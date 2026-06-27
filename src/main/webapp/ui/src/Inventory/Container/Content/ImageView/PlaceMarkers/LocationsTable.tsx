@@ -80,7 +80,7 @@ function LocationsTable({
           )}
           {location.name ?? (
             <Typography variant="inherit" component="span" sx={{ paddingLeft: "20px" }}>
-              &mdash;
+              {"—"}
             </Typography>
           )}
         </TableCell>

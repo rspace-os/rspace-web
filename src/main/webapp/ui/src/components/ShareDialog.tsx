@@ -752,10 +752,7 @@ export function ShareDialog({
 
         {isSnippet && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            <Trans ns="common" i18nKey="shareDialog.snippetsSharedNote" components={[<strong key="strong" />]}>
-              Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section
-              of the Gallery.
-            </Trans>
+            <Trans ns="common" i18nKey="shareDialog.snippetsSharedNote" components={[<strong key="strong" />]} />
           </Alert>
         )}
 

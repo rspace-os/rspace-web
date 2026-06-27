@@ -30,10 +30,10 @@ export default function Stepper({
   const { t } = useTranslation(["inventory", "common"]);
   const prevButton = () =>
     activeStep === 0 ? (
-      <Button onClick={handleCancel}>{t("actions.cancel", { ns: "common" })}</Button>
+      <Button onClick={handleCancel}>{t("common:actions.cancel")}</Button>
     ) : (
       <Button size="medium" onClick={handleBack} disabled={!activeStep}>
-        <KeyboardArrowLeft /> {t("actions.back", { ns: "common" })}
+        <KeyboardArrowLeft /> {t("common:actions.back")}
       </Button>
     );
 
@@ -47,7 +47,7 @@ export default function Stepper({
       />
     ) : (
       <Button size="medium" onClick={handleNext}>
-        {t("actions.next", { ns: "common" })} <KeyboardArrowRight />
+        {t("common:actions.next")} <KeyboardArrowRight />
       </Button>
     );
 

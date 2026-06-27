@@ -158,7 +158,7 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         <DialogTitle>{t("fields.link.versionLock.title")}</DialogTitle>
         <DialogContent>{t("fields.link.versionLock.cannotResolve", { globalId: props.globalId })}</DialogContent>
         <DialogActions>
-          <Button onClick={props.onCancel}>{t("actions.close", { ns: "common" })}</Button>
+          <Button onClick={props.onCancel}>{t("common:actions.close")}</Button>
         </DialogActions>
       </Dialog>
     );
@@ -182,7 +182,7 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onCancel}>{t("actions.cancel", { ns: "common" })}</Button>
+        <Button onClick={props.onCancel}>{t("common:actions.cancel")}</Button>
         <Button
           color="callToAction"
           disableElevation

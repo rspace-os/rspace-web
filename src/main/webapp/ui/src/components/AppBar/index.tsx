@@ -75,6 +75,7 @@ declare global {
   }
 }
 const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
+  const { t } = useTranslation("common");
   const { notificationCount, messageCount, specialMessageCount } = useWebSocketNotifications(`${currentUser.id}`);
   return (
     <Box
@@ -84,7 +85,7 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
       role="status"
       aria-live="polite"
       aria-relevant="text"
-      aria-label="notifications and messages"
+      aria-label={t("appBar.notificationsAndMessages")}
     >
       <Badge
         badgeContent={notificationCount + messageCount + specialMessageCount}
@@ -109,15 +110,17 @@ const NotificationCounter = ({ currentUser }: { currentUser: Person }) => {
               <NotificationsNoneIcon />
             )
           }
-          title="Notifications"
+          title={t("appBar.notifications")}
         />
       </Badge>
     </Box>
   );
 };
 const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const popoverId = React.useId();
+  const message = t("appBar.maintenancePopup", { relativeTime: getRelativeTime(startDate) });
 
   /*
    * On the non-react parts of the product, the app bar is rendered inside of a
@@ -133,7 +136,7 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
         onClick={(e) => {
           setAnchorEl(e.currentTarget);
         }}
-        aria-label={`A scheduled maintenance window begins ${getRelativeTime(startDate)}.`}
+        aria-label={message}
         aria-controls={popoverId}
         aria-haspopup="dialog"
         color="error"
@@ -166,7 +169,8 @@ const IncomingMaintenancePopup = ({ startDate }: { startDate: Date }) => {
           {/*
            * We show a relative time here rather than an absolute time to avoid
            * the need to take into account the user's timezone.
-           */}A scheduled maintenance window begins {getRelativeTime(startDate)}.
+           */}
+          {message}
         </Typography>
       </Popover>
     </div>
@@ -367,316 +371,200 @@ function GalleryAppBar({
    * The parts of the product that are important enough to get a tab in the app bar
    */
   const isTabbedPage = ["Workspace", "Gallery", "Inventory", "System", "My RSpace"].includes(currentPage);
+
+  /*
+   * Translated title/subheader for each tabbed section, keyed by the page
+   * identifier passed in `currentPage`. The identifiers themselves stay in
+   * English because they are compared against `currentPage` to mark the active
+   * tab; only the displayed labels are translated.
+   */
+  const sectionLabels: Record<string, { title: string; subheader: string }> = {
+    Workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
+    Gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
+    Inventory: { title: t("appBar.sections.inventory.title"), subheader: t("appBar.sections.inventory.subheader") },
+    "My RSpace": { title: t("appBar.sections.myRSpace.title"), subheader: t("appBar.sections.myRSpace.subheader") },
+    System: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
+  };
+
+  /* Display name for a page: the translated section title, or the raw value for caller-supplied dialog titles. */
+  const displayPage = (page: string): string => sectionLabels[page]?.title ?? page;
+
   return (
-    <AppBar position="relative" aria-label={variant === "page" ? "page header" : "dialog header"}>
-      <Toolbar variant="dense">
-        {variant === "page" && !isViewportSmall && (
-          <>
-            <Box
-              sx={{
-                height: "40px",
-                backgroundColor: "white",
-                width: "4px",
-                clipPath: `url(#${leftClipId})`,
-                marginLeft: "4px",
-                marginRight: "-1px",
-              }}
-            ></Box>
-            {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
-            <svg width="0" height="0" viewBox="0 0 3.9 40">
-              <defs>
-                <clipPath id={leftClipId}>
-                  <path d="M3.9,40C1.7,40,0,38.3,0,36.1V3.9C0,1.7,1.7,0,3.9,0v40Z" fill="#000000" />
-                </clipPath>
-              </defs>
-            </svg>
-          </>
-        )}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            backgroundColor: variant === "page" && !isViewportSmall ? "white" : "unset",
-            height: "40px",
-            px: 0.5,
-            gap: 0.5,
-          }}
-        >
-          {sidebarToggle}
+    <I18nRoot namespaces={["common", "about"]}>
+      <AppBar position="relative" aria-label={variant === "page" ? t("appBar.pageHeader") : t("appBar.dialogHeader")}>
+        <Toolbar variant="dense">
           {variant === "page" && !isViewportSmall && (
-            <Box
-              sx={{
-                height: "36px",
-                ml: 0.5,
-                py: 0.25,
-                position: "relative",
-              }}
-            >
-              {Result.fromNullable(brandingHref, new Error("branding not cached"))
-                .orElseTry(() => FetchingData.getSuccessValue(uiNavigationData).map(({ bannerImgSrc }) => bannerImgSrc))
-                .map((href) => (
-                  <img
-                    key="branding small"
-                    src={href}
-                    alt={t("appBar.brandingAlt")}
-                    style={{
-                      height: "100%",
-                    }}
-                  />
-                ))
-                .orElse(null)}
-            </Box>
+            <>
+              <Box
+                sx={{
+                  height: "40px",
+                  backgroundColor: "white",
+                  width: "4px",
+                  clipPath: `url(#${leftClipId})`,
+                  marginLeft: "4px",
+                  marginRight: "-1px",
+                }}
+              ></Box>
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
+              <svg width="0" height="0" viewBox="0 0 3.9 40">
+                <defs>
+                  <clipPath id={leftClipId}>
+                    <path d="M3.9,40C1.7,40,0,38.3,0,36.1V3.9C0,1.7,1.7,0,3.9,0v40Z" fill="#000000" />
+                  </clipPath>
+                </defs>
+              </svg>
+            </>
           )}
-        </Box>
-        {variant === "page" && !isViewportSmall && (
-          <>
-            <Box
-              sx={{
-                height: "40px",
-                backgroundColor: "white",
-                width: "12px",
-                clipPath: `url(#${rightClipId})`,
-                marginLeft: "-1px",
-              }}
-            ></Box>
-            {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
-            <svg width="0" height="0">
-              <defs>
-                <clipPath id={rightClipId}>
-                  <path d="M0,0c2.1,0,4.2,1.7,4.6,3.9l5.7,32.2c.4,2.1-1.1,3.9-3.2,3.9H0V0Z" fill="#000000" />
-                </clipPath>
-              </defs>
-            </svg>
-          </>
-        )}
-        {variant === "page" && isTabbedPage && (
-          <VisuallyHiddenHeading variant="h1">{currentPage}</VisuallyHiddenHeading>
-        )}
-        {variant === "dialog" && (
           <Box
             sx={{
-              ml: 0.5,
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: variant === "page" && !isViewportSmall ? "white" : "unset",
+              height: "40px",
+              px: 0.5,
+              gap: 0.5,
             }}
           >
-            <Typography variant="h6" noWrap component="h2">
-              {currentPage}
-            </Typography>
-          </Box>
-        )}
-        {!isViewportSmall && variant === "page" && (
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{
-              mx: 1,
-            }}
-            component="nav"
-            aria-label="main links"
-          >
-            <Link target="_self" aria-current={currentPage === "Workspace" ? "page" : false} href="/workspace">
-              Workspace
-            </Link>
-            <Link target="_self" aria-current={currentPage === "Gallery" ? "page" : false} href="/gallery">
-              Gallery
-            </Link>
-            {showInventory && (
-              <Link target="_self" aria-current={currentPage === "Inventory" ? "page" : false} href="/inventory">
-                Inventory
-              </Link>
-            )}
-            <Link
-              target="_self"
-              aria-current={currentPage === "My RSpace" ? "page" : false}
-              href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
-            >
-              My RSpace
-            </Link>
-            {showSystem && (
-              <Link target="_self" aria-current={currentPage === "System" ? "page" : false} href="/system">
-                System
-              </Link>
-            )}
-          </Stack>
-        )}
-        {isViewportSmall && variant === "page" && (
-          <>
-            <List
-              component="nav"
-              aria-label="Main Navigation"
-              disablePadding
-              sx={{
-                ml: 1,
-              }}
-            >
-              <ListItemButton
-                dense
-                id="app-menu-button"
-                aria-haspopup="menu"
-                aria-controls="app-menu"
-                {...(appMenuAnchorEl
-                  ? {
-                      "aria-expanded": "true",
-                    }
-                  : {})}
-                onClick={(event) => {
-                  setAppMenuAnchorEl(event.currentTarget);
+            {sidebarToggle}
+            {variant === "page" && !isViewportSmall && (
+              <Box
+                sx={{
+                  height: "36px",
+                  ml: 0.5,
+                  py: 0.25,
+                  position: "relative",
                 }}
               >
-                <ListItemText primary={isTabbedPage ? currentPage : "Go to..."} />
-                <ListItemIcon>
-                  <ArrowDropDownIcon />
-                </ListItemIcon>
-              </ListItemButton>
-            </List>
-            <Menu
-              id="app-menu"
-              anchorEl={appMenuAnchorEl}
-              open={Boolean(appMenuAnchorEl)}
-              onClose={handleAppMenuClose}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-              transformOrigin={{
-                vertical: "top",
-                horizontal: "left",
-              }}
-              sx={{
-                [`.${menuClasses.paper}`]: {
-                  /*
-                   * Generally we don't add box shadows to menus, but we do add
-                   * box shadows to popups opened from the app bar to make them
-                   * hover over the page's content.
-                   */
-                  boxShadow:
-                    "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
-                },
-              }}
-              slotProps={{
-                list: {
-                  "aria-labelledby": "app-menu-button",
-                  disablePadding: true,
-                },
-              }}
-            >
-              <AccentMenuItem
-                title="Workspace"
-                avatar={<NotebookIcon />}
-                subheader="Notebooks and documents"
-                foregroundColor={WORKSPACE_COLOR.contrastText}
-                backgroundColor={WORKSPACE_COLOR.main}
-                onClick={() => {
-                  window.location.href = "/workspace";
-                  handleAppMenuClose();
+                {Result.fromNullable(brandingHref, new Error("branding not cached"))
+                  .orElseTry(() =>
+                    FetchingData.getSuccessValue(uiNavigationData).map(({ bannerImgSrc }) => bannerImgSrc),
+                  )
+                  .map((href) => (
+                    <img
+                      key="branding small"
+                      src={href}
+                      alt={t("appBar.brandingAlt")}
+                      style={{
+                        height: "100%",
+                      }}
+                    />
+                  ))
+                  .orElse(null)}
+              </Box>
+            )}
+          </Box>
+          {variant === "page" && !isViewportSmall && (
+            <>
+              <Box
+                sx={{
+                  height: "40px",
+                  backgroundColor: "white",
+                  width: "12px",
+                  clipPath: `url(#${rightClipId})`,
+                  marginLeft: "-1px",
                 }}
-                current={currentPage === "Workspace" ? "page" : false}
-              />
-              <AccentMenuItem
-                title="Gallery"
-                avatar={<FileIcon />}
-                subheader="Your files in RSpace and connected filestores"
-                foregroundColor={GALLERY_COLOR.contrastText}
-                backgroundColor={GALLERY_COLOR.main}
-                onClick={() => {
-                  window.location.href = "/gallery";
-                  handleAppMenuClose();
-                }}
-                current={currentPage === "Gallery" ? "page" : false}
-              />
-              {showInventory && (
-                <AccentMenuItem
-                  title="Inventory"
-                  avatar={<FlaskIcon />}
-                  subheader="Samples and laboratory resources"
-                  foregroundColor={INVENTORY_COLOR.contrastText}
-                  backgroundColor={INVENTORY_COLOR.main}
-                  onClick={() => {
-                    window.location.href = "/inventory";
-                    handleAppMenuClose();
-                  }}
-                  current={currentPage === "Inventory" ? "page" : false}
-                />
-              )}
-              <AccentMenuItem
-                title="My RSpace"
-                avatar={<ProfileIcon />}
-                subheader="Your profile details, labgroups, and preferences"
-                foregroundColor={OTHER_COLOR.contrastText}
-                backgroundColor={OTHER_COLOR.main}
-                onClick={() => {
-                  window.location.href = showMyLabGroups ? "/groups/viewPIGroup" : "/userform";
-                  setAccountMenuAnchorEl(null);
-                }}
-                current={currentPage === "My RSpace" ? "page" : false}
-              />
-              {showSystem && (
-                <AccentMenuItem
-                  title="System"
-                  avatar={<SystemIcon />}
-                  subheader="System administration"
-                  foregroundColor={SYSADMIN_COLOR.contrastText}
-                  backgroundColor={SYSADMIN_COLOR.main}
-                  onClick={() => {
-                    window.location.href = "/system";
-                    handleAppMenuClose();
-                  }}
-                  current={currentPage === "System" ? "page" : false}
-                />
-              )}
-            </Menu>
-          </>
-        )}
-        <Box
-          sx={{
-            flexGrow: 1,
-          }}
-        ></Box>
-        {FetchingData.getSuccessValue(uiNavigationData)
-          .map(({ nextMaintenance }) => nextMaintenance)
-          .flatMap(Parsers.isNotNull)
-          .map(({ startDate }) => <IncomingMaintenancePopup key="maintenance" startDate={startDate} />)
-          .orElse(null)}
-        {variant === "page" && (
-          <>
-            {FetchingData.getSuccessValue(fetchedCurrentUser)
-              .map((currentUser) => <NotificationCounter key="notification counter" currentUser={currentUser} />)
-              .orElse(null)}
+              ></Box>
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: initial biome migration */}
+              <svg width="0" height="0">
+                <defs>
+                  <clipPath id={rightClipId}>
+                    <path d="M0,0c2.1,0,4.2,1.7,4.6,3.9l5.7,32.2c.4,2.1-1.1,3.9-3.2,3.9H0V0Z" fill="#000000" />
+                  </clipPath>
+                </defs>
+              </svg>
+            </>
+          )}
+          {variant === "page" && isTabbedPage && (
+            <VisuallyHiddenHeading variant="h1">{displayPage(currentPage)}</VisuallyHiddenHeading>
+          )}
+          {variant === "dialog" && (
             <Box
               sx={{
-                ml: 1,
+                ml: 0.5,
               }}
             >
-              <IconButtonWithTooltip
-                size="small"
-                disabled={FetchingData.isLoading(uiNavigationData)}
-                onClick={(event) => {
-                  setAccountMenuAnchorEl(event.currentTarget);
+              <Typography variant="h6" noWrap component="h2">
+                {displayPage(currentPage)}
+              </Typography>
+            </Box>
+          )}
+          {!isViewportSmall && variant === "page" && (
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                mx: 1,
+              }}
+              component="nav"
+              aria-label={t("appBar.mainLinks")}
+            >
+              <Link target="_self" aria-current={currentPage === "Workspace" ? "page" : false} href="/workspace">
+                {sectionLabels.Workspace.title}
+              </Link>
+              <Link target="_self" aria-current={currentPage === "Gallery" ? "page" : false} href="/gallery">
+                {sectionLabels.Gallery.title}
+              </Link>
+              {showInventory && (
+                <Link target="_self" aria-current={currentPage === "Inventory" ? "page" : false} href="/inventory">
+                  {sectionLabels.Inventory.title}
+                </Link>
+              )}
+              <Link
+                target="_self"
+                aria-current={currentPage === "My RSpace" ? "page" : false}
+                href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
+              >
+                {sectionLabels["My RSpace"].title}
+              </Link>
+              {showSystem && (
+                <Link target="_self" aria-current={currentPage === "System" ? "page" : false} href="/system">
+                  {sectionLabels.System.title}
+                </Link>
+              )}
+            </Stack>
+          )}
+          {isViewportSmall && variant === "page" && (
+            <>
+              <List
+                component="nav"
+                aria-label={t("appBar.mainNavigation")}
+                disablePadding
+                sx={{
+                  ml: 1,
                 }}
-                icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
-                title="Account Menu"
-                id="account-menu-button"
-                aria-haspopup="menu"
-                aria-controls="account-menu"
-                {...(accountMenuAnchorEl
-                  ? {
-                      "aria-expanded": "true",
-                    }
-                  : {})}
-              />
+              >
+                <ListItemButton
+                  dense
+                  id="app-menu-button"
+                  aria-haspopup="menu"
+                  aria-controls="app-menu"
+                  {...(appMenuAnchorEl
+                    ? {
+                        "aria-expanded": "true",
+                      }
+                    : {})}
+                  onClick={(event) => {
+                    setAppMenuAnchorEl(event.currentTarget);
+                  }}
+                >
+                  <ListItemText primary={isTabbedPage ? displayPage(currentPage) : t("appBar.goTo")} />
+                  <ListItemIcon>
+                    <ArrowDropDownIcon />
+                  </ListItemIcon>
+                </ListItemButton>
+              </List>
               <Menu
-                id="account-menu"
-                anchorEl={accountMenuAnchorEl}
-                open={Boolean(accountMenuAnchorEl)}
-                onClose={() => {
-                  setAccountMenuAnchorEl(null);
-                }}
+                id="app-menu"
+                anchorEl={appMenuAnchorEl}
+                open={Boolean(appMenuAnchorEl)}
+                onClose={handleAppMenuClose}
                 anchorOrigin={{
                   vertical: "bottom",
-                  horizontal: "right",
+                  horizontal: "left",
                 }}
                 transformOrigin={{
                   vertical: "top",
-                  horizontal: "right",
+                  horizontal: "left",
                 }}
                 sx={{
                   [`.${menuClasses.paper}`]: {
@@ -691,269 +579,403 @@ function GalleryAppBar({
                 }}
                 slotProps={{
                   list: {
-                    "aria-labelledby": "account-menu-button",
+                    "aria-labelledby": "app-menu-button",
                     disablePadding: true,
-                    sx: {
-                      pt: 0.5,
-                    },
                   },
                 }}
               >
-                {FetchingData.match(uiNavigationData, {
-                  loading: () => null,
-                  error: (errorMsg) => (
-                    <ListItem>
-                      <ListItemText primary="Error loading your details" secondary={errorMsg} />
-                    </ListItem>
-                  ),
-                  success: ({ userDetails }) => (
-                    <ListItem
-                      key="user details"
-                      sx={{
-                        py: 0,
-                      }}
-                    >
-                      <ListItemIcon
-                        sx={{
-                          alignSelf: "flex-start",
-                          mt: 1,
-                        }}
-                      >
-                        <DynamicAvatar uiNavigationData={uiNavigationData} />
-                      </ListItemIcon>
-                      <Stack>
-                        <ListItemText
-                          sx={{
-                            mt: 0.5,
-                            ml: 1.6,
-                          }}
-                          primary={
-                            <>
-                              {FetchingData.getSuccessValue(uiNavigationData)
-                                .map(({ operatedAs }) => operatedAs)
-                                .flatMap(Parsers.isTrue)
-                                .map(() => (
-                                  <>
-                                    <strong>{t("appBar.operatingAs")}</strong>
-                                    <br />
-                                  </>
-                                ))
-                                .orElse(null)}
-                              {userDetails.fullName} ({userDetails.username})
-                            </>
-                          }
-                          secondary={userDetails.email}
-                        />
-                        {userDetails.orcidAvailable && (
-                          <ListItemText
-                            /*
-                             * The styling of this component is dictated by the ORCID display guidelines
-                             * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
-                             */
-                            sx={{
-                              mt: -0.5,
-                            }}
-                            primary={
-                              userDetails.orcidId === null ? (
-                                <Trans
-                                  ns="common"
-                                  i18nKey="appBar.orcidAdd"
-                                  components={[<Link key="link" href="/userform" />]}
-                                >
-                                  Add an ORCID iD to your <Link href="/userform">profile</Link>.
-                                </Trans>
-                              ) : (
-                                <Stack
-                                  direction="row"
-                                  spacing={0.5}
-                                  sx={{
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <SvgIcon>
-                                    <OrcidIcon />
-                                  </SvgIcon>
-                                  <span>{userDetails.orcidId}</span>
-                                </Stack>
-                              )
-                            }
-                            slotProps={{
-                              primary: {
-                                sx: {
-                                  fontFamily: userDetails.orcidId === null ? "inherit" : "monospace",
-                                  lineHeight: userDetails.orcidId === null ? "unset" : "1em",
-                                  fontSize: "0.8em",
-                                  alignItems: "center",
-                                  textDecoration: userDetails.orcidId === null ? "none" : "underline",
-                                },
-                              },
-                            }}
-                          />
-                        )}
-                      </Stack>
-                    </ListItem>
-                  ),
-                })}
                 <AccentMenuItem
-                  title="Messaging"
-                  avatar={<MessageIcon />}
-                  compact
+                  title={sectionLabels.Workspace.title}
+                  avatar={<NotebookIcon />}
+                  subheader={sectionLabels.Workspace.subheader}
+                  foregroundColor={WORKSPACE_COLOR.contrastText}
+                  backgroundColor={WORKSPACE_COLOR.main}
                   onClick={() => {
-                    setAccountMenuAnchorEl(null);
+                    window.location.href = "/workspace";
+                    handleAppMenuClose();
                   }}
-                  component="a"
-                  href="/dashboard"
+                  current={currentPage === "Workspace" ? "page" : false}
                 />
                 <AccentMenuItem
-                  title="Apps"
-                  avatar={<AppsIcon />}
-                  compact
+                  title={sectionLabels.Gallery.title}
+                  avatar={<FileIcon />}
+                  subheader={sectionLabels.Gallery.subheader}
+                  foregroundColor={GALLERY_COLOR.contrastText}
+                  backgroundColor={GALLERY_COLOR.main}
                   onClick={() => {
+                    window.location.href = "/gallery";
+                    handleAppMenuClose();
+                  }}
+                  current={currentPage === "Gallery" ? "page" : false}
+                />
+                {showInventory && (
+                  <AccentMenuItem
+                    title={sectionLabels.Inventory.title}
+                    avatar={<FlaskIcon />}
+                    subheader={sectionLabels.Inventory.subheader}
+                    foregroundColor={INVENTORY_COLOR.contrastText}
+                    backgroundColor={INVENTORY_COLOR.main}
+                    onClick={() => {
+                      window.location.href = "/inventory";
+                      handleAppMenuClose();
+                    }}
+                    current={currentPage === "Inventory" ? "page" : false}
+                  />
+                )}
+                <AccentMenuItem
+                  title={sectionLabels["My RSpace"].title}
+                  avatar={<ProfileIcon />}
+                  subheader={sectionLabels["My RSpace"].subheader}
+                  foregroundColor={OTHER_COLOR.contrastText}
+                  backgroundColor={OTHER_COLOR.main}
+                  onClick={() => {
+                    window.location.href = showMyLabGroups ? "/groups/viewPIGroup" : "/userform";
                     setAccountMenuAnchorEl(null);
                   }}
-                  component="a"
-                  href="/apps"
+                  current={currentPage === "My RSpace" ? "page" : false}
                 />
-                {FetchingData.getSuccessValue(uiNavigationData)
-                  .map(({ visibleTabs: { published } }) => published)
-                  .flatMap(Parsers.isTrue)
-                  .map(() => (
-                    <AccentMenuItem
-                      key="published"
-                      title="Published"
-                      avatar={<PublicIcon />}
-                      compact
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setAccountMenuAnchorEl(null);
-                        window.open("/public/publishedView/publishedDocuments", "_target");
-                      }}
-                      component="a"
-                      href="/public/publishedView/publishedDocuments"
-                    />
-                  ))
-                  .orElse(null)}
-                <AccessibilityTipsMenuItem
-                  {...(accessibilityTips ?? {})}
+                {showSystem && (
+                  <AccentMenuItem
+                    title={sectionLabels.System.title}
+                    avatar={<SystemIcon />}
+                    subheader={sectionLabels.System.subheader}
+                    foregroundColor={SYSADMIN_COLOR.contrastText}
+                    backgroundColor={SYSADMIN_COLOR.main}
+                    onClick={() => {
+                      window.location.href = "/system";
+                      handleAppMenuClose();
+                    }}
+                    current={currentPage === "System" ? "page" : false}
+                  />
+                )}
+              </Menu>
+            </>
+          )}
+          <Box
+            sx={{
+              flexGrow: 1,
+            }}
+          ></Box>
+          {FetchingData.getSuccessValue(uiNavigationData)
+            .map(({ nextMaintenance }) => nextMaintenance)
+            .flatMap(Parsers.isNotNull)
+            .map(({ startDate }) => <IncomingMaintenancePopup key="maintenance" startDate={startDate} />)
+            .orElse(null)}
+          {variant === "page" && (
+            <>
+              {FetchingData.getSuccessValue(fetchedCurrentUser)
+                .map((currentUser) => <NotificationCounter key="notification counter" currentUser={currentUser} />)
+                .orElse(null)}
+              <Box
+                sx={{
+                  ml: 1,
+                }}
+              >
+                <IconButtonWithTooltip
+                  size="small"
+                  disabled={FetchingData.isLoading(uiNavigationData)}
+                  onClick={(event) => {
+                    setAccountMenuAnchorEl(event.currentTarget);
+                  }}
+                  icon={<DynamicAvatar uiNavigationData={uiNavigationData} size="small" />}
+                  title={t("appBar.accountMenu")}
+                  id="account-menu-button"
+                  aria-haspopup="menu"
+                  aria-controls="account-menu"
+                  {...(accountMenuAnchorEl
+                    ? {
+                        "aria-expanded": "true",
+                      }
+                    : {})}
+                />
+                <Menu
+                  id="account-menu"
+                  anchorEl={accountMenuAnchorEl}
+                  open={Boolean(accountMenuAnchorEl)}
                   onClose={() => {
                     setAccountMenuAnchorEl(null);
                   }}
-                />
-                <AccentMenuItem
-                  title="About RSpace"
-                  avatar={<InfoIcon />}
-                  compact
-                  onClick={() => {
-                    setAccountMenuAnchorEl(null);
-                    setAboutDialogOpen(true);
+                  anchorOrigin={{
+                    vertical: "bottom",
+                    horizontal: "right",
                   }}
-                />
-                {FetchingData.getSuccessValue(uiNavigationData)
-                  .map(({ operatedAs }) => operatedAs)
-                  .flatMap(Parsers.isTrue)
-                  .map(() => (
-                    <AccentMenuItem
-                      key="release"
-                      title="Release"
-                      avatar={<LogoutIcon />}
-                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
-                      compact
-                      onClick={() => {
-                        JwtService.destroyToken();
-                        setAccountMenuAnchorEl(null);
-                        window.location.href = "/logout/runAsRelease";
-                      }}
-                    />
-                  ))
-                  .orElse(
-                    <AccentMenuItem
-                      title="Log Out"
-                      avatar={<LogoutIcon />}
-                      backgroundColor={lighten(theme.palette.error.light, 0.5)}
-                      foregroundColor={darken(theme.palette.error.dark, 0.3)}
-                      compact
-                      onClick={() => {
-                        JwtService.destroyToken();
-
-                        /*
-                         * On some servers the user can login with the Google
-                         * Login workflow. On those servers, `gapi` will be
-                         * defined globally by header.jsp
-                         */
-                        if (typeof window.gapi !== "undefined" && window.gapi.auth2) {
-                          const auth2 = window.gapi.auth2.getAuthInstance();
-                          if (auth2) {
-                            void auth2.signOut().then(() => {
-                              console.log("User signed out.");
-                            });
-                          } else {
-                            console.log("No GAPI authinstance defined");
-                          }
-                        } else {
-                          console.log("No GAPI defined");
-                        }
-                        setAccountMenuAnchorEl(null);
-                        window.location.href = "/logout";
-                      }}
-                    />,
-                  )}
-                {FetchingData.getSuccessValue(uiNavigationData)
-                  .map(({ bannerImgSrc }) => (
-                    <ListItem
-                      key="branding large"
-                      sx={{
-                        py: 0,
-                        mb: 1,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <img
-                        src={bannerImgSrc}
-                        alt={t("appBar.brandingAlt")}
-                        style={{
-                          maxWidth: "120px",
-                          display: "block",
+                  transformOrigin={{
+                    vertical: "top",
+                    horizontal: "right",
+                  }}
+                  sx={{
+                    [`.${menuClasses.paper}`]: {
+                      /*
+                       * Generally we don't add box shadows to menus, but we do add
+                       * box shadows to popups opened from the app bar to make them
+                       * hover over the page's content.
+                       */
+                      boxShadow:
+                        "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
+                    },
+                  }}
+                  slotProps={{
+                    list: {
+                      "aria-labelledby": "account-menu-button",
+                      disablePadding: true,
+                      sx: {
+                        pt: 0.5,
+                      },
+                    },
+                  }}
+                >
+                  {FetchingData.match(uiNavigationData, {
+                    loading: () => null,
+                    error: (errorMsg) => (
+                      <ListItem>
+                        <ListItemText primary={t("appBar.errorLoadingDetails")} secondary={errorMsg} />
+                      </ListItem>
+                    ),
+                    success: ({ userDetails }) => (
+                      <ListItem
+                        key="user details"
+                        sx={{
+                          py: 0,
+                        }}
+                      >
+                        <ListItemIcon
+                          sx={{
+                            alignSelf: "flex-start",
+                            mt: 1,
+                          }}
+                        >
+                          <DynamicAvatar uiNavigationData={uiNavigationData} />
+                        </ListItemIcon>
+                        <Stack>
+                          <ListItemText
+                            sx={{
+                              mt: 0.5,
+                              ml: 1.6,
+                            }}
+                            primary={
+                              <>
+                                {FetchingData.getSuccessValue(uiNavigationData)
+                                  .map(({ operatedAs }) => operatedAs)
+                                  .flatMap(Parsers.isTrue)
+                                  .map(() => (
+                                    <>
+                                      <strong>{t("appBar.operatingAs")}</strong>
+                                      <br />
+                                    </>
+                                  ))
+                                  .orElse(null)}
+                                {userDetails.fullName} ({userDetails.username})
+                              </>
+                            }
+                            secondary={userDetails.email}
+                          />
+                          {userDetails.orcidAvailable && (
+                            <ListItemText
+                              /*
+                               * The styling of this component is dictated by the ORCID display guidelines
+                               * https://info.orcid.org/documentation/integration-guide/orcid-id-display-guidelines/#Compact_ORCID_iD
+                               */
+                              sx={{
+                                mt: -0.5,
+                              }}
+                              primary={
+                                userDetails.orcidId === null ? (
+                                  <Trans
+                                    ns="common"
+                                    i18nKey="appBar.orcidAdd"
+                                    components={[<Link key="link" href="/userform" />]}
+                                  />
+                                ) : (
+                                  <Stack
+                                    direction="row"
+                                    spacing={0.5}
+                                    sx={{
+                                      alignItems: "center",
+                                    }}
+                                  >
+                                    <SvgIcon>
+                                      <OrcidIcon />
+                                    </SvgIcon>
+                                    <span>{userDetails.orcidId}</span>
+                                  </Stack>
+                                )
+                              }
+                              slotProps={{
+                                primary: {
+                                  sx: {
+                                    fontFamily: userDetails.orcidId === null ? "inherit" : "monospace",
+                                    lineHeight: userDetails.orcidId === null ? "unset" : "1em",
+                                    fontSize: "0.8em",
+                                    alignItems: "center",
+                                    textDecoration: userDetails.orcidId === null ? "none" : "underline",
+                                  },
+                                },
+                              }}
+                            />
+                          )}
+                        </Stack>
+                      </ListItem>
+                    ),
+                  })}
+                  <AccentMenuItem
+                    title={t("appBar.messaging")}
+                    avatar={<MessageIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                    }}
+                    component="a"
+                    href="/dashboard"
+                  />
+                  <AccentMenuItem
+                    title={t("appBar.apps")}
+                    avatar={<AppsIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                    }}
+                    component="a"
+                    href="/apps"
+                  />
+                  {FetchingData.getSuccessValue(uiNavigationData)
+                    .map(({ visibleTabs: { published } }) => published)
+                    .flatMap(Parsers.isTrue)
+                    .map(() => (
+                      <AccentMenuItem
+                        key="published"
+                        title={t("appBar.published")}
+                        avatar={<PublicIcon />}
+                        compact
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setAccountMenuAnchorEl(null);
+                          window.open("/public/publishedView/publishedDocuments", "_target");
+                        }}
+                        component="a"
+                        href="/public/publishedView/publishedDocuments"
+                      />
+                    ))
+                    .orElse(null)}
+                  <AccessibilityTipsMenuItem
+                    {...(accessibilityTips ?? {})}
+                    onClose={() => {
+                      setAccountMenuAnchorEl(null);
+                    }}
+                  />
+                  <AccentMenuItem
+                    title={t("appBar.aboutRSpace")}
+                    avatar={<InfoIcon />}
+                    compact
+                    onClick={() => {
+                      setAccountMenuAnchorEl(null);
+                      setAboutDialogOpen(true);
+                    }}
+                  />
+                  {FetchingData.getSuccessValue(uiNavigationData)
+                    .map(({ operatedAs }) => operatedAs)
+                    .flatMap(Parsers.isTrue)
+                    .map(() => (
+                      <AccentMenuItem
+                        key="release"
+                        title={t("appBar.release")}
+                        avatar={<LogoutIcon />}
+                        backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                        foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                        compact
+                        onClick={() => {
+                          JwtService.destroyToken();
+                          setAccountMenuAnchorEl(null);
+                          window.location.href = "/logout/runAsRelease";
                         }}
                       />
-                    </ListItem>
-                  ))
-                  .orElse(null)}
-              </Menu>
-              <I18nRoot namespaces={["about"]}>
+                    ))
+                    .orElse(
+                      <AccentMenuItem
+                        title={t("appBar.logOut")}
+                        avatar={<LogoutIcon />}
+                        backgroundColor={lighten(theme.palette.error.light, 0.5)}
+                        foregroundColor={darken(theme.palette.error.dark, 0.3)}
+                        compact
+                        onClick={() => {
+                          JwtService.destroyToken();
+
+                          /*
+                           * On some servers the user can login with the Google
+                           * Login workflow. On those servers, `gapi` will be
+                           * defined globally by header.jsp
+                           */
+                          if (typeof window.gapi !== "undefined" && window.gapi.auth2) {
+                            const auth2 = window.gapi.auth2.getAuthInstance();
+                            if (auth2) {
+                              void auth2.signOut().then(() => {
+                                console.log("User signed out.");
+                              });
+                            } else {
+                              console.log("No GAPI authinstance defined");
+                            }
+                          } else {
+                            console.log("No GAPI defined");
+                          }
+                          setAccountMenuAnchorEl(null);
+                          window.location.href = "/logout";
+                        }}
+                      />,
+                    )}
+                  {FetchingData.getSuccessValue(uiNavigationData)
+                    .map(({ bannerImgSrc }) => (
+                      <ListItem
+                        key="branding large"
+                        sx={{
+                          py: 0,
+                          mb: 1,
+                          justifyContent: "flex-end",
+                        }}
+                      >
+                        <img
+                          src={bannerImgSrc}
+                          alt={t("appBar.brandingAlt")}
+                          style={{
+                            maxWidth: "120px",
+                            display: "block",
+                          }}
+                        />
+                      </ListItem>
+                    ))
+                    .orElse(null)}
+                </Menu>
                 <AboutRSpaceDialog open={aboutDialogOpen} onClose={() => setAboutDialogOpen(false)} />
-              </I18nRoot>
+              </Box>
+            </>
+          )}
+          {variant === "dialog" && (
+            <Box
+              sx={{
+                ml: 1,
+              }}
+            >
+              <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
             </Box>
-          </>
-        )}
-        {variant === "dialog" && (
+          )}
           <Box
             sx={{
               ml: 1,
             }}
           >
-            <AccessibilityTipsIconButton {...(accessibilityTips ?? {})} />
+            {helpPage ? (
+              <Box
+                sx={{
+                  transform: "translateY(2px)",
+                }}
+              >
+                <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
+              </Box>
+            ) : (
+              <HelpDocs />
+            )}
           </Box>
-        )}
-        <Box
-          sx={{
-            ml: 1,
-          }}
-        >
-          {helpPage ? (
-            <Box
-              sx={{
-                transform: "translateY(2px)",
-              }}
-            >
-              <HelpLinkIcon title={helpPage.title} link={helpPage.docLink} />
-            </Box>
-          ) : (
-            <HelpDocs />
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+        </Toolbar>
+      </AppBar>
+    </I18nRoot>
   );
 }
 

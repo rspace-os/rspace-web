@@ -275,7 +275,6 @@ const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
             )}
           </Fragment>
         ))}
-        ;
       </Grid>
     );
   },

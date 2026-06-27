@@ -72,16 +72,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
                       sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
                     />,
                   ]}
-                >
-                  Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                  <Typography
-                    variant="inherit"
-                    component="samp"
-                    sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
-                  >
-                    l:
-                  </Typography>
-                </Trans>
+                />
               </DialogContentText>
               <DialogContentText>
                 <Trans
@@ -98,21 +89,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
                       target="_blank"
                     />,
                   ]}
-                >
-                  For more information, see{" "}
-                  <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
-                    advanced search
-                  </a>{" "}
-                  and the related{" "}
-                  <a
-                    href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    Apache page
-                  </a>
-                  .
-                </Trans>
+                />
               </DialogContentText>
             </Box>
           </Stack>

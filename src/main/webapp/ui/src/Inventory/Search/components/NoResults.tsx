@@ -4,7 +4,7 @@ import Link from "@mui/material/Link";
 import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import NoResultsSvg from "@/assets/graphics/NoResults.svg";
 import docLinks from "../../../assets/DocLinks";
 
@@ -62,15 +62,19 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               maxWidth: "20em",
             }}
           >
-            For more information on using Lucene queries, see{" "}
-            <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
-              advanced search
-            </Link>{" "}
-            and the related{" "}
-            <Link href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
-              Apache page
-            </Link>
-            .
+            <Trans
+              ns="inventory"
+              i18nKey="search.noResults.luceneInfo"
+              components={[
+                <Link key="advanced" href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
+                <Link
+                  key="apache"
+                  href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
+                  rel="noreferrer"
+                  target="_blank"
+                />,
+              ]}
+            />
           </Typography>
         </>
       )}

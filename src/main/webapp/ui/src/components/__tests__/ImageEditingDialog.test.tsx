@@ -92,7 +92,10 @@ describe("ImageEditingDialog", () => {
             expect(image.naturalHeight).toBeGreaterThan(0);
           });
           const rotateButton = screen.getByRole("button", {
-            name: direction === "clockwise" ? "imageEditing.rotateClockwise" : "imageEditing.rotateCounterClockwise",
+            name:
+              direction === "clockwise"
+                ? "imageEditingDialog.rotateClockwise"
+                : "imageEditingDialog.rotateCounterClockwise",
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);
@@ -152,7 +155,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "imageEditing.rotateClockwise",
+      name: "imageEditingDialog.rotateClockwise",
     });
 
     await user.click(rotateButton);
@@ -207,7 +210,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "imageEditing.rotateCounterClockwise",
+      name: "imageEditingDialog.rotateCounterClockwise",
     });
 
     await user.click(rotateButton);
@@ -305,7 +308,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "imageEditing.rotateClockwise",
+      name: "imageEditingDialog.rotateClockwise",
     });
 
     await user.click(rotateButton);

@@ -18,6 +18,6 @@ export default function RecordLocation({ record }: RecordLocationArgs): React.Re
     .orElseGet(() => {
       if (record.deleted) return <InTrash />;
       if (record.showTopLinkInBreadcrumbs()) return <TopLink />;
-      return <>&mdash;</>;
+      return <>{"—"}</>;
     });
 }

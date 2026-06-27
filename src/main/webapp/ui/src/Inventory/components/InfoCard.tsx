@@ -22,11 +22,11 @@ function OpenButton({
 }: React.ComponentProps<typeof Button> & {
   icon?: React.ReactNode;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   return (
     <Button color="primary" variant="text" disableElevation sx={{ cursor: "default" }} {...rest}>
       {icon}
-      {t("actions.open", { ns: "common" })}
+      {t("common:actions.open")}
     </Button>
   );
 }
@@ -39,7 +39,7 @@ function InfoPopover({ record }: InfoCardArgs): React.ReactNode {
   const { moveStore, uiStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   const moveActions = (r: InventoryBaseRecord) => (
     <>

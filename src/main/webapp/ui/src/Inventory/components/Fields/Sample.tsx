@@ -39,14 +39,12 @@ export default function SampleField<
                   if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
                 }}
               >
-                {sample.subSamplesCount === 1 ? (
-                  `The parent sample only has one ${sample.subSampleAlias.alias}.`
-                ) : (
-                  <>
-                    There {sample.subSamplesCount === 2 ? "is" : "are"} {sample.subSamplesCount - 1} other{" "}
-                    {sample.subSamplesCount === 2 ? sample.subSampleAlias.alias : sample.subSampleAlias.plural}.
-                  </>
-                )}
+                {sample.subSamplesCount === 1
+                  ? t("fields.sample.parentOnlyOne", { alias: sample.subSampleAlias.alias })
+                  : t("fields.sample.parentOthers", {
+                      otherCount: sample.subSamplesCount - 1,
+                      noun: sample.subSamplesCount === 2 ? sample.subSampleAlias.alias : sample.subSampleAlias.plural,
+                    })}
               </Link>
             </Typography>
           )}

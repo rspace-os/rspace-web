@@ -170,7 +170,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   if (disabled) {
     return (
       <Typography variant="body2" color="text.secondary">
-        None
+        {t("sample.fields.linkFieldValue.none")}
       </Typography>
     );
   }

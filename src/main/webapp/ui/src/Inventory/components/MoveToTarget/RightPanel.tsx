@@ -3,6 +3,7 @@ import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
 import { menuIDs } from "../../../util/menuIDs";
@@ -49,12 +50,13 @@ const Content = observer(() => {
 // biome-ignore lint/correctness/noUnusedVariables: initial biome migration
 type RightPanelArgs = Record<string, never>;
 function RightPanel() {
+  const { t } = useTranslation("inventory");
   return (
     <Card elevation={0}>
       <CardHeader
         title={
           <>
-            Selected Destination: <Title />
+            {t("moveToTarget.selectedDestination")} <Title />
           </>
         }
         sx={{

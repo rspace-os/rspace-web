@@ -52,7 +52,7 @@ export default function FolderSelectionDialog({
 
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="md" fullWidth>
-      <DialogTitle>{title ?? t("folderSelection.title")}</DialogTitle>
+      <DialogTitle>{title ?? t("folderSelectionDialog.title")}</DialogTitle>
       <DialogContent>
         <Box sx={{ minHeight: 300, maxHeight: 500 }}>
           <FolderTree onFolderSelect={handleFolderSelect} rootFolderId={rootFolderId} />
@@ -62,9 +62,9 @@ export default function FolderSelectionDialog({
             sx={{ mt: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}
             role="status"
             aria-live="polite"
-            aria-label={t("folderSelection.selectedFolder")}
+            aria-label={t("folderSelectionDialog.selectedFolder")}
           >
-            <Typography variant="subtitle2">{t("folderSelection.selectedFolderWithColon")}</Typography>
+            <Typography variant="subtitle2">{t("folderSelectionDialog.selectedFolderWithColon")}</Typography>
             <Typography variant="body2" color="text.secondary">
               {selectedFolder.name}
             </Typography>

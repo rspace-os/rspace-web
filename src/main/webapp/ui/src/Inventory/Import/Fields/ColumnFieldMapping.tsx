@@ -10,7 +10,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import type { ImportRecordType } from "../../../stores/stores/ImportStore";
@@ -121,10 +121,12 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       show: hasRows && importData.isSubSamplesImport && importData.parentSamplesImportIdUndefined,
       severity: "info",
       content: (
-        <>
-          RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a{" "}
-          <Link to={onTypeSelect("SAMPLES")}>Samples CSV</Link> with mapped &quot;Import ID&quot;.
-        </>
+        <Trans
+          ns="inventory"
+          i18nKey="import.columnMapping.parentSampleImportIdMissing"
+          values={{ label }}
+          components={[<Link key="link" to={onTypeSelect("SAMPLES")} />]}
+        />
       ),
     },
     {
@@ -132,11 +134,12 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       show: hasRows && importData.parentContainersImportIdUndefined,
       severity: "info",
       content: (
-        <>
-          RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a{" "}
-          <Link to={onTypeSelect("CONTAINERS")}>Containers CSV</Link> with mapped &quot;Import ID&quot;, or unselect the
-          &quot;Parent Container Import ID&quot; conversion.
-        </>
+        <Trans
+          ns="inventory"
+          i18nKey="import.columnMapping.parentContainerImportIdMissing"
+          values={{ label }}
+          components={[<Link key="link" to={onTypeSelect("CONTAINERS")} />]}
+        />
       ),
     },
   ];

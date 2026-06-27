@@ -132,7 +132,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onClose}>{t("actions.close", { ns: "common" })}</Button>
+        <Button onClick={props.onClose}>{t("common:actions.close")}</Button>
       </DialogActions>
     </Dialog>
   );

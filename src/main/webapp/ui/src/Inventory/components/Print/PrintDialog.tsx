@@ -401,7 +401,7 @@ function PrintDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          {t("actions.cancel", { ns: "common" })}
+          {t("common:actions.cancel")}
         </Button>
         <Button
           onClick={handlePrint}

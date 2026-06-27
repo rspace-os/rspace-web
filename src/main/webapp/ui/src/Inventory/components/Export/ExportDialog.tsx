@@ -67,7 +67,7 @@ export const ExportOptionsWrapper = ({
   selectedResults,
   exportType,
 }: OptionsWrapperArgs): React.ReactNode => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const exportModeOptions: Array<RadioOption<ExportMode>> = [
     { value: "FULL", label: t("export.dialog.options.full") },
     { value: "COMPACT", label: t("export.dialog.options.compact") },
@@ -216,7 +216,7 @@ export default function ExportDialog({
   closeMenu,
   selectedResults,
 }: ExportDialogArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const [exportOptions, setExportOptions] = useState<ExportOptions>(
     defaultExportOptions(selectedResults ?? null, exportType),
   );
@@ -244,7 +244,7 @@ export default function ExportDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          {t("actions.cancel", { ns: "common" })}
+          {t("common:actions.cancel")}
         </Button>
         <SubmitSpinner onClick={onSubmitHandler} disabled={false} loading={false} label="Export" />
       </DialogActions>

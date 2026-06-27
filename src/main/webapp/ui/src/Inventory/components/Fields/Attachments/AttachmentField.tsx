@@ -127,8 +127,8 @@ function AttachmentField<
       {!value && (
         <Box sx={{ mt: 1 }}>
           <Alert severity="info" role="none">
-            <AlertTitle>Attachment</AlertTitle>A file of any type can be attached (e.g. image, document, or chemistry
-            file)
+            <AlertTitle>{t("fields.attachments.alert.title")}</AlertTitle>
+            {t("fields.attachments.alert.body")}
           </Alert>
         </Box>
       )}

@@ -106,7 +106,7 @@ function InventoryPicker({
 
   const selectedRecords = getSelectedRecords();
   const hasDisallowedSelection = selectedRecords.some((record) => search.alwaysFilterOut(record));
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   return (
     <Card
@@ -176,7 +176,7 @@ function InventoryPicker({
           >
             {t("picker.choose")}
           </Button>
-          <Button onClick={handleCancel}>{t("actions.cancel", { ns: "common" })}</Button>
+          <Button onClick={handleCancel}>{t("common:actions.cancel")}</Button>
         </CardActions>
       )}
     </Card>

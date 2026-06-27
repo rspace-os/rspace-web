@@ -50,12 +50,9 @@ export default function RelatedInventoryItems({
               <Link href={`/globalId/${item.globalId}`} target="_blank" rel="noopener noreferrer">
                 {item.globalId}
               </Link>
-              : {item.name}
+              {`: ${item.name}`}
               {item.relationType ? (
-                <Typography variant="caption" component="em">
-                  {" "}
-                  ({item.relationType})
-                </Typography>
+                <Typography variant="caption" component="em">{` (${item.relationType})`}</Typography>
               ) : null}
             </ListItem>
           ))}

@@ -198,7 +198,7 @@ function Form(): React.ReactNode {
                * "an" right would be too much of a pain.
                */}
               <Typography variant="body1">
-                Tap one of the {activeResult.subSampleAlias.plural} in the search section to preview it below.
+                {t("sample.subsamplesSection.tapToPreview", { plural: activeResult.subSampleAlias.plural })}
               </Typography>
               <SubsampleListing sample={activeResult} />
               <SubsampleDetails search={activeResult.search} />

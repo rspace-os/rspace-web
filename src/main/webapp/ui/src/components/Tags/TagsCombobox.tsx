@@ -811,14 +811,13 @@ function TagsComboboxContent<
           <AlertTitle>
             {enforceOntologies ? t("tags.noMatchingSuggestionsFromOntologies") : t("tags.noMatchingSuggestions")}
           </AlertTitle>
-          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
-          {enforceOntologies ? <></> : <>{t("tags.useNewTagHint")}</>}
+          {enforceOntologies && t("tags.useNewTagHint")}
         </Alert>
       )}
       {error && (
         <Alert severity="warning">
           <AlertTitle>{t("tags.errorFetchingTags")}</AlertTitle>
-          {enforceOntologies ? <>{t("tags.checkOntologyFiles")}</> : <>{t("tags.typeTagInstead")}</>}
+          {enforceOntologies ? t("tags.checkOntologyFiles") : t("tags.typeTagInstead")}
         </Alert>
       )}
     </>

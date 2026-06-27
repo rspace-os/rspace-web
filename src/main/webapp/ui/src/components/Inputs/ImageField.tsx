@@ -153,7 +153,7 @@ function ImageField({
                         startIcon={<CropIcon />}
                         data-test-id="EditImageButton"
                       >
-                        {t("imageEditing.title")}
+                        {t("imageEditingDialog.title")}
                       </Button>
                     </Grid>
                     {endAdornment}

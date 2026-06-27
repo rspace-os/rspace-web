@@ -208,7 +208,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={close}>{t("actions.close", { ns: "common" })}</Button>
+            <Button onClick={close}>{t("common:actions.close")}</Button>
           </DialogActions>
         </Dialog>
       </FormGroup>

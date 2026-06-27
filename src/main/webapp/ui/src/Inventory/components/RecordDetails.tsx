@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import DescriptionList from "../../components/DescriptionList";
 import GlobalId from "../../components/GlobalId";
@@ -22,6 +23,7 @@ type RecordDetailsArgs = {
 };
 
 function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
@@ -158,7 +160,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                           time={record.recordDetails.modified[0]}
                           formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
                         />{" "}
-                        by {record.recordDetails.modified[1]}
+                        {t("recordDetails.modifiedBy", { user: record.recordDetails.modified[1] })}
                       </>
                     ),
                   },

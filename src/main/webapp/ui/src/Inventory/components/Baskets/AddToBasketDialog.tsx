@@ -35,7 +35,7 @@ function AddToBasketDialog({
   closeMenu,
 }: AddToBasketDialogArgs): React.ReactNode {
   const { searchStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([NEW_BASKET]);
   const [targetBasket, setTargetBasket] = useState<Basket>(NEW_BASKET);
@@ -138,7 +138,7 @@ function AddToBasketDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          {t("actions.cancel", { ns: "common" })}
+          {t("common:actions.cancel")}
         </Button>
         <SubmitSpinner
           onClick={onSubmitHandler}

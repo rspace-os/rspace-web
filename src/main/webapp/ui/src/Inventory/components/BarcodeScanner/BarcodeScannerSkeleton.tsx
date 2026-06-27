@@ -42,7 +42,7 @@ export default function BarcodeScannerSkeleton({
   error,
 }: BarcodeScannerSkeletonArgs): React.ReactNode {
   const { uiStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   function handleOnSubmit() {
     try {
@@ -104,7 +104,7 @@ export default function BarcodeScannerSkeleton({
             onClose();
           }}
         >
-          {t("actions.cancel", { ns: "common" })}
+          {t("common:actions.cancel")}
         </Button>
         <Button
           disabled={!barcode?.rawValue}
@@ -121,7 +121,7 @@ export default function BarcodeScannerSkeleton({
               setBarcode(null);
             }}
           >
-            {t("actions.clear", { ns: "common" })}
+            {t("common:actions.clear")}
           </Button>
         )}
       </CardActions>

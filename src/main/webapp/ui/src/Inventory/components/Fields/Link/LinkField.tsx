@@ -167,7 +167,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               rel="noopener noreferrer"
               aria-label={`Open ${props.link.targetGlobalId}`}
             >
-              {t("actions.open", { ns: "common" })}
+              {t("common:actions.open")}
             </Button>
           )}
           {props.editable && props.onEdit && (
@@ -177,7 +177,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               onClick={props.onEdit}
               aria-label={t("fields.link.linkField.editLink")}
             >
-              {t("actions.edit", { ns: "common" })}
+              {t("common:actions.edit")}
             </Button>
           )}
         </Box>

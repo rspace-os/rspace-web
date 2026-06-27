@@ -231,7 +231,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             <h3>{identifier.title}</h3>
             <Typography variant="body1">
               {identifier.publicUrl ? (
-                <a href={identifier.publicUrl} title={t("links.itemLandingPageTitle")}>
+                <a href={identifier.publicUrl} title={t("links.itemLandingPage")}>
                   {identifier.doi}
                 </a>
               ) : (
@@ -243,7 +243,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         <Grid>
           <Grid container sx={{ flexDirection: "column", alignItems: "center" }} spacing={0.5}>
             <Grid>
-              <a href={IGSN_BASE_URL} title={t("links.igsnHomepageTitle")} target="_blank" rel="noreferrer">
+              <a href={IGSN_BASE_URL} title={t("links.igsnHomepage")} target="_blank" rel="noreferrer">
                 <img
                   src={IGSNlogo}
                   alt={t("images.igsnLogoAlt")}
@@ -275,7 +275,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         <Grid sx={LABEL_SX}>{t("labels.igsnId")}</Grid>
         <Grid data-testid="identifier-public-url">
           {identifier.publicUrl ? (
-            <a href={identifier.publicUrl} title={t("links.doiAddressTitle")}>
+            <a href={identifier.publicUrl} title={t("links.doiAddress")}>
               {identifier.publicUrl}
             </a>
           ) : (

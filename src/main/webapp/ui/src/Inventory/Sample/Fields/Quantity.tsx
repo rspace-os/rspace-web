@@ -7,6 +7,7 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
@@ -22,6 +23,7 @@ type QuantityArgs = {
 };
 
 function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const { unitStore } = useStores();
@@ -164,23 +166,25 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
           disabled
           explanation={
             sample.subSamplesCount === 1 ? (
-              `There is only one ${sample.subSampleAlias.alias}.`
+              t("fields.quantity.totalSingle", { alias: sample.subSampleAlias.alias })
             ) : (
-              <>
-                Total is calculated from the quantites of{" "}
-                <Link
-                  href={
-                    typeof sample.globalId === "string" ? `/inventory/search?parentGlobalId=${sample.globalId}` : "#"
-                  }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
-                  }}
-                >
-                  all {sample.subSamplesCount} {sample.subSampleAlias.plural}
-                </Link>
-                , which can be changed by editing the {sample.subSampleAlias.plural} individually.
-              </>
+              <Trans
+                ns="inventory"
+                i18nKey="fields.quantity.totalCalculated"
+                values={{ count: sample.subSamplesCount, plural: sample.subSampleAlias.plural }}
+                components={[
+                  <Link
+                    key="link"
+                    href={
+                      typeof sample.globalId === "string" ? `/inventory/search?parentGlobalId=${sample.globalId}` : "#"
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
+                    }}
+                  />,
+                ]}
+              />
             )
           }
           renderInput={() => <StringField disabled={true} value={totalQuantityString} />}

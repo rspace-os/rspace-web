@@ -44,9 +44,7 @@ function OverviewSection({
       <Image fieldOwner={collection} alt="What all of the items look like" />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">
-            Please note, on slower network connections uploading large images may trigger an error.
-          </Alert>
+          <Alert severity="info">{t("mixed.batch.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

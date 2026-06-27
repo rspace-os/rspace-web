@@ -108,7 +108,7 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
         {isImage ? (
           <Box sx={{ flex: "0 0 auto" }}>
-            <Typography variant="subtitle2">Preview</Typography>
+            <Typography variant="subtitle2">{t("fields.link.gallerySections.preview")}</Typography>
             <Box
               component="img"
               src={thumbnailSrc}
@@ -159,14 +159,16 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
       {linked !== null ? (
         <Box sx={{ mt: 1 }}>
           {linked.readable.length === 0 ? (
-            <Typography variant="body2">There are no references to this file.</Typography>
+            <Typography variant="body2">{t("fields.link.gallerySections.noReferences")}</Typography>
           ) : (
             <>
-              <Typography variant="body2">This file is referenced by:</Typography>
+              <Typography variant="body2">{t("fields.link.gallerySections.referencedBy")}</Typography>
               <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
                 {linked.readable.map((r) => (
                   <ListItem key={r.globalId} disableGutters sx={{ display: "list-item", py: 0 }}>
-                    <GlobalIdLink globalId={r.globalId} />: {r.name}
+                    <GlobalIdLink globalId={r.globalId} />
+                    {": "}
+                    {r.name}
                   </ListItem>
                 ))}
               </List>

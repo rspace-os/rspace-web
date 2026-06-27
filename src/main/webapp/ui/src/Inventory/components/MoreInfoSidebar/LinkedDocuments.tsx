@@ -124,7 +124,7 @@ function DocumentsTable({ documents }: { documents: RsSet<Document> }): React.Re
                   position={["bottom", "right"]}
                 />
               ) : (
-                <>-</>
+                "-"
               )}
             </TableCell>
           </TableRow>
@@ -266,7 +266,7 @@ function LinkedDocuments({ globalId, factory }: LinkedDocumentsArgs): React.Reac
               <DialogContents state={state} />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setOpen(false)}>{t("actions.close", { ns: "common" })}</Button>
+              <Button onClick={() => setOpen(false)}>{t("common:actions.close")}</Button>
             </DialogActions>
           </Dialog>
         </FormGroup>

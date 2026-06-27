@@ -92,7 +92,7 @@ function Name<Fields extends { name: BatchName }, FieldOwner extends HasEditable
               endAdornment: !disabled ? (
                 <InputAdornment position="end">
                   <Box sx={{ mx: 1 }}>
-                    {t("fields.name.suffix.label")}&nbsp;
+                    {t("fields.name.suffix.label")}{" "}
                     <Select variant="standard" value={fieldOwner.fieldValues.name.suffix} onChange={handleChangeSuffix}>
                       <MenuItem value="NONE">{t("fields.name.suffix.none")}</MenuItem>
                       <MenuItem value="INDEX_NUMBER">{t("fields.name.suffix.numericalIndex")}</MenuItem>

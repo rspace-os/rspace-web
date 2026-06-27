@@ -14,7 +14,7 @@ type CommonActionsArgs = {
 
 function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
   const { uiStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   return (
     <Box
@@ -41,7 +41,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
         }}
         disabled={editableObject.loading}
       >
-        {t("actions.cancel", { ns: "common" })}
+        {t("common:actions.cancel")}
       </Button>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {editableObject.submittable.orElseGet((errors) =>
@@ -58,7 +58,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
           progress={editableObject.uploadProgress}
           disabled={!editableObject.submittable.isOk}
         >
-          {t("actions.save", { ns: "common" })}
+          {t("common:actions.save")}
         </ValidatingSubmitButton>
       </Box>
     </Box>

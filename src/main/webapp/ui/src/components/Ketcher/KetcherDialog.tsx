@@ -197,12 +197,12 @@ const KetcherDialog = ({
         )}
       </DialogActions>
       <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
-        <DialogTitle>{t("ketcher.discardChanges.title")}</DialogTitle>
+        <DialogTitle>{t("ketcher.discardChangesDialog.title")}</DialogTitle>
         <DialogContent>
-          <DialogContentText>{t("ketcher.discardChanges.text")}</DialogContentText>
+          <DialogContentText>{t("ketcher.discardChangesDialog.text")}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDiscardConfirm(false)}>{t("ketcher.discardChanges.keepEditing")}</Button>
+          <Button onClick={() => setShowDiscardConfirm(false)}>{t("ketcher.discardChangesDialog.keepEditing")}</Button>
           <Button
             onClick={() => {
               setShowDiscardConfirm(false);
@@ -210,7 +210,7 @@ const KetcherDialog = ({
             }}
             color="error"
           >
-            {t("ketcher.discardChanges.discard")}
+            {t("ketcher.discardChangesDialog.discard")}
           </Button>
         </DialogActions>
       </Dialog>

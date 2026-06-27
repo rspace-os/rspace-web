@@ -39,7 +39,7 @@ function Exporter({
   exportOptions,
   setExportOptions,
 }: ExporterArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   return (
     <Card
       elevation={elevation}
@@ -90,7 +90,7 @@ function Exporter({
               setOpenExporter(false);
             }}
           >
-            {t("actions.cancel", { ns: "common" })}
+            {t("common:actions.cancel")}
           </Button>
         </CardActions>
       )}

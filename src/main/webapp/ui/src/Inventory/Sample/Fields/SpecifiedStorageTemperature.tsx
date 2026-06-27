@@ -185,9 +185,9 @@ function SpecifiedStorageTemperature({
                       id: unitSelectId,
                     }}
                   >
-                    <MenuItem value={CELSIUS}>°C</MenuItem>
-                    <MenuItem value={KELVIN}>K</MenuItem>
-                    <MenuItem value={FAHRENHEIT}>°F</MenuItem>
+                    <MenuItem value={CELSIUS}>{"°C"}</MenuItem>
+                    <MenuItem value={KELVIN}>{"K"}</MenuItem>
+                    <MenuItem value={FAHRENHEIT}>{"°F"}</MenuItem>
                   </Select>
                 </Box>
                 {!disabled && (

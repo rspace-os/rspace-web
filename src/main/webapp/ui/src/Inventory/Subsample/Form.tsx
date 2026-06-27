@@ -2,7 +2,7 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import type { Person } from "../../stores/definitions/Person";
@@ -152,8 +152,12 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
         {t("formSections.parentSample")}
       </Heading>
       <Typography variant="body2">
-        These fields belong to <RecordLink record={activeResult.sample} />, the parent sample of this{" "}
-        {activeResult.alias.alias}. To edit these fields, please edit the sample directly.
+        <Trans
+          ns="inventory"
+          i18nKey="subsample.sampleFieldsSection.parentSampleExplanation"
+          values={{ alias: activeResult.alias.alias }}
+          components={[<RecordLink key="recordLink" record={activeResult.sample} />]}
+        />
       </Typography>
       <Heading
         variant="h6"

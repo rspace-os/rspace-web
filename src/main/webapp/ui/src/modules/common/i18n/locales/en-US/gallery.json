@@ -27,7 +27,7 @@
     "next": "Next",
     "previous": "Previous"
   },
-  "filestoreLogin": {
+  "filestoreLoginDialog": {
     "couldNotAuthenticate": "Could not authenticate",
     "login": "Login",
     "password": "Password",

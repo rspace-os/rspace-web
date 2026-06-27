@@ -49,9 +49,9 @@
     "urlAvailableAfterPublishing": "URL available after publishing"
   },
   "links": {
-    "doiAddressTitle": "DOI - address",
-    "igsnHomepageTitle": "IGSN Homepage",
-    "itemLandingPageTitle": "Item landing page"
+    "doiAddress": "DOI - address",
+    "igsnHomepage": "IGSN Homepage",
+    "itemLandingPage": "Item landing page"
   },
   "table": {
     "name": "Name",

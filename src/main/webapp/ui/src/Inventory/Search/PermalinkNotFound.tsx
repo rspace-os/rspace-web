@@ -47,7 +47,7 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
           >
             {t("permalinkNotFound.latestLink")}
           </Link>
-          .
+          {"."}
         </Alert>
       ) : (
         <Alert severity="warning">

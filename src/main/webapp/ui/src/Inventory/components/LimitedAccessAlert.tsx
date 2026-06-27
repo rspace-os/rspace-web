@@ -1,5 +1,6 @@
 import Alert from "@mui/material/Alert";
 import type React from "react";
+import { Trans } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import type { ReadAccessLevel } from "../../stores/definitions/Record";
 
@@ -35,10 +36,16 @@ export default function LimitedAccessAlert({
   if (readAccessLevel === "full") return null;
   return (
     <Alert severity="info">
-      You do not have permission to see {readAccessLevel === "limited" ? "all" : "any"} of the details of this{" "}
-      {whatLabel}.
-      <br />
-      To gain full access, please contact the owner, {owner.fullName}.
+      <Trans
+        ns="inventory"
+        i18nKey="limitedAccessAlert.message"
+        values={{
+          access: readAccessLevel === "limited" ? "all" : "any",
+          whatLabel,
+          owner: owner.fullName,
+        }}
+        components={[<br key="br" />]}
+      />
     </Alert>
   );
 }

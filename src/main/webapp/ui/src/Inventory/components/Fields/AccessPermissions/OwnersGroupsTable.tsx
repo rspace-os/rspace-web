@@ -4,6 +4,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Group } from "../../../../stores/definitions/Group";
 
 type OwnersGroupsTableArgs = {
@@ -11,6 +12,7 @@ type OwnersGroupsTableArgs = {
 };
 
 export default function OwnersGroupsTable({ groups }: OwnersGroupsTableArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const groupData = groups.map(({ name, id }) => {
     if (!id) throw new Error("Group id is missing");
     return { name, id };
@@ -20,7 +22,7 @@ export default function OwnersGroupsTable({ groups }: OwnersGroupsTableArgs): Re
     <Table size="small" stickyHeader>
       <TableHead>
         <TableRow>
-          <TableCell variant="head">Group Name</TableCell>
+          <TableCell variant="head">{t("fields.accessPermissions.groupName")}</TableCell>
         </TableRow>
       </TableHead>
       <TableBody>

@@ -163,10 +163,10 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
             target="_blank"
             rel="noopener noreferrer"
           >
-            {t("actions.open", { ns: "common" })}
+            {t("common:actions.open")}
           </Button>
         )}
-        <Button onClick={props.onClose}>{t("actions.close", { ns: "common" })}</Button>
+        <Button onClick={props.onClose}>{t("common:actions.close")}</Button>
       </DialogActions>
     </Dialog>
   );

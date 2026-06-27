@@ -18,7 +18,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link as ReactRouterLink } from "react-router";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import GlobalId from "../../../components/GlobalId";
@@ -168,7 +168,12 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         <CardActions>
           <Typography align="center" sx={{ width: "100%" }}>
             <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
-              See full details of <strong>{subsample.name}</strong>
+              <Trans
+                ns="inventory"
+                i18nKey="subsample.details.seeFullDetails"
+                values={{ name: subsample.name }}
+                components={[<strong key="0" />]}
+              />
             </Link>
           </Typography>
         </CardActions>

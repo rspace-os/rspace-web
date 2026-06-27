@@ -80,14 +80,14 @@ const FilestoreLoginDialog = ({
               if (error instanceof Error) {
                 const message = Parsers.objectPath(["response", "status"], error)
                   .flatMap((status) => {
-                    if (status === 403) return Result.Ok(t("filestoreLogin.wrongCredentials"));
+                    if (status === 403) return Result.Ok(t("filestoreLoginDialog.wrongCredentials"));
                     return Parsers.objectPath(["response", "data", "message"], error).flatMap(Parsers.isString);
                   })
                   .orElse(error.message);
                 addAlert(
                   mkAlert({
                     variant: "error",
-                    title: t("filestoreLogin.couldNotAuthenticate"),
+                    title: t("filestoreLoginDialog.couldNotAuthenticate"),
                     message,
                   }),
                 );
@@ -98,7 +98,7 @@ const FilestoreLoginDialog = ({
           })();
         }}
       >
-        <DialogTitle>{t("filestoreLogin.title")}</DialogTitle>
+        <DialogTitle>{t("filestoreLoginDialog.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Please authenticate to the filesystem <strong>{filesystemName}</strong>.
@@ -106,7 +106,7 @@ const FilestoreLoginDialog = ({
           <Stack spacing={2} sx={{ mt: 2 }}>
             <TextField
               size="small"
-              label={t("filestoreLogin.username")}
+              label={t("filestoreLoginDialog.username")}
               value={username}
               onChange={({ target: { value } }) => {
                 setUsername(value);
@@ -114,7 +114,7 @@ const FilestoreLoginDialog = ({
             />
             <TextField
               size="small"
-              label={t("filestoreLogin.password")}
+              label={t("filestoreLoginDialog.password")}
               type="password"
               value={password}
               onChange={({ target: { value } }) => {
@@ -129,7 +129,7 @@ const FilestoreLoginDialog = ({
             type="submit"
             loading={submitting}
             disabled={submitting}
-            label={t("filestoreLogin.login")}
+            label={t("filestoreLoginDialog.login")}
           />
         </DialogActions>
       </form>

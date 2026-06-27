@@ -248,7 +248,7 @@ const CollapseContents = observer(
                 ))}
                 {barcodes.length > 1 && (
                   <TableRow>
-                    <TableCell>&nbsp;</TableCell>
+                    <TableCell> </TableCell>
                     <TableCell>
                       <IconButtonWithTooltip
                         size="small"

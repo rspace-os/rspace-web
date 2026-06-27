@@ -37,7 +37,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
 
   const [savingInFlight, setSavingInFlight] = useState(false);
   const { authStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const settingsLabels: Record<keyof SystemSettings["datacite"], string> = {
     enabled: t("settings.datacite.labels.enabled"),
     serverUrl: t("settings.datacite.labels.serverUrl"),
@@ -211,7 +211,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
           {t("settings.datacite.testConnection")}
         </Button>
         <SubmitSpinnerButton
-          label={t("actions.save", { ns: "common" })}
+          label={t("common:actions.save")}
           disabled={!unsavedChanges || savingInFlight}
           loading={savingInFlight}
           onClick={() => void onSubmitHandler()}

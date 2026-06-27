@@ -123,7 +123,7 @@ function PeopleField({
               ...inputSlotProps?.input,
               ...(label !== undefined
                 ? {
-                    startAdornment: <InputAdornment position="start">&nbsp;{label}</InputAdornment>,
+                    startAdornment: <InputAdornment position="start"> {label}</InputAdornment>,
                   }
                 : {}),
               endAdornment: (

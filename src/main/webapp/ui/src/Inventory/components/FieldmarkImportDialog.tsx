@@ -95,7 +95,7 @@ const GridToolbar = ({ setColumnsMenuAnchorEl }: { setColumnsMenuAnchorEl: (anch
 
 function CustomLoadingOverlay() {
   const id = React.useId();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   return (
     <Box
       sx={(theme) => ({
@@ -144,7 +144,7 @@ type Notebook = {
  */
 export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { getToken } = useOauthToken();
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert, removeAlert } = React.useContext(AlertContext);
@@ -559,7 +559,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
         </DialogContent>
         <DialogActions>
           <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
-            <Button onClick={() => handleClose()}>{t("actions.close", { ns: "common" })}</Button>
+            <Button onClick={() => handleClose()}>{t("common:actions.close")}</Button>
             <ValidatingSubmitButton
               onClick={() => {
                 if (selectedNotebook) void importNotebook(selectedNotebook).then(() => handleClose());

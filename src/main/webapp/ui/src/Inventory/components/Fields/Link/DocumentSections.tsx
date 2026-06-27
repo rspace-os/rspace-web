@@ -86,7 +86,9 @@ function LinkedByDocs({
       <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
         {linked.readable.map((r) => (
           <ListItem key={r.globalId} disableGutters sx={{ display: "list-item", py: 0 }}>
-            <GlobalIdLink globalId={r.globalId} />: {r.name}
+            <GlobalIdLink globalId={r.globalId} />
+            {": "}
+            {r.name}
           </ListItem>
         ))}
         {linked.privateByOwner.map((p) => (

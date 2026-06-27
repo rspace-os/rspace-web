@@ -46,9 +46,7 @@ function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
       <Image fieldOwner={collection} alt={`What the ${collection.size} samples look like`} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">
-            Please note, on slower network connections uploading large images may trigger an error.
-          </Alert>
+          <Alert severity="info">{t("sample.batch.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

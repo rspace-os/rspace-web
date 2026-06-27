@@ -1,5 +1,6 @@
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -10,6 +11,7 @@ import InventoryPicker from "../Picker/Picker";
 type LeftPanelArgs = Record<string, never>;
 
 function LeftPanel(_: LeftPanelArgs) {
+  const { t } = useTranslation("inventory");
   const { moveStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -37,7 +39,8 @@ function LeftPanel(_: LeftPanelArgs) {
           }}
           header={
             <Typography variant="h6" component="h3">
-              Pick Destination&nbsp;
+              {t("moveToTarget.pickDestination")}
+              {" "}
               <HelpLinkIcon link={docLinks.moving} title="Info on moving items." />
             </Typography>
           }
@@ -45,7 +48,7 @@ function LeftPanel(_: LeftPanelArgs) {
           testId="movePicker"
         />
       ) : (
-        <Typography variant="h5">Loading</Typography>
+        <Typography variant="h5">{t("moveToTarget.loading")}</Typography>
       )}
     </>
   );

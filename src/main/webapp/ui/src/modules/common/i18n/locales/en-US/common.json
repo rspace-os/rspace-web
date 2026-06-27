@@ -30,10 +30,47 @@
     "warningTitle": "Could not authenticate via API"
   },
   "appBar": {
+    "aboutRSpace": "About RSpace",
+    "accountMenu": "Account Menu",
+    "apps": "Apps",
     "brandingAlt": "branding",
-    "maintenancePopup": "A scheduled maintenance window begins {{relativeTime}}.",
+    "dialogHeader": "dialog header",
+    "errorLoadingDetails": "Error loading your details",
+    "goTo": "Go to...",
+    "logOut": "Log Out",
+    "mainLinks": "main links",
+    "mainNavigation": "Main Navigation",
+    "maintenancePopup": "A scheduled maintenance window begins {relativeTime}.",
+    "messaging": "Messaging",
+    "notifications": "Notifications",
+    "notificationsAndMessages": "notifications and messages",
     "operatingAs": "Operating as:",
-    "orcidAdd": "Add an ORCID iD to your <0>profile</0>."
+    "orcidAdd": "Add an ORCID iD to your <0>profile</0>.",
+    "pageHeader": "page header",
+    "published": "Published",
+    "release": "Release",
+    "sections": {
+      "gallery": {
+        "subheader": "Your files in RSpace and connected filestores",
+        "title": "Gallery"
+      },
+      "inventory": {
+        "subheader": "Samples and laboratory resources",
+        "title": "Inventory"
+      },
+      "myRSpace": {
+        "subheader": "Your profile details, labgroups, and preferences",
+        "title": "My RSpace"
+      },
+      "system": {
+        "subheader": "System administration",
+        "title": "System"
+      },
+      "workspace": {
+        "subheader": "Notebooks and documents",
+        "title": "Workspace"
+      }
+    }
   },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
@@ -41,7 +78,7 @@
   "errorBoundary": {
     "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
   },
-  "folderSelection": {
+  "folderSelectionDialog": {
     "selectedFolder": "Selected folder",
     "selectedFolderWithColon": "Selected folder:",
     "title": "Select Folder"
@@ -64,7 +101,7 @@
     "users": "Users",
     "viewGroup": "View Group"
   },
-  "imageEditing": {
+  "imageEditingDialog": {
     "rotateClockwise": "rotate clockwise",
     "rotateCounterClockwise": "rotate counter clockwise",
     "title": "Edit Image"
@@ -104,7 +141,7 @@
     "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
   },
   "ketcher": {
-    "discardChanges": {
+    "discardChangesDialog": {
       "discard": "Discard",
       "keepEditing": "Keep Editing",
       "text": "You have unsaved changes. Are you sure you want to discard them?",

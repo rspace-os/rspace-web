@@ -47,6 +47,9 @@
     }
   },
   "container": {
+    "batch": {
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+    },
     "content": {
       "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
       "placeMarkers": {
@@ -169,7 +172,8 @@
       "itemType": "Type of item to create",
       "loading": "Loading...",
       "noFields": "No fields.",
-      "noOptions": "No options available."
+      "noOptions": "No options available.",
+      "title": "Create new items from <0>{name}</0>"
     },
     "splitButton": {
       "moreOptions": "More selection options"
@@ -284,8 +288,8 @@
       "title": "Importing notebook"
     },
     "importSuccess": "Successfully imported notebook.",
-    "noNotebooks": "No Notebooks",
     "noNotebookSelected": "No Notebook selected.",
+    "noNotebooks": "No Notebooks",
     "selectRadioAriaLabel": "Select notebook: {name}",
     "title": "Import from Fieldmark"
   },
@@ -298,6 +302,7 @@
         "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
         "title": "Explicit access list"
       },
+      "groupName": "Group Name",
       "ownerGroups": {
         "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
         "tableNote": "This table lists the groups that the owner is a member of.",
@@ -312,6 +317,10 @@
       "actions": {
         "browseGallery": "Browse Gallery",
         "upload": "Upload"
+      },
+      "alert": {
+        "body": "A file of any type can be attached (e.g. image, document, or chemistry file)",
+        "title": "Attachment"
       },
       "columns": {
         "actions": "Actions",
@@ -390,16 +399,16 @@
       "addNewField": "Add new field",
       "addOneFieldAtATime": "You can only create one field at a time.",
       "deleteField": "Delete field",
-      "fields": {
-        "fieldName": "Field name",
-        "fieldType": "Field type",
-        "relationType": "Relation type"
-      },
       "fieldSettings": "Field settings",
       "fieldTypes": {
         "link": "Link",
         "number": "Number",
         "text": "Text"
+      },
+      "fields": {
+        "fieldName": "Field name",
+        "fieldType": "Field type",
+        "relationType": "Relation type"
       },
       "groups": {
         "editing": "Editing extra field with name {name}",
@@ -421,12 +430,12 @@
         "discard": "Discard",
         "update": "Update"
       },
+      "validNumber": "Must be a valid number.",
       "validation": {
         "duplicateName": "You either already have a field with that name or that name is not permitted.",
         "emptyName": "Name should not be empty.",
         "nameTooLong": "Name must be no longer than 255 characters."
-      },
-      "validNumber": "Must be a valid number."
+      }
     },
     "identifiers": {
       "assignDialog": {
@@ -516,6 +525,10 @@
         }
       },
       "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
+      "polygonCard": {
+        "inPolygonPointDescription": "Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than the half of the Earth's surface.",
+        "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one."
+      },
       "polygonDialog": {
         "close": "Close",
         "title": "Geolocation Polygon"
@@ -550,6 +563,10 @@
           "title": "Required Identifier Properties"
         }
       }
+    },
+    "image": {
+      "explanation": "Tap to view at full resolution, scroll to exit (or pinch on mobile)",
+      "tooManyToEdit": "The image can only be edited when no more than {max} items are selected."
     },
     "link": {
       "documentSections": {
@@ -611,13 +628,16 @@
         "browseEln": "Browse ELN",
         "browseInventory": "Browse Inventory",
         "latest": "Latest",
-        "pinnedVersion": "Pinned to v{version}",
         "pinVersion": "Pin version",
         "pinVersionFor": "Pin version for {globalId}",
+        "pinnedVersion": "Pinned to v{version}",
         "targetGlobalId": "Target Global ID"
       },
       "elnFolderBrowser": {
-        "loadMore": "Load more"
+        "failedToLoadContents": "Failed to load contents",
+        "failedToLoadWorkspace": "Failed to load your workspace",
+        "loadMore": "Load more",
+        "nothingToBrowse": "Nothing to browse here."
       },
       "elnInfoDialog": {
         "unavailable": "This item is not available, or you do not have permission to view it.",
@@ -630,6 +650,9 @@
         "title": "Browse ELN"
       },
       "gallerySections": {
+        "noReferences": "There are no references to this file.",
+        "preview": "Preview",
+        "referencedBy": "This file is referenced by:",
         "showLinkedDocs": "Show linked docs"
       },
       "infoDialog": {
@@ -696,9 +719,17 @@
     },
     "quantity": {
       "label": "Quantity",
+      "parentSampleOnly": "The parent sample only has one {alias}.",
+      "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
+      "totalCalculated": "Total is calculated from the quantites of <0>all {count} {plural}</0>, which can be changed by editing the {plural} individually.",
+      "totalSingle": "There is only one {alias}.",
       "validation": {
         "positiveOrZero": "Should be a positive number or zero."
       }
+    },
+    "sample": {
+      "parentOnlyOne": "The parent sample only has one {alias}.",
+      "parentOthers": "There {otherCount, plural, one {is} other {are}} {otherCount} other {noun}."
     },
     "tags": {
       "label": "Tags",
@@ -755,9 +786,9 @@
       },
       "defaultValue": {
         "addValue": "Add Value",
+        "allRelationshipTypes": "All relationship types",
         "allowedRelationshipTypes": "Allowed relationship types",
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
-        "allRelationshipTypes": "All relationship types",
         "none": "None"
       },
       "move": {
@@ -771,8 +802,8 @@
         "defaultScale": "Default Scale",
         "label": "Quantity Units",
         "mass": "Mass",
-        "unitless": "Unitless",
         "unitType": "Unit Type",
+        "unitless": "Unitless",
         "volume": "Volume"
       }
     }
@@ -897,6 +928,10 @@
       "import": "Import"
     },
     "browserTitle": "Import CSV | RSpace Inventory",
+    "cannotImport": {
+      "message": "Some csv documents cannot be imported: check Settings in the",
+      "tabSuffix": "{count, plural, one {tab.} other {tabs.}}"
+    },
     "columnMapping": {
       "columns": {
         "convertTo": "Convert To",
@@ -905,6 +940,8 @@
       "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
       "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
       "noCsv": "Column conversion is only available once a CSV file has been selected.",
+      "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <0>Containers CSV</0> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
+      "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <0>Samples CSV</0> with mapped \"Import ID\".",
       "parentSampleRequired": "You must select one column that refers to a Sample.",
       "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
       "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
@@ -912,6 +949,9 @@
     },
     "customDetails": "Custom details",
     "customFieldName": "Custom Field Name",
+    "fieldTypeMenu": {
+      "options": "Options"
+    },
     "file": {
       "clearFileAndMappings": "Clear File and Mappings",
       "errorDetails": "Error details:",
@@ -962,6 +1002,9 @@
       "subsamples": "Subsamples",
       "templates": "Templates"
     }
+  },
+  "limitedAccessAlert": {
+    "message": "You do not have permission to see {access} of the details of this {whatLabel}.<0/>To gain full access, please contact the owner, {owner}."
   },
   "materialsListing": {
     "actions": {
@@ -1021,6 +1064,11 @@
       "subsamplesOnly": "For subsamples only"
     }
   },
+  "mixed": {
+    "batch": {
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+    }
+  },
   "moreInfo": {
     "closeSidebar": "Close more info sidebar",
     "created": "Created",
@@ -1058,6 +1106,15 @@
       "view": "View version history",
       "viewing": " (viewing)"
     }
+  },
+  "moveToTarget": {
+    "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
+    "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+    "loading": "Loading",
+    "movingItem": "Moving <0></0>",
+    "nextItem": "Next item to be placed:",
+    "pickDestination": "Pick Destination",
+    "selectedDestination": "Selected Destination:"
   },
   "permalink": {
     "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -1118,13 +1175,19 @@
       "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a>documentation</a>.",
       "large": "Large",
       "printCopies": "Print Copies",
-      "printerType": "Printer Type",
       "printLayout": "Print Layout",
       "printSize": "Print Size",
+      "printerType": "Printer Type",
       "small": "Small",
       "standardPrinter": "Standard Printer",
       "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
     }
+  },
+  "recordDetails": {
+    "modifiedBy": "by {user}"
+  },
+  "recordTree": {
+    "navigateToContainer": "Navigate to container"
   },
   "recordsTable": {
     "columns": {
@@ -1132,10 +1195,10 @@
       "name": "Name"
     }
   },
-  "recordTree": {
-    "navigateToContainer": "Navigate to container"
-  },
   "sample": {
+    "batch": {
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+    },
     "fields": {
       "expiryDate": {
         "expiredWarning": "This sample has expired.",
@@ -1145,7 +1208,8 @@
         "apply": "Apply",
         "applyAriaLabel": "Apply link",
         "discard": "Discard",
-        "discardAriaLabel": "Discard link changes"
+        "discardAriaLabel": "Discard link changes",
+        "none": "None"
       },
       "numberOfSubsamples": {
         "count": "Number of {plural}",
@@ -1196,7 +1260,11 @@
         "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
         "label": "Sample Template",
         "noTemplate": "No template"
-      }
+      },
+      "unknownFieldType": "Unknown field type: {type}"
+    },
+    "subsamplesSection": {
+      "tapToPreview": "Tap one of the {plural} in the search section to preview it below."
     }
   },
   "search": {
@@ -1288,6 +1356,7 @@
       "title": "Welcome to RSpace Inventory!"
     },
     "noResults": {
+      "luceneInfo": "For more information on using Lucene queries, see <0>advanced search</0> and the related <1>Apache page</1>.",
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },
@@ -1361,7 +1430,11 @@
     "details": {
       "ariaLabel": "Subsample details",
       "imageAlt": "What the subsample, {name}, looks like",
-      "none": "No subsamples"
+      "none": "No subsamples",
+      "seeFullDetails": "See full details of <0>{name}</0>"
+    },
+    "sampleFieldsSection": {
+      "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
     }
   },
   "template": {

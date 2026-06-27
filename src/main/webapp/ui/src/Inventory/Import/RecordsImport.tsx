@@ -151,14 +151,14 @@ function RecordsImport(): React.ReactNode {
           <Grid sx={{ flexGrow: 1 }}>
             {showFooterAlert ? (
               <Alert severity="warning">
-                Some csv documents cannot be imported: check Settings in the{" "}
+                {t("import.cannotImport.message")}{" "}
                 {notImportable().map(({ route, label }, i) => (
                   <span key={i}>
-                    {i > 0 && <>, </>}
+                    {i > 0 && ", "}
                     {route !== recordType ? <Link to={onTypeSelect(route)}>{label}</Link> : label}
                   </span>
-                ))}
-                {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
+                ))}{" "}
+                {t("import.cannotImport.tabSuffix", { count: notImportable().length })}
               </Alert>
             ) : null}
           </Grid>

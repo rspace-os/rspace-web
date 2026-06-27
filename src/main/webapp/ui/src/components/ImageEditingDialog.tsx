@@ -180,7 +180,7 @@ function ImageEditingDialog({
         },
       }}
     >
-      <DialogTitle id={titleId}>{t("imageEditing.title")}</DialogTitle>
+      <DialogTitle id={titleId}>{t("imageEditingDialog.title")}</DialogTitle>
       <DialogContent
         sx={{
           display: "flex",
@@ -245,7 +245,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("counter clockwise");
             }}
-            aria-label={t("imageEditing.rotateCounterClockwise")}
+            aria-label={t("imageEditingDialog.rotateCounterClockwise")}
             size="small"
           >
             <RotateLeftIcon />
@@ -262,7 +262,7 @@ function ImageEditingDialog({
             onClick={() => {
               onRotate("clockwise");
             }}
-            aria-label={t("imageEditing.rotateClockwise")}
+            aria-label={t("imageEditingDialog.rotateClockwise")}
             size="small"
           >
             <RotateRightIcon />

@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../../../assets/DocLinks";
 import AddButton from "../../../../components/AddButton";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
@@ -42,6 +43,7 @@ const PolygonEditor = observer(
     editable: boolean;
     doUpdateIdentifiers: () => void;
   }): ReactNode => {
+    const { t } = useTranslation("inventory");
     const { geoLocationPolygon, polygonEmpty }: GeoLocation = geoLocation;
 
     /* in some cases points cannot be removed, or added */
@@ -96,13 +98,15 @@ const PolygonEditor = observer(
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLatitudeError(point)}
-                helperText={polygonPointLatitudeError(point) ? <>Between &minus;90.0˚ and 90.0˚.</> : null}
+                helperText={
+                  polygonPointLatitudeError(point) ? t("fields.identifiers.geoLocationField.latitudeRange") : null
+                }
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLatitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -130,13 +134,15 @@ const PolygonEditor = observer(
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLongitudeError(point)}
-                helperText={polygonPointLongitudeError(point) ? <>Between &minus;180.0˚ and 180.0˚.</> : null}
+                helperText={
+                  polygonPointLongitudeError(point) ? t("fields.identifiers.geoLocationField.longitudeRange") : null
+                }
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLongitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -147,11 +153,7 @@ const PolygonEditor = observer(
             md: 1,
           }}
         >
-          {canBeAdded(i) ? (
-            <AddButton onClick={() => handleAddPoint(i)} title={`Add Point after ${i + 1}`} />
-          ) : (
-            <>&nbsp;</>
-          )}
+          {canBeAdded(i) ? <AddButton onClick={() => handleAddPoint(i)} title={`Add Point after ${i + 1}`} /> : " "}
         </Grid>
         <Grid
           size={{
@@ -161,7 +163,7 @@ const PolygonEditor = observer(
           {canBeRemoved(i) ? (
             <RemoveButton onClick={() => handleRemovePoint(i)} title={`Remove Point ${i + 1}`} />
           ) : (
-            <>&nbsp;</>
+            " "
           )}
         </Grid>
       </Grid>
@@ -176,6 +178,7 @@ type PolygonCardArgs = {
 };
 
 function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCardArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const InPolygonPointEditor = observer((): ReactNode => {
     const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation = geoLocation;
     return (
@@ -217,15 +220,15 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLatitude) && inPolygonPointIncomplete) ||
-                  isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude)) ? (
-                    <>Between &minus;90.0˚ and 90.0˚.</>
-                  ) : null
+                  isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude))
+                    ? t("fields.identifiers.geoLocationField.latitudeRange")
+                    : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -260,15 +263,15 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) && inPolygonPointIncomplete) ||
-                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude)) ? (
-                    <>Between &minus;180.0˚ and 180.0˚.</>
-                  ) : null
+                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude))
+                    ? t("fields.identifiers.geoLocationField.longitudeRange")
+                    : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -288,9 +291,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add a Polygon to your IGSN ID Geolocation" />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
-            You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points
-            that form a closed shape. The first and last points have the same coordinates, editing the first point will
-            automatically update the last one.
+            {t("fields.identifiers.polygonCard.polygonDescription")}
           </FormHelperText>
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
@@ -301,8 +302,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
           </Box>
           <PolygonEditor geoLocation={geoLocation} editable={editable} doUpdateIdentifiers={doUpdateIdentifiers} />
           <FormHelperText component="div" sx={{ mx: 0, mt: 1, mb: 0.5 }}>
-            Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than
-            the half of the Earth&apos;s surface.
+            {t("fields.identifiers.polygonCard.inPolygonPointDescription")}
           </FormHelperText>
           <InPolygonPointEditor />
         </FormControl>

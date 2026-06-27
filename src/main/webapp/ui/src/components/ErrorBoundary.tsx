@@ -15,13 +15,7 @@ export const ERROR_MSG: React.ReactNode = (
       // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
       <a key="link" href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
     ]}
-  >
-    Something went wrong! Please refresh the page. If this error persists, please contact{" "}
-    <a href="mailto:support@researchspace.com" rel="noreferrer" target="_blank">
-      support@researchspace.com
-    </a>{" "}
-    with details of when the issue happens.
-  </Trans>
+  />
 );
 
 function Container({

@@ -3,8 +3,7 @@ export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
     "license": {
-      "agpl": "RSpace is licensed under AGPL.",
-      "oss": "RSpace is open-source, and powered by open-source libraries."
+      "oss": "RSpace is open-source under AGPL, and powered by open-source libraries."
     },
     "links": {
       "changelog": "Changelog",
@@ -885,10 +884,47 @@ export default interface Resources {
       "warningTitle": "Could not authenticate via API"
     },
     "appBar": {
+      "aboutRSpace": "About RSpace",
+      "accountMenu": "Account Menu",
+      "apps": "Apps",
       "brandingAlt": "branding",
-      "maintenancePopup": "A scheduled maintenance window begins {{relativeTime}}.",
+      "dialogHeader": "dialog header",
+      "errorLoadingDetails": "Error loading your details",
+      "goTo": "Go to...",
+      "logOut": "Log Out",
+      "mainLinks": "main links",
+      "mainNavigation": "Main Navigation",
+      "maintenancePopup": "A scheduled maintenance window begins {relativeTime}.",
+      "messaging": "Messaging",
+      "notifications": "Notifications",
+      "notificationsAndMessages": "notifications and messages",
       "operatingAs": "Operating as:",
-      "orcidAdd": "Add an ORCID iD to your <0>profile</0>."
+      "orcidAdd": "Add an ORCID iD to your <0>profile</0>.",
+      "pageHeader": "page header",
+      "published": "Published",
+      "release": "Release",
+      "sections": {
+        "gallery": {
+          "subheader": "Your files in RSpace and connected filestores",
+          "title": "Gallery"
+        },
+        "inventory": {
+          "subheader": "Samples and laboratory resources",
+          "title": "Inventory"
+        },
+        "myRSpace": {
+          "subheader": "Your profile details, labgroups, and preferences",
+          "title": "My RSpace"
+        },
+        "system": {
+          "subheader": "System administration",
+          "title": "System"
+        },
+        "workspace": {
+          "subheader": "Notebooks and documents",
+          "title": "Workspace"
+        }
+      }
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
@@ -896,7 +932,7 @@ export default interface Resources {
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
     },
-    "folderSelection": {
+    "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
       "selectedFolderWithColon": "Selected folder:",
       "title": "Select Folder"
@@ -919,7 +955,7 @@ export default interface Resources {
       "users": "Users",
       "viewGroup": "View Group"
     },
-    "imageEditing": {
+    "imageEditingDialog": {
       "rotateClockwise": "rotate clockwise",
       "rotateCounterClockwise": "rotate counter clockwise",
       "title": "Edit Image"
@@ -959,7 +995,7 @@ export default interface Resources {
       "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
     },
     "ketcher": {
-      "discardChanges": {
+      "discardChangesDialog": {
         "discard": "Discard",
         "keepEditing": "Keep Editing",
         "text": "You have unsaved changes. Are you sure you want to discard them?",
@@ -1348,7 +1384,7 @@ export default interface Resources {
       "next": "Next",
       "previous": "Previous"
     },
-    "filestoreLogin": {
+    "filestoreLoginDialog": {
       "couldNotAuthenticate": "Could not authenticate",
       "login": "Login",
       "password": "Password",
@@ -1523,6 +1559,9 @@ export default interface Resources {
       }
     },
     "container": {
+      "batch": {
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      },
       "content": {
         "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
         "placeMarkers": {
@@ -1645,7 +1684,8 @@ export default interface Resources {
         "itemType": "Type of item to create",
         "loading": "Loading...",
         "noFields": "No fields.",
-        "noOptions": "No options available."
+        "noOptions": "No options available.",
+        "title": "Create new items from <0>{name}</0>"
       },
       "splitButton": {
         "moreOptions": "More selection options"
@@ -1774,6 +1814,7 @@ export default interface Resources {
           "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
           "title": "Explicit access list"
         },
+        "groupName": "Group Name",
         "ownerGroups": {
           "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
           "tableNote": "This table lists the groups that the owner is a member of.",
@@ -1788,6 +1829,10 @@ export default interface Resources {
         "actions": {
           "browseGallery": "Browse Gallery",
           "upload": "Upload"
+        },
+        "alert": {
+          "body": "A file of any type can be attached (e.g. image, document, or chemistry file)",
+          "title": "Attachment"
         },
         "columns": {
           "actions": "Actions",
@@ -1992,6 +2037,10 @@ export default interface Resources {
           }
         },
         "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
+        "polygonCard": {
+          "inPolygonPointDescription": "Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than the half of the Earth's surface.",
+          "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one."
+        },
         "polygonDialog": {
           "close": "Close",
           "title": "Geolocation Polygon"
@@ -2026,6 +2075,10 @@ export default interface Resources {
             "title": "Required Identifier Properties"
           }
         }
+      },
+      "image": {
+        "explanation": "Tap to view at full resolution, scroll to exit (or pinch on mobile)",
+        "tooManyToEdit": "The image can only be edited when no more than {max} items are selected."
       },
       "link": {
         "documentSections": {
@@ -2093,7 +2146,10 @@ export default interface Resources {
           "targetGlobalId": "Target Global ID"
         },
         "elnFolderBrowser": {
-          "loadMore": "Load more"
+          "failedToLoadContents": "Failed to load contents",
+          "failedToLoadWorkspace": "Failed to load your workspace",
+          "loadMore": "Load more",
+          "nothingToBrowse": "Nothing to browse here."
         },
         "elnInfoDialog": {
           "unavailable": "This item is not available, or you do not have permission to view it.",
@@ -2106,6 +2162,9 @@ export default interface Resources {
           "title": "Browse ELN"
         },
         "gallerySections": {
+          "noReferences": "There are no references to this file.",
+          "preview": "Preview",
+          "referencedBy": "This file is referenced by:",
           "showLinkedDocs": "Show linked docs"
         },
         "infoDialog": {
@@ -2172,9 +2231,17 @@ export default interface Resources {
       },
       "quantity": {
         "label": "Quantity",
+        "parentSampleOnly": "The parent sample only has one {alias}.",
+        "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
+        "totalCalculated": "Total is calculated from the quantites of <0>all {count} {plural}</0>, which can be changed by editing the {plural} individually.",
+        "totalSingle": "There is only one {alias}.",
         "validation": {
           "positiveOrZero": "Should be a positive number or zero."
         }
+      },
+      "sample": {
+        "parentOnlyOne": "The parent sample only has one {alias}.",
+        "parentOthers": "There {otherCount, plural, one {is} other {are}} {otherCount} other {noun}."
       },
       "tags": {
         "label": "Tags",
@@ -2373,6 +2440,10 @@ export default interface Resources {
         "import": "Import"
       },
       "browserTitle": "Import CSV | RSpace Inventory",
+      "cannotImport": {
+        "message": "Some csv documents cannot be imported: check Settings in the",
+        "tabSuffix": "{count, plural, one {tab.} other {tabs.}}"
+      },
       "columnMapping": {
         "columns": {
           "convertTo": "Convert To",
@@ -2381,6 +2452,8 @@ export default interface Resources {
         "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
         "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
         "noCsv": "Column conversion is only available once a CSV file has been selected.",
+        "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <0>Containers CSV</0> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
+        "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <0>Samples CSV</0> with mapped \"Import ID\".",
         "parentSampleRequired": "You must select one column that refers to a Sample.",
         "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
         "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
@@ -2388,6 +2461,9 @@ export default interface Resources {
       },
       "customDetails": "Custom details",
       "customFieldName": "Custom Field Name",
+      "fieldTypeMenu": {
+        "options": "Options"
+      },
       "file": {
         "clearFileAndMappings": "Clear File and Mappings",
         "errorDetails": "Error details:",
@@ -2438,6 +2514,9 @@ export default interface Resources {
         "subsamples": "Subsamples",
         "templates": "Templates"
       }
+    },
+    "limitedAccessAlert": {
+      "message": "You do not have permission to see {access} of the details of this {whatLabel}.<0/>To gain full access, please contact the owner, {owner}."
     },
     "materialsListing": {
       "actions": {
@@ -2497,6 +2576,11 @@ export default interface Resources {
         "subsamplesOnly": "For subsamples only"
       }
     },
+    "mixed": {
+      "batch": {
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      }
+    },
     "moreInfo": {
       "closeSidebar": "Close more info sidebar",
       "created": "Created",
@@ -2534,6 +2618,15 @@ export default interface Resources {
         "view": "View version history",
         "viewing": " (viewing)"
       }
+    },
+    "moveToTarget": {
+      "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
+      "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+      "loading": "Loading",
+      "movingItem": "Moving <0></0>",
+      "nextItem": "Next item to be placed:",
+      "pickDestination": "Pick Destination",
+      "selectedDestination": "Selected Destination:"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -2602,6 +2695,9 @@ export default interface Resources {
         "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
       }
     },
+    "recordDetails": {
+      "modifiedBy": "by {user}"
+    },
     "recordTree": {
       "navigateToContainer": "Navigate to container"
     },
@@ -2612,6 +2708,9 @@ export default interface Resources {
       }
     },
     "sample": {
+      "batch": {
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      },
       "fields": {
         "expiryDate": {
           "expiredWarning": "This sample has expired.",
@@ -2621,7 +2720,8 @@ export default interface Resources {
           "apply": "Apply",
           "applyAriaLabel": "Apply link",
           "discard": "Discard",
-          "discardAriaLabel": "Discard link changes"
+          "discardAriaLabel": "Discard link changes",
+          "none": "None"
         },
         "numberOfSubsamples": {
           "count": "Number of {plural}",
@@ -2672,7 +2772,11 @@ export default interface Resources {
           "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
           "label": "Sample Template",
           "noTemplate": "No template"
-        }
+        },
+        "unknownFieldType": "Unknown field type: {type}"
+      },
+      "subsamplesSection": {
+        "tapToPreview": "Tap one of the {plural} in the search section to preview it below."
       }
     },
     "search": {
@@ -2764,6 +2868,7 @@ export default interface Resources {
         "title": "Welcome to RSpace Inventory!"
       },
       "noResults": {
+        "luceneInfo": "For more information on using Lucene queries, see <0>advanced search</0> and the related <1>Apache page</1>.",
         "title": "No results.",
         "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
       },
@@ -2837,7 +2942,11 @@ export default interface Resources {
       "details": {
         "ariaLabel": "Subsample details",
         "imageAlt": "What the subsample, {name}, looks like",
-        "none": "No subsamples"
+        "none": "No subsamples",
+        "seeFullDetails": "See full details of <0>{name}</0>"
+      },
+      "sampleFieldsSection": {
+        "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
       }
     },
     "template": {
@@ -2923,9 +3032,9 @@ export default interface Resources {
       "urlAvailableAfterPublishing": "URL available after publishing"
     },
     "links": {
-      "doiAddressTitle": "DOI - address",
-      "igsnHomepageTitle": "IGSN Homepage",
-      "itemLandingPageTitle": "Item landing page"
+      "doiAddress": "DOI - address",
+      "igsnHomepage": "IGSN Homepage",
+      "itemLandingPage": "Item landing page"
     },
     "table": {
       "name": "Name",

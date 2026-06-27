@@ -169,18 +169,13 @@ function QuantityField<
                       if (parentSample.globalId) navigate(`/inventory/search?parentGlobalId=${parentSample.globalId}`);
                     }}
                   >
-                    {parentSample.subSamplesCount === 1 ? (
-                      `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
-                    ) : (
-                      <>
-                        There {parentSample.subSamplesCount === 2 ? "is" : "are"} {parentSample.subSamplesCount - 1}{" "}
-                        other{" "}
-                        {parentSample.subSamplesCount === 2
-                          ? parentSample.subSampleAlias.alias
-                          : parentSample.subSampleAlias.plural}
-                        .
-                      </>
-                    )}
+                    {parentSample.subSamplesCount === 1
+                      ? t("fields.quantity.parentSampleOnly", { alias: parentSample.subSampleAlias.alias })
+                      : t("fields.quantity.parentSampleOthers", {
+                          count: parentSample.subSamplesCount - 1,
+                          alias: parentSample.subSampleAlias.alias,
+                          plural: parentSample.subSampleAlias.plural,
+                        })}
                   </Link>
                 </Typography>
               )}

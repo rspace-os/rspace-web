@@ -14,6 +14,7 @@ import Typography from "@mui/material/Typography";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FIELD_DATA, type FieldType, hasOptions } from "../../../stores/models/FieldTypes";
 import useStores from "../../../stores/use-stores";
 import { preventEventBubbling } from "../../../util/Util";
@@ -32,6 +33,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
     const [open, setOpen] = useState(false);
     const { uiStore } = useStores();
     const theme = useTheme();
+    const { t } = useTranslation("inventory");
     const menuItem = (
       <MenuItem
         ref={ref}
@@ -90,7 +92,7 @@ const FieldTypeMenuItem = forwardRef<HTMLLIElement, FieldTypeMenuItemArgs>(
                   }}
                 >
                   <Typography variant="subtitle1" sx={{ fontSize: "0.9rem" }}>
-                    Options
+                    {t("import.fieldTypeMenu.options")}
                   </Typography>
                 </Box>
                 <Box

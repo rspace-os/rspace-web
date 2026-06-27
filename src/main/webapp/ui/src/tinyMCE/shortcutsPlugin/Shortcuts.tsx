@@ -373,15 +373,19 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             )}
             {this.state.instructions && (
               <p>
-                <Trans ns="apps" i18nKey="tinyMce.shortcuts.reservedShortcutsNote">
-                  <a
-                    target="_blank"
-                    href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
-                    rel="noreferrer"
-                  >
-                    a list
-                  </a>
-                </Trans>
+                <Trans
+                  ns="apps"
+                  i18nKey="tinyMce.shortcuts.reservedShortcutsNote"
+                  components={[
+                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
+                    <a
+                      key="link"
+                      target="_blank"
+                      href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
+                      rel="noreferrer"
+                    />,
+                  ]}
+                />
               </p>
             )}
           </Alert>

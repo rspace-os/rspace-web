@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
@@ -17,6 +18,7 @@ import { match } from "../../../util/Util";
 import RecordDetails from "../RecordDetails";
 
 function MoveInstructions(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
@@ -168,7 +170,7 @@ function MoveInstructions(): React.ReactNode {
       <Card variant="outlined">
         <CardContent sx={{ paddingBottom: 0 }}>
           <Typography variant="h6" gutterBottom>
-            Next item to be placed:
+            {t("moveToTarget.nextItem")}
           </Typography>
           <RecordDetails record={nextRecord} />
         </CardContent>
@@ -186,12 +188,8 @@ function MoveInstructions(): React.ReactNode {
       {action && expand && nextDetails()}
       {showDragAndDropTip && (
         <Alert severity="info" sx={{ fontSize: "0.8rem", letterSpacing: "0.015em" }}>
-          <AlertTitle sx={{ fontSize: "0.85rem" }}>
-            Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new
-            locations.
-          </AlertTitle>
-          Select one or more grid cells in the container&apos;s &quot;Locations and Content&quot; section and then tap
-          and hold to enter drag-and-drop mode.
+          <AlertTitle sx={{ fontSize: "0.85rem" }}>{t("moveToTarget.dragDropTip")}</AlertTitle>
+          {t("moveToTarget.dragDropInstructions")}
         </Alert>
       )}
     </Stack>

@@ -36,9 +36,7 @@ function OverviewSection({ collection, recordsCount }: { collection: ContainerCo
       <Image fieldOwner={collection} alt={`What all ${collection.size} containers look like`} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">
-            Please note, on slower network connections uploading large images may trigger an error.
-          </Alert>
+          <Alert severity="info">{t("container.batch.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

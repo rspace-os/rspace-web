@@ -39,7 +39,7 @@ type TransferActionArgs = {
 const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, TransferActionArgs>(
   ({ as, selectedResults, disabled, closeMenu }, ref) => {
     const { search } = useContext(SearchContext);
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const [btnPos, setBtnPos] = useState<{ top: number; left: number } | null>(null);
     const [recipient, setRecipient] = useState<PersonModel | null>(null);
 
@@ -115,7 +115,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
               </DialogContent>
               <DialogActions>
                 <Button onClick={handleClose} disabled={false}>
-                  {t("actions.cancel", { ns: "common" })}
+                  {t("common:actions.cancel")}
                 </Button>
                 <SubmitSpinner
                   onClick={onSubmitHandler}

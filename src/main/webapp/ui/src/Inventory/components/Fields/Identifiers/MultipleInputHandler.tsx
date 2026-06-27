@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import AddButton from "../../../../components/AddButton";
 import DateField from "../../../../components/Inputs/DateField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -34,6 +35,7 @@ type MultipleInputArgs = {
  * If field has options, an additional dropdown is rendered.
  */
 const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputArgs): ReactNode => {
+  const { t } = useTranslation("inventory");
   const itemLabel: string = field.key.slice(0, field.key.length - 1);
 
   const isDuplicate = (v: string): boolean =>
@@ -201,14 +203,15 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   subFields(field.value[i]).map((sf) => (
                     <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
                       <Grid sx={{ minWidth: "150px" }}>
-                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}:
+                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
+                        {":"}
                       </Grid>
                       <Grid>
                         {sf.value ? (
                           String(sf.value)
                         ) : (
                           <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
-                            None
+                            {t("fields.identifiers.wrapper.none")}
                           </Typography>
                         )}
                       </Grid>

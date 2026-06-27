@@ -67,8 +67,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
           {columnFieldMap.fieldName}
           {columnFieldMap.columnName !== columnFieldMap.fieldName && (
             <Typography color="textSecondary" component="span" variant="caption">
-              {" "}
-              ({columnFieldMap.columnName})
+              {` (${columnFieldMap.columnName})`}
             </Typography>
           )}
         </TableCell>

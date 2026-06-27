@@ -63,7 +63,7 @@ describe("KetcherDialog cancel confirmation", () => {
     await user.click(screen.getByRole("button", { name: "actions.cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(screen.queryByText("ketcher.discardChanges.text")).not.toBeInTheDocument();
+    expect(screen.queryByText("ketcher.discardChangesDialog.text")).not.toBeInTheDocument();
   });
 
   it("shows confirmation dialog when Cancel is clicked and editor is dirty", async () => {
@@ -76,7 +76,7 @@ describe("KetcherDialog cancel confirmation", () => {
     await user.click(screen.getByRole("button", { name: "actions.cancel" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    expect(screen.getByText("ketcher.discardChanges.text")).toBeInTheDocument();
+    expect(screen.getByText("ketcher.discardChangesDialog.text")).toBeInTheDocument();
   });
 
   it("dismisses confirmation and keeps editor open when Keep Editing is clicked", async () => {
@@ -87,10 +87,10 @@ describe("KetcherDialog cancel confirmation", () => {
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "actions.cancel" }));
-    await user.click(screen.getByRole("button", { name: "ketcher.discardChanges.keepEditing" }));
+    await user.click(screen.getByRole("button", { name: "ketcher.discardChangesDialog.keepEditing" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByText("ketcher.discardChanges.text")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("ketcher.discardChangesDialog.text")).not.toBeInTheDocument());
   });
 
   it("skips dirty check and closes immediately in read-only mode", async () => {
@@ -103,7 +103,7 @@ describe("KetcherDialog cancel confirmation", () => {
     await user.click(screen.getByRole("button", { name: "actions.cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(screen.queryByText("ketcher.discardChanges.text")).not.toBeInTheDocument();
+    expect(screen.queryByText("ketcher.discardChangesDialog.text")).not.toBeInTheDocument();
   });
 
   it("closes the editor when Discard is clicked", async () => {
@@ -114,7 +114,7 @@ describe("KetcherDialog cancel confirmation", () => {
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
     await user.click(screen.getByRole("button", { name: "actions.cancel" }));
-    await user.click(screen.getByRole("button", { name: "ketcher.discardChanges.discard" }));
+    await user.click(screen.getByRole("button", { name: "ketcher.discardChangesDialog.discard" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
     expect(mockSetMolecule).toHaveBeenCalledWith("");

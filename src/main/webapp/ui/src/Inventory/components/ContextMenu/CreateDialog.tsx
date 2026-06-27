@@ -26,7 +26,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import docLinks from "../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
@@ -399,7 +399,7 @@ const ParameterField = observer(
                       }}
                       disabled={!validState()}
                     >
-                      {t("actions.next", { ns: "common" })}
+                      {t("common:actions.next")}
                     </Button>
                   )}
                   <Button
@@ -408,7 +408,7 @@ const ParameterField = observer(
                       setActiveStep(activeStep - 1);
                     }}
                   >
-                    {t("actions.back", { ns: "common" })}
+                    {t("common:actions.back")}
                   </Button>
                 </Stack>
               </Stack>
@@ -485,7 +485,12 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
         }}
       >
         <DialogTitle>
-          Create new items from <strong>{existingRecord.name}</strong>
+          <Trans
+            ns="inventory"
+            i18nKey="contextMenu.createDialog.title"
+            values={{ name: existingRecord.name }}
+            components={[<strong key="0" />]}
+          />
           <HelpLinkIcon link={docLinks.createDialog} title={t("contextMenu.createDialog.helpTitle")} />
         </DialogTitle>
         <DialogContent>
@@ -605,9 +610,9 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>{t("actions.cancel", { ns: "common" })}</Button>
+          <Button onClick={handleClose}>{t("common:actions.cancel")}</Button>
           <SubmitSpinner
-            label={t("actions.create", { ns: "common" })}
+            label={t("common:actions.create")}
             onClick={handleSubmit}
             disabled={
               submitting ||

@@ -189,7 +189,7 @@ function TreeNodeContent({ node }: { node: FolderTreeNode }): React.ReactNode {
       )}
       {error && (
         <Box sx={{ p: 1 }}>
-          <Alert severity="error">Failed to load contents</Alert>
+          <Alert severity="error">{t("fields.link.elnFolderBrowser.failedToLoadContents")}</Alert>
         </Box>
       )}
       {hasMorePages && !loading && (
@@ -252,11 +252,11 @@ export default function ElnFolderBrowser({
           sx={{ mb: 1 }}
           action={
             <Button size="small" onClick={() => void loadRoots()}>
-              {t("actions.retry", { ns: "common" })}
+              {t("common:actions.retry")}
             </Button>
           }
         >
-          Failed to load your workspace
+          {t("fields.link.elnFolderBrowser.failedToLoadWorkspace")}
         </Alert>
       )}
       {loading && (
@@ -302,7 +302,7 @@ export default function ElnFolderBrowser({
       </Tree>
       {!loading && !error && roots.length === 0 && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Nothing to browse here.
+          {t("fields.link.elnFolderBrowser.nothingToBrowse")}
         </Typography>
       )}
     </Box>
