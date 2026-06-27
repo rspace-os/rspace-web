@@ -161,6 +161,7 @@ jobs:
             -Dchemistry.provider=indigo \
             -Dchemistry.service.url=http://localhost:8090 \
             -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Djdbc.db.maven=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
             $PUBCHEM_BASE_ARG \
@@ -177,7 +178,7 @@ jobs:
         env:
           # sysWisc23! is the seed sysadmin password set by drop-recreate-db.
           RSPACE_SYSADMIN_PASSWORD: "sysWisc23!"
-        run: pnpm run test-e2e -- --project=${{ matrix.browser }}
+        run: pnpm run test-e2e
 
       - name: Dump server log on failure
         if: failure()

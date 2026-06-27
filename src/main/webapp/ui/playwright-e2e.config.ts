@@ -15,6 +15,10 @@ try {
 
 const BASE_URL = process.env.RSPACE_BASE_URL ?? "http://localhost:8080";
 
+// When set, run only that browser project (skips api and other browsers).
+// CI installs one browser and sets this; local runs omit it to get all projects.
+const E2E_BROWSER = process.env.E2E_BROWSER;
+
 // Mock server — only started when E2E_INTEGRATION_MODE=mock (the default).
 // The Java backend's integration base URLs (pubchem.base.url, etc.) are
 // overridden at JVM startup to http://localhost: MOCK_PORT, so Spring
@@ -76,15 +80,15 @@ export default defineConfig<E2EOptions>({
     testIdAttribute: "data-test-id",
   },
   projects: [
+    // API tests: Node HTTP only, no browser. Each test gets its own
+    // APIRequestContext via the `apiContext` fixture.
     {
-      // API tests: Node HTTP only, no browser. Each test gets its own
-      // APIRequestContext via the `apiContext` fixture.
       name: "api",
       testMatch: "**/*.api.spec.ts",
     },
+    // Each browser uses a distinct seed user to avoid shared-state collisions
+    // when browser shards run in parallel against the same backend.
     {
-      // Each browser uses a distinct seed user to avoid shared-state collisions
-      // when browser shards run in parallel against the same backend.
       name: "chromium",
       testMatch: "**/*.e2e.ts",
       use: { ...devices["Desktop Chrome"], headless: HEADLESS, appUser: USERS.user1a },
@@ -101,5 +105,5 @@ export default defineConfig<E2EOptions>({
       // server cipher suites with "internal error". ignoreHTTPSErrors bypasses it.
       use: { ...devices["Desktop Safari"], headless: HEADLESS, appUser: USERS.user3c, ignoreHTTPSErrors: true },
     },
-  ],
+  ].filter(({ name }) => !E2E_BROWSER || name === E2E_BROWSER),
 });
