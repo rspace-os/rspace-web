@@ -183,14 +183,19 @@ jobs:
 
       - name: Dump server log on failure
         if: failure()
-        run: tail -200 /tmp/jetty.log || true
+        run: |
+          echo "=== Jetty stdout (last 100 lines) ===" && tail -100 /tmp/jetty.log || true
+          echo "=== RSpace error.log (last 200 lines) ===" && tail -200 error.log || true
 
       - name: Upload Jetty log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: jetty-log-${{ inputs.mode }}-${{ matrix.browser }}
-          path: /tmp/jetty.log
+          path: |
+            /tmp/jetty.log
+            error.log
+            httpRequests.log
           retention-days: 3
 
       - name: Upload Playwright report
