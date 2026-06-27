@@ -1,0 +1,17 @@
+name: e2e (mocked)
+
+# Deterministic full-stack e2e, third-party responses mocked. Safe to gate on.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  mocked:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      mode: mock

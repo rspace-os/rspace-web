@@ -64,7 +64,13 @@ const uiTest = base.extend<
   flowLogin: async ({ pageLogin, pageWorkspace, appUser }, use) => {
     await pageLogin.open();
     await pageLogin.login(appUser.username, appUser.password);
-    await pageWorkspace.isLoaded();
+    const loaded = await pageWorkspace.isLoaded();
+    if (!loaded) {
+      throw new Error(
+        `flowLogin: workspace did not load after login as '${appUser.username}'. ` +
+          "Login may have failed or the server returned an unexpected page.",
+      );
+    }
     await use(pageWorkspace);
   },
 });
@@ -84,15 +90,18 @@ const sysadminFixtures = base.extend<{
   flowSysadminConfig: async ({ browser, browserName }, use) => {
     // Manually created contexts don't inherit the project-level ignoreHTTPSErrors.
     const ctx = await browser.newContext({ ignoreHTTPSErrors: browserName === "webkit" });
-    const page = await ctx.newPage();
-    const loginPage = new LoginPage(page);
-    await loginPage.open();
-    await loginPage.login(SYSADMIN.username, SYSADMIN.password);
-    await page.waitForURL((url) => !url.pathname.includes("/login"));
-    const configPage = new SystemConfigPage(page);
-    await configPage.open();
-    await use(configPage);
-    await ctx.close();
+    try {
+      const page = await ctx.newPage();
+      const loginPage = new LoginPage(page);
+      await loginPage.open();
+      await loginPage.login(SYSADMIN.username, SYSADMIN.password);
+      await page.waitForURL((url) => !url.pathname.includes("/login"));
+      const configPage = new SystemConfigPage(page);
+      await configPage.open();
+      await use(configPage);
+    } finally {
+      await ctx.close();
+    }
   },
 });
 

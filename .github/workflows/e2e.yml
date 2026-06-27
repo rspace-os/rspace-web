@@ -1,0 +1,195 @@
+name: e2e (reusable)
+
+# Boots a real RSpace instance and runs the Playwright `*.e2e.ts` suite. Called
+# by e2e-mocked.yml (mode=mock) and e2e-real.yml (mode=real); the only
+# difference is E2E_INTEGRATION_MODE.
+#
+# The app (frontend + backend WAR) is packaged ONCE in the `build` job; the
+# browser-sharded `e2e` jobs download that WAR and run it, so neither the
+# frontend build nor the backend compile is repeated per shard.
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "mock | real"
+        required: true
+        type: string
+      java_vendor:
+        description: "Java vendor Maven toolchain"
+        type: string
+        default: "temurin"
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  RS_FILE_BASE: /tmp/e2e-filestore
+  E2E_INTEGRATION_MODE: ${{ inputs.mode }}
+  RSPACE_BASE_URL: http://localhost:8080
+
+jobs:
+  # Package the deployable WAR (frontend dist + backend) exactly once.
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      matrix:
+        java-version: [17]
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+      - name: Set up Node + pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      # SPIKE: not yet validated in CI. -DgenerateReactDist runs the
+      # frontend prod build and bundles dist/ into the WAR.
+      - name: Package WAR (frontend + backend)
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }}
+      - name: Upload WAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: rspace-war
+          path: target/*.war
+          retention-days: 1
+
+  e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium]
+        java-version: [17]
+    services:
+      db:
+        image: mariadb:lts-jammy
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+      # Required even in mock mode: chemistry-gated integrations only render
+      # when the chemistry service is reachable (CHEMISTRY.available).
+      chemistry:
+        image: rspaceops/oss-chemistry:latest
+        ports:
+          - 8090:8090
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Set up Node + pnpm
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: corepack enable
+      # node_modules is needed only to run Playwright, not to build the app.
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download prebuilt WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: rspace-war
+          path: target
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf "$RS_FILE_BASE"
+          mkdir -p "$RS_FILE_BASE"
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
+
+      # SPIKE: NOT yet validated in CI. `jetty:run-war` is invoked as a
+      # direct goal so it deploys the downloaded WAR without recompiling or
+      # repackaging; if the WAR name differs from the plugin's expected path,
+      # pin it via the plugin's <war> property.
+      - name: Start RSpace (prebuilt WAR) and wait for readiness
+        run: |
+          set -euo pipefail
+          # Mock mode: point the backend's PubChem connector at the fake server
+          # (started as a Playwright webServer). Real mode: leave the default.
+          PUBCHEM_BASE_ARG=""
+          if [ "${{ inputs.mode }}" = "mock" ]; then
+            PUBCHEM_BASE_ARG="-Dpubchem.base.url=http://localhost:9099"
+          fi
+          nohup ./mvnw jetty:run-war \
+            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
+            -Denvironment=drop-recreate-db \
+            -Dspring.profiles.active=run \
+            -DreactDevMode=false \
+            -Dchemistry.provider=indigo \
+            -Dchemistry.service.url=http://localhost:8090 \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -DRS_FILE_BASE="$RS_FILE_BASE" \
+            -DRS.devlogLevel=INFO \
+            $PUBCHEM_BASE_ARG \
+            > /tmp/jetty.log 2>&1 &
+          for i in $(seq 1 180); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/login || true)" = "200" ]; then
+              echo "Ready after ~$((i*5))s"; exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::RSpace did not become ready in time"; tail -100 /tmp/jetty.log; exit 1
+
+      - name: Run e2e (${{ inputs.mode }} / ${{ matrix.browser }})
+        env:
+          # sysWisc23! is the seed sysadmin password set by drop-recreate-db.
+          RSPACE_SYSADMIN_PASSWORD: "sysWisc23!"
+        run: pnpm run test-e2e -- --project=${{ matrix.browser }}
+
+      - name: Dump server log on failure
+        if: failure()
+        run: tail -200 /tmp/jetty.log || true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-report-${{ inputs.mode }}-${{ matrix.browser }}
+          path: |
+            src/main/webapp/ui/playwright-report
+            src/main/webapp/ui/test-results
+            src/main/webapp/ui/e2e-junit.xml
+          retention-days: 14

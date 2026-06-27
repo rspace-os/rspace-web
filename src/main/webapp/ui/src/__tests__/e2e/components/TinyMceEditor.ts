@@ -52,4 +52,12 @@ export class TinyMceEditor {
   async selectAll(): Promise<void> {
     await this.body.press("Control+a");
   }
+
+  /**
+   * Locator for a chemistry element inserted via the Ketcher plugin.
+   * inside the editor body.
+   */
+  get chemElement(): Locator {
+    return this.frame.locator('img[src*="sourceType=CHEM"]');
+  }
 }

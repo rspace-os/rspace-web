@@ -53,6 +53,11 @@ export class PubchemDialogComponent {
     return this.resultsRegion.getByRole("region", { name: compoundName });
   }
 
+  /** A single `<dd role="definition">` inside a result card, matched by display value. */
+  resultCardField(compoundName: string, value: string): Locator {
+    return this.resultCard(compoundName).getByRole("definition").filter({ hasText: value });
+  }
+
   async waitForOpen(): Promise<void> {
     await this.root.waitFor({ state: "visible" });
     await this.resultsRegion.getByText(/Enter a search term/).waitFor({ state: "visible" });
@@ -77,13 +82,15 @@ export class PubchemDialogComponent {
       await this.setSearchType(type);
     }
     await this.searchInput(type).fill(term);
-    await Promise.all([
-      this.page.waitForResponse((r) => r.url().includes("/api/v1/pubchem/search") && r.status() === 200),
+    const [response] = await Promise.all([
+      this.page.waitForResponse((r) => r.url().includes("/api/v1/pubchem/search")),
       this.searchButton.click(),
     ]);
-    // Wait until the results region settles into one of three terminal states:
-    // no-results message, initial-prompt (shouldn't happen after a search), or
-    // at least one result card.
+    if (!response.ok()) {
+      throw new Error(`POST /api/v1/pubchem/search failed: ${response.status()} ${response.statusText()}`);
+    }
+    // Wait until the result region settles into one of three terminal states:
+    // no-result message, initial-prompt (shouldn't happen after a search), or at least one result card.
     await this.resultsRegion
       .getByText(/No compounds found|Enter a search term/)
       .or(this.resultsRegion.getByRole("region").first())
@@ -91,9 +98,7 @@ export class PubchemDialogComponent {
   }
 
   async importCompound(compoundName: string): Promise<void> {
-    await this.resultCard(compoundName)
-      .getByRole("button")
-      .evaluate((el) => (el as HTMLElement).click());
+    await this.resultCard(compoundName).getByRole("checkbox", { name: "Select compound" }).check();
     await this.importSelectedButton.click();
     await this.root.waitFor({ state: "detached" });
   }

@@ -1,0 +1,21 @@
+name: e2e (real)
+
+# Full-stack e2e against the LIVE third-party APIs. Allowed to fail.
+# Do NOT make this a required status check — its value is the per-integration
+# pass/fail signal, not gating merges.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      mode: real

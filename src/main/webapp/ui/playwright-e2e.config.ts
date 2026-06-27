@@ -1,6 +1,7 @@
 import { resolve } from "node:path";
 import { defineConfig, devices, type ReporterDescription } from "@playwright/test";
 import type { E2EOptions } from "./src/__tests__/e2e/fixtures";
+import { INTEGRATION_MODE } from "./src/__tests__/e2e/integrationMode";
 import { USERS } from "./src/__tests__/e2e/users";
 
 // Load .env before anything reads process.env. process.loadEnvFile is built
@@ -13,6 +14,13 @@ try {
 }
 
 const BASE_URL = process.env.RSPACE_BASE_URL ?? "http://localhost:8080";
+
+// Mock server — only started when E2E_INTEGRATION_MODE=mock (the default).
+// The Java backend's integration base URLs (pubchem.base.url, etc.) are
+// overridden at JVM startup to http://localhost: MOCK_PORT, so Spring
+// RestTemplate calls land on this local server instead of the real APIs.
+const MOCK_PORT = process.env.E2E_MOCK_PORT ?? "9099";
+const MOCK_PROBE_URL = `http://localhost:${MOCK_PORT}/e2e-health`;
 const HEADLESS = (process.env.HEADLESS ?? "true") !== "false";
 
 // Log level: "trace" | "info" | "off" (default "off")
@@ -36,6 +44,17 @@ export default defineConfig<E2EOptions>({
   // Discovers *.e2e.ts (UI browser specs) and *.api.spec.ts (Node HTTP specs)
   // anywhere under src/ — covers both specs/ and future colocated module tests.
   testDir: "./src",
+  // In mock mode: start the local HTTP server that all integration tests point
+  // the Java backend at. In real mode: no server — backend hits live APIs.
+  webServer:
+    INTEGRATION_MODE === "mock"
+      ? {
+          command: "node src/__tests__/e2e/mockServer.mjs",
+          url: MOCK_PROBE_URL,
+          reuseExistingServer: !process.env.CI,
+          timeout: 15_000,
+        }
+      : undefined,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

@@ -146,7 +146,11 @@ export default defineConfig({
     // Exclude the heavy suites that time out on CI Firefox (see above); empty on
     // every other run so they execute normally. `configDefaults.exclude` keeps
     // node_modules/dist/etc. excluded since setting `exclude` overrides it.
-    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles],
+    // "src/__tests__/e2e/**" is required because the Playwright e2e directory
+    // contains files with a .spec.ts suffix (e.g. documents.api.spec.ts) that
+    // would otherwise match the include pattern above and be picked up by
+    // Vitest Browser Mode — those files must only run under playwright-e2e.config.ts.
+    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles, "src/__tests__/e2e/**"],
     setupFiles: ["./src/__tests__/browserSetup.ts"],
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially

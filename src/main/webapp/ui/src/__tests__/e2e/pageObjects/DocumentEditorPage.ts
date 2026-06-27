@@ -42,7 +42,19 @@ export class DocumentEditorPage extends DocumentPage {
   async getField(fieldName: string): Promise<TinyMceEditor> {
     const fieldTd = this.page.locator("td.field-name").filter({ hasText: fieldName });
     const tdId = await fieldTd.getAttribute("id");
-    const fieldId = (tdId ?? "").replace("field-name-", "");
+    if (!tdId) {
+      throw new Error(
+        `getField('${fieldName}'): no td.field-name element with an id attribute found. ` +
+          "Verify the field name is spelled exactly as rendered and the document is in edit mode.",
+      );
+    }
+    const fieldId = tdId.replace("field-name-", "");
+    if (!fieldId) {
+      throw new Error(
+        `getField('${fieldName}'): id attribute '${tdId}' yielded an empty field id after ` +
+          "stripping the 'field-name-' prefix.",
+      );
+    }
     const editorId = `rtf_${fieldId}`;
     await this.page.locator(`iframe#${editorId}_ifr`).waitFor({ state: "visible" });
     return new TinyMceEditor(this.page, editorId).waitForReady();

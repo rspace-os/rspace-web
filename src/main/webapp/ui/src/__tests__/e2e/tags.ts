@@ -9,4 +9,5 @@ export const tags = {
   /** Third-party integration tests (Apps page toggles, external service calls).
    *  Run separately from smoke — not required on every PR. */
   APPS: "@apps",
+  REAL_ONLY: "@real-only",
 };
