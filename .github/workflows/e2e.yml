@@ -178,6 +178,7 @@ jobs:
         env:
           # sysWisc23! is the seed sysadmin password set by drop-recreate-db.
           RSPACE_SYSADMIN_PASSWORD: "sysWisc23!"
+          E2E_BROWSER: ${{ matrix.browser }}
         run: pnpm run test-e2e
 
       - name: Dump server log on failure
