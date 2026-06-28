@@ -55,7 +55,7 @@ jobs:
       # SPIKE: not yet validated in CI. -DgenerateReactDist runs the
       # frontend prod build and bundles dist/ into the WAR.
       - name: Package WAR (frontend + backend)
-        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }}
+        run: ./mvnw clean package -DgenerateReactDist -DskipTests -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} -Dtimestamp=${{ github.run_id }}
       - name: Upload WAR
         uses: actions/upload-artifact@v4
         with:
@@ -154,6 +154,8 @@ jobs:
             PUBCHEM_BASE_ARG="-Dpubchem.base.url=http://localhost:9099"
           fi
           nohup ./mvnw jetty:run-war \
+            -DskipTests=true -Dmaven.war.skip=true \
+            -Dtimestamp=${{ github.run_id }} \
             -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor }} \
             -Denvironment=drop-recreate-db \
             -Dspring.profiles.active=run \
