@@ -67,7 +67,7 @@ const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords(
           {materialsStore.loading ? (
             <NoValue label={t("associatedRecords.loading")} />
           ) : materialsStore.allInvRecordsFromAllDocumentLists.size === 0 ? (
-            <>{t("associatedRecords.empty")}</>
+            t("associatedRecords.empty")
           ) : (
             materialsStore.allInvRecordsFromAllDocumentLists.map(({ name, globalId, permalinkURL }) => (
               <li key={globalId}>

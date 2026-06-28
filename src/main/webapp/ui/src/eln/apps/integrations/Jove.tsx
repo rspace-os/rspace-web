@@ -9,6 +9,9 @@ import IntegrationCard from "../IntegrationCard";
 
 function Jove(): React.ReactNode {
   const { t } = useTranslation("apps");
+  const exampleDomain = "jove.com";
+  const exampleUrl = "https://www.jove.com/v/60908/...";
+  const appExampleUrl = "https://app.jove.com/v/60908/...";
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -39,9 +42,10 @@ function Jove(): React.ReactNode {
                 {t("integrations.jove.setup.toolbarSuffix")}
               </li>
               <li>
-                {t("integrations.jove.setup.pasteUrl")} <code>jove.com</code>{" "}
-                {t("integrations.jove.setup.pasteUrlSuffix")} <code>https://www.jove.com/v/60908/...</code>{" "}
-                {t("integrations.jove.setup.pasteUrlOr")} <code>https://app.jove.com/v/60908/...</code>.
+                {t("integrations.jove.setup.pasteUrl")} <code>{exampleDomain}</code>{" "}
+                {t("integrations.jove.setup.pasteUrlSuffix")} <code>{exampleUrl}</code>{" "}
+                {t("integrations.jove.setup.pasteUrlOr")} <code>{appExampleUrl}</code>
+                {"."}
               </li>
               <li>
                 {t("integrations.jove.setup.selectInsert")} <strong>{t("integrations.jove.setup.insertButton")}</strong>{" "}

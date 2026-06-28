@@ -4,6 +4,7 @@ import { produce } from "immer";
 import React, { useCallback } from "react";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import i18n from "@/modules/common/i18n";
 import { resolveToken } from "@/modules/common/utils/auth";
 import { inventoryQueryKeys, useSubSampleQuantitiesQuery } from "@/modules/inventory/queries";
 import {
@@ -40,6 +41,14 @@ type UseEditableStoichiometryTableArgs = {
   activeChemId?: number | null;
   onStoichiometryRefreshed?: (stoichiometry: RefreshedStoichiometry) => void;
 };
+
+function tCommon(key: string, options?: Record<string, unknown>): string {
+  const commonT = i18n.getFixedT(null, "common") as (
+    translationKey: string,
+    translationOptions?: Record<string, unknown>,
+  ) => string;
+  return commonT(key, options);
+}
 
 function getStoichiometryLinkAnalyticsProperties(
   stoichiometryId: number,
@@ -85,10 +94,10 @@ function toStoichiometryRequest(
       }
 
       if (!base.smiles) {
-        throw new Error("New reagents must have a SMILES string");
+        throw new Error(tCommon("stoichiometry.addReagent.validation.smilesRequired"));
       }
       if (!base.name) {
-        throw new Error("New reagents must have a name");
+        throw new Error(tCommon("stoichiometry.addReagent.validation.nameRequired"));
       }
 
       return base;
@@ -209,7 +218,7 @@ export function useEditableStoichiometryTable({
 
   const save = useCallback(async () => {
     if (!data?.id) {
-      throw new Error("No stoichiometry data to save");
+      throw new Error(tCommon("stoichiometry.inventoryUpdate.noDataToSave"));
     }
 
     const updatedData = toStoichiometryRequest(data.id, allMolecules);
@@ -252,7 +261,7 @@ export function useEditableStoichiometryTable({
       });
 
       if (isGettingMoleculeInfo) {
-        throw new Error("Please wait for the current reagent to be processed before adding another.");
+        throw new Error(tCommon("stoichiometry.addReagent.validation.busy"));
       }
 
       try {
@@ -459,7 +468,7 @@ export function useEditableStoichiometryTable({
   const updateInventoryStock = useCallback(
     async (selectedMoleculeIds: number[]) => {
       if (!data?.id) {
-        throw new Error("No stoichiometry data available to update stock");
+        throw new Error(tCommon("stoichiometry.inventoryUpdate.noDataToUpdateStock"));
       }
 
       const moleculesById = new Map(allMolecules.map((m) => [m.id, m]));
@@ -478,7 +487,7 @@ export function useEditableStoichiometryTable({
 
       for (const moleculeId of selectedMoleculeIds) {
         const molecule = moleculesById.get(moleculeId);
-        const moleculeName = molecule?.name ?? "Unnamed molecule";
+        const moleculeName = molecule?.name ?? tCommon("stoichiometry.inventoryUpdate.unnamedMolecule");
         const inventoryLink = molecule?.inventoryLink;
 
         if (!molecule || !inventoryLink?.inventoryItemGlobalId || typeof inventoryLink.id !== "number") {
@@ -486,7 +495,7 @@ export function useEditableStoichiometryTable({
             moleculeId,
             moleculeName,
             success: false,
-            errorMessage: "Link an inventory item before updating stock.",
+            errorMessage: tCommon("stoichiometry.inventoryUpdate.linkRequired"),
           });
           continue;
         }
@@ -498,7 +507,9 @@ export function useEditableStoichiometryTable({
             moleculeName,
             success: false,
             errorMessage:
-              eligibility.helperText ?? eligibility.stockDisplay.warningText ?? "This molecule cannot be updated.",
+              eligibility.helperText ??
+              eligibility.stockDisplay.warningText ??
+              tCommon("stoichiometry.inventoryUpdate.moleculeCannotBeUpdated"),
           });
           continue;
         }
@@ -530,7 +541,9 @@ export function useEditableStoichiometryTable({
             moleculeId,
             moleculeName,
             success: !!res?.success,
-            errorMessage: res?.success ? null : (res?.errorMessage ?? "Failed to update inventory stock."),
+            errorMessage: res?.success
+              ? null
+              : (res?.errorMessage ?? tCommon("stoichiometry.inventoryUpdate.updateStockError")),
           };
         });
 
@@ -546,7 +559,10 @@ export function useEditableStoichiometryTable({
             inventoryItemGlobalId,
             inventoryLinkId: linkId,
             success: res?.success === true,
-            errorMessage: res?.success === true ? null : (res?.errorMessage ?? "Failed to update inventory stock."),
+            errorMessage:
+              res?.success === true
+                ? null
+                : (res?.errorMessage ?? tCommon("stoichiometry.inventoryUpdate.updateStockError")),
           });
         }
 
@@ -643,7 +659,7 @@ export function useEditableStoichiometryTable({
         for (const field of numericalFields) {
           const value = newRow[field];
           if (value !== null && value !== undefined && Number(value) < 0) {
-            throw new Error(`${field} cannot be negative`);
+            throw new Error(tCommon("stoichiometry.inventoryUpdate.negativeFieldError", { field }));
           }
         }
 

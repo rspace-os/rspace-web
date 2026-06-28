@@ -1,4 +1,53 @@
 {
+  "alerts": {
+    "warning": "Warning"
+  },
+  "accessibilityTips": {
+    "actions": {
+      "disable": "disable",
+      "enable": "enable",
+      "off": "off",
+      "on": "on"
+    },
+    "browsers": {
+      "chrome": "Chrome",
+      "edge": "Edge",
+      "firefox": "Firefox",
+      "safari": "Safari"
+    },
+    "buttonLabel": "Accessibility tips",
+    "elementTypes": {
+      "dialog": "dialog",
+      "page": "page"
+    },
+    "highContrast": {
+      "enabled": "High contrast mode is enabled.",
+      "instructions": "To {action}, turn {settingState} your device's high contrast setting:",
+      "supported": "This {elementType} supports a high contrast mode."
+    },
+    "menuLabel": "Accessibility Tips",
+    "platforms": {
+      "android": "Android",
+      "iOs": "iOS",
+      "macOs": "macOS",
+      "windows": "Windows"
+    },
+    "reducedMotion": {
+      "enabled": "Reduced motion mode is enabled.",
+      "instructions": "To {action}, turn {settingState} your device's reduced motion setting:",
+      "supported": "This {elementType} supports a reduced motion mode."
+    },
+    "skipToContent": {
+      "navigation": "Skip to content navigation",
+      "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
+      "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
+    },
+    "tip": "Tip",
+    "zoom": {
+      "instructions": "To enable, adjust your browser's settings:",
+      "supported": "This {elementType} supports up to 200% zoom magnification."
+    }
+  },
   "actions": {
     "add": "Add",
     "back": "Back",
@@ -12,6 +61,7 @@
     "done": "Done",
     "edit": "Edit",
     "export": "Export",
+    "insert": "Insert",
     "invite": "Invite",
     "next": "Next",
     "ok": "OK",
@@ -93,7 +143,11 @@
     "failedFolders": "Failed to load folders",
     "failedSubfolders": "Failed to load subfolders",
     "loading": "Loading...",
-    "loadMore": "Load More"
+    "loadMore": "Load More",
+    "sharedFolderAria": "tree view of shared folder"
+  },
+  "galleryPicker": {
+    "selectionRequired": "Select at least one file to proceed."
   },
   "groupDetails": {
     "members": "Members",
@@ -101,14 +155,29 @@
     "users": "Users",
     "viewGroup": "View Group"
   },
+  "helpDocs": {
+    "chatWithUs": "Chat with us",
+    "documentation": "RSpace Documentation",
+    "openHelp": "Open Help",
+    "rspaceAlt": "RSpace",
+    "searchPlaceholder": "Type to search for articles...",
+    "suggestedArticles": "Suggested Articles",
+    "viewAllArticles": "View All Articles"
+  },
   "imageEditingDialog": {
     "rotateClockwise": "rotate clockwise",
     "rotateCounterClockwise": "rotate counter clockwise",
     "title": "Edit Image"
   },
   "inputs": {
+    "chooseToEdit": {
+      "label": "Batch edit this field"
+    },
     "dateField": {
       "invalidDate": "Invalid date."
+    },
+    "dynamicallyLoadedImageEditor": {
+      "loadError": "Could not load the image editor at this time. Please check your network connection and refresh."
     },
     "optionField": {
       "deleteNewOption": "Delete New Option",
@@ -120,7 +189,8 @@
       "notYetSupported": "Not yet supported."
     },
     "selectedFileInfo": {
-      "invalidFile": "Invalid file."
+      "invalidFile": "Invalid file.",
+      "label": "File selected:"
     },
     "unitSelect": {
       "quantityUnits": "Quantity units"
@@ -299,6 +369,7 @@
     },
     "oauth": {
       "connectedApps": {
+        "confirmDisconnectText": "Are you sure you want to revoke access from <0>{clientName}</0>?",
         "confirmDisconnectTitle": "Confirm Disconnect",
         "disconnect": "Disconnect",
         "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
@@ -309,6 +380,7 @@
         "title": "Connected Apps"
       },
       "createdApps": {
+        "confirmDeleteText": "Are you sure you want to delete <0>{appName}</0>? All access and refresh tokens will be revoked.",
         "confirmDeleteTitle": "Confirm Deletion",
         "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
         "deleteErrorTitle": "Unable to delete app",
@@ -389,34 +461,183 @@
     "query": "Search query"
   },
   "shareDialog": {
+    "addUsersOrGroups": "Add users or groups to share with",
+    "autocomplete": {
+      "label": "Add RSpace users or groups",
+      "noMatches": "No matches found. You can only share with groups you are in, and users in groups you are in.",
+      "placeholder": "Type to filter groups and users..."
+    },
     "changeFolder": "Change Folder",
     "changeLocation": "Change",
-    "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery."
+    "columns": {
+      "location": "Location",
+      "notebook": "Notebook",
+      "permission": "Permission",
+      "sharedWith": "Shared With",
+      "type": "Type"
+    },
+    "locationLabel": "Location: {location}",
+    "multipleSelection": {
+      "allItems": "All {count} {pluralName}",
+      "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <0>shared {pluralName} page</0>.",
+      "heading": "Adding shares to {count} {itemName}",
+      "newSharesHeading": "New shares to be added:",
+      "someItems": "{documentCount} of {totalCount} {itemName}"
+    },
+    "noDirectShares": "This {singularName} is not directly shared with anyone.",
+    "notebookShares": {
+      "heading": "As {docName} is shared into Notebooks, it is also shared with:",
+      "inheritedPermissions": "Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to alter the notebook's permissions."
+    },
+    "optionDescriptions": {
+      "alreadyShared": "All of the {pluralName} have already been shared with {recipientName}",
+      "group": "{type} • {memberCount} members",
+      "user": "User • {username} • {email}"
+    },
+    "permissions": {
+      "edit": "Edit",
+      "read": "Read",
+      "remove": "Remove",
+      "unshare": "Unshare"
+    },
+    "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery.",
+    "titleMultiple": "Share {count} {pluralName}",
+    "titleSingle": "Share <0>{name}</0>",
+    "updatedSuccessfully": "Shares updated successfully."
   },
   "stoichiometry": {
     "addReagent": {
       "addChemical": "Add Chemical",
+      "menuAria": "add chemical menu",
       "name": "Name",
+      "sources": {
+        "gallery": {
+          "subheader": "Import compound from Gallery",
+          "title": "Gallery"
+        },
+        "manual": {
+          "subheader": "Manually enter SMILES",
+          "title": "Manually"
+        },
+        "pubChem": {
+          "dialogTitle": "Insert from PubChem",
+          "subheader": "Import compound from PubChem",
+          "title": "PubChem"
+        }
+      },
       "smilesString": "SMILES String",
       "title": "Add New Chemical",
       "validation": {
+        "busy": "Please wait for the current reagent to be processed before adding another.",
         "nameRequired": "Name is required",
         "smilesRequired": "SMILES string is required"
       }
     },
     "inventoryUpdate": {
+      "cannotReplenish": "Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry table, delete the document, or unlink samples.",
       "dialogTitle": "Update Inventory Stock",
       "inStock": "In Stock",
+      "irreversibleTitle": "WARNING: This action is irreversible",
+      "irreversibleWarningAria": "Action irreversible warning",
+      "linkRequired": "Link an inventory item before updating stock.",
+      "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
+      "missingActualMass": "Define actual mass before updating linked inventory stock.",
       "molecule": "Molecule",
+      "moleculeCannotBeUpdated": "This molecule cannot be updated.",
+      "negativeFieldError": "{{field}} cannot be negative",
+      "noDataToSave": "No stoichiometry data to save",
+      "noDataToUpdateStock": "No stoichiometry data available to update stock",
+      "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
       "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
+      "proceedIfUsed": "Only proceed if you have actually used these materials in your experiment.",
       "remaining": "Remaining",
+      "saveBeforeUpdate": "Save the stoichiometry table before updating inventory stock.",
+      "saveError": "{message} Current stock amounts were refreshed where possible.",
+      "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
+      "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
+      "selectMoleculeAria": "Select molecule",
+      "selectionError": "Re-select any invalid molecules before saving.",
       "saving": "Saving...",
+      "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      "updateStockError": "Failed to update inventory stock.",
+      "unnamedMolecule": "Unnamed molecule",
       "updateInventoryStock": "Update Inventory Stock",
       "willUse": "Will Use"
+    },
+    "inventoryLink": {
+      "add": "Add inventory link",
+      "addForMolecule": "Add inventory link for {molecule}",
+      "alreadyLinked": "The inventory item is already linked.",
+      "deleted": "Link Deleted",
+      "insufficientStock": "Insufficient Stock",
+      "pickerTitle": "Pick inventory item for {molecule}",
+      "remove": "Remove inventory link",
+      "removeForMolecule": "Remove inventory link for {molecule}",
+      "stockDeducted": "Stock deducted",
+      "undo": "Undo deleting link",
+      "undoForMolecule": "Undo deleting inventory link for {molecule}"
+    },
+    "gallery": {
+      "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",
+      "loadingPicker": "Loading gallery picker"
+    },
+    "table": {
+      "aria": {
+        "deleteReagent": "Delete reagent {name}",
+        "selectLimitingReagent": "Select {name} as limiting reagent",
+        "typeSelect": "Select type for {name}"
+      },
+      "columns": {
+        "actions": "Actions",
+        "actualMass": "Actual Mass (g)",
+        "actualMoles": "Actual Moles (mol)",
+        "equivalent": "Equivalent",
+        "inventoryLink": "Inventory Link",
+        "limitingReagent": "Limiting Reagent",
+        "mass": "Mass (g)",
+        "molecularWeight": "Molecular Weight (g/mol)",
+        "moles": "Moles (mol)",
+        "name": "Name",
+        "notes": "Notes",
+        "type": "Type",
+        "yieldExcess": "Yield/Excess (%)"
+      },
+      "roles": {
+        "product": "Product",
+        "reactant": "Reactant",
+        "reagent": "Reagent"
+      }
     },
     "tableToolbar": {
       "columns": "Columns",
       "exportToCsv": "Export to CSV"
+    },
+    "dialog": {
+      "calculate": "Calculate Stoichiometry",
+      "calculatePrompt": "Click the button below to calculate the stoichiometry data for this chemical compound.",
+      "chemistryDisabledTitle": "Chemistry Integration Disabled",
+      "chemistryStatusErrorTitle": "Error Checking Chemistry Integration",
+      "calculating": "Calculating...",
+      "deleteError": "Failed to delete this stoichiometry table. Please try again.",
+      "deleteMessage": "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
+      "deleteTitle": "Delete Stoichiometry Table",
+      "discardChangesConfirm": "Discard",
+      "discardChangesMessage": "Closing the dialog will discard the unsaved changes.",
+      "discardChangesTitle": "Discard changes?",
+      "editInstructions": "Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are calculated automatically, as are each pairing of moles and mass.",
+      "loadingTable": "Loading stoichiometry table...",
+      "loadingMoleculeInformation": "Loading molecule information...",
+      "reactionTable": "Reaction Table"
+      ,
+      "saveChanges": "Save Changes",
+      "saveError": "Failed to save stoichiometry changes. Please try again."
+    },
+    "plugin": {
+      "emptyTablePlaceholder": "Empty Stoichiometry Table",
+      "insertActionAlias": "Stoichiometry",
+      "insertActionText": "Stoichiometry Table",
+      "insertTooltip": "Insert reaction table",
+      "noPreview": "Stoichiometry Table (no preview)"
     }
   },
   "tags": {
@@ -436,6 +657,7 @@
     "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
     "noName": "no name",
     "noTagsAvailable": "No tags available",
+    "tryAgain": "Please try again.",
     "typeTagInstead": "Simply type in the tag and press enter instead.",
     "useNewTagHint": "To use a new tag, press Enter.",
     "validation": {
@@ -482,6 +704,17 @@
     "sendMessageOnSlack": "Send message on Slack",
     "slack": "Slack"
   },
+  "treeSort": {
+    "direction": {
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "order": {
+      "creationDate": "Creation Date",
+      "lastModified": "Last Modified",
+      "name": "Name"
+    }
+  },
   "userDetails": {
     "accountDisabled": "Disabled",
     "accountEnabled": "Enabled",
@@ -489,10 +722,45 @@
     "email": "Email",
     "lastLogin": "Last login:",
     "openProfile": "Open profile",
+    "roleAt": "{role} at",
+    "roles": {
+      "pi": "PI",
+      "user": "User"
+    },
     "sendMessage": "Send a message"
+  },
+  "usersPage": {
+    "aliasDialog": {
+      "description": "usersPage.aliasDialog.description",
+      "errorTitle": "usersPage.aliasDialog.errorTitle",
+      "fieldLabel": "usersPage.aliasDialog.fieldLabel",
+      "menuItem": "usersPage.aliasDialog.menuItem",
+      "submit": "usersPage.aliasDialog.submit",
+      "success": "usersPage.aliasDialog.success",
+      "title": "usersPage.aliasDialog.title"
+    },
+    "piRoleDialog": {
+      "error": "usersPage.piRoleDialog.error",
+      "grantAction": "usersPage.piRoleDialog.grantAction",
+      "grantTitle": "usersPage.piRoleDialog.grantTitle",
+      "loading": "usersPage.piRoleDialog.loading",
+      "passwordLabel": "usersPage.piRoleDialog.passwordLabel",
+      "revokeAction": "usersPage.piRoleDialog.revokeAction",
+      "revokeTitle": "usersPage.piRoleDialog.revokeTitle",
+      "setVerificationPassword": "usersPage.piRoleDialog.setVerificationPassword"
+    }
   },
   "values": {
     "none": "None"
+  },
+  "versionLockPicker": {
+    "ariaLabel": "version-lock-picker",
+    "columns": {
+      "modified": "Modified",
+      "version": "Version"
+    },
+    "latest": "Latest",
+    "versionValue": "Version {version}"
   },
   "warningBar": {
     "unsavedChanges": "Unsaved changes"

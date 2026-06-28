@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import i18n from "../../modules/common/i18n";
 // eslint-disable-next-line no-duplicate-imports
 import Omero, { getHeaders, getOrder, getOrderBy, getSelectedItems } from "./Omero";
 import { omeroSort } from "./ResultsTable";
@@ -19,7 +20,10 @@ function createTinyMceTable() {
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
-    .concat([{ id: "notes", numeric: false, label: "Notes" }], headers.slice(4));
+    .concat(
+      [{ id: "notes", numeric: false, label: i18n.t("tinyMce.omero.columns.notes", { ns: "apps" }) }],
+      headers.slice(4),
+    );
   headersWithNotes.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;

@@ -99,7 +99,7 @@ function ContextMenu({
     return () => io.disconnect();
   }, [buttonList.length, selectedResults]);
 
-  const alertMessage = mixedSelectedStatus && `Please select only 'Current' or 'In Trash' items to view more actions`;
+  const alertMessage = mixedSelectedStatus && t("contextMenu.mixedStatusWarning");
 
   return (
     /*

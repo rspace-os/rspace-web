@@ -366,7 +366,7 @@ export default function FolderTree({
         </Box>
       )}
       <Tree<FolderTreeNode, string>
-        aria-label="tree view of shared folder"
+        aria-label={t("folderTree.sharedFolderAria")}
         getId={(item) => item.id.toString()}
         expandedItems={[...expandedFolders]}
         onExpandedItemsChange={(_event, newlyExpandedFolders) => {

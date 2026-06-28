@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -233,14 +234,14 @@ export default class SearchStore {
         const name = this.savedBaskets.find((b) => b.id === id)?.name ?? "The Basket";
         if (
           await uiStore.confirm(
-            `Deleting Basket`,
+            i18n.t("baskets.delete.title", { ns: "inventory" }),
             <>
-              You are about to delete {name}.
+              {i18n.t("baskets.delete.bodyPrefix", { ns: "inventory", name })}
               <br />
-              The contents of the Basket will not be affected.
+              {i18n.t("baskets.delete.bodySuffix", { ns: "inventory" })}
             </>,
-            "OK",
-            "CANCEL",
+            i18n.t("common:actions.ok"),
+            i18n.t("identifierConfirm.cancelButton", { ns: "inventory" }),
           )
         ) {
           const res = await showToastWhilstPending("Deleting Basket...", ApiService.delete<void>(`baskets`, id));

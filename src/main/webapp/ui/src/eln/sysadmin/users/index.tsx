@@ -64,7 +64,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import docLinks from "../../../assets/DocLinks";
@@ -190,6 +190,7 @@ const TagDialog = ({
   onClose: () => void;
   setTags: (addedTags: Array<string>, deletedTags: Array<string>) => Promise<void>;
 }) => {
+  const { t } = useTranslation("system");
   const { t: tCommon } = useTranslation("common");
   const { addAlert } = React.useContext(AlertContext);
   const [commonTags, setCommonTags] = React.useState<RsSet<string>>(new RsSet([]));
@@ -213,18 +214,15 @@ const TagDialog = ({
   return (
     <Portal>
       <Dialog open={open} onClose={onClose}>
-        <DialogTitle component="h3">
-          Tagging {selectedUsers.length} user
-          {(selectedUsers.length ?? 0) > 1 && "s"}
-        </DialogTitle>
+        <DialogTitle component="h3">{t("usersPage.tagDialog.title", { count: selectedUsers.length })}</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2">
-              You can tag users to categorise them, and filter users by tag. These tags are only visible to System
-              Admins and Community Admins. If you&apos;ve selected several users, only shared tags will be shown.{" "}
-              <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers}>
-                Read more about tagging users here.
-              </Link>{" "}
+              <Trans
+                ns="system"
+                i18nKey="usersPage.tagDialog.description"
+                components={[<Link key="link" target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />]}
+              />
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
               {visibleTags.map((tag) => (
@@ -241,7 +239,7 @@ const TagDialog = ({
               <Box>
                 <Chip
                   icon={<AddIcon />}
-                  label="Add Tag"
+                  label={tCommon("tags.addTag")}
                   color="primary"
                   skipFocusWhenDisabled
                   onClick={(e) => {
@@ -398,6 +396,7 @@ const PiAction = ({
   setActionsAnchorEl: (_: null) => void;
   autoFocus: boolean;
 }) => {
+  const { t } = useTranslation("system");
   const { t: tCommon } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
@@ -511,7 +510,9 @@ const PiAction = ({
                   })();
                 }}
               >
-                <DialogTitle>{action === "grant" ? "Grant user PI role" : "Revoke PI role from user"}</DialogTitle>
+                <DialogTitle>
+                  {t(`usersPage.piRoleDialog.${action === "grant" ? "grantTitle" : "revokeTitle"}`)}
+                </DialogTitle>
                 <DialogContent>
                   {FetchingData.match(verificationPasswordNeeded, {
                     loading: () => (
@@ -521,7 +522,7 @@ const PiAction = ({
                           mb: 2,
                         }}
                       >
-                        Loading
+                        {t("usersPage.piRoleDialog.loading")}
                       </DialogContentText>
                     ),
                     error: (errorMsg) => (
@@ -531,7 +532,7 @@ const PiAction = ({
                           mb: 2,
                         }}
                       >
-                        ERROR: {errorMsg}
+                        {t("usersPage.piRoleDialog.error", { error: errorMsg })}
                       </DialogContentText>
                     ),
                     success: (veriPwdNeeded) =>
@@ -542,7 +543,7 @@ const PiAction = ({
                             mb: 2,
                           }}
                         >
-                          Please set your verification password in My RSpace before performing this action.
+                          {t("usersPage.piRoleDialog.setVerificationPassword")}
                         </DialogContentText>
                       ) : (
                         <>
@@ -552,15 +553,18 @@ const PiAction = ({
                               mb: 2,
                             }}
                           >
-                            To {action === "grant" ? "grant the PI role to" : "revoke the PI role from"}{" "}
-                            <strong>{selectedUser.map((u) => u.fullName).orElse("")}</strong> please re-enter your
-                            password.
+                            <Trans
+                              ns="system"
+                              i18nKey={`usersPage.piRoleDialog.${action === "grant" ? "grantPrompt" : "revokePrompt"}`}
+                              values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
+                              components={[<strong key="strong" />]}
+                            />
                           </DialogContentText>
                           <TextField
                             type="password"
                             autoComplete="current-password"
                             size="small"
-                            label="Password"
+                            label={t("usersPage.piRoleDialog.passwordLabel")}
                             value={password}
                             onChange={(e) => {
                               setPassword(e.target.value);
@@ -585,7 +589,7 @@ const PiAction = ({
                     type="submit"
                     loading={false}
                     disabled={false}
-                    label={action === "grant" ? "Grant" : "Revoke"}
+                    label={t(`usersPage.piRoleDialog.${action === "grant" ? "grantAction" : "revokeAction"}`)}
                   />
                 </DialogActions>
               </form>
@@ -603,6 +607,7 @@ const SetUsernamAliasAction = ({
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
+  const { t } = useTranslation("system");
   const { t: tCommon } = useTranslation("common");
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
@@ -622,7 +627,7 @@ const SetUsernamAliasAction = ({
           <UserAliasIcon />
         </ListItemIcon>
         <ListItemText
-          primary="Set Username Alias"
+          primary={t("usersPage.aliasDialog.menuItem")}
           secondary={allowedToSetAlias.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
@@ -652,7 +657,7 @@ const SetUsernamAliasAction = ({
                     addAlert(
                       mkAlert({
                         variant: "success",
-                        message: "Successfully set username alias.",
+                        message: t("usersPage.aliasDialog.success"),
                       }),
                     );
                     setOpen(false);
@@ -661,7 +666,7 @@ const SetUsernamAliasAction = ({
                     if (error instanceof Error) {
                       addAlert(
                         mkAlert({
-                          title: "Could not set username alias.",
+                          title: t("usersPage.aliasDialog.errorTitle"),
                           message: error.message,
                           variant: "error",
                         }),
@@ -671,7 +676,7 @@ const SetUsernamAliasAction = ({
                 })();
               }}
             >
-              <DialogTitle>Set Username Alias</DialogTitle>
+              <DialogTitle>{t("usersPage.aliasDialog.title")}</DialogTitle>
               <DialogContent>
                 <DialogContentText
                   component="div"
@@ -680,15 +685,11 @@ const SetUsernamAliasAction = ({
                     mb: 2,
                   }}
                 >
-                  <Typography variant="body2">
-                    SysAdmins can set a username alias for a user, enabling both the username and its alias to be used
-                    during login. The alias is only recognised during the login process, and does not replace the user’s
-                    username as their main identifier inside RSpace.
-                  </Typography>
+                  <Typography variant="body2">{t("usersPage.aliasDialog.description")}</Typography>
                 </DialogContentText>
                 <TextField
                   size="small"
-                  label="Username Alias"
+                  label={t("usersPage.aliasDialog.fieldLabel")}
                   value={alias}
                   onChange={(e) => {
                     setAlias(e.target.value);
@@ -706,7 +707,12 @@ const SetUsernamAliasAction = ({
                 >
                   {tCommon("actions.cancel")}
                 </Button>
-                <SubmitSpinnerButton type="submit" loading={false} disabled={false} label="Set Alias" />
+                <SubmitSpinnerButton
+                  type="submit"
+                  loading={false}
+                  disabled={false}
+                  label={t("usersPage.aliasDialog.submit")}
+                />
               </DialogActions>
             </form>
           </Dialog>
@@ -795,7 +801,7 @@ const DeleteAction = ({
                 })();
               }}
             >
-              <DialogTitle>Deletion Confirmation</DialogTitle>
+              <DialogTitle>{t("usersPage.deleteDialog.title")}</DialogTitle>
               <DialogContent>
                 <DialogContentText
                   component="div"
@@ -807,11 +813,16 @@ const DeleteAction = ({
                   {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
-                        The user you are trying to delete is <strong>{t("usersPage.ownerOfFormsAndTemplates")}</strong>{" "}
-                        To ensure continued access to these Forms/Templates, the system
-                        <strong> {t("usersPage.willTransferOwnership")}</strong> of those files to
-                        <strong> {t("usersPage.thisSystemAdministrator")}</strong> account. Forms and Templates that are
-                        not used by others will be deleted.
+                        <Trans
+                          ns="system"
+                          i18nKey="usersPage.deleteDialog.formsAndTemplatesNotice"
+                          components={[<strong key="owner" />, <strong key="transfer" />, <strong key="admin" />]}
+                          values={{
+                            ownerOfFormsAndTemplates: t("usersPage.ownerOfFormsAndTemplates"),
+                            willTransferOwnership: t("usersPage.willTransferOwnership"),
+                            thisSystemAdministrator: t("usersPage.thisSystemAdministrator"),
+                          }}
+                        />
                       </Typography>
                     </Alert>
                   )}
@@ -821,7 +832,7 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    User deletion is irreversible, and all documents will be deleted.
+                    {t("usersPage.deleteDialog.irreversible")}
                   </Typography>
                   {user.hasFormsUsedByOtherUsers && (
                     <Typography
@@ -830,11 +841,16 @@ const DeleteAction = ({
                         mb: 1,
                       }}
                     >
-                      The user you are trying to delete is <strong>{t("usersPage.ownerOfForms")}</strong>
-                      To ensure continued access to these Forms, the system
-                      <strong> {t("usersPage.willTransferOwnership")}</strong> of the Forms to
-                      <strong> {t("usersPage.thisSystemAdministrator")}</strong> account. Forms that are not used by
-                      others will be deleted.
+                      <Trans
+                        ns="system"
+                        i18nKey="usersPage.deleteDialog.formsNotice"
+                        components={[<strong key="owner" />, <strong key="transfer" />, <strong key="admin" />]}
+                        values={{
+                          ownerOfForms: t("usersPage.ownerOfForms"),
+                          willTransferOwnership: t("usersPage.willTransferOwnership"),
+                          thisSystemAdministrator: t("usersPage.thisSystemAdministrator"),
+                        }}
+                      />
                     </Typography>
                   )}
                   <Typography
@@ -843,8 +859,7 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    An XML archive will be made of the user&apos;s work which will be available for a short time on the
-                    server.
+                    {t("usersPage.deleteDialog.xmlArchive")}
                   </Typography>
                   <Typography
                     variant="body2"
@@ -852,8 +867,12 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    To delete <strong>{selectedUser.map((u) => u.fullName).orElse("")}</strong>
-                    &apos;s account please enter their username.
+                    <Trans
+                      ns="system"
+                      i18nKey="usersPage.deleteDialog.confirmUsername"
+                      values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
+                      components={[<strong key="strong" />]}
+                    />
                   </Typography>
                 </DialogContentText>
                 <TextField
@@ -1371,7 +1390,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
       </Panel>
       <ColumnsPanelTrigger style={{ marginLeft: "auto" }}>
         <ViewColumnIcon sx={{ fontSize: 18, mr: 1 }} />
-        Columns
+        {t("usersPage.columns.button")}
       </ColumnsPanelTrigger>
       <GridToolbarExportContainer>
         <ExportMenuItem
@@ -1379,14 +1398,16 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
             await exportAllRows();
           }}
         >
-          Export all rows to CSV
+          {t("usersPage.export.allRows")}
         </ExportMenuItem>
         <ExportMenuItem
           onClick={() => {
             exportVisibleRows();
           }}
         >
-          Export {selectedCount > 0 ? "selected" : "this page of"} rows to CSV
+          {t("usersPage.export.visibleRows", {
+            scope: selectedCount > 0 ? t("usersPage.export.selected") : t("usersPage.export.thisPageOf"),
+          })}
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </DataGridToolbar>
@@ -1513,7 +1534,7 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value?: boolean }) =>
-        params.value ? <LockIcon color="error" aria-label="Locked" aria-hidden="false" /> : <>&mdash;</>,
+        params.value ? <LockIcon color="error" aria-label={t("usersPage.columns.locked")} aria-hidden="false" /> : "—",
     }),
     DataGridColumn.newColumnWithFieldName<"groups", User>("groups", {
       headerName: "Group Membership",
@@ -1521,9 +1542,9 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value?: Array<string>; tabIndex: number }): React.ReactNode => {
-        if (!params.value) return <>&mdash;</>;
+        if (!params.value) return <>{`—`}</>;
         const value = params.value;
-        if (value.length === 0) return <>&mdash;</>;
+        if (value.length === 0) return <>{`—`}</>;
         return (
           <Chip
             role="none"
@@ -1539,8 +1560,8 @@ export const UsersPage = (): React.ReactNode => {
                 sx={{
                   mr: 0,
                 }}
-                ariaLabel={`${value.length} group${value.length === 1 ? "" : "s"}. Show list of groups.`}
-                title="Show list of groups"
+                ariaLabel={t("usersPage.groupMembership.showListAria", { count: value.length })}
+                title={t("usersPage.groupMembership.showList")}
                 tabIndex={params.tabIndex}
                 size="small"
                 icon={<ExpandCircleDownIcon />}
@@ -1567,9 +1588,9 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value?: Array<string>; tabIndex: number }) => {
-        if (!params.value) return <>&mdash;</>;
+        if (!params.value) return <>{`—`}</>;
         const value = params.value;
-        if (value.length === 0) return <>&mdash;</>;
+        if (value.length === 0) return <>{`—`}</>;
         return (
           <Chip
             role="none"
@@ -1585,8 +1606,8 @@ export const UsersPage = (): React.ReactNode => {
                 sx={{
                   mr: 0,
                 }}
-                ariaLabel={`${value.length} tag${value.length === 1 ? "" : "s"}. Show list of tags.`}
-                title="Show list of tags"
+                ariaLabel={t("usersPage.tags.showListAria", { count: value.length })}
+                title={t("usersPage.tags.showList")}
                 tabIndex={params.tabIndex}
                 size="small"
                 icon={<ExpandCircleDownIcon />}
@@ -1678,11 +1699,11 @@ export const UsersPage = (): React.ReactNode => {
                     >
                       <TableBody>
                         <TableRow>
-                          <TableCell>Available Seats</TableCell>
+                          <TableCell>{t("usersPage.summary.availableSeats")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
+                              loading: () => <>{`—`}</>,
+                              error: () => <>{`—`}</>,
                               success: (listing) => listing.availableSeats,
                             })}
                           </TableCell>
@@ -1695,28 +1716,28 @@ export const UsersPage = (): React.ReactNode => {
                           </TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
+                              loading: () => <>{`—`}</>,
+                              error: () => <>{`—`}</>,
                               success: (listing) => listing.billableUsersCount,
                             })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell>System Admins</TableCell>
+                          <TableCell>{t("usersPage.summary.systemAdmins")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
+                              loading: () => <>{`—`}</>,
+                              error: () => <>{`—`}</>,
                               success: (listing) => listing.systemAdminCount,
                             })}
                           </TableCell>
                         </TableRow>
                         <TableRow>
-                          <TableCell>Community Admins</TableCell>
+                          <TableCell>{t("usersPage.summary.communityAdmins")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
+                              loading: () => <>{`—`}</>,
+                              error: () => <>{`—`}</>,
                               success: (listing) => listing.communityAdminCount,
                             })}
                           </TableCell>
@@ -1729,8 +1750,8 @@ export const UsersPage = (): React.ReactNode => {
                           </TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>&mdash;</>,
-                              error: () => <>&mdash;</>,
+                              loading: () => <>{`—`}</>,
+                              error: () => <>{`—`}</>,
                               success: (listing) => listing.totalUsersCount,
                             })}
                           </TableCell>
@@ -1746,12 +1767,11 @@ export const UsersPage = (): React.ReactNode => {
                       maxWidth: 575,
                     }}
                   >
-                    You can search, filter, and tag user accounts, as well as export summary information about the users
-                    on this server. See our{" "}
-                    <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers}>
-                      Tagging docs
-                    </Link>{" "}
-                    for more.
+                    <Trans
+                      ns="system"
+                      i18nKey="usersPage.intro"
+                      components={[<Link key="link" target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />]}
+                    />
                   </Typography>
                   <Box sx={{ height: 4 }} />
                   <Box sx={{ width: "100%" }}>
@@ -1763,14 +1783,12 @@ export const UsersPage = (): React.ReactNode => {
                             height: "36px",
                           }}
                         >
-                          Loading listing of users.
+                          {t("usersPage.loadingListing")}
                         </Typography>
                       ),
                       error: (error) => (
                         <>
-                          <Typography variant="body2">
-                            Failed to load listing of users. Please try refreshing.
-                          </Typography>
+                          <Typography variant="body2">{t("usersPage.loadingError")}</Typography>
                           <samp>{error}</samp>
                         </>
                       ),

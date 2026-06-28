@@ -25,6 +25,8 @@ import type { ListOfMaterials, Material } from "../../stores/models/MaterialsMod
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import UsedQuantityField from "./UsedQuantityField";
 
+const EM_DASH = "—";
+
 const colorCodedQuantity = (
   material: Material,
   list: ListOfMaterials,
@@ -302,7 +304,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {material.usedQuantity ? material.usedQuantityLabel : <>&mdash;</>}
+                    {material.usedQuantity ? material.usedQuantityLabel : EM_DASH}
                   </TableSubCell>
                   <TableSubCell
                     data-test-id={`material-inventory-quantity-${globalId}`}
@@ -311,7 +313,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {hasQuantity(record).isEmpty() || noQuantitySample ? <>&mdash;</> : material.inventoryQuantityLabel}
+                    {hasQuantity(record).isEmpty() || noQuantitySample ? EM_DASH : material.inventoryQuantityLabel}
                   </TableSubCell>
                 </TableCell>
                 {editingMode && material.canEditQuantity ? (
@@ -351,11 +353,9 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                     <TableSubCell flex={3}>
                       <Checkbox disabled={true} />
                     </TableSubCell>
-                    <TableSubCell flex={4}>
-                      <>&mdash;</>
-                    </TableSubCell>
+                    <TableSubCell flex={4}>{EM_DASH}</TableSubCell>
                     <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
-                      <>&mdash;</>
+                      {EM_DASH}
                     </TableSubCell>
                   </TableCell>
                 ) : (

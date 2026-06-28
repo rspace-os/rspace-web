@@ -7,7 +7,9 @@ import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
+import i18n from "../../modules/common/i18n";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import type { UseState } from "../../util/types";
@@ -25,107 +27,108 @@ import { BookingType, ErrorReason, Order } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 
-const TABLE_HEADER_CELLS = [
+const makeBookingHeaderCells = () => [
   {
     id: "bookingID" as const,
     numeric: false,
-    label: "Booking ID",
+    label: i18n.t("tinyMce.clustermarket.columns.bookingId", { ns: "apps" }),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: "Equipment Name",
+    label: i18n.t("tinyMce.clustermarket.columns.equipmentName", { ns: "apps" }),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: "Manufacturer",
+    label: i18n.t("tinyMce.clustermarket.columns.manufacturer", { ns: "apps" }),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: "Model",
+    label: i18n.t("tinyMce.clustermarket.columns.model", { ns: "apps" }),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: "Booked by",
+    label: i18n.t("tinyMce.clustermarket.columns.bookedBy", { ns: "apps" }),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: "Start Time",
+    label: i18n.t("tinyMce.clustermarket.columns.startTime", { ns: "apps" }),
   },
   {
     id: "duration" as const,
     numeric: false,
-    label: "Duration (mins)",
+    label: i18n.t("tinyMce.clustermarket.columns.durationMins", { ns: "apps" }),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: "Booking Type",
+    label: i18n.t("tinyMce.clustermarket.columns.bookingType", { ns: "apps" }),
   },
   {
     id: "status" as const,
     numeric: false,
-    label: "Status",
+    label: i18n.t("tinyMce.clustermarket.columns.status", { ns: "apps" }),
   },
 ];
 // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
 // therefore its OK to just cache notes in the DB along with the other booking details
-const maintenanceNotes = {
+const makeMaintenanceNotesHeader = () => ({
   id: "maintenance_notes",
   numeric: false,
-  label: "Maintenance notes",
-};
-const EQUIPMENT_TABLE_HEADER_CELLS = [
+  label: i18n.t("tinyMce.clustermarket.columns.maintenanceNotes", { ns: "apps" }),
+});
+const makeEquipmentHeaderCells = () => [
   {
     id: "equipmentID" as const,
     numeric: false,
-    label: "Equipment ID",
+    label: i18n.t("tinyMce.clustermarket.columns.equipmentId", { ns: "apps" }),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: "Equipment Name",
+    label: i18n.t("tinyMce.clustermarket.columns.equipmentName", { ns: "apps" }),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: "Manufacturer",
+    label: i18n.t("tinyMce.clustermarket.columns.manufacturer", { ns: "apps" }),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: "Model",
+    label: i18n.t("tinyMce.clustermarket.columns.model", { ns: "apps" }),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: "Booking Type",
+    label: i18n.t("tinyMce.clustermarket.columns.bookingType", { ns: "apps" }),
   },
   {
     id: "bookingID" as const,
     numeric: false,
-    label: "Last use",
+    label: i18n.t("tinyMce.clustermarket.columns.lastUse", { ns: "apps" }),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: "On date",
+    label: i18n.t("tinyMce.clustermarket.columns.onDate", { ns: "apps" }),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: "Booked by",
+    label: i18n.t("tinyMce.clustermarket.columns.bookedBy", { ns: "apps" }),
   },
 ];
 type ClustermarketArgs = {
   defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
-let VISIBLE_HEADER_CELLS: typeof TABLE_HEADER_CELLS | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
+let VISIBLE_HEADER_CELLS: ReturnType<typeof makeBookingHeaderCells> | ReturnType<typeof makeEquipmentHeaderCells> =
+  makeBookingHeaderCells();
 let SELECTED_BOOKINGS: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = [];
 export const getSelectedBookings = (): ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =>
   SELECTED_BOOKINGS;
@@ -140,7 +143,11 @@ function Clustermarket({
   defaultBookingType = BookingType.BOOKED,
   clustermarket_web_url,
 }: ClustermarketArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const bookingHeaderCells = makeBookingHeaderCells();
+  const equipmentHeaderCells = makeEquipmentHeaderCells();
+  const maintenanceNotes = makeMaintenanceNotesHeader();
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> = useState(
     [] as Array<BookingAndEquipmentDetails>,
   );
@@ -155,6 +162,7 @@ function Clustermarket({
   const [bookingType, setBookingType] = useLocalStorage("clustermarketBookingType", defaultBookingType);
   const [isMaintenance, setIsMaintenance] = useLocalStorage("clustermarketIsMaintenance", false);
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
+  VISIBLE_HEADER_CELLS = bookingType === BookingType.EQUIPMENT ? equipmentHeaderCells : bookingHeaderCells;
   const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (!headers.find((header) => header.id === maintenanceNotes.id)) {
       // @ts-expect-error type mismatch
@@ -170,13 +178,13 @@ function Clustermarket({
   };
   const setHeadersByBookingType = (newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE], newIsMaintenance: boolean) => {
     if (newBookingType === BookingType.EQUIPMENT) {
-      VISIBLE_HEADER_CELLS = isMaintenance
-        ? addMaintanceNotesToHeaders(EQUIPMENT_TABLE_HEADER_CELLS)
-        : removeMaintanceNotesFromHeaders(EQUIPMENT_TABLE_HEADER_CELLS);
+      VISIBLE_HEADER_CELLS = newIsMaintenance
+        ? addMaintanceNotesToHeaders(equipmentHeaderCells)
+        : removeMaintanceNotesFromHeaders(equipmentHeaderCells);
     } else {
       VISIBLE_HEADER_CELLS = newIsMaintenance
-        ? addMaintanceNotesToHeaders(TABLE_HEADER_CELLS)
-        : removeMaintanceNotesFromHeaders(TABLE_HEADER_CELLS);
+        ? addMaintanceNotesToHeaders(bookingHeaderCells)
+        : removeMaintanceNotesFromHeaders(bookingHeaderCells);
     }
   };
   function handleRequestError(error: {
@@ -284,15 +292,19 @@ function Clustermarket({
               data-testid="booked_radio"
               value={BookingType.BOOKED}
               control={<Radio />}
-              label="Booked"
+              label={t("tinyMce.clustermarket.bookingTypes.booked")}
             />
             <FormControlLabel
               data-testid="booked_and_completed_radio"
               value={BookingType.ALL}
               control={<Radio />}
-              label="Booked and Completed"
+              label={t("tinyMce.clustermarket.bookingTypes.all")}
             />
-            <FormControlLabel value={BookingType.EQUIPMENT} control={<Radio />} label="Booked Equipment" />
+            <FormControlLabel
+              value={BookingType.EQUIPMENT}
+              control={<Radio />}
+              label={t("tinyMce.clustermarket.bookingTypes.equipment")}
+            />
           </RadioGroup>
         </FormControl>
         <FormControlLabel
@@ -304,12 +316,12 @@ function Clustermarket({
               color="primary"
               slotProps={{
                 input: {
-                  "aria-label": "maintenance",
+                  "aria-label": t("tinyMce.clustermarket.maintenanceAria"),
                 },
               }}
             />
           }
-          label={`maintenance only`}
+          label={t("tinyMce.clustermarket.maintenanceOnly")}
         />
         <Grid container spacing={1}>
           <Grid size={12}>

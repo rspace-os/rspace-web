@@ -204,13 +204,13 @@ describe("StoichiometryDialog", () => {
   it("shows calculate button when no table is present", async () => {
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    expect(await screen.findByRole("button", { name: "Calculate Stoichiometry" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" })).toBeVisible();
   });
 
   it("calculate dialog has no accessibility violations", async () => {
     const { baseElement } = render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    await screen.findByRole("button", { name: "Calculate Stoichiometry" });
+    await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" });
 
     await expectAccessible(baseElement);
   });
@@ -235,7 +235,7 @@ describe("StoichiometryDialog", () => {
 
     render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreated} />);
 
-    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
+    await user.click(await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" }));
 
     expect(await screen.findByRole("grid")).toBeVisible();
     expect(onTableCreated).toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe("StoichiometryDialog", () => {
 
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
+    await user.click(await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" }));
 
     expect(await screen.findByRole("grid")).toBeVisible();
     expect(hasStoichiometryRequest("POST")).toBe(true);
@@ -302,10 +302,10 @@ describe("StoichiometryDialog", () => {
 
     render(<StoichiometryDialogWithCalculateButtonStory />);
 
-    await user.click(await screen.findByRole("button", { name: "Calculate Stoichiometry" }));
+    await user.click(await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" }));
 
     // The calculate button stays visible because the table was never created.
-    expect(await screen.findByRole("button", { name: "Calculate Stoichiometry" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "common:stoichiometry.dialog.calculate" })).toBeVisible();
     const errorAlert = await screen.findByRole("alert");
     expect(errorAlert).toHaveTextContent(createErrorMessage);
   });
@@ -315,7 +315,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    expect(screen.queryByRole("button", { name: "Save Changes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common:stoichiometry.dialog.saveChanges" })).not.toBeInTheDocument();
   });
 
   it("shows save button when limiting reagent is changed", async () => {
@@ -325,13 +325,12 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(
-      screen.getByRole("radio", {
-        name: /Select Cyclopentadiene as limiting reagent/,
-      }),
-    );
+    const radios = screen.getAllByRole("radio", {
+      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+    });
+    await user.click(radios[1]);
 
-    expect(await screen.findByRole("button", { name: "Save Changes" })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "common:stoichiometry.dialog.saveChanges" })).toBeVisible();
   });
 
   it("hides save button after saving changes", async () => {
@@ -341,16 +340,15 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(
-      screen.getByRole("radio", {
-        name: /Select Cyclopentadiene as limiting reagent/,
-      }),
-    );
+    const radios = screen.getAllByRole("radio", {
+      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+    });
+    await user.click(radios[1]);
 
-    await user.click(await screen.findByRole("button", { name: "Save Changes" }));
+    await user.click(await screen.findByRole("button", { name: "common:stoichiometry.dialog.saveChanges" }));
 
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: "Save Changes" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "common:stoichiometry.dialog.saveChanges" })).not.toBeInTheDocument();
     });
   });
 
@@ -361,13 +359,12 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(
-      screen.getByRole("radio", {
-        name: /Select Cyclopentadiene as limiting reagent/,
-      }),
-    );
+    const radios = screen.getAllByRole("radio", {
+      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+    });
+    await user.click(radios[1]);
 
-    await user.click(await screen.findByRole("button", { name: "Save Changes" }));
+    await user.click(await screen.findByRole("button", { name: "common:stoichiometry.dialog.saveChanges" }));
 
     await waitFor(() => {
       expect(hasStoichiometryRequest("PUT")).toBe(true);
@@ -379,7 +376,7 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    expect(screen.getByRole("button", { name: "actions.delete" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "common:actions.delete" })).toBeVisible();
   });
 
   it("shows confirmation dialog when delete button is clicked", async () => {
@@ -389,11 +386,11 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(screen.getByRole("button", { name: "actions.delete" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
 
     expect(
       await screen.findByRole("dialog", {
-        name: /Delete Stoichiometry Table/,
+        name: "common:stoichiometry.dialog.deleteTitle",
       }),
     ).toBeVisible();
   });
@@ -405,15 +402,15 @@ describe("StoichiometryDialog", () => {
 
     await screen.findByRole("grid");
 
-    await user.click(screen.getByRole("button", { name: "actions.delete" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
 
     const confirmDialog = await screen.findByRole("dialog", {
-      name: /Delete Stoichiometry Table/,
+      name: "common:stoichiometry.dialog.deleteTitle",
     });
 
     await user.click(
       within(confirmDialog).getByRole("button", {
-        name: "Delete",
+        name: "common:actions.delete",
       }),
     );
 

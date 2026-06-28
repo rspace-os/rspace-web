@@ -59,11 +59,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       <Table aria-label="Inventory update test table">
         <TableHead>
           <TableRow>
-            <TableCell aria-label="Select molecule" />
-            <TableCell>Molecule</TableCell>
-            <TableCell>In Stock</TableCell>
-            <TableCell>Will Use</TableCell>
-            <TableCell>Remaining</TableCell>
+            <TableCell aria-label="common:stoichiometry.inventoryUpdate.selectMoleculeAria" />
+            <TableCell>common:stoichiometry.inventoryUpdate.molecule</TableCell>
+            <TableCell>common:stoichiometry.inventoryUpdate.inStock</TableCell>
+            <TableCell>common:stoichiometry.inventoryUpdate.willUse</TableCell>
+            <TableCell>common:stoichiometry.inventoryUpdate.remaining</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>{ui}</TableBody>
@@ -72,10 +72,10 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
 
   const columnIndexes = {
     Actions: 0,
-    Molecule: 1,
-    "In Stock": 2,
-    "Will Use": 3,
-    Remaining: 4,
+    "common:stoichiometry.inventoryUpdate.molecule": 1,
+    "common:stoichiometry.inventoryUpdate.inStock": 2,
+    "common:stoichiometry.inventoryUpdate.willUse": 3,
+    "common:stoichiometry.inventoryUpdate.remaining": 4,
   } as const;
 
   const getMoleculeRow = (name: string) => {
@@ -133,16 +133,28 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("table", { name: "Inventory update test table" })).toBeVisible();
-    expect(screen.getByText("In Stock")).toBeVisible();
-    expect(screen.getByText("Will Use")).toBeVisible();
-    expect(screen.getByText("Remaining")).toBeVisible();
-    expect(screen.getByText("Molecule")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.inStock")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.willUse")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.remaining")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.molecule")).toBeVisible();
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toHaveAccessibleName("Ethanol");
-    expect(within(getMetric("Ethanol", "Molecule")).getByText("Ethanol")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Molecule")).getByText("reactant")).toBeVisible();
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("5.0 g")).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.molecule")).getByText("Ethanol"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.molecule")).getByText(
+        "common:stoichiometry.table.roles.reactant",
+      ),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("10.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText("5.0 g"),
+    ).toBeVisible();
   });
 
   it("only toggles when the checkbox is clicked", () => {
@@ -218,17 +230,23 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         }}
         selected={false}
         disabled={false}
-        helperText={
-          "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
-        }
+        helperText="common:stoichiometry.inventoryUpdate.stockDeductedWarning"
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
     );
 
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("5.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Molecule")).getByText("Stock Deducted")).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.molecule")).getByText(
+        "common:stoichiometry.inventoryLink.stockDeducted",
+      ),
+    ).toBeVisible();
   });
 
   it("shows a remaining warning and negative status when stock is insufficient", () => {
@@ -249,7 +267,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         unitLabel: "g",
       },
       remainingStatus: "negative",
-      warningText: "Insufficient Stock",
+      warningText: "common:stoichiometry.inventoryLink.insufficientStock",
     };
 
     renderInTable(
@@ -264,11 +282,24 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(getMetric("Ethanol", "Remaining")).toHaveAttribute("data-status", "negative");
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("4.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("-1.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("Insufficient Stock")).toBeVisible();
+    expect(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).toHaveAttribute(
+      "data-status",
+      "negative",
+    );
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("4.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("5.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText("-1.0 g"),
+    ).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText(
+        "common:stoichiometry.inventoryLink.insufficientStock",
+      ),
+    ).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -298,16 +329,16 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         molecule={{ ...molecule, inventoryLink: null }}
         selected={false}
         disabled={true}
-        helperText="Link an inventory item before updating stock."
+        helperText="common:stoichiometry.inventoryUpdate.linkRequired"
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
     );
 
-    expect(screen.getByText("Link an inventory item before updating stock.")).toBeVisible();
-    expect(screen.getByRole("alert")).toHaveTextContent("Link an inventory item before updating stock.");
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("—")).toBeVisible();
-    expect(screen.queryByText("Insufficient Stock")).not.toBeInTheDocument();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.linkRequired")).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent("common:stoichiometry.inventoryUpdate.linkRequired");
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("—")).toBeVisible();
+    expect(screen.queryByText("common:stoichiometry.inventoryLink.insufficientStock")).not.toBeInTheDocument();
   });
 
   it("disables the card when a linked inventory item has no quantity defined", () => {
@@ -343,8 +374,8 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("—")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("—")).toBeVisible();
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("—")).toBeVisible();
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("—")).toBeVisible();
   });
 
   it("disables the card when actual mass is not defined", () => {
@@ -373,17 +404,21 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         molecule={{ ...molecule, actualAmount: null }}
         selected={false}
         disabled={true}
-        helperText="Define actual mass before updating linked inventory stock."
+        helperText="common:stoichiometry.inventoryUpdate.missingActualMass"
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(screen.getByText("Define actual mass before updating linked inventory stock.")).toBeVisible();
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("— g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("— g")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.missingActualMass")).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("10.0 g"),
+    ).toBeVisible();
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("— g")).toBeVisible();
+    expect(
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText("— g"),
+    ).toBeVisible();
   });
 
   it("hides projected Will Use and Remaining metrics when stock was already deducted", () => {
@@ -419,19 +454,17 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         }}
         selected={false}
         disabled={true}
-        helperText="Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
+        helperText="common:stoichiometry.inventoryUpdate.stockDeductedWarning"
         stockDisplay={stockDisplay}
         onToggle={() => {}}
       />,
     );
 
-    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Will Use")).getByText("—")).toBeVisible();
-    expect(within(getMetric("Ethanol", "Remaining")).getByText("—")).toBeVisible();
     expect(
-      screen.getByText(
-        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
-      ),
+      within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.inStock")).getByText("10.0 g"),
     ).toBeVisible();
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.willUse")).getByText("—")).toBeVisible();
+    expect(within(getMetric("Ethanol", "common:stoichiometry.inventoryUpdate.remaining")).getByText("—")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.stockDeductedWarning")).toBeVisible();
   });
 });

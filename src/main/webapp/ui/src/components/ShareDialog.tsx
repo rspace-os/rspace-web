@@ -565,7 +565,7 @@ export function ShareDialog({
       } catch {}
       addAlert(
         mkAlert({
-          message: "Shares updated successfully.",
+          message: t("shareDialog.updatedSuccessfully"),
           variant: "success",
         }),
       );
@@ -591,16 +591,19 @@ export function ShareDialog({
     >
       <DialogTitle>
         {names.length === 1 ? (
-          <>
-            Share <strong>{names[0]}</strong>
-          </>
+          <Trans
+            ns="common"
+            i18nKey="shareDialog.titleSingle"
+            values={{ name: names[0] }}
+            components={[<strong key="strong" />]}
+          />
         ) : (
-          `Share ${names.length} ${pluralName}`
+          t("shareDialog.titleMultiple", { count: names.length, pluralName })
         )}
       </DialogTitle>
       <DialogContent>
         <Box sx={{ mb: 3, mt: 0.75 }}>
-          <VisuallyHiddenHeading variant="h3">Add users or groups to share with</VisuallyHiddenHeading>
+          <VisuallyHiddenHeading variant="h3">{t("shareDialog.addUsersOrGroups")}</VisuallyHiddenHeading>
           <Autocomplete
             options={shareOptionsWithState}
             loading={optionsLoading}
@@ -707,12 +710,20 @@ export function ShareDialog({
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {option.isDisabled
-                        ? `All of the ${pluralName} have already been shared with ${
-                            option.optionType === "GROUP" ? option.name : `${option.firstName} ${option.lastName}`
-                          }`
+                        ? t("shareDialog.optionDescriptions.alreadyShared", {
+                            pluralName,
+                            recipientName:
+                              option.optionType === "GROUP" ? option.name : `${option.firstName} ${option.lastName}`,
+                          })
                         : option.optionType === "GROUP"
-                          ? `${option.type} • ${option.members?.length || 0} members`
-                          : `User • ${option.username} • ${option.email}`}
+                          ? t("shareDialog.optionDescriptions.group", {
+                              type: option.type,
+                              memberCount: option.members?.length || 0,
+                            })
+                          : t("shareDialog.optionDescriptions.user", {
+                              username: option.username,
+                              email: option.email,
+                            })}
                     </Typography>
                   </Box>
                 </Box>
@@ -725,8 +736,8 @@ export function ShareDialog({
               return (
                 <TextField
                   {...textFieldProps}
-                  label="Add RSpace users or groups"
-                  placeholder="Type to filter groups and users..."
+                  label={t("shareDialog.autocomplete.label")}
+                  placeholder={t("shareDialog.autocomplete.placeholder")}
                   size="small"
                   slotProps={{
                     ...otherSlotProps,
@@ -743,7 +754,7 @@ export function ShareDialog({
                 />
               );
             }}
-            noOptionsText="No matches found. You can only share with groups you are in, and users in groups you are in."
+            noOptionsText={t("shareDialog.autocomplete.noMatches")}
             fullWidth
             clearOnBlur
             handleHomeEndKeys
@@ -784,17 +795,17 @@ export function ShareDialog({
                         <Stack spacing={3}>
                           {allDirectShares.length === 0 ? (
                             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                              This {singularName} is not directly shared with anyone.
+                              {t("shareDialog.noDirectShares", { singularName })}
                             </Typography>
                           ) : (
                             <TableContainer component={Paper} variant="outlined">
                               <Table size="small" sx={{ mb: 0 }}>
                                 <TableHead>
                                   <TableRow>
-                                    <TableCell>Shared With</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Permission</TableCell>
-                                    <TableCell>Location</TableCell>
+                                    <TableCell>{t("shareDialog.columns.sharedWith")}</TableCell>
+                                    <TableCell>{t("shareDialog.columns.type")}</TableCell>
+                                    <TableCell>{t("shareDialog.columns.permission")}</TableCell>
+                                    <TableCell>{t("shareDialog.columns.location")}</TableCell>
                                   </TableRow>
                                 </TableHead>
                                 <TableBody>
@@ -841,17 +852,17 @@ export function ShareDialog({
                                             }}
                                             size="small"
                                           >
-                                            <MenuItem value="READ">Read</MenuItem>
-                                            <MenuItem value="EDIT">Edit</MenuItem>
+                                            <MenuItem value="READ">{t("shareDialog.permissions.read")}</MenuItem>
+                                            <MenuItem value="EDIT">{t("shareDialog.permissions.edit")}</MenuItem>
                                             <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
-                                              Unshare
+                                              {t("shareDialog.permissions.unshare")}
                                             </MenuItem>
                                           </Select>
                                         </FormControl>
                                       </TableCell>
                                       <TableCell>
                                         {share.recipientType === "USER" ? (
-                                          <>&mdash;</>
+                                          "—"
                                         ) : (
                                           <>
                                             {shareFolderChanges.get(share.shareId.toString())?.name ||
@@ -929,17 +940,17 @@ export function ShareDialog({
                                             }}
                                             size="small"
                                           >
-                                            <MenuItem value="READ">Read</MenuItem>
-                                            <MenuItem value="EDIT">Edit</MenuItem>
+                                            <MenuItem value="READ">{t("shareDialog.permissions.read")}</MenuItem>
+                                            <MenuItem value="EDIT">{t("shareDialog.permissions.edit")}</MenuItem>
                                             <MenuItem value="UNSHARE" sx={{ color: "error.main" }} disabled>
-                                              Unshare
+                                              {t("shareDialog.permissions.unshare")}
                                             </MenuItem>
                                           </Select>
                                         </FormControl>
                                       </TableCell>
                                       <TableCell>
                                         {newShare.recipientType === "USER" ? (
-                                          <>&mdash;</>
+                                          "—"
                                         ) : (
                                           <>
                                             <Typography variant="body2" color="text.secondary">
@@ -979,16 +990,16 @@ export function ShareDialog({
                           {notebookShares.length > 0 && (
                             <Box>
                               <Typography variant="body1" component="h3" gutterBottom>
-                                As {docName} is shared into Notebooks, it is also shared with:
+                                {t("shareDialog.notebookShares.heading", { docName })}
                               </Typography>
                               <TableContainer component={Paper} variant="outlined" sx={{ my: 1 }}>
                                 <Table size="small" sx={{ mb: 0 }}>
                                   <TableHead>
                                     <TableRow>
-                                      <TableCell>Notebook</TableCell>
-                                      <TableCell>Shared With</TableCell>
-                                      <TableCell>Type</TableCell>
-                                      <TableCell>Permission</TableCell>
+                                      <TableCell>{t("shareDialog.columns.notebook")}</TableCell>
+                                      <TableCell>{t("shareDialog.columns.sharedWith")}</TableCell>
+                                      <TableCell>{t("shareDialog.columns.type")}</TableCell>
+                                      <TableCell>{t("shareDialog.columns.permission")}</TableCell>
                                     </TableRow>
                                   </TableHead>
                                   <TableBody>
@@ -1032,8 +1043,8 @@ export function ShareDialog({
                                               }}
                                               size="small"
                                             >
-                                              <MenuItem value="READ">Read</MenuItem>
-                                              <MenuItem value="EDIT">Edit</MenuItem>
+                                              <MenuItem value="READ">{t("shareDialog.permissions.read")}</MenuItem>
+                                              <MenuItem value="EDIT">{t("shareDialog.permissions.edit")}</MenuItem>
                                             </Select>
                                           </FormControl>
                                         </TableCell>
@@ -1043,8 +1054,7 @@ export function ShareDialog({
                                 </Table>
                               </TableContainer>
                               <Typography variant="body1" color="text.secondary">
-                                Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to
-                                alter the notebook's permissions.
+                                {t("shareDialog.notebookShares.inheritedPermissions")}
                               </Typography>
                             </Box>
                           )}
@@ -1057,16 +1067,23 @@ export function ShareDialog({
             ) : (
               <>
                 <Typography variant="h3" gutterBottom>
-                  Adding shares to {globalIds.length} {globalIds.length === 1 ? singularName : pluralName}
+                  {t("shareDialog.multipleSelection.heading", {
+                    count: globalIds.length,
+                    itemName: globalIds.length === 1 ? singularName : pluralName,
+                  })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the{" "}
-                  <Link href="/record/share/manage">shared {pluralName} page</Link>.
+                  <Trans
+                    ns="common"
+                    i18nKey="shareDialog.multipleSelection.description"
+                    values={{ pluralName }}
+                    components={[<Link key="link" href="/record/share/manage" />]}
+                  />
                 </Typography>
                 {newShares.size > 0 && (
                   <Box>
                     <Typography variant="h6" gutterBottom>
-                      New shares to be added:
+                      {t("shareDialog.multipleSelection.newSharesHeading")}
                     </Typography>
                     <Stack spacing={2}>
                       {/* Get unique shares across all documents */}
@@ -1113,12 +1130,19 @@ export function ShareDialog({
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
                                 {documentCount === globalIds.length
-                                  ? `All ${globalIds.length} ${pluralName}`
-                                  : `${documentCount} of ${globalIds.length} ${globalIds.length === 1 ? singularName : pluralName}`}
+                                  ? t("shareDialog.multipleSelection.allItems", {
+                                      count: globalIds.length,
+                                      pluralName,
+                                    })
+                                  : t("shareDialog.multipleSelection.someItems", {
+                                      documentCount,
+                                      totalCount: globalIds.length,
+                                      itemName: globalIds.length === 1 ? singularName : pluralName,
+                                    })}
                               </Typography>
                               {share.recipientType === "GROUP" && (
                                 <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-                                  Location: {share.locationName || "/"}
+                                  {t("shareDialog.locationLabel", { location: share.locationName || "/" })}
                                 </Typography>
                               )}
                             </Box>
@@ -1177,10 +1201,10 @@ export function ShareDialog({
                                 }}
                                 size="small"
                               >
-                                <MenuItem value="READ">Read</MenuItem>
-                                <MenuItem value="EDIT">Edit</MenuItem>
+                                <MenuItem value="READ">{t("shareDialog.permissions.read")}</MenuItem>
+                                <MenuItem value="EDIT">{t("shareDialog.permissions.edit")}</MenuItem>
                                 <MenuItem value="UNSHARE" sx={{ color: "error.main" }}>
-                                  Remove
+                                  {t("shareDialog.permissions.remove")}
                                 </MenuItem>
                               </Select>
                             </FormControl>

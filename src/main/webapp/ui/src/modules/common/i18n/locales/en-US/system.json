@@ -27,12 +27,72 @@
   "usersPage": {
     "actionsAriaLabel": "Actions menu for selected rows",
     "actionsButton": "Actions",
+    "aliasDialog": {
+      "description": "SysAdmins can set a username alias for a user, enabling both the username and its alias to be used during login. The alias is only recognised during the login process, and does not replace the user’s username as their main identifier inside RSpace.",
+      "errorTitle": "Could not set username alias.",
+      "fieldLabel": "Username Alias",
+      "menuItem": "Set Username Alias",
+      "submit": "Set Alias",
+      "success": "Successfully set username alias.",
+      "title": "Set Username Alias"
+    },
     "billableUsers": "Billable Users",
     "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
+    "columns": {
+      "button": "Columns",
+      "locked": "Locked"
+    },
+    "communityAdmins": "Community Admins",
+    "deleteDialog": {
+      "confirmUsername": "To delete <0>{fullName}</0>'s account please enter their username.",
+      "formsAndTemplatesNotice": "The user you are trying to delete is <0>{ownerOfFormsAndTemplates}</0> To ensure continued access to these Forms/Templates, the system<1> {willTransferOwnership}</1> of those files to<2> {thisSystemAdministrator}</2> account. Forms and Templates that are not used by others will be deleted.",
+      "formsNotice": "The user you are trying to delete is <0>{ownerOfForms}</0> To ensure continued access to these Forms, the system<1> {willTransferOwnership}</1> of the Forms to<2> {thisSystemAdministrator}</2> account. Forms that are not used by others will be deleted.",
+      "irreversible": "User deletion is irreversible, and all documents will be deleted.",
+      "title": "Deletion Confirmation",
+      "xmlArchive": "An XML archive will be made of the user's work which will be available for a short time on the server."
+    },
+    "export": {
+      "allRows": "Export all rows to CSV",
+      "selected": "selected",
+      "thisPageOf": "this page of",
+      "visibleRows": "Export {scope} rows to CSV"
+    },
     "filterAriaLabel": "Filter users",
     "filtersButton": "Filters",
+    "groupMembership": {
+      "showList": "Show list of groups",
+      "showListAria": "{count} group(s). Show list of groups."
+    },
+    "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <0>Tagging docs</0> for more.",
+    "loadingError": "Failed to load listing of users. Please try refreshing.",
+    "loadingListing": "Loading listing of users.",
     "ownerOfForms": "the owner of Forms that are used by other users.",
     "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
+    "piRoleDialog": {
+      "error": "ERROR: {error}",
+      "grantAction": "Grant",
+      "grantPrompt": "To grant the PI role to <0>{fullName}</0> please re-enter your password.",
+      "grantTitle": "Grant user PI role",
+      "loading": "Loading",
+      "passwordLabel": "Password",
+      "revokeAction": "Revoke",
+      "revokePrompt": "To revoke the PI role from <0>{fullName}</0> please re-enter your password.",
+      "revokeTitle": "Revoke PI role from user",
+      "setVerificationPassword": "Please set your verification password in My RSpace before performing this action."
+    },
+    "summary": {
+      "availableSeats": "Available Seats",
+      "communityAdmins": "Community Admins",
+      "systemAdmins": "System Admins"
+    },
+    "tagDialog": {
+      "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <0>Read more about tagging users here.</0>",
+      "title": "Tagging {count} {count, plural, one {user} other {users}}"
+    },
+    "tags": {
+      "showList": "Show list of tags",
+      "showListAria": "{count} tag(s). Show list of tags."
+    },
     "thisSystemAdministrator": "this System Administrator",
     "totalUsers": "Total Users",
     "totalUsersTooltip": "All users including admins and those with disabled accounts.",

@@ -34,6 +34,7 @@ export default interface Resources {
       "connect": "Connect",
       "delete": "Delete",
       "disconnect": "Disconnect",
+      "refresh": "Refresh",
       "remove": "Remove",
       "save": "Save",
       "test": "Test"
@@ -70,6 +71,7 @@ export default interface Resources {
         "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
         "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
+        "dmptoolImportDesc": "Importing a DMP{serverAlias, select, '' {} other { from {serverAlias}}} will make it available to view and reference within RSpace.",
         "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
         "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
         "error": {
@@ -94,6 +96,11 @@ export default interface Resources {
         "noDmps": "No DMPs",
         "noProjects": "No projects found",
         "notSpecified": "Not Specified",
+        "search": {
+          "collaborators": "Collaborators",
+          "filters": "Search filters",
+          "funder": "Funder"
+        },
         "selectAllAriaLabel": "Select all DMPs on this page",
         "selectDmpAriaLabel": "Select {title}",
         "selectPlanAriaLabel": "Select plan: {label}"
@@ -102,6 +109,11 @@ export default interface Resources {
       "dmponline": "DMPonline",
       "dmptool": "DMPTool",
       "dsw": "DSW / FAIR Wizard",
+      "endpoint": {
+        "importFailed": "{count, plural, one {Failed to import DMP.} other {Failed to import DMPs.}}",
+        "importSuccess": "{count, plural, one {Successfully imported DMP.} other {Successfully imported {count} DMPs.}}",
+        "listFailed": "Failed to get available DMPs."
+      },
       "scope": {
         "both": "Both",
         "mine": "Mine",
@@ -136,6 +148,12 @@ export default interface Resources {
     "integrationCard": {
       "disable": "DISABLE",
       "enable": "ENABLE",
+      "moreInfo": {
+        "docsOnlyPrefix": "See our",
+        "suffix": "for more.",
+        "websiteMiddle": "and our",
+        "websitePrefix": "See"
+      },
       "setup": "Setup"
     },
     "integrations": {
@@ -741,6 +759,13 @@ export default interface Resources {
       },
       "title": "Apps"
     },
+    "previewInfo": {
+      "chemistryStatus": {
+        "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
+        "error": "Error checking chemistry integration: {error}",
+        "loading": "Checking chemistry integration status..."
+      }
+    },
     "pyrat": {
       "columnVisibility": {
         "hideSettings": "Hide column visibility settings",
@@ -775,6 +800,32 @@ export default interface Resources {
         "name": "Name",
         "structureAlt": "Chemical structure"
       },
+      "clustermarket": {
+        "bookingTypes": {
+          "all": "Booked and Completed",
+          "booked": "Booked",
+          "equipment": "Booked Equipment"
+        },
+        "columns": {
+          "bookedBy": "Booked by",
+          "bookingId": "Booking ID",
+          "bookingType": "Booking Type",
+          "durationMins": "Duration (mins)",
+          "equipmentId": "Equipment ID",
+          "equipmentName": "Equipment Name",
+          "lastUse": "Last use",
+          "maintenanceNotes": "Maintenance notes",
+          "manufacturer": "Manufacturer",
+          "model": "Model",
+          "notes": "Notes",
+          "onDate": "On date",
+          "startTime": "Start Time",
+          "status": "Status"
+        },
+        "maintenanceAria": "maintenance",
+        "maintenanceOnly": "maintenance only",
+        "tableAria": "booking search results"
+      },
       "galaxy": {
         "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
         "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
@@ -789,6 +840,8 @@ export default interface Resources {
       },
       "internalLink": {
         "alwaysLatest": "Always automatically update link to latest version",
+        "chooseVersion": "Or choose a version that the link should always point at:",
+        "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
         "dialogTitle": "Internal link version options",
         "headCells": {
           "modified": "Modified",
@@ -796,20 +849,73 @@ export default interface Resources {
           "name": "Name",
           "version": "Version"
         },
-        "updateRevisionLink": "Update revision link"
+        "selectRevision": "Select revision",
+        "updateRevisionLink": "Update revision link",
+        "versionTableAria": "internal link revision table"
       },
       "omero": {
+        "columns": {
+          "description": "Description",
+          "notes": "Notes",
+          "path": "Path"
+        },
+        "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
+        "dataTypes": {
+          "all": "Projects And Screens",
+          "projects": "Projects",
+          "screens": "Screens"
+        },
+        "detailsFetched": "details fetched",
+        "fetchDetails": "fetch details",
         "filterResults": "Filter results",
         "hideImageGrid": "hide image grid",
+        "loadingData": "Data is loading...",
         "noImage": "no image",
+        "redrawImage": "re-draw image",
         "seeInOmero": "see in omero",
+        "selectedCount": "Selected: {count}",
+        "showGridOfWellsForField": "show grid of wells for field {field}",
+        "showImageGrid": "show image grid",
         "unavailableAlt": "Unavailable"
       },
       "pubchem": {
         "casNumber": "CAS Number",
+        "dialog": {
+          "chemicalStructureAlt": "Chemical structure of {name}",
+          "emptyState": {
+            "initial": "Enter a search term and click Search to find chemical compounds.",
+            "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
+          },
+          "intro": {
+            "docsLink": "PubChem integration docs",
+            "moreInfoMiddle": "and our",
+            "moreInfoPrefix": "See",
+            "moreInfoSuffix": "for more.",
+            "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
+          },
+          "searchPlaceholders": {
+            "nameCas": "Enter a compound name or CAS number",
+            "smiles": "Enter a SMILES string"
+          },
+          "searchResults": "Search Results",
+          "searchTypeAriaLabel": "Search type",
+          "searchTypes": {
+            "nameCas": "Name/CAS",
+            "smiles": "SMILES"
+          },
+          "selectCompoundAria": "Select compound",
+          "submitButton": "Select Compounds",
+          "title": "Search PubChem",
+          "validation": {
+            "selectCompound": "Please select at least one compound."
+          }
+        },
         "formula": "Formula",
         "pubchemId": "PubChem ID",
         "viewOnPubChem": "View on PubChem"
+      },
+      "pyrat": {
+        "tableAria": "animal search results"
       },
       "shortcuts": {
         "instructions": {
@@ -838,21 +944,98 @@ export default interface Resources {
       "snapGene": {
         "applySettings": "Apply Settings",
         "circular": "Circular",
+        "columns": {
+          "bottomCutPosition": "Bottom cut position",
+          "enzyme": "Enzyme",
+          "fullRangeBegin": "Full Range Begin",
+          "fullRangeEnd": "Full Range End",
+          "molecularWeight": "Molecular Weight",
+          "readingFrame": "Reading Frame",
+          "topCutPosition": "Top cut position",
+          "translation": "Translation"
+        },
         "copyToClipboard": "Copy to Clipboard",
         "dnaPreviewAlt": "DNA preview",
+        "enzymeSetOptions": {
+          "commercialNonredundant": "Commercial nonredundant",
+          "sixPlus": "Six plus",
+          "unique": "Unique",
+          "uniqueAndDual": "Unique and dual",
+          "uniqueSixPlus": "Unique six plus"
+        },
+        "enzymeSets": "Enzyme Sets",
         "enzymeSites": "Enzyme sites",
+        "enzymeTableAria": "Enzyme table",
+        "enzymeTypeAria": "Enzyme type",
         "imageType": "Image type",
         "linear": "Linear",
+        "linearChoiceAria": "Linear choice",
+        "openReadingFrames": "Open Reading Frames",
         "orfTable": "ORF table",
+        "readingFrames": {
+          "all": "All",
+          "aria": "Reading frame",
+          "firstForward": "First forward",
+          "firstReverse": "First reverse",
+          "forward": "Forward",
+          "reverse": "Reverse"
+        },
         "reset": "Reset",
         "showEnzymes": "Show enzymes",
         "showORFs": "Show ORFs",
         "tabDnaPreview": "DNA preview",
-        "viewAsFasta": "View as FASTA"
+        "viewAsFasta": "View as FASTA",
+        "zoomControlsAria": "Zoom controls"
       }
     }
   },
   "common": {
+    "accessibilityTips": {
+      "actions": {
+        "disable": "disable",
+        "enable": "enable",
+        "off": "off",
+        "on": "on"
+      },
+      "browsers": {
+        "chrome": "Chrome",
+        "edge": "Edge",
+        "firefox": "Firefox",
+        "safari": "Safari"
+      },
+      "buttonLabel": "Accessibility tips",
+      "elementTypes": {
+        "dialog": "dialog",
+        "page": "page"
+      },
+      "highContrast": {
+        "enabled": "High contrast mode is enabled.",
+        "instructions": "To {action}, turn {settingState} your device's high contrast setting:",
+        "supported": "This {elementType} supports a high contrast mode."
+      },
+      "menuLabel": "Accessibility Tips",
+      "platforms": {
+        "android": "Android",
+        "iOs": "iOS",
+        "macOs": "macOS",
+        "windows": "Windows"
+      },
+      "reducedMotion": {
+        "enabled": "Reduced motion mode is enabled.",
+        "instructions": "To {action}, turn {settingState} your device's reduced motion setting:",
+        "supported": "This {elementType} supports a reduced motion mode."
+      },
+      "skipToContent": {
+        "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
+        "navigation": "Skip to content navigation",
+        "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
+      },
+      "tip": "Tip",
+      "zoom": {
+        "instructions": "To enable, adjust your browser's settings:",
+        "supported": "This {elementType} supports up to 200% zoom magnification."
+      }
+    },
     "actions": {
       "add": "Add",
       "back": "Back",
@@ -866,6 +1049,7 @@ export default interface Resources {
       "done": "Done",
       "edit": "Edit",
       "export": "Export",
+      "insert": "Insert",
       "invite": "Invite",
       "next": "Next",
       "ok": "OK",
@@ -878,6 +1062,9 @@ export default interface Resources {
       "sign": "Sign",
       "submit": "Submit",
       "witness": "Witness"
+    },
+    "alerts": {
+      "warning": "Warning"
     },
     "apiAuthentication": {
       "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
@@ -947,7 +1134,11 @@ export default interface Resources {
       "failedFolders": "Failed to load folders",
       "failedSubfolders": "Failed to load subfolders",
       "loadMore": "Load More",
-      "loading": "Loading..."
+      "loading": "Loading...",
+      "sharedFolderAria": "tree view of shared folder"
+    },
+    "galleryPicker": {
+      "selectionRequired": "Select at least one file to proceed."
     },
     "groupDetails": {
       "members": "Members",
@@ -955,14 +1146,29 @@ export default interface Resources {
       "users": "Users",
       "viewGroup": "View Group"
     },
+    "helpDocs": {
+      "chatWithUs": "Chat with us",
+      "documentation": "RSpace Documentation",
+      "openHelp": "Open Help",
+      "rspaceAlt": "RSpace",
+      "searchPlaceholder": "Type to search for articles...",
+      "suggestedArticles": "Suggested Articles",
+      "viewAllArticles": "View All Articles"
+    },
     "imageEditingDialog": {
       "rotateClockwise": "rotate clockwise",
       "rotateCounterClockwise": "rotate counter clockwise",
       "title": "Edit Image"
     },
     "inputs": {
+      "chooseToEdit": {
+        "label": "Batch edit this field"
+      },
       "dateField": {
         "invalidDate": "Invalid date."
+      },
+      "dynamicallyLoadedImageEditor": {
+        "loadError": "Could not load the image editor at this time. Please check your network connection and refresh."
       },
       "optionField": {
         "deleteNewOption": "Delete New Option",
@@ -974,7 +1180,8 @@ export default interface Resources {
         "notYetSupported": "Not yet supported."
       },
       "selectedFileInfo": {
-        "invalidFile": "Invalid file."
+        "invalidFile": "Invalid file.",
+        "label": "File selected:"
       },
       "unitSelect": {
         "quantityUnits": "Quantity units"
@@ -1153,6 +1360,7 @@ export default interface Resources {
       },
       "oauth": {
         "connectedApps": {
+          "confirmDisconnectText": "Are you sure you want to revoke access from <0>{clientName}</0>?",
           "confirmDisconnectTitle": "Confirm Disconnect",
           "disconnect": "Disconnect",
           "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
@@ -1163,6 +1371,7 @@ export default interface Resources {
           "title": "Connected Apps"
         },
         "createdApps": {
+          "confirmDeleteText": "Are you sure you want to delete <0>{appName}</0>? All access and refresh tokens will be revoked.",
           "confirmDeleteTitle": "Confirm Deletion",
           "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
           "deleteErrorTitle": "Unable to delete app",
@@ -1243,30 +1452,178 @@ export default interface Resources {
       "query": "Search query"
     },
     "shareDialog": {
+      "addUsersOrGroups": "Add users or groups to share with",
+      "autocomplete": {
+        "label": "Add RSpace users or groups",
+        "noMatches": "No matches found. You can only share with groups you are in, and users in groups you are in.",
+        "placeholder": "Type to filter groups and users..."
+      },
       "changeFolder": "Change Folder",
       "changeLocation": "Change",
-      "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery."
+      "columns": {
+        "location": "Location",
+        "notebook": "Notebook",
+        "permission": "Permission",
+        "sharedWith": "Shared With",
+        "type": "Type"
+      },
+      "locationLabel": "Location: {location}",
+      "multipleSelection": {
+        "allItems": "All {count} {pluralName}",
+        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <0>shared {pluralName} page</0>.",
+        "heading": "Adding shares to {count} {itemName}",
+        "newSharesHeading": "New shares to be added:",
+        "someItems": "{documentCount} of {totalCount} {itemName}"
+      },
+      "noDirectShares": "This {singularName} is not directly shared with anyone.",
+      "notebookShares": {
+        "heading": "As {docName} is shared into Notebooks, it is also shared with:",
+        "inheritedPermissions": "Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to alter the notebook's permissions."
+      },
+      "optionDescriptions": {
+        "alreadyShared": "All of the {pluralName} have already been shared with {recipientName}",
+        "group": "{type} • {memberCount} members",
+        "user": "User • {username} • {email}"
+      },
+      "permissions": {
+        "edit": "Edit",
+        "read": "Read",
+        "remove": "Remove",
+        "unshare": "Unshare"
+      },
+      "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery.",
+      "titleMultiple": "Share {count} {pluralName}",
+      "titleSingle": "Share <0>{name}</0>",
+      "updatedSuccessfully": "Shares updated successfully."
     },
     "stoichiometry": {
       "addReagent": {
         "addChemical": "Add Chemical",
+        "menuAria": "add chemical menu",
         "name": "Name",
         "smilesString": "SMILES String",
+        "sources": {
+          "gallery": {
+            "subheader": "Import compound from Gallery",
+            "title": "Gallery"
+          },
+          "manual": {
+            "subheader": "Manually enter SMILES",
+            "title": "Manually"
+          },
+          "pubChem": {
+            "dialogTitle": "Insert from PubChem",
+            "subheader": "Import compound from PubChem",
+            "title": "PubChem"
+          }
+        },
         "title": "Add New Chemical",
         "validation": {
+          "busy": "Please wait for the current reagent to be processed before adding another.",
           "nameRequired": "Name is required",
           "smilesRequired": "SMILES string is required"
         }
       },
+      "dialog": {
+        "calculate": "Calculate Stoichiometry",
+        "calculatePrompt": "Click the button below to calculate the stoichiometry data for this chemical compound.",
+        "calculating": "Calculating...",
+        "chemistryDisabledTitle": "Chemistry Integration Disabled",
+        "chemistryStatusErrorTitle": "Error Checking Chemistry Integration",
+        "deleteError": "Failed to delete this stoichiometry table. Please try again.",
+        "deleteMessage": "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
+        "deleteTitle": "Delete Stoichiometry Table",
+        "discardChangesConfirm": "Discard",
+        "discardChangesMessage": "Closing the dialog will discard the unsaved changes.",
+        "discardChangesTitle": "Discard changes?",
+        "editInstructions": "Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are calculated automatically, as are each pairing of moles and mass.",
+        "loadingMoleculeInformation": "Loading molecule information...",
+        "loadingTable": "Loading stoichiometry table...",
+        "reactionTable": "Reaction Table",
+        "saveChanges": "Save Changes",
+        "saveError": "Failed to save stoichiometry changes. Please try again."
+      },
+      "gallery": {
+        "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",
+        "loadingPicker": "Loading gallery picker"
+      },
+      "inventoryLink": {
+        "add": "Add inventory link",
+        "addForMolecule": "Add inventory link for {molecule}",
+        "alreadyLinked": "The inventory item is already linked.",
+        "deleted": "Link Deleted",
+        "insufficientStock": "Insufficient Stock",
+        "pickerTitle": "Pick inventory item for {molecule}",
+        "remove": "Remove inventory link",
+        "removeForMolecule": "Remove inventory link for {molecule}",
+        "stockDeducted": "Stock deducted",
+        "undo": "Undo deleting link",
+        "undoForMolecule": "Undo deleting inventory link for {molecule}"
+      },
       "inventoryUpdate": {
+        "cannotReplenish": "Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry table, delete the document, or unlink samples.",
         "dialogTitle": "Update Inventory Stock",
         "inStock": "In Stock",
+        "irreversibleTitle": "WARNING: This action is irreversible",
+        "irreversibleWarningAria": "Action irreversible warning",
+        "linkRequired": "Link an inventory item before updating stock.",
+        "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
+        "missingActualMass": "Define actual mass before updating linked inventory stock.",
         "molecule": "Molecule",
+        "moleculeCannotBeUpdated": "This molecule cannot be updated.",
+        "negativeFieldError": "{{field}} cannot be negative",
+        "noDataToSave": "No stoichiometry data to save",
+        "noDataToUpdateStock": "No stoichiometry data available to update stock",
+        "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
         "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
+        "proceedIfUsed": "Only proceed if you have actually used these materials in your experiment.",
         "remaining": "Remaining",
+        "saveBeforeUpdate": "Save the stoichiometry table before updating inventory stock.",
+        "saveError": "{message} Current stock amounts were refreshed where possible.",
+        "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
         "saving": "Saving...",
+        "selectMoleculeAria": "Select molecule",
+        "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
+        "selectionError": "Re-select any invalid molecules before saving.",
+        "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+        "unnamedMolecule": "Unnamed molecule",
         "updateInventoryStock": "Update Inventory Stock",
+        "updateStockError": "Failed to update inventory stock.",
         "willUse": "Will Use"
+      },
+      "plugin": {
+        "emptyTablePlaceholder": "Empty Stoichiometry Table",
+        "insertActionAlias": "Stoichiometry",
+        "insertActionText": "Stoichiometry Table",
+        "insertTooltip": "Insert reaction table",
+        "noPreview": "Stoichiometry Table (no preview)"
+      },
+      "table": {
+        "aria": {
+          "deleteReagent": "Delete reagent {name}",
+          "selectLimitingReagent": "Select {name} as limiting reagent",
+          "typeSelect": "Select type for {name}"
+        },
+        "columns": {
+          "actions": "Actions",
+          "actualMass": "Actual Mass (g)",
+          "actualMoles": "Actual Moles (mol)",
+          "equivalent": "Equivalent",
+          "inventoryLink": "Inventory Link",
+          "limitingReagent": "Limiting Reagent",
+          "mass": "Mass (g)",
+          "molecularWeight": "Molecular Weight (g/mol)",
+          "moles": "Moles (mol)",
+          "name": "Name",
+          "notes": "Notes",
+          "type": "Type",
+          "yieldExcess": "Yield/Excess (%)"
+        },
+        "roles": {
+          "product": "Product",
+          "reactant": "Reactant",
+          "reagent": "Reagent"
+        }
       },
       "tableToolbar": {
         "columns": "Columns",
@@ -1290,6 +1647,7 @@ export default interface Resources {
       "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
       "noName": "no name",
       "noTagsAvailable": "No tags available",
+      "tryAgain": "Please try again.",
       "typeTagInstead": "Simply type in the tag and press enter instead.",
       "useNewTagHint": "To use a new tag, press Enter.",
       "validation": {
@@ -1336,6 +1694,17 @@ export default interface Resources {
       "sendMessageOnSlack": "Send message on Slack",
       "slack": "Slack"
     },
+    "treeSort": {
+      "direction": {
+        "ascending": "Ascending",
+        "descending": "Descending"
+      },
+      "order": {
+        "creationDate": "Creation Date",
+        "lastModified": "Last Modified",
+        "name": "Name"
+      }
+    },
     "userDetails": {
       "accountDisabled": "Disabled",
       "accountEnabled": "Enabled",
@@ -1343,10 +1712,45 @@ export default interface Resources {
       "email": "Email",
       "lastLogin": "Last login:",
       "openProfile": "Open profile",
+      "roleAt": "{role} at",
+      "roles": {
+        "pi": "PI",
+        "user": "User"
+      },
       "sendMessage": "Send a message"
+    },
+    "usersPage": {
+      "aliasDialog": {
+        "description": "usersPage.aliasDialog.description",
+        "errorTitle": "usersPage.aliasDialog.errorTitle",
+        "fieldLabel": "usersPage.aliasDialog.fieldLabel",
+        "menuItem": "usersPage.aliasDialog.menuItem",
+        "submit": "usersPage.aliasDialog.submit",
+        "success": "usersPage.aliasDialog.success",
+        "title": "usersPage.aliasDialog.title"
+      },
+      "piRoleDialog": {
+        "error": "usersPage.piRoleDialog.error",
+        "grantAction": "usersPage.piRoleDialog.grantAction",
+        "grantTitle": "usersPage.piRoleDialog.grantTitle",
+        "loading": "usersPage.piRoleDialog.loading",
+        "passwordLabel": "usersPage.piRoleDialog.passwordLabel",
+        "revokeAction": "usersPage.piRoleDialog.revokeAction",
+        "revokeTitle": "usersPage.piRoleDialog.revokeTitle",
+        "setVerificationPassword": "usersPage.piRoleDialog.setVerificationPassword"
+      }
     },
     "values": {
       "none": "None"
+    },
+    "versionLockPicker": {
+      "ariaLabel": "version-lock-picker",
+      "columns": {
+        "modified": "Modified",
+        "version": "Version"
+      },
+      "latest": "Latest",
+      "versionValue": "Version {version}"
     },
     "warningBar": {
       "unsavedChanges": "Unsaved changes"
@@ -1370,10 +1774,17 @@ export default interface Resources {
       "addFilestore": "Add Filestore",
       "chooseFilesystem": "Choose Filesystem",
       "chooseFolder": "Choose Folder",
+      "filesystemHelp": "Your sysadmin needs to configure a file system before it appears here.",
       "filesystemStep": "Choose Filesystem",
+      "filesystemStepLabel": "Select a File system",
+      "folderHelp": "You can configure multiple Filestores from the same File system with different top-level folders, to facilitate accessing deeply-nested content.",
       "folderStep": "Select the top-level Folder for the Filestore",
+      "folderStepLabel": "Select the top-level Folder for the Filestore",
+      "nameHelp": "This name is used in RSpace to help you identify the Filestore.",
       "nameLabel": "Filestore name",
-      "nameStep": "Name the Filestore"
+      "nameStep": "Name the Filestore",
+      "nameStepLabel": "Name the Filestore",
+      "noReadAccess": "(no read access; contact your sysadmin)"
     },
     "callablePdfPreview": {
       "title": "PDF Preview"
@@ -1393,6 +1804,8 @@ export default interface Resources {
       "wrongCredentials": "Wrong credentials?"
     },
     "infoPanel": {
+      "details": "Details",
+      "dmpDetails": "DMP Details",
       "nameAriaLabel": "Name",
       "noDescriptionPlaceholder": "No description",
       "noNamePlaceholder": "No Name"
@@ -1401,16 +1814,89 @@ export default interface Resources {
       "filestoreEnabledError": "Error checking if filestores are enabled.",
       "invalidSection": "Not a valid Gallery section."
     },
+    "linkedDocumentsPanel": {
+      "columns": {
+        "globalId": "Global ID",
+        "name": "Name"
+      },
+      "heading": "Linked Documents",
+      "noRows": "No Linked Documents"
+    },
     "loadMore": "Load More",
     "mainPanel": {
+      "cancelDrag": "Cancel",
       "carouselView": "Carousel",
       "carouselViewDesc": "Flick through all files to find one.",
       "gridView": "Grid",
       "gridViewDesc": "Browse by thumbnail previews.",
       "sort": "Sort",
+      "sortOptions": {
+        "modificationDate": "Modification Date",
+        "name": "Name"
+      },
       "treeView": "Tree",
       "treeViewDesc": "View and manage folder hierarchy.",
       "views": "Views"
+    },
+    "moveDialog": {
+      "description": "Choose a folder or tap the \"top-level\" button.",
+      "makeTopLevel": "Make top-level",
+      "title": "Move"
+    },
+    "moveToIrods": {
+      "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
+      "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
+      "destination": {
+        "explanation": "The available folders are configured in the Gallery's filestore section.",
+        "label": "Destination in iRODS",
+        "placeholder": "Select a destination"
+      },
+      "errors": {
+        "misconfigured": "Please check with your System Admin to ensure iRODS is correctly configured.",
+        "noFilestoreConfigured": {
+          "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+          "title": "No iRODS filestore has been configured."
+        }
+      },
+      "helpTitle": "iRODS help",
+      "login": {
+        "legend": "iRODS login",
+        "password": "Password",
+        "prompt": "Please provide your login credentials for {serverUrl}",
+        "username": "Username"
+      },
+      "retainCopy": "Retain a copy in RSpace",
+      "title": "Move to iRODS"
+    },
+    "moveToS3": {
+      "actions": {
+        "copy": "Copy",
+        "move": "Move",
+        "transfer": "Transfer"
+      },
+      "destination": {
+        "explanation": "The available filestores are configured in the Gallery's filestore section.",
+        "label": "Destination S3 filestore",
+        "noWriteAccess": "No write access",
+        "placeholder": "Select a filestore"
+      },
+      "errors": {
+        "misconfigured": "Please check with your System Admin to ensure the S3 filestore is correctly configured.",
+        "noFilestoreConfigured": {
+          "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+          "title": "No S3 filestore has been configured."
+        },
+        "noWriteAccess": {
+          "body": "Your account is not on the write allowlist for any S3 filestore. Ask your system administrator if you need write access.",
+          "title": "You do not have write access to any S3 filestore."
+        }
+      },
+      "moveDescription": "You have selected {count} {count, plural, one {item} other {items}} to move to S3. By default, the items will be added to S3 and removed from RSpace. You will be able to link to the S3 items inside of RSpace documents.",
+      "moveTitle": "Move to S3",
+      "retainRspaceCopy": "Retain a copy in RSpace",
+      "retainSourceCopy": "Retain a copy on source bucket",
+      "transferDescription": "You have selected {count} {count, plural, one {item} other {items}} to transfer to another S3 bucket. By default, the items will be copied to the destination and deleted from the source.",
+      "transferTitle": "Transfer to S3"
     },
     "sidebar": {
       "addFilestore": "Add a Filestore",
@@ -1542,6 +2028,11 @@ export default interface Resources {
       "editSessionExpired": {
         "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
         "title": "Your editing session has expired"
+      },
+      "editSessionExpiring": {
+        "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
+        "continue": "CONTINUE",
+        "title": "Your editing session is about to expire"
       }
     },
     "baskets": {
@@ -1556,6 +2047,11 @@ export default interface Resources {
         "locationUnchanged": "This action will not change the location of the {itemString}.",
         "nameTooLong": "The name should be no longer than 32 characters.",
         "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
+      },
+      "delete": {
+        "bodyPrefix": "You are about to delete {name}.",
+        "bodySuffix": "The contents of the Basket will not be affected.",
+        "title": "Deleting Basket"
       }
     },
     "container": {
@@ -1687,6 +2183,7 @@ export default interface Resources {
         "noOptions": "No options available.",
         "title": "Create new items from <0>{name}</0>"
       },
+      "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
       "splitButton": {
         "moreOptions": "More selection options"
       },
@@ -2349,6 +2846,10 @@ export default interface Resources {
         "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
         "title": "You are about to create an Identifier"
       },
+      "delete": {
+        "body": "The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to proceed?",
+        "title": "You are about to delete this Identifier"
+      },
       "publish": {
         "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to publish this Identifier"
@@ -2528,6 +3029,13 @@ export default interface Resources {
         "export": "Export",
         "move": {
           "alreadyOnBench": "All items are already on your bench.",
+          "confirmOnBench": {
+            "cancel": "No",
+            "confirm": "Yes",
+            "itemsLabel": "The items are:",
+            "prompt": "Do you want to move them to your bench?",
+            "title": "Some items are in containers that are already on your bench."
+          },
           "none": "Nothing to move.",
           "unsavedChanges": "Cannot move whilst there are unsaved changes."
         },
@@ -2697,6 +3205,14 @@ export default interface Resources {
     },
     "recordDetails": {
       "modifiedBy": "by {user}"
+    },
+    "recordInfo": {
+      "barcodes": {
+        "model": {
+          "generatedByRspace": "Generated By RSpace:",
+          "generatedDescription": "Generated by RSpace: {data}"
+        }
+      }
     },
     "recordTree": {
       "navigateToContainer": "Navigate to container"
@@ -2982,6 +3498,13 @@ export default interface Resources {
     }
   },
   "public": {
+    "aria": {
+      "alternateIdentifiers": "alternate identifiers",
+      "dates": "dates",
+      "descriptions": "descriptions",
+      "geoLocations": "geolocations",
+      "subjects": "subjects"
+    },
     "footer": {
       "contactInfo": "If you wish to obtain more information about this item, please contact the research data management department at {institution}.",
       "generatedBy": "This page was generated by {institution} using RSpace Public Pages."
@@ -3036,11 +3559,15 @@ export default interface Resources {
       "igsnHomepage": "IGSN Homepage",
       "itemLandingPage": "Item landing page"
     },
+    "resourceTypes": {
+      "physicalObject": "Physical Object"
+    },
     "table": {
       "name": "Name",
       "value": "Value"
     },
     "values": {
+      "invalidDate": "Invalid date",
       "none": "None"
     }
   },
@@ -3073,12 +3600,72 @@ export default interface Resources {
     "usersPage": {
       "actionsAriaLabel": "Actions menu for selected rows",
       "actionsButton": "Actions",
+      "aliasDialog": {
+        "description": "SysAdmins can set a username alias for a user, enabling both the username and its alias to be used during login. The alias is only recognised during the login process, and does not replace the user’s username as their main identifier inside RSpace.",
+        "errorTitle": "Could not set username alias.",
+        "fieldLabel": "Username Alias",
+        "menuItem": "Set Username Alias",
+        "submit": "Set Alias",
+        "success": "Successfully set username alias.",
+        "title": "Set Username Alias"
+      },
       "billableUsers": "Billable Users",
       "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
+      "columns": {
+        "button": "Columns",
+        "locked": "Locked"
+      },
+      "communityAdmins": "Community Admins",
+      "deleteDialog": {
+        "confirmUsername": "To delete <0>{fullName}</0>'s account please enter their username.",
+        "formsAndTemplatesNotice": "The user you are trying to delete is <0>{ownerOfFormsAndTemplates}</0> To ensure continued access to these Forms/Templates, the system<1> {willTransferOwnership}</1> of those files to<2> {thisSystemAdministrator}</2> account. Forms and Templates that are not used by others will be deleted.",
+        "formsNotice": "The user you are trying to delete is <0>{ownerOfForms}</0> To ensure continued access to these Forms, the system<1> {willTransferOwnership}</1> of the Forms to<2> {thisSystemAdministrator}</2> account. Forms that are not used by others will be deleted.",
+        "irreversible": "User deletion is irreversible, and all documents will be deleted.",
+        "title": "Deletion Confirmation",
+        "xmlArchive": "An XML archive will be made of the user's work which will be available for a short time on the server."
+      },
+      "export": {
+        "allRows": "Export all rows to CSV",
+        "selected": "selected",
+        "thisPageOf": "this page of",
+        "visibleRows": "Export {scope} rows to CSV"
+      },
       "filterAriaLabel": "Filter users",
       "filtersButton": "Filters",
+      "groupMembership": {
+        "showList": "Show list of groups",
+        "showListAria": "{count} group(s). Show list of groups."
+      },
+      "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <0>Tagging docs</0> for more.",
+      "loadingError": "Failed to load listing of users. Please try refreshing.",
+      "loadingListing": "Loading listing of users.",
       "ownerOfForms": "the owner of Forms that are used by other users.",
       "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
+      "piRoleDialog": {
+        "error": "ERROR: {error}",
+        "grantAction": "Grant",
+        "grantPrompt": "To grant the PI role to <0>{fullName}</0> please re-enter your password.",
+        "grantTitle": "Grant user PI role",
+        "loading": "Loading",
+        "passwordLabel": "Password",
+        "revokeAction": "Revoke",
+        "revokePrompt": "To revoke the PI role from <0>{fullName}</0> please re-enter your password.",
+        "revokeTitle": "Revoke PI role from user",
+        "setVerificationPassword": "Please set your verification password in My RSpace before performing this action."
+      },
+      "summary": {
+        "availableSeats": "Available Seats",
+        "communityAdmins": "Community Admins",
+        "systemAdmins": "System Admins"
+      },
+      "tagDialog": {
+        "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <0>Read more about tagging users here.</0>",
+        "title": "Tagging {count} {count, plural, one {user} other {users}}"
+      },
+      "tags": {
+        "showList": "Show list of tags",
+        "showListAria": "{count} tag(s). Show list of tags."
+      },
       "thisSystemAdministrator": "this System Administrator",
       "totalUsers": "Total Users",
       "totalUsersTooltip": "All users including admins and those with disabled accounts.",
@@ -3426,6 +4013,7 @@ export default interface Resources {
         "emptyName": "Empty name is not permitted.",
         "error": "An error occurred while renaming the document.",
         "name": "Name",
+        "prompt": "Please give a new name for <0>{currentName}</0>",
         "success": "Successfully renamed document.",
         "title": "Rename"
       },

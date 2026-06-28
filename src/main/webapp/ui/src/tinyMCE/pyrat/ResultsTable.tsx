@@ -8,6 +8,7 @@ import TableCell from "@mui/material/TableCell";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
@@ -32,6 +33,7 @@ export default function ResultsTable({
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   [key: string]: any;
 }) {
+  const { t } = useTranslation("apps");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function onRowClick(eartag: any) {
     setSelectedAnimalIds(
@@ -64,7 +66,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label="animal search results">
+        <Table aria-label={t("tinyMce.pyrat.tableAria")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}

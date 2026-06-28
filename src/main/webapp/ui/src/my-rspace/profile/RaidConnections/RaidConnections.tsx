@@ -93,7 +93,7 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
                       : t("profile.raidConnections.currently")}{" "}
                     {t("profile.raidConnections.connectedTo")}
                   </strong>{" "}
-                  {raidTitle} ({raidIdentifier})
+                  {`${raidTitle} (${raidIdentifier})`}
                 </Typography>
               )}
             </Stack>

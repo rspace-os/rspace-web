@@ -99,6 +99,7 @@ function DividedPair({ children }: DividedPairArgs) {
 export const INSTITUTION_LOGO_ADDRESS = "/public/banner";
 
 const IGSN_BASE_URL = `https://www.igsn.org/`;
+const formatDegrees = (value: string): string => `${value}˚`;
 
 /**
  * importing from IdentifierModel would not work
@@ -255,7 +256,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             <Grid>
               <Typography variant="caption">
                 {identifier.resourceTypeGeneral === "PhysicalObject"
-                  ? "Physical Object"
+                  ? t("resourceTypes.physicalObject")
                   : identifier.resourceTypeGeneral}
               </Typography>
             </Grid>
@@ -323,7 +324,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           </Grid>
           {Array.isArray(identifier.subjects) && identifier.subjects.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="subjects">
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.subjects")}>
               <Grid>
                 <h3>{t("headings.subjects")}</h3>
               </Grid>
@@ -350,7 +351,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.descriptions) && identifier.descriptions.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="descriptions">
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.descriptions")}>
               <Grid>
                 <h3>{t("headings.descriptions")}</h3>
               </Grid>
@@ -363,7 +364,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.alternateIdentifiers) && identifier.alternateIdentifiers.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="alternate-identifiers">
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.alternateIdentifiers")}>
               <Grid>
                 <h3>{t("headings.alternateIdentifiers")}</h3>
               </Grid>
@@ -382,14 +383,14 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label="dates">
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.dates")}>
               <Grid>
                 <h3>{t("headings.dates")}</h3>
               </Grid>
               {identifier.dates.map((d, i) => (
                 <Grid container direction="row" sx={ROW_SX} spacing={1} key={`${d.value.toString()}-${i}`}>
                   <Grid sx={LABEL_SX}>{capitaliseJustFirstChar(d.type.toLowerCase())}</Grid>
-                  <Grid>{truncateIsoTimestamp(d.value, "date").orElse("Invalid date")}</Grid>
+                  <Grid>{truncateIsoTimestamp(d.value, "date").orElse(t("values.invalidDate"))}</Grid>
                 </Grid>
               ))}
             </Grid>
@@ -397,7 +398,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
           {Array.isArray(identifier.geoLocations) && identifier.geoLocations.length > 0 && (
             <>
               <h3>{t("headings.geolocations")}</h3>
-              <Grid container direction="row" spacing={1} role="group" aria-label="geoLocations">
+              <Grid container direction="row" spacing={1} role="group" aria-label={t("aria.geoLocations")}>
                 {identifier.geoLocations.map((gl, i) => (
                   <Grid key={i}>
                     <Card variant="outlined">
@@ -417,9 +418,9 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                             <Box component="dl" sx={STYLED_DL_SX}>
                               <DividedPair>
                                 <dt>{t("geolocation.latitude")}</dt>
-                                <dd>{gl.geoLocationPoint.pointLatitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationPoint.pointLatitude)}</dd>
                                 <dt>{t("geolocation.longitude")}</dt>
-                                <dd>{gl.geoLocationPoint.pointLongitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationPoint.pointLongitude)}</dd>
                               </DividedPair>
                             </Box>
                           </>
@@ -451,15 +452,15 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                               {/* width style is used to align vertical dividers */}
                               <DividedPair>
                                 <dt style={{ minWidth: "140px" }}>{t("geolocation.northboundLatitude")}</dt>
-                                <dd>{gl.geoLocationBox.northBoundLatitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationBox.northBoundLatitude)}</dd>
                                 <dt>{t("geolocation.westboundLongitude")}</dt>
-                                <dd>{gl.geoLocationBox.westBoundLongitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationBox.westBoundLongitude)}</dd>
                               </DividedPair>
                               <DividedPair>
                                 <dt style={{ minWidth: "140px" }}>{t("geolocation.southboundLatitude")}</dt>
-                                <dd>{gl.geoLocationBox.southBoundLatitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationBox.southBoundLatitude)}</dd>
                                 <dt>{t("geolocation.eastboundLongitude")}</dt>
-                                <dd>{gl.geoLocationBox.eastBoundLongitude}˚</dd>
+                                <dd>{formatDegrees(gl.geoLocationBox.eastBoundLongitude)}</dd>
                               </DividedPair>
                             </Box>
                           </>
@@ -473,9 +474,9 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                               {gl.geoLocationPolygon.mapPoints((point: PolygonPoint, index: number) => (
                                 <DividedPair key={index}>
                                   <dt>{t("geolocation.pointLatitude", { index: index + 1 })}</dt>
-                                  <dd>{point.pointLatitude}˚</dd>
+                                  <dd>{formatDegrees(point.pointLatitude)}</dd>
                                   <dt>{t("geolocation.pointLongitude", { index: index + 1 })}</dt>
-                                  <dd>{point.pointLongitude}˚</dd>
+                                  <dd>{formatDegrees(point.pointLongitude)}</dd>
                                 </DividedPair>
                               ))}
                             </Box>
@@ -487,9 +488,9 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                                 <Box component="dl" sx={STYLED_DL_SX}>
                                   <DividedPair>
                                     <dt>{t("geolocation.latitude")}</dt>
-                                    <dd>{gl.geoLocationInPolygonPoint.pointLatitude}˚</dd>
+                                    <dd>{formatDegrees(gl.geoLocationInPolygonPoint.pointLatitude)}</dd>
                                     <dt>{t("geolocation.longitude")}</dt>
-                                    <dd>{gl.geoLocationInPolygonPoint.pointLongitude}˚</dd>
+                                    <dd>{formatDegrees(gl.geoLocationInPolygonPoint.pointLongitude)}</dd>
                                   </DividedPair>
                                 </Box>
                               </>

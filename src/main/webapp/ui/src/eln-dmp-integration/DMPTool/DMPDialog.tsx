@@ -24,7 +24,6 @@ import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/Val
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { DataGridColumn } from "../../util/table";
-import { mapNullable } from "../../util/Util";
 import ScopeField, { type Scope } from "./ScopeField";
 
 function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dialog>): React.ReactNode {
@@ -213,16 +212,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP{" "}
-              {mapNullable(
-                (host) => (
-                  <>
-                    from <strong>{host}</strong>{" "}
-                  </>
-                ),
-                DMPHost,
-              ) ?? ""}
-              will make it available to view and reference within RSpace.
+              {t("dmpIntegrations.dialog.dmptoolImportDesc", { serverAlias: DMPHost ?? "" })}
             </Typography>
             <Typography variant="body2">
               <Trans

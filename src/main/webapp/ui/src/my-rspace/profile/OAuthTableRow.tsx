@@ -7,7 +7,7 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import type { OAuthApp } from "@/my-rspace/profile/types";
 
@@ -37,8 +37,12 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clie
             title={t("profile.oauth.createdApps.confirmDeleteTitle")}
             consequences={
               <Typography variant="body1">
-                Are you sure you want to delete <strong>{app.appName}</strong>? All access and refresh tokens will be
-                revoked.
+                <Trans
+                  ns="common"
+                  i18nKey="profile.oauth.createdApps.confirmDeleteText"
+                  values={{ appName: app.appName }}
+                  components={[<strong key="strong" />]}
+                />
               </Typography>
             }
             variant="warning"

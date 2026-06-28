@@ -237,7 +237,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+    await user.click(screen.getByRole("button", { name: "common:stoichiometry.dialog.saveChanges" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Save mutation failed");
   });
@@ -295,7 +295,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "actions.delete" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
   });

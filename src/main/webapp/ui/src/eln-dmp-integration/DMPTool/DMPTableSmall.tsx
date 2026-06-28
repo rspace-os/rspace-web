@@ -8,6 +8,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 
 type DMPId = number | string;
 type DMPUserInternalId = number;
@@ -43,6 +44,7 @@ export default function DMPTableSmall({
   addSelectedPlan,
   removeSelectedPlan,
 }: TableArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <TableContainer sx={{ overflowX: "hidden" }}>
       <Table size="small">
@@ -50,13 +52,13 @@ export default function DMPTableSmall({
           <TableRow sx={tableRowSx}>
             <TableCell sx={tableRowCellSx}>
               <Box component="span" sx={{ flex: 1 }}>
-                Select
+                {t("dmpIntegrations.dialog.columns.select")}
               </Box>
               <Box component="span" sx={{ flex: 5 }}>
-                DMP Title
+                {t("dmpIntegrations.dialog.columns.title")}
               </Box>
               <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
-                ID
+                {t("dmpIntegrations.dialog.columns.id")}
               </Box>
             </TableCell>
           </TableRow>

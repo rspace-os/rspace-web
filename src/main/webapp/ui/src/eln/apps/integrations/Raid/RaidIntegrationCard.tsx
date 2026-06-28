@@ -113,7 +113,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully disconnected.",
+            message: t("integrations.raid.alerts.disconnectSuccess"),
           }),
         );
       } catch (e) {

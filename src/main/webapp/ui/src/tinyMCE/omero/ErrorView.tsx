@@ -32,17 +32,16 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
           the issue is.
         </>
       )}
-      {errorReason === ErrorReason.NotFound && <>{t("integrationErrors.omero.notFound")}</>}
+      {errorReason === ErrorReason.NotFound && t("integrationErrors.omero.notFound")}
       {/* when user credentials expire on user session end, server responds with 401 */}
-      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>{t("integrationErrors.omero.sessionExpired")}</>
-      )}
-      {errorReason === ErrorReason.Timeout && <>{t("integrationErrors.timeout")}</>}
+      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) &&
+        t("integrationErrors.omero.sessionExpired")}
+      {errorReason === ErrorReason.Timeout && t("integrationErrors.timeout")}
       {/* when a refresh token expires the omero API responds with 400 response and 'invalid_grant' in the response message */}
-      {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <>{t("integrationErrors.tryAgainLater")}</>
-      )}
-      {errorReason === ErrorReason.UNKNOWN && <>{t("integrationErrors.unknownRelogin")}</>}
+      {errorReason === ErrorReason.BadRequest &&
+        !errorMessage.includes("invalid_grant") &&
+        t("integrationErrors.tryAgainLater")}
+      {errorReason === ErrorReason.UNKNOWN && t("integrationErrors.unknownRelogin")}
     </Alert>
   );
 }

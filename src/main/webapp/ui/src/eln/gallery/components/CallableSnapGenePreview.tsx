@@ -51,6 +51,7 @@ function DnaPreview({
   file: GalleryFile;
   idOfDnaPreviewTab: string;
 }) {
+  const { t } = useTranslation("apps");
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
@@ -94,8 +95,8 @@ function DnaPreview({
     >
       <Stack direction="row" spacing={1}>
         <Select value={linear} onChange={(e) => setLinear(e.target.value === "true")} size="small">
-          <MenuItem value={"false"}>Circular</MenuItem>
-          <MenuItem value={"true"}>Linear</MenuItem>
+          <MenuItem value={"false"}>{t("tinyMce.snapGene.circular")}</MenuItem>
+          <MenuItem value={"true"}>{t("tinyMce.snapGene.linear")}</MenuItem>
         </Select>
         <FormControlLabel
           control={<Switch checked={showEnzymes} onChange={({ target: { checked } }) => setShowEnzymes(checked)} />}
@@ -216,6 +217,7 @@ function RestrictionSites({
   file: GalleryFile;
   idOfRestrictionSitesTab: string;
 }) {
+  const { t } = useTranslation("apps");
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
   const [page, setPage] = React.useState(0);
@@ -363,7 +365,7 @@ function RestrictionSites({
       <Grid>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
-            Enzyme Sets
+            {t("tinyMce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
             aria-label="Enzyme type"
@@ -479,6 +481,7 @@ type Orf = {
 };
 
 function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: GalleryFile; idOfOrfTableTab: string }) {
+  const { t } = useTranslation("apps");
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
@@ -599,7 +602,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
       <Grid sx={{ minWidth: "200px" }}>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
-            Open Reading Frames
+            {t("tinyMce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
             aria-label="Enzyme type"

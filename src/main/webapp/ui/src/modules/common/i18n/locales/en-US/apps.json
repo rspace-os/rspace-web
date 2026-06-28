@@ -6,6 +6,7 @@
     "connect": "Connect",
     "delete": "Delete",
     "disconnect": "Disconnect",
+    "refresh": "Refresh",
     "remove": "Remove",
     "save": "Save",
     "test": "Test"
@@ -41,6 +42,7 @@
       "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
       "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
       "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
+      "dmptoolImportDesc": "Importing a DMP{serverAlias, select, '' {} other { from {serverAlias}}} will make it available to view and reference within RSpace.",
       "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
       "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
       "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
@@ -66,6 +68,11 @@
       "noDmpSelected": "No DMP selected.",
       "noProjects": "No projects found",
       "notSpecified": "Not Specified",
+      "search": {
+        "collaborators": "Collaborators",
+        "filters": "Search filters",
+        "funder": "Funder"
+      },
       "selectAllAriaLabel": "Select all DMPs on this page",
       "selectDmpAriaLabel": "Select {title}",
       "selectPlanAriaLabel": "Select plan: {label}"
@@ -74,6 +81,11 @@
     "dmponline": "DMPonline",
     "dmptool": "DMPTool",
     "dsw": "DSW / FAIR Wizard",
+    "endpoint": {
+      "importFailed": "{count, plural, one {Failed to import DMP.} other {Failed to import DMPs.}}",
+      "importSuccess": "{count, plural, one {Successfully imported DMP.} other {Successfully imported {count} DMPs.}}",
+      "listFailed": "Failed to get available DMPs."
+    },
     "scope": {
       "both": "Both",
       "mine": "Mine",
@@ -108,7 +120,20 @@
   "integrationCard": {
     "disable": "DISABLE",
     "enable": "ENABLE",
+    "moreInfo": {
+      "docsOnlyPrefix": "See our",
+      "suffix": "for more.",
+      "websiteMiddle": "and our",
+      "websitePrefix": "See"
+    },
     "setup": "Setup"
+  },
+  "previewInfo": {
+    "chemistryStatus": {
+      "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
+      "error": "Error checking chemistry integration: {error}",
+      "loading": "Checking chemistry integration status..."
+    }
   },
   "integrations": {
     "apiDirect": {
@@ -761,6 +786,8 @@
     },
     "internalLink": {
       "alwaysLatest": "Always automatically update link to latest version",
+      "chooseVersion": "Or choose a version that the link should always point at:",
+      "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
       "dialogTitle": "Internal link version options",
       "headCells": {
         "modified": "Modified",
@@ -768,17 +795,96 @@
         "name": "Name",
         "version": "Version"
       },
+      "selectRevision": "Select revision",
+      "versionTableAria": "internal link revision table",
       "updateRevisionLink": "Update revision link"
     },
     "omero": {
+      "columns": {
+        "description": "Description",
+        "notes": "Notes",
+        "path": "Path"
+      },
+      "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
+      "dataTypes": {
+        "all": "Projects And Screens",
+        "projects": "Projects",
+        "screens": "Screens"
+      },
+      "detailsFetched": "details fetched",
+      "fetchDetails": "fetch details",
       "filterResults": "Filter results",
       "hideImageGrid": "hide image grid",
+      "loadingData": "Data is loading...",
       "noImage": "no image",
+      "redrawImage": "re-draw image",
       "seeInOmero": "see in omero",
+      "selectedCount": "Selected: {count}",
+      "showGridOfWellsForField": "show grid of wells for field {field}",
+      "showImageGrid": "show image grid",
       "unavailableAlt": "Unavailable"
+    },
+    "clustermarket": {
+      "bookingTypes": {
+        "all": "Booked and Completed",
+        "booked": "Booked",
+        "equipment": "Booked Equipment"
+      },
+      "columns": {
+        "bookedBy": "Booked by",
+        "bookingId": "Booking ID",
+        "bookingType": "Booking Type",
+        "durationMins": "Duration (mins)",
+        "equipmentId": "Equipment ID",
+        "equipmentName": "Equipment Name",
+        "lastUse": "Last use",
+        "maintenanceNotes": "Maintenance notes",
+        "manufacturer": "Manufacturer",
+        "model": "Model",
+        "notes": "Notes",
+        "onDate": "On date",
+        "startTime": "Start Time",
+        "status": "Status"
+      },
+      "maintenanceAria": "maintenance",
+      "maintenanceOnly": "maintenance only",
+      "tableAria": "booking search results"
+    },
+    "pyrat": {
+      "tableAria": "animal search results"
     },
     "pubchem": {
       "casNumber": "CAS Number",
+      "dialog": {
+        "chemicalStructureAlt": "Chemical structure of {name}",
+        "emptyState": {
+          "initial": "Enter a search term and click Search to find chemical compounds.",
+          "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
+        },
+        "intro": {
+          "docsLink": "PubChem integration docs",
+          "moreInfoMiddle": "and our",
+          "moreInfoPrefix": "See",
+          "moreInfoSuffix": "for more.",
+          "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
+        },
+        "searchResults": "Search Results",
+        "searchPlaceholders": {
+          "nameCas": "Enter a compound name or CAS number",
+          "smiles": "Enter a SMILES string"
+        },
+        "searchTypeAriaLabel": "Search type",
+        "searchTypes": {
+          "nameCas": "Name/CAS",
+          "smiles": "SMILES"
+        },
+        "selectCompoundAria": "Select compound",
+        "submitButton": "Select Compounds",
+        "title": "Search PubChem",
+        "validation": {
+          "selectCompound": "Please select at least one compound."
+        }
+      },
       "formula": "Formula",
       "pubchemId": "PubChem ID",
       "viewOnPubChem": "View on PubChem"
@@ -810,17 +916,48 @@
     "snapGene": {
       "applySettings": "Apply Settings",
       "circular": "Circular",
+      "columns": {
+        "bottomCutPosition": "Bottom cut position",
+        "enzyme": "Enzyme",
+        "fullRangeBegin": "Full Range Begin",
+        "fullRangeEnd": "Full Range End",
+        "molecularWeight": "Molecular Weight",
+        "readingFrame": "Reading Frame",
+        "topCutPosition": "Top cut position",
+        "translation": "Translation"
+      },
       "copyToClipboard": "Copy to Clipboard",
       "dnaPreviewAlt": "DNA preview",
+      "enzymeSetOptions": {
+        "commercialNonredundant": "Commercial nonredundant",
+        "sixPlus": "Six plus",
+        "unique": "Unique",
+        "uniqueAndDual": "Unique and dual",
+        "uniqueSixPlus": "Unique six plus"
+      },
+      "enzymeSets": "Enzyme Sets",
+      "enzymeTableAria": "Enzyme table",
+      "enzymeTypeAria": "Enzyme type",
       "enzymeSites": "Enzyme sites",
       "imageType": "Image type",
       "linear": "Linear",
+      "linearChoiceAria": "Linear choice",
+      "openReadingFrames": "Open Reading Frames",
       "orfTable": "ORF table",
+      "readingFrames": {
+        "all": "All",
+        "aria": "Reading frame",
+        "firstForward": "First forward",
+        "firstReverse": "First reverse",
+        "forward": "Forward",
+        "reverse": "Reverse"
+      },
       "reset": "Reset",
       "showEnzymes": "Show enzymes",
       "showORFs": "Show ORFs",
       "tabDnaPreview": "DNA preview",
-      "viewAsFasta": "View as FASTA"
+      "viewAsFasta": "View as FASTA",
+      "zoomControlsAria": "Zoom controls"
     }
   }
 }

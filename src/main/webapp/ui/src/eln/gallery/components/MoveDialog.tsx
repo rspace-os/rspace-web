@@ -41,6 +41,7 @@ const MoveDialog = observer(
   ({ open, onClose, section, selectedFiles, refreshListing }: MoveDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
+    const { t } = useTranslation("gallery");
     const { t: tCommon } = useTranslation("common");
 
     const listingOf = React.useMemo(
@@ -93,16 +94,14 @@ const MoveDialog = observer(
         scroll="paper"
         fullScreen={isViewportVerySmall}
       >
-        <DialogTitle>Move</DialogTitle>
+        <DialogTitle>{t("moveDialog.title")}</DialogTitle>
         <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
-          <DialogContentText variant="body2">
-            Choose a folder or tap the &quot;top-level&quot; button.
-          </DialogContentText>
+          <DialogContentText variant="body2">{t("moveDialog.description")}</DialogContentText>
         </DialogContent>
         <DialogContent sx={{ pt: 0 }}>
           <Box sx={{ overflowY: "auto" }}>
             {FetchingData.match(galleryListing, {
-              loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
+              loading: () => <PlaceholderLabel>{tCommon("folderTree.loading")}</PlaceholderLabel>,
               error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
               success: (listing) => (
                 <TreeView
@@ -140,7 +139,7 @@ const MoveDialog = observer(
               }}
               disabled={topLevelLoading}
               loading={topLevelLoading}
-              label="Make top-level"
+              label={t("moveDialog.makeTopLevel")}
             />
             <Box sx={{ flexGrow: 1 }}></Box>
             <Button
@@ -173,7 +172,7 @@ const MoveDialog = observer(
               }}
               validationResult={computeValidation()}
             >
-              Move
+              {t("moveDialog.title")}
             </ValidatingSubmitButton>
           </Stack>
         </DialogActions>

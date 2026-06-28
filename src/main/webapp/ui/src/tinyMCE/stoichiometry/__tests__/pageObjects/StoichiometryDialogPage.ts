@@ -8,7 +8,7 @@ import { type Locator, page, userEvent } from "vitest/browser";
  */
 export class StoichiometryDialogPage {
   get calculateButton(): Locator {
-    return page.getByRole("button", { name: "Calculate Stoichiometry" });
+    return page.getByRole("button", { name: "common:stoichiometry.dialog.calculate" });
   }
 
   get table(): Locator {
@@ -16,15 +16,15 @@ export class StoichiometryDialogPage {
   }
 
   get saveButton(): Locator {
-    return page.getByRole("button", { name: "Save Changes" });
+    return page.getByRole("button", { name: "common:stoichiometry.dialog.saveChanges" });
   }
 
   get deleteButton(): Locator {
-    return page.getByRole("button", { name: "Delete", exact: true });
+    return page.getByRole("button", { name: "common:actions.delete", exact: true });
   }
 
   get deleteConfirmationDialog(): Locator {
-    return page.getByRole("dialog", { name: /Delete Stoichiometry Table/ });
+    return page.getByRole("dialog", { name: "common:stoichiometry.dialog.deleteTitle" });
   }
 
   inlineError(message: string): Locator {
@@ -42,7 +42,7 @@ export class StoichiometryDialogPage {
       .getByRole("columnheader")
       .elements()
       .map((el) => el.textContent ?? "");
-    const indexOfMassColumn = headerTexts.findIndex((text) => /mass \(g\)/i.test(text));
+    const indexOfMassColumn = headerTexts.indexOf("common:stoichiometry.table.columns.mass");
 
     if (indexOfMassColumn < 0) {
       throw new Error("Mass column not found");
@@ -58,10 +58,10 @@ export class StoichiometryDialogPage {
   }
 
   async selectLimitingReagent(name: string): Promise<void> {
-    await page
-      .getByRole("radio", {
-        name: new RegExp(`Select ${name} as limiting reagent`),
-      })
+    await this.table
+      .getByRole("row")
+      .filter({ has: page.getByRole("gridcell", { name, exact: true }) })
+      .getByRole("radio", { name: "common:stoichiometry.table.aria.selectLimitingReagent" })
       .click();
   }
 
@@ -74,6 +74,6 @@ export class StoichiometryDialogPage {
   }
 
   async confirmDeletion(): Promise<void> {
-    await this.deleteConfirmationDialog.getByRole("button", { name: "Delete", exact: true }).click();
+    await this.deleteConfirmationDialog.getByRole("button", { name: "common:actions.delete", exact: true }).click();
   }
 }

@@ -82,6 +82,7 @@ type SelectedFileInfoArgs = {
 };
 
 function SelectedFileInfo({ selectedFilename, error, loading }: SelectedFileInfoArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   return (
     <Box
@@ -92,7 +93,7 @@ function SelectedFileInfo({ selectedFilename, error, loading }: SelectedFileInfo
       }}
     >
       <Box component="dt" sx={{ color: theme.palette.text.secondary }}>
-        File selected:
+        {t("inputs.selectedFileInfo.label")}
       </Box>
       <Box component="dd" sx={{ marginLeft: theme.spacing(1) }}>
         <StatusChip selectedFilename={selectedFilename} error={error} loading={loading} />

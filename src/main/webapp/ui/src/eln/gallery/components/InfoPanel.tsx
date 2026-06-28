@@ -414,6 +414,7 @@ const formatDmpSource = (source: string): string => {
 };
 const InfoPanelContent = observer(
   ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
+    const { t } = useTranslation("gallery");
     return (
       <Stack
         sx={{
@@ -472,7 +473,7 @@ const InfoPanelContent = observer(
             }}
           >
             <Typography variant="h4" component="h4">
-              DMP Details
+              {t("infoPanel.dmpDetails")}
             </Typography>
             <DescriptionList
               content={[
@@ -528,7 +529,7 @@ const InfoPanelContent = observer(
           }}
         >
           <Typography variant="h4" component="h4">
-            Details
+            {t("infoPanel.details")}
           </Typography>
           <DescriptionList
             content={[
@@ -615,11 +616,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
         >((oldestDate, newestDate) => [
           {
             label: "Created",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
-              </>
-            ),
+            value: <>{`${oldestDate.toLocaleDateString()} – ${newestDate.toLocaleDateString()}`}</>,
           },
         ])(
           Result.fromNullable(sortedByCreated.at(0), new Error("No creation dates available.")),
@@ -635,11 +632,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
         >((oldestDate, newestDate) => [
           {
             label: "Modified",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
-              </>
-            ),
+            value: <>{`${oldestDate.toLocaleDateString()} – ${newestDate.toLocaleDateString()}`}</>,
           },
         ])(
           Result.fromNullable(sortedByModified.at(0), new Error("No modification dates available.")),

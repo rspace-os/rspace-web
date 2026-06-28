@@ -114,7 +114,9 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
   const listLabgroups = user?.groups.map((group) => (
     <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
-        {group.roleInGroup} at
+        {t("userDetails.roleAt", {
+          role: t(`userDetails.roles.${group.roleInGroup === "PI" ? "pi" : "user"}`),
+        })}
       </TableCell>
       <TableCell align="right">
         <Link href={`/groups/view/${group.groupId}`} sx={linkSx}>

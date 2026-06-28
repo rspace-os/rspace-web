@@ -1,6 +1,9 @@
 import Chip, { chipClasses } from "@mui/material/Chip";
+import { useTranslation } from "react-i18next";
 
 const StoichiometryTableRoleChip = ({ role }: { role: string }) => {
+  const { t } = useTranslation("common");
+
   const getRoleColor = (role: string) => {
     switch (role.toLowerCase()) {
       case "reactant":
@@ -20,8 +23,12 @@ const StoichiometryTableRoleChip = ({ role }: { role: string }) => {
 
   const getRoleLabel = (role: string) => {
     switch (role.toLowerCase()) {
+      case "reactant":
+        return t("stoichiometry.table.roles.reactant");
+      case "product":
+        return t("stoichiometry.table.roles.product");
       case "agent":
-        return "reagent";
+        return t("stoichiometry.table.roles.reagent");
       default:
         return role.toLowerCase();
     }

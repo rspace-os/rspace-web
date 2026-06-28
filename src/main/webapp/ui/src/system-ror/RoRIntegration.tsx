@@ -34,6 +34,7 @@ type RoRApiResponse = RORDataV2;
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
 const RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";
+const INVALID_ROR_EXAMPLES = ["https://ror.org/02mhbdp94", "ror.org/02mhbdp94", "02mhbdp94"] as const;
 
 function RorDetails(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
   return <Box {...props} sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }} />;
@@ -272,8 +273,11 @@ function RoRIntegration(): React.ReactNode {
         {errorMessage && getSeverity(errorMessage) === "error" && (
           <RorHelpText>
             {t("ror.invalidFormatHelp")}
-            <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
-            <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[0]}</RorErrorHelpText>
+            {", "}
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[1]}</RorErrorHelpText>
+            {", "}
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[2]}</RorErrorHelpText>
           </RorHelpText>
         )}
         {showLinkAction && (

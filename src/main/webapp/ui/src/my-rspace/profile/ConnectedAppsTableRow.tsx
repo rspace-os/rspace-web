@@ -6,7 +6,7 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 
@@ -37,7 +37,12 @@ const ConnectedAppsTableRow = ({
           title={t("profile.oauth.connectedApps.confirmDisconnectTitle")}
           consequences={
             <Typography variant="body1">
-              Are you sure you want to revoke access from <strong>{app.clientName}</strong>?
+              <Trans
+                ns="common"
+                i18nKey="profile.oauth.connectedApps.confirmDisconnectText"
+                values={{ clientName: app.clientName }}
+                components={[<strong key="strong" />]}
+              />
             </Typography>
           }
           variant="warning"

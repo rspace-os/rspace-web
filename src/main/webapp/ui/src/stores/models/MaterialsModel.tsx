@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -744,20 +745,18 @@ export class ListOfMaterials {
     if (
       !parentIsOnBench.isEmpty &&
       (await uiStore.confirm(
-        "Some items are in containers that are already on your bench.",
+        i18n.t("materialsListing.actions.move.confirmOnBench.title", { ns: "inventory" }),
         <>
-          The items are:
+          {i18n.t("materialsListing.actions.move.confirmOnBench.itemsLabel", { ns: "inventory" })}
           <ul>
             {parentIsOnBench.map(({ name, globalId }) => (
-              <li key={globalId}>
-                {name} ({globalId})
-              </li>
+              <li key={globalId}>{`${name} (${globalId})`}</li>
             ))}
           </ul>
-          Do you want to move them to your bench?
+          {i18n.t("materialsListing.actions.move.confirmOnBench.prompt", { ns: "inventory" })}
         </>,
-        "Yes",
-        "No",
+        i18n.t("materialsListing.actions.move.confirmOnBench.confirm", { ns: "inventory" }),
+        i18n.t("materialsListing.actions.move.confirmOnBench.cancel", { ns: "inventory" }),
       ))
     ) {
       moving = moving.union(parentIsOnBench);

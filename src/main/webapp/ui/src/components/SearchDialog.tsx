@@ -104,7 +104,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
               onSubmit();
               onClose();
             }}
-            label="Search"
+            label={t("actions.search")}
           />
         </DialogActions>
       </Dialog>

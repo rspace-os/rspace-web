@@ -11,6 +11,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
@@ -20,32 +21,26 @@ import type { Order } from "../../util/types";
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const RS: any;
 
-const enzymeSetOptions = {
-  UNIQUE_SIX_PLUS: "Unique six plus",
-  UNIQUE: "Unique",
-  SIX_PLUS: "Six plus",
-  UNIQUE_AND_DUAL: "Unique and dual",
-  COMMERCIAL_NONREDUNDANT: "Commercial nonredundant",
-};
-
-const headCells = [
-  { id: "name", numeric: false, disablePadding: false, label: "Enzyme" },
-  {
-    id: "bottomCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Bottom cut position",
-  },
-  {
-    id: "topCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Top cut position",
-  },
-];
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function EnzymeTable(props: any) {
+  const { t } = useTranslation("apps");
+  const enzymeSetOptions = {
+    UNIQUE_SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.uniqueSixPlus"),
+    UNIQUE: t("tinyMce.snapGene.enzymeSetOptions.unique"),
+    SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.sixPlus"),
+    UNIQUE_AND_DUAL: t("tinyMce.snapGene.enzymeSetOptions.uniqueAndDual"),
+    COMMERCIAL_NONREDUNDANT: t("tinyMce.snapGene.enzymeSetOptions.commercialNonredundant"),
+  };
+  const headCells = [
+    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.enzyme") },
+    {
+      id: "bottomCutPosition",
+      numeric: true,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.bottomCutPosition"),
+    },
+    { id: "topCutPosition", numeric: true, disablePadding: false, label: t("tinyMce.snapGene.columns.topCutPosition") },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
   const [page, setPage] = React.useState(0);
@@ -135,7 +130,7 @@ export default function EnzymeTable(props: any) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table stickyHeader size="small" aria-label="Enzyme table">
+              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.enzymeTableAria")}>
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
@@ -182,10 +177,10 @@ export default function EnzymeTable(props: any) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            Enzyme Sets
+            {t("tinyMce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinyMce.snapGene.enzymeTypeAria")}
             name="enzymeSet"
             value={enzymeSet}
             onChange={(event) => handleChange(event.target.value)}

@@ -151,7 +151,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "actions.save" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith([1]);
@@ -241,9 +241,9 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeChecked();
 
-    await user.click(screen.getByRole("button", { name: "actions.save" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
 
-    await screen.findByText(/Current stock amounts were refreshed\. Re-select any remaining molecules to retry\./i);
+    await screen.findByText("common:stoichiometry.inventoryUpdate.saveFeedback");
 
     await waitFor(() => {
       expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
@@ -255,11 +255,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(within(getMetric("Cyclopentane", "Will Use")).getByText("5.0 g")).toBeVisible();
     expect(within(getMetric("Cyclopentane", "Remaining")).getByText("0.0 g")).toBeVisible();
     expect(screen.getByText("Insufficient stock to perform this action.")).toBeVisible();
-    expect(
-      screen.getByText(
-        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
-      ),
-    ).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.stockDeductedWarning")).toBeVisible();
     expect(onClose).not.toHaveBeenCalled();
   });
 
@@ -282,11 +278,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
-    expect(
-      screen.getByText(
-        "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
-      ),
-    ).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.stockDeductedWarning")).toBeVisible();
   });
 
   it("disables Save when a selected molecule becomes invalid after refresh", async () => {
@@ -326,7 +318,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    const saveButton = screen.getByRole("button", { name: "actions.save" });
+    const saveButton = screen.getByRole("button", { name: "common:actions.save" });
     expect(saveButton).toBeEnabled();
 
     await user.click(screen.getByText("Invalidate selection"));
@@ -335,7 +327,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeDisabled();
       expect(saveButton).toBeDisabled();
     });
-    expect(screen.getByText("Re-select any invalid molecules before saving.")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.inventoryUpdate.selectionError")).toBeVisible();
   });
 
   it("shows a local error message and clears selection when saving fails", async () => {
@@ -358,9 +350,9 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "actions.save" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
 
-    await screen.findByText("Network down Current stock amounts were refreshed where possible.");
+    await screen.findByText("common:stoichiometry.inventoryUpdate.saveError");
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
   });
 });

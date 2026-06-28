@@ -131,7 +131,7 @@ const Picker = observer(
                   })}
                   slotProps={{
                     paper: {
-                      "aria-label": "Gallery Picker",
+                      "aria-label": tCommon("appBar.sections.gallery.title"),
                     },
                     transition: {
                       timeout: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300,
@@ -147,7 +147,7 @@ const Picker = observer(
                 >
                   <AppBar
                     variant="dialog"
-                    currentPage="Gallery"
+                    currentPage={tCommon("appBar.sections.gallery.title")}
                     sidebarToggle={
                       <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                     }
@@ -209,14 +209,14 @@ const Picker = observer(
                           validationResult={
                             selection.size > 0
                               ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
-                              : Result.Error([new Error("Select at least one file to proceed.")])
+                              : Result.Error([new Error(tCommon("galleryPicker.selectionRequired"))])
                           }
                           loading={false}
                           onClick={() => {
                             onSubmit(selection.asSet());
                           }}
                         >
-                          Add
+                          {tCommon("actions.add")}
                         </ValidatingSubmitButton>
                       </DialogActions>
                     </Box>

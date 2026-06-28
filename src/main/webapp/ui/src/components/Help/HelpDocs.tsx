@@ -7,6 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
@@ -63,6 +64,7 @@ function loadScript(url: string): void {
  * Displays the HelpDocs popup window.
  */
 function HelpDocs() {
+  const { t } = useTranslation("common");
   const uiNavigationData = useUiNavigationData();
   const api = useRef(
     axios.create({
@@ -133,10 +135,10 @@ function HelpDocs() {
       disable_authorship: true,
       suggestions: ["article:pfsj1e1u7j", "article:xw0ds8tee1", "article:bzgr8ea9e3", "article:dagfzhl3yw"],
       i18n: {
-        contact_button: "Chat with us",
-        search_placeholder: "Type to search for articles...",
-        view_all: "View All Articles",
-        suggested_articles: "Suggested Articles",
+        contact_button: t("helpDocs.chatWithUs"),
+        search_placeholder: t("helpDocs.searchPlaceholder"),
+        view_all: t("helpDocs.viewAllArticles"),
+        suggested_articles: t("helpDocs.suggestedArticles"),
       },
       onReady() {
         if (typeof window.Intercom !== "undefined") {
@@ -202,7 +204,7 @@ function HelpDocs() {
         size="small"
         onClick={handleMenuButtonClick}
         icon={<HelpIcon />}
-        title="Open Help"
+        title={t("helpDocs.openHelp")}
         disabled={!window.Lighthouse}
         aria-controls={open ? menuId : undefined}
         aria-haspopup={hasExtraHelpLinks ? "menu" : undefined}
@@ -233,9 +235,14 @@ function HelpDocs() {
         <Divider />
         <MenuItem onClick={handleHelpButtonClicked}>
           <ListItemIcon>
-            <Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon2.svg" />
+            <Box
+              component="img"
+              sx={{ height: 24, width: 24 }}
+              alt={t("helpDocs.rspaceAlt")}
+              src="/images/icons/rspaceIcon2.svg"
+            />
           </ListItemIcon>
-          <ListItemText>RSpace Documentation</ListItemText>
+          <ListItemText>{t("helpDocs.documentation")}</ListItemText>
         </MenuItem>
       </Menu>
     </div>

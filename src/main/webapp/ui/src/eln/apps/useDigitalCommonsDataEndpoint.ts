@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
@@ -16,18 +17,20 @@ export function useDigitalCommonsDataEndpoint(): {
   const disconnect = async (): Promise<void> => {
     try {
       await api.delete<void>("/connect");
+      const appName = i18n.t("integrations.digitalCommonsData.name", { ns: "apps" });
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully disconnected from Digital Commons Data.",
+          message: i18n.t("disconnect.success", { ns: "apps", appName }),
         }),
       );
     } catch (e) {
       console.error(e);
+      const appName = i18n.t("integrations.digitalCommonsData.name", { ns: "apps" });
       addAlert(
         mkAlert({
           variant: "error",
-          message: "Could not disconnect from Digital Commons Data.",
+          message: i18n.t("disconnect.error", { ns: "apps", appName }),
         }),
       );
     }

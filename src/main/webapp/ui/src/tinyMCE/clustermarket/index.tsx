@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
+import i18n from "../../modules/common/i18n";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 // eslint-disable-next-line no-duplicate-imports
@@ -30,7 +31,12 @@ function createTinyMceTable() {
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
-    .concat([{ id: "notes", numeric: false, label: "Notes" }] as unknown as typeof headers, headers.slice(4));
+    .concat(
+      [
+        { id: "notes", numeric: false, label: i18n.t("tinyMce.clustermarket.columns.notes", { ns: "apps" }) },
+      ] as unknown as typeof headers,
+      headers.slice(4),
+    );
   headersWithNotes.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;

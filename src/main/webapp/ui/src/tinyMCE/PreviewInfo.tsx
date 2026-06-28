@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
@@ -91,6 +92,7 @@ export function StoichiometryPreviewSection({
   stoichiometryId: number;
   stoichiometryRevision?: number;
 }) {
+  const { t } = useTranslation("apps");
   const chemistryStatus = useIntegrationIsAllowedAndEnabled("CHEMISTRY");
 
   return (
@@ -105,12 +107,12 @@ export function StoichiometryPreviewSection({
             {FetchingData.match(chemistryStatus, {
               loading: () => (
                 <Box sx={{ p: 2 }}>
-                  <Alert severity="info">Checking chemistry integration status...</Alert>
+                  <Alert severity="info">{t("previewInfo.chemistryStatus.loading")}</Alert>
                 </Box>
               ),
               error: (error) => (
                 <Box sx={{ p: 2 }}>
-                  <Alert severity="error">Error checking chemistry integration: {String(error)}</Alert>
+                  <Alert severity="error">{t("previewInfo.chemistryStatus.error", { error: String(error) })}</Alert>
                 </Box>
               ),
               success: (isEnabled) =>
@@ -118,9 +120,7 @@ export function StoichiometryPreviewSection({
                   <StoichiometryTable stoichiometryId={stoichiometryId} stoichiometryRevision={stoichiometryRevision} />
                 ) : (
                   <Box sx={{ p: 2 }}>
-                    <Alert severity="warning">
-                      Chemistry integration is not enabled. Please contact your administrator to enable it.
-                    </Alert>
+                    <Alert severity="warning">{t("previewInfo.chemistryStatus.disabled")}</Alert>
                   </Box>
                 ),
             })}

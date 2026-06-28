@@ -1,10 +1,12 @@
 import type React from "react";
 import { createRoot } from "react-dom/client";
+import i18n from "@/modules/common/i18n";
 import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
-const EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER = "Empty Stoichiometry Table";
+const tCommon = i18n.getFixedT(null, "common") as (translationKey: string, options?: Record<string, unknown>) => string;
+const EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER = tCommon("stoichiometry.plugin.emptyTablePlaceholder");
 
 declare global {
   interface Window {
@@ -143,7 +145,7 @@ class StoichiometryPlugin {
     };
 
     const getStoichiometryTableOnlyText = (): string => {
-      return "Stoichiometry Table (no preview)";
+      return tCommon("stoichiometry.plugin.noPreview");
     };
 
     const syncStoichiometryTableOnlyNodePresentation = (node: HTMLElement) => {
@@ -211,7 +213,7 @@ class StoichiometryPlugin {
     };
 
     const buildStoichiometryTableOnlyHtml = (nodeId: string): string => {
-      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="Reaction table">${EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER}</div>`;
+      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${i18n.t("stoichiometry.dialog.reactionTable", { ns: "common" })}">${EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER}</div>`;
     };
 
     const insertStoichiometryTableOnly = (): string => {
@@ -460,13 +462,13 @@ class StoichiometryPlugin {
     };
 
     editor.ui.registry.addButton("stoichiometryInsertButton", {
-      tooltip: "Insert reaction table",
+      tooltip: tCommon("stoichiometry.plugin.insertTooltip"),
       icon: "stoichiometry",
       onAction: openStoichiometryDialogFromSelection,
     });
 
     editor.ui.registry.addMenuItem("stoichiometryMenuItem", {
-      text: "Reaction Table",
+      text: tCommon("stoichiometry.dialog.reactionTable"),
       icon: "stoichiometry",
       onAction: openStoichiometryDialogFromSelection,
     });
@@ -475,9 +477,9 @@ class StoichiometryPlugin {
       window.insertActions = new Map();
     }
     window.insertActions.set("stoichiometryMenuItem", {
-      text: "Stoichiometry Table",
+      text: tCommon("stoichiometry.plugin.insertActionText"),
       icon: "stoichiometry",
-      aliases: ["Stoichiometry"],
+      aliases: [tCommon("stoichiometry.plugin.insertActionAlias")],
       action: openStoichiometryDialogFromSelection,
     });
 

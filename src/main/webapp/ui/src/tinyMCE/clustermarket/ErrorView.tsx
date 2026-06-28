@@ -34,18 +34,17 @@ export default function ErrorView({
           what the issue is.
         </>
       )}
-      {errorReason === ErrorReason.NotFound && <>{t("integrationErrors.calira.notFound")}</>}
+      {errorReason === ErrorReason.NotFound && t("integrationErrors.calira.notFound")}
       {/* when an OAuth token expires the Clustermarket API responds with 401 response.
         When a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
-      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>{t("integrationErrors.calira.invalidToken")}</>
-      )}
-      {errorReason === ErrorReason.Timeout && <>{t("integrationErrors.timeout")}</>}
+      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) &&
+        t("integrationErrors.calira.invalidToken")}
+      {errorReason === ErrorReason.Timeout && t("integrationErrors.timeout")}
       {/* when a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
-      {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <>{t("integrationErrors.tryAgainLater")}</>
-      )}
-      {errorReason === ErrorReason.UNKNOWN && <>{t("integrationErrors.unknownRelogin")}</>}
+      {errorReason === ErrorReason.BadRequest &&
+        !errorMessage.includes("invalid_grant") &&
+        t("integrationErrors.tryAgainLater")}
+      {errorReason === ErrorReason.UNKNOWN && t("integrationErrors.unknownRelogin")}
     </Alert>
   );
 }

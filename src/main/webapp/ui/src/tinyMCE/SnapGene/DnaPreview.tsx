@@ -100,7 +100,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                   zIndex: 100,
                 }}
                 size="small"
-                aria-label="small outlined button group"
+                aria-label={t("tinyMce.snapGene.zoomControlsAria")}
               >
                 <Button onClick={() => zoomIn()}>+</Button>
                 <Button onClick={() => zoomOut()}>-</Button>
@@ -132,7 +132,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
             {t("tinyMce.snapGene.imageType")}
           </FormLabel>
           <RadioGroup
-            aria-label="Linear choice"
+            aria-label={t("tinyMce.snapGene.linearChoiceAria")}
             name="linear"
             value={state.linear.toString()}
             onChange={(event) => handleChange(event.target.name as keyof DnaPreviewState, event.target.value)}

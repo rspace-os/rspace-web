@@ -316,7 +316,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                     id={`${item.type}_details_fetched_${item.id}`}
                                     sx={{ fontWeight: "bold" }}
                                   >
-                                    details fetched
+                                    {t("tinyMce.omero.detailsFetched")}
                                   </Box>
                                 ) : (
                                   <a
@@ -328,7 +328,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       item.fetched = true;
                                     }}
                                   >
-                                    {item.type === "image" ? "re-draw image" : "fetch details"}
+                                    {item.type === "image"
+                                      ? t("tinyMce.omero.redrawImage")
+                                      : t("tinyMce.omero.fetchDetails")}
                                   </a>
                                 )}
                                 {item.gridShown ? (
@@ -359,7 +361,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                             data-testid={`${item.type}_show_grid_${item.id}`}
                                             sx={{ fontWeight: "bold" }}
                                           >
-                                            show grid of wells for field {pos + 1}
+                                            {t("tinyMce.omero.showGridOfWellsForField", { field: pos + 1 })}
                                           </Box>
                                         </a>
                                       </div>
@@ -379,7 +381,8 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         data-testid={`${item.type}_show_grid_${item.id}`}
                                         sx={{ fontWeight: "bold" }}
                                       >
-                                        show image grid {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
+                                        {t("tinyMce.omero.showImageGrid")}
+                                        {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
                                       </Box>
                                     </a>
                                   </div>
@@ -491,7 +494,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
           }}
         >
           <Typography component="span" variant="body2" color="textPrimary">
-            Selected: {selectedItemIds.length}
+            {t("tinyMce.omero.selectedCount", { count: selectedItemIds.length })}
           </Typography>
         </Box>
       </>

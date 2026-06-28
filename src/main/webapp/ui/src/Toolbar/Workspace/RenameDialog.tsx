@@ -7,7 +7,7 @@ import Portal from "@mui/material/Portal";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import axios from "@/common/axios";
 import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
@@ -140,7 +140,12 @@ const RenameDialog = () => {
         <DialogTitle>{t("toolbar.rename.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText variant="body2" sx={{ mb: 2 }}>
-            Please give a new name for <strong>{currentName}</strong>
+            <Trans
+              ns="workspace"
+              i18nKey="toolbar.rename.prompt"
+              values={{ currentName }}
+              components={[<strong key="strong" />]}
+            />
           </DialogContentText>
           <TextField
             size="small"

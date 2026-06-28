@@ -220,7 +220,7 @@ const DynamicAvatar = ({
         <CircularProgress size="16px" />
       </StyledAvatar>
     ),
-    error: () => <StyledAvatar size={size}>!</StyledAvatar>,
+    error: () => <StyledAvatar size={size}>{"!"}</StyledAvatar>,
     success: ({ operatedAs, userDetails: { profileImgSrc, fullName } }) => {
       if (operatedAs) {
         if (size === "small")
@@ -764,7 +764,7 @@ function GalleryAppBar({
                                     </>
                                   ))
                                   .orElse(null)}
-                                {userDetails.fullName} ({userDetails.username})
+                                {`${userDetails.fullName} (${userDetails.username})`}
                               </>
                             }
                             secondary={userDetails.email}

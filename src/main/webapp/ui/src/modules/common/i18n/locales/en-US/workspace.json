@@ -339,6 +339,7 @@
       "emptyName": "Empty name is not permitted.",
       "error": "An error occurred while renaming the document.",
       "name": "Name",
+      "prompt": "Please give a new name for <0>{currentName}</0>",
       "success": "Successfully renamed document.",
       "title": "Rename"
     },

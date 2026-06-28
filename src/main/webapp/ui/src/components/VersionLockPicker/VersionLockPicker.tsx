@@ -7,6 +7,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 export const LATEST_SELECTION = "__latest__" as const;
 
@@ -26,6 +27,7 @@ export interface VersionLockPickerProps {
 }
 
 export default function VersionLockPicker(props: VersionLockPickerProps): React.ReactElement {
+  const { t } = useTranslation("common");
   const [versions, setVersions] = useState<VersionRecord[]>([]);
 
   useEffect(() => {
@@ -53,12 +55,12 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
 
   return (
     <TableContainer>
-      <Table size="small" aria-label="version-lock-picker">
+      <Table size="small" aria-label={t("versionLockPicker.ariaLabel")}>
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox" />
-            <TableCell>Version</TableCell>
-            <TableCell>Modified</TableCell>
+            <TableCell>{t("versionLockPicker.columns.version")}</TableCell>
+            <TableCell>{t("versionLockPicker.columns.modified")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -66,7 +68,7 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
             <TableCell padding="checkbox">
               <Radio checked={isLatest} value={LATEST_SELECTION} />
             </TableCell>
-            <TableCell>Latest</TableCell>
+            <TableCell>{t("versionLockPicker.latest")}</TableCell>
             <TableCell />
           </TableRow>
           {versions.map((v) => {
@@ -81,7 +83,7 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
                 <TableCell padding="checkbox">
                   <Radio checked={checked} value={v.version} />
                 </TableCell>
-                <TableCell>{`Version ${v.version}`}</TableCell>
+                <TableCell>{t("versionLockPicker.versionValue", { version: v.version })}</TableCell>
                 <TableCell>{v.modificationDate}</TableCell>
               </TableRow>
             );

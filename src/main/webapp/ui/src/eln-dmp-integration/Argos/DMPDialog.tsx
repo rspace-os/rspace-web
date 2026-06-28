@@ -195,9 +195,9 @@ const SearchControls = ({
   }, [page, pageSize]);
   return (
     <Stack spacing={1}>
-      <Stack direction="row" spacing={1} role="group" aria-label="Search filters">
+      <Stack direction="row" spacing={1} role="group" aria-label={t("dmpIntegrations.dialog.search.filters")}>
         <CustomChip
-          name="Label"
+          name={t("dmpIntegrations.dialog.columns.label")}
           value={appliedSearchParameters.like}
           onDelete={() => {
             const newSearchParametes = {
@@ -209,7 +209,7 @@ const SearchControls = ({
           }}
         />
         <CustomChip
-          name="Grant"
+          name={t("dmpIntegrations.dialog.columns.grant")}
           value={appliedSearchParameters.grantsLike}
           onDelete={() => {
             const newSearchParametes = {
@@ -221,7 +221,7 @@ const SearchControls = ({
           }}
         />
         <CustomChip
-          name="Funder"
+          name={t("dmpIntegrations.dialog.search.funder")}
           value={appliedSearchParameters.fundersLike}
           onDelete={() => {
             const newSearchParametes = {
@@ -233,7 +233,7 @@ const SearchControls = ({
           }}
         />
         <CustomChip
-          name="Collaborators"
+          name={t("dmpIntegrations.dialog.search.collaborators")}
           value={appliedSearchParameters.collaboratorsLike}
           onDelete={() => {
             const newSearchParametes = {
@@ -253,7 +253,7 @@ const SearchControls = ({
         }}
       >
         <Search
-          name="Label"
+          name={t("dmpIntegrations.dialog.columns.label")}
           value={searchParameters.like}
           onChange={(like) =>
             setSearchParameters({
@@ -267,7 +267,7 @@ const SearchControls = ({
           }}
         />
         <Search
-          name="Grant"
+          name={t("dmpIntegrations.dialog.columns.grant")}
           value={searchParameters.grantsLike}
           onChange={(grantsLike) =>
             modifySearchParameters({
@@ -281,7 +281,7 @@ const SearchControls = ({
           }}
         />
         <Search
-          name="Funder"
+          name={t("dmpIntegrations.dialog.search.funder")}
           value={searchParameters.fundersLike}
           onChange={(fundersLike) =>
             modifySearchParameters({
@@ -295,7 +295,7 @@ const SearchControls = ({
           }}
         />
         <Search
-          name="Collaborators"
+          name={t("dmpIntegrations.dialog.search.collaborators")}
           value={searchParameters.collaboratorsLike}
           onChange={(collaboratorsLike) =>
             setSearchParameters({
@@ -314,7 +314,7 @@ const SearchControls = ({
           }}
           disabled={fetching}
           loading={fetching}
-          label="Refresh"
+          label={t("actions.refresh")}
           type="submit"
           size="small"
         />

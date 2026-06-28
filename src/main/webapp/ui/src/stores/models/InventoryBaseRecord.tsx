@@ -670,12 +670,12 @@ export default class InventoryBaseRecord
       if (
         getRootStore().uiStore.recentBatchEditExpiryCheck ??
         (await getRootStore().uiStore.confirm(
-          "Your editing session is about to expire",
-          <>
-            This session will expire in one minute. Please confirm if you want to continue editing this{" "}
-            {this.recordTypeLabel.toLowerCase()}. If you cancel, your unsaved changes will be lost.
-          </>,
-          "CONTINUE",
+          i18n.t("baseRecord.editSessionExpiring.title", { ns: "inventory" }),
+          i18n.t("baseRecord.editSessionExpiring.body", {
+            ns: "inventory",
+            recordType: this.recordTypeLabel.toLowerCase(),
+          }),
+          i18n.t("baseRecord.editSessionExpiring.continue", { ns: "inventory" }),
         ))
       ) {
         /*
@@ -1409,13 +1409,10 @@ export default class InventoryBaseRecord
     try {
       if (
         await getRootStore().uiStore.confirm(
-          "You are about to delete this Identifier",
-          <>
-            The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to
-            proceed?
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("identifierConfirm.delete.title", { ns: "inventory" }),
+          i18n.t("identifierConfirm.delete.body", { ns: "inventory" }),
+          i18n.t("common:actions.ok"),
+          i18n.t("identifierConfirm.cancelButton", { ns: "inventory" }),
         )
       ) {
         if (!id) throw new Error("DOI Id must be known.");

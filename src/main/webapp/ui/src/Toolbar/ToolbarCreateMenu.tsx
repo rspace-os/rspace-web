@@ -145,7 +145,7 @@ export default function CreateMenu(props: CreateMenuProps) {
                 fontWeight: "bold",
               }}
             >
-              T
+              {"T"}
             </Box>
           </Box>
           {t("toolbar.fromTemplate")}

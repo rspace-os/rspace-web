@@ -464,7 +464,7 @@ class WorkspaceToolbar extends React.Component {
                     marginTop: "1px",
                   }}
                 >
-                  T
+                  {"T"}
                 </Box>
               </IconButton>
             </Tooltip>
@@ -491,7 +491,7 @@ class WorkspaceToolbar extends React.Component {
                     marginTop: "1px",
                   }}
                 >
-                  O
+                  {"O"}
                 </Box>
               </IconButton>
             </Tooltip>

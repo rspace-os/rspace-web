@@ -12,6 +12,7 @@ import { ThemeProvider, useTheme } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { forwardRef, useCallback, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import materialTheme from "../theme";
 
 type ToastVariant = "success" | "warning" | "error" | "notice";
@@ -180,6 +181,7 @@ const variantIcon: Record<ToastVariant, typeof CheckCircleIcon> = {
 
 const MySnackbarContentWrapper = forwardRef<HTMLDivElement, MySnackbarContentWrapperProps>(
   ({ message, onClose, variant }, ref) => {
+    const { t } = useTranslation("common");
     const theme = useTheme();
     const Icon = variantIcon[variant];
     const backgroundColors: Record<ToastVariant, string> = {
@@ -212,7 +214,7 @@ const MySnackbarContentWrapper = forwardRef<HTMLDivElement, MySnackbarContentWra
           <IconButton
             data-test-id="toast-close"
             key="close"
-            aria-label="close"
+            aria-label={t("actions.close")}
             color="inherit"
             onClick={(event) => onClose(event)}
           >

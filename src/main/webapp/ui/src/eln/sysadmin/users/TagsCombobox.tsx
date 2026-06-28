@@ -15,6 +15,7 @@ import useAutocomplete, {
 } from "@mui/material/useAutocomplete";
 import type React from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
 import axios from "@/common/axios";
 import { checkUserInputString, helpText, isAllowed } from "../../../components/Tags/TagValidation";
@@ -239,6 +240,7 @@ function TagsComboboxContent({
   onClose,
   allowNewTags = true,
 }: Omit<TagsComboboxArgs, "anchorEl">): React.ReactNode {
+  const { t } = useTranslation("common");
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [filter, setFilter] = useState("");
@@ -545,14 +547,14 @@ function TagsComboboxContent({
       )}
       {!error && groupedOptions.length === 0 && filter.length > 1 && (
         <Alert severity="info">
-          <AlertTitle>No matching tag suggestions</AlertTitle>
-          {allowNewTags && <>To use a new tag, press Enter.</>}
+          <AlertTitle>{t("tags.noMatchingSuggestions")}</AlertTitle>
+          {allowNewTags && t("tags.useNewTagHint")}
         </Alert>
       )}
       {error && (
         <Alert severity="warning">
-          <AlertTitle>Error fetching tags</AlertTitle>
-          {allowNewTags ? <>Simply type in the tag and press enter instead.</> : <>Please try again.</>}
+          <AlertTitle>{t("tags.errorFetchingTags")}</AlertTitle>
+          {allowNewTags ? t("tags.typeTagInstead") : t("tags.tryAgain")}
         </Alert>
       )}
     </>

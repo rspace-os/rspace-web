@@ -13,10 +13,17 @@
     "addFilestore": "Add Filestore",
     "chooseFilesystem": "Choose Filesystem",
     "chooseFolder": "Choose Folder",
+    "filesystemHelp": "Your sysadmin needs to configure a file system before it appears here.",
     "filesystemStep": "Choose Filesystem",
+    "filesystemStepLabel": "Select a File system",
+    "folderHelp": "You can configure multiple Filestores from the same File system with different top-level folders, to facilitate accessing deeply-nested content.",
     "folderStep": "Select the top-level Folder for the Filestore",
+    "folderStepLabel": "Select the top-level Folder for the Filestore",
+    "nameHelp": "This name is used in RSpace to help you identify the Filestore.",
     "nameLabel": "Filestore name",
-    "nameStep": "Name the Filestore"
+    "nameStep": "Name the Filestore",
+    "nameStepLabel": "Name the Filestore",
+    "noReadAccess": "(no read access; contact your sysadmin)"
   },
   "callablePdfPreview": {
     "title": "PDF Preview"
@@ -36,6 +43,8 @@
     "wrongCredentials": "Wrong credentials?"
   },
   "infoPanel": {
+    "details": "Details",
+    "dmpDetails": "DMP Details",
     "nameAriaLabel": "Name",
     "noDescriptionPlaceholder": "No description",
     "noNamePlaceholder": "No Name"
@@ -44,16 +53,89 @@
     "filestoreEnabledError": "Error checking if filestores are enabled.",
     "invalidSection": "Not a valid Gallery section."
   },
+  "linkedDocumentsPanel": {
+    "columns": {
+      "globalId": "Global ID",
+      "name": "Name"
+    },
+    "heading": "Linked Documents",
+    "noRows": "No Linked Documents"
+  },
   "loadMore": "Load More",
   "mainPanel": {
+    "cancelDrag": "Cancel",
     "carouselView": "Carousel",
     "carouselViewDesc": "Flick through all files to find one.",
     "gridView": "Grid",
     "gridViewDesc": "Browse by thumbnail previews.",
     "sort": "Sort",
+    "sortOptions": {
+      "modificationDate": "Modification Date",
+      "name": "Name"
+    },
     "treeView": "Tree",
     "treeViewDesc": "View and manage folder hierarchy.",
     "views": "Views"
+  },
+  "moveDialog": {
+    "description": "Choose a folder or tap the \"top-level\" button.",
+    "makeTopLevel": "Make top-level",
+    "title": "Move"
+  },
+  "moveToIrods": {
+    "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
+    "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
+    "destination": {
+      "explanation": "The available folders are configured in the Gallery's filestore section.",
+      "label": "Destination in iRODS",
+      "placeholder": "Select a destination"
+    },
+    "errors": {
+      "misconfigured": "Please check with your System Admin to ensure iRODS is correctly configured.",
+      "noFilestoreConfigured": {
+        "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+        "title": "No iRODS filestore has been configured."
+      }
+    },
+    "helpTitle": "iRODS help",
+    "login": {
+      "legend": "iRODS login",
+      "password": "Password",
+      "prompt": "Please provide your login credentials for {serverUrl}",
+      "username": "Username"
+    },
+    "retainCopy": "Retain a copy in RSpace",
+    "title": "Move to iRODS"
+  },
+  "moveToS3": {
+    "actions": {
+      "copy": "Copy",
+      "move": "Move",
+      "transfer": "Transfer"
+    },
+    "destination": {
+      "explanation": "The available filestores are configured in the Gallery's filestore section.",
+      "label": "Destination S3 filestore",
+      "noWriteAccess": "No write access",
+      "placeholder": "Select a filestore"
+    },
+    "errors": {
+      "misconfigured": "Please check with your System Admin to ensure the S3 filestore is correctly configured.",
+      "noFilestoreConfigured": {
+        "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+        "title": "No S3 filestore has been configured."
+      },
+      "noWriteAccess": {
+        "body": "Your account is not on the write allowlist for any S3 filestore. Ask your system administrator if you need write access.",
+        "title": "You do not have write access to any S3 filestore."
+      }
+    },
+    "moveDescription": "You have selected {count} {count, plural, one {item} other {items}} to move to S3. By default, the items will be added to S3 and removed from RSpace. You will be able to link to the S3 items inside of RSpace documents.",
+    "moveTitle": "Move to S3",
+    "retainRspaceCopy": "Retain a copy in RSpace",
+    "retainSourceCopy": "Retain a copy on source bucket",
+    "transferDescription": "You have selected {count} {count, plural, one {item} other {items}} to transfer to another S3 bucket. By default, the items will be copied to the destination and deleted from the source.",
+    "transferTitle": "Transfer to S3"
   },
   "sidebar": {
     "addFilestore": "Add a Filestore",

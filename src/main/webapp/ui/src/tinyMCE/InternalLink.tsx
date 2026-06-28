@@ -203,11 +203,13 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
       <DialogContent>
         <Toolbar sx={{ pl: 2, pr: 1 }}>
           <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
-            The link currently points at {props.version ? `version ${props.version}.` : "latest version."}
+            {t("tinyMce.internalLink.currentTarget", {
+              version: props.version ?? null,
+            })}
           </Typography>
         </Toolbar>
         {latestRevision && (
-          <Table sx={{ minWidth: 750 }} size="small" aria-label="Internal link version options">
+          <Table sx={{ minWidth: 750 }} size="small" aria-label={t("tinyMce.internalLink.dialogTitle")}>
             <TableBody>
               <TableRow
                 hover
@@ -226,7 +228,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                     name="radio-button-demo"
                     slotProps={{
                       input: {
-                        "aria-label": "D",
+                        "aria-label": LATEST_REVISION_LABEL,
                       },
                     }}
                   />
@@ -257,10 +259,15 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
           }}
           gutterBottom
         >
-          Or choose a version that the link should always point at:
+          {t("tinyMce.internalLink.chooseVersion")}
         </Typography>
         <TableContainer>
-          <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size="small" aria-label="enhanced table">
+          <Table
+            sx={{ minWidth: 750 }}
+            aria-labelledby="tableTitle"
+            size="small"
+            aria-label={t("tinyMce.internalLink.versionTableAria")}
+          >
             <EnhancedTableHead
               headCells={headCells}
               order={order}
@@ -294,7 +301,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                           name="radio-button-demo"
                           slotProps={{
                             input: {
-                              "aria-label": "Select revision",
+                              "aria-label": t("tinyMce.internalLink.selectRevision"),
                             },
                           }}
                         />

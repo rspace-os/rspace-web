@@ -129,6 +129,7 @@ const DragOverlayContents = observer(() => {
   );
 });
 const DragCancelFab = () => {
+  const { t } = useTranslation("gallery");
   const dndContext = useDndContext();
   const dndInProgress = Boolean(dndContext.active);
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -165,7 +166,7 @@ const DragCancelFab = () => {
             }}
             sx={dropStyle}
           >
-            Cancel
+            {t("mainPanel.cancelDrag")}
           </Fab>
         </Box>
       )}
@@ -756,7 +757,7 @@ const FileCard = observer(
                       : {}),
                   })}
                 >
-                  v{file.version}
+                  {`v${file.version}`}
                 </Box>
               )}
             </CardActionArea>
@@ -1520,7 +1521,7 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title={
                     <>
-                      Name
+                      {t("mainPanel.sortOptions.name")}
                       {orderBy === "name" && (
                         <>
                           {" "}
@@ -1559,7 +1560,7 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title={
                     <>
-                      Modification Date
+                      {t("mainPanel.sortOptions.modificationDate")}
                       {orderBy === "modificationDate" && (
                         <>
                           {" "}

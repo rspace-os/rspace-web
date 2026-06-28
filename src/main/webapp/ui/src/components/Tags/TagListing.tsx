@@ -12,6 +12,8 @@ import type { Tag } from "../../stores/definitions/Tag";
 import DescriptionList from "../DescriptionList";
 import IconButtonWithTooltip from "../IconButtonWithTooltip";
 
+const EM_DASH = "—";
+
 type TagListingArgs = {
   tags: Array<Tag>;
   size?: "small" | "medium";
@@ -53,15 +55,15 @@ export default function TagListing({
     },
     {
       label: t("tags.metadata.termUri"),
-      value: tag.uri.orElse(<>&mdash;</>),
+      value: tag.uri.orElse(EM_DASH),
     },
     {
       label: t("tags.metadata.controlledVocabularyName"),
-      value: tag.vocabulary.orElse(<>&mdash;</>),
+      value: tag.vocabulary.orElse(EM_DASH),
     },
     {
       label: t("tags.metadata.controlledVocabularyVersion"),
-      value: tag.version.orElse(<>&mdash;</>),
+      value: tag.version.orElse(EM_DASH),
     },
   ];
 

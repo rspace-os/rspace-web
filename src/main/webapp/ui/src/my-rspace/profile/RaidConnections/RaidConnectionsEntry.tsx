@@ -28,13 +28,7 @@ const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
       ) : (
         <>
           <Typography variant="body2">
-            {raidIdentifier ? (
-              <>
-                {raidTitle} ({raidIdentifier})
-              </>
-            ) : (
-              t("profile.raidConnections.notConnected")
-            )}
+            {raidIdentifier ? `${raidTitle} (${raidIdentifier})` : t("profile.raidConnections.notConnected")}
           </Typography>
           {raidIdentifier ? (
             <RaidConnectionsDisassociateButton

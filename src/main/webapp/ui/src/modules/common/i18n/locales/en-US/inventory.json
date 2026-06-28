@@ -27,6 +27,11 @@
     }
   },
   "baseRecord": {
+    "editSessionExpiring": {
+      "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
+      "continue": "CONTINUE",
+      "title": "Your editing session is about to expire"
+    },
     "editSessionExpired": {
       "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
       "title": "Your editing session has expired"
@@ -44,6 +49,11 @@
       "locationUnchanged": "This action will not change the location of the {itemString}.",
       "nameTooLong": "The name should be no longer than 32 characters.",
       "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
+    },
+    "delete": {
+      "bodyPrefix": "You are about to delete {name}.",
+      "bodySuffix": "The contents of the Basket will not be affected.",
+      "title": "Deleting Basket"
     }
   },
   "container": {
@@ -158,6 +168,7 @@
       "restore": "Restore",
       "trash": "Trash"
     },
+    "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "createDialog": {
       "change": "Change",
       "columns": {
@@ -288,8 +299,8 @@
       "title": "Importing notebook"
     },
     "importSuccess": "Successfully imported notebook.",
-    "noNotebookSelected": "No Notebook selected.",
     "noNotebooks": "No Notebooks",
+    "noNotebookSelected": "No Notebook selected.",
     "selectRadioAriaLabel": "Select notebook: {name}",
     "title": "Import from Fieldmark"
   },
@@ -399,16 +410,16 @@
       "addNewField": "Add new field",
       "addOneFieldAtATime": "You can only create one field at a time.",
       "deleteField": "Delete field",
+      "fields": {
+        "fieldName": "Field name",
+        "fieldType": "Field type",
+        "relationType": "Relation type"
+      },
       "fieldSettings": "Field settings",
       "fieldTypes": {
         "link": "Link",
         "number": "Number",
         "text": "Text"
-      },
-      "fields": {
-        "fieldName": "Field name",
-        "fieldType": "Field type",
-        "relationType": "Relation type"
       },
       "groups": {
         "editing": "Editing extra field with name {name}",
@@ -430,12 +441,12 @@
         "discard": "Discard",
         "update": "Update"
       },
-      "validNumber": "Must be a valid number.",
       "validation": {
         "duplicateName": "You either already have a field with that name or that name is not permitted.",
         "emptyName": "Name should not be empty.",
         "nameTooLong": "Name must be no longer than 255 characters."
-      }
+      },
+      "validNumber": "Must be a valid number."
     },
     "identifiers": {
       "assignDialog": {
@@ -628,9 +639,9 @@
         "browseEln": "Browse ELN",
         "browseInventory": "Browse Inventory",
         "latest": "Latest",
+        "pinnedVersion": "Pinned to v{version}",
         "pinVersion": "Pin version",
         "pinVersionFor": "Pin version for {globalId}",
-        "pinnedVersion": "Pinned to v{version}",
         "targetGlobalId": "Target Global ID"
       },
       "elnFolderBrowser": {
@@ -786,9 +797,9 @@
       },
       "defaultValue": {
         "addValue": "Add Value",
-        "allRelationshipTypes": "All relationship types",
         "allowedRelationshipTypes": "Allowed relationship types",
         "allowedRelationshipTypesExplanation": "The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types.",
+        "allRelationshipTypes": "All relationship types",
         "none": "None"
       },
       "move": {
@@ -802,8 +813,8 @@
         "defaultScale": "Default Scale",
         "label": "Quantity Units",
         "mass": "Mass",
-        "unitType": "Unit Type",
         "unitless": "Unitless",
+        "unitType": "Unit Type",
         "volume": "Volume"
       }
     }
@@ -836,6 +847,10 @@
     "create": {
       "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
       "title": "You are about to create an Identifier"
+    },
+    "delete": {
+      "body": "The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to proceed?",
+      "title": "You are about to delete this Identifier"
     },
     "publish": {
       "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
@@ -1016,6 +1031,13 @@
       "export": "Export",
       "move": {
         "alreadyOnBench": "All items are already on your bench.",
+        "confirmOnBench": {
+          "cancel": "No",
+          "confirm": "Yes",
+          "itemsLabel": "The items are:",
+          "prompt": "Do you want to move them to your bench?",
+          "title": "Some items are in containers that are already on your bench."
+        },
         "none": "Nothing to move.",
         "unsavedChanges": "Cannot move whilst there are unsaved changes."
       },
@@ -1175,9 +1197,9 @@
       "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a>documentation</a>.",
       "large": "Large",
       "printCopies": "Print Copies",
+      "printerType": "Printer Type",
       "printLayout": "Print Layout",
       "printSize": "Print Size",
-      "printerType": "Printer Type",
       "small": "Small",
       "standardPrinter": "Standard Printer",
       "standardPrinterHint": "Print multiple labels per sheet (e.g. A4 / A3 / Letter)."
@@ -1186,14 +1208,22 @@
   "recordDetails": {
     "modifiedBy": "by {user}"
   },
-  "recordTree": {
-    "navigateToContainer": "Navigate to container"
+  "recordInfo": {
+    "barcodes": {
+      "model": {
+        "generatedByRspace": "Generated By RSpace:",
+        "generatedDescription": "Generated by RSpace: {data}"
+      }
+    }
   },
   "recordsTable": {
     "columns": {
       "globalId": "Global ID",
       "name": "Name"
     }
+  },
+  "recordTree": {
+    "navigateToContainer": "Navigate to container"
   },
   "sample": {
     "batch": {

@@ -60,9 +60,7 @@ const StoichiometryTableToolbar = ({
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
   const [inventoryUpdateDialogOpen, setInventoryUpdateDialogOpen] = React.useState(false);
   const [exportMenuAnchorEl, setExportMenuAnchorEl] = React.useState<HTMLButtonElement | null>(null);
-  const inventoryUpdateDisabledTooltip = hasChanges
-    ? "Save the stoichiometry table before updating inventory stock."
-    : "";
+  const inventoryUpdateDisabledTooltip = hasChanges ? t("stoichiometry.inventoryUpdate.saveBeforeUpdate") : "";
   return (
     <Toolbar
       style={{
@@ -115,13 +113,13 @@ const StoichiometryTableToolbar = ({
             slotProps={{
               list: {
                 disablePadding: true,
-                "aria-label": "add chemical menu",
+                "aria-label": t("stoichiometry.addReagent.menuAria"),
               },
             }}
           >
             <AccentMenuItem
-              title="PubChem"
-              subheader="Import compound from PubChem"
+              title={t("stoichiometry.addReagent.sources.pubChem.title")}
+              subheader={t("stoichiometry.addReagent.sources.pubChem.subheader")}
               backgroundColor={PUBCHEM_ACCENT_COLOR.background}
               foregroundColor={PUBCHEM_ACCENT_COLOR.backgroundContrastText}
               avatar={<CardMedia image={PubChemLogo} />}
@@ -132,8 +130,8 @@ const StoichiometryTableToolbar = ({
             />
 
             <AccentMenuItem
-              title="Gallery"
-              subheader="Import compound from Gallery"
+              title={t("stoichiometry.addReagent.sources.gallery.title")}
+              subheader={t("stoichiometry.addReagent.sources.gallery.subheader")}
               backgroundColor={GALLERY_COLOR.main}
               foregroundColor={GALLERY_COLOR.contrastText}
               avatar={
@@ -150,8 +148,8 @@ const StoichiometryTableToolbar = ({
               }}
             />
             <AccentMenuItem
-              title="Manually"
-              subheader="Manually enter SMILES"
+              title={t("stoichiometry.addReagent.sources.manual.title")}
+              subheader={t("stoichiometry.addReagent.sources.manual.subheader")}
               backgroundColor={CHEMISTRY_COLOR.background}
               foregroundColor={CHEMISTRY_COLOR.backgroundContrastText}
               avatar={<EditIcon />}
@@ -193,8 +191,8 @@ const StoichiometryTableToolbar = ({
                   }
                 })();
               }}
-              title="Insert from PubChem"
-              submitButtonText="Insert"
+              title={t("stoichiometry.addReagent.sources.pubChem.dialogTitle")}
+              submitButtonText={t("actions.insert")}
               showPubChemInfo
               allowMultipleSelection
             />
@@ -211,7 +209,7 @@ const StoichiometryTableToolbar = ({
                         zIndex: 1,
                       }}
                     >
-                      <CircularProgress color="inherit" aria-label="Loading gallery picker" />
+                      <CircularProgress color="inherit" aria-label={t("stoichiometry.gallery.loadingPicker")} />
                     </Backdrop>
                   }
                 >
@@ -234,7 +232,7 @@ const StoichiometryTableToolbar = ({
                     }}
                     validateSelection={(file) => {
                       if (file.type !== "Chemistry")
-                        return Result.Error([new Error("Only chemistry files can be added to stoichiometry tables")]);
+                        return Result.Error([new Error(t("stoichiometry.gallery.chemistryFilesOnly"))]);
                       return Result.Ok(null);
                     }}
                   />

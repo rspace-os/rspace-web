@@ -110,14 +110,8 @@ function FilesystemSelectionStep(props: {
 
   return (
     <Step key="filesystemSelection" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">
-            Your sysadmin needs to configure a file system before it appears here.
-          </Typography>
-        }
-      >
-        Select a File system
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.filesystemHelp")}</Typography>}>
+        {t("addFilestoreDialog.filesystemStepLabel")}
       </StepLabel>
       <StepContent>
         <RadioGroup
@@ -144,7 +138,7 @@ function FilesystemSelectionStep(props: {
                   <>
                     {fs.name}
                     <Typography component="span" variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
-                      (no read access; contact your sysadmin)
+                      {t("addFilestoreDialog.noReadAccess")}
                     </Typography>
                   </>
                 )
@@ -279,15 +273,8 @@ function FolderSelectionStep(props: {
 
   return (
     <Step key="folderSelection" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">
-            You can configure multiple Filestores from the same File system with different top-level folders, to
-            facilitate accessing deeply-nested content.
-          </Typography>
-        }
-      >
-        Select the top-level Folder for the Filestore
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.folderHelp")}</Typography>}>
+        {t("addFilestoreDialog.folderStepLabel")}
       </StepLabel>
       <StepContent>
         <SimpleTreeView
@@ -344,12 +331,8 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
   const [name, setName] = React.useState("");
   return (
     <Step key="name" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">This name is used in RSpace to help you identify the Filestore.</Typography>
-        }
-      >
-        Name the Filestore
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.nameHelp")}</Typography>}>
+        {t("addFilestoreDialog.nameStepLabel")}
       </StepLabel>
       <StepContent>
         <TextField
@@ -392,6 +375,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
  * appears in the filesystems section.
  */
 export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialogArgs): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const { t: tCommon } = useTranslation("common");
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
@@ -467,7 +451,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
   return (
     <EventBoundary>
       <Dialog fullWidth maxWidth="sm" open={open} onClose={() => onClose(false)}>
-        <DialogTitle>Add a Filestore</DialogTitle>
+        <DialogTitle>{t("addFilestoreDialog.addFilestore")}</DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} component="div" orientation="vertical">
             <FilesystemSelectionStep

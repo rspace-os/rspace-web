@@ -13,13 +13,13 @@ vi.mock("../../../stores/stores/getRootStore", () => ({
 }));
 describe("Breadcrumbs", () => {
   describe("When the passed record is deleted", () => {
-    test("In Trash should be shown.", () => {
+    test("the in-trash identifier should be shown.", () => {
       const subsample = makeMockSubSample({
         deleted: true,
       });
 
       render(<Breadcrumbs record={subsample} />);
-      expect(screen.getByRole("navigation")).toHaveTextContent("In Trash");
+      expect(screen.getByRole("navigation")).toHaveTextContent("inventory:search.controls.status.inTrash");
     });
   });
 });
