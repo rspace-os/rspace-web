@@ -1,12 +1,11 @@
-import type { FieldmarkDialogComponent } from "@/__tests__/e2e/components/fieldmark/FieldmarkDialogComponent";
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "@/__tests__/e2e/integrationMode";
-import { InventoryPage } from "@/__tests__/e2e/pageObjects/InventoryPage";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/LoginPage";
+import type { FieldmarkDialogComponent } from "./pageObjects/FieldmarkDialogComponent";
 
 /**
  * Notebook name must match the fixture in
- * specs/apps/fieldmarkMock/fixtures/notebooks.json → metadata.name.
+ * src/modules/fieldmark/__tests__/fieldmarkMock/fixtures/notebooks.json → metadata.name.
  * In real mode the live Fieldmark API must return the same notebook (drift check).
  */
 const EXPECTED = {
@@ -55,17 +54,20 @@ test.describe
       }
     });
 
-    test("Fieldmark enabled — Create menu shows 'Fieldmark' under Third-Party Import", async ({ flowLogin, page }) => {
+    test("Fieldmark enabled — Create menu shows 'Fieldmark' under Third-Party Import", async ({
+      flowLogin,
+      pageInventory,
+      page,
+    }) => {
       void flowLogin;
-      const inventoryPage = new InventoryPage(page);
 
       await test.step("Given I am on the Inventory page", async () => {
-        await inventoryPage.open();
-        await inventoryPage.isLoaded();
+        await pageInventory.open();
+        await pageInventory.isLoaded();
       });
 
       await test.step("When I open the Create menu", async () => {
-        await inventoryPage.createButton.click();
+        await pageInventory.createButton.click();
       });
 
       await test.step("Then a 'Fieldmark' menu item is visible", async () => {
@@ -74,15 +76,14 @@ test.describe
       });
     });
 
-    test("Opening the Fieldmark dialog lists available notebooks", async ({ flowLogin, page }) => {
+    test("Opening the Fieldmark dialog lists available notebooks", async ({ flowLogin, pageInventory }) => {
       void flowLogin;
-      const inventoryPage = new InventoryPage(page);
       let dialog!: FieldmarkDialogComponent;
 
       await test.step("Given I have opened the Fieldmark import dialog", async () => {
-        await inventoryPage.open();
-        await inventoryPage.isLoaded();
-        dialog = await inventoryPage.openFieldmarkImport();
+        await pageInventory.open();
+        await pageInventory.isLoaded();
+        dialog = await pageInventory.openFieldmarkImport();
       });
 
       await test.step(`Then the notebook '${EXPECTED.notebookName}' appears in the grid`, async () => {
@@ -95,16 +96,19 @@ test.describe
       });
     });
 
-    test("Importing a notebook creates a container and shows a success toast", async ({ flowLogin, page }) => {
+    test("Importing a notebook creates a container and shows a success toast", async ({
+      flowLogin,
+      pageInventory,
+      page,
+    }) => {
       void flowLogin;
-      const inventoryPage = new InventoryPage(page);
       let dialog!: FieldmarkDialogComponent;
       let containerName!: string;
 
       await test.step(`Given I have selected the notebook '${EXPECTED.notebookName}'`, async () => {
-        await inventoryPage.open();
-        await inventoryPage.isLoaded();
-        dialog = await inventoryPage.openFieldmarkImport();
+        await pageInventory.open();
+        await pageInventory.isLoaded();
+        dialog = await pageInventory.openFieldmarkImport();
         await dialog.selectNotebook(EXPECTED.notebookName);
       });
 

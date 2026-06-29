@@ -2,18 +2,28 @@
 
 How third-party integrations are faked in the Playwright e2e suite.
 
-## Why a real HTTP server, not MSW
+## Why a real HTTP server
 
-RSpace integration calls (PubChem, GitHub, etc.) are made **server-side** by the
-Java backend via Spring `RestTemplate`. The browser only talks to
+RSpace integration calls (PubChem, Fieldmark, etc.) are made **server-side** by
+the Java backend via Spring `RestTemplate`. The browser only talks to
 `/api/v1/<integration>/...` on the RSpace server and never reaches the
 third-party API directly.
 
-MSW's Node interceptor patches Node's `http` module — it cannot intercept
-outgoing requests from a separate JVM process. So instead, the e2e suite starts
-a real TCP listener on `localhost:9099`. JVM startup args override each
-integration's base URL (e.g. `-Dpubchem.base.url=http://localhost:9099`) so
-Spring `RestTemplate` calls land on this local server rather than the live API.
+MSW's **Node interceptor** (`msw/node`) patches Node's `http` module — it
+cannot intercept outgoing requests from a separate JVM process. Instead, the
+e2e suite starts a real TCP listener on `localhost:9099`. JVM startup args
+override each integration's base URL (e.g. `-Dpubchem.base.url=http://localhost:9099`)
+so Spring `RestTemplate` calls land on this local server rather than the live API.
+
+The server is built with Node's `http.createServer`, MSW handlers running as
+Express-style middleware via `@mswjs/http-middleware`, and **Hono**
+(`@hono/node-server`) as the fallback listener for unmatched requests.
+
+## Why MSW handlers
+
+Handlers are written using MSW's `http.*` API — the same format used by Vitest
+Browser Mode component tests (`worker.use(...)`). This means fixture data and
+handler patterns can be shared across both test layers without any translation.
 
 ## Integration modes
 
@@ -38,25 +48,27 @@ waits for `GET /e2e-health → 200` before proceeding.
 
 ### Handler format
 
-Each integration exports a `handlers` array:
+Each integration exports a `handlers` array of MSW `RequestHandler`s:
 
 ```js
+import { HttpResponse, http } from "msw";
+
 export const myHandlers = [
-  {
-    method: "GET",
-    match: (pathname) => /^\/some\/path/.test(pathname),
-    respond: (req) => ({ status: 200, body: myFixture }),
-  },
+  http.get(/\/some\/path/, () => HttpResponse.json(myFixture)),
+  http.post("/other/path", () => HttpResponse.json({ ok: true })),
+  // Binary response (Buffer is a valid BodyInit):
+  http.get(/\/file\.zip$/, () =>
+    new HttpResponse(zipBuffer, { headers: { "Content-Type": "application/zip" } }),
+  ),
 ];
 ```
 
-`body` can be:
-- a plain object — sent as `application/json`
-- a string — sent as `text/plain`
-- a `Buffer` — sent as `application/octet-stream` (or set `contentType` explicitly)
+Use regex patterns for paths with extensions (`.csv`, `.zip`) or case-insensitive
+matching. Use string patterns for simple, exact paths.
 
-`ALL_HANDLERS` in `mockServer.mjs` assembles all integration handler arrays.
-The health probe handler is always first.
+`mockServer.mjs` passes all integration handlers (plus a health probe) to
+`createMiddleware` from `@mswjs/http-middleware`. MSW handles matched requests
+first; unmatched ones fall through to Hono's `notFound` handler (404).
 
 ## Fixtures
 
@@ -78,13 +90,13 @@ fixture change is always intentional and reviewable in a diff.
 
 ## Adding a new integration mock
 
-1. Create `src/__tests__/e2e/specs/<feature>/<feature>Mock/handlers.mjs`
-   with a named export `<feature>Handlers`.
-2. Add fixture JSON files under `.../fixtures/` — harvest from the real API.
-3. Import and spread into `ALL_HANDLERS` in `mockServer.mjs`:
+1. Create `src/modules/<feature>/__tests__/<feature>Mock/handlers.mjs`
+   with a named export `<feature>Handlers` using MSW `http.*` handlers.
+2. Add fixture JSON/binary files under `.../fixtures/` — harvest from the real API.
+3. Import and spread into the `handlers` array in `mockServer.mjs`:
    ```js
-   import { myHandlers } from "./specs/<feature>/<feature>Mock/handlers.mjs";
-   const ALL_HANDLERS = [healthHandler, ...pubchemHandlers, ...myHandlers];
+   import { myHandlers } from "../../modules/<feature>/__tests__/<feature>Mock/handlers.mjs";
+   const handlers = [healthHandler, ...pubchemHandlers, ...myHandlers];
    ```
 4. Override the integration's base URL in the CI `jetty:run-war` command
    (and in the local runbook below) so the JVM points at `http://localhost:9099`.
@@ -93,8 +105,8 @@ fixture change is always intentional and reviewable in a diff.
 
 | Integration | Property overridden | Handlers |
 |-------------|---------------------|---------|
-| PubChem | `pubchem.base.url` | `specs/apps/pubchemMock/handlers.mjs` |
-| Fieldmark | `fieldmark.api.url` | `specs/apps/fieldmarkMock/handlers.mjs` |
+| PubChem | `pubchem.base.url` | `src/modules/pubchem/__tests__/pubchemMock/handlers.mjs` |
+| Fieldmark | `fieldmark.api.url` | `src/modules/fieldmark/__tests__/fieldmarkMock/handlers.mjs` |
 
 ## CI setup
 

@@ -19,10 +19,12 @@
  * They are the single source of truth: the mock returns them AND the real-mode
  * e2e assertions compare against the same values (drift detection).
  *
- * Handler format: { method, match(pathname) → boolean, respond(req) → { status, body, contentType? } }
- * body can be a plain object (JSON), string, or Buffer (binary).
+ * Handler format: MSW http.* handlers — the same format used by Vitest Browser
+ * Mode component tests, so fixture data and patterns can be shared across both
+ * test layers.
  */
 
+import { HttpResponse, http } from "msw";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -40,25 +42,20 @@ const PNG_1x1 = Buffer.from(
 
 export const pubchemHandlers = [
   // Compound property search (name / CID / SMILES / InChI namespace)
-  {
-    method: "GET",
-    match: (pathname) =>
-      /^\/rest\/pug\/compound\/[^/]+\/[^/]+\/property\/[^/]+\/json$/i.test(pathname),
-    respond: () => ({ status: 200, body: searchFixture }),
-  },
+  http.get(
+    /\/rest\/pug\/compound\/[^/]+\/[^/]+\/property\/[^/]+\/json$/i,
+    () => HttpResponse.json(searchFixture),
+  ),
 
   // CAS / synonym lookup for a given CID
-  {
-    method: "GET",
-    match: (pathname) =>
-      /^\/rest\/pug\/compound\/cid\/[^/]+\/synonyms\/JSON$/i.test(pathname),
-    respond: () => ({ status: 200, body: synonymsFixture }),
-  },
+  http.get(
+    /\/rest\/pug\/compound\/cid\/[^/]+\/synonyms\/JSON$/i,
+    () => HttpResponse.json(synonymsFixture),
+  ),
 
-  // Structure thumbnail — browser <img> src points here
-  {
-    method: "GET",
-    match: (pathname) => pathname === "/image/imgsrv.fcgi",
-    respond: () => ({ status: 200, body: PNG_1x1, contentType: "image/png" }),
-  },
+  // Structure thumbnail — browser <img> src points at this URL
+  http.get(
+    /\/image\/imgsrv\.fcgi/,
+    () => new HttpResponse(PNG_1x1, { headers: { "Content-Type": "image/png" } }),
+  ),
 ];

@@ -1,5 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
-import { FieldmarkDialogComponent } from "../components/fieldmark/FieldmarkDialogComponent";
+import { FieldmarkDialogComponent } from "@/modules/fieldmark/__tests__/pageObjects/FieldmarkDialogComponent";
 import { BasePage } from "./BasePage";
 
 /**

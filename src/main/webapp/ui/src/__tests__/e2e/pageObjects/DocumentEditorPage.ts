@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
+import { PubchemDialogComponent } from "@/modules/pubchem/__tests__/pageObjects/PubchemDialogComponent";
 import { DocumentToolbar } from "../components/DocumentToolbar";
-import { PubchemDialogComponent } from "../components/pubchem/PubchemDialogComponent";
 import { TinyMceEditor } from "../components/TinyMceEditor";
 import { DocumentPage } from "./DocumentPage";
 

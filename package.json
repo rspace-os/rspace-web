@@ -27,6 +27,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.0",
+    "@hono/node-server": "^2.0.6",
+    "@mswjs/http-middleware": "^0.10.3",
     "@playwright/test": "1.61.0",
     "@sa11y/vitest": "8.0.27",
     "@testing-library/jest-dom": "6.9.1",
@@ -50,6 +52,7 @@
     "cross-env": "10.1.0",
     "csstype": "3.2.3",
     "fast-check": "4.8.0",
+    "hono": "^4.12.26",
     "jsdom": "29.1.1",
     "jsonwebtoken": "9.0.3",
     "lefthook": "2.1.9",

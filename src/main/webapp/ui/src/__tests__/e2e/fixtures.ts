@@ -4,6 +4,7 @@ import { DocumentsClient } from "./api/clients/DocumentsClient";
 import { env } from "./env";
 import { DocumentEditorPage } from "./pageObjects/DocumentEditorPage";
 import { DocumentPage } from "./pageObjects/DocumentPage";
+import { InventoryPage } from "./pageObjects/InventoryPage";
 import { LoginPage } from "./pageObjects/LoginPage";
 import { SystemConfigPage } from "./pageObjects/SystemConfigPage";
 import { WorkspacePage } from "./pageObjects/WorkspacePage";
@@ -37,6 +38,7 @@ const uiTest = base.extend<
     pageWorkspace: WorkspacePage;
     pageDocument: DocumentPage;
     pageDocumentEditor: DocumentEditorPage;
+    pageInventory: InventoryPage;
     flowLogin: WorkspacePage;
   }
 >({
@@ -52,6 +54,9 @@ const uiTest = base.extend<
   },
   pageDocumentEditor: async ({ page }, use) => {
     await use(new DocumentEditorPage(page));
+  },
+  pageInventory: async ({ page }, use) => {
+    await use(new InventoryPage(page));
   },
   /**
    * Logs in via the UI form. Uses `appUser` (set per project in config) so

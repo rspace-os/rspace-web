@@ -5,23 +5,29 @@ API tests (HTTP against `/api/v1/`). `CLAUDE.md` in this directory is a copy.
 
 ## What's where
 
-- `specs/` — test files. Check here before writing a new one; a fixture or page
-  object you need may already exist.
-- `pageObjects/` — one class per screen. Navigation + user-level actions only.
-- `components/` — reusable UI fragments (nav bars, dialogs, toolbars) composed
-  into page objects as fields.
+Shared infrastructure lives here:
+- `specs/` — test files for cross-cutting concerns (auth, smoke). Check here before writing a new one.
+- `pageObjects/` — shared page objects used across multiple features (LoginPage, WorkspacePage, InventoryPage, etc.).
+- `components/` — shared UI fragments composed into shared page objects.
 - `api/clients/` — one class per API resource (e.g. `DocumentsClient.ts`).
 - `api/models/` — TypeScript types for request/response bodies.
-- `fixtures.ts` — the only thing specs should import from. Exports `test`,
-  `expect`, and re-exports `tags` from `tags.ts`.
+- `fixtures.ts` — the only thing specs should import from. Exports `test`, `expect`, and re-exports `tags`.
 - `env.ts` — all config/env reading goes through here, nowhere else.
-- `users.ts` — seed user map. Browser projects pick distinct users to avoid
-  parallel-run state collisions.
+- `users.ts` — seed user map. Browser projects pick distinct users to avoid parallel-run state collisions.
 - `playwright-e2e.config.ts` — one directory up (`src/main/webapp/ui/`).
 
-Colocated feature specs live beside the feature:
-`src/modules/<feature>/__tests__/<feature>.e2e.ts`
-They import page objects from `@/__tests__/e2e/pageObjects/`.
+Feature-specific e2e tests live beside the feature they test:
+```
+src/modules/<feature>/
+  __tests__/
+    <feature>.e2e.ts          # spec
+    pageObjects/              # page objects / components only this feature uses
+    <feature>Mock/
+      handlers.mjs            # MSW handlers for the e2e mock server
+      fixtures/               # harvested API responses (JSON, CSV, ZIP, …)
+```
+
+Examples: `src/modules/pubchem/__tests__/`, `src/modules/fieldmark/__tests__/`.
 
 ## Running tests — avoid the hang
 
@@ -66,6 +72,32 @@ File suffix drives `testMatch` in the config — wrong suffix = silently never r
 
 Use `flowLogin` when login is a precondition. Use `pageLogin`/`pageWorkspace`
 directly when login is the behaviour under test.
+
+## Must: use fixtures, never instantiate page objects directly in tests
+
+Specs must receive page objects via fixtures — never `new PageClass(page)` inside
+a test body. The fixture wires the Playwright `page` to the page object; doing it
+manually duplicates that wiring and bypasses any setup the fixture performs.
+
+```ts
+// Bad
+test("...", async ({ page }) => {
+  const inventory = new InventoryPage(page); // don't do this
+});
+
+// Good
+test("...", async ({ pageInventory }) => {
+  // pageInventory is already wired to the right page
+});
+```
+
+**Exception:** `beforeAll` hooks that call `browser.newContext()` to create an
+isolated context (e.g. sysadmin setup, per-user app enablement). Those operate
+on a custom `page` that fixtures cannot target, so manual instantiation is
+correct and intentional.
+
+If a page object fixture is missing from `fixtures.ts`, add it there rather than
+instantiating the class in the spec.
 
 ## Must: spec structure
 

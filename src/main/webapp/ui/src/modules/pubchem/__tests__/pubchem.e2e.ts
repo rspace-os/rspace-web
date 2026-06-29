@@ -1,12 +1,12 @@
-import type { PubchemDialogComponent } from "@/__tests__/e2e/components/pubchem/PubchemDialogComponent";
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "@/__tests__/e2e/integrationMode";
 import { AppsPage } from "@/__tests__/e2e/pageObjects/AppsPage";
 import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/DocumentEditorPage";
 import { LoginPage } from "@/__tests__/e2e/pageObjects/LoginPage";
+import type { PubchemDialogComponent } from "./pageObjects/PubchemDialogComponent";
 
 /**
- * Expected compound data — must match specs/apps/pubchemMock/fixtures/.
+ * Expected compound data — must match src/modules/pubchem/__tests__/pubchemMock/fixtures/.
  * In real mode the live PubChem API must return the same values (drift check).
  */
 const EXPECTED = {
