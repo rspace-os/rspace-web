@@ -1026,7 +1026,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
       anchor="bottom"
       open={mobileInfoPanelOpen}
       sx={{
-        zIndex: 1400,
+        // z-index stays at the default drawer level; the picker raises it via theme.
         [`& .${paperClasses.root}`]: {
           height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
           overflow: "visible",
