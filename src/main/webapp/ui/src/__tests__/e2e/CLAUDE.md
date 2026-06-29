@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Playwright TypeScript test suite for RSpace: UI E2E tests (real browser) and
-API tests (HTTP against `/api/v1/`). `CLAUDE.md` in this directory is a copy.
+API tests (HTTP against `/api/v1/`). `AGENTS.md` in this directory is a copy.
 
 ## What's where
 

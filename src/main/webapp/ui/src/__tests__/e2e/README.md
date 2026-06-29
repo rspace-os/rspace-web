@@ -23,7 +23,7 @@ cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 | `HEADLESS` | `true` | No | Set `false` to watch browsers |
 | `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | No | Sysadmin username |
 | `RSPACE_SYSADMIN_PASSWORD` | — | **Yes** | Sysadmin password |
-| `RSPACE_SYSADMIN_API_KEY` | — | **Yes** | API key for API tests |
+| `RSPACE_TEST_API_KEY` | — | **Yes** | API key for API tests |
 | `RSPACE_TEST_USERNAME` | `user1a` | No | Override test user (UI tests use `appUser`) |
 | `RSPACE_TEST_PASSWORD` | `user1234` | No | Override test user password |
 

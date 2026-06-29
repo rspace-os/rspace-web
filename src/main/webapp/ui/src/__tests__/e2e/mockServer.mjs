@@ -40,6 +40,7 @@ import {createServer} from "node:http";
 const PORT = Number(process.env.E2E_MOCK_PORT ?? "9099");
 
 import {pubchemHandlers} from "./specs/apps/pubchemMock/handlers.mjs";
+import {fieldmarkHandlers} from "./specs/apps/fieldmarkMock/handlers.mjs";
 
 /**
  * Health probe handler — must stay first.
@@ -58,7 +59,7 @@ const ALL_HANDLERS = [
 ];
 
 const server = createServer((req, res) => {
-    const pathname = new URL(req.url, `http://localhost:${PORT}`).pathname;
+    const pathname = new URL(req.url ?? "/", `http://localhost:${PORT}`).pathname;
 
     const handler = ALL_HANDLERS.find(
         (h) => h.method === req.method && h.match(pathname),
