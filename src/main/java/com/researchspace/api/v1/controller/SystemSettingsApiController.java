@@ -119,9 +119,7 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
     settings.setUsername(getPropertyValue(propertiesMap, p.username()));
     settings.setPassword(getPropertyValue(propertiesMap, p.password()));
     settings.setRepositoryPrefix(
-        p.repositoryPrefix() == null
-            ? null
-            : getPropertyValue(propertiesMap, p.repositoryPrefix()));
+        p.repositoryPrefix() == null ? "" : getPropertyValue(propertiesMap, p.repositoryPrefix()));
     return settings;
   }
 

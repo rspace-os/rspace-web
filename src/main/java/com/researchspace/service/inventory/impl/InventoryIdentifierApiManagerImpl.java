@@ -487,7 +487,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     try {
       deleteResult = b2instConnector.deleteDoi(doi.getIdentifier());
     } catch (B2instConnectionException b2instException) {
-      log.error("Error when deleting the PID from B2INST: ", b2instException.getCause());
+      log.error("Error when deleting the PID from B2INST: ", b2instException);
       throw new B2instConnectionException(
           "Error when deleting the PID from B2INST. "
               + "If the problem persists, please contact your System Admin",

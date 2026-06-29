@@ -95,6 +95,9 @@ class SystemSettingsApiControllerUnitTest {
     assertEquals("comm-default", b2inst.getUsername());
     assertEquals("tok-default", b2inst.getPassword());
     assertEquals("https://b2inst-test.gwdg.de", b2inst.getServerUrl());
+    // repositoryPrefix is unused for B2INST; it must serialize as "" (the IdentifierSettings
+    // contract is a String) rather than null, so clients never see "repositoryPrefix": null.
+    assertEquals("", b2inst.getRepositoryPrefix());
   }
 
   @Test
