@@ -249,7 +249,7 @@ describe("FolderTree", () => {
     await user.click(getTreeItemContent(/Research Projects/));
 
     // 20 of 25 subfolders loaded -> a Load More button should be visible
-    expect((await screen.findAllByRole("button", { name: "folderTree.loadMore" }))[0]).toBeVisible();
+    expect((await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0]).toBeVisible();
   });
 
   test("Loads additional folders when Load More is clicked", async () => {
@@ -260,7 +260,7 @@ describe("FolderTree", () => {
     const user = userEvent.setup();
     await user.click(getTreeItemContent(/Research Projects/));
 
-    const loadMore = (await screen.findAllByRole("button", { name: "folderTree.loadMore" }))[0];
+    const loadMore = (await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0];
     await user.click(loadMore);
 
     // page 1 brings in subfolders 21-25. Query by the label text node rather
@@ -319,15 +319,15 @@ describe("FolderTree", () => {
 
     // the create folder dialog should be open
     const dialog = await screen.findByRole("dialog", {
-      name: "folderTree.createFolder.title",
+      name: "common:folderTree.createFolder.title",
     });
     expect(dialog).toBeVisible();
 
     // the user enters a folder name
-    await user.type(within(dialog).getByLabelText("folderTree.createFolder.folderName"), "New Test Folder");
+    await user.type(within(dialog).getByLabelText("common:folderTree.createFolder.folderName"), "New Test Folder");
 
     // the user submits the create folder dialog
-    await user.click(within(dialog).getByRole("button", { name: "actions.create" }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
     // the new folder should appear in the tree and be selected. The new folder
     // is created as a child of "Research Projects", so the parent treeitem's
@@ -356,17 +356,17 @@ describe("FolderTree", () => {
     );
 
     const dialog = await screen.findByRole("dialog", {
-      name: "folderTree.createFolder.title",
+      name: "common:folderTree.createFolder.title",
     });
     expect(dialog).toBeVisible();
 
     // the user clicks the create button without entering a name
-    await user.click(within(dialog).getByRole("button", { name: "actions.create" }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
     // a validation error should be displayed
-    const errorAlert = await screen.findByLabelText("Warning");
+    const errorAlert = await screen.findByLabelText("common:alerts.warning");
     expect(errorAlert).toBeVisible();
-    expect(screen.getByText("folderTree.createFolder.validation")).toBeVisible();
+    expect(screen.getByText("common:folderTree.createFolder.validation")).toBeVisible();
   });
 
   test("Should have no axe violations", async () => {

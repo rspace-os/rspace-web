@@ -41,7 +41,7 @@ describe("ExportFileStore", () => {
           />,
         ),
     );
-    expect(screen.getByText("export.fileStore.noLinks.heading")).toBeVisible();
+    expect(screen.getByText("workspace:export.fileStore.noLinks.heading")).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();
@@ -79,11 +79,11 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: "export.fileStore.foundLinks.showButton",
+          name: "workspace:export.fileStore.foundLinks.showButton",
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: "export.fileStore.foundLinks.showButton" }));
+    await user.click(screen.getByRole("button", { name: "workspace:export.fileStore.foundLinks.showButton" }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "/test.txt" }),
     ).toBeVisible();

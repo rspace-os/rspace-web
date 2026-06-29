@@ -71,7 +71,7 @@ export default interface Resources {
         "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
         "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
-        "dmptoolImportDesc": "Importing a DMP{serverAlias, select, '' {} other { from {serverAlias}}} will make it available to view and reference within RSpace.",
+        "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
         "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
         "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
         "error": {
@@ -237,7 +237,7 @@ export default interface Resources {
           "testInvalid": "Connection details are not valid.",
           "testValid": "Connection details are valid."
         },
-        "configuredAriaLabel": "Configured Dataverse with name {{name}}",
+        "configuredAriaLabel": "Configured Dataverse with name {name}",
         "description": "Explore, analyse, and share data through an open-source research data repository software.",
         "errorGettingConfigs": "There was an error getting the configured Dataverses.",
         "fields": {
@@ -356,7 +356,7 @@ export default interface Resources {
           "testInvalid": "Connection details are not valid.",
           "testValid": "Connection details are valid."
         },
-        "configuredAriaLabel": "Configured DSW with label {{label}}",
+        "configuredAriaLabel": "Configured DSW with label {label}",
         "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
         "errorGettingConfigs": "There was an error getting the configured DSW instances.",
         "fields": {
@@ -441,7 +441,7 @@ export default interface Resources {
           "saveError": "Error saving API key.",
           "saveSuccess": "Successfully saved API key."
         },
-        "apiKeyLabel": "API Key for {{alias}}",
+        "apiKeyLabel": "API Key for {alias}",
         "description": "Galaxy is a free, open-source system for data analysis, workflows, and more.",
         "helpLink": "Galaxy integration docs",
         "name": "Galaxy",
@@ -646,7 +646,7 @@ export default interface Resources {
           "saveError": "Error saving API key.",
           "saveSuccess": "Successfully saved API key."
         },
-        "apiKeyLabel": "API Key for {{alias}}",
+        "apiKeyLabel": "API Key for {alias}",
         "description": "Increase efficiency, access, and ensure compliance through a lab animal colony management software.",
         "helpLink": "PyRAT integration docs",
         "name": "PyRAT",
@@ -662,16 +662,16 @@ export default interface Resources {
       },
       "raid": {
         "alerts": {
-          "addError": "Could not add {{alias}} as a new RAiD connection.",
+          "addError": "Could not add {alias} as a new RAiD connection.",
           "addSuccess": "Successfully added new RAiD server.",
-          "connectAliasError": "Could not connect to {{alias}} RAiD server",
+          "connectAliasError": "Could not connect to {alias} RAiD server",
           "connectError": "Could not connect to RAiD server",
-          "connectSuccess": "Successfully connected to {{alias}} RAiD server.",
-          "deleteError": "Could not disconnect {{alias}} RAiD connection.",
+          "connectSuccess": "Successfully connected to {alias} RAiD server.",
+          "deleteError": "Could not disconnect {alias} RAiD connection.",
           "deleteSuccess": "Successfully deleted connection.",
-          "disconnectError": "Could not disconnect {{alias}} RAiD connection",
+          "disconnectError": "Could not disconnect {alias} RAiD connection",
           "disconnectSuccess": "Successfully disconnected.",
-          "serverStatus": "Server responded with status {{status}}: {{statusText}}"
+          "serverStatus": "Server responded with status {status}: {statusText}"
         },
         "description": "Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records.",
         "helpLink": "documentation",
@@ -1125,7 +1125,7 @@ export default interface Resources {
       "title": "Select Folder"
     },
     "folderTree": {
-      "addSubfolder": "Add subfolder to {{folderName}}",
+      "addSubfolder": "Add subfolder to {folderName}",
       "createFolder": {
         "folderName": "Folder Name",
         "title": "Create New Folder",
@@ -1148,6 +1148,196 @@ export default interface Resources {
     },
     "helpDocs": {
       "chatWithUs": "Chat with us",
+      "docLinks": {
+        "IGSNIdentifiers": {
+          "articleTitle": "Add IGSN identifiers to your samples",
+          "hash": "Add IGSN identifiers to your samples"
+        },
+        "apiDirect": {
+          "articleTitle": "API Direct Access"
+        },
+        "appsIntroduction": {
+          "articleTitle": "Apps introduction"
+        },
+        "argos": {
+          "articleTitle": "ARGOS integration"
+        },
+        "attachments": {
+          "articleTitle": "Attachments"
+        },
+        "barcodes": {
+          "articleTitle": "Scan and use barcodes"
+        },
+        "barcodesPrinting": {
+          "articleTitle": "Scan and use barcodes",
+          "hash": "Barcode printing"
+        },
+        "changelog": {
+          "articleTitle": "Changelog"
+        },
+        "chemistry": {
+          "articleTitle": "Chemistry integration"
+        },
+        "cloudstorage": {
+          "articleTitle": "Cloud storage integrations"
+        },
+        "clustermarket": {
+          "articleTitle": "Calira integration"
+        },
+        "controlledVocabularies": {
+          "articleTitle": "Controlled vocabularies"
+        },
+        "createContainer": {
+          "articleTitle": "Create a container"
+        },
+        "createDialog": {
+          "articleTitle": "Edit a sample or container",
+          "hash": "Create"
+        },
+        "createSample": {
+          "articleTitle": "Create a sample"
+        },
+        "createTemplate": {
+          "articleTitle": "Create a template"
+        },
+        "createTemplateFromSample": {
+          "articleTitle": "Create a template",
+          "hash": "Create a template from a sample"
+        },
+        "dataverse": {
+          "articleTitle": "Dataverse integration"
+        },
+        "dcd": {
+          "articleTitle": "Digital Commons Data integration"
+        },
+        "dmpassistant": {
+          "articleTitle": "DMP Assistant integration"
+        },
+        "dmponline": {
+          "articleTitle": "DMPonline integration"
+        },
+        "dmptool": {
+          "articleTitle": "DMPTool integration"
+        },
+        "dmptoolImportingDmps": {
+          "articleTitle": "DMPTool integration",
+          "hash": "Importing DMPs into RSpace"
+        },
+        "dryad": {
+          "articleTitle": "Dryad integration"
+        },
+        "dsw": {
+          "articleTitle": "DSW / FAIR Wizard integration"
+        },
+        "editLocationsInVisualContainers": {
+          "articleTitle": "Edit locations in visual containers"
+        },
+        "evernote": {
+          "articleTitle": "Evernote integration"
+        },
+        "fieldmark": {
+          "articleTitle": "Fieldmark integration"
+        },
+        "figshare": {
+          "articleTitle": "Figshare integration"
+        },
+        "galaxy": {
+          "articleTitle": "Galaxy integration"
+        },
+        "gallery": {
+          "articleTitle": "Gallery"
+        },
+        "gettingStarted": {
+          "articleTitle": "Getting started"
+        },
+        "github": {
+          "articleTitle": "GitHub integration"
+        },
+        "import": {
+          "articleTitle": "Import records"
+        },
+        "irods": {
+          "articleTitle": "iRODS integration"
+        },
+        "jupyter": {
+          "articleTitle": "Jupyter integration"
+        },
+        "listOfMaterials": {
+          "articleTitle": "List of materials"
+        },
+        "luceneSyntax": {
+          "articleTitle": "Search inventory",
+          "hash": "Expert Lucene query syntax"
+        },
+        "moving": {
+          "articleTitle": "Moving items"
+        },
+        "nextcloud": {
+          "articleTitle": "Nextcloud integration"
+        },
+        "omero": {
+          "articleTitle": "Omero integration"
+        },
+        "orcid": {
+          "articleTitle": "ORCID integration"
+        },
+        "owncloud": {
+          "articleTitle": "OwnCloud integration"
+        },
+        "panelAdjuster": {
+          "articleTitle": "More info sidebar",
+          "hash": "Panel adjuster"
+        },
+        "permissions": {
+          "articleTitle": "Permissions"
+        },
+        "protocolsio": {
+          "articleTitle": "Protocols.io integration"
+        },
+        "pubchem": {
+          "articleTitle": "Chemistry integration",
+          "hash": "Importing chemical structures from external databases"
+        },
+        "pyrat": {
+          "articleTitle": "PyRAT integration"
+        },
+        "pyratCors": {
+          "articleTitle": "PyRAT integration",
+          "hash": "CORS"
+        },
+        "raid": {
+          "articleTitle": "RAiD integration"
+        },
+        "search": {
+          "articleTitle": "Search inventory"
+        },
+        "slack": {
+          "articleTitle": "Slack integration"
+        },
+        "taggingUsers": {
+          "articleTitle": "Tagging users"
+        },
+        "tags": {
+          "articleTitle": "Controlled vocabularies"
+        },
+        "teams": {
+          "articleTitle": "Microsoft Teams integration"
+        },
+        "updateAllSamplesOfTemplate": {
+          "articleTitle": "Create a template",
+          "hash": "Update all of your samples to latest template version"
+        },
+        "videoIntegration": {
+          "articleTitle": "Video integrations"
+        },
+        "zebraPrinter": {
+          "articleTitle": "Scan and use barcodes",
+          "hash": "Using a Zebra printer"
+        },
+        "zenodo": {
+          "articleTitle": "Zenodo integration"
+        }
+      },
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
       "rspaceAlt": "RSpace",
@@ -1234,22 +1424,22 @@ export default interface Resources {
           "disable": "Disable autosharing",
           "disableGroup": {
             "button": "disable autosharing",
-            "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
+            "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{groupDisplayName}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
             "title": "Disable group-wide autosharing"
           },
           "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
           "disableSuccess": "Autoshare for {group} was disabled successfully.",
-          "disableUserText": "Disabling autosharing will unshare all work for user <strong>{{username}}</strong> from group <strong>{{group}}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
+          "disableUserText": "Disabling autosharing will unshare all work for user <strong>{username}</strong> from group <strong>{group}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
           "disabled": "Disabled",
           "enable": "Enable autosharing",
           "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
           "enableGroup": {
             "button": "enable autosharing",
-            "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
+            "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{groupDisplayName}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
             "title": "Enable group-wide autosharing"
           },
           "enableSuccess": "Autoshare for {group} was enabled successfully.",
-          "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{{username}}</strong> will be shared with group<strong> {{group}}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
+          "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{username}</strong> will be shared with group<strong> {group}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
           "enabled": "Enabled",
           "folderName": "Folder name",
           "genericError": "Something went wrong. Please, contact support if the issue persists.",
@@ -1319,13 +1509,13 @@ export default interface Resources {
         "publication": {
           "disable": {
             "button": "disable publication",
-            "text": "Disabling group-wide publication will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group publishing their own documents. They may still unpublish previously published documents.",
+            "text": "Disabling group-wide publication will prevent non PI members of the <strong>{groupDisplayName}</strong> group publishing their own documents. They may still unpublish previously published documents.",
             "title": "Disable group-wide publication"
           },
           "disabledButton": "disable publication",
           "enable": {
             "button": "enable publication",
-            "text": "Enabling group-wide publication will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
+            "text": "Enabling group-wide publication will allow non-PI members in the <strong>{groupDisplayName}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
             "title": "Enable group publication"
           },
           "notAvailableForCollaboration": "Not available for collaboration groups",
@@ -1334,13 +1524,13 @@ export default interface Resources {
         "seo": {
           "disable": {
             "button": "disable published seo",
-            "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
+            "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{groupDisplayName}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
             "title": "Disable group-wide SEO of public documents"
           },
           "disabledButton": "disable published seo",
           "enable": {
             "button": "enable published seo",
-            "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
+            "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
             "title": "Enable group-wide SEO for published documents"
           },
           "notAvailableForCollaboration": "Not available for collaboration groups",
@@ -1409,7 +1599,7 @@ export default interface Resources {
       },
       "raidConnections": {
         "adding": "Adding...",
-        "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{{raidTitle}}</strong> ({{raidIdentifier}}) from this project group?",
+        "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
         "confirmDisassociateTitle": "Confirm Disassociation",
         "connectedTo": "connected to:",
         "currently": "Currently",
@@ -1571,7 +1761,7 @@ export default interface Resources {
         "missingActualMass": "Define actual mass before updating linked inventory stock.",
         "molecule": "Molecule",
         "moleculeCannotBeUpdated": "This molecule cannot be updated.",
-        "negativeFieldError": "{{field}} cannot be negative",
+        "negativeFieldError": "{field} cannot be negative",
         "noDataToSave": "No stoichiometry data to save",
         "noDataToUpdateStock": "No stoichiometry data available to update stock",
         "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
@@ -1763,11 +1953,16 @@ export default interface Resources {
     "actionsMenu": {
       "actions": "Actions",
       "cannotView": "Cannot view this file because",
+      "download": "Download",
+      "export": "Export",
+      "moveToIrods": "Move to iRODS",
+      "moveToS3": "Move to S3",
       "nameRequired": "Empty name is not permitted.",
       "open": "Open",
       "rename": "Rename",
       "renameLabel": "Name",
-      "renamePrompt": "Please give a new name for {{name}}.",
+      "renamePrompt": "Please give a new name for {name}.",
+      "share": "Share",
       "view": "View"
     },
     "addFilestoreDialog": {
@@ -3130,11 +3325,14 @@ export default interface Resources {
     "moveToTarget": {
       "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
       "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+      "hideItems": "Hide items being moved",
       "loading": "Loading",
       "movingItem": "Moving <0></0>",
+      "movingItems": "Moving {count} items",
       "nextItem": "Next item to be placed:",
       "pickDestination": "Pick Destination",
-      "selectedDestination": "Selected Destination:"
+      "selectedDestination": "Selected Destination:",
+      "showItems": "Show items being moved"
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",

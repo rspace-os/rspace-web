@@ -212,7 +212,10 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              {t("dmpIntegrations.dialog.dmptoolImportDesc", { serverAlias: DMPHost ?? "" })}
+              {t("dmpIntegrations.dialog.dmptoolImportDesc", {
+                serverAlias: DMPHost ?? "",
+                hasAlias: DMPHost ? "yes" : "no",
+              })}
             </Typography>
             <Typography variant="body2">
               <Trans

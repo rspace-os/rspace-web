@@ -1,7 +1,4 @@
 {
-  "alerts": {
-    "warning": "Warning"
-  },
   "accessibilityTips": {
     "actions": {
       "disable": "disable",
@@ -38,8 +35,8 @@
       "supported": "This {elementType} supports a reduced motion mode."
     },
     "skipToContent": {
-      "navigation": "Skip to content navigation",
       "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
+      "navigation": "Skip to content navigation",
       "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
     },
     "tip": "Tip",
@@ -74,6 +71,9 @@
     "sign": "Sign",
     "submit": "Submit",
     "witness": "Witness"
+  },
+  "alerts": {
+    "warning": "Warning"
   },
   "apiAuthentication": {
     "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
@@ -134,7 +134,7 @@
     "title": "Select Folder"
   },
   "folderTree": {
-    "addSubfolder": "Add subfolder to {{folderName}}",
+    "addSubfolder": "Add subfolder to {folderName}",
     "createFolder": {
       "folderName": "Folder Name",
       "title": "Create New Folder",
@@ -157,6 +157,196 @@
   },
   "helpDocs": {
     "chatWithUs": "Chat with us",
+    "docLinks": {
+      "apiDirect": {
+        "articleTitle": "API Direct Access"
+      },
+      "appsIntroduction": {
+        "articleTitle": "Apps introduction"
+      },
+      "argos": {
+        "articleTitle": "ARGOS integration"
+      },
+      "attachments": {
+        "articleTitle": "Attachments"
+      },
+      "barcodes": {
+        "articleTitle": "Scan and use barcodes"
+      },
+      "barcodesPrinting": {
+        "articleTitle": "Scan and use barcodes",
+        "hash": "Barcode printing"
+      },
+      "changelog": {
+        "articleTitle": "Changelog"
+      },
+      "chemistry": {
+        "articleTitle": "Chemistry integration"
+      },
+      "cloudstorage": {
+        "articleTitle": "Cloud storage integrations"
+      },
+      "clustermarket": {
+        "articleTitle": "Calira integration"
+      },
+      "controlledVocabularies": {
+        "articleTitle": "Controlled vocabularies"
+      },
+      "createContainer": {
+        "articleTitle": "Create a container"
+      },
+      "createDialog": {
+        "articleTitle": "Edit a sample or container",
+        "hash": "Create"
+      },
+      "createSample": {
+        "articleTitle": "Create a sample"
+      },
+      "createTemplate": {
+        "articleTitle": "Create a template"
+      },
+      "createTemplateFromSample": {
+        "articleTitle": "Create a template",
+        "hash": "Create a template from a sample"
+      },
+      "dataverse": {
+        "articleTitle": "Dataverse integration"
+      },
+      "dcd": {
+        "articleTitle": "Digital Commons Data integration"
+      },
+      "dmpassistant": {
+        "articleTitle": "DMP Assistant integration"
+      },
+      "dmponline": {
+        "articleTitle": "DMPonline integration"
+      },
+      "dmptool": {
+        "articleTitle": "DMPTool integration"
+      },
+      "dmptoolImportingDmps": {
+        "articleTitle": "DMPTool integration",
+        "hash": "Importing DMPs into RSpace"
+      },
+      "dryad": {
+        "articleTitle": "Dryad integration"
+      },
+      "dsw": {
+        "articleTitle": "DSW / FAIR Wizard integration"
+      },
+      "editLocationsInVisualContainers": {
+        "articleTitle": "Edit locations in visual containers"
+      },
+      "evernote": {
+        "articleTitle": "Evernote integration"
+      },
+      "fieldmark": {
+        "articleTitle": "Fieldmark integration"
+      },
+      "figshare": {
+        "articleTitle": "Figshare integration"
+      },
+      "galaxy": {
+        "articleTitle": "Galaxy integration"
+      },
+      "gallery": {
+        "articleTitle": "Gallery"
+      },
+      "gettingStarted": {
+        "articleTitle": "Getting started"
+      },
+      "github": {
+        "articleTitle": "GitHub integration"
+      },
+      "IGSNIdentifiers": {
+        "articleTitle": "Add IGSN identifiers to your samples",
+        "hash": "Add IGSN identifiers to your samples"
+      },
+      "import": {
+        "articleTitle": "Import records"
+      },
+      "irods": {
+        "articleTitle": "iRODS integration"
+      },
+      "jupyter": {
+        "articleTitle": "Jupyter integration"
+      },
+      "listOfMaterials": {
+        "articleTitle": "List of materials"
+      },
+      "luceneSyntax": {
+        "articleTitle": "Search inventory",
+        "hash": "Expert Lucene query syntax"
+      },
+      "moving": {
+        "articleTitle": "Moving items"
+      },
+      "nextcloud": {
+        "articleTitle": "Nextcloud integration"
+      },
+      "omero": {
+        "articleTitle": "Omero integration"
+      },
+      "orcid": {
+        "articleTitle": "ORCID integration"
+      },
+      "owncloud": {
+        "articleTitle": "OwnCloud integration"
+      },
+      "panelAdjuster": {
+        "articleTitle": "More info sidebar",
+        "hash": "Panel adjuster"
+      },
+      "permissions": {
+        "articleTitle": "Permissions"
+      },
+      "protocolsio": {
+        "articleTitle": "Protocols.io integration"
+      },
+      "pubchem": {
+        "articleTitle": "Chemistry integration",
+        "hash": "Importing chemical structures from external databases"
+      },
+      "pyrat": {
+        "articleTitle": "PyRAT integration"
+      },
+      "pyratCors": {
+        "articleTitle": "PyRAT integration",
+        "hash": "CORS"
+      },
+      "raid": {
+        "articleTitle": "RAiD integration"
+      },
+      "search": {
+        "articleTitle": "Search inventory"
+      },
+      "slack": {
+        "articleTitle": "Slack integration"
+      },
+      "taggingUsers": {
+        "articleTitle": "Tagging users"
+      },
+      "tags": {
+        "articleTitle": "Controlled vocabularies"
+      },
+      "teams": {
+        "articleTitle": "Microsoft Teams integration"
+      },
+      "updateAllSamplesOfTemplate": {
+        "articleTitle": "Create a template",
+        "hash": "Update all of your samples to latest template version"
+      },
+      "videoIntegration": {
+        "articleTitle": "Video integrations"
+      },
+      "zebraPrinter": {
+        "articleTitle": "Scan and use barcodes",
+        "hash": "Using a Zebra printer"
+      },
+      "zenodo": {
+        "articleTitle": "Zenodo integration"
+      }
+    },
     "documentation": "RSpace Documentation",
     "openHelp": "Open Help",
     "rspaceAlt": "RSpace",
@@ -244,22 +434,22 @@
         "disabled": "Disabled",
         "disableGroup": {
           "button": "disable autosharing",
-          "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
+          "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{groupDisplayName}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
           "title": "Disable group-wide autosharing"
         },
         "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
         "disableSuccess": "Autoshare for {group} was disabled successfully.",
-        "disableUserText": "Disabling autosharing will unshare all work for user <strong>{{username}}</strong> from group <strong>{{group}}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
+        "disableUserText": "Disabling autosharing will unshare all work for user <strong>{username}</strong> from group <strong>{group}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
         "enable": "Enable autosharing",
         "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
         "enabled": "Enabled",
         "enableGroup": {
           "button": "enable autosharing",
-          "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{{groupDisplayName}}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
+          "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{groupDisplayName}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
           "title": "Enable group-wide autosharing"
         },
         "enableSuccess": "Autoshare for {group} was enabled successfully.",
-        "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{{username}}</strong> will be shared with group<strong> {{group}}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
+        "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{username}</strong> will be shared with group<strong> {group}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
         "folderName": "Folder name",
         "genericError": "Something went wrong. Please, contact support if the issue persists.",
         "inProgress": "Autosharing is in progress",
@@ -328,13 +518,13 @@
       "publication": {
         "disable": {
           "button": "disable publication",
-          "text": "Disabling group-wide publication will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group publishing their own documents. They may still unpublish previously published documents.",
+          "text": "Disabling group-wide publication will prevent non PI members of the <strong>{groupDisplayName}</strong> group publishing their own documents. They may still unpublish previously published documents.",
           "title": "Disable group-wide publication"
         },
         "disabledButton": "disable publication",
         "enable": {
           "button": "enable publication",
-          "text": "Enabling group-wide publication will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
+          "text": "Enabling group-wide publication will allow non-PI members in the <strong>{groupDisplayName}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
           "title": "Enable group publication"
         },
         "notAvailableForCollaboration": "Not available for collaboration groups",
@@ -343,13 +533,13 @@
       "seo": {
         "disable": {
           "button": "disable published seo",
-          "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{{groupDisplayName}}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
+          "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{groupDisplayName}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
           "title": "Disable group-wide SEO of public documents"
         },
         "disabledButton": "disable published seo",
         "enable": {
           "button": "enable published seo",
-          "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{{groupDisplayName}}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
+          "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
           "title": "Enable group-wide SEO for published documents"
         },
         "notAvailableForCollaboration": "Not available for collaboration groups",
@@ -418,7 +608,7 @@
     },
     "raidConnections": {
       "adding": "Adding...",
-      "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{{raidTitle}}</strong> ({{raidIdentifier}}) from this project group?",
+      "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
       "confirmDisassociateTitle": "Confirm Disassociation",
       "connectedTo": "connected to:",
       "currently": "Currently",
@@ -510,6 +700,7 @@
       "addChemical": "Add Chemical",
       "menuAria": "add chemical menu",
       "name": "Name",
+      "smilesString": "SMILES String",
       "sources": {
         "gallery": {
           "subheader": "Import compound from Gallery",
@@ -525,7 +716,6 @@
           "title": "PubChem"
         }
       },
-      "smilesString": "SMILES String",
       "title": "Add New Chemical",
       "validation": {
         "busy": "Please wait for the current reagent to be processed before adding another.",
@@ -533,36 +723,28 @@
         "smilesRequired": "SMILES string is required"
       }
     },
-    "inventoryUpdate": {
-      "cannotReplenish": "Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry table, delete the document, or unlink samples.",
-      "dialogTitle": "Update Inventory Stock",
-      "inStock": "In Stock",
-      "irreversibleTitle": "WARNING: This action is irreversible",
-      "irreversibleWarningAria": "Action irreversible warning",
-      "linkRequired": "Link an inventory item before updating stock.",
-      "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
-      "missingActualMass": "Define actual mass before updating linked inventory stock.",
-      "molecule": "Molecule",
-      "moleculeCannotBeUpdated": "This molecule cannot be updated.",
-      "negativeFieldError": "{{field}} cannot be negative",
-      "noDataToSave": "No stoichiometry data to save",
-      "noDataToUpdateStock": "No stoichiometry data available to update stock",
-      "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
-      "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
-      "proceedIfUsed": "Only proceed if you have actually used these materials in your experiment.",
-      "remaining": "Remaining",
-      "saveBeforeUpdate": "Save the stoichiometry table before updating inventory stock.",
-      "saveError": "{message} Current stock amounts were refreshed where possible.",
-      "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
-      "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
-      "selectMoleculeAria": "Select molecule",
-      "selectionError": "Re-select any invalid molecules before saving.",
-      "saving": "Saving...",
-      "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
-      "updateStockError": "Failed to update inventory stock.",
-      "unnamedMolecule": "Unnamed molecule",
-      "updateInventoryStock": "Update Inventory Stock",
-      "willUse": "Will Use"
+    "dialog": {
+      "calculate": "Calculate Stoichiometry",
+      "calculatePrompt": "Click the button below to calculate the stoichiometry data for this chemical compound.",
+      "calculating": "Calculating...",
+      "chemistryDisabledTitle": "Chemistry Integration Disabled",
+      "chemistryStatusErrorTitle": "Error Checking Chemistry Integration",
+      "deleteError": "Failed to delete this stoichiometry table. Please try again.",
+      "deleteMessage": "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
+      "deleteTitle": "Delete Stoichiometry Table",
+      "discardChangesConfirm": "Discard",
+      "discardChangesMessage": "Closing the dialog will discard the unsaved changes.",
+      "discardChangesTitle": "Discard changes?",
+      "editInstructions": "Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are calculated automatically, as are each pairing of moles and mass.",
+      "loadingMoleculeInformation": "Loading molecule information...",
+      "loadingTable": "Loading stoichiometry table...",
+      "reactionTable": "Reaction Table",
+      "saveChanges": "Save Changes",
+      "saveError": "Failed to save stoichiometry changes. Please try again."
+    },
+    "gallery": {
+      "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",
+      "loadingPicker": "Loading gallery picker"
     },
     "inventoryLink": {
       "add": "Add inventory link",
@@ -577,9 +759,43 @@
       "undo": "Undo deleting link",
       "undoForMolecule": "Undo deleting inventory link for {molecule}"
     },
-    "gallery": {
-      "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",
-      "loadingPicker": "Loading gallery picker"
+    "inventoryUpdate": {
+      "cannotReplenish": "Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry table, delete the document, or unlink samples.",
+      "dialogTitle": "Update Inventory Stock",
+      "inStock": "In Stock",
+      "irreversibleTitle": "WARNING: This action is irreversible",
+      "irreversibleWarningAria": "Action irreversible warning",
+      "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
+      "linkRequired": "Link an inventory item before updating stock.",
+      "missingActualMass": "Define actual mass before updating linked inventory stock.",
+      "molecule": "Molecule",
+      "moleculeCannotBeUpdated": "This molecule cannot be updated.",
+      "negativeFieldError": "{field} cannot be negative",
+      "noDataToSave": "No stoichiometry data to save",
+      "noDataToUpdateStock": "No stoichiometry data available to update stock",
+      "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+      "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
+      "proceedIfUsed": "Only proceed if you have actually used these materials in your experiment.",
+      "remaining": "Remaining",
+      "saveBeforeUpdate": "Save the stoichiometry table before updating inventory stock.",
+      "saveError": "{message} Current stock amounts were refreshed where possible.",
+      "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
+      "saving": "Saving...",
+      "selectionError": "Re-select any invalid molecules before saving.",
+      "selectMoleculeAria": "Select molecule",
+      "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
+      "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      "unnamedMolecule": "Unnamed molecule",
+      "updateInventoryStock": "Update Inventory Stock",
+      "updateStockError": "Failed to update inventory stock.",
+      "willUse": "Will Use"
+    },
+    "plugin": {
+      "emptyTablePlaceholder": "Empty Stoichiometry Table",
+      "insertActionAlias": "Stoichiometry",
+      "insertActionText": "Stoichiometry Table",
+      "insertTooltip": "Insert reaction table",
+      "noPreview": "Stoichiometry Table (no preview)"
     },
     "table": {
       "aria": {
@@ -611,33 +827,6 @@
     "tableToolbar": {
       "columns": "Columns",
       "exportToCsv": "Export to CSV"
-    },
-    "dialog": {
-      "calculate": "Calculate Stoichiometry",
-      "calculatePrompt": "Click the button below to calculate the stoichiometry data for this chemical compound.",
-      "chemistryDisabledTitle": "Chemistry Integration Disabled",
-      "chemistryStatusErrorTitle": "Error Checking Chemistry Integration",
-      "calculating": "Calculating...",
-      "deleteError": "Failed to delete this stoichiometry table. Please try again.",
-      "deleteMessage": "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
-      "deleteTitle": "Delete Stoichiometry Table",
-      "discardChangesConfirm": "Discard",
-      "discardChangesMessage": "Closing the dialog will discard the unsaved changes.",
-      "discardChangesTitle": "Discard changes?",
-      "editInstructions": "Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are calculated automatically, as are each pairing of moles and mass.",
-      "loadingTable": "Loading stoichiometry table...",
-      "loadingMoleculeInformation": "Loading molecule information...",
-      "reactionTable": "Reaction Table"
-      ,
-      "saveChanges": "Save Changes",
-      "saveError": "Failed to save stoichiometry changes. Please try again."
-    },
-    "plugin": {
-      "emptyTablePlaceholder": "Empty Stoichiometry Table",
-      "insertActionAlias": "Stoichiometry",
-      "insertActionText": "Stoichiometry Table",
-      "insertTooltip": "Insert reaction table",
-      "noPreview": "Stoichiometry Table (no preview)"
     }
   },
   "tags": {

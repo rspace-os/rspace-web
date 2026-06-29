@@ -69,7 +69,7 @@ beforeEach(() => {
 });
 
 async function selectMyS3Bucket(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /select a filestore/i }));
+  await user.click(screen.getByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i }));
   await user.click(await screen.findByRole("menuitem", { name: /my s3 bucket/i }));
 }
 
@@ -77,9 +77,9 @@ describe("MoveToS3", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations", async () => {
       const { baseElement } = render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
       // Wait for the filestore listing to resolve before scanning.
-      await screen.findByRole("button", { name: /select a filestore/i });
+      await screen.findByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i });
       await expectAccessible(baseElement);
     });
   });
@@ -88,13 +88,13 @@ describe("MoveToS3", () => {
     test("When no filestores are configured shows a 'no S3 filestore' message", async () => {
       mockAxios.onGet("/api/v1/gallery/filestores").reply(200, []);
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByText(/no s3 filestore has been configured/i)).toBeVisible();
+      expect(await screen.findByText("gallery:moveToS3.errors.noFilestoreConfigured.title")).toBeVisible();
     });
 
     test("When only non-S3 filestores are configured shows a 'no S3 filestore' message", async () => {
       mockAxios.onGet("/api/v1/gallery/filestores").reply(200, [IRODS_FILESTORE]);
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByText(/no s3 filestore has been configured/i)).toBeVisible();
+      expect(await screen.findByText("gallery:moveToS3.errors.noFilestoreConfigured.title")).toBeVisible();
     });
   });
 
@@ -102,12 +102,12 @@ describe("MoveToS3", () => {
     test("Submit button is disabled until a filestore is selected", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
 
       // The submit button is not HTML-disabled; instead, submitting while no
       // filestore is selected surfaces a validation popover.
-      await screen.findByRole("button", { name: /select a filestore/i });
-      await user.click(screen.getByRole("button", { name: /^move$/i }));
+      await screen.findByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i });
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ }));
       expect(await screen.findByText(/a destination filestore is required/i)).toBeVisible();
 
       // Dismiss the validation popover (the spec clicked its backdrop).
@@ -118,17 +118,17 @@ describe("MoveToS3", () => {
 
       // Selecting a filestore clears the validation error so submit succeeds.
       await selectMyS3Bucket(user);
-      expect(await screen.findByRole("button", { name: /^move$/i })).toBeVisible();
+      expect(await screen.findByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ })).toBeVisible();
     });
 
     test("Submit button label switches from 'Move' to 'Copy' when retain-copy is checked", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
-      expect(await screen.findByRole("button", { name: /^move$/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
+      expect(await screen.findByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ })).toBeVisible();
 
-      await user.click(screen.getByRole("checkbox", { name: /retain a copy in rspace/i }));
-      expect(await screen.findByRole("button", { name: /^copy$/i })).toBeVisible();
+      await user.click(screen.getByRole("checkbox", { name: "gallery:moveToS3.retainRspaceCopy" }));
+      expect(await screen.findByRole("button", { name: /^gallery:moveToS3\.actions\.copy$/ })).toBeVisible();
     });
   });
 
@@ -136,10 +136,10 @@ describe("MoveToS3", () => {
     test("Selecting a filestore and clicking Move calls the move endpoint", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("button", { name: /^move$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/move")).toBe(true);
@@ -148,11 +148,11 @@ describe("MoveToS3", () => {
     test("Checking 'Retain a copy' and clicking Copy calls the copy endpoint", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogWithOneFile />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("checkbox", { name: /retain a copy in rspace/i }));
-      await user.click(screen.getByRole("button", { name: /^copy$/i }));
+      await user.click(screen.getByRole("checkbox", { name: "gallery:moveToS3.retainRspaceCopy" }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.copy$/ }));
 
       expect(await screen.findByText(/successfully copied/i)).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/copy")).toBe(true);
@@ -161,10 +161,10 @@ describe("MoveToS3", () => {
     test("The correct record IDs are sent to the move endpoint", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogWithTwoFiles />);
-      expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.moveTitle/i })).toBeVisible();
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("button", { name: /^move$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
       const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/move");
@@ -179,22 +179,22 @@ describe("MoveToS3", () => {
   describe("Transfer mode", () => {
     test("Should have no axe violations in transfer mode", async () => {
       const { baseElement } = render(<MoveToS3DialogInTransferMode />);
-      expect(await screen.findByRole("heading", { name: /transfer to s3/i })).toBeVisible();
-      await screen.findByRole("button", { name: /select a filestore/i });
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i })).toBeVisible();
+      await screen.findByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i });
       await expectAccessible(baseElement);
     });
 
     test("Transfer mode shows 'Transfer' button and 'retain on source bucket' checkbox", async () => {
       render(<MoveToS3DialogInTransferMode />);
-      expect(await screen.findByRole("heading", { name: /transfer to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i })).toBeVisible();
       // Wait for the filestore listing to resolve before the checkbox renders.
-      await screen.findByRole("button", { name: /select a filestore/i });
-      expect(screen.getByRole("button", { name: /^transfer$/i })).toBeVisible();
+      await screen.findByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i });
+      expect(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ })).toBeVisible();
       // MUI renders the native checkbox input visually hidden (an SVG stands in
       // for it), so under jsdom assert presence rather than `toBeVisible`.
       expect(
         screen.getByRole("checkbox", {
-          name: /retain a copy on source bucket/i,
+          name: /gallery:moveToS3\.retainSourceCopy/i,
         }),
       ).toBeInTheDocument();
     });
@@ -202,12 +202,12 @@ describe("MoveToS3", () => {
     test("Transfer button is disabled until a destination filestore is selected", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogInTransferMode />);
-      expect(await screen.findByRole("heading", { name: /transfer to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i })).toBeVisible();
 
       // Not HTML-disabled; submitting without a filestore shows a validation
       // popover.
-      await screen.findByRole("button", { name: /select a filestore/i });
-      await user.click(screen.getByRole("button", { name: /^transfer$/i }));
+      await screen.findByRole("button", { name: /gallery:moveToS3\.destination\.placeholder/i });
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ }));
       expect(await screen.findByText(/a destination filestore is required/i)).toBeVisible();
 
       // Dismiss the validation popover (the spec clicked its backdrop).
@@ -217,16 +217,16 @@ describe("MoveToS3", () => {
       });
 
       await selectMyS3Bucket(user);
-      expect(await screen.findByRole("button", { name: /^transfer$/i })).toBeVisible();
+      expect(await screen.findByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ })).toBeVisible();
     });
 
     test("Clicking Transfer calls the transfer endpoint and shows a success alert", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogInTransferMode />);
-      expect(await screen.findByRole("heading", { name: /transfer to s3/i })).toBeVisible();
+      expect(await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i })).toBeVisible();
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("button", { name: /^transfer$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ }));
 
       expect(await screen.findByText(/successfully transferred/i)).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/transfer")).toBe(true);
@@ -235,10 +235,10 @@ describe("MoveToS3", () => {
     test("Transfer sends correct body with deleteSource=true by default", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogInTransferMode />);
-      await screen.findByRole("heading", { name: /transfer to s3/i });
+      await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i });
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("button", { name: /^transfer$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ }));
 
       await waitFor(() => {
         expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/transfer")).toBe(true);
@@ -255,15 +255,15 @@ describe("MoveToS3", () => {
     test("Checking 'Retain a copy on source bucket' sends deleteSource=false", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogInTransferMode />);
-      await screen.findByRole("heading", { name: /transfer to s3/i });
+      await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i });
 
       await selectMyS3Bucket(user);
       await user.click(
         screen.getByRole("checkbox", {
-          name: /retain a copy on source bucket/i,
+          name: /gallery:moveToS3\.retainSourceCopy/i,
         }),
       );
-      await user.click(screen.getByRole("button", { name: /^transfer$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ }));
 
       await waitFor(() => {
         expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/transfer")).toBe(true);
@@ -277,10 +277,10 @@ describe("MoveToS3", () => {
     test("All source paths are sent to the transfer endpoint for multiple files", async () => {
       const user = userEvent.setup();
       render(<MoveToS3DialogInTransferModeWithTwoFiles />);
-      await screen.findByRole("heading", { name: /transfer to s3/i });
+      await screen.findByRole("heading", { name: /gallery:moveToS3\.transferTitle/i });
 
       await selectMyS3Bucket(user);
-      await user.click(screen.getByRole("button", { name: /^transfer$/i }));
+      await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.transfer$/ }));
 
       expect((await screen.findAllByText(/successfully transferred/i))[0]).toBeVisible();
 

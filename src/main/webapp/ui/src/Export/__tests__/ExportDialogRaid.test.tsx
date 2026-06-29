@@ -86,9 +86,9 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("export.raid.error.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.error.message")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.error.nextHint")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.message")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.nextHint")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when groups are missing", () => {
@@ -100,8 +100,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.ineligible.missingGroups")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.missingGroups")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no project groups are available", () => {
@@ -113,8 +113,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.ineligible.noProjectGroups")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.noProjectGroups")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no RAiD association is found", () => {
@@ -129,8 +129,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.ineligible.noRaidAssociation")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.noRaidAssociation")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when multiple RAiD associations are found", () => {
@@ -145,8 +145,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.ineligible.multipleRaids")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.multipleRaids")).toBeInTheDocument();
   });
 
   it("renders the RAiD info and toggles exportToRaid when eligible", async () => {
@@ -162,9 +162,9 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
-    expect(within(alert).getByText("export.raid.eligible.title")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.eligible.projectGroupLine")).toBeInTheDocument();
-    expect(screen.getByText("export.raid.eligible.raidDetails")).toBeInTheDocument();
+    expect(within(alert).getByText("workspace:export.raid.eligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.eligible.projectGroupLine")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.eligible.raidDetails")).toBeInTheDocument();
 
     const user = userEvent.setup();
     const toggle = screen.getByRole("checkbox", { name: /export.raid.eligible.reportLabel/i });

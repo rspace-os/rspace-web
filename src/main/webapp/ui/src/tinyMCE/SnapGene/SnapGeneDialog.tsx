@@ -10,6 +10,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import DnaPreview from "./DnaPreview";
 import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
@@ -120,8 +121,10 @@ function renderDialog(target_id: any) {
   const container = $(".snapgene-dialog")[0];
   const root = createRoot(container);
   root.render(
-    <MuiCssLayerProvider>
-      <SnapGeneDialog id={target_id} />
-    </MuiCssLayerProvider>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <MuiCssLayerProvider>
+        <SnapGeneDialog id={target_id} />
+      </MuiCssLayerProvider>
+    </I18nRoot>,
   );
 }

@@ -10,21 +10,21 @@ import { IgsnTableWithControlDefaults, SimpleIgsnTable, SingularSelectionIgsnTab
 
 const IGSN_TABLE = {
   columns: {
-    doi: "igsnTable.columns.doi",
-    linkedItem: "igsnTable.columns.linkedItem",
-    state: "igsnTable.columns.state",
+    doi: "inventory:igsnTable.columns.doi",
+    linkedItem: "inventory:igsnTable.columns.linkedItem",
+    state: "inventory:igsnTable.columns.state",
   },
-  exportToCsv: "igsnTable.exportToCsv",
+  exportToCsv: "inventory:igsnTable.exportToCsv",
   filters: {
-    linkedItem: "igsnTable.filters.linkedItem",
-    noLinkedItem: "igsnTable.filters.noLinkedItem",
-    state: "igsnTable.filters.state",
-    draft: "igsnTable.filters.stateOptions.draft.title",
+    linkedItem: "inventory:igsnTable.filters.linkedItem",
+    noLinkedItem: "inventory:igsnTable.filters.noLinkedItem",
+    state: "inventory:igsnTable.filters.state",
+    draft: "inventory:igsnTable.filters.stateOptions.draft.title",
   },
-  noRows: "igsnTable.noRows",
-  scan: "igsnTable.scan",
-  searchButtonPrefix: "igsnTable.searchButtonPrefix",
-  searchPlaceholder: "igsnTable.searchPlaceholder",
+  noRows: "inventory:igsnTable.noRows",
+  scan: "inventory:igsnTable.scan",
+  searchButtonPrefix: "inventory:igsnTable.searchButtonPrefix",
+  searchPlaceholder: "inventory:igsnTable.searchPlaceholder",
 } as const;
 
 const mockAxios = new MockAdapter(axios);
@@ -275,7 +275,7 @@ describe("IGSN Table", () => {
      */
     await user.type(
       await screen.findByRole("textbox", {
-        name: "Alternatively, enter the data encoded in the barcode",
+        name: "inventory:barcodeScanner.altEntry",
       }),
       "test",
     );

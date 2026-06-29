@@ -39,7 +39,7 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
@@ -49,7 +49,7 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
@@ -74,7 +74,7 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
@@ -104,7 +104,7 @@ describe("Zenodo", () => {
       .thenReturn(expectedState);
     render(<ZenodoWrapper state={initialState} />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
@@ -133,7 +133,7 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
@@ -145,7 +145,7 @@ describe("Zenodo", () => {
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    await user.type(screen.getAllByLabelText("integrations.zenodo.fields.apiKey")[0], apiKey);
+    await user.type(screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0], apiKey);
 
     await user.click(screen.getByRole("button", { name: /save/i }));
     // Verify update was called with correct arguments
@@ -174,14 +174,14 @@ describe("Zenodo", () => {
 
     render(<ZenodoWrapper />);
     await waitFor(() => {
-      screen.getByText("integrations.zenodo.name");
+      screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
     await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
-    await user.type(screen.getAllByLabelText("integrations.zenodo.fields.apiKey")[0], apiKey);
+    await user.type(screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0], apiKey);
 
     await user.click(screen.getByRole("button", { name: /save/i }));
     // Verify update was called with correct arguments for setting API key

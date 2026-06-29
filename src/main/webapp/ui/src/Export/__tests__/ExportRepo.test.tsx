@@ -41,7 +41,7 @@ describe("ExportRepo", () => {
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
-    expect(screen.getByText("export.repositories.choiceLabel")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.repositories.choiceLabel")).toBeInTheDocument();
   });
   test("Should display repository list with two repositories", async () => {
     render(<ExportRepo {...props} />);
@@ -104,7 +104,7 @@ describe("ExportRepo", () => {
                 expect(props.fetchTags).toHaveBeenCalled();
               });
               const repoChoice = await screen.findByRole("radiogroup", {
-                name: "export.repositories.choiceAriaLabel",
+                name: "workspace:export.repositories.choiceAriaLabel",
               });
               expect(
                 await within(repoChoice).findByRole("radio", {
@@ -113,7 +113,7 @@ describe("ExportRepo", () => {
               ).toBeChecked();
               fireEvent.click(
                 await screen.findByRole("checkbox", {
-                  name: "export.repositories.dmp.associateLabel",
+                  name: "workspace:export.repositories.dmp.associateLabel",
                 }),
               );
 
@@ -125,7 +125,9 @@ describe("ExportRepo", () => {
               ).forEach((c, i) => {
                 if (indexes.has(i)) fireEvent.click(c);
               });
-              expect(await screen.findByRole("alert")).toHaveTextContent("export.repositories.dmp.zenodoLimit");
+              expect(await screen.findByRole("alert")).toHaveTextContent(
+                "workspace:export.repositories.dmp.zenodoLimit",
+              );
             },
           )
           .beforeEach(() => {

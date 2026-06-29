@@ -103,7 +103,7 @@ describe("ValidatingSubmitButton", () => {
       await user.click(screen.getByRole("button", { name: /Set Invalid/ }));
       await user.click(screen.getByRole("button", { name: "Submit" }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(await screen.findByRole("alert", { name: "Warning" })).toBeVisible();
+      expect(await screen.findByRole("alert", { name: "common:alerts.warning" })).toBeVisible();
     });
   });
 });

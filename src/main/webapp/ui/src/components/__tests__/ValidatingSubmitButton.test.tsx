@@ -49,7 +49,7 @@ describe("ValidatingSubmitButton", () => {
       </ThemeProvider>,
     );
     fireEvent.click(screen.getByRole("button"));
-    const alert = screen.getByRole("alert", { name: "Warning" });
+    const alert = screen.getByRole("alert", { name: "common:alerts.warning" });
     expect(alert).toBeVisible();
     expect(alert).toHaveTextContent("test");
   });

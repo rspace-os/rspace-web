@@ -119,7 +119,7 @@ describe("ExtraFields - Link extra-field branch", () => {
       </ThemeProvider>,
     );
     expect(screen.queryByTestId("link-field")).not.toBeInTheDocument();
-    expect(screen.getByText("fields.extraFields.noLinkSet")).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.extraFields.noLinkSet")).toBeInTheDocument();
   });
 
   it("enters edit mode via the settings cog, without mutating the model from the view card", async () => {
@@ -137,7 +137,7 @@ describe("ExtraFields - Link extra-field branch", () => {
       </ThemeProvider>,
     );
 
-    await user.click(screen.getByRole("button", { name: "fields.extraFields.fieldSettings" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.extraFields.fieldSettings" }));
 
     expect(setEditing).toHaveBeenCalledWith(true);
     expect(setAttributesDirty).not.toHaveBeenCalled();

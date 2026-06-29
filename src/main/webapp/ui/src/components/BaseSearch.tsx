@@ -8,6 +8,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
 function BaseSearch(props: {
@@ -103,12 +104,14 @@ function renderElements() {
         const variant = dataset.variant === "outlined" || dataset.variant === "elevation" ? dataset.variant : undefined;
         const root = createRoot(container);
         root.render(
-          <WrappedBaseSearch
-            placeholder={dataset.placeholder ?? ""}
-            onSubmit={dataset.onsubmit}
-            elId={dataset.elid ?? "base-search"}
-            variant={variant}
-          />,
+          <I18nRoot namespaces={["common"]}>
+            <WrappedBaseSearch
+              placeholder={dataset.placeholder ?? ""}
+              onSubmit={dataset.onsubmit}
+              elId={dataset.elid ?? "base-search"}
+              variant={variant}
+            />
+          </I18nRoot>,
         );
       });
     }

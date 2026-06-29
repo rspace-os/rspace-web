@@ -502,13 +502,13 @@ describe("Gallery", () => {
 
       // the share dialog for the selected snippet is shown
       const shareDialog = await screen.findByRole("dialog", {
-        name: /Share My Snippet/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
 
       // pick Bob from the recipient dropdown
       await user.click(
         within(shareDialog).getByRole("combobox", {
-          name: /Add RSpace users or groups/i,
+          name: /common:shareDialog\.autocomplete\.label/i,
         }),
       );
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
@@ -517,7 +517,7 @@ describe("Gallery", () => {
       await user.click(within(shareDialog).getByRole("button", { name: /Save/i }));
 
       // the success toast appears
-      expect(await screen.findByText(/Shares updated successfully\./i)).toBeVisible();
+      expect(await screen.findByText(/common:shareDialog\.updatedSuccessfully/i)).toBeVisible();
     });
   });
 });

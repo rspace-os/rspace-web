@@ -51,13 +51,13 @@ const setUpComponent = () => {
 };
 async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
   const rorInput = screen.getByRole("textbox", {
-    name: "ror.searchTooltip",
+    name: "system:ror.searchTooltip",
   });
   fireEvent.change(rorInput, {
     target: { value: term },
   });
   expect(rorInput).toHaveValue(term);
-  const searchButton = await screen.findByLabelText("actions.search");
+  const searchButton = await screen.findByLabelText("common:actions.search");
   fireEvent.click(searchButton);
 }
 async function assertRoRDetailsText() {
@@ -84,13 +84,13 @@ describe("Renders page with ROR data", () => {
     });
 
     await waitFor(() => expect(screen.queryByText("stale content")).not.toBeInTheDocument());
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
   });
 
   test("displays page with searchbar when RoR not linked", async () => {
     setUpComponent();
 
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     expect(screen.queryByText(/A ROR ID is linked to this RSpace Instance./)).not.toBeInTheDocument();
   });
@@ -98,7 +98,7 @@ describe("Renders page with ROR data", () => {
     mockAxios.resetHandlers();
     setupRoRMocks("https://ror.org/02mhbdp94");
     setUpComponent();
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
     await screen.findByText(/ror.unlinkHelpPrefix/);
     expect(
       screen.getByRole("button", {
@@ -110,7 +110,7 @@ describe("Renders page with ROR data", () => {
 
   test("displays ROR v2 details on search", async () => {
     setUpComponent();
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails();
     await screen.findByText(/ror.linkHelpPrefix/);
@@ -119,7 +119,7 @@ describe("Renders page with ROR data", () => {
 
   test("displays error when invalid ROR entered", async () => {
     setUpComponent();
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp941");
     await screen.findByText(/https:\/\/ror.org\/02mhbdp941 is not a valid ROR/);
@@ -127,7 +127,7 @@ describe("Renders page with ROR data", () => {
 
   test("displays error when ROR details not found", async () => {
     setUpComponent();
-    await screen.findByText("ror.heading");
+    await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp92");
     await screen.findByText(/ROR ID 'https:\/\/ror.org\/02mhbdp92' does not exist/);

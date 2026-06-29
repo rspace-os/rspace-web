@@ -193,7 +193,7 @@ describe("DMPDialog", () => {
 
       fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
 
-      expect(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
 
     test("label includes the count when more than one DMP is selected.", async () => {
@@ -204,11 +204,11 @@ describe("DMPDialog", () => {
       fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
       fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
 
-      expect(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
 
       fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Three" }));
 
-      expect(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton (3)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (3)" })).toBeInTheDocument();
     });
 
     test(
@@ -227,9 +227,9 @@ describe("DMPDialog", () => {
         // wait until the dialog finishes loading and the Import button is present
         await screen.findByRole("checkbox", { name: "Select Plan One" });
 
-        fireEvent.click(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton" }));
+        fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
-        expect(await screen.findByText("dmpIntegrations.dialog.noDmpIsSelected")).toBeVisible();
+        expect(await screen.findByText("apps:dmpIntegrations.dialog.noDmpIsSelected")).toBeVisible();
         expect(importPostSpy).not.toHaveBeenCalled();
       },
     );
@@ -243,7 +243,7 @@ describe("DMPDialog", () => {
 
       await screen.findByRole("checkbox", { name: "Select Plan One" });
       const selectAll = screen.getByRole("checkbox", {
-        name: "dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
       });
       expect(selectAll).not.toBeChecked();
 
@@ -251,7 +251,7 @@ describe("DMPDialog", () => {
 
       expect(screen.getByRole("checkbox", { name: "Select Plan One" })).toBeChecked();
       expect(screen.getByRole("checkbox", { name: "Select Plan Two" })).toBeChecked();
-      expect(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
     });
 
     test("toggles back off when clicked a second time.", async () => {
@@ -261,7 +261,7 @@ describe("DMPDialog", () => {
 
       await screen.findByRole("checkbox", { name: "Select Plan One" });
       const selectAll = screen.getByRole("checkbox", {
-        name: "dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
       });
 
       fireEvent.click(selectAll);
@@ -282,7 +282,7 @@ describe("DMPDialog", () => {
       fireEvent.click(cb1);
 
       const selectAll = screen.getByRole("checkbox", {
-        name: "dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
       });
       // MUI Checkbox surfaces indeterminate state via a data attribute on
       // the input rather than the native DOM property (see the upstream
@@ -300,7 +300,7 @@ describe("DMPDialog", () => {
       fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
 
       const selectAll = screen.getByRole("checkbox", {
-        name: "dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
       });
       expect(selectAll).toBeChecked();
       expect(selectAll).toHaveAttribute("data-indeterminate", "false");
@@ -320,7 +320,7 @@ describe("DMPDialog", () => {
       fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
       fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
 
-      fireEvent.click(screen.getByRole("button", { name: "dmpIntegrations.dialog.importButton (2)" }));
+      fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" }));
 
       await waitFor(() => {
         const importCalls = mockAxios.history.post.filter((c) => /importPlans/.test(c.url ?? ""));

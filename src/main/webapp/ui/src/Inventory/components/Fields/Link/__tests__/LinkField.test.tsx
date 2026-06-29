@@ -81,7 +81,7 @@ describe("LinkField", () => {
     const user = userEvent.setup();
     renderField({ editable: true, onEdit });
 
-    const editButton = screen.getByRole("button", { name: /edit link/i });
+    const editButton = screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.editLink/i });
     /* eslint-disable testing-library/no-node-access -- asserting Edit sits inline in the link row */
     expect(editButton.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access */
@@ -92,7 +92,9 @@ describe("LinkField", () => {
 
   it("omits the inline Edit button when onEdit is not provided (custom field Link cards are edited via the settings cog)", () => {
     renderField({ editable: true, onEdit: undefined });
-    expect(screen.queryByRole("button", { name: /edit link/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.linkField\.editLink/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders the Open action as a static link inline with the link chips", () => {
@@ -113,7 +115,7 @@ describe("LinkField", () => {
 
   it("renders pinned version label when versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: 4 } });
-    expect(screen.getByText(/v4|pinned to v4/i)).toBeInTheDocument();
+    expect(screen.getByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).toBeInTheDocument();
   });
 
   it("shows the Target deleted pill and blocks Open for a deleted ELN target", () => {
@@ -127,7 +129,7 @@ describe("LinkField", () => {
       readable: true,
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
-    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
+    expect(screen.getByText(/inventory:fields\.link\.linkField\.targetDeleted/i)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^open /i })).not.toBeInTheDocument();
   });
 
@@ -142,7 +144,7 @@ describe("LinkField", () => {
       readable: true,
     });
     renderField();
-    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
+    expect(screen.getByText(/inventory:fields\.link\.linkField\.targetDeleted/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
   });
 
@@ -158,13 +160,13 @@ describe("LinkField", () => {
       readable: false,
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
-    expect(screen.getByText(/no access/i)).toBeInTheDocument();
+    expect(screen.getByText(/inventory:fields\.link\.linkField\.noAccess/i)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /^open /i })).not.toBeInTheDocument();
     // an unreadable target has nothing to show, so info and the version-pin
     // clock are greyed out; Edit stays as the repair path (retarget or remove)
     expect(screen.getByRole("button", { name: /show info for sd5/i })).toBeDisabled();
     expect(screen.getByRole("button", { name: /pin version for sd5/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /edit link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.editLink/i })).toBeInTheDocument();
   });
 
   it("explains the No access pill with a permission tooltip", async () => {
@@ -178,10 +180,10 @@ describe("LinkField", () => {
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
 
-    await user.hover(screen.getByText(/no access/i));
+    await user.hover(screen.getByText(/inventory:fields\.link\.linkField\.noAccess/i));
 
     // no "no longer": viewers who never had access see this pill too
-    expect(await screen.findByText(/you do not have permission to view this item/i)).toBeInTheDocument();
+    expect(await screen.findByText(/inventory:fields\.link\.linkField\.noPermission/i)).toBeInTheDocument();
   });
 
   it("renders a normal card with Open for an unreadable inventory target", () => {
@@ -195,7 +197,7 @@ describe("LinkField", () => {
       readable: false,
     });
     renderField();
-    expect(screen.queryByText(/no access/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/inventory:fields\.link\.linkField\.noAccess/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
   });
 
@@ -204,7 +206,7 @@ describe("LinkField", () => {
     // it did before the summary existed rather than flashing a wrong state
     mockUseLinkTargetSummary.mockReturnValue(null);
     renderField();
-    expect(screen.queryByText(/target deleted/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/inventory:fields\.link\.linkField\.targetDeleted/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
   });
 

@@ -31,7 +31,7 @@ describe("HistoricalVersionAlert", () => {
     render(<HistoricalVersionAlert record={subsample} />);
 
     // t() mock returns the raw key
-    expect(screen.getByText("historicalVersion.title")).toBeVisible();
+    expect(screen.getByText("inventory:historicalVersion.title")).toBeVisible();
   });
 
   test("renders the read-only-with-link key and does not retain 'may not be the latest' hedge", () => {
@@ -44,7 +44,7 @@ describe("HistoricalVersionAlert", () => {
 
     const alert = screen.getByRole("alert");
     // Trans mock returns the i18nKey; key presence confirms the read-only message is wired up
-    expect(alert).toHaveTextContent("historicalVersion.readOnlyWithLink");
+    expect(alert).toHaveTextContent("inventory:historicalVersion.readOnlyWithLink");
     expect(alert).not.toHaveTextContent(/may not be the latest version/i);
   });
 
@@ -62,7 +62,7 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={container} />);
 
-    expect(screen.getByText("historicalVersion.contentsNotShown")).toBeVisible();
+    expect(screen.getByText("inventory:historicalVersion.contentsNotShown")).toBeVisible();
   });
 
   test("does not mention contents for a historical subsample", () => {
@@ -73,7 +73,7 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(screen.queryByText("historicalVersion.contentsNotShown")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:historicalVersion.contentsNotShown")).not.toBeInTheDocument();
   });
 
   test("the alert is accessible", async () => {

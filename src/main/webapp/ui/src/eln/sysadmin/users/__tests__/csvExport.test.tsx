@@ -64,7 +64,7 @@ describe("CSV Export", () => {
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Export this page of rows to CSV/,
+          name: /system:usersPage\.export\.visibleRows/,
         }),
       );
       expect(createObjectURL).toHaveBeenCalled();
@@ -106,7 +106,7 @@ describe("CSV Export", () => {
       await user.click(screen.getByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Export selected rows to CSV/,
+          name: /system:usersPage\.export\.visibleRows/,
         }),
       );
       expect(createObjectURL).toHaveBeenCalled();
@@ -156,7 +156,7 @@ describe("CSV Export", () => {
       await user.click(screen.getByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Export this page of rows to CSV/,
+          name: /system:usersPage\.export\.visibleRows/,
         }),
       );
       expect(createObjectURL).toHaveBeenCalled();
@@ -191,7 +191,7 @@ describe("CSV Export", () => {
       await user.click(await screen.findByRole("button", { name: /Export/ }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Export this page of rows to CSV/,
+          name: /system:usersPage\.export\.visibleRows/,
         }),
       );
       expect(createObjectURL).toHaveBeenCalled();

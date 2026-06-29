@@ -71,7 +71,7 @@ describe("MoveDialog", () => {
     );
     expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), undefined);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     await waitFor(() => {
       expect(rootStore.moveStore.isMoving).toBe(false);
     });
@@ -116,7 +116,7 @@ describe("MoveDialog", () => {
               </storesContext.Provider>
             </ThemeProvider>,
           );
-          fireEvent.click(screen.getByRole("button", { name: "Show items being moved" }));
+          fireEvent.click(screen.getByRole("button", { name: "inventory:moveToTarget.showItems" }));
           expect(within(screen.getByRole("table")).getAllByRole("row").length).toBe(selectedResults.length + 1);
           const table = screen.getByRole("table");
 
@@ -124,7 +124,7 @@ describe("MoveDialog", () => {
           const indexOfNameColumn =
             // @ts-expect-error TS does not recognise the vi.extend
 
-            within(headerRow).getIndexOfTableCell("Name");
+            within(headerRow).getIndexOfTableCell("inventory:recordsTable.columns.name");
           const allNameCells = bodyRows.map((row) => within(row).getAllByRole("cell")[indexOfNameColumn]);
           expect(selectedResults.every((r) => allNameCells.some((cell) => cell.textContent === r.name))).toBe(true);
         },

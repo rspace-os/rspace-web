@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
@@ -82,12 +83,14 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
       };
 
       root.render(
-        <GalleryEntrypoint
-          open={newProps.open}
-          onClose={newProps.onClose}
-          onSubmit={handleSubmit}
-          validateSelection={handleValidateSelection}
-        />,
+        <I18nRoot namespaces={["common"]}>
+          <GalleryEntrypoint
+            open={newProps.open}
+            onClose={newProps.onClose}
+            onSubmit={handleSubmit}
+            validateSelection={handleValidateSelection}
+          />
+        </I18nRoot>,
       );
     }
   }

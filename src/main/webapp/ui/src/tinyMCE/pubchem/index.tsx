@@ -6,6 +6,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
 import ImportDialog from "./ImportDialog";
@@ -66,17 +67,19 @@ class PubchemPlugin {
       while (true) {
         const newProps: React.ComponentProps<typeof ImportDialog> = yield;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Analytics>
-                <ErrorBoundary>
-                  <Alerts>
-                    <ImportDialog {...newProps} />
-                  </Alerts>
-                </ErrorBoundary>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["common"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Analytics>
+                  <ErrorBoundary>
+                    <Alerts>
+                      <ImportDialog {...newProps} />
+                    </Alerts>
+                  </ErrorBoundary>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }

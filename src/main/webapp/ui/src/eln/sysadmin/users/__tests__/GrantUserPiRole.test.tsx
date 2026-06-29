@@ -75,9 +75,7 @@ describe("Grant User PI Role", () => {
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(
-        within(screen.getByRole("dialog")).getByText(
-          "Please set your verification password in My RSpace before performing this action.",
-        ),
+        within(screen.getByRole("dialog")).getByText("system:usersPage.piRoleDialog.setVerificationPassword"),
       ).toBeVisible();
     },
     40 * 1000,
@@ -121,7 +119,7 @@ describe("Grant User PI Role", () => {
       await waitFor(() => {
         expect(
           screen.getByText((content) => {
-            return content === "To grant the PI role to please re-enter your password.";
+            return content === "system:usersPage.piRoleDialog.grantPrompt";
           }),
         ).toBeVisible();
       });

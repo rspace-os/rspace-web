@@ -27,14 +27,14 @@
     }
   },
   "baseRecord": {
+    "editSessionExpired": {
+      "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
+      "title": "Your editing session has expired"
+    },
     "editSessionExpiring": {
       "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
       "continue": "CONTINUE",
       "title": "Your editing session is about to expire"
-    },
-    "editSessionExpired": {
-      "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
-      "title": "Your editing session has expired"
     }
   },
   "baskets": {
@@ -168,7 +168,6 @@
       "restore": "Restore",
       "trash": "Trash"
     },
-    "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "createDialog": {
       "change": "Change",
       "columns": {
@@ -186,6 +185,7 @@
       "noOptions": "No options available.",
       "title": "Create new items from <0>{name}</0>"
     },
+    "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "splitButton": {
       "moreOptions": "More selection options"
     },
@@ -1132,11 +1132,14 @@
   "moveToTarget": {
     "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
     "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+    "hideItems": "Hide items being moved",
     "loading": "Loading",
     "movingItem": "Moving <0></0>",
+    "movingItems": "Moving {count} items",
     "nextItem": "Next item to be placed:",
     "pickDestination": "Pick Destination",
-    "selectedDestination": "Selected Destination:"
+    "selectedDestination": "Selected Destination:",
+    "showItems": "Show items being moved"
   },
   "permalink": {
     "invalidId": "\"{id}\" is not a valid {recordType} id.",

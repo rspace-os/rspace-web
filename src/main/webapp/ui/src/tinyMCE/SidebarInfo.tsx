@@ -6,6 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useCallback, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import ChemCard from "./ChemCard";
 
@@ -209,11 +210,13 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   const root = sidebarRoots.get(container) ?? createRoot(container);
   sidebarRoots.set(container, root);
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <SidebarInfo iframe={iframe} />
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <SidebarInfo iframe={iframe} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
   );
 });
 

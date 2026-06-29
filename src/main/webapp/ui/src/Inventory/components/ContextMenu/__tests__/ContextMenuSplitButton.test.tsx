@@ -13,11 +13,11 @@ describe("ContextMenuSplitButton", () => {
     );
     // none of the options are selected until one has been used
     // so first we tap one of the options
-    fireEvent.click(screen.getByRole("button", { name: "contextMenu.splitButton.moreOptions" }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:contextMenu.splitButton.moreOptions" }));
 
     fireEvent.click(screen.getByRole("menuitem", { name: "foo" }));
     // then we reopen the menu to assert the now selected option
-    fireEvent.click(screen.getByRole("button", { name: "contextMenu.splitButton.moreOptions" }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:contextMenu.splitButton.moreOptions" }));
     expect(
       screen.getByRole("menuitem", {
         name: "foo",

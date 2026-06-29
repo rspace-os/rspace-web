@@ -13,6 +13,7 @@ import { ACCENT_COLOR } from "@/assets/branding/chemistry";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../accentedTheme";
 import { useIntegrationIsAllowedAndEnabled } from "../hooks/api/integrationHelpers";
 import * as FetchingData from "../util/fetchingData";
@@ -219,7 +220,11 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 
 function render(attributes: PreviewInfoItem, element: Element) {
   const root = getPreviewInfoRoot(element);
-  root.render(<PreviewInfo item={{ ...attributes }} />);
+  root.render(
+    <I18nRoot namespaces={["apps", "common"]}>
+      <PreviewInfo item={{ ...attributes }} />
+    </I18nRoot>,
+  );
 }
 
 function renderChemPreview(domContainer: HTMLImageElement) {
@@ -235,7 +240,11 @@ function renderChemPreview(domContainer: HTMLImageElement) {
   const contents = parent.innerHTML;
 
   const root = getPreviewInfoRoot(parent);
-  root.render(<PreviewInfo item={{ ...attributes }} />);
+  root.render(
+    <I18nRoot namespaces={["apps", "common"]}>
+      <PreviewInfo item={{ ...attributes }} />
+    </I18nRoot>,
+  );
   parent.insertAdjacentHTML("beforeend", contents);
 }
 

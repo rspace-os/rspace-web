@@ -767,7 +767,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             }}
           />
           <AccentMenuItem
-            title="Download"
+            title={t("actionsMenu.download")}
             subheader={downloadAllowed
               .get()
               .map(() => "")
@@ -783,7 +783,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={downloadAllowed.get().isError}
           />
           <AccentMenuItem
-            title="Share"
+            title={t("actionsMenu.share")}
             subheader={shareAllowed
               .get()
               .map(() => "")
@@ -819,7 +819,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               .orElse(null)}
           </EventBoundary>
           <AccentMenuItem
-            title="Export"
+            title={t("actionsMenu.export")}
             subheader={exportAllowed
               .get()
               .map(() => "")
@@ -871,7 +871,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
           {showNetfileActions && (
             <>
               <AccentMenuItem
-                title="Move to iRODS"
+                title={t("actionsMenu.moveToIrods")}
                 subheader={moveToIrodsAllowed
                   .get()
                   .map(() => "")
@@ -908,7 +908,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 ))
                 .orElse(null)}
               <AccentMenuItem
-                title="Move to S3"
+                title={t("actionsMenu.moveToS3")}
                 subheader={moveToS3Allowed
                   .get()
                   .map(() => "")

@@ -23,6 +23,6 @@ describe("TimeField", () => {
 
   test("shows the no-value label when disabled with no value", () => {
     render(<TimeField value="" onChange={() => {}} disabled />);
-    expect(screen.getByText("values.none")).toBeInTheDocument();
+    expect(screen.getByText("common:values.none")).toBeInTheDocument();
   });
 });

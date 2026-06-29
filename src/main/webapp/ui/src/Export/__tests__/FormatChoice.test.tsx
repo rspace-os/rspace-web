@@ -35,7 +35,7 @@ describe("FormatChoice", () => {
       );
       expect(
         await screen.findByRole("checkbox", {
-          name: "export.format.chooser.noRepoSetup",
+          name: "workspace:export.format.chooser.noRepoSetup",
         }),
       ).toBeDisabled();
     });
@@ -89,7 +89,9 @@ describe("FormatChoice", () => {
           validator={mkValidator()}
         />,
       );
-      expect(await screen.findByRole("checkbox", { name: "export.format.chooser.exportToRepository" })).toBeEnabled();
+      expect(
+        await screen.findByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }),
+      ).toBeEnabled();
     });
   });
   describe("Export as Word .doc is dependent on the document conversion lib aspose.", () => {
@@ -117,7 +119,7 @@ describe("FormatChoice", () => {
           </DeploymentPropertyContext.Provider>,
         ),
       );
-      const wordElement = screen.getByText("export.format.chooser.formats.docHeading");
+      const wordElement = screen.getByText("workspace:export.format.chooser.formats.docHeading");
       expect(wordElement).toBeInTheDocument();
     });
     test("When aspose is disabled, .doc export option isn't present", async () => {
@@ -144,7 +146,7 @@ describe("FormatChoice", () => {
           </DeploymentPropertyContext.Provider>,
         ),
       );
-      const wordElement = screen.queryAllByText("export.format.chooser.formats.docHeading");
+      const wordElement = screen.queryAllByText("workspace:export.format.chooser.formats.docHeading");
       expect(wordElement.length).toBe(0);
     });
   });
@@ -180,7 +182,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: "export.format.chooser.formats.docHeading export.format.chooser.wordErrors.multiple",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.multiple",
         }),
       ).toBeDisabled();
     });
@@ -210,7 +212,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: "export.format.chooser.formats.docHeading export.format.chooser.wordErrors.folder",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.folder",
         }),
       ).toBeDisabled();
     });
@@ -240,7 +242,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: "export.format.chooser.formats.docHeading export.format.chooser.wordErrors.notebook",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.notebook",
         }),
       ).toBeDisabled();
     });
@@ -270,7 +272,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getAllByRole("radio", {
-          name: "export.format.chooser.formats.docHeading export.format.chooser.wordErrors.allMedia",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.allMedia",
         })[0],
       ).toBeDisabled();
     });
@@ -299,7 +301,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getAllByRole("radio", {
-          name: "export.format.chooser.formats.pdfHeading export.format.chooser.formats.pdfUnavailable",
+          name: "workspace:export.format.chooser.formats.pdfHeading workspace:export.format.chooser.formats.pdfUnavailable",
           // selecting first such radio because second will be for .doc export
         })[0],
       ).toBeDisabled();

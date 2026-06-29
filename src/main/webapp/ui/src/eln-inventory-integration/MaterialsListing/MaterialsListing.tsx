@@ -20,6 +20,7 @@ import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import Analytics from "../../components/Analytics";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { ElnFieldId } from "../../stores/models/MaterialsModel";
 import useStores from "../../stores/use-stores";
@@ -277,9 +278,11 @@ function initListOfMaterials({
 
     const root = getMaterialsListingRoot(listingWrapper);
     root.render(
-      <Analytics>
-        <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
-      </Analytics>,
+      <I18nRoot namespaces={["inventory", "common"]}>
+        <Analytics>
+          <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
+        </Analytics>
+      </I18nRoot>,
     );
     if (makeWrapperRelative) listingWrapper.style.position = "relative";
 
@@ -290,9 +293,11 @@ function initListOfMaterials({
     );
     if (newButtonWrapper) {
       getMaterialsListingRoot(newButtonWrapper).render(
-        <Analytics>
-          <NewMaterialsListing elnFieldId={fieldId} />
-        </Analytics>,
+        <I18nRoot namespaces={["inventory", "common"]}>
+          <Analytics>
+            <NewMaterialsListing elnFieldId={fieldId} />
+          </Analytics>
+        </I18nRoot>,
       );
     }
   });

@@ -18,6 +18,7 @@ import Analytics from "../../components/Analytics";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
@@ -303,7 +304,11 @@ window.renderToolbar = (newProps: any) => {
     },
     canSign: newProps?.canSign ?? prevProps.canSign,
   };
-  rootNode.render(<StructuredDocumentToolbar domContainer={domContainer} {...prevProps} canSign={prevProps.canSign} />);
+  rootNode.render(
+    <I18nRoot namespaces={["common"]}>
+      <StructuredDocumentToolbar domContainer={domContainer} {...prevProps} canSign={prevProps.canSign} />
+    </I18nRoot>,
+  );
 };
 
 /*

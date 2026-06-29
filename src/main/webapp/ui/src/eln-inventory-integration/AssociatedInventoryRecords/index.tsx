@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import Analytics from "@/components/Analytics";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import type { ElnDocumentId } from "@/stores/models/MaterialsModel";
 import NoValue from "../../components/NoValue";
@@ -85,11 +86,13 @@ const wrapperDiv = document.getElementById("inventoryRecordList");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <Analytics>
-      <MuiCssLayerProvider>
-        <AssociatedInventoryRecords elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)} />
-      </MuiCssLayerProvider>
-    </Analytics>,
+    <I18nRoot namespaces={["inventory", "common"]}>
+      <Analytics>
+        <MuiCssLayerProvider>
+          <AssociatedInventoryRecords elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)} />
+        </MuiCssLayerProvider>
+      </Analytics>
+    </I18nRoot>,
   );
 }
 

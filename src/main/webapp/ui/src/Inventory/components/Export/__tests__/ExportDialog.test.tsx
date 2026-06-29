@@ -60,18 +60,18 @@ describe("Export Tests", () => {
       );
 
       expect(screen.getAllByRole("radio")).toHaveLength(6); // containers options rendered when no selected results
-      const fullOption = screen.getByLabelText("export.dialog.options.full");
+      const fullOption = screen.getByLabelText("inventory:export.dialog.options.full");
       expect(fullOption).toBeInTheDocument();
       expect(fullOption).toBeChecked();
-      const compactOption = screen.getByLabelText("export.dialog.options.compact");
+      const compactOption = screen.getByLabelText("inventory:export.dialog.options.compact");
       expect(compactOption).toBeInTheDocument();
       expect(compactOption).not.toBeChecked();
-      const includeContentOption = screen.getByLabelText("export.dialog.options.containerContentInclude");
+      const includeContentOption = screen.getByLabelText("inventory:export.dialog.options.containerContentInclude");
       expect(includeContentOption).toBeInTheDocument();
 
       expect(includeContentOption).not.toBeChecked();
       /* assert help text for default option */
-      const defaultContainersHint = "export.exporter.containerContent.exclude";
+      const defaultContainersHint = "inventory:export.exporter.containerContent.exclude";
       expect(screen.getByText(defaultContainersHint)).toBeInTheDocument();
     });
   });
@@ -89,15 +89,15 @@ describe("Export Tests", () => {
         </storesContext.Provider>,
       );
       expect(screen.getAllByRole("radio")).toHaveLength(6);
-      const includeOption = screen.getByLabelText("export.dialog.options.subsamplesInclude");
+      const includeOption = screen.getByLabelText("inventory:export.dialog.options.subsamplesInclude");
       expect(includeOption).toBeInTheDocument();
       expect(includeOption).toBeChecked();
-      const excludeOption = screen.getByLabelText("export.dialog.options.subsamplesExclude");
+      const excludeOption = screen.getByLabelText("inventory:export.dialog.options.subsamplesExclude");
       expect(excludeOption).toBeInTheDocument();
 
       expect(excludeOption).not.toBeChecked();
       /* assert help text for default option */
-      const defaultSamplesHint = "export.dialog.modeAllData";
+      const defaultSamplesHint = "inventory:export.dialog.modeAllData";
       expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
     });
     test("renders, has radio options for exportMode, samples and containers", () => {

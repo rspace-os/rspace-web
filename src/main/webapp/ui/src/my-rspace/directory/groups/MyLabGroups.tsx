@@ -5,6 +5,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import i18n from "../../../modules/common/i18n";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import materialTheme from "../../../theme";
 import GroupAutoshareManager from "./Autoshare/GroupAutoshareManager";
 import GroupBioOntologiesManager from "./GroupBioOntologiesManager";
@@ -143,4 +144,8 @@ class MyLabGroups extends React.Component<any, any> {
 
 const domContainer = document.getElementById("myLabGroups") as HTMLElement;
 const root = createRoot(domContainer);
-root.render(<MyLabGroups />);
+root.render(
+  <I18nRoot namespaces={["common"]}>
+    <MyLabGroups />
+  </I18nRoot>,
+);

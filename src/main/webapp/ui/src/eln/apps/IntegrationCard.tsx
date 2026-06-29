@@ -20,6 +20,7 @@ import { observer } from "mobx-react-lite";
 import React, { forwardRef, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
+import type { DocLinkName } from "../../assets/DocLinks";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -73,7 +74,7 @@ type IntegrationCardArgs<Credentials> = {
   // The name of a link in ../../assets/DocLinks to our user-facing
   // documentation. We cannot infer this from `name` because some very similar
   // integrations share a single page of documentation.
-  docLink: string;
+  docLink: DocLinkName;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in

@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import Analytics from "../../components/Analytics";
 import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 // eslint-disable-next-line no-duplicate-imports
@@ -11,15 +12,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
   root.render(
-    <Analytics>
-      <Clustermarket
-        {...({
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-          clustermarket_web_url: (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url,
-          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        } as any)}
-      />
-    </Analytics>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <Analytics>
+        <Clustermarket
+          {...({
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+            clustermarket_web_url: (parent.tinymce.activeEditor as any)?.settings.clustermarket_web_url,
+            // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          } as any)}
+        />
+      </Analytics>
+    </I18nRoot>,
   );
 });
 

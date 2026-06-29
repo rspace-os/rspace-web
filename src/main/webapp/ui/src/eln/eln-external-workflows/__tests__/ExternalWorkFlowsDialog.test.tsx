@@ -35,12 +35,12 @@ describe("Renders with table of  data", () => {
     });
     expect(toggleButton).toBeEnabled();
     fireEvent.click(toggleButton);
-    expect(await screen.findByText("externalWorkflows.dialogTitle")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.columns.dataUploaded")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.columns.container")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.columns.invocation")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.columns.status")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.columns.created")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.dialogTitle")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.columns.dataUploaded")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.columns.container")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.columns.invocation")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.columns.status")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.columns.created")).toBeInTheDocument();
   });
   test("displays WorkFlow Data", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
@@ -50,7 +50,7 @@ describe("Renders with table of  data", () => {
     expect(toggleButton).toBeEnabled();
     expect(toggleButton).toBeInTheDocument();
     fireEvent.click(toggleButton);
-    expect(await screen.findByText("externalWorkflows.dialogTitle")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.dialogTitle")).toBeInTheDocument();
     const gridCells = screen.getAllByRole("gridcell");
     expect(gridCells[0]).toHaveTextContent("Galaxy1-_anaphase_1750407920234.jpg__1753183694203.jpg");
     expect(gridCells[1]).toHaveTextContent("RSPACE_Untitled document_SD375v3_Data_FD229379");
@@ -66,20 +66,20 @@ describe("Handles errors", () => {
   test("displays error message if 404 returned", async () => {
     mockAxios.onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1").reply(404, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.error.notFound")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.notFound")).toBeInTheDocument();
   });
   test("displays error message if 403 returned", async () => {
     mockAxios.onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1").reply(403, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.error.unauthorized")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.unauthorized")).toBeInTheDocument();
   });
 
   test("displays error message if 500 returned", async () => {
     mockAxios.onGet("/apps/galaxy/getGalaxyInvocationCountForRSpaceField/1").reply(500, []);
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
-    expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
-    expect(await screen.findByText("externalWorkflows.error.unknown")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
+    expect(await screen.findByText("apps:externalWorkflows.error.unknown")).toBeInTheDocument();
   });
 });

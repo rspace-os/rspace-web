@@ -65,7 +65,7 @@ describe("pdf preview dialog island", () => {
       );
     });
 
-    expect(await screen.findByLabelText(/pdf preview/i)).toBeVisible();
+    expect(await screen.findByLabelText(/gallery:callablePdfPreview\.title/i)).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
       "data-file",
       "/public/publicView/Streamfile/17?revision=4",
@@ -99,7 +99,7 @@ describe("pdf preview dialog island", () => {
     await waitFor(() => {
       expect(axiosGetMock).toHaveBeenCalledWith("/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7");
     });
-    expect(await screen.findByLabelText(/pdf preview/i)).toBeVisible();
+    expect(await screen.findByLabelText(/gallery:callablePdfPreview\.title/i)).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
       "data-file",
       "/public/publicView/Streamfile/direct/42?fileName=converted-preview.pdf",

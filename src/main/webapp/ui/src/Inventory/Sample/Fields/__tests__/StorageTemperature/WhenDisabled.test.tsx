@@ -124,8 +124,8 @@ describe("StorageTemperature", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("1");
-        expect(container).toHaveTextContent("2");
+        expect(container).toHaveTextContent("inventory:sample.fields.storageTemperature.between");
+        expect(container).toHaveTextContent("inventory:sample.fields.storageTemperature.between");
       });
       describe("That renders the units correctly.", () => {
         test("Celsius", () => {

@@ -22,6 +22,7 @@ import docLinks from "@/assets/DocLinks";
 import axios from "@/common/axios";
 import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -596,11 +597,13 @@ class PyratPlugin {
       while (true) {
         const newProps = yield;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <PyratDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["apps", "common"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <PyratDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }

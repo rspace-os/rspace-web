@@ -206,7 +206,7 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -223,7 +223,7 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Notebook No Identifiers"));
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -243,11 +243,11 @@ describe("FieldmarkImportDialog", () => {
       await user.click(getRadioForNotebook("Notebook With Identifiers"));
       // The IGSN ID field select appears once the candidate fields are fetched
       const identifierSelect = await screen.findByRole("combobox", {
-        name: "fieldmarkImport.igsnField.label",
+        name: "inventory:fieldmarkImport.igsnField.label",
       });
       fireEvent.mouseDown(identifierSelect);
       fireEvent.click(await screen.findByRole("option", { name: "sample_id" }));
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -283,15 +283,15 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
-      const alert = await screen.findByText("fieldmarkImport.importNotebook.title");
+      const alert = await screen.findByText("inventory:fieldmarkImport.importNotebook.title");
       const alertContainer = alert.closest('[role="group"]') as HTMLElement;
       expect(alertContainer).toBeVisible();
-      expect(alertContainer).toHaveTextContent("fieldmarkImport.importNotebook.title");
+      expect(alertContainer).toHaveTextContent("inventory:fieldmarkImport.importNotebook.title");
       // The t() mock returns the key without interpolation; the message key being
       // present is sufficient to confirm the alert was triggered
-      expect(alertContainer).toHaveTextContent("fieldmarkImport.importNotebook.message");
+      expect(alertContainer).toHaveTextContent("inventory:fieldmarkImport.importNotebook.message");
 
       // Release the pending import so the test can clean up without dangling
       // promises.
@@ -319,10 +319,10 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "import.actions.import" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "inventory:import.actions.import" })).toBeDisabled();
       });
 
       (resolveImport as (() => void) | null)?.();
@@ -338,7 +338,7 @@ describe("FieldmarkImportDialog", () => {
         await user.click(getRadioForNotebook("Notebook IGSN Error"));
 
         // TransRichText mock returns the i18nKey; real content rendered at runtime
-        expect(await screen.findByText("fieldmarkImport.igsnMessage")).toBeVisible();
+        expect(await screen.findByText("inventory:fieldmarkImport.igsnMessage")).toBeVisible();
       } finally {
         restoreConsole();
       }
@@ -367,14 +367,16 @@ describe("FieldmarkImportDialog", () => {
       await user.click(getRadioForNotebook("Notebook With Identifiers"));
       // Wait for the identifier select to appear, then import WITHOUT selecting
       // an identifier field (selection stays "unselected").
-      await screen.findByRole("combobox", { name: "fieldmarkImport.igsnField.label" });
-      await user.click(screen.getByRole("button", { name: "import.actions.import" }));
+      await screen.findByRole("combobox", { name: "inventory:fieldmarkImport.igsnField.label" });
+      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
 
       // The importing alert should appear...
-      expect(await screen.findByText("fieldmarkImport.importNotebook.title")).toBeVisible();
+      expect(await screen.findByText("inventory:fieldmarkImport.importNotebook.title")).toBeVisible();
       // ...and the identifier parsing UI should be hidden during import.
-      expect(screen.queryByRole("combobox", { name: "fieldmarkImport.igsnField.label" })).not.toBeInTheDocument();
-      expect(screen.queryByText("fieldmarkImport.igsnField.loading")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("combobox", { name: "inventory:fieldmarkImport.igsnField.label" }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText("inventory:fieldmarkImport.igsnField.loading")).not.toBeInTheDocument();
 
       (resolveImport as (() => void) | null)?.();
     });

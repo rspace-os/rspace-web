@@ -111,7 +111,7 @@ describe("Sidebar", () => {
     const { baseElement } = render(<DefaultSidebar />);
 
     // wait for the sidebar to be on screen before scanning
-    await screen.findByRole("button", { name: "actions.create" });
+    await screen.findByRole("button", { name: "common:actions.create" });
 
     await expectAccessible(baseElement);
   });
@@ -122,7 +122,7 @@ describe("Sidebar", () => {
       render(<DefaultSidebar />);
 
       // the sidebar is visible
-      await user.click(await screen.findByRole("button", { name: "actions.create" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
       await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));
@@ -136,7 +136,7 @@ describe("Sidebar", () => {
       await user.type(within(dialog).getByRole("textbox"), "test");
 
       // the user clicks the Create button in the dialog
-      await user.click(within(dialog).getByRole("button", { name: "actions.create" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
       // a folder creation request should be made
       await waitFor(() => {
@@ -154,7 +154,7 @@ describe("Sidebar", () => {
       render(<DefaultSidebar />);
 
       // the sidebar is visible
-      await user.click(await screen.findByRole("button", { name: "actions.create" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
       await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));

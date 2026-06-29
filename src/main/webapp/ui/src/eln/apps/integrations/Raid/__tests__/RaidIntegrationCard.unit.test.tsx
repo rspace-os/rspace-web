@@ -124,7 +124,7 @@ describe("RaidIntegrationCard", () => {
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
       const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("integrations.raid.alerts.connectSuccess");
+      expect(alertArg.message).toContain("apps:integrations.raid.alerts.connectSuccess");
     });
 
     test("Ignores broadcast messages for unknown serverAlias", async () => {
@@ -226,7 +226,7 @@ describe("RaidIntegrationCard", () => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Successfully disconnected.");
+      expect(alertArg.message).toContain("apps:integrations.raid.alerts.disconnectSuccess");
       expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
     });
 
@@ -254,7 +254,7 @@ describe("RaidIntegrationCard", () => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("integrations.raid.alerts.serverStatus");
+      expect(alertArg.message).toContain("apps:integrations.raid.alerts.serverStatus");
       expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
     });
 

@@ -101,7 +101,7 @@ describe("GallerySections", () => {
 
   it("hides the related inventory items until 'Show linked docs' is clicked", () => {
     renderGallery();
-    expect(screen.queryByText("fields.link.relatedInventoryItems.title")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.relatedInventoryItems.title")).not.toBeInTheDocument();
   });
 
   it("shows the Inventory items that link to this file on 'Show linked docs'", async () => {
@@ -127,7 +127,7 @@ describe("GallerySections", () => {
     await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
-    expect(await screen.findByText("fields.link.relatedInventoryItems.title")).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.title")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /SA42/ })).toHaveAttribute("href", "/globalId/SA42");
     expect(screen.getByText(/\(References\)/)).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe("GallerySections", () => {
 
     await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
-    expect(await screen.findByText("fields.link.relatedInventoryItems.none")).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.none")).toBeInTheDocument();
   });
 
   it("shows the upload-new-version control when the file is editable (VIEW_MODE)", () => {

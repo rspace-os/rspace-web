@@ -80,6 +80,7 @@ import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerif
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../../hooks/api/useUiPreference";
 import { type User, type UserId, type UserListing, useUserListing } from "../../../hooks/api/useUserListing";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as FetchingData from "../../../util/fetchingData";
 import { formatFileSize } from "../../../util/files";
@@ -1978,14 +1979,16 @@ const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <QueryClientProvider client={queryClient}>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-          <UiPreferences>
-            <UsersPage />
-          </UiPreferences>
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </QueryClientProvider>,
+    <I18nRoot namespaces={["system", "common"]}>
+      <QueryClientProvider client={queryClient}>
+        <StyledEngineProvider injectFirst enableCssLayer>
+          <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+            <UiPreferences>
+              <UsersPage />
+            </UiPreferences>
+          </ThemeProvider>
+        </StyledEngineProvider>
+      </QueryClientProvider>
+    </I18nRoot>,
   );
 }

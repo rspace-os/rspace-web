@@ -18,6 +18,7 @@ import useOauthToken from "../../../hooks/auth/useOauthToken";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import { type Identifier, IdentifiersRefreshProvider } from "../../../Inventory/useIdentifiers";
 import i18n from "../../../modules/common/i18n";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { toTitleCase } from "../../../util/Util";
@@ -140,13 +141,15 @@ class IdentifiersPlugin {
       while (true) {
         newProps = yield newProps;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Alerts>
-                <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-              </Alerts>
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["inventory", "common"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Alerts>
+                  <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
+                </Alerts>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }

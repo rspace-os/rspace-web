@@ -13,6 +13,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { forwardRef, useCallback, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
 type ToastVariant = "success" | "warning" | "error" | "notice";
@@ -134,7 +135,11 @@ function WrappedSnackbars() {
 const domContainer = document.getElementById("toast-message");
 if (domContainer) {
   const root = createRoot(domContainer);
-  root.render(<WrappedSnackbars />);
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <WrappedSnackbars />
+    </I18nRoot>,
+  );
 }
 
 function ToastMessage({ callback, closeToast, id, open, variant, message }: ToastMessageProps) {

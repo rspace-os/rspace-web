@@ -74,11 +74,11 @@ describe("UserDetails", () => {
 
     await waitFor(() => {
       expect(onOpen).toHaveBeenCalledTimes(1);
-      expect(screen.getByRole("link", { name: "userDetails.openProfile" })).toBeVisible();
-      expect(screen.getByRole("link", { name: "userDetails.sendMessage" })).toBeVisible();
+      expect(screen.getByRole("link", { name: "common:userDetails.openProfile" })).toBeVisible();
+      expect(screen.getByRole("link", { name: "common:userDetails.sendMessage" })).toBeVisible();
     });
 
-    await user.click(screen.getByRole("link", { name: "userDetails.sendMessage" }));
+    await user.click(screen.getByRole("link", { name: "common:userDetails.sendMessage" }));
 
     expect(dialogRecipient).toBe("ada<Ada Lovelace>,");
   });

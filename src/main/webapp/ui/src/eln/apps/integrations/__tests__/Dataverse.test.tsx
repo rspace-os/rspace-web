@@ -87,7 +87,7 @@ describe("Dataverse", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("integrations.dataverse.fields.apiKey"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dataverse.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
@@ -160,7 +160,7 @@ describe("Dataverse", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("integrations.dataverse.fields.apiKey"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dataverse.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
@@ -341,7 +341,7 @@ describe("Dataverse", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("integrations.dataverse.fields.apiKey")[1], {
+      fireEvent.input(screen.getAllByLabelText("apps:integrations.dataverse.fields.apiKey")[1], {
         target: { value: "new api key" },
       });
 

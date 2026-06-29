@@ -2,11 +2,16 @@
   "actionsMenu": {
     "actions": "Actions",
     "cannotView": "Cannot view this file because",
+    "download": "Download",
+    "export": "Export",
+    "moveToIrods": "Move to iRODS",
+    "moveToS3": "Move to S3",
     "nameRequired": "Empty name is not permitted.",
     "open": "Open",
     "rename": "Rename",
     "renameLabel": "Name",
-    "renamePrompt": "Please give a new name for {{name}}.",
+    "renamePrompt": "Please give a new name for {name}.",
+    "share": "Share",
     "view": "View"
   },
   "addFilestoreDialog": {

@@ -24,7 +24,7 @@ describe("DefaultValueField", () => {
       );
 
       await user.click(
-        screen.getByRole("combobox", { name: "fields.templateFields.defaultValue.allowedRelationshipTypes" }),
+        screen.getByRole("combobox", { name: "inventory:fields.templateFields.defaultValue.allowedRelationshipTypes" }),
       );
       const chosen = await screen.findByRole("option", { name: "IsCitedBy" });
       expect(chosen).toHaveAttribute("aria-disabled", "true");
@@ -49,7 +49,7 @@ describe("DefaultValueField", () => {
       );
 
       await user.click(
-        screen.getByRole("combobox", { name: "fields.templateFields.defaultValue.allowedRelationshipTypes" }),
+        screen.getByRole("combobox", { name: "inventory:fields.templateFields.defaultValue.allowedRelationshipTypes" }),
       );
       const unchosen = await screen.findByRole("option", { name: "Cites" });
       expect(unchosen).not.toHaveAttribute("aria-disabled", "true");

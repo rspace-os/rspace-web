@@ -19,6 +19,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
 import i18n from "../../../modules/common/i18n";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
 
@@ -257,4 +258,8 @@ class GroupEditBar extends React.Component<any, any> {
 
 const domContainer = document.getElementById("groupEditBar") as HTMLElement;
 const root = createRoot(domContainer);
-root.render(<GroupEditBar />);
+root.render(
+  <I18nRoot namespaces={["common"]}>
+    <GroupEditBar />
+  </I18nRoot>,
+);

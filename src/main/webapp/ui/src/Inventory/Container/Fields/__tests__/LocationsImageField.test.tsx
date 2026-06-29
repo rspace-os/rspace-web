@@ -89,7 +89,7 @@ describe("LocationImageField", () => {
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
-          warningAlert: "container.fields.locationsImage.warningNoImage",
+          warningAlert: "inventory:container.fields.locationsImage.warningNoImage",
         }),
         undefined,
       );
@@ -169,7 +169,7 @@ describe("LocationImageField", () => {
       });
       expect(addScopedToastSpy).toHaveBeenCalled();
       expect(addAlertMock).toHaveBeenCalledWith(
-        expect.objectContaining({ message: "container.fields.locationsImage.setPreviewImage" }),
+        expect.objectContaining({ message: "inventory:container.fields.locationsImage.setPreviewImage" }),
       );
       act(() => {
         setPreviewImageFunction();
@@ -236,7 +236,7 @@ describe("LocationImageField", () => {
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
-          warningAlert: "container.fields.locationsImage.warningNoMarkers",
+          warningAlert: "inventory:container.fields.locationsImage.warningNoMarkers",
         }),
         undefined,
       );
@@ -259,7 +259,7 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-      const editLocationsButtons = screen.getByText("container.fields.locationsImage.editLocations");
+      const editLocationsButtons = screen.getByText("inventory:container.fields.locationsImage.editLocations");
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
@@ -284,7 +284,7 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-      const editLocationsButtons = screen.getByText("container.fields.locationsImage.editLocations");
+      const editLocationsButtons = screen.getByText("inventory:container.fields.locationsImage.editLocations");
       await user.click(editLocationsButtons);
       await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(

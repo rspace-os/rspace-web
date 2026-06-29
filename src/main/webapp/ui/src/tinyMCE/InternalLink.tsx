@@ -19,6 +19,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from "@/tinyMCE/types";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import UserDetails from "../components/UserDetails";
@@ -385,10 +386,12 @@ document.addEventListener("tinymce-insert-revision", (event: Event): void => {
   // MUI v5 useStyles cannot be used in the same component as the root
   // MuiThemeProvider.
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
   );
 });

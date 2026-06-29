@@ -35,7 +35,7 @@ describe("MSTeams", () => {
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(table).findTableCell({
-          columnHeading: "integrations.msteams.tableHeader",
+          columnHeading: "apps:integrations.msteams.tableHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("foo");

@@ -1,12 +1,20 @@
 import type React from "react";
 import { createRoot } from "react-dom/client";
 import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
-const tCommon = i18n.getFixedT(null, "common") as (translationKey: string, options?: Record<string, unknown>) => string;
-const EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER = tCommon("stoichiometry.plugin.emptyTablePlaceholder");
+// Resolve against the `common` namespace through the live instance on every
+// call (rather than a bound `getFixedT`), so the active language is always
+// honoured consistently with the rest of the app.
+const translate = i18n.t as (translationKey: string, options?: Record<string, unknown>) => string;
+const tCommon = (translationKey: string, options?: Record<string, unknown>): string =>
+  translate(translationKey, { ns: "common", ...options });
+// Resolved lazily: i18n loads asynchronously, so reading the key at module load
+// would capture the raw key string before the catalog is available.
+const getEmptyStoichiometryTablePlaceholder = (): string => tCommon("stoichiometry.plugin.emptyTablePlaceholder");
 
 declare global {
   interface Window {
@@ -130,7 +138,7 @@ class StoichiometryPlugin {
       const hasStoichiometryData = node.hasAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE);
       const hasElementChildren = node.children.length > 0;
       const textContent = node.textContent?.trim() ?? "";
-      const hasOnlyPlaceholderText = textContent === EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
+      const hasOnlyPlaceholderText = textContent === getEmptyStoichiometryTablePlaceholder();
 
       if (hasStoichiometryData) {
         if (!hasElementChildren && hasOnlyPlaceholderText) {
@@ -140,7 +148,7 @@ class StoichiometryPlugin {
       }
 
       if (!hasElementChildren && textContent.length === 0) {
-        node.textContent = EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
+        node.textContent = getEmptyStoichiometryTablePlaceholder();
       }
     };
 
@@ -213,7 +221,7 @@ class StoichiometryPlugin {
     };
 
     const buildStoichiometryTableOnlyHtml = (nodeId: string): string => {
-      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${i18n.t("stoichiometry.dialog.reactionTable", { ns: "common" })}">${EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER}</div>`;
+      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${i18n.t("stoichiometry.dialog.reactionTable", { ns: "common" })}">${getEmptyStoichiometryTablePlaceholder()}</div>`;
     };
 
     const insertStoichiometryTableOnly = (): string => {
@@ -252,7 +260,11 @@ class StoichiometryPlugin {
           ...nextProps,
         };
 
-        root.render(<StoichiometryDialogEntrypoint {...props} />);
+        root.render(
+          <I18nRoot namespaces={["common"]}>
+            <StoichiometryDialogEntrypoint {...props} />
+          </I18nRoot>,
+        );
       };
     };
 

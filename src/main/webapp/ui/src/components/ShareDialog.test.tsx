@@ -338,11 +338,11 @@ describe("ShareDialog", () => {
       const { baseElement } = render(<NoPreviousShares />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(dialog).toBeVisible();
       await waitFor(() => {
-        expect(dialog).toHaveTextContent(/This document is not directly shared with anyone./i);
+        expect(dialog).toHaveTextContent(/common:shareDialog\.noDirectShares/i);
       });
 
       await expectAccessible(baseElement);
@@ -352,7 +352,7 @@ describe("ShareDialog", () => {
       const { baseElement } = render(<SharedWithAnotherUser />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share A shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(dialog).toBeVisible();
       const table = await within(dialog).findByRole("table");
@@ -374,7 +374,7 @@ describe("ShareDialog", () => {
       const { baseElement } = render(<SharedWithAGroup />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Another shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(dialog).toBeVisible();
       const table = await within(dialog).findByRole("table");
@@ -402,13 +402,13 @@ describe("ShareDialog", () => {
       const { baseElement } = render(<MultipleDocuments />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share \d+ documents/i,
+        name: /common:shareDialog\.titleMultiple/i,
       });
       expect(dialog).toBeVisible();
       expect(within(dialog).queryByRole("table")).toBeNull();
       expect(
         within(dialog).getByRole("heading", {
-          name: /adding shares to 2 documents/i,
+          name: /common:shareDialog\.multipleSelection\.heading/i,
         }),
       ).toBeVisible();
 
@@ -420,7 +420,7 @@ describe("ShareDialog", () => {
       const { baseElement } = render(<DocumentThatHasBeenSharedIntoANotebook />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share A shared notebook document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(dialog).toBeVisible();
       await waitFor(() => {
@@ -460,12 +460,12 @@ describe("ShareDialog", () => {
       render(<NoPreviousShares />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
 
       // the user selects Bob from the recipient dropdown
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
@@ -487,11 +487,11 @@ describe("ShareDialog", () => {
       render(<MultipleDocuments />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share \d+ documents/i,
+        name: /common:shareDialog\.titleMultiple/i,
       });
 
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Alice and Bob's Group/ }));
@@ -508,13 +508,13 @@ describe("ShareDialog", () => {
       render(<SharedWithAnotherUser />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share A shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       // ensure share data has loaded so the option's disabled state is computed
       await within(dialog).findByRole("table");
 
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
       await user.click(recipientDropdown);
       const bobOption = await screen.findByRole("option", { name: /^Bob/ });
@@ -526,12 +526,12 @@ describe("ShareDialog", () => {
       render(<MultipleDocuments />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share \d+ documents/i,
+        name: /common:shareDialog\.titleMultiple/i,
       });
 
       // Alice and Bob's Group is chosen in the recipient dropdown
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /Alice and Bob's Group/i }));
@@ -566,7 +566,7 @@ describe("ShareDialog", () => {
       render(<SharedWithAnotherUser />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share A shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const table = await within(dialog).findByRole("table");
 
@@ -577,7 +577,7 @@ describe("ShareDialog", () => {
       expect(bobRow).toBeDefined();
       // biome-ignore lint/style/noNonNullAssertion: test asserts bobRow is defined above
       await user.click(within(bobRow!).getByRole("combobox"));
-      await user.click(await screen.findByRole("option", { name: /unshare/i }));
+      await user.click(await screen.findByRole("option", { name: /common:shareDialog\.permissions\.unshare/i }));
 
       // the user saves the new share
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
@@ -595,7 +595,7 @@ describe("ShareDialog", () => {
       render(<SharedWithAnotherUser />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share A shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const table = await within(dialog).findByRole("table");
 
@@ -606,7 +606,7 @@ describe("ShareDialog", () => {
       expect(bobRow).toBeDefined();
       // biome-ignore lint/style/noNonNullAssertion: test asserts bobRow is defined above
       await user.click(within(bobRow!).getByRole("combobox"));
-      await user.click(await screen.findByRole("option", { name: /^Edit$/i }));
+      await user.click(await screen.findByRole("option", { name: /^common:shareDialog\.permissions\.edit$/ }));
 
       // the user saves the new share
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
@@ -636,7 +636,7 @@ describe("ShareDialog", () => {
       render(<SharedWithAGroup />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Another shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const table = (await within(dialog).findAllByRole("table"))[0];
 
@@ -651,7 +651,7 @@ describe("ShareDialog", () => {
       expect(groupRow).toBeDefined();
       // biome-ignore lint/style/noNonNullAssertion: test asserts groupRow is defined above
       await user.click(within(groupRow!).getByRole("combobox"));
-      await user.click(await screen.findByRole("option", { name: /^Read$/i }));
+      await user.click(await screen.findByRole("option", { name: /^common:shareDialog\.permissions\.read$/ }));
 
       // the user saves the new share
       await user.click(within(dialog).getByRole("button", { name: /Save/i }));
@@ -682,7 +682,7 @@ describe("ShareDialog", () => {
       render(<SharedWithAGroup />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Another shared document/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const table = (await within(dialog).findAllByRole("table"))[0];
 
@@ -705,7 +705,7 @@ describe("ShareDialog", () => {
       const treeItem = await within(folderDialog).findByText("alice-bob");
       await user.click(treeItem);
       const selectButton = within(folderDialog).getByRole("button", {
-        name: /^Select$/i,
+        name: /^common:actions\.select$/,
       });
       await waitFor(() => expect(selectButton).toBeEnabled());
       await user.click(selectButton);
@@ -749,11 +749,11 @@ describe("ShareDialog", () => {
       render(<SharedSnippetWithAGroup />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Another shared snippet/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(dialog).toBeVisible();
-      expect(within(dialog).getByText("Another shared snippet")).toBeVisible();
-      expect(within(screen.getByRole("alert")).getByText(/SNIPPETS_Shared/i)).toBeVisible();
+      expect(within(dialog).getByText(/common:shareDialog\.titleSingle/i)).toBeVisible();
+      expect(within(screen.getByRole("alert")).getByText(/common:shareDialog\.snippetsSharedNote/i)).toBeVisible();
     });
 
     test("Closing and reopening should reset transient dialog state", async () => {
@@ -761,10 +761,10 @@ describe("ShareDialog", () => {
       render(<SharedWithAControlledOpenState />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
 
       await user.click(recipientDropdown);
@@ -773,19 +773,19 @@ describe("ShareDialog", () => {
 
       await user.keyboard("{Escape}");
       await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
+        expect(screen.queryByRole("dialog", { name: /common:shareDialog\.titleSingle/i })).toBeNull();
       });
 
       await user.click(screen.getByRole("button", { name: /Open share dialog/i }));
       const reopenedDialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       expect(reopenedDialog).toBeVisible();
-      expect(within(reopenedDialog).getByText("This document is not directly shared with anyone.")).toBeVisible();
+      expect(within(reopenedDialog).getByText("common:shareDialog.noDirectShares")).toBeVisible();
       expect(within(reopenedDialog).queryByRole("table")).toBeNull();
       expect(
         within(reopenedDialog).getByRole("combobox", {
-          name: /Add RSpace users or groups/i,
+          name: /common:shareDialog\.autocomplete\.label/i,
         }),
       ).toHaveValue("");
     });
@@ -802,10 +802,10 @@ describe("ShareDialog", () => {
       render(<SharedWithAControlledOpenState />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /Add RSpace users or groups/i,
+        name: /common:shareDialog\.autocomplete\.label/i,
       });
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
@@ -813,12 +813,12 @@ describe("ShareDialog", () => {
 
       await waitFor(
         () => {
-          expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
+          expect(screen.queryByRole("dialog", { name: /common:shareDialog\.titleSingle/i })).toBeNull();
         },
         { timeout: 5000 },
       );
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent(/Shares updated successfully\./i);
+        expect(screen.getByRole("alert")).toHaveTextContent(/common:shareDialog\.updatedSuccessfully/i);
       });
     });
 
@@ -829,13 +829,13 @@ describe("ShareDialog", () => {
       render(<SharedWithAnalyticsCapture />);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Share Sample Document 1/i,
+        name: /common:shareDialog\.titleSingle/i,
       });
       // With no changes the submit button reads "Done".
       const doneButton = within(dialog).getByRole("button", { name: /Done/i });
       await user.click(doneButton);
       await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /Share Sample Document 1/i })).toBeNull();
+        expect(screen.queryByRole("dialog", { name: /common:shareDialog\.titleSingle/i })).toBeNull();
       });
 
       const trackedEvents = (window as Window & { __trackedEvents?: string[] }).__trackedEvents ?? [];

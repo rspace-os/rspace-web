@@ -18,6 +18,6 @@ describe("NameDialog", () => {
         />
       </ThemeProvider>,
     );
-    expect(screen.getByText("search.controls.nameDialog.duplicateName")).toBeVisible();
+    expect(screen.getByText("inventory:search.controls.nameDialog.duplicateName")).toBeVisible();
   });
 });

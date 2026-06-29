@@ -28,7 +28,7 @@ describe("SortControls", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "search.controls.sort.sortBy" }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:search.controls.sort.sortBy" }));
     const selectedOptions = sortProperties.filter(({ key }) => search.fetcher.isCurrentSort(key));
     if (selectedOptions.length !== 1) throw new Error("Invalid menu selection");
 
@@ -36,7 +36,7 @@ describe("SortControls", () => {
     expect(
       screen.getByRole("menuitem", {
         name: new RegExp(
-          `${selectedOption.label} (search\\.controls\\.sort\\.ascending|search\\.controls\\.sort\\.descending)`,
+          `${selectedOption.label} (inventory:search\\.controls\\.sort\\.ascending|inventory:search\\.controls\\.sort\\.descending)`,
         ),
       }),
     ).toHaveAttribute("aria-current", "true");

@@ -57,7 +57,7 @@ describe("GitHub", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
-      expect(screen.getByText("integrations.github.repositories.noLinked")).toBeVisible();
+      expect(screen.getByText("apps:integrations.github.repositories.noLinked")).toBeVisible();
     });
     test("The names of repositories should be shown in a table.", () => {
       render(
@@ -98,7 +98,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
       expect(within(screen.getByRole("table")).getByText("username/someRepo")).toBeVisible();
-      expect(screen.getByText("integrations.github.repositories.invalidState")).toBeVisible();
+      expect(screen.getByText("apps:integrations.github.repositories.invalidState")).toBeVisible();
     });
   });
   describe("Adding repositories", () => {
@@ -151,7 +151,7 @@ describe("GitHub", () => {
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(newReposTable).findTableCell({
-          columnHeading: "integrations.github.repositories.nameHeader",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("a repo");
@@ -281,23 +281,23 @@ describe("GitHub", () => {
         }),
       );
       await waitFor(() => {
-        expect(screen.queryByText("integrations.github.repositories.noLinked")).not.toBeInTheDocument();
+        expect(screen.queryByText("apps:integrations.github.repositories.noLinked")).not.toBeInTheDocument();
       });
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(connectedReposTable).findTableCell({
-          columnHeading: "integrations.github.repositories.nameHeader",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("a repo");
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(allReposTable).findTableCell({
-          columnHeading: "integrations.github.repositories.nameHeader",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
-      ).toHaveTextContent("integrations.github.repositories.noAvailable");
+      ).toHaveTextContent("apps:integrations.github.repositories.noAvailable");
     });
     test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
@@ -362,7 +362,7 @@ describe("GitHub", () => {
         }),
       );
       await waitFor(() => {
-        expect(screen.queryByText("integrations.github.repositories.noLinked")).not.toBeInTheDocument();
+        expect(screen.queryByText("apps:integrations.github.repositories.noLinked")).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(1);
     });

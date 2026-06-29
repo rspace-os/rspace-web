@@ -56,7 +56,7 @@ describe("AttachmentField", () => {
   describe("Description field", () => {
     test.each`
       disabled     | value    | noValueLabel | expectFn
-      ${true}      | ${""}    | ${undefined} | ${expectLabel("fields.attachments.noDescription")}
+      ${true}      | ${""}    | ${undefined} | ${expectLabel("inventory:fields.attachments.noDescription")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
       ${true}      | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${true}      | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}
@@ -112,9 +112,7 @@ describe("AttachmentField", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent(
-          "A file of any type can be attached (e.g. image, document, or chemistry file)",
-        );
+        expect(container).toHaveTextContent("inventory:fields.attachments.alert.body");
       });
     });
     describe('value = "foo"', () => {
@@ -130,9 +128,7 @@ describe("AttachmentField", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).not.toHaveTextContent(
-          "A file of any type can be attached (e.g. image, document, or chemistry file)",
-        );
+        expect(container).not.toHaveTextContent("inventory:fields.attachments.alert.body");
       });
     });
   });
@@ -185,9 +181,9 @@ describe("AttachmentField", () => {
         test('Whether to show "No File Attached" label.', () => {
           renderAttachmentField();
           if (showNoAttachmentLabel) {
-            expect(textContent).toEqual(expect.stringContaining("fields.attachments.noFileAttached"));
+            expect(textContent).toEqual(expect.stringContaining("inventory:fields.attachments.noFileAttached"));
           } else {
-            expect(textContent).not.toEqual(expect.stringContaining("fields.attachments.noFileAttached"));
+            expect(textContent).not.toEqual(expect.stringContaining("inventory:fields.attachments.noFileAttached"));
           }
         });
       },

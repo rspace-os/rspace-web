@@ -31,7 +31,7 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 // Mock AlertContext
 
 const mockAddAlert = vi.fn();
-const createButton = () => screen.getByRole("button", { name: "actions.create" });
+const createButton = () => screen.getByRole("button", { name: "common:actions.create" });
 describe("CreateDialog", () => {
   describe("Splitting", () => {
     test("Subsamples", async () => {
@@ -280,7 +280,7 @@ describe("CreateDialog", () => {
       await user.type(screen.getByRole("textbox", { name: /name/i }), "New template");
 
       await user.click(screen.getByRole("button", { name: /next/i }));
-      expect(screen.getByText("contextMenu.createDialog.noFields")).toBeVisible();
+      expect(screen.getByText("inventory:contextMenu.createDialog.noFields")).toBeVisible();
       expect(createButton()).toBeEnabled();
     });
     test("Name that's too short", async () => {

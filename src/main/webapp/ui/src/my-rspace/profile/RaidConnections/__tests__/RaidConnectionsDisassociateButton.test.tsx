@@ -131,7 +131,7 @@ describe("RaidConnectionsDisassociateButton", () => {
 
       await user.click(screen.getByRole("button", { name: /disassociate/i }));
 
-      expect(await screen.findByText("profile.raidConnections.confirmDisassociateTitle")).toBeInTheDocument();
+      expect(await screen.findByText("common:profile.raidConnections.confirmDisassociateTitle")).toBeInTheDocument();
     });
 
     it("Should display RAiD title and identifier in dialog", async () => {

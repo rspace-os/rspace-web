@@ -13,12 +13,16 @@ import JwtService from "./JwtService";
 
 type JSON = unknown;
 
-const toast = mkAlert({
-  variant: "warning",
-  title: i18n.t("apiAuthentication.warningTitle"),
-  message: i18n.t("apiAuthentication.warningMessage"),
-  isInfinite: true,
-});
+// Built lazily: i18n initialises asynchronously, so resolving these keys at
+// module load would capture the raw key strings before the catalog has loaded.
+let authWarningToast: ReturnType<typeof mkAlert> | undefined;
+const getAuthWarningToast = (): ReturnType<typeof mkAlert> =>
+  (authWarningToast ??= mkAlert({
+    variant: "warning",
+    title: i18n.t("apiAuthentication.warningTitle"),
+    message: i18n.t("apiAuthentication.warningMessage"),
+    isInfinite: true,
+  }));
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
@@ -57,12 +61,12 @@ class ApiServiceBase {
          * logs-in in another window but only once every 10 seconds so as not
          * to cause too much overhead on both client and server.
          */
-        getRootStore().uiStore.removeAlert(toast);
-        getRootStore().uiStore.addAlert(toast);
+        getRootStore().uiStore.removeAlert(getAuthWarningToast());
+        getRootStore().uiStore.addAlert(getAuthWarningToast());
         await delay(10 * 1000);
       }
       await getRootStore().authStore.authenticate();
-      getRootStore().uiStore.removeAlert(toast);
+      getRootStore().uiStore.removeAlert(getAuthWarningToast());
       // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
       // which then results in baseURL + baseURL + url(resource) as the url for axios request below.
       error.config.baseURL = "";

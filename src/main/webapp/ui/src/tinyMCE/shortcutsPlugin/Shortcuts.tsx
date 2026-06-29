@@ -16,6 +16,7 @@ import { createRoot } from "react-dom/client";
 import { Trans } from "react-i18next";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import {
   arraysEqual,
   humanize,
@@ -435,8 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-shortcuts");
   const root = createRoot(domContainer as HTMLElement);
   root.render(
-    <MuiCssLayerProvider>
-      <Shortcuts />
-    </MuiCssLayerProvider>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <MuiCssLayerProvider>
+        <Shortcuts />
+      </MuiCssLayerProvider>
+    </I18nRoot>,
   );
 });

@@ -43,7 +43,7 @@ describe("Galaxy Upload Data tests", () => {
     windowParentPostMessageSpy = vi.spyOn(window.parent, "postMessage");
     mockAxios.onGet("/integration/integrationInfo").reply(200, {
       data: {
-        name: "GALAXY",
+        name: "apps:integrations.galaxy.name",
         displayName: "Galaxy",
         available: true,
         enabled: true,
@@ -144,7 +144,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
+      expect(await screen.findByText("apps:tinyMce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(
         await screen.findByRole("link", { name: "RSPACE_Untitled document_SD375v4_Data_FD229379_1" }),
       ).toHaveAttribute("href", "https://usegalaxy.org/histories/view?id=f8e722da311b8793");
@@ -156,7 +156,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
+      expect(await screen.findByText("apps:tinyMce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "uploading-complete" }, "*");
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "enableClose" }, "*");
     });
@@ -175,8 +175,8 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
-      expect(await screen.findByText("externalWorkflows.error.unauthorized")).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.unauthorized")).toBeInTheDocument();
     });
 
     test("displays error message if 500 returned", async () => {
@@ -185,7 +185,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("externalWorkflows.error.title")).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
       expect(await screen.findByRole("alert")).toBeInTheDocument();
     });
   });

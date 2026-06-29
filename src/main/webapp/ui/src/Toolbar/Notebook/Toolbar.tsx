@@ -17,6 +17,7 @@ import { createRoot } from "react-dom/client";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -201,7 +202,11 @@ window.renderToolbar = (newProps: any) => {
       ...(newProps?.eventHandlers ?? {}),
     },
   };
-  rootNode.render(<NotebookToolbar domContainer={domContainer} {...prevProps} />);
+  rootNode.render(
+    <I18nRoot namespaces={["common"]}>
+      <NotebookToolbar domContainer={domContainer} {...prevProps} />
+    </I18nRoot>,
+  );
 };
 
 /*

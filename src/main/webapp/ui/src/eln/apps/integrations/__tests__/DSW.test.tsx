@@ -86,7 +86,7 @@ describe("DSW", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("integrations.dsw.fields.apiKey"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
@@ -158,7 +158,7 @@ describe("DSW", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("integrations.dsw.fields.apiKey"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
@@ -331,7 +331,7 @@ describe("DSW", () => {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("integrations.dsw.fields.apiKey")[1], {
+      fireEvent.input(screen.getAllByLabelText("apps:integrations.dsw.fields.apiKey")[1], {
         target: { value: "new api key" },
       });
 

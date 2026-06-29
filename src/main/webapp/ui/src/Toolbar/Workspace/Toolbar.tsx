@@ -24,6 +24,7 @@ import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
 import TreeSort from "../../components/TreeSort";
 import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -566,7 +567,11 @@ window.renderToolbar = (newProps) => {
       ...(newProps?.eventHandlers ?? {}),
     },
   };
-  rootNode.render(<WorkspaceToolbar domContainer={domContainer} {...prevProps} />);
+  rootNode.render(
+    <I18nRoot namespaces={["workspace", "common"]}>
+      <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
+    </I18nRoot>,
+  );
 };
 
 /*

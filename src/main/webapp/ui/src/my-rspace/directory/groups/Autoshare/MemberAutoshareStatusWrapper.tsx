@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -87,15 +88,17 @@ axios.get(url).then((response) => {
     .forEach((member: any) => {
       const root = createRoot(document.getElementById(`autoshareStatus-${member.userId}`) as HTMLElement);
       root.render(
-        <MemberAutoshareStatusWrapper
-          isCloud={isCloud}
-          isGroupAutoshareAllowed={isGroupAutoshareAllowed}
-          userId={member.userId}
-          username={member.username}
-          isPI={member.isPI}
-          autoshareEnabled={member.autoshareEnabled}
-          isAutoshareInProgress={member.isAutoshareInProgress}
-        />,
+        <I18nRoot namespaces={["common"]}>
+          <MemberAutoshareStatusWrapper
+            isCloud={isCloud}
+            isGroupAutoshareAllowed={isGroupAutoshareAllowed}
+            userId={member.userId}
+            username={member.username}
+            isPI={member.isPI}
+            autoshareEnabled={member.autoshareEnabled}
+            isAutoshareInProgress={member.isAutoshareInProgress}
+          />
+        </I18nRoot>,
       );
     });
 });

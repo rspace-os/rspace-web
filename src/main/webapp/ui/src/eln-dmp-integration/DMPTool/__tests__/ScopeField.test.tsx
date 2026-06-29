@@ -6,9 +6,9 @@ import ScopeField, { type Scope } from "../ScopeField";
 
 describe("ScopeField", () => {
   test.each([
-    ["dmpIntegrations.scope.mine", "MINE"],
-    ["dmpIntegrations.scope.public", "PUBLIC"],
-    ["dmpIntegrations.scope.both", "BOTH"],
+    ["apps:dmpIntegrations.scope.mine", "MINE"],
+    ["apps:dmpIntegrations.scope.public", "PUBLIC"],
+    ["apps:dmpIntegrations.scope.both", "BOTH"],
   ])("getDMPs is called correctly when the scope key is %s", (key: string, scopeValue: string) => {
     cleanup();
 

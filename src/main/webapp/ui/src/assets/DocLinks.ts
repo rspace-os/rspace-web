@@ -1,74 +1,141 @@
+import i18n from "@/modules/common/i18n";
+import commonEnUs from "@/modules/common/i18n/locales/en-US/common.json";
 import type { URL } from "../util/types";
 
-const mkDocLink = (pageId: string, hash: string = ""): URL =>
-  `https://researchspace.helpdocs.io/article/${pageId}#${hash}`;
+const HELP_DOCS_ARTICLE_BASE = "https://researchspace.helpdocs.io/article";
 
-const docLinks: Record<string, URL> = {
-  listOfMaterials: mkDocLink("cdrc4ed67l"),
-  attachments: mkDocLink("ory7fu1uw9"),
-  gettingStarted: mkDocLink("tffkwcpizj"),
-  moving: mkDocLink("dncoti2i4t"),
-  editLocationsInVisualContainers: mkDocLink("jya8j336dt"),
-  createContainer: mkDocLink("e5v4bvcl61"),
-  createTemplate: mkDocLink("c8sxesdqpy"),
-  updateAllSamplesOfTemplate: mkDocLink("c8sxesdqpy", "update_all_of_your_samples_to_latest_template_version"),
-  createDialog: mkDocLink("x4y02hje72-edit-a-sample-or-container", "create"),
-  createSample: mkDocLink("gb3r1lgm5g"),
-  createTemplateFromSample: mkDocLink("c8sxesdqpy", "create_a_template_from_a_sample"),
-  search: mkDocLink("e0fngo8a5s"),
-  import: mkDocLink("a5zm2c3vtw"),
-  barcodes: mkDocLink("nr29uf0fdr-scan-and-use-barcodes"),
-  permissions: mkDocLink("n09nmg4ax7"),
-  barcodesPrinting: mkDocLink("nr29uf0fdr-scan-and-use-barcodes", "barcode_printing"),
-  zebraPrinter: mkDocLink("nr29uf0fdr-scan-and-use-barcodes", "using_a_zebra_printer"),
-  luceneSyntax: mkDocLink("k919di8naq", "expert_lucene_query_syntax"),
-  controlledVocabularies: mkDocLink("8ujmvpa1no"),
-  IGSNIdentifiers: mkDocLink("0wh5ziurr5", "add-igsn-identifiers-to-your-samples"),
-  pyratCors: mkDocLink("9kkeooveia", "cors"),
-  panelAdjuster: mkDocLink("bt6kx098eq", "panel_adjuster"),
-  appsIntroduction: mkDocLink("08ky7o0l1y"),
-  apiDirect: mkDocLink("v0dxtfvj7u"),
-  argos: mkDocLink("vkd8mt2ffb"),
-  clustermarket: mkDocLink("e6pb7y8ak1"),
-  dataverse: mkDocLink("h14qd5tvjj"),
-  dmptool: mkDocLink("o0wlhlgxnr"),
-  dmptoolImportingDmps: mkDocLink("o0wlhlgxnr", "importing_dm_ps_into_r_space"),
-  dryad: mkDocLink("i1xvubndhm"),
-  dsw: mkDocLink("6adimrmy9m"),
-  evernote: mkDocLink("9ckpmfdq8m"),
-  figshare: mkDocLink("ir4ybsamcn"),
-  github: mkDocLink("y2080yw30x"),
-  galaxy: mkDocLink("zzsl46jo5y"),
-  cloudstorage: mkDocLink("j2z5f5r90q"),
-  videoIntegration: mkDocLink("cdzdub1ykw"),
-  jupyter: mkDocLink("gg0ao0rqpt"),
-  chemistry: mkDocLink("wfxm4xwtio"),
-  pubchem: mkDocLink("wfxm4xwtio", "importing_chemical_structures_from_external_databases"),
-  nextcloud: mkDocLink("na3hn8ilee"),
-  omero: mkDocLink("bwwbpkll90"),
-  owncloud: mkDocLink("v8ss2uso0a"),
-  protocolsio: mkDocLink("nid9q64pas"),
-  pyrat: mkDocLink("9kkeooveia"),
-  slack: mkDocLink("74r6scvv8g"),
-  teams: mkDocLink("i95u9itfgu"),
-  zenodo: mkDocLink("8i37k8kjqz"),
-  tags: mkDocLink("/8ujmvpa1no"),
-  changelog: mkDocLink("mx11qvqg0i"),
-  dmpassistant: mkDocLink("n88a3g86e0"),
-  dmponline: mkDocLink("pd84qoylzy"),
-  taggingUsers: mkDocLink("zw6o5uh4qv"),
-  irods: mkDocLink("xt21074dln"),
-  dcd: mkDocLink("jj6grnzbdl"),
-  fieldmark: mkDocLink("idbaaggghu"),
-  orcid: mkDocLink("yhkbtnj61a"),
-  gallery: mkDocLink("sl6mo1i9do"),
-  raid: mkDocLink("zb4c2c8a4b"),
+type HashSeparator = "-" | "_";
+
+type DocLinkDefinition = {
+  articleId: string;
+  hashSeparator?: HashSeparator;
 };
 
+const docLinkDefinitions = {
+  listOfMaterials: { articleId: "cdrc4ed67l" },
+  attachments: { articleId: "ory7fu1uw9" },
+  gettingStarted: { articleId: "tffkwcpizj" },
+  moving: { articleId: "dncoti2i4t" },
+  editLocationsInVisualContainers: { articleId: "jya8j336dt" },
+  createContainer: { articleId: "e5v4bvcl61" },
+  createTemplate: { articleId: "c8sxesdqpy" },
+  updateAllSamplesOfTemplate: { articleId: "c8sxesdqpy", hashSeparator: "_" },
+  createDialog: { articleId: "x4y02hje72", hashSeparator: "-" },
+  createSample: { articleId: "gb3r1lgm5g" },
+  createTemplateFromSample: { articleId: "c8sxesdqpy", hashSeparator: "_" },
+  search: { articleId: "e0fngo8a5s" },
+  import: { articleId: "a5zm2c3vtw" },
+  barcodes: { articleId: "nr29uf0fdr" },
+  permissions: { articleId: "n09nmg4ax7" },
+  barcodesPrinting: { articleId: "nr29uf0fdr", hashSeparator: "_" },
+  zebraPrinter: { articleId: "nr29uf0fdr", hashSeparator: "_" },
+  luceneSyntax: { articleId: "k919di8naq", hashSeparator: "_" },
+  controlledVocabularies: { articleId: "8ujmvpa1no" },
+  IGSNIdentifiers: { articleId: "0wh5ziurr5", hashSeparator: "-" },
+  pyratCors: { articleId: "9kkeooveia", hashSeparator: "-" },
+  panelAdjuster: { articleId: "bt6kx098eq", hashSeparator: "_" },
+  appsIntroduction: { articleId: "08ky7o0l1y" },
+  apiDirect: { articleId: "v0dxtfvj7u" },
+  argos: { articleId: "vkd8mt2ffb" },
+  clustermarket: { articleId: "e6pb7y8ak1" },
+  dataverse: { articleId: "h14qd5tvjj" },
+  dmptool: { articleId: "o0wlhlgxnr" },
+  dmptoolImportingDmps: { articleId: "o0wlhlgxnr", hashSeparator: "_" },
+  dryad: { articleId: "i1xvubndhm" },
+  dsw: { articleId: "6adimrmy9m" },
+  evernote: { articleId: "9ckpmfdq8m" },
+  figshare: { articleId: "ir4ybsamcn" },
+  github: { articleId: "y2080yw30x" },
+  galaxy: { articleId: "zzsl46jo5y" },
+  cloudstorage: { articleId: "j2z5f5r90q" },
+  videoIntegration: { articleId: "cdzdub1ykw" },
+  jupyter: { articleId: "gg0ao0rqpt" },
+  chemistry: { articleId: "wfxm4xwtio" },
+  pubchem: { articleId: "wfxm4xwtio", hashSeparator: "_" },
+  nextcloud: { articleId: "na3hn8ilee" },
+  omero: { articleId: "bwwbpkll90" },
+  owncloud: { articleId: "v8ss2uso0a" },
+  protocolsio: { articleId: "nid9q64pas" },
+  pyrat: { articleId: "9kkeooveia" },
+  slack: { articleId: "74r6scvv8g" },
+  teams: { articleId: "i95u9itfgu" },
+  zenodo: { articleId: "8i37k8kjqz" },
+  tags: { articleId: "8ujmvpa1no" },
+  changelog: { articleId: "mx11qvqg0i" },
+  dmpassistant: { articleId: "n88a3g86e0" },
+  dmponline: { articleId: "pd84qoylzy" },
+  taggingUsers: { articleId: "zw6o5uh4qv" },
+  irods: { articleId: "xt21074dln" },
+  dcd: { articleId: "jj6grnzbdl" },
+  fieldmark: { articleId: "idbaaggghu" },
+  orcid: { articleId: "yhkbtnj61a" },
+  gallery: { articleId: "sl6mo1i9do" },
+  raid: { articleId: "zb4c2c8a4b" },
+} as const satisfies Record<string, DocLinkDefinition>;
+
+export type DocLinkName = keyof typeof docLinkDefinitions;
+
+function slugifyForHelpDocs(value: string, separator: HashSeparator): string {
+  const separatorPattern = separator === "-" ? "\\-" : "_";
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^\p{Letter}\p{Number}]+/gu, separator)
+    .replace(new RegExp(`${separatorPattern}{2,}`, "g"), separator)
+    .replace(new RegExp(`^${separatorPattern}|${separatorPattern}$`, "g"), "");
+}
+
+function getFallbackTranslation(key: string): string | null {
+  const value = key.split(".").reduce<unknown>((currentValue, currentKey) => {
+    if (currentValue && typeof currentValue === "object" && currentKey in currentValue) {
+      return currentValue[currentKey as keyof typeof currentValue];
+    }
+    return null;
+  }, commonEnUs);
+
+  return typeof value === "string" ? value : null;
+}
+
+function getTranslation(key: string): string {
+  const resource =
+    i18n.getResource(i18n.resolvedLanguage ?? "en-US", "common", key) ?? i18n.getResource("en-US", "common", key);
+
+  if (typeof resource === "string") {
+    return resource;
+  }
+
+  return getFallbackTranslation(key) ?? key;
+}
+
+function buildDocLink(name: DocLinkName, definition: DocLinkDefinition): URL {
+  const articleTitle = getTranslation(`helpDocs.docLinks.${name}.articleTitle`);
+  const articleSlug = slugifyForHelpDocs(articleTitle, "-");
+  const hash =
+    definition.hashSeparator === undefined
+      ? ""
+      : `#${slugifyForHelpDocs(getTranslation(`helpDocs.docLinks.${name}.hash`), definition.hashSeparator)}`;
+
+  return `${HELP_DOCS_ARTICLE_BASE}/${definition.articleId}-${articleSlug}${hash}`;
+}
+
+const docLinks = Object.defineProperties(
+  {} as Record<DocLinkName, URL>,
+  Object.fromEntries(
+    Object.entries(docLinkDefinitions).map(([name, definition]) => [
+      name,
+      {
+        enumerable: true,
+        get: () => buildDocLink(name as DocLinkName, definition),
+      },
+    ]),
+  ),
+);
+
 /**
- * This object is a mapping of logical names for pages of user documentation to
- * URLs for those pages. This is so that if the documentation changes then the
- * link only needs to be updated here and to make the code generally more
- * readable.
+ * This object maps logical documentation names to locale-aware HelpDocs URLs.
+ * The translated article titles and section headings live in i18n resources so
+ * localized HelpDocs routes can be addressed without changing call sites.
  */
 export default docLinks;

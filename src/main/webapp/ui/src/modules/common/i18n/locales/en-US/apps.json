@@ -42,8 +42,8 @@
       "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
       "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
       "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-      "dmptoolImportDesc": "Importing a DMP{serverAlias, select, '' {} other { from {serverAlias}}} will make it available to view and reference within RSpace.",
       "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
+      "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
       "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
       "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
       "error": {
@@ -128,13 +128,6 @@
     },
     "setup": "Setup"
   },
-  "previewInfo": {
-    "chemistryStatus": {
-      "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
-      "error": "Error checking chemistry integration: {error}",
-      "loading": "Checking chemistry integration status..."
-    }
-  },
   "integrations": {
     "apiDirect": {
       "curlExample": "cURL example:",
@@ -216,7 +209,7 @@
         "testInvalid": "Connection details are not valid.",
         "testValid": "Connection details are valid."
       },
-      "configuredAriaLabel": "Configured Dataverse with name {{name}}",
+      "configuredAriaLabel": "Configured Dataverse with name {name}",
       "description": "Explore, analyse, and share data through an open-source research data repository software.",
       "errorGettingConfigs": "There was an error getting the configured Dataverses.",
       "fields": {
@@ -335,7 +328,7 @@
         "testInvalid": "Connection details are not valid.",
         "testValid": "Connection details are valid."
       },
-      "configuredAriaLabel": "Configured DSW with label {{label}}",
+      "configuredAriaLabel": "Configured DSW with label {label}",
       "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
       "errorGettingConfigs": "There was an error getting the configured DSW instances.",
       "fields": {
@@ -420,7 +413,7 @@
         "saveError": "Error saving API key.",
         "saveSuccess": "Successfully saved API key."
       },
-      "apiKeyLabel": "API Key for {{alias}}",
+      "apiKeyLabel": "API Key for {alias}",
       "description": "Galaxy is a free, open-source system for data analysis, workflows, and more.",
       "helpLink": "Galaxy integration docs",
       "name": "Galaxy",
@@ -625,7 +618,7 @@
         "saveError": "Error saving API key.",
         "saveSuccess": "Successfully saved API key."
       },
-      "apiKeyLabel": "API Key for {{alias}}",
+      "apiKeyLabel": "API Key for {alias}",
       "description": "Increase efficiency, access, and ensure compliance through a lab animal colony management software.",
       "helpLink": "PyRAT integration docs",
       "name": "PyRAT",
@@ -641,16 +634,16 @@
     },
     "raid": {
       "alerts": {
-        "addError": "Could not add {{alias}} as a new RAiD connection.",
+        "addError": "Could not add {alias} as a new RAiD connection.",
         "addSuccess": "Successfully added new RAiD server.",
-        "connectAliasError": "Could not connect to {{alias}} RAiD server",
+        "connectAliasError": "Could not connect to {alias} RAiD server",
         "connectError": "Could not connect to RAiD server",
-        "connectSuccess": "Successfully connected to {{alias}} RAiD server.",
-        "deleteError": "Could not disconnect {{alias}} RAiD connection.",
+        "connectSuccess": "Successfully connected to {alias} RAiD server.",
+        "deleteError": "Could not disconnect {alias} RAiD connection.",
         "deleteSuccess": "Successfully deleted connection.",
-        "disconnectError": "Could not disconnect {{alias}} RAiD connection",
+        "disconnectError": "Could not disconnect {alias} RAiD connection",
         "disconnectSuccess": "Successfully disconnected.",
-        "serverStatus": "Server responded with status {{status}}: {{statusText}}"
+        "serverStatus": "Server responded with status {status}: {statusText}"
       },
       "description": "Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records.",
       "helpLink": "documentation",
@@ -738,6 +731,13 @@
     },
     "title": "Apps"
   },
+  "previewInfo": {
+    "chemistryStatus": {
+      "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
+      "error": "Error checking chemistry integration: {error}",
+      "loading": "Checking chemistry integration status..."
+    }
+  },
   "pyrat": {
     "columnVisibility": {
       "hideSettings": "Hide column visibility settings",
@@ -772,58 +772,6 @@
       "name": "Name",
       "structureAlt": "Chemical structure"
     },
-    "galaxy": {
-      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
-      "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
-      "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
-      "chooseGalaxyServer": "Choose a Galaxy Server",
-      "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
-      "historyViewedHere": "Your new history can be viewed here:",
-      "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
-      "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
-      "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
-      "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
-    },
-    "internalLink": {
-      "alwaysLatest": "Always automatically update link to latest version",
-      "chooseVersion": "Or choose a version that the link should always point at:",
-      "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
-      "dialogTitle": "Internal link version options",
-      "headCells": {
-        "modified": "Modified",
-        "modifiedBy": "Modified by",
-        "name": "Name",
-        "version": "Version"
-      },
-      "selectRevision": "Select revision",
-      "versionTableAria": "internal link revision table",
-      "updateRevisionLink": "Update revision link"
-    },
-    "omero": {
-      "columns": {
-        "description": "Description",
-        "notes": "Notes",
-        "path": "Path"
-      },
-      "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
-      "dataTypes": {
-        "all": "Projects And Screens",
-        "projects": "Projects",
-        "screens": "Screens"
-      },
-      "detailsFetched": "details fetched",
-      "fetchDetails": "fetch details",
-      "filterResults": "Filter results",
-      "hideImageGrid": "hide image grid",
-      "loadingData": "Data is loading...",
-      "noImage": "no image",
-      "redrawImage": "re-draw image",
-      "seeInOmero": "see in omero",
-      "selectedCount": "Selected: {count}",
-      "showGridOfWellsForField": "show grid of wells for field {field}",
-      "showImageGrid": "show image grid",
-      "unavailableAlt": "Unavailable"
-    },
     "clustermarket": {
       "bookingTypes": {
         "all": "Booked and Completed",
@@ -850,8 +798,57 @@
       "maintenanceOnly": "maintenance only",
       "tableAria": "booking search results"
     },
-    "pyrat": {
-      "tableAria": "animal search results"
+    "galaxy": {
+      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+      "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
+      "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+      "chooseGalaxyServer": "Choose a Galaxy Server",
+      "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
+      "historyViewedHere": "Your new history can be viewed here:",
+      "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
+      "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+      "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+      "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
+    },
+    "internalLink": {
+      "alwaysLatest": "Always automatically update link to latest version",
+      "chooseVersion": "Or choose a version that the link should always point at:",
+      "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
+      "dialogTitle": "Internal link version options",
+      "headCells": {
+        "modified": "Modified",
+        "modifiedBy": "Modified by",
+        "name": "Name",
+        "version": "Version"
+      },
+      "selectRevision": "Select revision",
+      "updateRevisionLink": "Update revision link",
+      "versionTableAria": "internal link revision table"
+    },
+    "omero": {
+      "columns": {
+        "description": "Description",
+        "notes": "Notes",
+        "path": "Path"
+      },
+      "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
+      "dataTypes": {
+        "all": "Projects And Screens",
+        "projects": "Projects",
+        "screens": "Screens"
+      },
+      "detailsFetched": "details fetched",
+      "fetchDetails": "fetch details",
+      "filterResults": "Filter results",
+      "hideImageGrid": "hide image grid",
+      "loadingData": "Data is loading...",
+      "noImage": "no image",
+      "redrawImage": "re-draw image",
+      "seeInOmero": "see in omero",
+      "selectedCount": "Selected: {count}",
+      "showGridOfWellsForField": "show grid of wells for field {field}",
+      "showImageGrid": "show image grid",
+      "unavailableAlt": "Unavailable"
     },
     "pubchem": {
       "casNumber": "CAS Number",
@@ -868,11 +865,11 @@
           "moreInfoSuffix": "for more.",
           "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
         },
-        "searchResults": "Search Results",
         "searchPlaceholders": {
           "nameCas": "Enter a compound name or CAS number",
           "smiles": "Enter a SMILES string"
         },
+        "searchResults": "Search Results",
         "searchTypeAriaLabel": "Search type",
         "searchTypes": {
           "nameCas": "Name/CAS",
@@ -888,6 +885,9 @@
       "formula": "Formula",
       "pubchemId": "PubChem ID",
       "viewOnPubChem": "View on PubChem"
+    },
+    "pyrat": {
+      "tableAria": "animal search results"
     },
     "shortcuts": {
       "instructions": {
@@ -936,9 +936,9 @@
         "uniqueSixPlus": "Unique six plus"
       },
       "enzymeSets": "Enzyme Sets",
+      "enzymeSites": "Enzyme sites",
       "enzymeTableAria": "Enzyme table",
       "enzymeTypeAria": "Enzyme type",
-      "enzymeSites": "Enzyme sites",
       "imageType": "Image type",
       "linear": "Linear",
       "linearChoiceAria": "Linear choice",

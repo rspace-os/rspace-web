@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import BaseToolbar from "../components/BaseToolbar";
 import TreeSort from "../components/TreeSort";
 import i18n from "../modules/common/i18n";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
 /**
@@ -70,4 +71,8 @@ export default function FileTreeToolbar() {
 const domContainer = document.getElementById("fileTreeToolbar");
 // biome-ignore lint/style/noNonNullAssertion: initial biome migration
 const root = createRoot(domContainer!);
-root.render(<FileTreeToolbar />);
+root.render(
+  <I18nRoot namespaces={["common"]}>
+    <FileTreeToolbar />
+  </I18nRoot>,
+);
