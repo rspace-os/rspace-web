@@ -3,12 +3,9 @@ package com.researchspace.webapp.controller;
 import com.researchspace.core.util.ResponseUtil;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
-import com.researchspace.service.archive.IExportUtils;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.net.URLConnection;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -30,35 +26,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping("/public")
 public class PublicController extends BaseController {
 
-  @Autowired private IExportUtils exportUtils;
-
   @Autowired private ResourceLoader resourceLoader;
 
   @Autowired private MaintenanceManager maintenanceMgr;
 
   private String actualImageName;
-
-  /**
-   * @param filename the filename of an exported file as it is in the file0-store - NOT the original
-   *     file name.
-   * @param res
-   * @throws URISyntaxException
-   * @throws IOException
-   * @throws Exception
-   */
-  @ResponseBody
-  // All newly issued links are /publish/filename, but it supports previously issued
-  // /publishpdf/filename links too.
-  @GetMapping({"/publishpdf/{filename:.+}", "/publish/{filename:.+}"})
-  public void getExportedPublishedFile(
-      @PathVariable("filename") String filename, HttpServletResponse res)
-      throws IOException, URISyntaxException {
-    if (filename.endsWith(".doc") || filename.endsWith(".pdf")) {
-      exportUtils.display(filename, null, res);
-    } else {
-      throw new IllegalArgumentException("Only .doc or .pdf files can be published.");
-    }
-  }
 
   /**
    * Gets a banner image according to the follwoing rules:
@@ -192,10 +164,6 @@ public class PublicController extends BaseController {
    *     for testing
    * ======================
    */
-
-  public void setExportUtils(IExportUtils exportUtils) {
-    this.exportUtils = exportUtils;
-  }
 
   protected void setResourceLoader(ResourceLoader resourceLoader) {
     this.resourceLoader = resourceLoader;

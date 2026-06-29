@@ -15,16 +15,19 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import DescriptionList from "../../../components/DescriptionList";
 import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { filenameExceptExtension, formatFileSize } from "../../../util/files";
 import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import usePrimaryAction from "../primaryActionHooks";
 import { useGalleryActions } from "../useGalleryActions";
-import { Description, type GalleryFile } from "../useGalleryListing";
+import { Description, Filestore, type GalleryFile, idToString, RemoteFile } from "../useGalleryListing";
 import { useGallerySelection } from "../useGallerySelection";
 import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
@@ -407,8 +410,59 @@ const formatDmpSource = (source: string): string => {
       return source;
   }
 };
+/**
+ * Fetches an S3 filestore item's write-provenance (created-by / created-at) on demand when it is
+ * selected, rather than HeadObject-ing every item during a folder listing. Returns nulls for
+ * non-RemoteFiles, backends without provenance, or while the request is in flight.
+ */
+function useS3Provenance(file: GalleryFile): { createdBy: string | null; createdAt: Date | null } {
+  const { getToken } = useOauthToken();
+  const [audit, setAudit] = React.useState<{ createdBy: string | null; createdAt: Date | null }>({
+    createdBy: null,
+    createdAt: null,
+  });
+  const filestore = file.path[0];
+  const remotePath = file instanceof RemoteFile ? file.remotePath : null;
+  // S3-only; other backends have no provenance to fetch.
+  const filestoreId =
+    file instanceof RemoteFile && filestore instanceof Filestore && filestore.filesystemType === "S3"
+      ? filestore.id
+      : null;
+  React.useEffect(() => {
+    setAudit({ createdBy: null, createdAt: null });
+    if (remotePath === null || filestoreId === null) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const api = axios.create({
+          baseURL: "/api/v1/gallery",
+          headers: { Authorization: `Bearer ${await getToken()}` },
+        });
+        const { data } = await api.get<unknown>(
+          `filestores/${idToString(filestoreId).elseThrow()}/metadata?remotePath=${encodeURIComponent(remotePath)}`,
+        );
+        if (cancelled) return;
+        setAudit({
+          createdBy: Parsers.objectPath(["createdBy"], data).flatMap(Parsers.isString).orElse(null),
+          createdAt: Parsers.objectPath(["createdAt"], data)
+            .flatMap(Parsers.isString)
+            .flatMap(Parsers.parseDate)
+            .orElse(null),
+        });
+      } catch {
+        // provenance is supplementary; ignore failures
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remotePath, filestoreId, getToken]);
+  return audit;
+}
+
 const InfoPanelContent = observer(
   ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
+    const s3Provenance = useS3Provenance(file);
     return (
       <Stack
         sx={{
@@ -568,6 +622,23 @@ const InfoPanelContent = observer(
                     {
                       label: "Original Image ID",
                       value: file.originalImageId,
+                    },
+                  ]
+                : []),
+              // RSpace-stamped write provenance, kept distinct from the object's real Owner/Created.
+              ...(s3Provenance.createdBy
+                ? [
+                    {
+                      label: "Added to S3 by",
+                      value: s3Provenance.createdBy,
+                    },
+                  ]
+                : []),
+              ...(s3Provenance.createdAt
+                ? [
+                    {
+                      label: "Added to S3 on",
+                      value: s3Provenance.createdAt.toLocaleString(),
                     },
                   ]
                 : []),
@@ -955,7 +1026,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
       anchor="bottom"
       open={mobileInfoPanelOpen}
       sx={{
-        zIndex: 1400,
+        // z-index stays at the default drawer level; the picker raises it via theme.
         [`& .${paperClasses.root}`]: {
           height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
           overflow: "visible",

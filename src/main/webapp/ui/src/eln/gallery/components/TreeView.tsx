@@ -367,12 +367,13 @@ const CustomTreeItem = observer(
             borderRadius: "4px",
           }}
           sx={(theme) => ({
+            // x-tree-view v9: selection/focus are data attributes, not Mui-selected/Mui-focused classes.
             [`.${treeItemClasses.content}`]: {
-              "&.Mui-selected": {
+              "&[data-selected]": {
                 backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                   ? "black"
                   : theme.palette.callToAction.main,
-                "&.Mui-focused": {
+                "&[data-focused]": {
                   backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                     ? "black"
                     : theme.palette.callToAction.main,
@@ -574,7 +575,7 @@ const TreeView = ({
        */}
       <GallerySelection>
         {listing.list.map((file, index) =>
-          filter(file) ? (
+          filter(file) !== "hide" ? (
             <CustomTreeItem
               index={index}
               file={file}

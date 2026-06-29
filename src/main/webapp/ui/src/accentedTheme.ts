@@ -32,7 +32,7 @@ import { toolbarClasses } from "@mui/material/Toolbar";
 import { typographyClasses } from "@mui/material/Typography";
 import { alpha, darken, lighten } from "@mui/system";
 import { getDataGridUtilityClass, gridClasses } from "@mui/x-data-grid";
-import { getTreeItemUtilityClass, treeItemClasses } from "@mui/x-tree-view/TreeItem";
+import { treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import baseTheme from "./theme";
 
 /**
@@ -1043,11 +1043,10 @@ export default function createAccentedTheme(accent: AccentColor): Theme {
                 ? "transparent"
                 : darken(secondaryBackground, hoverDarkenCoefficient * 2),
             },
-            // Tree View exposes no state-class constants; its own
-            // getTreeItemUtilityClass resolves the global Mui-selected/Mui-focused classes.
-            [`&.${getTreeItemUtilityClass("selected")}`]: {
+            // x-tree-view v9: selection/focus are data attributes, not Mui-selected/Mui-focused classes.
+            "&[data-selected]": {
               backgroundColor: accentedBackground,
-              [`&.${getTreeItemUtilityClass("focused")}`]: {
+              "&[data-focused]": {
                 backgroundColor: prefersMoreContrast
                   ? accentedBackground
                   : darken(secondaryBackground, hoverDarkenCoefficient * 5),
