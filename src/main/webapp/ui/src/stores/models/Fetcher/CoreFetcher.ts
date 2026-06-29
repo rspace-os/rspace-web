@@ -259,6 +259,8 @@ export default class CoreFetcher {
         [(t) => t === "container", "containers"],
         [(t) => t === "subsample", "subSamples"],
         [(t) => t === "sampletemplate", "sampleTemplates"],
+        [(t) => t === "instrument", "instruments"],
+        [(t) => t === "instrumenttemplate", "instrumentTemplates"],
       ])(type);
       return;
     }
@@ -273,8 +275,14 @@ export default class CoreFetcher {
       if (!this.query && this.resultType === "CONTAINER") {
         this.endpoint = "containers";
       }
-      if (!this.query && this.resultType === "TEMPLATE") {
+      if (!this.query && this.resultType === "SAMPLE_TEMPLATE") {
         this.endpoint = "sampleTemplates";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT") {
+        this.endpoint = "instruments";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT_TEMPLATE") {
+        this.endpoint = "instrumentTemplates";
       }
     }
   }
@@ -357,6 +365,7 @@ export default class CoreFetcher {
           subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
         }>(
           endpoint,
           new URLSearchParams(
@@ -370,6 +379,14 @@ export default class CoreFetcher {
           [() => endpoint === "containers", data.containers as Array<Record<string, unknown> & { globalId: GlobalId }>],
           [
             () => endpoint === "sampleTemplates",
+            data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instruments",
+            data.instruments as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instrumentTemplates",
             data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
         ])();
@@ -584,6 +601,7 @@ export default class CoreFetcher {
       [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
       [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
       [(id) => globalIdPatterns.sampleTemplate.test(id ?? ""), "TEMPLATE"],
+      [(id) => globalIdPatterns.instrumentTemplate.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
       [(id) => globalIdPatterns.bench.test(id ?? ""), "BENCH"],
       [(id) => globalIdPatterns.basket.test(id ?? ""), "BASKET"],
       [(id) => !id, null],

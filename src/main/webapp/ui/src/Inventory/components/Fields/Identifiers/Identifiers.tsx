@@ -566,6 +566,8 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+  const identifierLabel = isInstrument ? "PIDINST" : "IGSN ID";
 
   return (
     <>
@@ -574,18 +576,24 @@ const IdentifiersCard = observer((): ReactNode => {
       )}
       {activeResult.state !== "create" && identifiers.length === 0 && !activeResult.historicalVersion && (
         <Stack direction="row" spacing={1}>
-          <Button color="primary" variant="outlined" onClick={() => void activeResult.addIdentifier()}>
-            Create new IGSN ID
+          <Button
+            color="primary"
+            variant="outlined"
+            disabled={isInstrument}
+            onClick={() => void activeResult.addIdentifier()}
+          >
+            {`Create new ${identifierLabel}`}
           </Button>
           <Button
             color="primary"
             variant="outlined"
+            disabled={isInstrument}
             onClick={() => {
               setAssignDialogOpen(true);
               trackEvent("user:open:assign-existing-igsn-dialog");
             }}
           >
-            Link existing IGSN ID
+            {`Link existing ${identifierLabel}`}
           </Button>
           <AssignDialog
             recordToAssignTo={activeResult}

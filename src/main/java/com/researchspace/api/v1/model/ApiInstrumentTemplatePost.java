@@ -24,6 +24,11 @@ public class ApiInstrumentTemplatePost extends ApiInstrumentEntityInfo {
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
+  @Override
+  public List<ApiExtraField> getExtraFields() {
+    return extraFields;
+  }
+
   public ApiInstrumentTemplatePost(InstrumentTemplate template) {
     super(template);
     for (InventoryEntityField f : template.getActiveFields()) {

@@ -13,6 +13,8 @@ const TYPE_LABELS: Record<PermalinkType, string> = {
   subsample: "subsample",
   container: "container",
   sampletemplate: "sample template",
+  instrument: "instrument",
+  instrumenttemplate: "instrument template",
 };
 
 type PermalinkNotFoundArgs = {

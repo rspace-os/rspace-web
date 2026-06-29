@@ -34,6 +34,8 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
       [(t) => t === "container", "container"],
       [(t) => t === "subsample", "subsample"],
       [(t) => t === "sampletemplate", "sampleTemplate"],
+      [(t) => t === "instrument", "instrument"],
+      [(t) => t === "instrumenttemplate", "instrumentTemplate"],
     ])(type);
     /*
      * If the user has provided the Global Id where they are meant to provide

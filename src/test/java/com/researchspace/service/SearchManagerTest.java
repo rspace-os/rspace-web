@@ -2473,7 +2473,7 @@ public class SearchManagerTest extends SearchSpringTestBase {
     // try templates-only search
     result =
         searchMgr.searchInventoryWithSimpleQuery(
-            "junit", InventorySearchType.TEMPLATE, null, null, null, null, user);
+            "junit", InventorySearchType.SAMPLE_TEMPLATE, null, null, null, null, user);
     assertEquals(1, result.getTotalHits().intValue());
     assertEquals("junit test template", result.getRecords().get(0).getName());
 

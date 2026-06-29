@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Instrument;
@@ -38,11 +39,46 @@ public interface InstrumentEntityApiManager extends InventoryApiManager<Instrume
       InventorySearchDeletedOption deletedOption,
       User user);
 
+  /**
+   * Returns instruments created from the given template, visible to the given user. Optionally
+   * limit to instruments belonging to a particular owner.
+   */
+  ApiInventorySearchResult getInstrumentsCreatedFromTemplate(
+      Long templateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      PaginationCriteria<Instrument> pgCrit,
+      User user);
+
   /** Returns a paginated list of instrument templates visible to the given user. */
   ApiInstrumentTemplateSearchResult getTemplatesForUser(
       PaginationCriteria<InstrumentTemplate> pgCrit,
       String ownedBy,
       InventorySearchDeletedOption deletedOption,
+      User user);
+
+  /**
+   * Returns instruments visible to the given user as an {@link ApiInventorySearchResult}, suitable
+   * for the general inventory search endpoint. When {@code searchTerm} is non-blank, results are
+   * filtered to records whose name contains the term (case-insensitive).
+   */
+  ApiInventorySearchResult searchInstrumentsForUser(
+      PaginationCriteria<Instrument> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      String searchTerm,
+      User user);
+
+  /**
+   * Returns instrument templates visible to the given user as an {@link ApiInventorySearchResult},
+   * suitable for the general inventory search endpoint. When {@code searchTerm} is non-blank,
+   * results are filtered to records whose name contains the term (case-insensitive).
+   */
+  ApiInventorySearchResult searchInstrumentTemplatesForUser(
+      PaginationCriteria<InstrumentTemplate> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      String searchTerm,
       User user);
 
   /**

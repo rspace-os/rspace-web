@@ -14,6 +14,8 @@ import type { CoreFetcher, CoreFetcherArgs, ResultType } from "../definitions/Se
 import BasketModel from "../models/Basket";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
+import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel";
+import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
 import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
@@ -339,9 +341,91 @@ export default class SearchStore {
     return template;
   }
 
-  createNew(type: "sample" | "container" | "template"): Promise<InventoryBaseRecord> {
+  async createNewInstrument(opts?: { templateId?: Id | null }): Promise<InstrumentModel> {
+    const template =
+      opts?.templateId &&
+      this.activeResult instanceof InstrumentTemplateModel &&
+      this.activeResult.id === opts.templateId
+        ? this.activeResult
+        : null;
+
+    const currentUsersGroups = await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+
+    const instrumentAttrs: InstrumentAttrs = {
+      id: null,
+      type: "INSTRUMENT",
+      globalId: null,
+      name: "",
+      permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
+      tags: null,
+      owner: null,
+      created: null,
+      deleted: false,
+      lastModified: null,
+      modifiedByFullName: null,
+      attachments: [],
+      barcodes: [],
+      identifiers: [],
+      fields: [],
+      parentContainers: [],
+      parentLocation: null,
+      lastNonWorkbenchParent: null,
+      lastMoveDate: null,
+      _links: [],
+    };
+    const instrument = new InstrumentModel(new MemoisedFactory(), instrumentAttrs);
+    instrument.setAttributes({
+      sharedWith: currentUsersGroups.map((group) => ({
+        group,
+        shared: true,
+        itemOwnerGroup: true,
+      })),
+    });
+    if (template) {
+      await instrument.setTemplate(template);
+    }
+    await this.createNewHelper(instrument);
+    return instrument;
+  }
+
+  async createNewInstrumentTemplate(): Promise<InstrumentTemplateModel> {
+    const currentUsersGroups = await this.rootStore.peopleStore.fetchCurrentUsersGroups();
+    const instrumentTemplate = new InstrumentTemplateModel(new MemoisedFactory(), {
+      id: null,
+      type: "INSTRUMENT_TEMPLATE",
+      globalId: null,
+      name: "",
+      permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
+      tags: null,
+      owner: null,
+      created: null,
+      deleted: false,
+      lastModified: null,
+      modifiedByFullName: null,
+      attachments: [],
+      barcodes: [],
+      identifiers: [],
+      sharingMode: "OWNER_GROUPS",
+      _links: [],
+    });
+    instrumentTemplate.setAttributes({
+      sharedWith: currentUsersGroups.map((group) => ({
+        group,
+        shared: true,
+        itemOwnerGroup: true,
+      })),
+    });
+    await this.createNewHelper(instrumentTemplate);
+    return instrumentTemplate;
+  }
+
+  createNew(
+    type: "sample" | "container" | "template" | "instrument" | "instrumentTemplate",
+  ): Promise<InventoryBaseRecord> {
     if (type === "sample") return this.createNewSample();
     if (type === "container") return this.createNewContainer();
+    if (type === "instrument") return this.createNewInstrument();
+    if (type === "instrumentTemplate") return this.createNewInstrumentTemplate();
     return this.createNewTemplate();
   }
 

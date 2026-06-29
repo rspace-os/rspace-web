@@ -1,3 +1,5 @@
+import InstrumentModel, { type InstrumentAttrs } from "@/stores/models/InstrumentModel";
+import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import type InvApiService from "../../../common/InvApiService";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../../definitions/Barcode";
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
@@ -38,7 +40,11 @@ export default class AlwaysNewFactory implements Factory {
             ? new TemplateModel(this, params as TemplateAttrs)
             : patterns.bench.test(g)
               ? new ContainerModel(this, params as ContainerAttrs)
-              : /* otherwise */ null;
+              : patterns.instrument.test(g)
+                ? new InstrumentModel(this, params as InstrumentAttrs)
+                : patterns.instrumentTemplate.test(g)
+                  ? new InstrumentTemplateModel(this, params as InstrumentTemplateAttrs)
+                  : /* otherwise */ null;
     if (!record) throw new Error("Unknown Global ID");
     return record;
   }

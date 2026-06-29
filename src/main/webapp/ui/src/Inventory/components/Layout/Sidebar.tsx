@@ -1,5 +1,6 @@
 import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -227,6 +228,40 @@ const SampleNavItem = observer(
   },
 );
 
+const InstrumentNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label="Instruments"
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT")}
+        icon={<FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} />}
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT",
+          });
+        }}
+      />
+    );
+  },
+);
+
 const TemplateNavItem = observer(
   ({
     index,
@@ -244,8 +279,14 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label="Templates"
-        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("TEMPLATE")}
+        label={
+          <>
+            Sample
+            <br />
+            Templates
+          </>
+        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE_TEMPLATE")}
         icon={
           <RecordTypeIcon
             record={{
@@ -262,7 +303,56 @@ const TemplateNavItem = observer(
         drawerOpen={uiStore.sidebarOpen}
         onClick={() => {
           navigateToSearch({
-            resultType: "TEMPLATE",
+            resultType: "SAMPLE_TEMPLATE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const InstrumentTemplateNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label={
+          <>
+            Instrument
+            <br />
+            Templates
+          </>
+        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "instrumentTemplate",
+              recordTypeLabel: "",
+            }}
+            style={{ width: "16px", height: "16px" }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT_TEMPLATE",
           });
         }}
       />
@@ -434,7 +524,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const sidebarRef = useLandmark("Navigation");
 
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
-    max: isSysAdmin ? 7 : 6,
+    max: isSysAdmin ? 9 : 8,
   });
 
   const afterClick = () => {
@@ -460,13 +550,15 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <ContainersNavItem index={1} tabIndex={getTabIndex(1)} getRef={getRef} />
             <SampleNavItem index={2} tabIndex={getTabIndex(2)} getRef={getRef} />
             <SubsampleNavItem index={3} tabIndex={getTabIndex(3)} getRef={getRef} />
-            <TemplateNavItem index={4} tabIndex={getTabIndex(4)} getRef={getRef} />
-            <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <InstrumentNavItem index={4} tabIndex={getTabIndex(4)} getRef={getRef} />
+            <TemplateNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <InstrumentTemplateNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
+            <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
           </List>
           <Divider />
           <List component="ul" aria-label="Other places and action">
-            <ExportNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
-            {isSysAdmin && <SettingsNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />}
+            <ExportNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
+            {isSysAdmin && <SettingsNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />}
           </List>
         </Box>
       </Box>

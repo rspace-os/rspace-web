@@ -29,10 +29,16 @@ function SearchFeedback(): React.ReactNode {
     [() => search.fetcher.resultType === "CONTAINER", resultsStatusText("top-level containers")],
     [() => search.fetcher.resultType === "SAMPLE", resultsStatusText("samples")],
     [() => search.fetcher.resultType === "SUBSAMPLE", resultsStatusText("subsamples")],
-    [() => search.fetcher.resultType === "TEMPLATE", resultsStatusText("templates")],
+    [() => search.fetcher.resultType === "INSTRUMENT", resultsStatusText("instruments")],
+    [() => search.fetcher.resultType === "INSTRUMENT_TEMPLATE", resultsStatusText("instrument templates")],
+    [() => search.fetcher.resultType === "SAMPLE_TEMPLATE", resultsStatusText("templates")],
     [() => search.fetcher.parentGlobalIdType === "SAMPLE", resultsStatusText("subsamples")],
     [() => search.fetcher.parentGlobalIdType === "CONTAINER", resultsStatusText("container contents")],
     [() => search.fetcher.parentGlobalIdType === "TEMPLATE", resultsStatusText("samples of the template")],
+    [
+      () => search.fetcher.parentGlobalIdType === "INSTRUMENT_TEMPLATE",
+      resultsStatusText("instruments of the template"),
+    ],
     [() => search.fetcher.parentGlobalIdType === "BENCH", `${search.count} items found on this bench.`],
     [
       () => search.fetcher.parentGlobalIdType === "BASKET",

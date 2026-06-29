@@ -21,6 +21,8 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
+import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.Sample;
@@ -319,8 +321,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     Class<?>[] resultClasses;
     InventorySearchType searchType = srchConfig.getSearchType();
     switch (searchType) {
+      case SAMPLE_TEMPLATE:
       case SAMPLE:
-      case TEMPLATE:
         // Sample and SampleTemplate have separate Lucene indexes; targeting the abstract
         // SampleEntity searches both, and search-type post-filtering picks the right kind
         resultClasses = new Class[] {SampleEntity.class};
@@ -331,8 +333,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
       case CONTAINER:
         resultClasses = new Class[] {Container.class};
         break;
+      case INSTRUMENT:
+        resultClasses = new Class[] {Instrument.class};
+        break;
+      case INSTRUMENT_TEMPLATE:
+        resultClasses = new Class[] {InstrumentTemplate.class};
+        break;
       case ALL:
-        resultClasses = new Class[] {SampleEntity.class, SubSample.class, Container.class};
+        resultClasses =
+            new Class[] {
+              SampleEntity.class,
+              SubSample.class,
+              Container.class,
+              Instrument.class,
+              InstrumentTemplate.class
+            };
         break;
       default:
         throw new IllegalArgumentException("unknown requested search type: " + searchType);
@@ -425,11 +440,13 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   private boolean isMatchingSearchType(InventoryRecord foundRec, InventorySearchType searchType) {
     // a template's type is SAMPLE_TEMPLATE, so the type-name arm no longer matches templates for
     // SAMPLE searches (isMatchingTemplateOption used to drop them later; same outcome), and the
-    // explicit last arm matches them for TEMPLATE searches
+    // explicit last arm matches them for SAMPLE_TEMPLATE searches
     return searchType == null
         || searchType.equals(InventorySearchType.ALL)
         || searchType.toString().equals(foundRec.getType().toString())
-        || (searchType.equals(InventorySearchType.TEMPLATE) && foundRec.isSampleTemplate());
+        || (searchType.equals(InventorySearchType.SAMPLE_TEMPLATE)
+            && foundRec.isSample()
+            && ((Sample) foundRec).isTemplate());
   }
 
   private boolean isMatchingDeletedItemsOption(
@@ -478,10 +495,11 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   private boolean isMatchingTemplateOption(InventoryRecord record, InventorySearchType searchType) {
     boolean isTemplate = record.isSampleTemplate();
     if (isTemplate
-        && !(searchType == InventorySearchType.ALL || searchType == InventorySearchType.TEMPLATE)) {
+        && !(searchType == InventorySearchType.ALL
+            || searchType == InventorySearchType.SAMPLE_TEMPLATE)) {
       return false;
     }
-    return isTemplate || searchType != InventorySearchType.TEMPLATE;
+    return isTemplate || searchType != InventorySearchType.SAMPLE_TEMPLATE;
   }
 
   private boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
