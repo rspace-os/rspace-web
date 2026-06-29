@@ -133,9 +133,4 @@ const docLinks = Object.defineProperties(
   ),
 );
 
-/**
- * This object maps logical documentation names to locale-aware HelpDocs URLs.
- * The translated article titles and section headings live in i18n resources so
- * localized HelpDocs routes can be addressed without changing call sites.
- */
 export default docLinks;

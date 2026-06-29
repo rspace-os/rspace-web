@@ -6,14 +6,11 @@ import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
-// Resolve against the `common` namespace through the live instance on every
-// call (rather than a bound `getFixedT`), so the active language is always
-// honoured consistently with the rest of the app.
+// Resolve `common`-namespace keys against the live instance so the active language is honoured.
 const translate = i18n.t as (translationKey: string, options?: Record<string, unknown>) => string;
 const tCommon = (translationKey: string, options?: Record<string, unknown>): string =>
-  translate(translationKey, { ns: "common", ...options });
-// Resolved lazily: i18n loads asynchronously, so reading the key at module load
-// would capture the raw key string before the catalog is available.
+  translate(`common:${translationKey}`, options);
+// A getter (not a module-level const) so the key resolves after i18n has loaded.
 const getEmptyStoichiometryTablePlaceholder = (): string => tCommon("stoichiometry.plugin.emptyTablePlaceholder");
 
 declare global {
@@ -221,7 +218,7 @@ class StoichiometryPlugin {
     };
 
     const buildStoichiometryTableOnlyHtml = (nodeId: string): string => {
-      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${i18n.t("stoichiometry.dialog.reactionTable", { ns: "common" })}">${getEmptyStoichiometryTablePlaceholder()}</div>`;
+      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${tCommon("stoichiometry.dialog.reactionTable")}">${getEmptyStoichiometryTablePlaceholder()}</div>`;
     };
 
     const insertStoichiometryTableOnly = (): string => {

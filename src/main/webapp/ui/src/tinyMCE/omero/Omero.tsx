@@ -38,10 +38,8 @@ const makeTableHeaderCells = (): Array<Cell<string>> => [
 ];
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];
-// Populated when the component renders (and on every render); left empty at
-// module load so the i18n.t calls inside makeTableHeaderCells don't run before
-// the catalog has loaded. getHeaders() is only read from the insert handler,
-// which fires after the component has rendered.
+// Left empty at module load so makeTableHeaderCells' i18n.t calls don't run
+// before the catalog loads; the component repopulates it on render.
 let VISIBLE_HEADER_CELLS: Array<Cell<string>> = [];
 
 export const getSelectedItems = (): Array<OmeroItem> => SELECTED_ITEMS;

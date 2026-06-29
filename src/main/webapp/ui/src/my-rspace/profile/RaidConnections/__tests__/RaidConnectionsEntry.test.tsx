@@ -406,7 +406,6 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      // Should show "common:profile.raidConnections.notConnected" when data is undefined
       expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
