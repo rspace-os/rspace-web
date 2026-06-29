@@ -115,7 +115,6 @@ if (typeof globalThis.DOMMatrix !== "function") {
     d = 1;
     e = 0;
     f = 0;
-    constructor(_init?: string | number[]) {}
     multiplySelf(): this {
       return this;
     }
