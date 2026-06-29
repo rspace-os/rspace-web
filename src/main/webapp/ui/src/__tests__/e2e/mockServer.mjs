@@ -56,6 +56,7 @@ const healthHandler = {
 const ALL_HANDLERS = [
     healthHandler,
     ...pubchemHandlers,
+    ...fieldmarkHandlers,
 ];
 
 const server = createServer((req, res) => {

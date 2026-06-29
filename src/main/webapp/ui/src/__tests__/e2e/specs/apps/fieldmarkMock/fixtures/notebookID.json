@@ -1,0 +1,59 @@
+{
+  "name": "RSpace IGSN Demo",
+  "status": "OPEN",
+  "id": null,
+  "metadata": {
+    "name": "RSpace IGSN Demo",
+    "showQRCodeButton": "true",
+    "Age": "123",
+    "Size": "Large",
+    "ispublic": false,
+    "isrequest": false,
+    "lead_institution": "Fieldmark",
+    "notebook_version": "1.1",
+    "pre_description": "Demonstration notebook to help develop an export pipeline from Fieldmark to RSpace.",
+    "project_lead": "Steve Cassidy",
+    "project_status": "New",
+    "schema_version": "2.0",
+    "project_id": "1726126204618-rspace-igsn-demo"
+  },
+  "project_id": null,
+  "listing_id": null,
+  "ui-specification": {
+    "fields": {
+      "Description": {
+        "type-returned": "faims-core::String"
+      },
+      "Field-ID": {
+        "type-returned": "faims-core::String"
+      },
+      "IGSN-QR-Code": {
+        "type-returned": "faims-core::String"
+      },
+      "Length-mm": {
+        "type-returned": "faims-core::Number"
+      },
+      "New-Text-Field": {
+        "type-returned": "faims-core::String"
+      },
+      "Sample-Location": {
+        "type-returned": "faims-pos::Location"
+      },
+      "Sample-Photograph": {
+        "type-returned": "faims-attachment::Files"
+      },
+      "Survey-Number": {
+        "type-returned": "faims-core::Number"
+      },
+      "Thickness-mm": {
+        "type-returned": "faims-core::Number"
+      },
+      "Width-mm": {
+        "type-returned": "faims-core::Number"
+      },
+      "hridPrimary-Next-Section": {
+        "type-returned": "faims-core::String"
+      }
+    }
+  }
+}

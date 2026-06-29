@@ -149,9 +149,9 @@ jobs:
           set -euo pipefail
           # Mock mode: point the backend's PubChem connector at the fake server
           # (started as a Playwright webServer). Real mode: leave the default.
-          PUBCHEM_BASE_ARG=""
+          MOCK_ARGS=""
           if [ "${{ inputs.mode }}" = "mock" ]; then
-            PUBCHEM_BASE_ARG="-Dpubchem.base.url=http://localhost:9099"
+            MOCK_ARGS="-Dpubchem.base.url=http://localhost:9099 -Dfieldmark.api.url=http://localhost:9099"
           fi
           nohup ./mvnw jetty:run-war \
             -DskipTests=true -Dmaven.war.skip=true \
@@ -166,7 +166,7 @@ jobs:
             -Djdbc.db.maven=rspace \
             -DRS_FILE_BASE="$RS_FILE_BASE" \
             -DRS.devlogLevel=INFO \
-            $PUBCHEM_BASE_ARG \
+            $MOCK_ARGS \
             > /tmp/jetty.log 2>&1 &
           for i in $(seq 1 180); do
             if [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/login || true)" = "200" ]; then
