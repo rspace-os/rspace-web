@@ -61,7 +61,7 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
       {
         title: "RSpace Inventory",
         slug: "rspace-inventory",
-        url: `${baseUrl}/resources/rspace_api_inventory_specs_2_14_0.yaml`,
+        url: `${baseUrl}/resources/rspace_api_inventory_specs_2_24_0.yaml`,
         agent: DISABLED_AGENT,
       },
     ],

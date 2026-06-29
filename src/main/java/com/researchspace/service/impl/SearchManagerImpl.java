@@ -239,7 +239,8 @@ public class SearchManagerImpl implements SearchManager {
         if (GlobalIdPrefix.IC.equals(parentOid.getPrefix())
             || GlobalIdPrefix.BE.equals(parentOid.getPrefix())) {
           options.add(SearchConstants.INVENTORY_PARENT_ID_OPTION);
-        } else if (GlobalIdPrefix.IT.equals(parentOid.getPrefix())) {
+        } else if (GlobalIdPrefix.IT.equals(parentOid.getPrefix())
+            || GlobalIdPrefix.NT.equals(parentOid.getPrefix())) {
           options.add(SearchConstants.INVENTORY_PARENT_TEMPLATE_ID_OPTION);
         } else if (GlobalIdPrefix.SA.equals(parentOid.getPrefix())) {
           options.add(SearchConstants.INVENTORY_PARENT_SAMPLE_ID_OPTION);
