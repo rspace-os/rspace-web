@@ -1,5 +1,5 @@
 import type React from "react";
-import { useLocation, useNavigate as useReactRouterNavigate } from "react-router-dom";
+import { useLocation, useNavigate as useReactRouterNavigate } from "react-router";
 import NavigateContext from "../../../stores/contexts/Navigate";
 
 type RouterNavigationProviderArgs = {

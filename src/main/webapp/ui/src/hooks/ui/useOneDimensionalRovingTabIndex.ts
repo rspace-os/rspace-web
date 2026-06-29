@@ -64,7 +64,7 @@ export default function useOneDimensionalRovingTabIndex<RefComponent extends HTM
    * Given the index of an element of the vertical list, return a ref if it has
    * a tab index of 0. Otherwise returns null.
    */
-  getRef: (index: number) => null | React.RefObject<RefComponent>;
+  getRef: (index: number) => null | React.RefObject<RefComponent | null>;
 } {
   const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
   const [hasFocus, setHasFocus] = React.useState(false);

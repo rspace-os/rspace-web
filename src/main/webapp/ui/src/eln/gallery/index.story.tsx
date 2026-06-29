@@ -1,4 +1,4 @@
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { Gallery } from ".";
 import type { GallerySection } from "./common";

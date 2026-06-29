@@ -49,7 +49,7 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
     detail: { number: number };
   };
 
-  const listener = (num: number, cardRef: React.RefObject<HTMLLIElement>) => (event: Event) => {
+  const listener = (num: number, cardRef: React.RefObject<HTMLLIElement | null>) => (event: Event) => {
     const customEvent = event as unknown as CustomEvent;
     const tappedNum = customEvent.detail.number;
     if (tappedNum === num && rightView === DETAILED_VIEW && cardRef.current) {

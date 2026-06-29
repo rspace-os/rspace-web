@@ -6,7 +6,7 @@ import Tabs from "@mui/material/Tabs";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import docLinks from "../../assets/DocLinks";
 import CustomTooltip from "../../components/CustomTooltip";

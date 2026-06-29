@@ -18,7 +18,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Link as ReactRouterLink } from "react-router-dom";
+import { Link as ReactRouterLink } from "react-router";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import GlobalId from "../../../components/GlobalId";
 import type { Search } from "../../../stores/definitions/Search";

@@ -15,28 +15,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 
-const isTestEnv = import.meta.env.MODE === "test";
-type NoopTransitionProps = {
-  in?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -189,25 +167,6 @@ function ImageEditingDialog({
       open={open}
       onClose={close}
       aria-labelledby={titleId}
-      transitionDuration={isTestEnv ? 0 : undefined}
-      disableAutoFocus={isTestEnv}
-      disableEnforceFocus={isTestEnv}
-      disableRestoreFocus={isTestEnv}
-      slotProps={
-        isTestEnv
-          ? {
-              backdrop: {
-                transitionDuration: 0,
-                slots: {
-                  transition: NoopTransition,
-                },
-              },
-            }
-          : undefined
-      }
-      slots={{
-        transition: isTestEnv ? NoopTransition : undefined,
-      }}
       sx={{
         [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
           /*

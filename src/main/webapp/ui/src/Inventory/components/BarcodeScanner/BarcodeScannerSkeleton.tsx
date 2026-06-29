@@ -24,7 +24,7 @@ type BarcodeScannerSkeletonArgs = {
   setBarcode: (value: BarcodeInput | null) => void;
   loading: boolean;
   warning?: React.ReactNode;
-  videoElem: React.RefObject<HTMLVideoElement>;
+  videoElem: React.RefObject<HTMLVideoElement | null>;
   error: boolean;
 };
 

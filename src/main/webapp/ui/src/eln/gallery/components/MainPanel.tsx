@@ -45,7 +45,7 @@ import Typography from "@mui/material/Typography";
 import { chunk } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Link as ReactRouterLink } from "react-router-dom";
+import { Link as ReactRouterLink } from "react-router";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";

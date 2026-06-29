@@ -15,7 +15,7 @@ describe("DateField", () => {
       {
         label: "None",
       },
-      expect.anything(),
+      undefined,
     );
   });
 

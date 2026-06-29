@@ -62,7 +62,7 @@ export default function NumberField({
       value={value}
       {...props}
       variant={props.variant ?? "standard"}
-      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+      onInput={(e) => {
         /*
          * onChange only fires if the field is in a valid state and so it would
          * be impossible to show an error state if the user inputted an invalid
@@ -72,7 +72,7 @@ export default function NumberField({
          * onChange props to check whether the user's current input is valid
          * even if `target.value` is the empty string.
          */
-        props.onChange?.(e);
+        props.onChange?.(e as unknown as React.ChangeEvent<HTMLInputElement>);
       }}
       onChange={() => {}}
       slotProps={{

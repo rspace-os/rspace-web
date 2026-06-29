@@ -13,7 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import { ColumnsPanelTrigger, type GridSlotProps, Toolbar, useGridApiContext } from "@mui/x-data-grid";
 import React from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR as CHEMISTRY_COLOR } from "@/assets/branding/chemistry";
 import { ACCENT_COLOR as PUBCHEM_ACCENT_COLOR } from "@/assets/branding/pubchem";

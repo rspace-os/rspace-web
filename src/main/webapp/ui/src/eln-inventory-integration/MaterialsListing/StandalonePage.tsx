@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams } from "react-router";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import useStores from "../../stores/use-stores";
 import MaterialsDialog from "./MaterialsDialog";

@@ -412,6 +412,7 @@ describe("ShareDialog", () => {
         }),
       ).toBeVisible();
 
+      await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
       await expectAccessible(baseElement);
     });
 

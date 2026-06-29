@@ -217,7 +217,7 @@ function ContentImage({
             }}
             onLoad={({ target }) => setImg(target as HTMLElement)}
             onClick={newMarker}
-            ref={imgRef as React.RefObject<HTMLImageElement>}
+            ref={imgRef as React.RefObject<HTMLImageElement | null>}
           />
           {img &&
             imageDimensions &&

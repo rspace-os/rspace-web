@@ -1,5 +1,5 @@
 import React, { type Context } from "react";
-import type { Location } from "react-router-dom";
+import type { Location } from "react-router";
 import type { URL } from "../../util/types";
 
 export type UseLocation = Location;

@@ -78,7 +78,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
           initialScale={1}
           wheel={{ step: 20 }}
           pinch={{ step: 20 }}
-          velocityAnimation={{ sensitivity: 5000 }}
+          velocityAnimation={{ sensitivityMouse: 5000, sensitivityTouch: 5000 }}
         >
           {({ zoomIn, zoomOut, resetTransform }) => (
             <Box
