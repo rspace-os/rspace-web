@@ -1,26 +1,32 @@
 import { afterEach, describe, expect, test } from "vitest";
 import i18n from "@/modules/common/i18n";
+import commonEnUs from "@/modules/common/i18n/locales/en-US/common.json";
 import docLinks from "./DocLinks";
 
-const teamsArticleTitleKey = "helpDocs.docLinks.teams.articleTitle";
-const updateSamplesHashKey = "helpDocs.docLinks.updateAllSamplesOfTemplate.hash";
-const originalTeamsArticleTitle = i18n.t(teamsArticleTitleKey);
-const originalUpdateSamplesHash = i18n.t(updateSamplesHashKey);
+const teamsArticleIdKey = "helpDocs.docLinks.teams";
+const updateSamplesArticleIdKey = "helpDocs.docLinks.updateAllSamplesOfTemplate";
+const originalTeamsArticleId = commonEnUs.helpDocs.docLinks.teams;
+const originalUpdateSamplesArticleId = commonEnUs.helpDocs.docLinks.updateAllSamplesOfTemplate;
 
 afterEach(() => {
-  i18n.addResource("en-US", "common", teamsArticleTitleKey, originalTeamsArticleTitle);
-  i18n.addResource("en-US", "common", updateSamplesHashKey, originalUpdateSamplesHash);
+  i18n.addResource("en-US", "common", teamsArticleIdKey, originalTeamsArticleId);
+  i18n.addResource("en-US", "common", updateSamplesArticleIdKey, originalUpdateSamplesArticleId);
 });
 
 describe("docLinks", () => {
-  test("uses the translated article title in the article slug", () => {
-    i18n.addResource("en-US", "common", teamsArticleTitleKey, "Teams integration translated");
+  test("uses the translated article path", () => {
+    i18n.addResource("en-US", "common", teamsArticleIdKey, "translated-id");
 
-    expect(docLinks.teams).toBe("https://researchspace.helpdocs.io/article/i95u9itfgu-teams-integration-translated");
+    expect(docLinks.teams).toBe("https://researchspace.helpdocs.io/article/translated-id");
   });
 
-  test("uses the translated heading for section anchors", () => {
-    i18n.addResource("en-US", "common", updateSamplesHashKey, "Refresh all samples to the latest template version");
+  test("uses an anchor embedded in the translated article id", () => {
+    i18n.addResource(
+      "en-US",
+      "common",
+      updateSamplesArticleIdKey,
+      "c8sxesdqpy-create-a-template#refresh_all_samples_to_the_latest_template_version",
+    );
 
     expect(docLinks.updateAllSamplesOfTemplate).toBe(
       "https://researchspace.helpdocs.io/article/c8sxesdqpy-create-a-template#refresh_all_samples_to_the_latest_template_version",

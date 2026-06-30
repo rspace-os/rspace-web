@@ -1149,194 +1149,67 @@ export default interface Resources {
     "helpDocs": {
       "chatWithUs": "Chat with us",
       "docLinks": {
-        "IGSNIdentifiers": {
-          "articleTitle": "Add IGSN identifiers to your samples",
-          "hash": "Add IGSN identifiers to your samples"
-        },
-        "apiDirect": {
-          "articleTitle": "API Direct Access"
-        },
-        "appsIntroduction": {
-          "articleTitle": "Apps introduction"
-        },
-        "argos": {
-          "articleTitle": "ARGOS integration"
-        },
-        "attachments": {
-          "articleTitle": "Attachments"
-        },
-        "barcodes": {
-          "articleTitle": "Scan and use barcodes"
-        },
-        "barcodesPrinting": {
-          "articleTitle": "Scan and use barcodes",
-          "hash": "Barcode printing"
-        },
-        "changelog": {
-          "articleTitle": "Changelog"
-        },
-        "chemistry": {
-          "articleTitle": "Chemistry integration"
-        },
-        "cloudstorage": {
-          "articleTitle": "Cloud storage integrations"
-        },
-        "clustermarket": {
-          "articleTitle": "Calira integration"
-        },
-        "controlledVocabularies": {
-          "articleTitle": "Controlled vocabularies"
-        },
-        "createContainer": {
-          "articleTitle": "Create a container"
-        },
-        "createDialog": {
-          "articleTitle": "Edit a sample or container",
-          "hash": "Create"
-        },
-        "createSample": {
-          "articleTitle": "Create a sample"
-        },
-        "createTemplate": {
-          "articleTitle": "Create a template"
-        },
-        "createTemplateFromSample": {
-          "articleTitle": "Create a template",
-          "hash": "Create a template from a sample"
-        },
-        "dataverse": {
-          "articleTitle": "Dataverse integration"
-        },
-        "dcd": {
-          "articleTitle": "Digital Commons Data integration"
-        },
-        "dmpassistant": {
-          "articleTitle": "DMP Assistant integration"
-        },
-        "dmponline": {
-          "articleTitle": "DMPonline integration"
-        },
-        "dmptool": {
-          "articleTitle": "DMPTool integration"
-        },
-        "dmptoolImportingDmps": {
-          "articleTitle": "DMPTool integration",
-          "hash": "Importing DMPs into RSpace"
-        },
-        "dryad": {
-          "articleTitle": "Dryad integration"
-        },
-        "dsw": {
-          "articleTitle": "DSW / FAIR Wizard integration"
-        },
-        "editLocationsInVisualContainers": {
-          "articleTitle": "Edit locations in visual containers"
-        },
-        "evernote": {
-          "articleTitle": "Evernote integration"
-        },
-        "fieldmark": {
-          "articleTitle": "Fieldmark integration"
-        },
-        "figshare": {
-          "articleTitle": "Figshare integration"
-        },
-        "galaxy": {
-          "articleTitle": "Galaxy integration"
-        },
-        "gallery": {
-          "articleTitle": "Gallery"
-        },
-        "gettingStarted": {
-          "articleTitle": "Getting started"
-        },
-        "github": {
-          "articleTitle": "GitHub integration"
-        },
-        "import": {
-          "articleTitle": "Import records"
-        },
-        "irods": {
-          "articleTitle": "iRODS integration"
-        },
-        "jupyter": {
-          "articleTitle": "Jupyter integration"
-        },
-        "listOfMaterials": {
-          "articleTitle": "List of materials"
-        },
-        "luceneSyntax": {
-          "articleTitle": "Search inventory",
-          "hash": "Expert Lucene query syntax"
-        },
-        "moving": {
-          "articleTitle": "Moving items"
-        },
-        "nextcloud": {
-          "articleTitle": "Nextcloud integration"
-        },
-        "omero": {
-          "articleTitle": "Omero integration"
-        },
-        "orcid": {
-          "articleTitle": "ORCID integration"
-        },
-        "owncloud": {
-          "articleTitle": "OwnCloud integration"
-        },
-        "panelAdjuster": {
-          "articleTitle": "More info sidebar",
-          "hash": "Panel adjuster"
-        },
-        "permissions": {
-          "articleTitle": "Permissions"
-        },
-        "protocolsio": {
-          "articleTitle": "Protocols.io integration"
-        },
-        "pubchem": {
-          "articleTitle": "Chemistry integration",
-          "hash": "Importing chemical structures from external databases"
-        },
-        "pyrat": {
-          "articleTitle": "PyRAT integration"
-        },
-        "pyratCors": {
-          "articleTitle": "PyRAT integration",
-          "hash": "CORS"
-        },
-        "raid": {
-          "articleTitle": "RAiD integration"
-        },
-        "search": {
-          "articleTitle": "Search inventory"
-        },
-        "slack": {
-          "articleTitle": "Slack integration"
-        },
-        "taggingUsers": {
-          "articleTitle": "Tagging users"
-        },
-        "tags": {
-          "articleTitle": "Controlled vocabularies"
-        },
-        "teams": {
-          "articleTitle": "Microsoft Teams integration"
-        },
-        "updateAllSamplesOfTemplate": {
-          "articleTitle": "Create a template",
-          "hash": "Update all of your samples to latest template version"
-        },
-        "videoIntegration": {
-          "articleTitle": "Video integrations"
-        },
-        "zebraPrinter": {
-          "articleTitle": "Scan and use barcodes",
-          "hash": "Using a Zebra printer"
-        },
-        "zenodo": {
-          "articleTitle": "Zenodo integration"
-        }
+        "IGSNIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+        "apiDirect": "v0dxtfvj7u-api-direct-access",
+        "appsIntroduction": "08ky7o0l1y-apps-introduction",
+        "argos": "vkd8mt2ffb-argos-integration",
+        "attachments": "ory7fu1uw9-attachments",
+        "barcodes": "nr29uf0fdr-scan-and-use-barcodes",
+        "barcodesPrinting": "nr29uf0fdr-scan-and-use-barcodes#barcode_printing",
+        "changelog": "mx11qvqg0i-changelog",
+        "chemistry": "wfxm4xwtio-chemistry-integration",
+        "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
+        "clustermarket": "e6pb7y8ak1-calira-integration",
+        "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
+        "createContainer": "e5v4bvcl61-create-a-container",
+        "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
+        "createInstrument": "ct15xwb13m-create-an-instrument",
+        "createInstrumentTemplate": "5f0lakn5nl-create-an-instrument-template",
+        "createSample": "gb3r1lgm5g-create-a-sample",
+        "createTemplate": "c8sxesdqpy-create-a-template",
+        "createTemplateFromSample": "c8sxesdqpy-create-a-template#create_a_template_from_a_sample",
+        "dataverse": "h14qd5tvjj-dataverse-integration",
+        "dcd": "jj6grnzbdl-digital-commons-data-integration",
+        "dmpassistant": "n88a3g86e0-dmp-assistant-integration",
+        "dmponline": "pd84qoylzy-dmponline-integration",
+        "dmptool": "o0wlhlgxnr-dmptool-integration",
+        "dmptoolImportingDmps": "o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace",
+        "dryad": "i1xvubndhm-dryad-integration",
+        "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
+        "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
+        "evernote": "9ckpmfdq8m-evernote-integration",
+        "fieldmark": "idbaaggghu-fieldmark-integration",
+        "figshare": "ir4ybsamcn-figshare-integration",
+        "galaxy": "zzsl46jo5y-galaxy-integration",
+        "gallery": "sl6mo1i9do-gallery",
+        "gettingStarted": "tffkwcpizj-getting-started",
+        "github": "y2080yw30x-github-integration",
+        "import": "a5zm2c3vtw-import-records",
+        "irods": "xt21074dln-irods-integration",
+        "jupyter": "gg0ao0rqpt-jupyter-integration",
+        "listOfMaterials": "cdrc4ed67l-list-of-materials",
+        "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
+        "moving": "dncoti2i4t-moving-items",
+        "nextcloud": "na3hn8ilee-nextcloud-integration",
+        "omero": "bwwbpkll90-omero-integration",
+        "orcid": "yhkbtnj61a-orcid-integration",
+        "owncloud": "v8ss2uso0a-owncloud-integration",
+        "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
+        "permissions": "n09nmg4ax7-permissions",
+        "protocolsio": "nid9q64pas-protocols-io-integration",
+        "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
+        "pyrat": "9kkeooveia-pyrat-integration",
+        "pyratCors": "9kkeooveia-pyrat-integration#cors",
+        "raid": "zb4c2c8a4b-raid-integration",
+        "search": "e0fngo8a5s-search-inventory",
+        "slack": "74r6scvv8g-slack-integration",
+        "taggingUsers": "zw6o5uh4qv-tagging-users",
+        "tags": "8ujmvpa1no-controlled-vocabularies",
+        "teams": "i95u9itfgu-microsoft-teams-integration",
+        "updateAllSamplesOfTemplate": "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
+        "videoIntegration": "cdzdub1ykw-video-integrations",
+        "zebraPrinter": "nr29uf0fdr-scan-and-use-barcodes#using_a_zebra_printer",
+        "zenodo": "8i37k8kjqz-zenodo-integration"
       },
       "documentation": "RSpace Documentation",
       "openHelp": "Open Help",
