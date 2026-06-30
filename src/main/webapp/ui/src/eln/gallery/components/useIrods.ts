@@ -152,15 +152,8 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
     Result.Ok([]),
   );
 
-  function mkIrodsLocation(
-    id: number,
-    name: string,
-    path: string,
-    filesystemId: number,
-    filesystemName: string,
-    filesystemUrl: string,
-    authType: string,
-  ): IrodsLocation {
+  function mkIrodsLocation(location: Omit<IrodsLocation, "copy" | "move">): IrodsLocation {
+    const { id } = location;
     async function callEndpoint(
       operation: "move" | "copy",
       recordIds: ReadonlyArray<number>,
@@ -206,13 +199,7 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
     }
 
     return {
-      id,
-      name,
-      path,
-      filesystemId,
-      filesystemName,
-      filesystemUrl,
-      authType,
+      ...location,
       copy: (recordIds, credentials) => callEndpoint("copy", recordIds, credentials),
       move: (recordIds, credentials) => callEndpoint("move", recordIds, credentials),
     };
@@ -249,53 +236,43 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
               Parsers.isObject(item)
                 .flatMap(Parsers.isNotNull)
                 .flatMap((obj) => {
+                  // The seven fields are independent, so parse each one flatly
+                  // and let the first failure short-circuit via elseThrow; the
+                  // catch turns it back into the Error that Result.all
+                  // propagates. (See result.ts: elseThrow is the sanctioned
+                  // alternative to deeply nested flatMaps / lifts.)
                   const fileSystem = Parsers.getValueWithKey("fileSystem")(obj)
                     .flatMap(Parsers.isObject)
                     .flatMap(Parsers.isNotNull);
-                  // Bind each field in turn and construct the location once all
-                  // seven have parsed successfully. Any failure short-circuits
-                  // the chain to an Error, which Result.all propagates.
-                  return Parsers.getValueWithKey("id")(obj)
-                    .flatMap(Parsers.isNumber)
-                    .flatMap((id) =>
-                      Parsers.getValueWithKey("name")(obj)
-                        .flatMap(Parsers.isString)
-                        .flatMap((name) =>
-                          Parsers.getValueWithKey("path")(obj)
-                            .flatMap(Parsers.isString)
-                            .flatMap((path) =>
-                              fileSystem
-                                .flatMap(Parsers.getValueWithKey("id"))
-                                .flatMap(Parsers.isNumber)
-                                .flatMap((filesystemId) =>
-                                  fileSystem
-                                    .flatMap(Parsers.getValueWithKey("name"))
-                                    .flatMap(Parsers.isString)
-                                    .flatMap((filesystemName) =>
-                                      fileSystem
-                                        .flatMap(Parsers.getValueWithKey("url"))
-                                        .flatMap(Parsers.isString)
-                                        .flatMap((filesystemUrl) =>
-                                          fileSystem
-                                            .flatMap(Parsers.getValueWithKey("authType"))
-                                            .flatMap(Parsers.isString)
-                                            .map((authType) =>
-                                              mkIrodsLocation(
-                                                id,
-                                                name,
-                                                path,
-                                                filesystemId,
-                                                filesystemName,
-                                                filesystemUrl,
-                                                authType,
-                                              ),
-                                            ),
-                                        ),
-                                    ),
-                                ),
-                            ),
-                        ),
+                  try {
+                    return Result.Ok(
+                      mkIrodsLocation({
+                        id: Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow(),
+                        name: Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow(),
+                        path: Parsers.getValueWithKey("path")(obj).flatMap(Parsers.isString).elseThrow(),
+                        filesystemId: fileSystem
+                          .flatMap(Parsers.getValueWithKey("id"))
+                          .flatMap(Parsers.isNumber)
+                          .elseThrow(),
+                        filesystemName: fileSystem
+                          .flatMap(Parsers.getValueWithKey("name"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                        filesystemUrl: fileSystem
+                          .flatMap(Parsers.getValueWithKey("url"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                        authType: fileSystem
+                          .flatMap(Parsers.getValueWithKey("authType"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                      }),
                     );
+                  } catch (e) {
+                    return Result.Error<IrodsLocation>(
+                      e instanceof Error ? [e] : [new Error("Could not parse iRODS filestore")],
+                    );
+                  }
                 }),
             ),
           );
