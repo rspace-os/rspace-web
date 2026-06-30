@@ -2,8 +2,11 @@
 package com.researchspace.api.v1.model;
 
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
-import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,9 +33,23 @@ public class ApiInventorySystemSettings {
     private String enabled;
   }
 
-  private Map<InventorySettingType, IdentifierSettings> identifiersSettings = new HashMap<>();
+  /**
+   * Settings grouped by type. A type may hold more than one provider (PIDINST holds both {@code
+   * PIDINST_DATACITE} and {@code PIDINST_B2INST}), of which at most one is enabled at a time.
+   */
+  private Map<InventorySettingType, Set<IdentifierSettings>> identifiersSettings =
+      new EnumMap<>(InventorySettingType.class);
 
-  public IdentifierSettings getOrCreate(InventorySettingType type) {
-    return identifiersSettings.computeIfAbsent(type, t -> new IdentifierSettings());
+  /** Add a settings entry under its type, preserving insertion order. */
+  public void addSetting(InventorySettingType type, IdentifierSettings settings) {
+    identifiersSettings.computeIfAbsent(type, t -> new LinkedHashSet<>()).add(settings);
+  }
+
+  /** Find the single settings entry for a specific provider, across all types. */
+  public Optional<IdentifierSettings> findByProvider(IdentifierType provider) {
+    return identifiersSettings.values().stream()
+        .flatMap(Set::stream)
+        .filter(s -> provider.equals(s.getProvider()))
+        .findFirst();
   }
 }

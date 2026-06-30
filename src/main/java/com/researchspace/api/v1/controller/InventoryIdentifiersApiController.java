@@ -12,6 +12,7 @@ import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.util.List;
 import javax.naming.InvalidNameException;
@@ -33,6 +34,7 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
   @Autowired private InventoryIdentifierApiManager identifierMgr;
   @Autowired private DataCiteConnector dataCiteConnector;
+  @Autowired private B2instConnector b2instConnector;
   @Autowired private ApiAvailabilityHandler apiHandler;
 
   @Data
@@ -159,6 +161,10 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
   @Override
   public boolean testPidinstConnection(User user) {
+    // route to whichever PIDINST provider is currently enabled
+    if (b2instConnector.isConfiguredAndEnabled()) {
+      return b2instConnector.testConnection();
+    }
     return dataCiteConnector.testDataCiteConnection(InventorySettingType.PIDINST);
   }
 
