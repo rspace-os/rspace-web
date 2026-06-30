@@ -43,7 +43,7 @@
 
 <div id="groupBlocks">
   <div id="groupBlockLeft">
-    <h2 style="flex-grow:1; margin-bottom: 0px;">
+    <h2 style="flex-grow:1;">
       <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">Collaboration </c:if>
       <c:if test="${group.groupType == 'PROJECT_GROUP'}">Project </c:if>
       Group: <span class="displayname">${group.displayName}</span>
@@ -53,42 +53,42 @@
       <c:if test="${canEdit}">
         <shiro:hasRole name="ROLE_PI">
         <c:if test="${group.isLabGroup() and canEdit == true}">
-          <a id="createCollabGroup" class="createCollabGroup groupEditButton" href="#">Create Collaboration Group</a>
+          <button id="createCollabGroup" type="button" class="createCollabGroup groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Create Collaboration Group</button>
          </c:if>
           <c:if test="${group.isSelfService() and canEdit == true and group.owner == subject}">
-            <a id="deleteGroup" class="deleteFromCollbGrpLink groupEditButton" href="#">Delete Group</a>
+            <button id="deleteGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Delete Group</button>
           </c:if>
         </shiro:hasRole>
           <shiro:hasRole name="ROLE_USER">
               <c:if test="${group.isProjectGroup() and canEdit == true and group.owner == subject}">
-                  <a id="deleteProjectGroup" class="deleteFromCollbGrpLink groupEditButton" href="#">Delete Group</a>
+                  <button id="deleteProjectGroup" type="button" class="deleteFromCollbGrpLink groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Delete Group</button>
               </c:if>
           </shiro:hasRole>
         <shiro:hasAnyRoles name="ROLE_ADMIN,ROLE_SYSADMIN">
           <c:if test="${group.groupType != 'PROJECT_GROUP'}">
-            <a id="changePiLink" class="groupEditButton" href="#">Change PI</a>
+            <button id="changePiLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Change PI</button>
           </c:if>
         </shiro:hasAnyRoles>
-        <a id="renameGrpLink" class="groupEditButton" href="#">Rename</a>
+        <button id="renameGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Rename</button>
       </c:if>
       <rst:hasDeploymentProperty name="cloud" value="true">
         <c:forEach items="${group.userGroups}" var="ug">
           <c:if test="${ug.user == subject}">
-            <a id="removeMeFromGrpLink" class="groupEditButton" href="#">Leave Group</a>
+            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Leave Group</button>
           </c:if>
         </c:forEach>
       </rst:hasDeploymentProperty>
       <c:if test="${group.isProjectGroup() }">
         <c:forEach items="${group.userGroups}" var="ug">
           <c:if test="${ug.user == subject}">
-            <a id="removeMeFromGrpLink" class="groupEditButton" href="#">Leave Group</a>
+            <button id="removeMeFromGrpLink" type="button" class="groupEditButton"><img class="groupActionButtonIcon" src="/images/icons/editIcon.png" alt="" aria-hidden="true">Leave Group</button>
           </c:if>
         </c:forEach>
       </c:if>
       <c:if test="${not empty userGroups and fn:length(userGroups) gt 1}">
         <div id="groupDrop">
-          <dl class="groupDropdown" style="margin-bottom: 0px;white-space: nowrap;">
-            <dt style="margin: 0px">
+          <dl class="groupDropdown">
+            <dt>
               <a class="groupChangeButton" href="#">Change Group</a>
             </dt>
             <dd>
@@ -118,21 +118,22 @@
       </div>
     </c:if>
     <c:if test="${group.labGroup == true and showExportFunctionality}">
-      <a href="#" id="exportGroupRecord" class="groupEditButton" style="background-image:url('/images/icons/exportAllGroupIcon.png');padding:3px 7px 2px 50px;">
-        <spring:message code="group.export.link" /> </a>
+      <button type="button" id="exportGroupRecord" class="groupEditButton">
+        <img class="groupActionButtonIcon" src="/images/icons/exportAllGroupIcon.png" alt="" aria-hidden="true"><spring:message code="group.export.link" />
+      </button>
     </c:if>
     <c:if test="${group.groupType == 'COLLABORATION_GROUP' and canEdit == true}">
       <br>
       <div id="piInviteLink" style="text-align: right;">
-        <a id="grpid_${group.id}" href="#" class="createRequest groupEditButton" style="background-image:url('/images/icons/invitePi.png');padding:3px 7px 2px 40px;"
-          title="New PI Invitation" alt="New PI Invitation">Invite a New PI</a>
+        <button id="grpid_${group.id}" type="button" class="createRequest groupEditButton" title="New PI Invitation">
+          <img class="groupActionButtonIcon" src="/images/icons/invitePi.png" alt="" aria-hidden="true">Invite a New PI</button>
       </div>
       <div id="leaveCollaborationLink" style="text-align: right;">
         <form class="deleteFromCollbGrp"
           action="/groups/admin/removeLabGrpFromCollabGroup/${group.id}"
           method='POST'></form>
-        <a class="deleteFromCollbGrpLink groupEditButton" href="#" style="background-image:url('/images/icons/leavecollaboration.png');padding:3px 7px 2px 47px;"
-          title="Leave Collaboration" alt="Leave Collaboration">Leave Collaboration</a>
+        <button type="button" class="deleteFromCollbGrpLink groupEditButton" title="Leave Collaboration">
+          <img class="groupActionButtonIcon" src="/images/icons/leavecollaboration.png" alt="" aria-hidden="true">Leave Collaboration</button>
       </div>
     </c:if>
   </div>
@@ -345,15 +346,16 @@
               <td id="autoshareStatus-${ug.user.id}"></td>
               <td>
                 <c:if test="${roleEditable and ug.roleInGroup ne 'PI' and (group.isLabGroup() or canEdit)}">
-                  <a class="changeRole changeRoleButton" style="position: relative; background-image:url('/images/icons/changeRoleIcon.png');background-repeat: no-repeat; padding:4px 7px 3px 32px;"
-                    href="#" data-groupId="${group.id}" data-adminviewall="${ug.adminViewDocsEnabled}" data-userid="${ug.user.id}" data-username="${ug.user.username}" data-role="${ug.roleInGroup}"> <spring:message code="group.actions.changerole" /> </a>
+                  <button type="button" class="changeRole changeRoleButton"
+                    data-groupId="${group.id}" data-adminviewall="${ug.adminViewDocsEnabled}" data-userid="${ug.user.id}" data-username="${ug.user.username}" data-role="${ug.roleInGroup}"><img class="groupActionButtonIcon" src="/images/icons/changeRoleIcon.png" alt="" aria-hidden="true"><spring:message code="group.actions.changerole" /></button>
                 </c:if>
               </td>
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon2.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
-                      href="#" data-username="${ug.user.username}"></a>
+                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="Export Work" title="Export Work">
+                      <img class="exportUsersWorkButtonIcon" src="/images/icons/exportIcon2.png" alt="" aria-hidden="true">
+                    </button>
                   </c:if>
                 </td>
               </c:if>
@@ -367,7 +369,7 @@
                       </c:url>
                       <form:form modelAttribute="group" style="display:inline"
                         class="removeUserForm" method="POST" action="${removeUserURL}">
-                        <a class="removeLink" style="position: relative; background-image:url('/images/icons/closeIcon.png');background-repeat: no-repeat; padding:4px 7px 3px 25px;" href="#"> Remove </a>
+                        <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true">Remove</button>
                         <form:input type="hidden" path="uniqueName" />
                         <form:input type="hidden" path="id" />
                       </form:form>
@@ -449,8 +451,9 @@
               <c:if test="${showExportFunctionality}">
                 <td>
                   <c:if test="${!ug.user.PI or ug.user eq subject}">
-                    <a class="exportUsersWorkButton groupEditButton" style="position: relative; background-image:url('/images/icons/exportIcon2.png');background-repeat: no-repeat; padding:4px 7px 3px 40px;"
-                      href="#" data-username="${ug.user.username}"></a>
+                    <button type="button" class="exportUsersWorkButton groupEditButton" data-username="${ug.user.username}" aria-label="Export Work" title="Export Work">
+                      <img class="exportUsersWorkButtonIcon" src="/images/icons/exportIcon2.png" alt="" aria-hidden="true">
+                    </button>
                   </c:if>
                 </td>
               </c:if>
@@ -463,7 +466,7 @@
                     </c:url>
                     <form:form modelAttribute="group" style="display:inline"
                       class="removeUserForm" method="POST" action="${removeUserURL}">
-                      <a class="removeLink" style="position: relative; background-image:url('/images/icons/closeIcon.png');background-repeat: no-repeat; padding:4px 7px 3px 25px;" href="#"> Remove </a>
+                      <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true">Remove</button>
                       <form:input type="hidden" path="uniqueName" />
                       <form:input type="hidden" path="id" />
                     </form:form>
