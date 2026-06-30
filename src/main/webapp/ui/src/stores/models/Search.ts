@@ -1001,20 +1001,22 @@ export default class Search implements SearchInterface {
           ontologyVersion: tag.version.map(encodeTagString).orElse(null),
         })),
         newBase64Image,
-        fields: instrument.fields.map((f) => {
-          const params = { ...(f.paramsForBackend as Record<string, unknown>) };
-          if (!includeContentForFields.has(params.id as Id)) {
-            params.content = "";
-            params.selectedOptions = null;
-          }
-          return params;
-        }),
-        extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
-          name: fieldName,
-          type: type.toLowerCase(),
-          content: includeContentForFields.has(id) ? content : "",
-          definition: null,
-        })),
+        fields: [
+          ...instrument.fields.map((f) => {
+            const params = { ...(f.paramsForBackend as Record<string, unknown>) };
+            if (!includeContentForFields.has(params.id as Id)) {
+              params.content = "";
+              params.selectedOptions = null;
+            }
+            return params;
+          }),
+          ...instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
+            name: fieldName,
+            type: type.toLowerCase(),
+            content: includeContentForFields.has(id) ? content : "",
+            definition: null,
+          })),
+        ],
       };
       const { data } = await ApiService.post<InstrumentTemplateAttrs>("instrumentTemplates", args);
       const factory = this.factory.newFactory();
