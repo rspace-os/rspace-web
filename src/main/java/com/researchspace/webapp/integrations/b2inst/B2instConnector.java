@@ -12,11 +12,11 @@ import com.researchspace.b2inst.model.response.B2instRequestResponse;
  * <p>Only {@link #registerDoi(B2instDoi)} (create draft) is fully exercised end-to-end. Publishing
  * goes through the Invenio community review/submit flow and is curator-gated on the configured
  * community, so {@link #publishDoi(String)} is best-effort and {@link #retractDoi(String)} is not
- * supported by B2INST. See ADR-002.
+ * supported by B2INST.
  */
 public interface B2instConnector {
 
-  /** Create a draft record from the given metadata (STEP 1). The returned draft carries the RID. */
+  /** Create a draft record from the given metadata. The returned draft carries the RID. */
   B2instDraftRecord registerDoi(B2instDoi doi);
 
   /** Delete a draft record by its RID. Returns true on success. */

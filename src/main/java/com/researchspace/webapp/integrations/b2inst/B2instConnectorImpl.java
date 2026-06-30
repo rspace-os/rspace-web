@@ -24,8 +24,7 @@ import org.springframework.web.client.RestTemplate;
 /**
  * {@link B2instConnector} implementation over Spring {@link RestTemplate}. Reads its configuration
  * from the {@code pidinst.b2inst.*} system properties (B2INST reuses the IdentifierSettings shape:
- * {@code username} holds the community id and {@code password} holds the bearer token). See
- * ADR-002.
+ * {@code username} holds the community id and {@code password} holds the bearer token).
  */
 @Slf4j
 public class B2instConnectorImpl implements B2instConnector {
@@ -69,6 +68,9 @@ public class B2instConnectorImpl implements B2instConnector {
 
   @Override
   public boolean isConfiguredAndEnabled() {
+    // Draft registration (the supported flow) needs only the server URL and token. The community
+    // id is required only for the curator-gated publish, which publishDoi() validates separately,
+    // so it is deliberately not part of this readiness gate.
     return enabled && StringUtils.isNotBlank(serverUrl) && StringUtils.isNotBlank(token);
   }
 

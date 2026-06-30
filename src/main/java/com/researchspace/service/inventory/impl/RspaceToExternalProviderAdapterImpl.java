@@ -30,7 +30,7 @@ public class RspaceToExternalProviderAdapterImpl implements RspaceToExternalProv
     metadata.setOwner(List.of(ownerOf(instrument.getOwner())));
     // Manufacturer, Model and LandingPage are intentionally left unset at draft creation: the
     // Instrument entity has no manufacturer/model fields, and the public landing URL needs a DOI
-    // public link that only exists once the identifier is persisted. See ADR-002.
+    // public link that only exists once the identifier is persisted.
 
     B2instAccess access = new B2instAccess();
     access.setRecord(PUBLIC_ACCESS);

@@ -410,7 +410,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   /**
    * Registers a draft instrument record with B2INST and returns the RSpace DOI representation,
    * persisting the B2INST record id (RID) as the identifier. The Handle PID is minted only on
-   * publish; see ADR-002.
+   * publish.
    */
   @SneakyThrows
   private ApiInventoryDOI createNewB2instDoi(InventoryRecord invRec, User user) {
@@ -572,7 +572,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   /**
    * Best-effort publish for B2INST: submits the draft to the configured community. On the test
    * community this is curator-gated, so the returned state reflects the submission status rather
-   * than a minted PID. See ADR-002.
+   * than a minted PID.
    */
   @SneakyThrows
   private ApiInventoryDOI createUpdateWithPublishedB2instDoi(DigitalObjectIdentifier doi) {
