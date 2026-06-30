@@ -366,7 +366,7 @@ describe("FolderTree", () => {
     // a validation error should be displayed
     const errorAlert = await screen.findByLabelText("common:alerts.warning");
     expect(errorAlert).toBeVisible();
-    expect(screen.getByText("common:folderTree.createFolder.validation")).toBeVisible();
+    expect(screen.getByText("common:folderTree.errors.folderNameRequired")).toBeVisible();
   });
 
   test("Should have no axe violations", async () => {

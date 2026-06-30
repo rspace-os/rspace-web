@@ -45,8 +45,7 @@ export default function MenuWithSelectedState({
         })}
       >
         <Box component="span" sx={{ pl: 1.5, pt: 0.5, pb: 0.25, maxHeight: "100%" }}>
-          {label}
-          {":"}
+          {`${label}:`}
         </Box>
         <Box
           component="span"

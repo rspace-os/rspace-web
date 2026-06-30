@@ -24,7 +24,8 @@ import TableRow from "@mui/material/TableRow";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlertsContext, { mkAlert } from "@/stores/contexts/Alert";
 import createAccentedTheme from "../accentedTheme";
 import { ACCENT_COLOR } from "../assets/branding/rspace/workspace";
@@ -590,12 +591,7 @@ export function ShareDialog({
     >
       <DialogTitle>
         {names.length === 1 ? (
-          <Trans
-            ns="common"
-            i18nKey="shareDialog.titleSingle"
-            values={{ name: names[0] }}
-            components={[<strong key="strong" />]}
-          />
+          <TransRichText ns="common" i18nKey="shareDialog.titleSingle" values={{ name: names[0] }} />
         ) : (
           t("shareDialog.titleMultiple", { count: names.length, pluralName })
         )}
@@ -762,7 +758,7 @@ export function ShareDialog({
 
         {isSnippet && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            <Trans ns="common" i18nKey="shareDialog.snippetsSharedNote" components={[<strong key="strong" />]} />
+            <TransRichText ns="common" i18nKey="shareDialog.snippetsSharedNote" />
           </Alert>
         )}
 
@@ -1072,11 +1068,11 @@ export function ShareDialog({
                   })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  <Trans
+                  <TransRichText
                     ns="common"
                     i18nKey="shareDialog.multipleSelection.description"
                     values={{ pluralName }}
-                    components={[<Link key="link" href="/record/share/manage" />]}
+                    components={{ a: <Link href="/record/share/manage" /> }}
                   />
                 </Typography>
                 {newShares.size > 0 && (

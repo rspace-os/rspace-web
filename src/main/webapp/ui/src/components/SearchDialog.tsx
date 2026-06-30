@@ -9,7 +9,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Grow from "@mui/material/Grow";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -61,18 +60,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
             />
             <Box>
               <DialogContentText>
-                <Trans
-                  ns="common"
-                  i18nKey="searchDialog.luceneTip"
-                  components={[
-                    <Typography
-                      key="samp"
-                      variant="inherit"
-                      component="samp"
-                      sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
-                    />,
-                  ]}
-                />
+                <Trans ns="common" i18nKey="searchDialog.luceneTip" components={[<code key="code" />]} />
               </DialogContentText>
               <DialogContentText>
                 <Trans

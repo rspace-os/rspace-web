@@ -74,7 +74,7 @@ const CreateFolderDialog = ({ open, onClose, onSubmit, isLoading }: CreateFolder
         </Button>
         <ValidatingSubmitButton
           loading={isLoading}
-          validationResult={isValidName ? IsValid() : IsInvalid(t("folderTree.createFolder.validation"))}
+          validationResult={isValidName ? IsValid() : IsInvalid(t("folderTree.errors.folderNameRequired"))}
           onClick={handleSubmit}
         >
           {t("actions.create")}
@@ -202,7 +202,7 @@ const TreeItemContent = ({
                 </Button>
               }
             >
-              {t("folderTree.failedSubfolders")}
+              {t("folderTree.errors.failedSubfolders")}
             </Alert>
           </Box>
         )}
@@ -361,7 +361,7 @@ export default function FolderTree({
               </Button>
             }
           >
-            {t("folderTree.failedFolders")}
+            {t("folderTree.errors.failedFolders")}
           </Alert>
         </Box>
       )}

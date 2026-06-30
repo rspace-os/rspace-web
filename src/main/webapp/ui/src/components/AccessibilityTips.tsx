@@ -6,7 +6,7 @@ import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import AccentMenuItem from "./AccentMenuItem";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 
@@ -100,21 +100,14 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.highContrast.enabled")
                 : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            <Trans
-              ns="common"
-              i18nKey="accessibilityTips.highContrast.instructions"
-              values={{
-                action: t(`accessibilityTips.actions.${highContrastModeIsEnabled ? "disable" : "enable"}`),
-                settingState: t(`accessibilityTips.actions.${highContrastModeIsEnabled ? "off" : "on"}`),
-              }}
-            />
+            {t(`accessibilityTips.highContrast.instructions.${highContrastModeIsEnabled ? "disable" : "enable"}`)}
             <br />
             <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
               {t("accessibilityTips.platforms.windows")}
             </Link>
             {", "}
             <Link href="https://support.apple.com/en-gb/guide/mac-help/unac089/mac">
-              {t("accessibilityTips.platforms.macOs")}
+              {t("accessibilityTips.platforms.macOS")}
             </Link>
             {", "}
             <Link href="https://support.apple.com/en-us/111773">{t("accessibilityTips.platforms.iOS")}</Link>
@@ -135,17 +128,10 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.reducedMotion.enabled")
                 : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            <Trans
-              ns="common"
-              i18nKey="accessibilityTips.reducedMotion.instructions"
-              values={{
-                action: t(`accessibilityTips.actions.${reducedMotionModeIsEnabled ? "disable" : "enable"}`),
-                settingState: t(`accessibilityTips.actions.${reducedMotionModeIsEnabled ? "off" : "on"}`),
-              }}
-            />
+            {t(`accessibilityTips.reducedMotion.instructions.${reducedMotionModeIsEnabled ? "disable" : "enable"}`)}
             <br />
             <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">
-              {t("accessibilityTips.platforms.macOs")}
+              {t("accessibilityTips.platforms.macOS")}
             </Link>
             {", "}
             <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">

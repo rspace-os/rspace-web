@@ -991,12 +991,6 @@ export default interface Resources {
   },
   "common": {
     "accessibilityTips": {
-      "actions": {
-        "disable": "disable",
-        "enable": "enable",
-        "off": "off",
-        "on": "on"
-      },
       "browsers": {
         "chrome": "Chrome",
         "edge": "Edge",
@@ -1010,19 +1004,25 @@ export default interface Resources {
       },
       "highContrast": {
         "enabled": "High contrast mode is enabled.",
-        "instructions": "To {action}, turn {settingState} your device's high contrast setting:",
+        "instructions": {
+          "disable": "To disable, turn off your device's high contrast setting:",
+          "enable": "To enable, turn on your device's high contrast setting:"
+        },
         "supported": "This {elementType} supports a high contrast mode."
       },
       "menuLabel": "Accessibility Tips",
       "platforms": {
         "android": "Android",
         "iOS": "iOS",
-        "macOs": "macOS",
+        "macOS": "macOS",
         "windows": "Windows"
       },
       "reducedMotion": {
         "enabled": "Reduced motion mode is enabled.",
-        "instructions": "To {action}, turn {settingState} your device's reduced motion setting:",
+        "instructions": {
+          "disable": "To disable, turn off your device's reduced motion setting:",
+          "enable": "To enable, turn on your device's reduced motion setting:"
+        },
         "supported": "This {elementType} supports a reduced motion mode."
       },
       "skipToContent": {
@@ -1128,11 +1128,13 @@ export default interface Resources {
       "addSubfolder": "Add subfolder to {folderName}",
       "createFolder": {
         "folderName": "Folder Name",
-        "title": "Create New Folder",
-        "validation": "Folder name is required"
+        "title": "Create New Folder"
       },
-      "failedFolders": "Failed to load folders",
-      "failedSubfolders": "Failed to load subfolders",
+      "errors": {
+        "failedFolders": "Failed to load folders",
+        "failedSubfolders": "Failed to load subfolders",
+        "folderNameRequired": "Folder name is required"
+      },
       "loadMore": "Load More",
       "loading": "Loading...",
       "sharedFolderLabel": "tree view of shared folder"
@@ -1533,7 +1535,7 @@ export default interface Resources {
       "locationLabel": "Location: {location}",
       "multipleSelection": {
         "allItems": "All {count} {pluralName}",
-        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <0>shared {pluralName} page</0>.",
+        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <a>shared {pluralName} page</a>.",
         "heading": "Adding shares to {count} {itemName}",
         "newSharesHeading": "New shares to be added:",
         "someItems": "{documentCount} of {totalCount} {itemName}"
@@ -1554,9 +1556,9 @@ export default interface Resources {
         "remove": "Remove",
         "unshare": "Unshare"
       },
-      "snippetsSharedNote": "Shared snippets can be found in the <0>SNIPPETS_Shared</0> folder, inside the Snippets section of the Gallery.",
+      "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
       "titleMultiple": "Share {count} {pluralName}",
-      "titleSingle": "Share <0>{name}</0>",
+      "titleSingle": "Share <strong>{name}</strong>",
       "updatedSuccessfully": "Shares updated successfully."
     },
     "stoichiometry": {
@@ -1807,7 +1809,7 @@ export default interface Resources {
       "none": "None"
     },
     "versionLockPicker": {
-      "ariaLabel": "version-lock-picker",
+      "ariaLabel": "Version Lock Picker",
       "columns": {
         "modified": "Modified",
         "version": "Version"
