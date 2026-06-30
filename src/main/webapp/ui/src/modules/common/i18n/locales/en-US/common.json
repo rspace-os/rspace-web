@@ -25,7 +25,7 @@
     "menuLabel": "Accessibility Tips",
     "platforms": {
       "android": "Android",
-      "iOs": "iOS",
+      "iOS": "iOS",
       "macOs": "macOS",
       "windows": "Windows"
     },
@@ -144,7 +144,7 @@
     "failedSubfolders": "Failed to load subfolders",
     "loading": "Loading...",
     "loadMore": "Load More",
-    "sharedFolderAria": "tree view of shared folder"
+    "sharedFolderLabel": "tree view of shared folder"
   },
   "galleryPicker": {
     "selectionRequired": "Select at least one file to proceed."

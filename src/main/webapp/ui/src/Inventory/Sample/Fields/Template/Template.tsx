@@ -34,7 +34,6 @@ function Template(): React.ReactNode {
 
   const [open, setOpen] = useState(true);
 
-  // Use `tmpl` to avoid clashing with the `t` translation function
   const setTemplate = React.useCallback(
     (tmpl: TemplateModel | null) => {
       activeResult.setTemplate(tmpl).catch((error) => {

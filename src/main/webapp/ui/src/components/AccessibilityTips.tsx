@@ -117,7 +117,7 @@ function AccessibilityTipsPopup({
               {t("accessibilityTips.platforms.macOs")}
             </Link>
             {", "}
-            <Link href="https://support.apple.com/en-us/111773">{t("accessibilityTips.platforms.iOs")}</Link>
+            <Link href="https://support.apple.com/en-us/111773">{t("accessibilityTips.platforms.iOS")}</Link>
             {", "}
             <Link href="https://support.google.com/accessibility/android/answer/11183305">
               {t("accessibilityTips.platforms.android")}
@@ -149,7 +149,7 @@ function AccessibilityTipsPopup({
             </Link>
             {", "}
             <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">
-              {t("accessibilityTips.platforms.iOs")}
+              {t("accessibilityTips.platforms.iOS")}
             </Link>
             {", "}
             <Link href="https://support.google.com/accessibility/android/answer/11183305">

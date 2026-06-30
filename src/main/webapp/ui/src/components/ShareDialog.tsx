@@ -53,7 +53,6 @@ type DocumentName = string;
 type ShareId = string;
 type Permission = "READ" | "EDIT" | "UNSHARE";
 
-// Extended type with sharing state
 type ShareOptionWithState = ShareOption & {
   isDisabled: boolean;
 };

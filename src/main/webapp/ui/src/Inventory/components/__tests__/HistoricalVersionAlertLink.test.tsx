@@ -55,7 +55,6 @@ async function createTestI18n(): Promise<I18nInstance> {
 
 describe("HistoricalVersionAlert link href", () => {
   test("link in read-only message points to the latest-version URL", async () => {
-    // SubSample default: id=1, recordType="subSample" → latestUrl = /inventory/subsample/1
     const subsample = makeMockSubSample({
       version: 2,
       historicalVersion: true,

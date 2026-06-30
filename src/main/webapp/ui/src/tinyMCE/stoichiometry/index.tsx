@@ -6,11 +6,9 @@ import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
-// Resolve `common`-namespace keys against the live instance so the active language is honoured.
 const translate = i18n.t as (translationKey: string, options?: Record<string, unknown>) => string;
 const tCommon = (translationKey: string, options?: Record<string, unknown>): string =>
   translate(`common:${translationKey}`, options);
-// A getter (not a module-level const) so the key resolves after i18n has loaded.
 const getEmptyStoichiometryTablePlaceholder = (): string => tCommon("stoichiometry.plugin.emptyTablePlaceholder");
 
 declare global {
@@ -60,7 +58,6 @@ interface Editor {
   focus: () => void;
 }
 
-// Declare the global tinymce object
 declare const tinymce: {
   PluginManager: {
     add: (name: string, plugin: new (editor: Editor) => unknown) => void;

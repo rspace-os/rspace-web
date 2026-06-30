@@ -430,46 +430,6 @@ describe("RaidConnectionsAddForm", () => {
         expect(autocomplete).toHaveAttribute("aria-invalid", "true");
       });
     });
-
-    // TODO: This currently doesn't work
-    // it("Should handle network error during submission", async () => {
-    //   mockQueryData.data = [
-    //     {
-    //       raidServerAlias: "server1",
-    //       raidIdentifier: "raid-123",
-    //       raidTitle: "Test RAiD 1",
-    //     },
-    //   ];
-    //
-    //   renderWithProviders(defaultProps);
-    //   const user = userEvent.setup();
-    //   const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
-    //
-    //   await user.click(autocomplete);
-    //   await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
-    //
-    //   // Set up rejection after selection
-    //   mockMutateAsync.mockRejectedValueOnce(new Error("Network error"));
-    //
-    //   const addButton = screen.getByRole("button", { name: "common:actions.add" });
-    //
-    //   // Suppress console errors for this test since we're expecting an error
-    //   const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    //
-    //   // Clicking will trigger the error, but it's handled internally
-    //   await user.click(addButton);
-    //
-    //   // The error will be caught by the form but handleCloseForm should not be called
-    //   await waitFor(() => {
-    //     expect(mockMutateAsync).toHaveBeenCalled();
-    //   }, { timeout: 500 });
-    //
-    //   // Give it time to not call handleCloseForm
-    //   await new Promise(resolve => setTimeout(resolve, 50));
-    //   expect(mockHandleCloseForm).not.toHaveBeenCalled();
-    //
-    //   consoleErrorSpy.mockRestore();
-    // });
   });
 
   describe("Props Handling", () => {

@@ -30,7 +30,6 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    // t() mock returns the raw key
     expect(screen.getByText("inventory:historicalVersion.title")).toBeVisible();
   });
 
@@ -43,7 +42,6 @@ describe("HistoricalVersionAlert", () => {
     render(<HistoricalVersionAlert record={subsample} />);
 
     const alert = screen.getByRole("alert");
-    // Trans mock returns the i18nKey; key presence confirms the read-only message is wired up
     expect(alert).toHaveTextContent("inventory:historicalVersion.readOnlyWithLink");
     expect(alert).not.toHaveTextContent(/may not be the latest version/i);
   });

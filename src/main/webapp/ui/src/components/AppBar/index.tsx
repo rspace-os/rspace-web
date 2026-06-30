@@ -367,9 +367,6 @@ function GalleryAppBar({
       showMyLabGroups: false,
     });
 
-  /*
-   * The parts of the product that are important enough to get a tab in the app bar
-   */
   const isTabbedPage = ["Workspace", "Gallery", "Inventory", "System", "My RSpace"].includes(currentPage);
 
   /*
@@ -386,7 +383,6 @@ function GalleryAppBar({
     System: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
   };
 
-  /* Display name for a page: the translated section title, or the raw value for caller-supplied dialog titles. */
   const displayPage = (page: string): string => sectionLabels[page]?.title ?? page;
 
   return (
@@ -705,11 +701,6 @@ function GalleryAppBar({
                   }}
                   sx={{
                     [`.${menuClasses.paper}`]: {
-                      /*
-                       * Generally we don't add box shadows to menus, but we do add
-                       * box shadows to popups opened from the app bar to make them
-                       * hover over the page's content.
-                       */
                       boxShadow:
                         "3px 5px 5px -3px rgba(0,0,0,0.2),0px 8px 10px 1px rgba(0,0,0,0.14),0px 3px 14px 2px rgba(0,0,0,0.12)",
                     },
@@ -979,7 +970,4 @@ function GalleryAppBar({
   );
 }
 
-/**
- * GalleryAppBar is the header bar for the gallery page.
- */
 export default observer(GalleryAppBar);

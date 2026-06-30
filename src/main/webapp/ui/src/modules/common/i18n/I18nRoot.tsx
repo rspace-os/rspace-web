@@ -10,7 +10,6 @@ import {
   RichTextComponentsContext,
 } from "@/modules/common/i18n/TransRichText";
 
-/** Preloads the optional `namespaces` so they resolve in the root's single Suspense pass. */
 function NamespacePreloader({
   namespaces,
   children,
@@ -22,18 +21,6 @@ function NamespacePreloader({
   return children;
 }
 
-/**
- * Provides the i18n instance and a Suspense boundary for a React root.
- * Namespaces resolve automatically — each component calls `useTranslation(ns)`
- * and the boundary waits while the chunk loads, so cross-namespace components
- * need nothing declared here. `namespaces` is an OPTIONAL preload hint: pass a
- * root's main namespaces to load them up front in one suspense (avoids
- * mid-render loading flashes); omit it and components load their own on demand.
- *
- * `componentMap` selects the rich-text vocabulary `TransRichText` renders with.
- * Defaults to MUI; a Base UI root passes its own map to override it for the
- * whole subtree.
- */
 export default function I18nRoot({
   children,
   namespaces,

@@ -40,7 +40,6 @@ type PdfExportArgs = PdfExportDetailsArgs & {
   };
 };
 
-// Maps each detail key to its translation key; resolved via t() in the component.
 const checkboxes = {
   provenance: "export.format.pdf.checkboxes.provenance",
   comments: "export.format.pdf.checkboxes.comments",

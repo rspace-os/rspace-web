@@ -1016,7 +1016,7 @@ export default interface Resources {
       "menuLabel": "Accessibility Tips",
       "platforms": {
         "android": "Android",
-        "iOs": "iOS",
+        "iOS": "iOS",
         "macOs": "macOS",
         "windows": "Windows"
       },
@@ -1135,7 +1135,7 @@ export default interface Resources {
       "failedSubfolders": "Failed to load subfolders",
       "loadMore": "Load More",
       "loading": "Loading...",
-      "sharedFolderAria": "tree view of shared folder"
+      "sharedFolderLabel": "tree view of shared folder"
     },
     "galleryPicker": {
       "selectionRequired": "Select at least one file to proceed."
