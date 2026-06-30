@@ -171,7 +171,11 @@ function setAllSectionValues<T extends RecordType>(
   return result;
 }
 
-function mergeWithDefaults(stored: FormSectionsState): FormSectionsState {
+type PartialFormSectionsState = Partial<{
+  [K in RecordType]: Partial<FormSectionsState[K]>;
+}>;
+
+function mergeWithDefaults(stored: PartialFormSectionsState): FormSectionsState {
   const defaults = defaultFormSectionExpandedState();
   const result = {} as FormSectionsState;
   for (const recordType of Object.keys(defaults) as Array<RecordType>) {
@@ -187,7 +191,10 @@ export default function SynchroniseFormSections({ children }: SynchroniseFormSec
   const [storedState, setFormSectionExpandedState] = useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
     defaultValue: defaultFormSectionExpandedState(),
   });
-  const formSectionExpandedState = mergeWithDefaults(storedState);
+  const formSectionExpandedState = React.useMemo(
+    () => mergeWithDefaults(storedState as PartialFormSectionsState),
+    [storedState],
+  );
   return (
     <FormSectionsContext.Provider
       value={{
