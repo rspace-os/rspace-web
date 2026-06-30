@@ -43,7 +43,7 @@
 
 <div id="groupBlocks">
   <div id="groupBlockLeft">
-    <h2 style="flex-grow:1; margin-bottom: 0px;">
+    <h2 style="flex-grow:1;">
       <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">Collaboration </c:if>
       <c:if test="${group.groupType == 'PROJECT_GROUP'}">Project </c:if>
       Group: <span class="displayname">${group.displayName}</span>
