@@ -188,6 +188,7 @@ function mergeWithDefaults(stored: PartialFormSectionsState): FormSectionsState 
 }
 
 export default function SynchroniseFormSections({ children }: SynchroniseFormSectionsArgs): React.ReactNode {
+  // Temporary solution.  See https://researchspace.atlassian.net/browse/RSDEV-1221 for a preferred implementation.
   const [storedState, setFormSectionExpandedState] = useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
     defaultValue: defaultFormSectionExpandedState(),
   });
