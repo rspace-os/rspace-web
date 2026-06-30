@@ -1,7 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { LandmarksProvider } from "../components/LandmarksContext";
 import SkipToContentMenu from "../components/SkipToContentMenu";
@@ -40,6 +40,8 @@ function InventoryRouter(): React.ReactNode {
                 <Route path="/sample/:id" element={<PermalinkRouter type="sample" />} />
                 <Route path="/subsample/:id" element={<PermalinkRouter type="subsample" />} />
                 <Route path="/sampletemplate/:id" element={<PermalinkRouter type="sampletemplate" />} />
+                <Route path="/instrument/:id" element={<PermalinkRouter type="instrument" />} />
+                <Route path="/instrumenttemplate/:id" element={<PermalinkRouter type="instrumenttemplate" />} />
                 <Route path="/search/*" element={<SearchRouter />} />
                 <Route path="/import/*" element={<ImportRouter />} />
                 <Route path="/identifiers/*" element={<IdentifiersRouter />} />

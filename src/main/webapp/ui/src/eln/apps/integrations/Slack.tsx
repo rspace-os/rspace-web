@@ -19,7 +19,6 @@ import DescriptionList from "../../../components/DescriptionList";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
-import RsSet from "../../../util/set";
 import IntegrationCard from "../IntegrationCard";
 import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 import { useSlackEndpoint } from "../useSlackEndpoint";
@@ -273,12 +272,17 @@ const DialogContent = observer(
                     event.preventDefault();
                     try {
                       const newState = await saveAppOptions("SLACK", Optional.empty(), newChannel);
-                      const optionIdsOfExistingRepos = new RsSet(copyOfChannels.map(({ optionsId }) => optionsId));
+                      const optionIdsOfExistingRepos = new Set(copyOfChannels.map(({ optionsId }) => optionsId));
                       runInAction(() => {
                         integrationState.credentials = newState.credentials;
-                        const newlySavedRepo = new RsSet(newState.credentials)
-                          .mapOptional((x) => x)
-                          .subtractMap(({ optionsId }) => optionsId, optionIdsOfExistingRepos).first;
+                        const newlySavedRepo = newState.credentials
+                          .find((credential) =>
+                            credential.map(({ optionsId }) => !optionIdsOfExistingRepos.has(optionsId)).orElse(false),
+                          )
+                          ?.orElseGet(() => {
+                            throw new Error("Save completed but cannot show results.");
+                          });
+                        if (!newlySavedRepo) throw new Error("Save completed but cannot show results.");
                         copyOfChannels.push(newlySavedRepo);
                       });
                       setNewChannel(null);

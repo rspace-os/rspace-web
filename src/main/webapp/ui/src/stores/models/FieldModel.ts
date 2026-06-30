@@ -1,10 +1,9 @@
+import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { UnparsableString } from "../../util/error";
 import type { URL as URLType } from "../../util/types";
-import { pick } from "../../util/unsafeUtils";
 import type { Attachment } from "../definitions/Attachment";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { Field, FieldLink, FieldType, Option, OptionValue } from "../definitions/Field";
@@ -109,20 +108,19 @@ export default class FieldModel implements Field {
       hasContent: computed,
     });
 
-    let params = pick(
+    let params = pick(_params, [
       "id",
       "globalId",
       "attachment",
       "content",
       "selectedOptions",
-      "files",
       "type",
       "name",
       "initial",
       "mandatory",
       "allowedRelationTypes",
       "link",
-    )(_params) as object & {
+    ]) as unknown as object & {
       content: string | number | Date;
       type: FieldType;
       initial: boolean;
@@ -225,7 +223,8 @@ export default class FieldModel implements Field {
   }
 
   get optionsAreUnique(): boolean {
-    return ArrayUtils.allAreUnique(this.options.map((o) => o.value));
+    const optionValues = this.options.map((o) => o.value);
+    return new Set(optionValues).size === optionValues.length;
   }
 
   validate(): ValidationResult {
@@ -327,6 +326,6 @@ export default class FieldModel implements Field {
     } else {
       keys.push(hasOptions(ret.type) ? "selectedOptions" : "content");
     }
-    return pick(...keys)(ret) as object;
+    return pick(ret, keys as Array<keyof typeof ret>) as object;
   }
 }

@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useContext } from "react";
-import type { Location } from "react-router-dom";
+import type { Location } from "react-router";
 import { describe, expect, test, vi } from "vitest";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { makeMockRootStore } from "../../../stores/stores/__tests__/RootStore/mocking";

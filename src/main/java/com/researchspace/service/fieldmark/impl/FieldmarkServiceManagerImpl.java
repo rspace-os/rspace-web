@@ -33,7 +33,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.dtos.fieldmark.FieldmarkNotebookDTO;
 import com.researchspace.model.dtos.fieldmark.FieldmarkRecordDTO;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.fieldmark.FieldmarkServiceClientAdapter;
 import com.researchspace.service.fieldmark.FieldmarkServiceManager;
@@ -255,14 +255,14 @@ public class FieldmarkServiceManagerImpl implements FieldmarkServiceManager {
   public void validateCreateSampleInput(
       ApiSampleWithFullSubSamples apiSample, BindingResult errors, User user) throws BindException {
 
-    Sample template = verifyTemplateIsCompatible(apiSample, errors, user);
+    SampleTemplate template = verifyTemplateIsCompatible(apiSample, errors, user);
     inputValidator.validate(apiSample, sampleApiPostValidator, errors);
     ApiSampleFullPost allData = new ApiSampleFullPost(apiSample, user, template);
     inputValidator.validate(allData, sampleApiPostFullValidator, errors);
     throwBindExceptionIfErrors(errors);
   }
 
-  private Sample verifyTemplateIsCompatible(
+  private SampleTemplate verifyTemplateIsCompatible(
       ApiSampleInfo apiSample, BindingResult errors, User user) throws BindException {
     if (apiSample.getTemplateId() != null) {
       try {

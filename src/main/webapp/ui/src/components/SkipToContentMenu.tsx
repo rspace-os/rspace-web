@@ -21,7 +21,7 @@ const SkipToContentButton: React.FC = () => {
     setIsVisible(true);
   };
 
-  const handleSkipToLandmark = (ref: React.RefObject<HTMLElement>) => {
+  const handleSkipToLandmark = (ref: React.RefObject<HTMLElement | null>) => {
     if (ref.current) {
       /*
        * Setting tabIndex to -1 (even if already -1) forces the browser to

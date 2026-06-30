@@ -1,5 +1,5 @@
 import type React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
 import IGSNs from "./IGSN";
 import NavigationContext from "./NavigationContext";

@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useParams } from "react-router";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import NavigateContext from "../stores/contexts/Navigate";
 import { globalIdPatterns, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
@@ -34,6 +34,8 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
       [(t) => t === "container", "container"],
       [(t) => t === "subsample", "subsample"],
       [(t) => t === "sampletemplate", "sampleTemplate"],
+      [(t) => t === "instrument", "instrument"],
+      [(t) => t === "instrumenttemplate", "instrumentTemplate"],
     ])(type);
     /*
      * If the user has provided the Global Id where they are meant to provide

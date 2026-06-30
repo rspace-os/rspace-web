@@ -2,7 +2,7 @@
 import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import Box from "@mui/material/Box";
 import React from "react";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";

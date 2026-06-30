@@ -24,7 +24,13 @@ import com.researchspace.model.record.ObjectToIdPropertyTransformer;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Session;
@@ -350,11 +356,12 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
 
   @Override
   public boolean doesUserOwnDocWithHash(User user, String contentsHash) {
+    // SampleEntity spans samples and sample templates, both of which can use the image
     long sampleHits =
         (long)
             getSession()
                 .createQuery(
-                    "select count(*) from Sample where owner = :user and"
+                    "select count(*) from SampleEntity where owner = :user and"
                         + " (imageFileProperty.contentsHash = :contentsHash or"
                         + " thumbnailFileProperty.contentsHash = :contentsHash) ")
                 .setParameter("user", user)

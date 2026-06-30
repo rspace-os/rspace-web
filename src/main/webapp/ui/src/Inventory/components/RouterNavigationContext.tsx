@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useLocation, useNavigate as useReactRouterNavigate } from "react-router-dom";
+import { useLocation, useNavigate as useReactRouterNavigate } from "react-router";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
 import type { URL } from "../../util/types";

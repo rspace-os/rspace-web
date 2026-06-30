@@ -4,7 +4,7 @@ package com.researchspace.api.v1.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import java.util.ArrayList;
@@ -72,7 +72,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
-  protected ApiSampleWithoutSubSamples(Sample sample) {
+  protected ApiSampleWithoutSubSamples(SampleEntity sample) {
     super(sample);
 
     for (InventoryEntityField field : sample.getActiveFields()) {
@@ -103,7 +103,7 @@ public class ApiSampleWithoutSubSamples extends ApiSampleInfo {
    * @param dbSample db entity to which incoming changes should be applied
    * @return if any change was applied
    */
-  public boolean applyChangesToDatabaseSample(Sample dbSample, User user) {
+  public boolean applyChangesToDatabaseSample(SampleEntity dbSample, User user) {
     boolean contentChanged = super.applyChangesToDatabaseSample(dbSample);
 
     if (fields != null) {

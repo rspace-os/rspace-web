@@ -10,7 +10,6 @@ import type ContainerModel from "../../../../stores/models/ContainerModel";
 import LocationModel from "../../../../stores/models/LocationModel";
 import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
 import { incrementForever, take } from "../../../../util/iterators";
 import ContextMenuButton from "../../../components/ContextMenu/ContextMenuButton";
 import ContentContextMenu from "../ContentContextMenu";
@@ -63,7 +62,7 @@ describe("ContentContextMenu", () => {
           disabledHelp: "Nothing selected.",
           label: "Open",
         }),
-        expect.anything(),
+        undefined,
       );
     });
   });
@@ -75,15 +74,13 @@ describe("ContentContextMenu", () => {
           cleanup();
           const container: ContainerModel = makeMockContainer({
             name: "A visual container",
-            locations: ArrayUtils.outerProduct(
-              [...take(incrementForever(), width)],
-              [...take(incrementForever(), height)],
-              (coordX: number, coordY: number) => ({
+            locations: Array.from(take(incrementForever(), width), (coordX: number) =>
+              Array.from(take(incrementForever(), height), (coordY: number) => ({
                 coordX,
                 coordY,
                 content: containerAttrs(),
                 id: null,
-              }),
+              })),
             ).flat(),
             cType: "GRID",
             gridLayout: {

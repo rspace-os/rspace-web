@@ -12,7 +12,7 @@ import axios from "@/common/axios";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 import materialTheme from "../../theme";
-import { getSorting, stableSort } from "../../util/table";
+import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 import AutoshareStatus from "./Autoshare/AutoshareStatus";
 
@@ -106,7 +106,7 @@ export default function GroupsTable(props: any) {
                 />
                 <TableBody>
                   {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-                  {stableSort(groups, getSorting(order, orderBy)).map((group: any) => (
+                  {groups.toSorted(getSorting(order, orderBy)).map((group: any) => (
                     <TableRow hover tabIndex={-1} key={group.groupDisplayName}>
                       <TableCell align="left">
                         <a href={`/groups/view/${group.groupId}`}>{group.groupDisplayName}</a>

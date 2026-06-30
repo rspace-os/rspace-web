@@ -92,7 +92,7 @@ describe("LocationImageField", () => {
           warningAlert:
             "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
         }),
-        expect.anything(),
+        undefined,
       );
     });
     test("be a button labelled 'Edit Locations' that can't be tapped.", () => {
@@ -137,12 +137,12 @@ describe("LocationImageField", () => {
         expect.objectContaining({
           storeImage: expect.any(Function),
         }),
-        expect.anything(),
+        undefined,
       );
       act(() => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
-      expect(setImageSpy).toHaveBeenCalledWith("locationsImage", expect.any(String));
+      expect(setImageSpy).toHaveBeenCalledWith("locationsImage");
     });
     test("be an alert to update the preview image, if the container doesn't have a preview image.", () => {
       const rootStore = mockRootStore()[0];
@@ -173,7 +173,7 @@ describe("LocationImageField", () => {
       act(() => {
         setPreviewImageFunction();
       });
-      expect(setImageSpy).toHaveBeenCalledWith("image", expect.any(String));
+      expect(setImageSpy).toHaveBeenCalledWith("image");
     });
     test("not be an alert, if the container already has a preview image.", () => {
       const [rootStore, container] = mockRootStore();
@@ -237,7 +237,7 @@ describe("LocationImageField", () => {
         expect.objectContaining({
           warningAlert: "Click on 'Edit Locations' to add locations and start using the visual container.",
         }),
-        expect.anything(),
+        undefined,
       );
     });
   });
@@ -262,7 +262,7 @@ describe("LocationImageField", () => {
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
-        expect.anything(),
+        undefined,
       );
     });
   });
@@ -288,7 +288,7 @@ describe("LocationImageField", () => {
       await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: false, close: expect.any(Function) },
-        expect.anything(),
+        undefined,
       );
     });
   });

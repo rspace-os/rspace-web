@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
+import { clamp } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
@@ -9,7 +10,6 @@ import ContainerModel from "../../../../../stores/models/ContainerModel";
 import LocationModel from "../../../../../stores/models/LocationModel";
 import useStores from "../../../../../stores/use-stores";
 import type { Point } from "../../../../../util/types";
-import { clamp } from "../../../../../util/Util";
 import NumberedLocation from "../NumberedLocation";
 
 export type TappedLocationData = {
@@ -217,7 +217,7 @@ function ContentImage({
             }}
             onLoad={({ target }) => setImg(target as HTMLElement)}
             onClick={newMarker}
-            ref={imgRef as React.RefObject<HTMLImageElement>}
+            ref={imgRef as React.RefObject<HTMLImageElement | null>}
           />
           {img &&
             imageDimensions &&

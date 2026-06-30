@@ -2,7 +2,6 @@
 packages: []
 
 overrides:
-  react-is: ^18.3.1
   # The @mui core overrides below are intentionally COMMENTED OUT, not deleted,
   # so the history and rationale stay visible. They pin RSpace's MUI v9 family to
   # 9.0.x (9.1.x has an ESM Transition.mjs bug under Vitest, mui#48644).
@@ -25,6 +24,14 @@ overrides:
   # but work with 3.15.0; the override pins a single version to avoid a tsc
   # type mismatch from the two-instance `#private` clash.
   ketcher-core: 3.15.0
+  # Force miew-react 0.12.0 (ketcher-react pulls 0.11.0 transitively). 0.12.0
+  # declares a react/react-dom peer of >=18.2.0, so it supports React 19 without
+  # the allowedVersions workaround that 0.11.0 (peer ^18.2.0) needed.
+  miew-react: 0.12.0
+  # miew-react@0.12.0 was published with a broken "miew": "workspace:^"
+  # dependency (the workspace protocol only resolves inside miew's own
+  # monorepo). Redirect it to the published miew 0.12.0 on npm.
+  miew-react>miew: 0.12.0
   # Pin rolldown to 1.0.1 (bundled in Vite 8.0.13) to avoid
   # https://github.com/rolldown/rolldown/issues/9502 and
   # https://github.com/vitejs/vite/issues/22499, where rolldown 1.0.2+

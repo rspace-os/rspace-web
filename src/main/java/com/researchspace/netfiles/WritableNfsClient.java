@@ -48,6 +48,76 @@ public interface WritableNfsClient extends NfsClient {
   void deleteFile(String absolutePath) throws IOException;
 
   /**
+   * Creates a folder at the given absolute path, attaching the given audit metadata (e.g. {@code
+   * rspace-created-by} / {@code rspace-created-at}). Default throws — only backends that support
+   * folder creation (e.g. S3, via a zero-byte placeholder object) override this.
+   *
+   * @param absolutePath absolute path of the folder to create
+   * @param metadata audit metadata to attach to the folder
+   * @return the external-storage id of the created folder
+   */
+  default String createFolder(String absolutePath, Map<String, String> metadata)
+      throws IOException {
+    throw new UnsupportedOperationException(
+        "Folder creation is not supported by this filestore backend");
+  }
+
+  /**
+   * Moves a file or empty folder to another location within the same filestore, preserving its leaf
+   * name (i.e. moves it <em>into</em> {@code destFolderAbsolutePath}). Only files and empty folders
+   * may be moved; implementations reject non-empty folders. Default throws — only backends that
+   * support within-filestore moves (e.g. S3) override this.
+   *
+   * <p>May be non-atomic: backends without an atomic rename (e.g. S3) implement this as copy then
+   * delete-source, so a failure after the copy can leave the item at both locations.
+   *
+   * @param sourceAbsolutePath absolute path of the file/empty folder to move
+   * @param destFolderAbsolutePath absolute path of the destination folder
+   * @return the external-storage id of the moved object at its new location
+   */
+  default String moveWithin(String sourceAbsolutePath, String destFolderAbsolutePath)
+      throws IOException {
+    throw new UnsupportedOperationException(
+        "Within-filestore move is not supported by this filestore backend");
+  }
+
+  /**
+   * Resolves the single object a delete of {@code absolutePath} would remove (a file, or an empty
+   * folder's placeholder) into its backend key and audit metadata, so the caller can gate then
+   * delete without re-resolving. Throws {@link IOException} if the target is a non-empty folder
+   * (only empty folders may be deleted) or does not exist. Default throws {@link
+   * UnsupportedOperationException} — only backends supporting gated delete (e.g. S3) override this.
+   *
+   * @param absolutePath absolute path of the file or empty folder targeted for deletion
+   */
+  default DeletableTarget resolveDeletableTarget(String absolutePath) throws IOException {
+    throw new UnsupportedOperationException("Delete is not supported by this filestore backend");
+  }
+
+  /**
+   * Deletes the object with the exact backend key obtained from {@link #resolveDeletableTarget}.
+   * The caller is expected to have authorized the deletion first. Default throws — only backends
+   * supporting delete (e.g. S3) override this.
+   *
+   * @param objectKey the exact backend key to delete
+   */
+  default void deleteByKey(String objectKey) throws IOException {
+    throw new UnsupportedOperationException("Delete is not supported by this filestore backend");
+  }
+
+  /**
+   * Reads the creator/creation-time audit metadata of the object at {@code absolutePath}, fetched
+   * on demand (e.g. when the Gallery info panel opens) rather than per item during a listing.
+   * Returns empty metadata when the object is absent or carries none. Default returns empty — only
+   * backends with native metadata (e.g. S3) override this.
+   *
+   * @param absolutePath absolute path of the file or folder
+   */
+  default FilestoreAuditMetadata getAuditMetadata(String absolutePath) throws IOException {
+    return FilestoreAuditMetadata.from(null);
+  }
+
+  /**
    * Server-side copies a single object from this filestore to a destination filestore. For S3 this
    * uses {@code CopyObject} (no data flows through the RSpace server). Implementations may throw
    * {@link UnsupportedOperationException} if the destination backend is incompatible (e.g. S3

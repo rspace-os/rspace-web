@@ -6,13 +6,14 @@ type TransitionChild = React.ReactNode | ((state: string, childProps: Record<str
 type TransitionProps = {
   in?: boolean;
   children?: TransitionChild;
+  ref?: React.Ref<unknown>;
 };
 
 type TransitionGroupProps = {
   children?: React.ReactNode;
 };
 
-const TransitionMock = React.forwardRef<unknown, TransitionProps>(({ in: inProp, children }, ref) => {
+function TransitionMock({ in: inProp, children, ref }: TransitionProps): React.ReactNode {
   if (inProp === false) {
     return null;
   }
@@ -20,11 +21,10 @@ const TransitionMock = React.forwardRef<unknown, TransitionProps>(({ in: inProp,
     return children("entered", {}) as React.ReactElement | null;
   }
   if (React.isValidElement(children)) {
-    return React.cloneElement(children, { ref });
+    return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, { ref });
   }
   return children ?? null;
-});
-TransitionMock.displayName = "TransitionMock";
+}
 
 vi.mock("@mui/material/Grow", () => ({
   __esModule: true,

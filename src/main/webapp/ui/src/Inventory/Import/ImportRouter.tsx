@@ -1,6 +1,6 @@
 import Box from "@mui/material/Box";
 import React, { useContext, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 import { useLandmark } from "@/components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";

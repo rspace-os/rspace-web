@@ -3,13 +3,13 @@ import Grid from "@mui/material/Grid";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
+import { pick } from "es-toolkit";
 import type React from "react";
 import { useEffect, useState } from "react";
 import FormField from "../../../../components/Inputs/FormField";
 import type { ExtraField, ExtraFieldType } from "../../../../stores/definitions/ExtraField";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import { match } from "../../../../util/Util";
-import { pick } from "../../../../util/unsafeUtils";
 import { DATACITE_RELATION_TYPES, isValidDataCiteRelationType } from "../Link/dataciteRelationTypes";
 import { isInventoryGlobalId, supportsVersionPin } from "../Link/iconForGlobalId";
 import LinkEditor from "../Link/LinkEditor";
@@ -209,13 +209,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
 
   const discardChanges = () => {
     extraField.setInvalidInput(false);
-    record.updateExtraField(
-      extraField.name,
-      pick("name", "type")(extraField) as {
-        name: typeof extraField.name;
-        type: typeof extraField.type;
-      },
-    );
+    record.updateExtraField(extraField.name, pick(extraField, ["name", "type"]));
   };
 
   if (!extraField) return null;

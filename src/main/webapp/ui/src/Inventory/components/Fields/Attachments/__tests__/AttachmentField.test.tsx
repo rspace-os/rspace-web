@@ -30,7 +30,7 @@ const renderWithDeploymentProperties = (ui: React.ReactElement) =>
   );
 const expectLabel = (text: string) => (container: HTMLElement) => expect(container).toHaveTextContent(text);
 const expectTextField = (value: string) => () =>
-  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), expect.anything());
+  expect(TextField).toHaveBeenCalledWith(expect.objectContaining({ value }), undefined);
 const activeResult = new ContainerModel(new MemoisedFactory(), {
   ...containerAttrs(),
   cType: "LIST",

@@ -4,7 +4,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.testutils.TestFactory;
 import java.util.Optional;
 import org.junit.Rule;
@@ -26,7 +26,7 @@ public class SampleTemplateBuiltInTest {
   public void test() {
 
     User anyUser = TestFactory.createAnyUser("any");
-    Optional<Sample> opt = antibody.createSampleTemplate(anyUser);
+    Optional<SampleTemplate> opt = antibody.createSampleTemplate(anyUser);
     assertTrue(opt.isPresent());
     assertEquals(10, opt.get().getActiveFields().size());
   }

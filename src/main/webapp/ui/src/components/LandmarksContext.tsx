@@ -3,11 +3,11 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useR
 
 interface Landmark {
   name: string;
-  ref: React.RefObject<HTMLElement>;
+  ref: React.RefObject<HTMLElement | null>;
 }
 
 interface LandmarkRegistrationContextProps {
-  registerLandmark: (name: string, ref: React.RefObject<HTMLElement>) => void;
+  registerLandmark: (name: string, ref: React.RefObject<HTMLElement | null>) => void;
   unregisterLandmark: (name: string) => void;
 }
 
@@ -21,7 +21,7 @@ const LandmarksListContext = createContext<LandmarksListContextProps | undefined
 export const LandmarksProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
 
-  const registerLandmark = useCallback((name: string, ref: React.RefObject<HTMLElement>) => {
+  const registerLandmark = useCallback((name: string, ref: React.RefObject<HTMLElement | null>) => {
     setLandmarks((prev) => {
       const existingIndex = prev.findIndex((landmark) => landmark.name === name);
       if (existingIndex >= 0) {

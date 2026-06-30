@@ -22,7 +22,7 @@ type LocationsTableArgs = {
   locations: Array<Location>;
   onRemove: ({ location, number }: { location: Location; number: number }) => void;
   isCompactView: boolean;
-  parentRef: React.RefObject<HTMLElement>;
+  parentRef: React.RefObject<HTMLElement | null>;
   selected?: number;
   onClick: (data: TappedLocationData) => void;
 };
@@ -41,7 +41,7 @@ function LocationsTable({
     detail: { number: number };
   };
 
-  const listener = (num: number, rowRef: React.RefObject<HTMLTableRowElement>) => (event: Event) => {
+  const listener = (num: number, rowRef: React.RefObject<HTMLTableRowElement | null>) => (event: Event) => {
     const customEvent = event as unknown as CustomEvent;
     const tappedNum = customEvent.detail.number;
     if (tappedNum === num && isCompactView && rowRef.current) {

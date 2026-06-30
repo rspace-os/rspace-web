@@ -1,8 +1,8 @@
 import Grid from "@mui/material/Grid";
+import { delay } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { incrementForever, take } from "../../../util/iterators";
-import { sleep } from "../../../util/Util";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import BatchGridContainer from "./BatchGridContainer";
 
@@ -26,7 +26,7 @@ function LoadingList({ onVisible, count, placeholder, pageNumber, loading }: Loa
   React.useEffect(() => {
     void (async () => {
       if (ref.current) intObs.unobserve(ref.current);
-      await sleep(100); // give React a chance to re-render
+      await delay(100); // give React a chance to re-render
       if (ref.current && !loading) intObs.observe(ref.current);
     })();
   }, [pageNumber, loading]);

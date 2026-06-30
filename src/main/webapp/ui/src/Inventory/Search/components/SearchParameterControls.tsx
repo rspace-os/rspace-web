@@ -1,5 +1,6 @@
 import Grid from "@mui/material/Grid";
 import Popover from "@mui/material/Popover";
+import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
@@ -12,7 +13,7 @@ import type BasketModel from "../../../stores/models/Basket";
 import type { SavedSearch } from "../../../stores/stores/SearchStore";
 import useStores from "../../../stores/use-stores";
 import RsSet from "../../../util/set";
-import { dropProperty, isInventoryPermalink } from "../../../util/Util";
+import { isInventoryPermalink } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/BarcodeScanner";
 import PeopleField from "../../components/Inputs/PeopleField";
 import SavedList from "./SavedList";
@@ -117,7 +118,7 @@ function SearchParameterControls(): React.ReactNode {
           <PeopleField
             onSelection={(user, doSearch) => {
               setBenchDropdown(null);
-              if (["SAMPLE", "TEMPLATE"].includes(search.fetcher.resultType as string)) {
+              if (["SAMPLE", "SAMPLE_TEMPLATE"].includes(search.fetcher.resultType as string)) {
                 search.setTypeFilter("ALL");
               }
               search.setBench(user, doSearch as boolean | undefined);
@@ -226,7 +227,7 @@ function SearchParameterControls(): React.ReactNode {
                * to do this by navigating, with the navigation context
                * faciliating scoped navigation e.g. with the picker.
                */
-              const params = search.fetcher.generateNewQuery(dropProperty(savedSearch, "name"));
+              const params = search.fetcher.generateNewQuery(omit(savedSearch, ["name"]));
               navigate(`/inventory/search?${params.toString()}`);
             }
           }}

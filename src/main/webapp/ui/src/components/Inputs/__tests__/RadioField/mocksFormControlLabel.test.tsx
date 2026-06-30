@@ -28,13 +28,13 @@ const expectAllOptionsAreShown = () => {
     expect.objectContaining({
       value: "foo",
     }),
-    expect.anything(),
+    undefined,
   );
   expect(FormControlLabel).toHaveBeenCalledWith(
     expect.objectContaining({
       value: "bar",
     }),
-    expect.anything(),
+    undefined,
   );
 };
 const expectNoOptions = () => {
@@ -46,7 +46,7 @@ const expectJustFoo = () => {
     expect.objectContaining({
       value: "foo",
     }),
-    expect.anything(),
+    undefined,
   );
 };
 describe("RadioField", () => {

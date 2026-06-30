@@ -9,22 +9,19 @@ import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
-import com.researchspace.model.field.FieldType;
 import com.researchspace.model.inventory.Sample;
-import com.researchspace.model.inventory.field.InventoryChoiceField;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
-import com.researchspace.model.inventory.field.InventoryRadioField;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.Validate;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
 
-@Repository
+@Repository("sampleDao")
 public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     implements SampleDao {
 
@@ -78,16 +75,21 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     int maxResult = pgCrit.getResultsPerPage();
 
     boolean limitByParentTemplate = parentTemplateId != null;
+    // property name is STemplate: JavaBeans decapitalize keeps the leading double-uppercase of
+    // getSTemplate()
     String parentTemplateQueryFragment =
-        limitByParentTemplate ? "and STemplate_id=:parentTemplateId " : "";
+        limitByParentTemplate ? "and STemplate.id=:parentTemplateId " : "";
 
     // get total count
+    // raw DTYPE discriminator anchor (matching the instrument DAOs): keeps the WHERE clause
+    // non-empty when deletedOption=INCLUDE makes the deleted fragment blank; redundant with the
+    // discriminator Hibernate adds for the concrete entity
     Query<Long> countQueryBase =
         sessionFactory
             .getCurrentSession()
             .createQuery(
                 "select count(s) from Sample s where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=false ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Sample' ")
                     + parentTemplateQueryFragment
                     + ownedByAndPermittedItemsQueryFragment,
                 Long.class);
@@ -108,7 +110,7 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
             .getCurrentSession()
             .createQuery(
                 FROM_SAMPLE_WHERE
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=false ")
+                    + connectSqlConditionsWithAnd(deletedFragment, " DTYPE='Sample' ")
                     + parentTemplateQueryFragment
                     + ownedByAndPermittedItemsQueryFragment
                     + orderByFragment,
@@ -147,12 +149,15 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
   @Override
   public List<Sample> getSamplesLinkingOlderTemplateVersionForUser(
       Long templateId, Long version, User user) {
+    // property names are STemplate/STemplateLinkedVersion: JavaBeans keeps the leading
+    // double-uppercase of the getter
     return sessionFactory
         .getCurrentSession()
         .createQuery(
             FROM_SAMPLE_WHERE
-                + " owner=:owner and template=false and deleted=false "
-                + " and STemplate_id=:parentTemplateId "
+                // "from Sample" already excludes templates; no template=false needed
+                + " owner=:owner and deleted=false "
+                + " and STemplate.id=:parentTemplateId "
                 + " and STemplateLinkedVersion < :parentTemplateMaxVersion",
             Sample.class)
         .setParameter("owner", user)
@@ -173,119 +178,11 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
     return get(sample.getId());
   }
 
-  @SuppressWarnings("unchecked")
   @Override
-  public ISearchResults<Sample> getTemplatesForUser(
-      PaginationCriteria<Sample> pgCrit,
-      String ownedBy,
-      InventorySearchDeletedOption deletedItemsOption,
-      User user) {
-
-    // prepare permission limiting query fragment
-    List<String> userGroupMembers =
-        invPermissionUtils.getUsernameOfUserAndAllMembersOfTheirGroups(user);
-    List<String> userGroupsUniqueNames =
-        user.getGroups().stream().map(Group::getUniqueName).collect(Collectors.toList());
-    List<String> visibleOwners = invPermissionUtils.getOwnersVisibleWithUserRole(user);
-    visibleOwners.add(getDefaultTemplatesOwner()); // can also see templates of a default user
-    String ownedByAndPermittedItemsQueryFragment =
-        getOwnedByAndPermittedItemsSqlQueryFragment(
-            ownedBy, user, userGroupMembers, userGroupsUniqueNames, visibleOwners);
-
-    // get the page of results
-    if (pgCrit == null) {
-      pgCrit = PaginationCriteria.createDefaultForClass(Sample.class);
-    }
-    String orderByFragment = getOrderBySqlFragmentForInventoryRecord(pgCrit);
-    String deletedFragment = getDeletedSqlFragmentForInventoryRecord(deletedItemsOption);
-    int startPosition = pgCrit.getFirstResultIndex();
-    int maxResult = pgCrit.getResultsPerPage();
-
-    // find the total count
-    Query<Long> countQueryBase =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery(
-                "select count(s) from Sample s where "
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=true ")
-                    + ownedByAndPermittedItemsQueryFragment);
-    Query<Long> countQueryWithParams =
-        addQueryParams(
-            ownedBy, user, countQueryBase, visibleOwners, userGroupMembers, userGroupsUniqueNames);
-    long allTemplatesCount = countQueryWithParams.getSingleResult();
-    if (allTemplatesCount == 0) {
-      return new SearchResultsImpl<>(new ArrayList<>(), pgCrit, 0);
-    }
-
-    Query<Sample> sampleQueryBase =
-        sessionFactory
-            .getCurrentSession()
-            .createQuery(
-                FROM_SAMPLE_WHERE
-                    + connectSqlConditionsWithAnd(deletedFragment, " template=true ")
-                    + ownedByAndPermittedItemsQueryFragment
-                    + orderByFragment)
-            .setFirstResult(startPosition)
-            .setMaxResults(maxResult);
-    Query<Sample> sampleQueryWithParams =
-        addQueryParams(
-            ownedBy, user, sampleQueryBase, visibleOwners, userGroupMembers, userGroupsUniqueNames);
-    List<Sample> pagedTemplates = sampleQueryWithParams.list();
-    return new SearchResultsImpl<>(pagedTemplates, pgCrit, allTemplatesCount);
-  }
-
-  private String defaultTemplateOwner;
-
-  @Override
-  public String getDefaultTemplatesOwner() {
-    if (defaultTemplateOwner == null) {
-      defaultTemplateOwner =
-          (String)
-              sessionFactory
-                  .getCurrentSession()
-                  .createQuery(
-                      "select owner.username from Sample s where template=true order by id asc")
-                  .setMaxResults(1)
-                  .getSingleResult();
-    }
-    return defaultTemplateOwner;
-  }
-
-  private long countTemplates() {
-    return (long)
-        sessionFactory
-            .getCurrentSession()
-            .createQuery("select count(s) from Sample s where deleted=false and template=true")
-            .getSingleResult();
-  }
-
-  @Override
-  public Sample persistSampleTemplate(Sample template) {
-    assertIsSampleTemplate(template);
-    Session currentSession = sessionFactory.getCurrentSession();
-    template.getActiveFields().stream()
-        .filter(f -> FieldType.CHOICE.equals(f.getType()))
-        .map(InventoryChoiceField.class::cast)
-        .forEach(cf -> currentSession.save(cf.getChoiceDef()));
-    template.getActiveFields().stream()
-        .filter(f -> FieldType.RADIO.equals(f.getType()))
-        .map(InventoryRadioField.class::cast)
-        .forEach(cf -> currentSession.save(cf.getRadioDef()));
-    return persistNewSample(template);
-  }
-
-  private void assertIsSampleTemplate(Sample sampleToCheck) {
-    Validate.isTrue(sampleToCheck.isTemplate(), "Was expecting a template, but found a sample");
-  }
-
-  @Override
-  public Long getTemplateCount() {
-    return countTemplates();
-  }
-
-  @Override
-  public int saveIconId(Sample sample, Long iconId) {
-    Query<?> q = getSession().createQuery("update Sample set iconId=:iconId where id = :id");
+  public int saveIconId(SampleEntity sample, Long iconId) {
+    // DML targets SampleEntity (the mapped superclass) so it applies to both samples and
+    // templates. Using "update Sample ..." would silently skip template rows.
+    Query<?> q = getSession().createQuery("update SampleEntity set iconId=:iconId where id = :id");
     q.setParameter("iconId", iconId);
     q.setParameter("id", sample.getId());
     return q.executeUpdate();
@@ -301,6 +198,8 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
 
   @Override
   public List<Sample> getAllUsingImage(FileProperty fileProperty) {
+    // Intentionally restricted to Sample rows (template=false). The template DAO's
+    // getAllTemplatesUsingImage handles the template side; callers that need both invoke both DAOs.
     return sessionFactory
         .getCurrentSession()
         .createQuery(
@@ -312,25 +211,21 @@ public class SampleDaoHibernateImpl extends InventoryDaoHibernate<Sample, Long>
   }
 
   @Override
-  public List<Sample> getAllTemplatesUsingImage(FileProperty fileProperty) {
-    return sessionFactory
-        .getCurrentSession()
-        .createQuery(
-            "from Sample where template = true and (imageFileProperty=:fileProperty OR "
-                + "thumbnailFileProperty=:fileProperty)",
-            Sample.class)
-        .setParameter("fileProperty", fileProperty)
-        .list();
-  }
-
-  /*
-   * ============
-   *  for tests
-   * ============
-   */
-
-  @Override
-  public void resetDefaultTemplateOwner() {
-    defaultTemplateOwner = null;
+  public boolean entityNameExistsForUser(String name, User owner) {
+    // Query SampleEntity to count across BOTH discriminator values (samples and templates),
+    // preserving the legacy behaviour that treated them as a single name-uniqueness namespace.
+    // The explicit editInfo.name path is required: unqualified embedded sub-properties (like
+    // "name") resolve only on concrete-leaf persisters, not on the abstract hierarchy root.
+    long count =
+        sessionFactory
+            .getCurrentSession()
+            .createQuery(
+                "select count(se) from SampleEntity se where se.editInfo.name=:name and"
+                    + " se.owner=:owner",
+                Long.class)
+            .setParameter("name", name)
+            .setParameter("owner", owner)
+            .getSingleResult();
+    return count > 0;
   }
 }

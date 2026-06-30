@@ -80,10 +80,11 @@ beforeEach(() => {
   // Default: two iRODS filestores on two different filesystems, plus an S3 one
   // that must be filtered out.
   mockAxios.onGet("/api/v1/gallery/filestores").reply(200, [IRODS_FILESTORE_FS1, IRODS_FILESTORE_FS2, S3_FILESTORE]);
-  mockAxios.onPost("/api/v1/gallery/filestores/1/move").reply(200, OPERATION_SUCCESS_RESPONSE);
-  mockAxios.onPost("/api/v1/gallery/filestores/1/copy").reply(200, OPERATION_SUCCESS_RESPONSE);
-  mockAxios.onPost("/api/v1/gallery/filestores/2/move").reply(200, OPERATION_SUCCESS_RESPONSE);
-  mockAxios.onPost("/api/v1/gallery/filestores/4/move").reply(200, OPERATION_SUCCESS_RESPONSE);
+  // Gallery -> filestore ingest (move and copy alike) goes through
+  // /uploadFromGallery; removeOriginalFromRspace in the body selects move vs copy.
+  mockAxios.onPost("/api/v1/gallery/filestores/1/uploadFromGallery").reply(200, OPERATION_SUCCESS_RESPONSE);
+  mockAxios.onPost("/api/v1/gallery/filestores/2/uploadFromGallery").reply(200, OPERATION_SUCCESS_RESPONSE);
+  mockAxios.onPost("/api/v1/gallery/filestores/4/uploadFromGallery").reply(200, OPERATION_SUCCESS_RESPONSE);
 
   // Catch-all for the AppBar/analytics bootstrap requests.
   mockAxios.onAny().reply(200, {});
@@ -207,7 +208,7 @@ describe("MoveToIrods", () => {
   });
 
   describe("API calls", () => {
-    test("Selecting a destination, entering credentials and clicking Move calls the move endpoint", async () => {
+    test("Selecting a destination, entering credentials and clicking Move uploads with removeOriginalFromRspace=true", async () => {
       const user = userEvent.setup();
       render(<MoveToIrodsDialogWithOneFile />);
       expect(await screen.findByRole("heading", { name: /move to irods/i })).toBeVisible();
@@ -218,17 +219,19 @@ describe("MoveToIrods", () => {
       await user.click(screen.getByRole("button", { name: /^move$/i }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
-      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/move");
+      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(moveRequest).toBeDefined();
       const body = JSON.parse(moveRequest?.data as string) as {
         recordIds: unknown;
         credentials: { username: string; password: string };
+        removeOriginalFromRspace: boolean;
       };
       expect(body.recordIds).toEqual(expect.arrayContaining([123]));
       expect(body.credentials).toEqual({ username: "alice", password: "secret" });
+      expect(body.removeOriginalFromRspace).toBe(true);
     });
 
-    test("Sends the move request to the endpoint keyed by the chosen filestore's id (second filesystem)", async () => {
+    test("Sends the upload request to the endpoint keyed by the chosen filestore's id (second filesystem)", async () => {
       const user = userEvent.setup();
       render(<MoveToIrodsDialogWithOneFile />);
       expect(await screen.findByRole("heading", { name: /move to irods/i })).toBeVisible();
@@ -239,10 +242,10 @@ describe("MoveToIrods", () => {
       await user.click(screen.getByRole("button", { name: /^move$/i }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
-      expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/move")).toBe(true);
+      expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/uploadFromGallery")).toBe(true);
     });
 
-    test("Checking 'Retain a copy' and submitting calls the copy endpoint and reports a copy", async () => {
+    test("Checking 'Retain a copy' and submitting uploads with removeOriginalFromRspace=false and reports a copy", async () => {
       const user = userEvent.setup();
       render(<MoveToIrodsDialogWithOneFile />);
       expect(await screen.findByRole("heading", { name: /move to irods/i })).toBeVisible();
@@ -251,14 +254,17 @@ describe("MoveToIrods", () => {
       await user.type(await screen.findByRole("textbox", { name: /username/i }), "alice");
       await user.type(screen.getByLabelText(/password/i, { selector: "input" }), "secret");
       await user.click(screen.getByRole("checkbox", { name: /retain a copy in rspace/i }));
-      // The submit button stays labelled "Move"; ticking "Retain a copy" routes it to copy.
+      // The submit button stays labelled "Move"; ticking "Retain a copy" routes it to a copy.
       await user.click(screen.getByRole("button", { name: /^move$/i }));
 
       expect(await screen.findByText(/successfully copied/i)).toBeVisible();
-      expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/copy")).toBe(true);
+      const copyRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
+      expect(copyRequest).toBeDefined();
+      const body = JSON.parse(copyRequest?.data as string) as { removeOriginalFromRspace: boolean };
+      expect(body.removeOriginalFromRspace).toBe(false);
     });
 
-    test("Sends all selected record IDs to the move endpoint", async () => {
+    test("Sends all selected record IDs to the upload endpoint", async () => {
       const user = userEvent.setup();
       render(<MoveToIrodsDialogWithTwoFiles />);
       expect(await screen.findByRole("heading", { name: /move to irods/i })).toBeVisible();
@@ -269,7 +275,7 @@ describe("MoveToIrods", () => {
       await user.click(screen.getByRole("button", { name: /^move$/i }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
-      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/move");
+      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       const body = JSON.parse(moveRequest?.data as string) as { recordIds: unknown };
       expect(body.recordIds).toEqual(expect.arrayContaining([123, 456]));
     });

@@ -1,3 +1,4 @@
+import { omitBy, pick, pickBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../../common/InvApiService";
@@ -6,8 +7,7 @@ import { parseInteger } from "../../../util/parsers";
 import Result from "../../../util/result";
 import RsSet from "../../../util/set";
 import { type Order, parseOrder } from "../../../util/types";
-import { filterObject, match, omitNull } from "../../../util/Util";
-import { pick } from "../../../util/unsafeUtils";
+import { match } from "../../../util/Util";
 import { mkAlert } from "../../contexts/Alert";
 import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
 import type { Factory } from "../../definitions/Factory";
@@ -105,14 +105,19 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
  * with either specified values or else their defaults.
  */
 export const generateUrlFromCoreFetcherArgs = (fetcherArgs: CoreFetcherArgs): string => {
-  const params = pick(...Object.keys(DEFAULT_SEARCH))({
-    ...DEFAULT_SEARCH,
-    ...fetcherArgs,
-  }) as Partial<typeof DEFAULT_SEARCH>;
+  const params = pick(
+    {
+      ...DEFAULT_SEARCH,
+      ...fetcherArgs,
+    },
+    Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
+  ) as Partial<typeof DEFAULT_SEARCH>;
   delete params.permalink;
   delete params.benchOwner;
   delete params.owner;
-  const searchParams = new URLSearchParams(omitDefault(omitNull(params)) as Record<string, string>);
+  const searchParams = new URLSearchParams(
+    omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
+  );
   return `/inventory/search?${searchParams.toString()}`;
 };
 
@@ -254,6 +259,8 @@ export default class CoreFetcher {
         [(t) => t === "container", "containers"],
         [(t) => t === "subsample", "subSamples"],
         [(t) => t === "sampletemplate", "sampleTemplates"],
+        [(t) => t === "instrument", "instruments"],
+        [(t) => t === "instrumenttemplate", "instrumentTemplates"],
       ])(type);
       return;
     }
@@ -268,8 +275,14 @@ export default class CoreFetcher {
       if (!this.query && this.resultType === "CONTAINER") {
         this.endpoint = "containers";
       }
-      if (!this.query && this.resultType === "TEMPLATE") {
+      if (!this.query && this.resultType === "SAMPLE_TEMPLATE") {
         this.endpoint = "sampleTemplates";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT") {
+        this.endpoint = "instruments";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT_TEMPLATE") {
+        this.endpoint = "instrumentTemplates";
       }
     }
   }
@@ -352,7 +365,13 @@ export default class CoreFetcher {
           subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
-        }>(endpoint, new URLSearchParams(omitNull(params) as Record<string, string>));
+          instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+        }>(
+          endpoint,
+          new URLSearchParams(
+            omitBy(params, (v) => v === null || v === "" || typeof v === "undefined") as Record<string, string>,
+          ),
+        );
         const records = match<void, Array<Record<string, unknown> & { globalId: GlobalId }>>([
           [() => endpoint === "search", data.records as Array<Record<string, unknown> & { globalId: GlobalId }>],
           [() => endpoint === "samples", data.samples as Array<Record<string, unknown> & { globalId: GlobalId }>],
@@ -360,6 +379,14 @@ export default class CoreFetcher {
           [() => endpoint === "containers", data.containers as Array<Record<string, unknown> & { globalId: GlobalId }>],
           [
             () => endpoint === "sampleTemplates",
+            data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instruments",
+            data.instruments as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instrumentTemplates",
             data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
         ])();
@@ -385,6 +412,10 @@ export default class CoreFetcher {
         if (
           (data.totalHits === 0 || records.length === 0) &&
           typeof params.query === "string" &&
+          // a previous version relied on omitNull mutating `params` to drop an
+          // empty query here; guard explicitly so an empty query never triggers
+          // the wildcard re-search
+          params.query !== "" &&
           !/\*$/.test(params.query)
         ) {
           await this.search(
@@ -444,11 +475,11 @@ export default class CoreFetcher {
 
     const params = {
       ...DEFAULT_SEARCH,
-      ...filterObject((k) => keys.has(k), { ...this }),
+      ...pickBy({ ...this }, (_, k) => keys.has(k as string)),
       ...editedParams,
     };
 
-    return omitDefault(omitNull(params));
+    return omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined"));
   }
 
   /*
@@ -484,8 +515,9 @@ export default class CoreFetcher {
    * `this`, or else the defaults.
    */
   generateQuery(editedParams: CoreFetcherArgs): URLSearchParams {
-    const params = pick(...(Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>))(
+    const params = pick(
       this.generateParams(editedParams),
+      Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
     ) as Partial<CoreFetcherArgs>;
 
     // These aren't URL serialisable
@@ -495,7 +527,9 @@ export default class CoreFetcher {
 
     params.pageNumber = 0;
 
-    return new URLSearchParams(omitDefault(omitNull(params)) as Record<string, string>);
+    return new URLSearchParams(
+      omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
+    );
   }
 
   /*
@@ -505,14 +539,17 @@ export default class CoreFetcher {
    * currently set on `this`.
    */
   generateNewQuery(editedParams: CoreFetcherArgs): URLSearchParams {
-    const params = pick(...Object.keys(DEFAULT_SEARCH))(
+    const params = pick(
       this.generateParams({
         ...DEFAULT_SEARCH,
         ...editedParams,
       }),
+      Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
     ) as Partial<CoreFetcherArgs>;
     // Don't need to delete those that aren't serialisable as they are null.
-    return new URLSearchParams(omitDefault(omitNull(params)) as Record<string, string>);
+    return new URLSearchParams(
+      omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
+    );
   }
 
   /*
@@ -523,10 +560,13 @@ export default class CoreFetcher {
   get serialize(): Partial<CoreFetcherArgs> {
     const keysOfComplexData = new RsSet(["owner", "benchOwner", "permalink"]);
     const keysOfSimpleData: RsSet<string> = new RsSet(Object.keys(DEFAULT_SEARCH)).subtract(keysOfComplexData);
-    return filterObject((k) => keysOfSimpleData.has(k), {
-      ...DEFAULT_SEARCH,
-      ...this,
-    }) as Partial<CoreFetcherArgs>;
+    return pickBy(
+      {
+        ...DEFAULT_SEARCH,
+        ...this,
+      },
+      (_, k) => keysOfSimpleData.has(k as string),
+    ) as Partial<CoreFetcherArgs>;
   }
 
   setResults(results: Array<InventoryRecord> = []): void {
@@ -561,6 +601,7 @@ export default class CoreFetcher {
       [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
       [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
       [(id) => globalIdPatterns.sampleTemplate.test(id ?? ""), "TEMPLATE"],
+      [(id) => globalIdPatterns.instrumentTemplate.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
       [(id) => globalIdPatterns.bench.test(id ?? ""), "BENCH"],
       [(id) => globalIdPatterns.basket.test(id ?? ""), "BASKET"],
       [(id) => !id, null],

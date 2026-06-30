@@ -1,21 +1,26 @@
+import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import type { Instrument } from "@/stores/definitions/Instrument";
+import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
+import { encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { handleDetailedErrors, handleDetailedSuccesses, showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage, InvalidState, UserCancelledAction } from "../../util/error";
+import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import { noProgress } from "../../util/progress";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
-import { mapObject, match, omitNull, sameKeysAndValues } from "../../util/Util";
+import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
 import type { Basket } from "../definitions/Basket";
 import type { Editable } from "../definitions/Editable";
 import type { Factory } from "../definitions/Factory";
 import type { Quantity } from "../definitions/HasQuantity";
-import type { ApiRecordType, InventoryRecord } from "../definitions/InventoryRecord";
+import type { InventoryRecord } from "../definitions/InventoryRecord";
 import type { Person, Username } from "../definitions/Person";
 import type { Sample } from "../definitions/Sample";
 import type {
@@ -81,7 +86,15 @@ type SearchArgs = {
 
 const DEFAULT_UI_CONFIG: UiConfig = {
   allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
-  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "TEMPLATE"]),
+  allowedTypeFilters: new Set([
+    "ALL",
+    "CONTAINER",
+    "SAMPLE",
+    "SUBSAMPLE",
+    "INSTRUMENT",
+    "SAMPLE_TEMPLATE",
+    "INSTRUMENT_TEMPLATE",
+  ]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],
@@ -414,16 +427,21 @@ export default class Search implements SearchInterface {
        * subsamples are currently inside containers then the user is presented
        * with an error detailing these subsamples and where to find them.
        */
-      const samplesThatCouldNotBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        ({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted,
-      );
-      const samplesThatCouldBeDeleted = ArrayUtils.filterNull(data.results.map(({ record }) => record)).filter(
-        (r) => r.type === "SAMPLE" && r.canBeDeleted,
-      );
+      const samplesThatCouldNotBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter(({ type, canBeDeleted }) => type === "SAMPLE" && !canBeDeleted);
+      const samplesThatCouldBeDeleted = data.results
+        .map(({ record }) => record)
+        .filter(isNotNil)
+        .filter((r) => r.type === "SAMPLE" && r.canBeDeleted);
 
       const factory = this.factory.newFactory();
       const successfullyDeleted = [
-        ...ArrayUtils.filterNull(data.results.filter(({ error }) => !error).map(({ record }) => record))
+        ...data.results
+          .filter(({ error }) => !error)
+          .map(({ record }) => record)
+          .filter(isNotNil)
           .filter((record) => record.type !== "SAMPLE")
           /*
            * The list is reversed because the server processes each record in
@@ -454,17 +472,20 @@ export default class Search implements SearchInterface {
             variant: "error",
             title: "Some of the samples could not be trashed because the subsamples are in containers.",
             message: "Please move them to the trash first.",
-            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => ({
-              title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${ArrayUtils.head(ss.parentContainers)
-                .map(({ name, globalId }) => `(in ${name} ${globalId ?? ""})`)
-                .orElse("")}`,
-              variant: "error",
-              record: factory.newRecord({
-                ...ss,
-                sample: s,
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-              } as any as Record<string, unknown> & { globalId: GlobalId }),
-            })),
+            details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => {
+              const parentContainer = ss.parentContainers.at(0);
+              return {
+                title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
+                  parentContainer ? `(in ${parentContainer.name} ${parentContainer.globalId ?? ""})` : ""
+                }`,
+                variant: "error",
+                record: factory.newRecord({
+                  ...ss,
+                  sample: s,
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                } as any as Record<string, unknown> & { globalId: GlobalId }),
+              };
+            }),
             actionLabel: "Move all to trash",
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
@@ -481,7 +502,15 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords),
       );
-      if (successfullyDeleted.length > 0) handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0) {
+        handleDetailedSuccesses(successfullyDeleted, "trashed");
+        for (const record of successfullyDeleted) {
+          if (record.recordType === "instrument" || record.recordType === "instrumentTemplate") {
+            const type = record.recordType === "instrument" ? "instrument" : "instrument_template";
+            getRootStore().trackingStore.trackEvent(`user:delete:${type}:inventory`);
+          }
+        }
+      }
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));
@@ -540,9 +569,8 @@ export default class Search implements SearchInterface {
 
   offerToDeleteNowEmptySamples(deletedRecords: Array<InventoryRecord>) {
     const { uiStore, searchStore } = getRootStore();
-    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = ArrayUtils.filterClass(
-      SubSampleModel,
-      deletedRecords,
+    const justSubsamplesThatAreBeingDeleted: Array<SubSampleModel> = deletedRecords.filter(
+      (record): record is SubSampleModel => record instanceof SubSampleModel,
     );
     const samplesOfDeletedSubSamples: Array<SampleModel> = justSubsamplesThatAreBeingDeleted.map((r) => r.sample);
     /*
@@ -950,6 +978,86 @@ export default class Search implements SearchInterface {
     }
   }
 
+  async createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
+    includeContentForFields: Set<Id>,
+  ): Promise<void> {
+    const { uiStore, trackingStore } = getRootStore();
+    try {
+      if (!instrument.infoLoaded) await instrument.fetchAdditionalInfo();
+      const newBase64Image = instrument.image
+        ? await fetch(instrument.image)
+            .then((x) => x.blob())
+            .then(blobToBase64)
+        : null;
+      const args = {
+        name,
+        description: instrument.description,
+        tags: instrument.tags.map((tag) => ({
+          value: encodeTagString(tag.value),
+          uri: tag.uri.map(encodeTagString).orElse(null),
+          ontologyName: tag.vocabulary.map(encodeTagString).orElse(null),
+          ontologyVersion: tag.version.map(encodeTagString).orElse(null),
+        })),
+        newBase64Image,
+        fields: instrument.fields.map((f) => {
+          const params = { ...(f.paramsForBackend as Record<string, unknown>) };
+          if (!includeContentForFields.has(params.id as Id)) {
+            params.content = "";
+            params.selectedOptions = null;
+          }
+          return params;
+        }),
+        extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
+          name: fieldName,
+          type: type.toLowerCase(),
+          content: includeContentForFields.has(id) ? content : "",
+          definition: null,
+        })),
+      };
+      const { data } = await ApiService.post<InstrumentTemplateAttrs>("instrumentTemplates", args);
+      const factory = this.factory.newFactory();
+      const template = factory.newRecord(data);
+      uiStore.addAlert(
+        mkAlert({
+          message: `Instrument template created successfully.`,
+          variant: "success",
+          details: [
+            {
+              title: template.name,
+              variant: "success",
+              record: template,
+            },
+          ],
+        }),
+      );
+      trackingStore.trackEvent("user:create:instrument_template:inventory");
+      void this.fetcher.performInitialSearch(null);
+    } catch (error) {
+      uiStore.addAlert(
+        mkAlert({
+          title: `Instrument template creation failed.`,
+          message: getErrorMessage(error, "Unknown reason."),
+          variant: "error",
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
+                titles.map((title) => ({
+                  title,
+                  variant: "error" as const,
+                })),
+              ),
+            )
+            .orElse(undefined),
+        }),
+      );
+      console.error("Could not create instrument template from instrument.", error);
+      throw error;
+    }
+  }
+
   async createNewSubsamples(opts: {
     sample: Sample;
     numberOfNewSubsamples: number;
@@ -1054,9 +1162,9 @@ export default class Search implements SearchInterface {
       trackingStore.trackEvent("user:export:selection:Inventory", {
         ...exportOptions,
         count: {
-          ...mapObject(
-            (_type: ApiRecordType, list) => list.length,
-            ArrayUtils.groupBy(({ type }) => type, records),
+          ...mapValues(
+            groupBy(records, ({ type }) => type),
+            (list) => list.length,
           ),
           total: records.length,
         },
@@ -1256,7 +1364,7 @@ export default class Search implements SearchInterface {
     const searchParameterBefore = this.fetcher.serialize;
     const resolved = await promise;
     const searchParameterAfter = this.fetcher.serialize;
-    if (!sameKeysAndValues(searchParameterBefore, searchParameterAfter))
+    if (!isEqual(searchParameterBefore, searchParameterAfter))
       throw new InvalidState("Search parameters have changed, cancelling search.");
     return resolved;
   }
@@ -1308,7 +1416,7 @@ export default class Search implements SearchInterface {
       }
     }
 
-    return this.fetcher.performInitialSearch(omitNull(params));
+    return this.fetcher.performInitialSearch(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined"));
   }
 
   get allowedStatusFilters(): RsSet<DeletedItems> {
@@ -1320,18 +1428,23 @@ export default class Search implements SearchInterface {
     if (!this.uiConfig.allowedTypeFilters) return new Set([]);
     const allowedTypeFilters = new Set([...this.uiConfig.allowedTypeFilters]);
     if (this.benchSearch || this.fetcher.parentIsContainer) {
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
       allowedTypeFilters.delete("SAMPLE");
     }
     if (this.fetcher.parentIsSample) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (this.fetcher.parentIsTemplate) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SUBSAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (!this.fetcher.allTypesAllowed) {
       allowedTypeFilters.delete("ALL");

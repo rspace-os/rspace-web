@@ -1,3 +1,4 @@
+import { delay } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import docLinks from "../../assets/DocLinks";
@@ -7,7 +8,6 @@ import HelpLinkIcon from "../../components/HelpLinkIcon";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
-import { sleep } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import type { Factory } from "../definitions/Factory";
@@ -296,7 +296,7 @@ export default class TemplateModel extends SampleModel implements Template {
        * rendering before we pull the rug from under it's feet and ask it to
        * render again.
        */
-      await sleep(0);
+      await delay(0);
       return latest.setEditing(true, refresh, false);
     }
     return super.setEditing(value, refresh);
@@ -465,7 +465,7 @@ export default class TemplateModel extends SampleModel implements Template {
 
   get showNewlyCreatedRecordSearchParams(): CoreFetcherArgs {
     return {
-      resultType: "TEMPLATE",
+      resultType: "SAMPLE_TEMPLATE",
     };
   }
 

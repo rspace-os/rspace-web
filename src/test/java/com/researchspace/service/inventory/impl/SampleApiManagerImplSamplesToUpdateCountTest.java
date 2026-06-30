@@ -9,6 +9,7 @@ import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.dao.SampleDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,8 +41,8 @@ class SampleApiManagerImplSamplesToUpdateCountTest {
     user = TestFactory.createAnyUser("any");
   }
 
-  private Sample templateWith(Long id, Long version) {
-    Sample template = mock(Sample.class);
+  private SampleTemplate templateWith(Long id, Long version) {
+    SampleTemplate template = mock(SampleTemplate.class);
     lenient().when(template.getId()).thenReturn(id);
     lenient().when(template.getVersion()).thenReturn(version);
     return template;
@@ -49,7 +50,7 @@ class SampleApiManagerImplSamplesToUpdateCountTest {
 
   @Test
   void countReflectsSamplesCreatedFromAnOlderVersion() {
-    Sample template = templateWith(7L, 3L);
+    SampleTemplate template = templateWith(7L, 3L);
     when(sampleDao.getSamplesLinkingOlderTemplateVersionForUser(7L, 3L, user))
         .thenReturn(Arrays.asList(mock(Sample.class), mock(Sample.class)));
 
@@ -61,7 +62,7 @@ class SampleApiManagerImplSamplesToUpdateCountTest {
 
   @Test
   void countIsZeroWhenNoSampleIsBehind() {
-    Sample template = templateWith(7L, 3L);
+    SampleTemplate template = templateWith(7L, 3L);
     when(sampleDao.getSamplesLinkingOlderTemplateVersionForUser(7L, 3L, user))
         .thenReturn(Collections.emptyList());
 

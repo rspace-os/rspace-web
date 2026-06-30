@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
+import "@/__tests__/__mocks__/muiTransitions";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";

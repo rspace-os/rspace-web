@@ -1,4 +1,5 @@
 import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -116,12 +117,26 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemText primary="Subsamples" />
         </MenuItem>
         <MenuItem
-          selected={current === "TEMPLATE"}
-          aria-current={current === "TEMPLATE"}
+          selected={current === "INSTRUMENT"}
+          aria-current={current === "INSTRUMENT"}
           onClick={() => {
-            onClose("TEMPLATE");
+            onClose("INSTRUMENT");
           }}
-          disabled={!search.allowedTypeFilters.has("TEMPLATE")}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+          data-test-id="instrumentType"
+        >
+          <ListItemIcon>
+            <FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} style={{ fontSize: "1em" }} />
+          </ListItemIcon>
+          <ListItemText primary="Instruments" />
+        </MenuItem>
+        <MenuItem
+          selected={current === "SAMPLE_TEMPLATE"}
+          aria-current={current === "SAMPLE_TEMPLATE"}
+          onClick={() => {
+            onClose("SAMPLE_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("SAMPLE_TEMPLATE")}
           data-test-id="templateType"
         >
           <ListItemIcon>
@@ -138,10 +153,41 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText
-            primary="Templates"
+            primary="Sample Templates"
             secondary={match<void, string>([
-              [() => search.benchSearch, "Templates cannot be found on benches."],
-              [() => search.fetcher.parentIsContainer, "Templates cannot be found in containers."],
+              [() => search.benchSearch, "Sample Templates cannot be found on benches."],
+              [() => search.fetcher.parentIsContainer, "Sample Templates cannot be found in containers."],
+              [() => true, ""],
+            ])()}
+          />
+        </MenuItem>
+        <MenuItem
+          selected={current === "INSTRUMENT_TEMPLATE"}
+          aria-current={current === "INSTRUMENT_TEMPLATE"}
+          onClick={() => {
+            onClose("INSTRUMENT_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+          data-test-id="instrumentTemplateType"
+        >
+          <ListItemIcon>
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Instrument Template",
+                iconName: "instrumentTemplate",
+              }}
+              color={theme.palette.standardIcon.main}
+              style={{
+                height: 18,
+                width: 18,
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary="Instrument Templates"
+            secondary={match<void, string>([
+              [() => search.benchSearch, "Instrument Templates cannot be found on benches."],
+              [() => search.fetcher.parentIsContainer, "Instrument Templates cannot be found in containers."],
               [() => true, ""],
             ])()}
           />

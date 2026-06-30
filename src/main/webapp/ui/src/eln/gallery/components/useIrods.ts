@@ -173,9 +173,14 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
             Authorization: `Bearer ${await getToken()}`,
           },
         });
-        const response = await api.post<"">(`/filestores/${id}/${operation}`, {
+        // Gallery -> filestore ingest is the unified /uploadFromGallery endpoint
+        // (see useS3Filestores): removeOriginalFromRspace=true is a "move", false
+        // is a "copy". iRODS requires per-filesystem credentials in the body; S3
+        // ignores them.
+        const response = await api.post<"">(`/filestores/${id}/uploadFromGallery`, {
           recordIds,
           credentials: { username, password },
+          removeOriginalFromRspace: operation === "move",
         });
         addAlert(
           handleErrors(

@@ -24,7 +24,8 @@ const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveAc
       closeMenu();
     };
 
-    const invalidTypeSelected = () => selectedResults.some((r) => r.recordType === "sampleTemplate");
+    const invalidTypeSelected = () =>
+      selectedResults.some((r) => r.recordType === "sampleTemplate" || r.recordType === "instrumentTemplate");
 
     const disabledHelp = match<void, string>([
       [() => disabled !== "", disabled],

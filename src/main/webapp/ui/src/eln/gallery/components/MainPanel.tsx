@@ -42,9 +42,10 @@ import Stack from "@mui/material/Stack";
 import { alpha, lighten, type SxProps, type Theme, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { chunk } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Link as ReactRouterLink } from "react-router-dom";
+import { Link as ReactRouterLink } from "react-router";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -56,9 +57,8 @@ import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensional
 import { mergeSx } from "../../../modules/common/utils/styles";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as FetchingData from "../../../util/fetchingData";
-import { getByKey, type Optional } from "../../../util/optional";
+import { getByKey, Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { match } from "../../../util/Util";
 import {
@@ -227,6 +227,11 @@ const BreadcrumbLink = React.forwardRef<
         clickable
         component={ReactRouterLink}
         to=""
+        // The Box onClick handles navigation; block the Link's own `to=""` nav, which would drop
+        // the ?mediaType search param and reset the section to Images.
+        onClick={(e: React.MouseEvent) => {
+          e.preventDefault();
+        }}
         label={label}
         icon={React.isValidElement(icon) ? icon : undefined}
         sx={(theme) => ({
@@ -318,11 +323,12 @@ const Path = observer(
             void (async () => {
               try {
                 await navigator.clipboard.writeText(
-                  `${window.location.origin}/gallery${ArrayUtils.last(
+                  `${window.location.origin}/gallery${Optional.fromNullable(
                     selection
                       .asSet()
                       .only.map((f) => f.path)
-                      .orElse(path),
+                      .orElse(path)
+                      .at(-1),
                   )
                     .map(({ id }) => `/${idToString(id).elseThrow()}`)
                     .orElse(`?mediaType=${section}`)}`,
@@ -962,7 +968,7 @@ const GridView = observer(
             if (selection.isEmpty) selection.append(listing.list[y * cols + x]);
           }}
         >
-          {ArrayUtils.chunksOf(cols, listing.list).map((files: Array<GalleryFile>, y: number) => (
+          {chunk(listing.list, cols).map((files: Array<GalleryFile>, y: number) => (
             <Box
               role="row"
               key={y}

@@ -7,6 +7,7 @@ import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
@@ -17,6 +18,8 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -68,6 +71,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
 
   @Autowired private SampleDao sampleDao;
 
+  @Autowired private SampleTemplateDao sampleTemplateDao;
+
   @Autowired private InstrumentEntityApiManager instrumentManager;
 
   @Autowired private InstrumentDao instrumentDao;
@@ -95,8 +100,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
   @Data
   private static class ItemsToExport {
     private final Set<Container> containersToExport;
-    private final Set<Sample> samplesToExport;
-    private final Set<Sample> templatesToExport;
+    private final Set<SampleEntity> samplesToExport;
+    private final Set<SampleEntity> templatesToExport;
     private final Set<SubSample> subSamplesToExport;
     private final Set<ListOfMaterials> lomsToExport;
     private final Set<Instrument> instrumentsToExport;
@@ -113,8 +118,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       throws IOException {
 
     Set<Container> containersToExport = new LinkedHashSet<>();
-    Set<Sample> samplesToExport = new LinkedHashSet<>();
-    Set<Sample> templatesToExport = new LinkedHashSet<>();
+    Set<SampleEntity> samplesToExport = new LinkedHashSet<>();
+    Set<SampleEntity> templatesToExport = new LinkedHashSet<>();
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
     Set<ListOfMaterials> lomsToExport = new LinkedHashSet<>();
     Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
@@ -178,8 +183,8 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
   private void findItemByGlobalIdAndPutIntoSetToExport(
       GlobalIdentifier globalId,
       Set<Container> containersToExport,
-      Set<Sample> samplesToExport,
-      Set<Sample> templatesToExport,
+      Set<SampleEntity> samplesToExport,
+      Set<SampleEntity> templatesToExport,
       Set<SubSample> subSamplesToExport,
       Set<Instrument> instrumentsToExport,
       Set<InstrumentTemplate> instrumentTemplatesToExport,
@@ -189,13 +194,14 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
     if (globalId.getPrefix().equals(GlobalIdPrefix.SS)) {
       subSamplesToExport.add(subSampleManager.assertUserCanReadSubSample(globalId.getDbId(), user));
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.SA)) {
-      Sample sample = sampleManager.assertUserCanReadSample(globalId.getDbId(), user);
+      SampleEntity sample = sampleManager.assertUserCanReadSample(globalId.getDbId(), user);
       samplesToExport.add(sample);
       if (includeSampleContent) {
         subSamplesToExport.addAll(sample.getActiveSubSamples());
       }
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.IT)) {
-      Sample template = sampleManager.assertUserCanReadSample(globalId.getDbId(), user);
+      SampleEntity template =
+          sampleManager.assertUserCanReadSampleTemplate(globalId.getDbId(), user);
       templatesToExport.add(template);
     } else if (globalId.getPrefix().equals(GlobalIdPrefix.IC)) {
       Container container = containerManager.assertUserCanReadContainer(globalId.getDbId(), user);
@@ -281,9 +287,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       User user)
       throws IOException {
     Set<Container> containersToExport = new LinkedHashSet<>();
-    Set<Sample> samplesToExport = new LinkedHashSet<>();
+    Set<SampleEntity> samplesToExport = new LinkedHashSet<>();
     Set<SubSample> subSamplesToExport = new LinkedHashSet<>();
-    Set<Sample> templatesToExport = new LinkedHashSet<>();
+    Set<SampleEntity> templatesToExport = new LinkedHashSet<>();
     Set<Instrument> instrumentsToExport = new LinkedHashSet<>();
     Set<InstrumentTemplate> instrumentTemplatesToExport = new LinkedHashSet<>();
 
@@ -297,6 +303,9 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
       PaginationCriteria<Sample> samplePgCrit =
           PaginationCriteria.createDefaultForClass(Sample.class);
       samplePgCrit.setResultsPerPage(Integer.MAX_VALUE);
+      PaginationCriteria<SampleTemplate> templatePgCrit =
+          PaginationCriteria.createDefaultForClass(SampleTemplate.class);
+      templatePgCrit.setResultsPerPage(Integer.MAX_VALUE);
       PaginationCriteria<Instrument> instrumentPgCrit =
           PaginationCriteria.createDefaultForClass(Instrument.class);
       instrumentPgCrit.setResultsPerPage(Integer.MAX_VALUE);
@@ -307,26 +316,26 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
         ISearchResults<Container> dbContainers =
             containerDao.getAllContainersForUser(containerPgCrit, username, null, user);
         containersToExport.addAll(dbContainers.getResults());
-        ISearchResults<Sample> dbSamples =
+        ISearchResults<? extends SampleEntity> dbSamples =
             sampleDao.getSamplesForUser(samplePgCrit, null, username, null, user);
         samplesToExport.addAll(dbSamples.getResults());
-        for (Sample sample : samplesToExport) {
+        for (SampleEntity sample : samplesToExport) {
           subSamplesToExport.addAll(sample.getActiveSubSamples());
         }
         ISearchResults<Instrument> dbInstruments =
-            instrumentDao.getInstrumentsForUser(instrumentPgCrit, username, null, user);
+            instrumentDao.getInstrumentsForUser(instrumentPgCrit, username, null, null, user);
         instrumentsToExport.addAll(dbInstruments.getResults());
 
         if (includeContainerContent) {
           addAllContainerContentToExportSets(
               containersToExport, subSamplesToExport, instrumentsToExport, user);
         }
-        ISearchResults<Sample> dbTemplates =
-            sampleDao.getTemplatesForUser(samplePgCrit, username, null, user);
+        ISearchResults<SampleTemplate> dbTemplates =
+            sampleTemplateDao.getTemplatesForUser(templatePgCrit, username, null, user);
         templatesToExport.addAll(dbTemplates.getResults());
         ISearchResults<InstrumentTemplate> dbInstrumentTemplates =
             instrumentTemplateDao.getTemplatesForUser(
-                instrumentTemplatePgCrit, username, null, user);
+                instrumentTemplatePgCrit, username, null, null, user);
         instrumentTemplatesToExport.addAll(dbInstrumentTemplates.getResults());
       }
     }

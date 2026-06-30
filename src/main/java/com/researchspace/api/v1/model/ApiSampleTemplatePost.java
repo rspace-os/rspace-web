@@ -1,7 +1,7 @@
 package com.researchspace.api.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSampleName;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.units.RSUnitDef;
@@ -34,7 +34,7 @@ public class ApiSampleTemplatePost extends ApiSampleTemplateInfo {
   @JsonProperty(value = "sharedWith")
   private List<ApiGroupInfoWithSharedFlag> sharedWith;
 
-  public ApiSampleTemplatePost(Sample template) {
+  public ApiSampleTemplatePost(SampleTemplate template) {
     super(template);
     for (InventoryEntityField f : template.getActiveFields()) {
       fields.add(new ApiInventoryEntityField(f));

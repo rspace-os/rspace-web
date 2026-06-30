@@ -20,7 +20,6 @@ import { Dialog } from "../../../components/DialogBoundary";
 import EventBoundary from "../../../components/EventBoundary";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
@@ -39,11 +38,22 @@ type AddFilestoreDialogArgs = {
 };
 
 function FilesystemSelectionStep(props: {
-  setSelectedFilesystem: ({ id, name, url }: { id: number; name: string; url: string }) => void;
+  setSelectedFilesystem: ({
+    id,
+    name,
+    url,
+    clientType,
+  }: {
+    id: number;
+    name: string;
+    url: string;
+    clientType: string;
+  }) => void;
   selectedFilesystem: Optional<{
     id: number;
     name: string;
     url: string;
+    clientType: string;
   }>;
 }) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
@@ -51,12 +61,14 @@ function FilesystemSelectionStep(props: {
     id: number;
     name: string;
     url: string;
+    clientType: string;
   } | null>(null);
   const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
     id: number;
     name: string;
     url: string;
     canRead: boolean;
+    clientType: string;
   }>>(null);
   const { getToken } = useOauthToken();
   const api = React.useRef(
@@ -90,13 +102,15 @@ function FilesystemSelectionStep(props: {
                       .flatMap(Parsers.getValueWithKey("canRead"))
                       .flatMap(Parsers.isBoolean)
                       .orElse(true);
-                    return Result.Ok({ id, name, url, canRead });
+                    const clientType = Parsers.getValueWithKey("clientType")(obj).flatMap(Parsers.isString).orElse("");
+                    return Result.Ok({ id, name, url, canRead, clientType });
                   } catch (e) {
                     return Result.Error<{
                       id: number;
                       name: string;
                       url: string;
                       canRead: boolean;
+                      clientType: string;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 }),
@@ -124,7 +138,7 @@ function FilesystemSelectionStep(props: {
           onChange={({ target: { value } }) => {
             const chosenId = parseInt(value, 10);
             Optional.fromNullable(filesystems)
-              .flatMap((fss) => ArrayUtils.find(({ id }) => id === chosenId, fss))
+              .flatMap((fss) => Optional.fromNullable(fss.find(({ id }) => id === chosenId)))
               .do((fs) => {
                 setChosenFilesysem(fs);
               });
@@ -180,11 +194,14 @@ function TreeListing({
   fsName,
   path,
   onFailToAuthenticate,
+  showBucketTopLevel = false,
 }: {
   fsId: number;
   fsName: string;
   path: string;
   onFailToAuthenticate: () => void;
+  /** Root S3 listing only: prepend the "(bucket top level)" option once the folders have loaded. */
+  showBucketTopLevel?: boolean;
 }): React.ReactNode {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -200,8 +217,10 @@ function TreeListing({
   );
 
   const [listing, setListing] = React.useState<FilesystemListing>([]);
+  const [loading, setLoading] = React.useState(true);
   const { login } = useFilestoreLogin();
   React.useEffect(() => {
+    setLoading(true);
     async function browse(): Promise<void> {
       try {
         const { data } = await (await api.current).get<{ content: FilesystemListing }>(
@@ -241,13 +260,21 @@ function TreeListing({
                 }
               }),
         );
+      } finally {
+        setLoading(false);
       }
     }
     void browse();
   }, [fsId, path]);
 
+  // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
+  // every option appears at once rather than top-level looking like the only choice.
+  if (showBucketTopLevel && loading) {
+    return <TreeItem itemId="__loading__" label="Loading..." disabled />;
+  }
   return (
     <>
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" />}
       {listing.map(
         ({ folder, name }) =>
           folder && (
@@ -265,14 +292,21 @@ function TreeListing({
   );
 }
 
+// Sentinel tree-item id for "the bucket top level" (an empty filestore path). Distinct from any
+// real folder id, which always ends in "/".
+const TOP_LEVEL_ITEM_ID = "__top_level__";
+
 function FolderSelectionStep(props: {
-  selectedFilesystem: Optional<{ id: number; name: string; url: string }>;
+  selectedFilesystem: Optional<{ id: number; name: string; url: string; clientType: string }>;
   onConfirm: (folderPath: string) => void;
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
-  const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
+  // null = nothing chosen yet; "" = the bucket top level (S3); otherwise a subfolder path.
+  const [selectedFolderPath, setSelectedFolderPath] = React.useState<string | null>(null);
+  // S3 folders are virtual, so an S3 filestore may be rooted at the bucket top level (empty path).
+  const isS3 = selectedFilesystem.map(({ clientType }) => clientType === "S3").orElse(false);
 
   return (
     <Step key="folderSelection" component="div" {...rest}>
@@ -294,9 +328,8 @@ function FolderSelectionStep(props: {
           }}
           onItemSelectionToggle={(_event, itemId: string | ReadonlyArray<string>, selected) => {
             if (!(typeof itemId === "string")) return;
-            const selectedFolder: string = itemId;
             if (!selected) return;
-            setSelectedFolderPath(decodeURIComponent(selectedFolder));
+            setSelectedFolderPath(itemId === TOP_LEVEL_ITEM_ID ? "" : decodeURIComponent(itemId));
           }}
         >
           {selectedFilesystem
@@ -306,6 +339,7 @@ function FolderSelectionStep(props: {
                 fsId={id}
                 fsName={name}
                 key={null}
+                showBucketTopLevel={isS3}
                 onFailToAuthenticate={() => {
                   onCancel();
                 }}
@@ -315,11 +349,11 @@ function FolderSelectionStep(props: {
         </SimpleTreeView>
         <Box sx={{ mb: 2 }}>
           <Button
-            disabled={!selectedFolderPath}
+            disabled={selectedFolderPath === null}
             variant="contained"
             color="primary"
             onClick={() => {
-              onConfirm(selectedFolderPath);
+              if (selectedFolderPath !== null) onConfirm(selectedFolderPath);
             }}
             sx={{ mt: 1, mr: 1 }}
           >
@@ -401,6 +435,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       id: number;
       name: string;
       url: string;
+      clientType: string;
     }>
   >(Optional.empty());
 

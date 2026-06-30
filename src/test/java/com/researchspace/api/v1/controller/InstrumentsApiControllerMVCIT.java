@@ -19,13 +19,11 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 @WebAppConfiguration
-@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InstrumentsApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   @Before

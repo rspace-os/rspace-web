@@ -12,8 +12,6 @@ import FormField from "../../components/Inputs/FormField";
 import ContentImage from "../Content/ImageView/PlaceMarkers/ContentImage";
 import LocationsImageMarkersDialog from "./LocationsImageMarkersDialog";
 
-const CANVAS_ID = "locationsCanvas";
-
 function LocationsImageField(): React.ReactNode {
   const { searchStore, trackingStore, uiStore } = useStores();
   const activeResult = searchStore.activeResult;
@@ -22,7 +20,7 @@ function LocationsImageField(): React.ReactNode {
   const [toast, setToast] = React.useState<Alert | null>(null);
 
   const storeImage = (newImageData: ImageData) => {
-    void activeResult.setImage("locationsImage", CANVAS_ID)(newImageData);
+    void activeResult.setImage("locationsImage")(newImageData);
     if (activeResult.image) return;
 
     if (toast) {
@@ -33,7 +31,7 @@ function LocationsImageField(): React.ReactNode {
       variant: "notice",
       isInfinite: true,
       actionLabel: "yes",
-      onActionClick: () => void activeResult.setImage("image", CANVAS_ID)(newImageData),
+      onActionClick: () => void activeResult.setImage("image")(newImageData),
     });
     setToast(newToast);
     activeResult.addScopedToast(newToast);
@@ -91,7 +89,6 @@ function LocationsImageField(): React.ReactNode {
               }
               alt={`The marked locations of ${activeResult.name}`}
             />
-            <canvas id={CANVAS_ID} style={{ display: "none" }}></canvas>
           </>
         )}
       />

@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import type { Alias, Plugin } from "vite";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import { configDefaults, defineConfig } from "vitest/config";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -100,18 +99,13 @@ const firefoxCiSkippedFiles =
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
+        "**/components/Tags/__tests__/TagsCombobox.spec.tsx",
+        "**/eln/sysadmin/users/__tests__/TagsCombobox.spec.tsx",
       ]
     : [];
 
 export default defineConfig({
-  plugins: [
-    react(),
-    nodePolyfills({
-      globals: { process: true, Buffer: true, global: true },
-      protocolImports: false,
-    }),
-    tinymceAssetsPlugin(),
-  ],
+  plugins: [react(), tinymceAssetsPlugin()],
   define: {
     global: "globalThis",
     // Real TinyMCE version for cache-busting; assets are served by the
@@ -134,15 +128,10 @@ export default defineConfig({
   // dynamically imported module" flakiness. A separate dir lets the two suites
   // run in parallel safely.
   cacheDir: resolveFromRoot("node_modules/.vite-browser"),
-  // Pre-bundle the node-polyfill shims up front. They are otherwise discovered
-  // lazily (the first time app code touches `process`/`Buffer`/`global`),
-  // which makes Vite re-optimize and reload mid-run — Vitest warns this can
-  // make browser tests flaky.
+  // Pre-bundle deps that are otherwise discovered lazily mid-run, which makes
+  // Vite re-optimize and reload — Vitest warns this can make browser tests flaky.
   optimizeDeps: {
     include: [
-      "vite-plugin-node-polyfills/shims/process",
-      "vite-plugin-node-polyfills/shims/buffer",
-      "vite-plugin-node-polyfills/shims/global",
       // Pulled in by Inventory/Identifiers/IGSN/IgsnTable at runtime; pre-bundling
       // prevents a mid-run optimizer reload that causes duplicate React/emotion instances.
       "@mui/material/utils",

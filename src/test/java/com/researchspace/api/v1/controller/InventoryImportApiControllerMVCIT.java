@@ -29,8 +29,8 @@ import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleSource;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.inventory.ContainerApiManager;
@@ -351,7 +351,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Test
   public void importComplexTemplateCsvWithoutTemplateCreation() throws Exception {
 
-    Sample complexTemplate = findComplexSampleTemplate(anyUser);
+    SampleTemplate complexTemplate = findComplexSampleTemplate(anyUser);
 
     /* let's import with name column being 'Name' */
     String settingsJson =
@@ -685,7 +685,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Test
   public void importSamplesIntoContainersCsvFiles() throws Exception {
 
-    Sample sampleTemplate = findBasicSampleTemplate(anyUser);
+    SampleTemplate sampleTemplate = findBasicSampleTemplate(anyUser);
     String samplesSettingsJson =
         "{ \"fieldMappings\": { \"Name\": \"name\", \"Description\": \"description\", \"Import"
             + " identifier\": \"import identifier\", \"Parent container\":\"parent container import"
@@ -864,7 +864,7 @@ public class InventoryImportApiControllerMVCIT extends API_MVC_InventoryTestBase
   @Test
   public void importMultipleCsvFiles() throws Exception {
 
-    Sample basicTemplate = findBasicSampleTemplate(anyUser);
+    SampleTemplate basicTemplate = findBasicSampleTemplate(anyUser);
     String containersSettingsJson =
         "{ \"fieldMappings\": { \"Name\": \"name\", \"Import identifier\": \"import identifier\","
             + " \"Parent container\": \"parent container import id\" } }";

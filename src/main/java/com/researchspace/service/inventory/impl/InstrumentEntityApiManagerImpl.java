@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
@@ -192,7 +193,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       User user) {
 
     ISearchResults<Instrument> dbInstruments =
-        instrumentDao.getInstrumentsForUser(pgCrit, ownedBy, deletedOption, user);
+        instrumentDao.getInstrumentsForUser(pgCrit, ownedBy, deletedOption, null, user);
     List<ApiInstrumentEntityInfo> instrumentInfos = new ArrayList<>();
     for (Instrument instrument : dbInstruments.getResults()) {
       ApiInstrumentEntityInfo apiInstrument = new ApiInstrumentEntityInfo(instrument);
@@ -404,7 +405,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       User user) {
 
     ISearchResults<InstrumentTemplate> dbTemplates =
-        instrumentTemplateDao.getTemplatesForUser(pgCrit, ownedBy, deletedOption, user);
+        instrumentTemplateDao.getTemplatesForUser(pgCrit, ownedBy, deletedOption, null, user);
     List<ApiInstrumentEntityInfo> templateInfos = new ArrayList<>();
     for (InstrumentTemplate template : dbTemplates.getResults()) {
       ApiInstrumentEntityInfo apiInfo = new ApiInstrumentEntityInfo(template);
@@ -417,6 +418,38 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     result.setPageNumber(dbTemplates.getPageNumber());
     result.setItems(templateInfos);
     return result;
+  }
+
+  @Override
+  public ApiInventorySearchResult searchInstrumentsForUser(
+      PaginationCriteria<Instrument> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      String searchTerm,
+      User user) {
+    ISearchResults<Instrument> dbInstruments =
+        instrumentDao.getInstrumentsForUser(pgCrit, ownedBy, deletedOption, searchTerm, user);
+    return convertToApiInventorySearchResult(
+        dbInstruments.getTotalHits(),
+        (pgCrit != null ? pgCrit.getPageNumber().intValue() : 0),
+        dbInstruments.getResults(),
+        user);
+  }
+
+  @Override
+  public ApiInventorySearchResult searchInstrumentTemplatesForUser(
+      PaginationCriteria<InstrumentTemplate> pgCrit,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      String searchTerm,
+      User user) {
+    ISearchResults<InstrumentTemplate> dbTemplates =
+        instrumentTemplateDao.getTemplatesForUser(pgCrit, ownedBy, deletedOption, searchTerm, user);
+    return convertToApiInventorySearchResult(
+        dbTemplates.getTotalHits(),
+        (pgCrit != null ? pgCrit.getPageNumber().intValue() : 0),
+        dbTemplates.getResults(),
+        user);
   }
 
   @Override
@@ -684,6 +717,28 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   }
 
   @Override
+  public ApiInventorySearchResult getInstrumentsCreatedFromTemplate(
+      Long templateId,
+      String ownedBy,
+      InventorySearchDeletedOption deletedOption,
+      PaginationCriteria<Instrument> pgCrit,
+      User user) {
+
+    InstrumentTemplate template = getInstrumentTemplateOrThrowNotFound(templateId);
+    boolean canRead = invPermissions.canUserReadInventoryRecord(template, user);
+    if (!canRead) {
+      return ApiInventorySearchResult.emptyResult();
+    }
+    ISearchResults<Instrument> dbInstruments =
+        instrumentDao.getInstrumentsForTemplate(pgCrit, templateId, ownedBy, deletedOption, user);
+    return convertToApiInventorySearchResult(
+        dbInstruments.getTotalHits(),
+        (pgCrit != null ? pgCrit.getPageNumber().intValue() : 0),
+        dbInstruments.getResults(),
+        user);
+  }
+
+  @Override
   public List<ApiInventoryRecordInfo> getInstrumentsLinkingOldTemplateVersion(
       Long templateId, User user) {
     InstrumentTemplate template = assertUserCanReadInstrumentTemplate(templateId, user);
@@ -784,6 +839,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     switch (parentEntity.getType()) {
       case SAMPLE:
         return sampleApiManager.assertUserCanReadSample(entityGlobalId.getDbId(), user);
+      case SAMPLE_TEMPLATE:
+        return sampleApiManager.assertUserCanReadSampleTemplate(entityGlobalId.getDbId(), user);
       case INSTRUMENT:
         return this.assertUserCanReadInstrument(entityGlobalId.getDbId(), user);
       case INSTRUMENT_TEMPLATE:
@@ -801,6 +858,8 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     switch (parentEntity.getType()) {
       case SAMPLE:
         return sampleApiManager.assertUserCanEditSample(entityGlobalId.getDbId(), user);
+      case SAMPLE_TEMPLATE:
+        return sampleApiManager.assertUserCanEditSampleTemplate(entityGlobalId.getDbId(), user);
       case INSTRUMENT:
         return this.assertUserCanEditInstrument(entityGlobalId.getDbId(), user);
       case INSTRUMENT_TEMPLATE:

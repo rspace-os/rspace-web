@@ -18,7 +18,8 @@ import com.researchspace.api.v1.model.ApiSampleTemplateSearchResult;
 import com.researchspace.api.v1.service.impl.SpringMultipartFileAdapter;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
@@ -30,7 +31,6 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
-import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -65,7 +65,8 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
     if (apiPgCrit == null) {
       apiPgCrit = new InventoryApiPaginationCriteria();
     }
-    PaginationCriteria<Sample> pgCrit = getPaginationCriteriaForApiSearch(apiPgCrit, Sample.class);
+    PaginationCriteria<SampleTemplate> pgCrit =
+        getPaginationCriteriaForApiSearch(apiPgCrit, SampleTemplate.class);
 
     String ownedBy = null;
     InventorySearchDeletedOption deletedItemsOption = null;
@@ -105,11 +106,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   @Override
   public ApiInventoryRecordRevisionList getSampleTemplateAllRevisions(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    Sample dbTemplate = sampleApiMgr.assertUserCanReadSample(id, user);
-    if (!dbTemplate.isTemplate()) {
-      // a plain sample id is not addressable through the template endpoint
-      throw new NotFoundException(createNotFoundMessage("Sample template", id));
-    }
+    SampleEntity dbTemplate = sampleApiMgr.assertUserCanReadSampleTemplate(id, user);
     ApiInventoryRecordRevisionList revisions =
         inventoryAuditMgr.getInventoryRecordRevisions(dbTemplate);
     for (ApiInventoryRecordRevisionList.ApiInventoryRecordRevision templateRev :
@@ -154,8 +151,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
 
     // update incoming object's id which could be omitted
     incomingTemplate.setIdIfNotSet(id);
-    Sample dbSample = sampleApiMgr.assertUserCanEditSample(id, user);
-    assertIsSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanEditSampleTemplate(id, user);
 
     // update the template
     ApiSampleTemplate updatedTemplate =
@@ -173,18 +169,11 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
     }
   }
 
-  private void assertIsSampleTemplate(Sample sampleToCheck) {
-    Validate.isTrue(
-        sampleToCheck.isTemplate(),
-        "Seems like the sample is not a template, please use /samples endpoint for sample actions");
-  }
-
   @Override
   public ApiSampleTemplate deleteSampleTemplate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
-    Sample dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
-    assertIsSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanDeleteSampleTemplate(id, user);
     return (ApiSampleTemplate) sampleApiMgr.markSampleAsDeleted(id, false, user);
   }
 
@@ -192,8 +181,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   public ApiSampleTemplate restoreDeletedSampleTemplate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
-    Sample dbSample = sampleApiMgr.assertUserCanDeleteSample(id, user);
-    assertIsSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanDeleteSampleTemplate(id, user);
     return (ApiSampleTemplate) sampleApiMgr.restoreDeletedSample(id, user, true);
   }
 
@@ -201,14 +189,15 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   public ResponseEntity<byte[]> getSampleTemplateImage(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
-        user, () -> sampleApiMgr.assertUserCanReadSample(id, user).getImageFileProperty());
+        user, () -> sampleApiMgr.assertUserCanReadSampleTemplate(id, user).getImageFileProperty());
   }
 
   @Override
   public ResponseEntity<byte[]> getSampleTemplateThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
     return doImageResponse(
-        user, () -> sampleApiMgr.assertUserCanReadSample(id, user).getThumbnailFileProperty());
+        user,
+        () -> sampleApiMgr.assertUserCanReadSampleTemplate(id, user).getThumbnailFileProperty());
   }
 
   @Override
@@ -216,7 +205,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long templateId, MultipartFile file, @RequestAttribute(name = "user") User user)
       throws BindException, IOException {
 
-    Sample template = sampleApiMgr.assertUserCanReadSample(templateId, user);
+    SampleEntity template = sampleApiMgr.assertUserCanReadSampleTemplate(templateId, user);
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {
@@ -233,7 +222,9 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
     return result;
   }
 
-  private ApiSampleInfo convertToApiSampleTemplateInfo(User user, Sample newTemplate) {
+  // Intentionally returns the ApiSampleInfo shape (not ApiSampleTemplateInfo): this endpoint's
+  // JSON payload has always been the info shape, and changing the class changes the payload.
+  private ApiSampleInfo convertToApiSampleTemplateInfo(User user, SampleEntity newTemplate) {
     ApiSampleInfo rc = new ApiSampleInfo(newTemplate);
     return rc;
   }
@@ -263,7 +254,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
 
     // update incoming object's id which could be omitted
     incomingTemplate.setIdIfNotSet(id);
-    sampleApiMgr.assertUserCanEditSample(id, user);
+    sampleApiMgr.assertUserCanEditSampleTemplate(id, user);
 
     // updated sample
     ApiSampleTemplate updatedTemplate =
@@ -278,8 +269,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
 
     // find the template
-    Sample template = sampleApiMgr.assertUserCanReadSample(id, user);
-    assertIsSampleTemplate(template);
+    SampleEntity template = sampleApiMgr.assertUserCanReadSampleTemplate(id, user);
 
     // find connected user's samples taken from non-latest template
     List<ApiInventoryRecordInfo> samplesFromNonLatestTemplate =
@@ -308,8 +298,7 @@ public class SampleTemplatesApiController extends BaseApiInventoryController
   public ApiInventoryRecordInfo duplicate(Long id, User user) {
     /* there are default templates for which user only has read permissions,
      * but should still be be able to copy and reuse */
-    Sample dbSample = sampleApiMgr.assertUserCanReadSample(id, user);
-    assertIsSampleTemplate(dbSample);
+    sampleApiMgr.assertUserCanReadSampleTemplate(id, user);
 
     ApiSampleTemplate copy = sampleApiMgr.duplicateTemplate(id, user);
     buildAndAddInventoryRecordLinks(copy);

@@ -1,6 +1,6 @@
+import { isNotNil, pick, pickBy, zipWith } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import ApiService from "../../common/InvApiService";
-import * as ArrayUtils from "../../util/ArrayUtils";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
 import { filenameExceptExtension } from "../../util/files";
@@ -9,8 +9,7 @@ import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
 import StateMachine from "../../util/stateMachine";
-import { filterObject, match, toTitleCase } from "../../util/Util";
-import { pick } from "../../util/unsafeUtils";
+import { match, toTitleCase } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import type { GlobalId } from "../definitions/BaseRecord";
 import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
@@ -251,7 +250,9 @@ export class ColumnFieldMap {
       ]),
       SUBSAMPLES: new Set(["expiry_date", "source", "import_identifier", "custom"]),
     };
-    return filterObject((key: string) => !exclusions[this.recordType].has(key), Fields);
+    return pickBy(Fields, (_, key) => !exclusions[this.recordType].has(key as string)) as {
+      [fieldName: string]: symbol;
+    };
   }
 }
 
@@ -509,7 +510,8 @@ export default class Import {
   validateMappings(mappings: Array<ColumnFieldMap>): boolean {
     const allMappingsAreValid: boolean = mappings.every((m) => m.valid);
 
-    const allFieldNamesAreUnique: boolean = ArrayUtils.allAreUnique(mappings.map((m) => m.fieldName));
+    const fieldNames = mappings.map((m) => m.fieldName);
+    const allFieldNamesAreUnique: boolean = new Set(fieldNames).size === fieldNames.length;
 
     const nameFieldIsSelected: boolean = mappings.some(
       (m) => m.field === Fields.name && m.selected && m.columnsWithoutBlankValue.includes(m.columnName),
@@ -758,16 +760,17 @@ export default class Import {
         name: string;
       }
     | { id: number } {
-    if (!this.createNewTemplate) return pick("id")(this.template) as { id: number };
+    // biome-ignore lint/style/noNonNullAssertion: template is set whenever createNewTemplate is false
+    if (!this.createNewTemplate) return pick(this.template!, ["id"]) as { id: number };
     if (!this.templateInfo) throw new Error("TemplateInfo is null");
     const templateFieldWithMappings: Array<{
       field: TemplateField;
       mapping: ColumnFieldMap;
-    }> = ArrayUtils.zipWith<TemplateField, ColumnFieldMap, { field: TemplateField; mapping: ColumnFieldMap }>(
+    }> = zipWith(
       this.templateInfo.fields,
-      ArrayUtils.filterNull(
-        this.templateInfo.fields.map(({ name }) => this.samplesMappings.find((f) => f.fieldName === name) ?? null),
-      ),
+      this.templateInfo.fields
+        .map(({ name }) => this.samplesMappings.find((f) => f.fieldName === name) ?? null)
+        .filter(isNotNil),
       (f, m) => ({ field: f, mapping: m }),
     );
     const processedFields = templateFieldWithMappings
@@ -1007,7 +1010,7 @@ export default class Import {
         reason: `Number of custom columns (${customFields.length}) does not equal the number of template fields (${template.fields.length}).`,
       };
 
-    const namePairs = ArrayUtils.zipWith(customFields, template.fields, ({ columnName }, { name: fieldName }) => [
+    const namePairs = zipWith(customFields, template.fields, ({ columnName }, { name: fieldName }) => [
       columnName,
       fieldName,
     ]);
@@ -1020,7 +1023,7 @@ export default class Import {
     }
 
     const notMatchingByType = new Set(
-      ArrayUtils.zipWith(customFields, template.fields, ({ allValidTypes, columnName }, { type: fieldType }) =>
+      zipWith(customFields, template.fields, ({ allValidTypes, columnName }, { type: fieldType }) =>
         allValidTypes.includes(apiStringToFieldType(fieldType.toLowerCase())) ? null : columnName,
       ),
     );
@@ -1033,7 +1036,7 @@ export default class Import {
       };
     }
 
-    const columnsWithMissingData = ArrayUtils.zipWith(
+    const columnsWithMissingData = zipWith(
       customFields,
       template.fields,
       ({ columnsWithoutBlankValue, columnName }, { mandatory }) =>

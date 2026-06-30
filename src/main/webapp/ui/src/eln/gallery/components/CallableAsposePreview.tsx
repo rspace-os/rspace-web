@@ -1,11 +1,13 @@
 import React from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import { type GalleryFile, idToString } from "../useGalleryListing";
 import { usePdfPreview } from "./CallablePdfPreview";
+
+const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
 
 /*
  * If aspose is configured, then users can preview the contents of various
@@ -104,7 +106,7 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
         });
       Parsers.objectPath(["error", "errorMessages"], data)
         .flatMap(Parsers.isArray)
-        .flatMap(ArrayUtils.head)
+        .flatMap(firstResult)
         .flatMap(Parsers.isString)
         .do((msg) => {
           throw new Error(msg);
