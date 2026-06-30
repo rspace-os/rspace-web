@@ -2,53 +2,15 @@ import React from "react";
 import axios from "@/common/axios";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
+import * as ArrayUtils from "../../../util/ArrayUtils";
 import type * as FetchingData from "../../../util/fetchingData";
-import { Optional } from "../../../util/optional";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
-
-type Link = { operation: string; href: string };
-
-const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
-  Result.fromNullable(items.at(0), new Error("Array is empty"));
-
-function parseIrodsLocationLinks(obj: object): Result<ReadonlyArray<Link>> {
-  return Parsers.getValueWithKey("_links")(obj)
-    .flatMap(Parsers.isArray)
-    .flatMap((linksArray) =>
-      Result.all(
-        ...linksArray.map((m: unknown) =>
-          Parsers.isObject(m)
-            .flatMap(Parsers.isNotNull)
-            .flatMap((linkObj) =>
-              Result.lift2((operation: string, href: string) => ({
-                operation,
-                href,
-              }))(
-                Parsers.getValueWithKey("operation")(linkObj).flatMap(Parsers.isString),
-                Parsers.getValueWithKey("link")(linkObj).flatMap(Parsers.isString),
-              ),
-            ),
-        ),
-      ),
-    );
-}
-
-/*
- * Instead of returning the string wrapped in a Result, this function returns
- * it wrapped in Optional because a location not having a particular operation
- * is not an error; that particular operation may simply not be permitted on
- * the selected files with regards to a location.
- */
-const parseSpecificHref =
-  (op: string) =>
-  (links: ReadonlyArray<Link>): Optional<string> =>
-    Optional.fromNullable(links.find(({ operation }) => operation === op)).map(({ href }) => href);
 
 const parseOperationError = (error: unknown): Result<string> =>
   Parsers.objectPath(["response", "data", "errors"], error)
     .flatMap(Parsers.isArray)
-    .flatMap(firstResult)
+    .flatMap(ArrayUtils.head)
     .flatMap(Parsers.isString)
     .map((errorMsg) => {
       if (/attempt to overwrite file/.test(errorMsg)) return "Some or all of the files already exist";
@@ -58,7 +20,11 @@ const parseOperationError = (error: unknown): Result<string> =>
       return errorMsg;
     });
 
-function handleErrors(response: unknown): Alert {
+function handleErrors(
+  response: unknown,
+  successMessage = "Successfully moved the files.",
+  partialFailureMessage = "Moving some files failed.",
+): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data
@@ -73,7 +39,7 @@ function handleErrors(response: unknown): Alert {
             return Result.Ok(
               mkAlert({
                 variant: "success",
-                message: "Successfully moved the files.",
+                message: successMessage,
               }),
             );
           return data
@@ -121,7 +87,7 @@ function handleErrors(response: unknown): Alert {
               ).map((details) =>
                 mkAlert({
                   variant: "warning",
-                  message: "Moving some files failed.",
+                  message: partialFailureMessage,
                   details,
                   isInfinite: true,
                 }),
@@ -138,174 +104,179 @@ function handleErrors(response: unknown): Alert {
 }
 
 /**
- * A folder on an iRODS system.
+ * Credentials for an iRODS filesystem. iRODS auth is per-filesystem, so these
+ * are collected (and cached server-side) per destination filesystem rather
+ * than globally.
+ */
+export type IrodsCredentials = { username: string; password: string };
+
+/**
+ * A folder (filestore) on an iRODS system.
+ *
+ * Unlike the previous implementation, which only ever surfaced filestores on
+ * the first connected iRODS filesystem, locations are now built from the
+ * generic GET /api/v1/gallery/filestores listing and span ALL connected iRODS
+ * filesystems. Each location therefore carries the identity of the filesystem
+ * it lives on (filesystemId / filesystemName / filesystemUrl) plus its
+ * authType, so the dialog can group destinations by server and collect the
+ * right per-filesystem credentials.
  */
 export type IrodsLocation = {
   id: number;
   name: string;
   path: string;
-  copy: Optional<({ username, password }: { username: string; password: string }) => Promise<void>>;
-  move: Optional<({ username, password }: { username: string; password: string }) => Promise<void>>;
+  filesystemId: number;
+  filesystemName: string;
+  filesystemUrl: string;
+  authType: string;
+  copy: (recordIds: ReadonlyArray<number>, credentials: IrodsCredentials) => Promise<void>;
+  move: (recordIds: ReadonlyArray<number>, credentials: IrodsCredentials) => Promise<void>;
 };
 
 /**
- * A custom hook for interacting with the /api/v1/gallery/irods API endpoint.
+ * A custom hook that fetches the list of iRODS filestores from
+ * GET /api/v1/gallery/filestores (filtering for clientType === "IRODS", across
+ * every connected iRODS filesystem) and provides move/copy operations for each.
+ *
+ * This mirrors the S3 flow (see useS3Filestores): the listing is not
+ * parameterised by the selected files, and move/copy are keyed by filestore id
+ * with the record ids supplied in the request body. iRODS additionally requires
+ * per-filesystem credentials, which are passed through to the move/copy body.
  */
-export default function useIrods(
-  /**
-   * A list of IDs of files in the Gallery. The order is not significant.
-   */
-  selectedIds: ReadonlyArray<string>,
-): FetchingData.Fetched<{
-  /**
-   * The URL of the configured iRODS server. This is set by the sysadmin and is
-   * the same for all users on a particular instance.
-   */
-  serverUrl: string;
-
-  /**
-   * A list of folders on the iRODS server that the current user has configured
-   * in the filestores section of the Gallery.
-   */
-  configuredLocations: ReadonlyArray<IrodsLocation>;
-}> {
+export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLocation>> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
-
-  /**
-   * Makes a new location on an iRODs server, which is to say a reference to a
-   * folder. These objects are paramaterised (although it is not encoded in the
-   * type) by the set of selected files as the copyLink and moveLinks encode
-   * the information that instructs the server which files to move. As such,
-   * two distinct IrodsLocation objects may exist in memory and whilst they may
-   * refer to the same directory they encode information on how to copy and
-   * move different files and are as such different IrodsLocations.
-   */
-  function mkIrodsLocation(
-    id: IrodsLocation["id"],
-    name: IrodsLocation["name"],
-    path: IrodsLocation["path"],
-    copyLink: Optional<string>,
-    moveLink: Optional<string>,
-  ): IrodsLocation {
-    return {
-      id,
-      name,
-      path,
-      copy: copyLink.map((cl) => async ({ username, password }) => {
-        try {
-          const api = axios.create({
-            baseURL: "/api/v1/gallery/irods",
-            headers: {
-              Authorization: `Bearer ${await getToken()}`,
-            },
-          });
-          const response = await api.post<"">(cl, {
-            username,
-            password,
-          });
-          addAlert(handleErrors(response));
-        } catch (e) {
-          console.error(e);
-          const errorMsg = parseOperationError(e).orElseGet(([error]) => {
-            throw new Error("Could not parse error object", { cause: error });
-          });
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Could not copy file.",
-              message: errorMsg,
-            }),
-          );
-          throw e;
-        }
-      }),
-      move: moveLink.map((ml) => async ({ username, password }) => {
-        try {
-          const api = axios.create({
-            baseURL: "/api/v1/gallery/irods",
-            headers: {
-              Authorization: `Bearer ${await getToken()}`,
-            },
-          });
-          const response = await api.post<"">(ml, {
-            username,
-            password,
-          });
-          addAlert(handleErrors(response));
-        } catch (e) {
-          console.error(e);
-          const errorMsg = parseOperationError(e).orElseGet(([error]) => {
-            throw new Error("Could not parse error object", { cause: error });
-          });
-          addAlert(
-            mkAlert({
-              variant: "error",
-              title: "Could not move file.",
-              message: errorMsg,
-            }),
-          );
-          throw e;
-        }
-      }),
-    };
-  }
-
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [configuredLocations, setConfiguredLocations] = React.useState<Result<ReadonlyArray<IrodsLocation>>>(
     Result.Ok([]),
   );
-  const [serverUrl, setServerUrl] = React.useState<Result<string>>(Result.Ok(""));
+
+  function mkIrodsLocation(location: Omit<IrodsLocation, "copy" | "move">): IrodsLocation {
+    const { id } = location;
+    async function callEndpoint(
+      operation: "move" | "copy",
+      recordIds: ReadonlyArray<number>,
+      { username, password }: IrodsCredentials,
+    ): Promise<void> {
+      try {
+        const api = axios.create({
+          baseURL: "/api/v1/gallery",
+          headers: {
+            Authorization: `Bearer ${await getToken()}`,
+          },
+        });
+        // Gallery -> filestore ingest is the unified /uploadFromGallery endpoint
+        // (see useS3Filestores): removeOriginalFromRspace=true is a "move", false
+        // is a "copy". iRODS requires per-filesystem credentials in the body; S3
+        // ignores them.
+        const response = await api.post<"">(`/filestores/${id}/uploadFromGallery`, {
+          recordIds,
+          credentials: { username, password },
+          removeOriginalFromRspace: operation === "move",
+        });
+        addAlert(
+          handleErrors(
+            response,
+            operation === "copy" ? "Successfully copied the files." : "Successfully moved the files.",
+            operation === "copy" ? "Copying some files failed." : "Moving some files failed.",
+          ),
+        );
+      } catch (e) {
+        console.error(e);
+        // Fall back to a safe message rather than throwing while handling the
+        // error, which would suppress the user-facing alert (mirrors the S3 flow).
+        const errorMsg = parseOperationError(e).orElse("Unknown error");
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: operation === "copy" ? "Could not copy file." : "Could not move file.",
+            message: errorMsg,
+          }),
+        );
+        throw e;
+      }
+    }
+
+    return {
+      ...location,
+      copy: (recordIds, credentials) => callEndpoint("copy", recordIds, credentials),
+      move: (recordIds, credentials) => callEndpoint("move", recordIds, credentials),
+    };
+  }
 
   async function fetchConfiguredLocations() {
     setLoading(true);
     setErrorMessage("");
     try {
       const api = axios.create({
-        baseURL: "/api/v1/gallery/irods",
+        baseURL: "/api/v1/gallery",
         headers: {
           Authorization: `Bearer ${await getToken()}`,
         },
       });
-      const { data } = await api.get<unknown>("/", {
-        params: new URLSearchParams({
-          recordIds: selectedIds.join(","),
-        }),
-      });
-      const dataObj: Result<object> = Parsers.isObject(data).flatMap(Parsers.isNotNull);
-      setServerUrl(
-        dataObj
-          .flatMap(Parsers.getValueWithKey("serverUrl"))
-          .flatMap(Parsers.isString)
-          .mapError(([error]) => {
-            console.error("Cannot parse 'serverUrl' from API response", error);
-            return new Error("Could not determine which iRODS server is configured.");
-          })
-          .flatMap((url) => (url === "" ? Result.Error([new Error("No iRODS filestore configured")]) : Result.Ok(url))),
-      );
+      const { data } = await api.get<unknown>("/filestores");
+
       setConfiguredLocations(
-        dataObj
-          .flatMap(Parsers.getValueWithKey("configuredLocations"))
-          .flatMap(Parsers.isArray)
-          .flatMap((array: ReadonlyArray<unknown>) => {
-            return Result.all(
-              ...array.map((x) =>
-                Parsers.isObject(x)
-                  .flatMap(Parsers.isNotNull)
-                  .flatMap((obj) => {
-                    const links = parseIrodsLocationLinks(obj);
-                    return Result.lift5(mkIrodsLocation)(
-                      Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber),
-                      Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString),
-                      Parsers.getValueWithKey("path")(obj).flatMap(Parsers.isString),
-                      links.map(parseSpecificHref("copy")),
-                      links.map(parseSpecificHref("move")),
+        Parsers.isArray(data).flatMap((array: ReadonlyArray<unknown>) => {
+          const irodsOnly = array.filter((item) =>
+            Parsers.isObject(item)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("fileSystem"))
+              .flatMap(Parsers.isObject)
+              .flatMap(Parsers.isNotNull)
+              .flatMap(Parsers.getValueWithKey("clientType"))
+              .flatMap(Parsers.isString)
+              .map((type) => type === "IRODS")
+              .orElse(false),
+          );
+
+          return Result.all(
+            ...irodsOnly.map((item) =>
+              Parsers.isObject(item)
+                .flatMap(Parsers.isNotNull)
+                .flatMap((obj) => {
+                  // The seven fields are independent, so parse each one flatly
+                  // and let the first failure short-circuit via elseThrow; the
+                  // catch turns it back into the Error that Result.all
+                  // propagates. (See result.ts: elseThrow is the sanctioned
+                  // alternative to deeply nested flatMaps / lifts.)
+                  const fileSystem = Parsers.getValueWithKey("fileSystem")(obj)
+                    .flatMap(Parsers.isObject)
+                    .flatMap(Parsers.isNotNull);
+                  try {
+                    return Result.Ok(
+                      mkIrodsLocation({
+                        id: Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow(),
+                        name: Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow(),
+                        path: Parsers.getValueWithKey("path")(obj).flatMap(Parsers.isString).elseThrow(),
+                        filesystemId: fileSystem
+                          .flatMap(Parsers.getValueWithKey("id"))
+                          .flatMap(Parsers.isNumber)
+                          .elseThrow(),
+                        filesystemName: fileSystem
+                          .flatMap(Parsers.getValueWithKey("name"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                        filesystemUrl: fileSystem
+                          .flatMap(Parsers.getValueWithKey("url"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                        authType: fileSystem
+                          .flatMap(Parsers.getValueWithKey("authType"))
+                          .flatMap(Parsers.isString)
+                          .elseThrow(),
+                      }),
                     );
-                  }),
-              ),
-            );
-          }),
+                  } catch (e) {
+                    return Result.Error<IrodsLocation>(
+                      e instanceof Error ? [e] : [new Error("Could not parse iRODS filestore")],
+                    );
+                  }
+                }),
+            ),
+          );
+        }),
       );
     } catch (e) {
       setErrorMessage(
@@ -318,7 +289,7 @@ export default function useIrods(
               .do((message) => console.error(message));
             return Parsers.getValueWithKey("errors")(data)
               .flatMap(Parsers.isArray)
-              .flatMap(firstResult)
+              .flatMap(ArrayUtils.head)
               .flatMap(Parsers.isString);
           })
           .orElse("Error parsing error"),
@@ -329,36 +300,13 @@ export default function useIrods(
     }
   }
 
-  /*
-   * This is a performance optimisation: we only need to re-fetch the
-   * configured locations when the selection of files has materially changed. If
-   * there is a new array in memory that contains the same Ids then there is no
-   * need to re-fetch, nor if the same array has been re-ordered.
-   */
-  const parsedSelectedIds = Result.all(...selectedIds.map(Parsers.parseInteger)).orElseGet(() => {
-    throw new Error("Invalid selected Ids");
-  });
-  const sortedStringOfSelectedIds = JSON.stringify(
-    parsedSelectedIds.toSorted((a, b) => {
-      if (a > b) return 1;
-      if (a < b) return -1;
-      return 0;
-    }),
-  );
   React.useEffect(() => {
     void fetchConfiguredLocations();
-  }, [sortedStringOfSelectedIds]);
+  }, []);
 
   if (loading) return { tag: "loading" };
   if (errorMessage) return { tag: "error", error: errorMessage };
-  return Result.lift2((url: string, locations: ReadonlyArray<IrodsLocation>) => ({
-    tag: "success" as const,
-    value: {
-      serverUrl: url,
-      configuredLocations: locations,
-    },
-  }))(serverUrl, configuredLocations).orElseGet(([error]) => ({
-    tag: "error",
-    error: error.message,
-  }));
+  return configuredLocations
+    .map((locations) => ({ tag: "success" as const, value: locations }))
+    .orElseGet(([error]) => ({ tag: "error", error: error.message }));
 }
