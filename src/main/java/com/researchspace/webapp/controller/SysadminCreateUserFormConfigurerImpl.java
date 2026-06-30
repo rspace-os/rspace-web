@@ -77,13 +77,4 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
   public Boolean isBackdoorSysadminCreationEnabled() {
     return ssoBackdoorUserCreationEnabled; // RSPAC-2189
   }
-
-  /*
-   * ==================
-   *   for testing
-   * ==================
-   */
-  void setInternalUserCreationEnabled(boolean enabled) {
-    this.ssoBackdoorUserCreationEnabled = enabled;
-  }
 }

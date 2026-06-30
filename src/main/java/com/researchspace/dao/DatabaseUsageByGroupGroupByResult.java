@@ -47,23 +47,7 @@ public class DatabaseUsageByGroupGroupByResult {
     this.groupId = groupId;
   }
 
-  void setFileusage(Double usage) {
-    if (usage == null) {
-      this.fileusage = 0d;
-      return;
-    }
-    this.fileusage = usage;
-  }
-
   private Double countLong;
-
-  Double getCountLong() {
-    return countLong;
-  }
-
-  void setCountLong(Double countLong) {
-    this.countLong = countLong;
-  }
 
   @Override
   public int hashCode() {
