@@ -412,7 +412,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
    * persisting the B2INST record id (RID) as the identifier. The Handle PID is minted only on
    * publish.
    */
-  @SneakyThrows
   private ApiInventoryDOI createNewB2instDoi(InventoryRecord invRec, User user) {
     B2instDoi b2instDoi = rspaceToExternalProviderAdapter.buildB2instDoi(invRec);
     B2instDraftRecord draft;
@@ -574,7 +573,6 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
    * community this is curator-gated, so the returned state reflects the submission status rather
    * than a minted PID.
    */
-  @SneakyThrows
   private ApiInventoryDOI createUpdateWithPublishedB2instDoi(DigitalObjectIdentifier doi) {
     B2instRequestResponse result;
     try {

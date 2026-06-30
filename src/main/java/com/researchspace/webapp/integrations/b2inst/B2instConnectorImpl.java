@@ -45,7 +45,8 @@ public class B2instConnectorImpl implements B2instConnector {
     Map<String, SystemPropertyValue> props = sysPropertyMgr.getAllSysadminPropertiesAsMap();
     enabled = Boolean.parseBoolean(getProperty(props, SystemPropertyName.PIDINST_B2INST_ENABLED));
     serverUrl =
-        stripTrailingSlash(getProperty(props, SystemPropertyName.PIDINST_B2INST_SERVER_URL));
+        StringUtils.removeEnd(
+            getProperty(props, SystemPropertyName.PIDINST_B2INST_SERVER_URL), "/");
     communityId = getProperty(props, SystemPropertyName.PIDINST_B2INST_COMMUNITY_ID);
     token = getProperty(props, SystemPropertyName.PIDINST_B2INST_TOKEN);
     restTemplate = buildRestTemplate(token);
@@ -155,13 +156,6 @@ public class B2instConnectorImpl implements B2instConnector {
   private String getProperty(Map<String, SystemPropertyValue> props, SystemPropertyName name) {
     SystemPropertyValue value = props.get(name.getPropertyName());
     return value == null ? null : value.getValue();
-  }
-
-  private String stripTrailingSlash(String url) {
-    if (url == null) {
-      return null;
-    }
-    return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
   }
 
   /** Visible for testing: lets a MockRestServiceServer bind to the currently configured client. */
