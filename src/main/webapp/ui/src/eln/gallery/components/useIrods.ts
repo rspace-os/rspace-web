@@ -247,44 +247,50 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
                   const fileSystem = Parsers.getValueWithKey("fileSystem")(obj)
                     .flatMap(Parsers.isObject)
                     .flatMap(Parsers.isNotNull);
-                  // lift maxes out at 6 results, so parse the four filesystem
-                  // fields into one object first, then combine with the
-                  // filestore's own id/name/path.
-                  const parsedFileSystem = Result.lift4(
-                    (filesystemId: number, filesystemName: string, filesystemUrl: string, authType: string) => ({
-                      filesystemId,
-                      filesystemName,
-                      filesystemUrl,
-                      authType,
-                    }),
-                  )(
-                    fileSystem.flatMap(Parsers.getValueWithKey("id")).flatMap(Parsers.isNumber),
-                    fileSystem.flatMap(Parsers.getValueWithKey("name")).flatMap(Parsers.isString),
-                    fileSystem.flatMap(Parsers.getValueWithKey("url")).flatMap(Parsers.isString),
-                    fileSystem.flatMap(Parsers.getValueWithKey("authType")).flatMap(Parsers.isString),
-                  );
-                  return Result.lift4(
-                    (
-                      id: number,
-                      name: string,
-                      path: string,
-                      fs: { filesystemId: number; filesystemName: string; filesystemUrl: string; authType: string },
-                    ) =>
-                      mkIrodsLocation(
-                        id,
-                        name,
-                        path,
-                        fs.filesystemId,
-                        fs.filesystemName,
-                        fs.filesystemUrl,
-                        fs.authType,
-                      ),
-                  )(
-                    Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber),
-                    Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString),
-                    Parsers.getValueWithKey("path")(obj).flatMap(Parsers.isString),
-                    parsedFileSystem,
-                  );
+                  // Bind each field in turn and construct the location once all
+                  // seven have parsed successfully. Any failure short-circuits
+                  // the chain to an Error, which Result.all propagates.
+                  return Parsers.getValueWithKey("id")(obj)
+                    .flatMap(Parsers.isNumber)
+                    .flatMap((id) =>
+                      Parsers.getValueWithKey("name")(obj)
+                        .flatMap(Parsers.isString)
+                        .flatMap((name) =>
+                          Parsers.getValueWithKey("path")(obj)
+                            .flatMap(Parsers.isString)
+                            .flatMap((path) =>
+                              fileSystem
+                                .flatMap(Parsers.getValueWithKey("id"))
+                                .flatMap(Parsers.isNumber)
+                                .flatMap((filesystemId) =>
+                                  fileSystem
+                                    .flatMap(Parsers.getValueWithKey("name"))
+                                    .flatMap(Parsers.isString)
+                                    .flatMap((filesystemName) =>
+                                      fileSystem
+                                        .flatMap(Parsers.getValueWithKey("url"))
+                                        .flatMap(Parsers.isString)
+                                        .flatMap((filesystemUrl) =>
+                                          fileSystem
+                                            .flatMap(Parsers.getValueWithKey("authType"))
+                                            .flatMap(Parsers.isString)
+                                            .map((authType) =>
+                                              mkIrodsLocation(
+                                                id,
+                                                name,
+                                                path,
+                                                filesystemId,
+                                                filesystemName,
+                                                filesystemUrl,
+                                                authType,
+                                              ),
+                                            ),
+                                        ),
+                                    ),
+                                ),
+                            ),
+                        ),
+                    );
                 }),
             ),
           );
