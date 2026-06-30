@@ -32,15 +32,15 @@ public class InventoryApiSearchConfig extends ApiSearchConfig {
   private String query;
 
   @Pattern(
-      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|TEMPLATE",
-      message = "Requested result type must be SAMPLE, SUBSAMPLE, CONTAINER or TEMPLATE")
+      regexp = "SAMPLE|SUBSAMPLE|CONTAINER|SAMPLE_TEMPLATE|INSTRUMENT|INSTRUMENT_TEMPLATE",
+      message = "{errors.inventory.search.resultType.invalid}")
   private String resultType;
 
   @Pattern(
-      regexp = "(IC|BE|SA|IT|BA)(\\d+)(v\\d+)?",
+      regexp = "(IC|BE|SA|IT|BA|NT)(\\d+)(v\\d+)?",
       message =
           "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench,"
-              + " Sample, Sample Template, or Basket")
+              + " Sample, Sample Template, Instrument Template or Basket")
   @JsonProperty("parentGlobalId")
   private String parentGlobalId;
 

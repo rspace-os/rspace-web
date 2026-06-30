@@ -7,7 +7,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
@@ -29,7 +28,7 @@ import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import * as FetchingData from "../../../util/fetchingData";
 import Result from "../../../util/result";
-import useIrods, { type IrodsLocation } from "./useIrods";
+import useIrods, { type IrodsCredentials, type IrodsLocation } from "./useIrods";
 
 type MoveCopyDialogArgs = {
   selectedIds: ReadonlyArray<string>;
@@ -41,7 +40,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { t } = useTranslation("gallery");
   const { t: tCommon } = useTranslation("common");
-  const irods = useIrods(selectedIds);
+  const irods = useIrods();
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedDestination, setSelectedDestination] = React.useState<IrodsLocation | null>(null);
   const [keepCopyInRspace, setKeepCopyInRspace] = React.useState(false);
@@ -50,24 +49,45 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
   const [operationInProgress, setOperationInProgress] = React.useState(false);
 
   /*
-   * After the first authenticated request in a session, the server caches the
-   * credentials so that it is not necessary re-type password over and over.
+   * iRODS authentication is per-filesystem, and in one dialog session the user
+   * may pick destinations spanning several iRODS servers. We therefore track
+   * credentials keyed by filesystem id rather than globally. An entry is added
+   * once a move/copy to that filesystem succeeds (mirroring the server-side
+   * credential cache), so subsequent operations to the same server don't
+   * re-prompt; selecting a destination on a different server does.
    */
-  const [showUsernamePasswordForm, setShowUsernamePasswordForm] = React.useState(true);
+  const [credentialsByFilesystem, setCredentialsByFilesystem] = React.useState<Map<number, IrodsCredentials>>(
+    new Map(),
+  );
+
+  /*
+   * Show the login form for the selected destination unless its filesystem
+   * uses no authentication, or we already hold credentials for it. This is the
+   * same rule that makes the S3 flow (authType === "NONE") prompt-free, applied
+   * per destination.
+   */
+  const needsCredentials = selectedDestination !== null && selectedDestination.authType !== "NONE";
+  const hasCachedCredentials =
+    selectedDestination !== null && credentialsByFilesystem.has(selectedDestination.filesystemId);
+  const showUsernamePasswordForm = needsCredentials && !hasCachedCredentials;
 
   function validateState(): Result<null> {
     return Result.all(
-      irods.tag === "loading" ? Result.Error<null>([new Error("Loading available locations")]) : Result.Ok(null),
+      irods.tag === "loading"
+        ? Result.Error<null>([new Error(t("moveToIrods.validation.loadingLocations"))])
+        : Result.Ok(null),
       irods.tag === "error" ? Result.Error([new Error(irods.error)]) : Result.Ok(null),
     )
       .flatMap(() =>
         Result.all(
-          selectedDestination ? Result.Ok(null) : Result.Error<null>([new Error("A destination is required.")]),
+          selectedDestination
+            ? Result.Ok(null)
+            : Result.Error<null>([new Error(t("moveToIrods.validation.destinationRequired"))]),
           showUsernamePasswordForm && username === ""
-            ? Result.Error([new Error("Username for iRODS server is required.")])
+            ? Result.Error([new Error(t("moveToIrods.validation.usernameRequired"))])
             : Result.Ok(null),
           showUsernamePasswordForm && password === ""
-            ? Result.Error([new Error("Password for iRODS server is required.")])
+            ? Result.Error([new Error(t("moveToIrods.validation.passwordRequired"))])
             : Result.Ok(null),
         ),
       )
@@ -75,44 +95,47 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
   }
 
   React.useEffect(() => {
-    /*
-     * selectedDestination is reset because the IrodsLocations are
-     * paramaterised by the files that are being moved. This allows the RESTful
-     * API to adjust the available locations based on the particular files
-     * being moved.
-     */
+    // Clear the chosen destination when the set of selected files changes, so a
+    // reused dialog doesn't carry a stale selection across to a new operation.
     setSelectedDestination(null);
   }, [selectedIds]);
 
+  /*
+   * Clear the working username/password whenever the selected destination's
+   * filesystem changes, so credentials typed for one iRODS server are never
+   * carried over to another. Switching between folders on the same server
+   * keeps them.
+   */
+  const selectedFilesystemId = selectedDestination?.filesystemId ?? null;
+  React.useEffect(() => {
+    setUsername("");
+    setPassword("");
+  }, [selectedFilesystemId]);
+
   const onSubmit = () => {
-    if (!selectedDestination) throw new Error("A destination has not bee selected");
-    if (keepCopyInRspace) {
-      selectedDestination.copy.do((c) => {
-        setOperationInProgress(true);
-        void c({ username, password })
-          .then(() => {
-            setDialogOpen(false);
-            setShowUsernamePasswordForm(false);
-            trackEvent("user:copy:file:irods");
-          })
-          .finally(() => {
-            setOperationInProgress(false);
-          });
+    if (!selectedDestination) throw new Error("A destination has not been selected");
+    const recordIds: ReadonlyArray<number> = selectedIds.flatMap((id) => {
+      const n = parseInt(id, 10);
+      return Number.isNaN(n) ? [] : [n];
+    });
+    const { filesystemId, authType } = selectedDestination;
+    const credentials = credentialsByFilesystem.get(filesystemId) ?? { username, password };
+    const operation = keepCopyInRspace ? selectedDestination.copy : selectedDestination.move;
+    setOperationInProgress(true);
+    void operation(recordIds, credentials)
+      .then(() => {
+        setDialogOpen(false);
+        // Remember credentials for this filesystem so further operations to the
+        // same iRODS server within this session don't re-prompt (NONE-auth
+        // filesystems never collect or cache credentials).
+        if (authType !== "NONE") {
+          setCredentialsByFilesystem((prev) => new Map(prev).set(filesystemId, credentials));
+        }
+        trackEvent(keepCopyInRspace ? "user:copy:file:irods" : "user:move:file:irods");
+      })
+      .finally(() => {
+        setOperationInProgress(false);
       });
-    } else {
-      selectedDestination.move.do((m) => {
-        setOperationInProgress(true);
-        void m({ username, password })
-          .then(() => {
-            setDialogOpen(false);
-            setShowUsernamePasswordForm(false);
-            trackEvent("user:move:file:irods");
-          })
-          .finally(() => {
-            setOperationInProgress(false);
-          });
-      });
-    }
   };
 
   return (
@@ -170,144 +193,157 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
             >
               {FetchingData.match(irods, {
                 loading: () => <></>,
-                error: (errorMsg) =>
-                  errorMsg === "No iRODS filestore configured" ? (
+                error: (errorMsg) => (
+                  <Alert severity="error">
+                    <AlertTitle>{errorMsg}</AlertTitle>
+                    {t("moveToIrods.errors.misconfigured")}
+                  </Alert>
+                ),
+                success: (configuredLocations) =>
+                  configuredLocations.length === 0 ? (
                     <Alert severity="error">
                       <AlertTitle>{t("moveToIrods.errors.noFilestoreConfigured.title")}</AlertTitle>
                       {t("moveToIrods.errors.noFilestoreConfigured.body")}
                     </Alert>
                   ) : (
-                    <Alert severity="error">
-                      <AlertTitle>{errorMsg}</AlertTitle>
-                      {t("moveToIrods.errors.misconfigured")}
-                    </Alert>
-                  ),
-                success: ({ serverUrl, configuredLocations }) => (
-                  <>
-                    <Typography variant="body2">
-                      {t("moveToIrods.description", { count: selectedIds.length })}{" "}
-                      <Link target="_blank" href={serverUrl}>
-                        {serverUrl}
-                      </Link>
-                      {t("moveToIrods.descriptionSuffix")}
-                    </Typography>
-                    <ChoiceField
-                      name="keep"
-                      value={keepCopyInRspace ? ["keep"] : []}
-                      onChange={({ target: { value } }) => {
-                        setKeepCopyInRspace(value.includes("keep"));
-                      }}
-                      options={[
-                        {
-                          value: "keep",
-                          label: t("moveToIrods.retainCopy"),
-                        },
-                      ]}
-                    />
-                    <FormField
-                      label={t("moveToIrods.destination.label")}
-                      explanation={t("moveToIrods.destination.explanation")}
-                      value={void 0}
-                      renderInput={() => (
-                        <Box>
-                          <List>
-                            <ListItemButton
-                              sx={{ maxWidth: "400px" }}
-                              onClick={(e) => setLocationsAnchorEl(e.currentTarget)}
-                            >
-                              <ListItemText
-                                primary={selectedDestination?.name ?? t("moveToIrods.destination.placeholder")}
-                                secondary={selectedDestination?.path ?? ""}
-                              />
-                              <KeyboardArrowDownIcon />
-                            </ListItemButton>
-                          </List>
-                          <Menu
-                            open={Boolean(locationsAnchorEl)}
-                            anchorEl={locationsAnchorEl}
-                            onClose={() => {
-                              setLocationsAnchorEl(null);
-                            }}
-                          >
-                            {configuredLocations.map((location) => (
-                              <MenuItem
-                                key={location.id}
-                                selected={location === selectedDestination}
-                                onClick={() => {
-                                  setSelectedDestination(location);
-                                  setLocationsAnchorEl(null);
-                                }}
-                                sx={{ width: "400px" }}
+                    <>
+                      <Typography variant="body2">
+                        {t("moveToIrods.description", { count: selectedIds.length })}
+                      </Typography>
+                      <ChoiceField
+                        name="keep"
+                        value={keepCopyInRspace ? ["keep"] : []}
+                        onChange={({ target: { value } }) => {
+                          setKeepCopyInRspace(value.includes("keep"));
+                        }}
+                        options={[
+                          {
+                            value: "keep",
+                            label: t("moveToIrods.retainCopy"),
+                          },
+                        ]}
+                      />
+                      <FormField
+                        label={t("moveToIrods.destination.label")}
+                        explanation={t("moveToIrods.destination.explanation")}
+                        value={void 0}
+                        renderInput={() => (
+                          <Box>
+                            <List>
+                              <ListItemButton
+                                sx={{ maxWidth: "400px" }}
+                                onClick={(e) => setLocationsAnchorEl(e.currentTarget)}
                               >
-                                <ListItemText primary={location.name} secondary={location.path} />
-                              </MenuItem>
-                            ))}
-                          </Menu>
-                        </Box>
-                      )}
-                    />
-                    {showUsernamePasswordForm && (
-                      <Box
-                        component="fieldset"
-                        sx={(theme) => ({
-                          border: theme.borders.card,
-                          margin: 0,
-                          borderRadius: theme.spacing(0.5),
-                          padding: theme.spacing(2),
-                          paddingTop: theme.spacing(0.5),
-                          "& label": {
-                            fontSize: "0.9rem",
-                            letterSpacing: "0.03em",
-                          },
-                          "& input": {
-                            padding: theme.spacing(1),
-                          },
-                        })}
-                      >
+                                <ListItemText
+                                  primary={selectedDestination?.name ?? t("moveToIrods.destination.placeholder")}
+                                  secondary={
+                                    selectedDestination
+                                      ? `${selectedDestination.path} · ${selectedDestination.filesystemName}`
+                                      : ""
+                                  }
+                                />
+                                <KeyboardArrowDownIcon />
+                              </ListItemButton>
+                            </List>
+                            <Menu
+                              open={Boolean(locationsAnchorEl)}
+                              anchorEl={locationsAnchorEl}
+                              onClose={() => {
+                                setLocationsAnchorEl(null);
+                              }}
+                            >
+                              {configuredLocations.map((location) => (
+                                <MenuItem
+                                  key={location.id}
+                                  selected={location === selectedDestination}
+                                  onClick={() => {
+                                    setSelectedDestination(location);
+                                    setLocationsAnchorEl(null);
+                                  }}
+                                  sx={{ width: "400px" }}
+                                >
+                                  <ListItemText
+                                    primary={location.name}
+                                    secondary={`${location.path} · ${location.filesystemName}`}
+                                  />
+                                </MenuItem>
+                              ))}
+                            </Menu>
+                          </Box>
+                        )}
+                      />
+                      {showUsernamePasswordForm && (
                         <Box
-                          component="legend"
+                          component="fieldset"
                           sx={(theme) => ({
-                            padding: theme.spacing(0.25, 1),
-                            fontWeight: 700,
-                            fontSize: "1rem",
-                            letterSpacing: "0.02em",
-                            color: "#3b5958",
+                            border: theme.borders.card,
+                            margin: 0,
+                            borderRadius: theme.spacing(0.5),
+                            padding: theme.spacing(2),
+                            paddingTop: theme.spacing(0.5),
+                            "& label": {
+                              fontSize: "0.9rem",
+                              letterSpacing: "0.03em",
+                            },
+                            "& input": {
+                              padding: theme.spacing(1),
+                            },
                           })}
                         >
-                          {t("moveToIrods.login.legend")}
+                          <Box
+                            component="legend"
+                            sx={(theme) => ({
+                              padding: theme.spacing(0.25, 1),
+                              fontWeight: 700,
+                              fontSize: "1rem",
+                              letterSpacing: "0.02em",
+                              color: "#3b5958",
+                            })}
+                          >
+                            {t("moveToIrods.login.legend")}
+                          </Box>
+                          <Stack spacing={1}>
+                            <Typography variant="body2">
+                              {t("moveToIrods.login.prompt", {
+                                serverUrl: `${selectedDestination?.filesystemName ?? ""}${
+                                  selectedDestination?.filesystemUrl ? ` (${selectedDestination.filesystemUrl})` : ""
+                                }`,
+                              })}
+                            </Typography>
+                            <FormField
+                              label={t("moveToIrods.login.username")}
+                              value={username}
+                              renderInput={({ id }) => (
+                                <TextField
+                                  id={id}
+                                  value={username}
+                                  autoComplete="username"
+                                  onChange={({ target: { value } }) => {
+                                    setUsername(value);
+                                  }}
+                                />
+                              )}
+                            />
+                            <FormField
+                              label={t("moveToIrods.login.password")}
+                              value={password}
+                              renderInput={({ id }) => (
+                                <TextField
+                                  id={id}
+                                  type="password"
+                                  value={password}
+                                  autoComplete="current-password"
+                                  onChange={({ target: { value } }) => {
+                                    setPassword(value);
+                                  }}
+                                />
+                              )}
+                            />
+                          </Stack>
                         </Box>
-                        <Stack spacing={1}>
-                          <Typography variant="body2">{t("moveToIrods.login.prompt", { serverUrl })}</Typography>
-                          <FormField
-                            label={t("moveToIrods.login.username")}
-                            value={username}
-                            renderInput={() => (
-                              <TextField
-                                autoComplete="username"
-                                onChange={({ target: { value } }) => {
-                                  setUsername(value);
-                                }}
-                              />
-                            )}
-                          />
-                          <FormField
-                            label={t("moveToIrods.login.password")}
-                            value={password}
-                            renderInput={() => (
-                              <TextField
-                                type="password"
-                                autoComplete="current-password"
-                                onChange={({ target: { value } }) => {
-                                  setPassword(value);
-                                }}
-                              />
-                            )}
-                          />
-                        </Stack>
-                      </Box>
-                    )}
-                  </>
-                ),
+                      )}
+                    </>
+                  ),
               })}
             </Stack>
           </DialogContent>
@@ -322,7 +358,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                 onSubmit();
               }}
             >
-              Move
+              {t("moveToIrods.submit")}
             </ValidatingSubmitButton>
           </DialogActions>
         </Box>

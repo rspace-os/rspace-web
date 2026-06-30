@@ -74,6 +74,27 @@ public interface S3Utilities {
   DeleteObjectResponse deleteFromS3(String folderPath, String fileName);
 
   /**
+   * Creates a "folder" on S3. S3 has no native folders, so this writes a zero-byte object whose key
+   * is {@code folderPath} with a single trailing {@code /} (added if not already present). The
+   * given metadata (e.g. {@code rspace-created-by} / {@code rspace-created-at}) is attached to the
+   * placeholder object so the folder is subject to the same creator/age delete rules as files.
+   *
+   * @param folderPath the folder key, with or without a trailing slash
+   * @param metadata user-defined metadata to attach (may be empty)
+   */
+  void createFolder(String folderPath, Map<String, String> metadata);
+
+  /**
+   * Deletes a single object by its exact key (which may be a folder placeholder key ending in
+   * {@code /}). Uses the S3 {@code DeleteObject} API. This is the single-object delete primitive;
+   * {@link #deleteFromS3(String, String)} is a {@code (folder, file)} convenience wrapper over it.
+   *
+   * @param key the full object key to delete
+   * @return the {@code DeleteObjectResponse} from S3
+   */
+  DeleteObjectResponse deleteObject(String key);
+
+  /**
    * Server-side copies an object from another bucket (the source) into this S3Utilities's bucket
    * (the destination). Uses S3 {@code CopyObject}, so data does not flow through the RSpace server.
    * Requires that the configured credentials grant {@code GetObject} on the source and {@code

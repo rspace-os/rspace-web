@@ -66,7 +66,7 @@ describe("LinkTargetBrowser", () => {
     const args = searchConstructorArgs.at(-1) as {
       uiConfig: { allowedTypeFilters: Set<string> };
     };
-    expect([...args.uiConfig.allowedTypeFilters]).toContain("TEMPLATE");
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("SAMPLE_TEMPLATE");
   });
 
   it("requires an explicit Choose click instead of confirming on row click", () => {

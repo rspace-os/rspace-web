@@ -3,6 +3,7 @@ package com.researchspace.service.aws.impl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -16,12 +17,17 @@ import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.MetadataDirective;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
 @Slf4j
@@ -129,6 +135,49 @@ public class S3UtilitiesTest {
   }
 
   @Test
+  public void listFolderContents_emptyPath_listsBucketRootWithEmptyPrefix() {
+    // A filestore rooted at the bucket top level has an empty path; listing it must query S3 with
+    // an empty prefix (the bucket root) and surface top-level files and folders.
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    S3Object rootFile =
+        S3Object.builder().key("file-at-root.txt").size(10L).lastModified(Instant.now()).build();
+    CommonPrefix topFolder = CommonPrefix.builder().prefix("topfolder/").build();
+    ListObjectsV2Response response =
+        ListObjectsV2Response.builder()
+            .contents(rootFile)
+            .commonPrefixes(topFolder)
+            .isTruncated(false)
+            .build();
+    when(mockS3Client.listObjectsV2(
+            argThat(
+                (ListObjectsV2Request r) ->
+                    r != null && "".equals(r.prefix()) && "/".equals(r.delimiter()))))
+        .thenReturn(response);
+
+    List<S3FolderContentItem> items = impl.listFolderContents("");
+
+    assertEquals(2, items.size());
+    // common prefixes (folders) come before files, per implementation order
+    assertEquals("topfolder", items.get(0).getName());
+    assertTrue(items.get(0).isFolder());
+    assertEquals("file-at-root.txt", items.get(1).getName());
+    assertFalse(items.get(1).isFolder());
+  }
+
+  @Test
+  public void getObjectDetails_blankPath_returnsBucketRootAsFolder() {
+    // The bucket root (empty path) is a valid folder target, without an S3 call.
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mock(S3Client.class), "test-bucket");
+
+    S3FolderContentItem root = impl.getObjectDetails("");
+
+    assertTrue(root.isFolder());
+    assertEquals("", root.getName());
+  }
+
+  @Test
   public void copyObjectFromBucket_issuesS3CopyObjectRequest() {
     S3Client mockS3Client = mock(S3Client.class);
     S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "dest-bucket");
@@ -144,6 +193,90 @@ public class S3UtilitiesTest {
                         && "src/file.txt".equals(r.sourceKey())
                         && "dest-bucket".equals(r.destinationBucket())
                         && "dst/file.txt".equals(r.destinationKey())));
+  }
+
+  @Test
+  public void getObjectDetails_exposesUserMetadataFromHeadObject() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+    Map<String, String> meta =
+        Map.of("rspace-created-by", "alice", "rspace-created-at", "2026-06-18T10:00:00Z");
+    when(mockS3Client.headObject(
+            argThat(
+                (HeadObjectRequest r) ->
+                    r != null
+                        && "test-bucket".equals(r.bucket())
+                        && "folder/file.txt".equals(r.key()))))
+        .thenReturn(HeadObjectResponse.builder().contentLength(10L).metadata(meta).build());
+
+    assertEquals(meta, impl.getObjectDetails("folder/file.txt").getUserMetadata());
+  }
+
+  @Test
+  public void createFolder_putsZeroByteObjectWithTrailingSlashAndMetadata() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+    Map<String, String> meta =
+        Map.of("rspace-created-by", "alice", "rspace-created-at", "2026-06-18T10:00:00Z");
+
+    impl.createFolder("parent/newfolder", meta);
+
+    verify(mockS3Client)
+        .putObject(
+            argThat(
+                (PutObjectRequest r) ->
+                    r != null
+                        && "test-bucket".equals(r.bucket())
+                        && "parent/newfolder/".equals(r.key())
+                        && meta.equals(r.metadata())),
+            argThat(
+                (RequestBody body) ->
+                    body != null && body.optionalContentLength().orElse(-1L) == 0L));
+  }
+
+  @Test
+  public void createFolder_appendsSingleTrailingSlashWhenAlreadyPresent() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    impl.createFolder("parent/already/", Map.of());
+
+    verify(mockS3Client)
+        .putObject(
+            argThat((PutObjectRequest r) -> r != null && "parent/already/".equals(r.key())),
+            any(RequestBody.class));
+  }
+
+  @Test
+  public void deleteObject_issuesDeleteObjectRequestWithExactKey() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    impl.deleteObject("folder/placeholder/");
+
+    verify(mockS3Client)
+        .deleteObject(
+            argThat(
+                (DeleteObjectRequest r) ->
+                    r != null
+                        && "test-bucket".equals(r.bucket())
+                        && "folder/placeholder/".equals(r.key())));
+  }
+
+  @Test
+  public void deleteFromS3_joinsFolderAndFileAndDelegatesToDeleteObject() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    impl.deleteFromS3("folder/sub", "file.txt");
+
+    verify(mockS3Client)
+        .deleteObject(
+            argThat(
+                (DeleteObjectRequest r) ->
+                    r != null
+                        && "test-bucket".equals(r.bucket())
+                        && "folder/sub/file.txt".equals(r.key())));
   }
 
   @Test

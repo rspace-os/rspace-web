@@ -1055,6 +1055,10 @@ export default class InventoryBaseRecord
         }),
       );
       trackingStore.trackEvent("InventoryRecordCreated", this.dataAttachedToRecordCreatedAnaylticsEvent);
+      if (this.recordType === "instrument" || this.recordType === "instrumentTemplate") {
+        const type = this.recordType === "instrument" ? "instrument" : "instrument_template";
+        trackingStore.trackEvent(`user:create:${type}:inventory`);
+      }
       if (peopleStore.currentUser) await peopleStore.currentUser.getBench();
     } catch (error) {
       this.setAttributes({
@@ -1156,6 +1160,10 @@ export default class InventoryBaseRecord
           variant: "success",
         }),
       );
+      if (this.recordType === "instrument" || this.recordType === "instrumentTemplate") {
+        const type = this.recordType === "instrument" ? "instrument" : "instrument_template";
+        getRootStore().trackingStore.trackEvent(`user:edit:${type}:inventory`);
+      }
     } catch (error) {
       this.setAttributes({
         uploadProgress: noProgress,

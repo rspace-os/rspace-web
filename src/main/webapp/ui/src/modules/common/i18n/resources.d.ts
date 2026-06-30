@@ -2061,7 +2061,14 @@ export default interface Resources {
         "username": "Username"
       },
       "retainCopy": "Retain a copy in RSpace",
-      "title": "Move to iRODS"
+      "submit": "Move",
+      "title": "Move to iRODS",
+      "validation": {
+        "destinationRequired": "A destination is required.",
+        "loadingLocations": "Loading available locations",
+        "passwordRequired": "Password for iRODS server is required.",
+        "usernameRequired": "Username for iRODS server is required."
+      }
     },
     "moveToS3": {
       "actions": {
@@ -2093,8 +2100,19 @@ export default interface Resources {
       "transferDescription": "You have selected {count} {count, plural, one {item} other {items}} to transfer to another S3 bucket. By default, the items will be copied to the destination and deleted from the source.",
       "transferTitle": "Transfer to S3"
     },
+    "moveWithinFilestore": {
+      "description": "Choose a destination folder in this filestore, or move to its top level.",
+      "move": "Move",
+      "moveToTopLevel": "Move to top level",
+      "title": "Move",
+      "validation": {
+        "noFolder": "No folder is selected.",
+        "tooManyFolders": "More than one folder is selected."
+      }
+    },
     "sidebar": {
       "addFilestore": "Add a Filestore",
+      "createFilestoreFolder": "New Filestore Folder",
       "createFolder": "New Folder",
       "createFolderLabel": "Name",
       "createFolderNameRequired": "A name is required.",
@@ -2402,6 +2420,8 @@ export default interface Resources {
       "containers": "Containers",
       "csvImport": "CSV Import",
       "newContainer": "New Container",
+      "newInstrument": "New Instrument",
+      "newInstrumentTemplate": "New Instrument Template",
       "newSample": "New Sample",
       "newTemplate": "New Template",
       "samples": "Samples",
@@ -2653,9 +2673,11 @@ export default interface Resources {
           "undoWarningFormatted": "<strong>This action cannot be undone!</strong> Once an IGSN ID has been associated with an item, it cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created instead."
         },
         "card": {
-          "createNew": "Create new IGSN ID",
-          "linkExisting": "Link existing IGSN ID",
-          "notCreatedYet": "This item has not been created yet. Please save the item first."
+          "createNew": "Create new {identifierLabel}",
+          "igsnId": "IGSN ID",
+          "linkExisting": "Link existing {identifierLabel}",
+          "notCreatedYet": "This item has not been created yet. Please save the item first.",
+          "pidinst": "PIDINST"
         },
         "formField": {
           "explanation": "See the Documentation for information on <a>adding and publishing identifiers</a>."
@@ -3189,6 +3211,12 @@ export default interface Resources {
     "infoCard": {
       "setAsTarget": "Set as Target"
     },
+    "instrumentTemplate": {
+      "customFields": {
+        "addFieldTooltip": "Add field",
+        "noCustomFields": "No custom fields"
+      }
+    },
     "layout": {
       "initialScreen": {
         "navigateTo": "Navigate to:"
@@ -3201,10 +3229,13 @@ export default interface Resources {
         "containers": "Containers",
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
+        "instrumentTemplates": "Instrument Templates",
+        "instruments": "Instruments",
         "itemsListAriaLabel": "List existing Inventory items",
         "myBench": "My Bench",
         "navigationAriaLabel": "Inventory Sidebar Navigation",
         "otherActionsAriaLabel": "Other places and action",
+        "sampleTemplates": "Sample Templates",
         "samples": "Samples",
         "settings": "Settings",
         "subsamples": "Subsamples",
@@ -3342,6 +3373,8 @@ export default interface Resources {
       "latestLink": "View the latest version",
       "typeLabels": {
         "container": "container",
+        "instrument": "instrument",
+        "instrumentTemplate": "instrument template",
         "sample": "sample",
         "sampleTemplate": "sample template",
         "subsample": "subsample"
@@ -3527,6 +3560,10 @@ export default interface Resources {
           "container": "Container",
           "containers": "Containers",
           "enterQueryFirst": "Enter a search query first.",
+          "instrumentTemplate": "Instrument Template",
+          "instrumentTemplates": "Instrument Templates",
+          "instrumentTemplatesNotInContainers": "Instrument Templates cannot be found in containers.",
+          "instrumentTemplatesNotOnBenches": "Instrument Templates cannot be found on benches.",
           "sample": "Sample",
           "samples": "Samples",
           "samplesNotInContainers": "Samples cannot be found in containers.",
@@ -3560,6 +3597,9 @@ export default interface Resources {
         "containerContents": "{count} container contents found.",
         "errorGlobalId": "ERROR",
         "foundGlobalId": "Found {globalId}.",
+        "instrumentTemplates": "{count} instrument templates found.",
+        "instruments": "{count} instruments found.",
+        "instrumentsOfTemplate": "{count} instruments of the template found.",
         "itemsInBasket": "{count} items found in {basketName}.",
         "itemsOnBench": "{count} items found on this bench.",
         "loading": "Loading...",

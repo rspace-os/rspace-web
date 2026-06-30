@@ -21,12 +21,10 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTestBase {
 
   User anyUser;
@@ -322,24 +320,6 @@ public class InstrumentTemplatesApiControllerMVCIT extends API_MVC_InventoryTest
     assertTrue(
         resynced.getFields().stream().anyMatch(f -> "addedLater".equals(f.getName())),
         "expected the new template field to be propagated to the instrument");
-  }
-
-  @Test
-  public void disabledFeatureReturnsErrorStatus() throws Exception {
-    // Disable the feature flag via reflection on the controller bean
-    InstrumentTemplatesApiController controller =
-        applicationContext.getBean(InstrumentTemplatesApiController.class);
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        controller, "inventoryInstrumentEnabled", false);
-    try {
-      // ApiControllerAdvice maps UnsupportedOperationException → 404 NOT_FOUND.
-      mockMvc
-          .perform(createBuilderForGet(API_VERSION.ONE, apiKey, "/instrumentTemplates", anyUser))
-          .andExpect(status().isNotFound());
-    } finally {
-      org.springframework.test.util.ReflectionTestUtils.setField(
-          controller, "inventoryInstrumentEnabled", true);
-    }
   }
 
   @Test

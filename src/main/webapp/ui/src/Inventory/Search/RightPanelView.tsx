@@ -14,6 +14,10 @@ import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
 import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import SampleBatchForm from "../Sample/BatchForm";
 import SampleForm from "../Sample/Form";
@@ -143,6 +147,16 @@ function RightPanelView(): ReactNode {
     if (activeResult.recordType === "sampleTemplate") {
       if (activeResult.id) return <TemplateForm />;
       return <TemplateNewRecordForm />;
+    }
+
+    if (activeResult.recordType === "instrument") {
+      if (activeResult.id) return <InstrumentForm />;
+      return <InstrumentNewRecordForm />;
+    }
+
+    if (activeResult.recordType === "instrumentTemplate") {
+      if (activeResult.id) return <InstrumentTemplateForm />;
+      return <InstrumentTemplateNewRecordForm />;
     }
 
     throw Error("The active item's type is not valid.");

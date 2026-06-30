@@ -57,8 +57,8 @@ beforeEach(() => {
 
   // Default: one S3 filestore available
   mockAxios.onGet("/api/v1/gallery/filestores").reply(200, [S3_FILESTORE]);
-  mockAxios.onPost("/api/v1/gallery/filestores/1/move").reply(200, OPERATION_SUCCESS_RESPONSE);
-  mockAxios.onPost("/api/v1/gallery/filestores/1/copy").reply(200, OPERATION_SUCCESS_RESPONSE);
+  // move and copy both POST to uploadFromGallery, differentiated by removeOriginalFromRspace
+  mockAxios.onPost("/api/v1/gallery/filestores/1/uploadFromGallery").reply(200, OPERATION_SUCCESS_RESPONSE);
   // Default transfer route: source filestore id=2 (as used in transfer stories)
   mockAxios.onPost("/api/v1/gallery/filestores/2/transfer").reply(200, OPERATION_SUCCESS_RESPONSE);
 
@@ -142,7 +142,11 @@ describe("MoveToS3", () => {
       await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
-      expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/move")).toBe(true);
+      const req = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
+      expect(req).toBeDefined();
+      expect((JSON.parse(req?.data as string) as { removeOriginalFromRspace: boolean }).removeOriginalFromRspace).toBe(
+        true,
+      );
     });
 
     test("Checking 'Retain a copy' and clicking Copy calls the copy endpoint", async () => {
@@ -155,7 +159,11 @@ describe("MoveToS3", () => {
       await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.copy$/ }));
 
       expect(await screen.findByText(/successfully copied/i)).toBeVisible();
-      expect(mockAxios.history.post.some(({ url }) => url === "/filestores/1/copy")).toBe(true);
+      const req = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
+      expect(req).toBeDefined();
+      expect((JSON.parse(req?.data as string) as { removeOriginalFromRspace: boolean }).removeOriginalFromRspace).toBe(
+        false,
+      );
     });
 
     test("The correct record IDs are sent to the move endpoint", async () => {
@@ -167,7 +175,7 @@ describe("MoveToS3", () => {
       await user.click(screen.getByRole("button", { name: /^gallery:moveToS3\.actions\.move$/ }));
 
       expect(await screen.findByText(/successfully moved/i)).toBeVisible();
-      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/move");
+      const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(moveRequest).toBeDefined();
       const body = JSON.parse(moveRequest?.data as string) as {
         recordIds: unknown;

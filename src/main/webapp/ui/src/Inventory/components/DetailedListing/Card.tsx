@@ -20,6 +20,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import { hasRequiredPermissions, type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import ContainerModel from "../../../stores/models/ContainerModel";
+import InstrumentModel from "../../../stores/models/InstrumentModel";
 import SampleModel from "../../../stores/models/SampleModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
 import useStores from "../../../stores/use-stores";
@@ -139,7 +140,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   }
   if (
     notPublic &&
-    (record instanceof SubSampleModel || record instanceof ContainerModel) &&
+    (record instanceof SubSampleModel || record instanceof ContainerModel || record instanceof InstrumentModel) &&
     record.immediateParentContainer
   ) {
     contentItems.push({

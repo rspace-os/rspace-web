@@ -118,7 +118,7 @@ function SearchParameterControls(): React.ReactNode {
           <PeopleField
             onSelection={(user, doSearch) => {
               setBenchDropdown(null);
-              if (["SAMPLE", "TEMPLATE"].includes(search.fetcher.resultType as string)) {
+              if (["SAMPLE", "SAMPLE_TEMPLATE"].includes(search.fetcher.resultType as string)) {
                 search.setTypeFilter("ALL");
               }
               search.setBench(user, doSearch as boolean | undefined);

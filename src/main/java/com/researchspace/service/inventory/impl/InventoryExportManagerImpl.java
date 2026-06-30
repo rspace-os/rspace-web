@@ -323,7 +323,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
           subSamplesToExport.addAll(sample.getActiveSubSamples());
         }
         ISearchResults<Instrument> dbInstruments =
-            instrumentDao.getInstrumentsForUser(instrumentPgCrit, username, null, user);
+            instrumentDao.getInstrumentsForUser(instrumentPgCrit, username, null, null, user);
         instrumentsToExport.addAll(dbInstruments.getResults());
 
         if (includeContainerContent) {
@@ -335,7 +335,7 @@ public class InventoryExportManagerImpl implements InventoryExportManager {
         templatesToExport.addAll(dbTemplates.getResults());
         ISearchResults<InstrumentTemplate> dbInstrumentTemplates =
             instrumentTemplateDao.getTemplatesForUser(
-                instrumentTemplatePgCrit, username, null, user);
+                instrumentTemplatePgCrit, username, null, null, user);
         instrumentTemplatesToExport.addAll(dbInstrumentTemplates.getResults());
       }
     }

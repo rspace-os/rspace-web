@@ -209,6 +209,8 @@
     "containers": "Containers",
     "csvImport": "CSV Import",
     "newContainer": "New Container",
+    "newInstrument": "New Instrument",
+    "newInstrumentTemplate": "New Instrument Template",
     "newSample": "New Sample",
     "newTemplate": "New Template",
     "samples": "Samples",
@@ -460,9 +462,11 @@
         "undoWarningFormatted": "<strong>This action cannot be undone!</strong> Once an IGSN ID has been associated with an item, it cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created instead."
       },
       "card": {
-        "createNew": "Create new IGSN ID",
-        "linkExisting": "Link existing IGSN ID",
-        "notCreatedYet": "This item has not been created yet. Please save the item first."
+        "createNew": "Create new {identifierLabel}",
+        "igsnId": "IGSN ID",
+        "linkExisting": "Link existing {identifierLabel}",
+        "notCreatedYet": "This item has not been created yet. Please save the item first.",
+        "pidinst": "PIDINST"
       },
       "formField": {
         "explanation": "See the Documentation for information on <a>adding and publishing identifiers</a>."
@@ -996,6 +1000,12 @@
   "infoCard": {
     "setAsTarget": "Set as Target"
   },
+  "instrumentTemplate": {
+    "customFields": {
+      "addFieldTooltip": "Add field",
+      "noCustomFields": "No custom fields"
+    }
+  },
   "layout": {
     "initialScreen": {
       "navigateTo": "Navigate to:"
@@ -1008,11 +1018,14 @@
       "containers": "Containers",
       "exportData": "Export Data",
       "igsnIds": "IGSN IDs",
+      "instruments": "Instruments",
+      "instrumentTemplates": "Instrument Templates",
       "itemsListAriaLabel": "List existing Inventory items",
       "myBench": "My Bench",
       "navigationAriaLabel": "Inventory Sidebar Navigation",
       "otherActionsAriaLabel": "Other places and action",
       "samples": "Samples",
+      "sampleTemplates": "Sample Templates",
       "settings": "Settings",
       "subsamples": "Subsamples",
       "templates": "Templates"
@@ -1149,6 +1162,8 @@
     "latestLink": "View the latest version",
     "typeLabels": {
       "container": "container",
+      "instrument": "instrument",
+      "instrumentTemplate": "instrument template",
       "sample": "sample",
       "sampleTemplate": "sample template",
       "subsample": "subsample"
@@ -1334,6 +1349,10 @@
         "container": "Container",
         "containers": "Containers",
         "enterQueryFirst": "Enter a search query first.",
+        "instrumentTemplate": "Instrument Template",
+        "instrumentTemplates": "Instrument Templates",
+        "instrumentTemplatesNotInContainers": "Instrument Templates cannot be found in containers.",
+        "instrumentTemplatesNotOnBenches": "Instrument Templates cannot be found on benches.",
         "sample": "Sample",
         "samples": "Samples",
         "samplesNotInContainers": "Samples cannot be found in containers.",
@@ -1367,6 +1386,9 @@
       "containerContents": "{count} container contents found.",
       "errorGlobalId": "ERROR",
       "foundGlobalId": "Found {globalId}.",
+      "instruments": "{count} instruments found.",
+      "instrumentsOfTemplate": "{count} instruments of the template found.",
+      "instrumentTemplates": "{count} instrument templates found.",
       "itemsInBasket": "{count} items found in {basketName}.",
       "itemsOnBench": "{count} items found on this bench.",
       "loading": "Loading...",

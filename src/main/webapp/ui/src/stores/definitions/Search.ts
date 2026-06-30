@@ -4,6 +4,7 @@ import type RsSet from "../../util/set";
 import type { Order } from "../../util/types";
 import type { GlobalId, Id } from "./BaseRecord";
 import type { Basket } from "./Basket";
+import type { Instrument } from "./Instrument";
 import type { Action, InventoryRecord } from "./InventoryRecord";
 import type { Person, Username } from "./Person";
 import type { Sample } from "./Sample";
@@ -33,7 +34,14 @@ export function parseDeletedItems(str: string): Result<DeletedItems> {
   return Result.first(parseString("EXCLUDE", str), parseString("INCLUDE", str), parseString("DELETED_ONLY", str));
 }
 
-export type ResultType = "ALL" | "CONTAINER" | "SAMPLE" | "SUBSAMPLE" | "TEMPLATE";
+export type ResultType =
+  | "ALL"
+  | "CONTAINER"
+  | "SAMPLE"
+  | "SUBSAMPLE"
+  | "SAMPLE_TEMPLATE"
+  | "INSTRUMENT"
+  | "INSTRUMENT_TEMPLATE";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -41,15 +49,24 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("CONTAINER", str),
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
-    parseString("TEMPLATE", str),
+    parseString("SAMPLE_TEMPLATE", str),
+    parseString("INSTRUMENT", str),
+    parseString("INSTRUMENT_TEMPLATE", str),
   );
 }
 
-export type ParentGlobalIdType = "SAMPLE" | "SUBSAMPLE" | "CONTAINER" | "TEMPLATE" | "BENCH" | "BASKET";
+export type ParentGlobalIdType =
+  | "SAMPLE"
+  | "SUBSAMPLE"
+  | "CONTAINER"
+  | "TEMPLATE"
+  | "INSTRUMENT_TEMPLATE"
+  | "BENCH"
+  | "BASKET";
 
 /*
  * Except for container's contentSearch in  'public view case', must include
- * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "TEMPLATE".
+ * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "SAMPLE_TEMPLATE".
  * "ALL" can optionally be included if more than one of the above are added.
  *
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
@@ -125,7 +142,13 @@ export type UiConfig = {
   onlyAllowSelectingEmptyLocations: boolean;
 };
 
-export type PermalinkType = "sample" | "container" | "subsample" | "sampletemplate";
+export type PermalinkType =
+  | "sample"
+  | "container"
+  | "subsample"
+  | "sampletemplate"
+  | "instrument"
+  | "instrumenttemplate";
 export type Permalink = {
   type: PermalinkType;
   id: number;
@@ -399,6 +422,11 @@ export interface Search {
    * These methods SHOULD perform the associated contextual action.
    */
   createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void>;
+  createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
+    includeContentForFields: Set<Id>,
+  ): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;

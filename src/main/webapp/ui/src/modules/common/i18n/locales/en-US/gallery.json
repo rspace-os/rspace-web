@@ -110,7 +110,14 @@
       "username": "Username"
     },
     "retainCopy": "Retain a copy in RSpace",
-    "title": "Move to iRODS"
+    "submit": "Move",
+    "title": "Move to iRODS",
+    "validation": {
+      "destinationRequired": "A destination is required.",
+      "loadingLocations": "Loading available locations",
+      "passwordRequired": "Password for iRODS server is required.",
+      "usernameRequired": "Username for iRODS server is required."
+    }
   },
   "moveToS3": {
     "actions": {
@@ -142,8 +149,19 @@
     "transferDescription": "You have selected {count} {count, plural, one {item} other {items}} to transfer to another S3 bucket. By default, the items will be copied to the destination and deleted from the source.",
     "transferTitle": "Transfer to S3"
   },
+  "moveWithinFilestore": {
+    "description": "Choose a destination folder in this filestore, or move to its top level.",
+    "move": "Move",
+    "moveToTopLevel": "Move to top level",
+    "title": "Move",
+    "validation": {
+      "noFolder": "No folder is selected.",
+      "tooManyFolders": "More than one folder is selected."
+    }
+  },
   "sidebar": {
     "addFilestore": "Add a Filestore",
+    "createFilestoreFolder": "New Filestore Folder",
     "createFolder": "New Folder",
     "createFolderLabel": "Name",
     "createFolderNameRequired": "A name is required.",

@@ -8,9 +8,17 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonProperty.Access;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.researchspace.api.v1.controller.BaseApiInventoryController;
+import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeDeserialiser;
+import com.researchspace.core.util.jsonserialisers.ISO8601DateTimeSerialiser;
+import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentEntity;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -49,6 +57,11 @@ import org.springframework.web.util.UriComponentsBuilder;
   "revisionId",
   "version",
   "historicalVersion",
+  "parentContainers",
+  "parentLocation",
+  "lastNonWorkbenchParent",
+  "lastMoveDate",
+  "storedInContainer",
   "_links"
 })
 public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
@@ -76,6 +89,24 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
   @JsonProperty("historicalVersion")
   private boolean historicalVersion;
 
+  @JsonProperty("parentContainers")
+  private List<ApiContainerInfo> parentContainers = new ArrayList<>();
+
+  @JsonProperty("parentLocation")
+  private ApiContainerLocation parentLocation;
+
+  @JsonProperty("lastNonWorkbenchParent")
+  private ApiContainerInfo lastNonWorkbenchParent;
+
+  @EqualsAndHashCode.Exclude
+  @JsonProperty("lastMoveDate")
+  @JsonSerialize(using = ISO8601DateTimeSerialiser.class)
+  @JsonDeserialize(using = ISO8601DateTimeDeserialiser.class)
+  private Long lastMoveDateMillis;
+
+  @JsonProperty("storedInContainer")
+  private boolean storedInContainer;
+
   public ApiInstrumentEntityInfo(InstrumentEntity instrumentEntity) {
     super(instrumentEntity);
     if (instrumentEntity.isInstrument()) {
@@ -83,6 +114,25 @@ public class ApiInstrumentEntityInfo extends ApiInventoryRecordInfo {
       this.setTemplateId(in.getParentTemplateId());
       this.setTemplate(false);
       this.setTemplateVersion(in.getTemplateLinkedVersion());
+      if (in.getParentLocation() != null) {
+        parentLocation = new ApiContainerLocation(in.getParentLocation());
+        Container parent = in.getParentContainer();
+        if (parent != null) {
+          parentContainers.add(new ApiContainerInfo(parent));
+          Container curr = parent.getParentContainer();
+          while (curr != null) {
+            parentContainers.add(new ApiContainerInfo(curr));
+            curr = curr.getParentContainer();
+          }
+        }
+      }
+      if (in.getLastNonWorkbenchParent() != null) {
+        lastNonWorkbenchParent = new ApiContainerInfo(in.getLastNonWorkbenchParent());
+      }
+      if (in.getLastMoveDate() != null) {
+        lastMoveDateMillis = Date.from(in.getLastMoveDate()).getTime();
+      }
+      storedInContainer = in.isStoredInContainer();
     } else { // then it is an InstrumentTemplate
       this.setTemplate(true);
     }

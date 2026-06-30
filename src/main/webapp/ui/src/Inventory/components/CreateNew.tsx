@@ -45,7 +45,9 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   const [fieldmarkOpen, setFieldmarkOpen] = React.useState(false);
   const showFieldmark = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("FIELDMARK")).orElse(false);
-  const handleCreate = async (recordType: "sample" | "container" | "template") => {
+  const handleCreate = async (
+    recordType: "sample" | "container" | "instrument" | "template" | "instrumentTemplate",
+  ) => {
     trackingStore.trackEvent("CreateInventoryRecordClicked", {
       type: recordType,
     });
@@ -166,6 +168,27 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
+          title={t("createNew.newInstrument")}
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "instrument",
+              }}
+              color=""
+              style={{
+                width: "18px",
+                height: "18px",
+                padding: "5px",
+              }}
+            />
+          }
+          onClick={() => {
+            void handleCreate("instrument");
+          }}
+        />
+        <AccentMenuItem
+          compact
           title={t("createNew.newTemplate")}
           avatar={
             <RecordTypeIcon
@@ -185,6 +208,29 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           }
           onClick={() => {
             void handleCreate("template");
+          }}
+        />
+        <AccentMenuItem
+          compact
+          title={t("createNew.newInstrumentTemplate")}
+          avatar={
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "",
+                iconName: "instrumentTemplate",
+              }}
+              color=""
+              style={{
+                width: "28px",
+                height: "28px",
+                padding: "2px",
+                paddingTop: "5px",
+                paddingLeft: "5px",
+              }}
+            />
+          }
+          onClick={() => {
+            void handleCreate("instrumentTemplate");
           }}
         />
         <Divider textAlign="left" aria-label={t("createNew.csvImport")}>

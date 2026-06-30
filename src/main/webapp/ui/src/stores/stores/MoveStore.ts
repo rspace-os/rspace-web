@@ -11,6 +11,7 @@ import type { HasLocation } from "../definitions/HasLocation";
 import { type InventoryRecord, recordTypeToApiRecordType } from "../definitions/InventoryRecord";
 import ContainerModel from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
+import InstrumentModel from "../models/InstrumentModel";
 import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
@@ -165,7 +166,11 @@ export default class MoveStore {
           await record.fetchAdditionalInfo();
         }
         this.selectedResults = [...this.selectedResults, ...record.subSamples];
-      } else if (record instanceof SubSampleModel || record instanceof ContainerModel) {
+      } else if (
+        record instanceof SubSampleModel ||
+        record instanceof ContainerModel ||
+        record instanceof InstrumentModel
+      ) {
         this.selectedResults = [...this.selectedResults, record];
       } else {
         throw new Error("Unknown type.");

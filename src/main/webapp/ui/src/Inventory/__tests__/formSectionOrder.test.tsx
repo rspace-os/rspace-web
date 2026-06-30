@@ -7,6 +7,8 @@ import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderO
 import { IsValid } from "../../components/ValidatingSubmitButton";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
@@ -19,6 +21,10 @@ import ContainerBatchForm from "../Container/BatchForm";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
 import MixedBatchForm from "../Mixed/BatchForm";
 import SampleBatchForm from "../Sample/BatchForm";
 import SampleForm from "../Sample/Form";
@@ -53,6 +59,12 @@ vi.mock("../components/ContextMenu/ContextMenu", () => ({
   default: vi.fn(() => <div></div>),
 }));
 vi.mock("../Sample/Fields/Template/Template", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Instrument/Fields/InstrumentTemplateField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../InstrumentTemplate/Fields/InstrumentsList", () => ({
   default: vi.fn(() => <div></div>),
 }));
 vi.mock("../Sample/Fields/Quantity", () => ({
@@ -230,6 +242,34 @@ describe("Form Section Order", () => {
           "Template New Form",
           getSectionNames(<TemplateNewRecordForm />, {
             activeResult: makeMockTemplate({ id: null, globalId: null }),
+          }),
+        ],
+        [
+          "Instrument Form",
+          getSectionNames(<InstrumentForm />, {
+            activeResult: makeMockInstrument({
+              owner: personAttrs(),
+            }),
+          }),
+        ],
+        [
+          "Instrument New Form",
+          getSectionNames(<InstrumentNewRecordForm />, {
+            activeResult: makeMockInstrument({ id: null, globalId: null }),
+          }),
+        ],
+        [
+          "Instrument Template Form",
+          getSectionNames(<InstrumentTemplateForm />, {
+            activeResult: makeMockInstrumentTemplate({
+              owner: personAttrs(),
+            }),
+          }),
+        ],
+        [
+          "Instrument Template New Form",
+          getSectionNames(<InstrumentTemplateNewRecordForm />, {
+            activeResult: makeMockInstrumentTemplate({ id: null, globalId: null }),
           }),
         ],
         [

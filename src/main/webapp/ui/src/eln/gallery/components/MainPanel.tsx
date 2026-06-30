@@ -229,6 +229,11 @@ const BreadcrumbLink = React.forwardRef<
         clickable
         component={ReactRouterLink}
         to=""
+        // The Box onClick handles navigation; block the Link's own `to=""` nav, which would drop
+        // the ?mediaType search param and reset the section to Images.
+        onClick={(e: React.MouseEvent) => {
+          e.preventDefault();
+        }}
         label={label}
         icon={React.isValidElement(icon) ? icon : undefined}
         sx={(theme) => ({

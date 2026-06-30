@@ -14,6 +14,8 @@ const TYPE_LABEL_KEYS = {
   subsample: "permalinkNotFound.typeLabels.subsample",
   container: "permalinkNotFound.typeLabels.container",
   sampletemplate: "permalinkNotFound.typeLabels.sampleTemplate",
+  instrument: "permalinkNotFound.typeLabels.instrument",
+  instrumenttemplate: "permalinkNotFound.typeLabels.instrumentTemplate",
 } as const satisfies Record<PermalinkType, string>;
 
 type PermalinkNotFoundArgs = {

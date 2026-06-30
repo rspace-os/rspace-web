@@ -97,7 +97,7 @@ describe("Template", () => {
     test("all of the template's fields should be copied to the sample.", async () => {
       const user = userEvent.setup();
       vi.spyOn(ApiService, "query").mockImplementation((_endpoint, params) => {
-        if (params.get("resultType") === "TEMPLATE") {
+        if (params.get("resultType") === "SAMPLE_TEMPLATE") {
           return Promise.resolve({
             data: {
               templates: [templateAttrs()],

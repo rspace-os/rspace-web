@@ -29,7 +29,12 @@ function SearchFeedback(): React.ReactNode {
     [() => search.fetcher.resultType === "CONTAINER", t("search.feedback.topLevelContainers", { count: search.count })],
     [() => search.fetcher.resultType === "SAMPLE", t("search.feedback.samples", { count: search.count })],
     [() => search.fetcher.resultType === "SUBSAMPLE", t("search.feedback.subsamples", { count: search.count })],
-    [() => search.fetcher.resultType === "TEMPLATE", t("search.feedback.templates", { count: search.count })],
+    [() => search.fetcher.resultType === "INSTRUMENT", t("search.feedback.instruments", { count: search.count })],
+    [
+      () => search.fetcher.resultType === "INSTRUMENT_TEMPLATE",
+      t("search.feedback.instrumentTemplates", { count: search.count }),
+    ],
+    [() => search.fetcher.resultType === "SAMPLE_TEMPLATE", t("search.feedback.templates", { count: search.count })],
     [() => search.fetcher.parentGlobalIdType === "SAMPLE", t("search.feedback.subsamples", { count: search.count })],
     [
       () => search.fetcher.parentGlobalIdType === "CONTAINER",
@@ -38,6 +43,10 @@ function SearchFeedback(): React.ReactNode {
     [
       () => search.fetcher.parentGlobalIdType === "TEMPLATE",
       t("search.feedback.samplesOfTemplate", { count: search.count }),
+    ],
+    [
+      () => search.fetcher.parentGlobalIdType === "INSTRUMENT_TEMPLATE",
+      t("search.feedback.instrumentsOfTemplate", { count: search.count }),
     ],
     [() => search.fetcher.parentGlobalIdType === "BENCH", t("search.feedback.itemsOnBench", { count: search.count })],
     [

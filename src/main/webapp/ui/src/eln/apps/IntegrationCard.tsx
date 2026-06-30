@@ -105,7 +105,6 @@ const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((p
   />
 ));
 CustomGrow.displayName = "CustomGrow";
-const isTestEnv = import.meta.env.MODE === "test";
 type NoopTransitionProps = {
   in?: boolean;
   children?: React.ReactNode;
@@ -402,7 +401,6 @@ function IntegrationCard<Credentials>({
         open={open}
         maxWidth="sm"
         fullWidth
-        transitionDuration={isTestEnv ? 0 : undefined}
         sx={{
           // these styles allow callers of this component to use regular HTML tags to
           // markup the `setupSection`
@@ -440,16 +438,13 @@ function IntegrationCard<Credentials>({
             },
           },
         }}
-        disableAutoFocus={isTestEnv}
-        disableEnforceFocus={isTestEnv}
-        disableRestoreFocus={isTestEnv}
         slotProps={{
           paper: {
             tabIndex: -1,
           },
         }}
         slots={{
-          transition: isTestEnv ? NoopTransition : CustomGrow,
+          transition: CustomGrow,
         }}
       >
         <DialogTitle>

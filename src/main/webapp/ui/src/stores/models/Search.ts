@@ -1,10 +1,14 @@
 import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import type { Instrument } from "@/stores/definitions/Instrument";
+import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
+import { encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { handleDetailedErrors, handleDetailedSuccesses, showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage, InvalidState, UserCancelledAction } from "../../util/error";
+import { blobToBase64 } from "../../util/files";
 import * as Parsers from "../../util/parsers";
 import { noProgress } from "../../util/progress";
 import Result from "../../util/result";
@@ -82,7 +86,15 @@ type SearchArgs = {
 
 const DEFAULT_UI_CONFIG: UiConfig = {
   allowedSearchModules: new Set(["BENCHES", "TYPE", "STATUS", "OWNER", "SCAN", "TAG", "SAVEDSEARCHES", "SAVEDBASKETS"]),
-  allowedTypeFilters: new Set(["ALL", "CONTAINER", "SAMPLE", "SUBSAMPLE", "TEMPLATE"]),
+  allowedTypeFilters: new Set([
+    "ALL",
+    "CONTAINER",
+    "SAMPLE",
+    "SUBSAMPLE",
+    "INSTRUMENT",
+    "SAMPLE_TEMPLATE",
+    "INSTRUMENT_TEMPLATE",
+  ]),
   mainColumn: "Name",
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
   adjustableColumns: ["Global ID", "Owner", "Last Modified"],
@@ -490,7 +502,15 @@ export default class Search implements SearchInterface {
         "sending to trash",
         (erroredRecords) => this.deleteRecords(erroredRecords),
       );
-      if (successfullyDeleted.length > 0) handleDetailedSuccesses(successfullyDeleted, "trashed");
+      if (successfullyDeleted.length > 0) {
+        handleDetailedSuccesses(successfullyDeleted, "trashed");
+        for (const record of successfullyDeleted) {
+          if (record.recordType === "instrument" || record.recordType === "instrumentTemplate") {
+            const type = record.recordType === "instrument" ? "instrument" : "instrument_template";
+            getRootStore().trackingStore.trackEvent(`user:delete:${type}:inventory`);
+          }
+        }
+      }
       this.offerToDeleteNowEmptySamples(successfullyDeleted);
 
       await this.updateStateAfterDelete(new RsSet(successfullyDeleted));
@@ -958,6 +978,86 @@ export default class Search implements SearchInterface {
     }
   }
 
+  async createInstrumentTemplateFromInstrument(
+    name: string,
+    instrument: Instrument,
+    includeContentForFields: Set<Id>,
+  ): Promise<void> {
+    const { uiStore, trackingStore } = getRootStore();
+    try {
+      if (!instrument.infoLoaded) await instrument.fetchAdditionalInfo();
+      const newBase64Image = instrument.image
+        ? await fetch(instrument.image)
+            .then((x) => x.blob())
+            .then(blobToBase64)
+        : null;
+      const args = {
+        name,
+        description: instrument.description,
+        tags: instrument.tags.map((tag) => ({
+          value: encodeTagString(tag.value),
+          uri: tag.uri.map(encodeTagString).orElse(null),
+          ontologyName: tag.vocabulary.map(encodeTagString).orElse(null),
+          ontologyVersion: tag.version.map(encodeTagString).orElse(null),
+        })),
+        newBase64Image,
+        fields: instrument.fields.map((f) => {
+          const params = { ...(f.paramsForBackend as Record<string, unknown>) };
+          if (!includeContentForFields.has(params.id as Id)) {
+            params.content = "";
+            params.selectedOptions = null;
+          }
+          return params;
+        }),
+        extraFields: instrument.extraFields.map(({ name: fieldName, type, content, id }) => ({
+          name: fieldName,
+          type: type.toLowerCase(),
+          content: includeContentForFields.has(id) ? content : "",
+          definition: null,
+        })),
+      };
+      const { data } = await ApiService.post<InstrumentTemplateAttrs>("instrumentTemplates", args);
+      const factory = this.factory.newFactory();
+      const template = factory.newRecord(data);
+      uiStore.addAlert(
+        mkAlert({
+          message: `Instrument template created successfully.`,
+          variant: "success",
+          details: [
+            {
+              title: template.name,
+              variant: "success",
+              record: template,
+            },
+          ],
+        }),
+      );
+      trackingStore.trackEvent("user:create:instrument_template:inventory");
+      void this.fetcher.performInitialSearch(null);
+    } catch (error) {
+      uiStore.addAlert(
+        mkAlert({
+          title: `Instrument template creation failed.`,
+          message: getErrorMessage(error, "Unknown reason."),
+          variant: "error",
+          details: Parsers.objectPath(["response", "data", "errors"], error)
+            .flatMap(Parsers.isArray)
+            .flatMap((errors) =>
+              Result.all(...errors.map(Parsers.isString)).map((titles) =>
+                titles.map((title) => ({
+                  title,
+                  variant: "error" as const,
+                })),
+              ),
+            )
+            .orElse(undefined),
+        }),
+      );
+      console.error("Could not create instrument template from instrument.", error);
+      throw error;
+    }
+  }
+
   async createNewSubsamples(opts: {
     sample: Sample;
     numberOfNewSubsamples: number;
@@ -1328,18 +1428,23 @@ export default class Search implements SearchInterface {
     if (!this.uiConfig.allowedTypeFilters) return new Set([]);
     const allowedTypeFilters = new Set([...this.uiConfig.allowedTypeFilters]);
     if (this.benchSearch || this.fetcher.parentIsContainer) {
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
       allowedTypeFilters.delete("SAMPLE");
     }
     if (this.fetcher.parentIsSample) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (this.fetcher.parentIsTemplate) {
       allowedTypeFilters.delete("CONTAINER");
       allowedTypeFilters.delete("SUBSAMPLE");
-      allowedTypeFilters.delete("TEMPLATE");
+      allowedTypeFilters.delete("SAMPLE_TEMPLATE");
+      allowedTypeFilters.delete("INSTRUMENT");
+      allowedTypeFilters.delete("INSTRUMENT_TEMPLATE");
     }
     if (!this.fetcher.allTypesAllowed) {
       allowedTypeFilters.delete("ALL");

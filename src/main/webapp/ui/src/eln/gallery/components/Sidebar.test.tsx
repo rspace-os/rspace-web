@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible, render, screen, waitFor, within } from "@/__tests__/customQueries";
 import axios from "@/common/axios";
-import { DefaultSidebar } from "./Sidebar.story";
+import { DefaultSidebar, S3_FILESTORE_ID, S3FilestoreSidebar } from "./Sidebar.story";
 
 const mockAxios = new MockAdapter(axios);
 
@@ -33,6 +33,11 @@ function mockNetwork() {
     error: null,
     success: true,
     errorMsg: null,
+  });
+
+  // S3 filestore folder creation endpoint
+  mockAxios.onPost(`/api/v1/gallery/filestores/${S3_FILESTORE_ID}/folder`).reply(200, {
+    data: "my-bucket/test/",
   });
 
   // DMP integration status lookups (DmpMenuSection)
@@ -144,6 +149,33 @@ describe("Sidebar", () => {
       });
 
       // submission closes the dialog
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
+
+    test("Inside an S3 filestore, creates the folder via the filestore API", async () => {
+      const user = userEvent.setup();
+      render(<S3FilestoreSidebar />);
+
+      await user.click(await screen.findByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      // S3 gets the filestore-specific title and the "no native folders" note
+      expect(within(dialog).getByRole("heading", { name: /New Filestore Folder/i })).toBeVisible();
+      expect(within(dialog).getByText(/S3 has no native concept of folders/i)).toBeVisible();
+      await user.type(within(dialog).getByRole("textbox"), "test");
+      await user.click(within(dialog).getByRole("button", { name: "Create" }));
+
+      // the request goes to the filestore folder endpoint, not the local one
+      await waitFor(() => {
+        const req = mockAxios.history.post.find((r) => r.url?.includes(`filestores/${S3_FILESTORE_ID}/folder`));
+        expect(req).toBeDefined();
+        expect(JSON.parse(String(req?.data))).toEqual({ path: "", name: "test" });
+      });
+      expect(mockAxios.history.post.some((r) => r.url?.includes("createFolder"))).toBe(false);
+
       await waitFor(() => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       });

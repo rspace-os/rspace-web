@@ -584,24 +584,32 @@ const IdentifiersCard = observer((): ReactNode => {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
   const { t } = useTranslation("inventory");
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+  const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
 
   return (
     <>
       {activeResult.state === "create" && <Alert severity="info">{t("fields.identifiers.card.notCreatedYet")}</Alert>}
       {activeResult.state !== "create" && identifiers.length === 0 && !activeResult.historicalVersion && (
         <Stack direction="row" spacing={1}>
-          <Button color="primary" variant="outlined" onClick={() => void activeResult.addIdentifier()}>
-            {t("fields.identifiers.card.createNew")}
+          <Button
+            color="primary"
+            variant="outlined"
+            disabled={isInstrument}
+            onClick={() => void activeResult.addIdentifier()}
+          >
+            {t("fields.identifiers.card.createNew", { identifierLabel })}
           </Button>
           <Button
             color="primary"
             variant="outlined"
+            disabled={isInstrument}
             onClick={() => {
               setAssignDialogOpen(true);
               trackEvent("user:open:assign-existing-igsn-dialog");
             }}
           >
-            {t("fields.identifiers.card.linkExisting")}
+            {t("fields.identifiers.card.linkExisting", { identifierLabel })}
           </Button>
           <AssignDialog
             recordToAssignTo={activeResult}

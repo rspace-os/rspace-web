@@ -19,6 +19,8 @@ const docLinkDefinitions = {
   editLocationsInVisualContainers: { articleId: "jya8j336dt" },
   createContainer: { articleId: "e5v4bvcl61" },
   createTemplate: { articleId: "c8sxesdqpy" },
+  createInstrument: { articleId: "ct15xwb13m" },
+  createInstrumentTemplate: { articleId: "5f0lakn5nl" },
   updateAllSamplesOfTemplate: { articleId: "c8sxesdqpy", hashSeparator: "_" },
   createDialog: { articleId: "x4y02hje72", hashSeparator: "-" },
   createSample: { articleId: "gb3r1lgm5g" },

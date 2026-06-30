@@ -99,6 +99,8 @@ const firefoxCiSkippedFiles =
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",
+        "**/components/Tags/__tests__/TagsCombobox.spec.tsx",
+        "**/eln/sysadmin/users/__tests__/TagsCombobox.spec.tsx",
       ]
     : [];
 

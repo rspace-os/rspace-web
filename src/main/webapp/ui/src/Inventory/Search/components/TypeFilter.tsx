@@ -1,4 +1,5 @@
 import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
@@ -118,12 +119,26 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemText primary={t("search.controls.type.subsamples")} />
         </MenuItem>
         <MenuItem
-          selected={current === "TEMPLATE"}
-          aria-current={current === "TEMPLATE"}
+          selected={current === "INSTRUMENT"}
+          aria-current={current === "INSTRUMENT"}
           onClick={() => {
-            onClose("TEMPLATE");
+            onClose("INSTRUMENT");
           }}
-          disabled={!search.allowedTypeFilters.has("TEMPLATE")}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+          data-test-id="instrumentType"
+        >
+          <ListItemIcon>
+            <FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} style={{ fontSize: "1em" }} />
+          </ListItemIcon>
+          <ListItemText primary="Instruments" />
+        </MenuItem>
+        <MenuItem
+          selected={current === "SAMPLE_TEMPLATE"}
+          aria-current={current === "SAMPLE_TEMPLATE"}
+          onClick={() => {
+            onClose("SAMPLE_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("SAMPLE_TEMPLATE")}
           data-test-id="templateType"
         >
           <ListItemIcon>
@@ -144,6 +159,37 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             secondary={match<void, string>([
               [() => search.benchSearch, t("search.controls.type.templatesNotOnBenches")],
               [() => search.fetcher.parentIsContainer, t("search.controls.type.templatesNotInContainers")],
+              [() => true, ""],
+            ])()}
+          />
+        </MenuItem>
+        <MenuItem
+          selected={current === "INSTRUMENT_TEMPLATE"}
+          aria-current={current === "INSTRUMENT_TEMPLATE"}
+          onClick={() => {
+            onClose("INSTRUMENT_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+          data-test-id="instrumentTemplateType"
+        >
+          <ListItemIcon>
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: t("search.controls.type.instrumentTemplate"),
+                iconName: "instrumentTemplate",
+              }}
+              color={theme.palette.standardIcon.main}
+              style={{
+                height: 18,
+                width: 18,
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary={t("search.controls.type.instrumentTemplates")}
+            secondary={match<void, string>([
+              [() => search.benchSearch, t("search.controls.type.instrumentTemplatesNotOnBenches")],
+              [() => search.fetcher.parentIsContainer, t("search.controls.type.instrumentTemplatesNotInContainers")],
               [() => true, ""],
             ])()}
           />

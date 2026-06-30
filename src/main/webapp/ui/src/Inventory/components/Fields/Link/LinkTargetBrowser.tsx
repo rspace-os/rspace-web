@@ -34,7 +34,7 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
         },
         uiConfig: {
           allowedSearchModules: new Set(["TYPE", "OWNER", "SAVEDSEARCHES", "TAG"]),
-          allowedTypeFilters: new Set(["ALL", "SAMPLE", "SUBSAMPLE", "CONTAINER", "TEMPLATE"]),
+          allowedTypeFilters: new Set(["ALL", "SAMPLE", "SUBSAMPLE", "CONTAINER", "SAMPLE_TEMPLATE"]),
           selectionMode: "SINGLE",
           // mirror Browse ELN: clicking a result only selects it, and the
           // picker's Choose button (enabled once a row is selected) confirms
