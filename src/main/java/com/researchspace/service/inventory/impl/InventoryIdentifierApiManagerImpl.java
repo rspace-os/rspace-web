@@ -12,6 +12,9 @@ import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.api.v1.model.ApiSample;
 import com.researchspace.api.v1.model.ApiSubSample;
+import com.researchspace.b2inst.model.request.B2instDoi;
+import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.b2inst.model.response.B2instRequestResponse;
 import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.datacite.model.DataCiteConnectionException;
 import com.researchspace.datacite.model.DataCiteDoi;
@@ -28,8 +31,11 @@ import com.researchspace.service.inventory.ContainerApiManager;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.InventoryRecordRetriever;
+import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.service.inventory.SubSampleApiManager;
+import com.researchspace.webapp.integrations.b2inst.B2instConnectionException;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import java.time.Year;
 import java.util.LinkedList;
@@ -62,6 +68,8 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   private @Autowired IPropertyHolder properties;
 
   private DataCiteConnector dataCiteConnector;
+  @Autowired private B2instConnector b2instConnector;
+  @Autowired private RspaceToExternalProviderAdapter rspaceToExternalProviderAdapter;
 
   @Override
   public InventoryRecord getInventoryRecordByIdentifierId(Long doiId) {
@@ -190,6 +198,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       case IGSN_DATACITE:
         return InventorySettingType.IGSN;
       case PIDINST_DATACITE:
+      case PIDINST_B2INST:
         return InventorySettingType.PIDINST;
       default:
         throw new UnsupportedOperationException(
@@ -198,8 +207,15 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
   }
 
+  private boolean isB2inst(IdentifierType identifierType) {
+    return IdentifierType.PIDINST_B2INST.equals(identifierType);
+  }
+
   private void assertPidinstRegistrationSupported() {
-    if (!dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST)) {
+    boolean dataciteEnabled =
+        dataCiteConnector.isDataCiteConfiguredAndEnabled(InventorySettingType.PIDINST);
+    boolean b2instEnabled = b2instConnector.isConfiguredAndEnabled();
+    if (!dataciteEnabled && !b2instEnabled) {
       throw new UnsupportedOperationException(
           messages.getMessage(
               "errors.inventory.identifier.integration.not.enabled",
@@ -381,8 +397,48 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   private ApiInventoryDOI createUpdateWithNewDoi(
       InventoryRecord invRec, User user, InventorySettingType settingType) {
-    ApiInventoryDOI newDoi = createNewDoi(user, settingType);
+    ApiInventoryDOI newDoi;
+    if (InventorySettingType.PIDINST.equals(settingType)
+        && b2instConnector.isConfiguredAndEnabled()) {
+      newDoi = createNewB2instDoi(invRec, user);
+    } else {
+      newDoi = createNewDoi(user, settingType);
+    }
     return updateNewAssociatedDoi(invRec, newDoi);
+  }
+
+  /**
+   * Registers a draft instrument record with B2INST and returns the RSpace DOI representation,
+   * persisting the B2INST record id (RID) as the identifier. The Handle PID is minted only on
+   * publish.
+   */
+  private ApiInventoryDOI createNewB2instDoi(InventoryRecord invRec, User user) {
+    B2instDoi b2instDoi = rspaceToExternalProviderAdapter.buildB2instDoi(invRec);
+    B2instDraftRecord draft;
+    try {
+      draft = b2instConnector.registerDoi(b2instDoi);
+    } catch (B2instConnectionException b2instException) {
+      throw new B2instConnectionException(
+          "Error when registering a new instrument PID with B2INST. "
+              + "If the problem persists, please contact your System Admin",
+          b2instException);
+    }
+    if (draft == null || isBlank(draft.getId())) {
+      throw new IllegalStateException("B2INST registration failed");
+    }
+
+    ApiInventoryDOI newDoi = new ApiInventoryDOI();
+    newDoi.setRegisterIdentifierRequest(true);
+    newDoi.setDoi(draft.getId()); // the draft RID; the Handle PID is minted on publish
+    newDoi.setState("draft");
+    newDoi.setCreatorName(user.getFullName());
+    newDoi.setCreatorType("Personal");
+    newDoi.setPublisher(properties.getCustomerName());
+    newDoi.setPublicationYear(Year.now().getValue());
+    newDoi.setDoiType(IdentifierType.PIDINST_B2INST.name());
+    newDoi.setResourceType("Instrument");
+    newDoi.setResourceTypeGeneral("Instrument");
+    return newDoi;
   }
 
   private ApiInventoryDOI assignUpdateWithNewDoi(
@@ -405,6 +461,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   }
 
   private boolean deleteFromDatacite(DigitalObjectIdentifier doi) {
+    if (isB2inst(doi.getType())) {
+      return deleteFromB2inst(doi);
+    }
     boolean dataCiteDeleteResult;
     try {
       dataCiteDeleteResult =
@@ -422,12 +481,32 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     return dataCiteDeleteResult;
   }
 
+  private boolean deleteFromB2inst(DigitalObjectIdentifier doi) {
+    boolean deleteResult;
+    try {
+      deleteResult = b2instConnector.deleteDoi(doi.getIdentifier());
+    } catch (B2instConnectionException b2instException) {
+      log.error("Error when deleting the PID from B2INST: ", b2instException);
+      throw new B2instConnectionException(
+          "Error when deleting the PID from B2INST. "
+              + "If the problem persists, please contact your System Admin",
+          b2instException);
+    }
+    if (!deleteResult) {
+      throw new IllegalStateException("B2INST delete failed");
+    }
+    return deleteResult;
+  }
+
   @SneakyThrows
   private ApiInventoryDOI createUpdateWithPublishedDoi(InventoryRecord invRec, User user) {
 
+    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
+    if (isB2inst(doi.getType())) {
+      return createUpdateWithPublishedB2instDoi(doi);
+    }
     String rorAffiliationID = rorService.getSystemRoRValue();
     String rorAffiliationName = rorService.getRorNameForSystemRoRValue();
-    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
@@ -457,9 +536,12 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
 
   @SneakyThrows
   private ApiInventoryDOI createUpdateWithRetractedDoi(InventoryRecord invRec, User user) {
+    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
+    if (isB2inst(doi.getType())) {
+      return createUpdateWithRetractedB2instDoi(doi);
+    }
     String rorAffiliationID = rorService.getSystemRoRValue();
     String rorAffiliationName = rorService.getRorNameForSystemRoRValue();
-    DigitalObjectIdentifier doi = invRec.getActiveIdentifiers().get(0);
     ApiInventoryDOI actualdoi = new ApiInventoryDOI(doi);
     actualdoi.setCreatorAffiliation(rorAffiliationName);
     actualdoi.setCreatorAffiliationIdentifier(rorAffiliationID);
@@ -484,6 +566,35 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     publishDoi.setCreatorAffiliation(rorAffiliationName);
     publishDoi.setCreatorAffiliationIdentifier(rorAffiliationID);
     return publishDoi;
+  }
+
+  /**
+   * Best-effort publish for B2INST: submits the draft to the configured community. On the test
+   * community this is curator-gated, so the returned state reflects the submission status rather
+   * than a minted PID.
+   */
+  private ApiInventoryDOI createUpdateWithPublishedB2instDoi(DigitalObjectIdentifier doi) {
+    B2instRequestResponse result;
+    try {
+      result = b2instConnector.publishDoi(doi.getIdentifier());
+    } catch (B2instConnectionException b2instException) {
+      throw new B2instConnectionException(
+          "Error when publishing the instrument PID in B2INST. "
+              + "If the problem persists, please contact your System Admin",
+          b2instException);
+    }
+    ApiInventoryDOI publishDoi = new ApiInventoryDOI();
+    publishDoi.setId(doi.getId());
+    if (result != null && isNotBlank(result.getStatus())) {
+      publishDoi.setState(result.getStatus());
+    }
+    return publishDoi;
+  }
+
+  private ApiInventoryDOI createUpdateWithRetractedB2instDoi(DigitalObjectIdentifier doi) {
+    // B2INST/Invenio has no retract operation; this surfaces an UnsupportedOperationException.
+    b2instConnector.retractDoi(doi.getIdentifier());
+    return new ApiInventoryDOI();
   }
 
   @NotNull

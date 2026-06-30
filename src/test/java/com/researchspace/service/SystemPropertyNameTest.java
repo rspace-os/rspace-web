@@ -22,4 +22,18 @@ class SystemPropertyNameTest {
     assertEquals(expectedEnumName, resolved.name());
     assertEquals(propertyName, resolved.getPropertyName());
   }
+
+  @ParameterizedTest
+  @CsvSource({
+    "pidinst.b2inst.enabled, PIDINST_B2INST_ENABLED",
+    "pidinst.b2inst.server.url, PIDINST_B2INST_SERVER_URL",
+    "pidinst.b2inst.community.id, PIDINST_B2INST_COMMUNITY_ID",
+    "pidinst.b2inst.token, PIDINST_B2INST_TOKEN"
+  })
+  void valueOfPropertyNameResolvesB2instProperties(String propertyName, String expectedEnumName) {
+    SystemPropertyName resolved = SystemPropertyName.valueOfPropertyName(propertyName);
+    assertNotNull(resolved, "no SystemPropertyName for " + propertyName);
+    assertEquals(expectedEnumName, resolved.name());
+    assertEquals(propertyName, resolved.getPropertyName());
+  }
 }

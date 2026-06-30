@@ -7,7 +7,6 @@ import static org.mockito.Mockito.mock;
 
 import com.researchspace.api.v1.model.ApiInventorySystemSettings;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.IdentifierSettings;
-import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.system.SystemPropertyValue;
@@ -44,14 +43,14 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(initialSettings);
 
     IdentifierSettings initialIgsn =
-        initialSettings.getIdentifiersSettings().get(InventorySettingType.IGSN);
+        initialSettings.findByProvider(IdentifierType.IGSN_DATACITE).orElseThrow();
     assertNotNull(initialIgsn);
     assertEquals(IdentifierType.IGSN_DATACITE, initialIgsn.getProvider());
-    assertNotNull(initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST));
+    assertNotNull(initialSettings.findByProvider(IdentifierType.PIDINST_DATACITE).orElseThrow());
 
     // capture the current PIDINST username, so we can prove the IGSN update leaves it untouched
     String initialPidinstUsername =
-        initialSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername();
+        initialSettings.findByProvider(IdentifierType.PIDINST_DATACITE).orElseThrow().getUsername();
 
     // a single IGSN-provider object updates only the IGSN config
     IdentifierSettings igsnUpdate = new IdentifierSettings();
@@ -63,10 +62,13 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(updatedSettings);
     assertEquals(
         "igsnUserUpdated",
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
+        updatedSettings.findByProvider(IdentifierType.IGSN_DATACITE).orElseThrow().getUsername());
     assertEquals(
         initialPidinstUsername,
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+        updatedSettings
+            .findByProvider(IdentifierType.PIDINST_DATACITE)
+            .orElseThrow()
+            .getUsername());
 
     // a single PIDINST-provider object updates only the PIDINST config
     IdentifierSettings pidinstUpdate = new IdentifierSettings();
@@ -78,20 +80,26 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(updatedSettings);
     assertEquals(
         "pidinstUserUpdated",
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+        updatedSettings
+            .findByProvider(IdentifierType.PIDINST_DATACITE)
+            .orElseThrow()
+            .getUsername());
     assertEquals(
         "igsnUserUpdated",
-        updatedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
+        updatedSettings.findByProvider(IdentifierType.IGSN_DATACITE).orElseThrow().getUsername());
 
     ApiInventorySystemSettings reloadedSettings =
         settingsController.getInventorySettings(request, sysadmin);
     assertNotNull(reloadedSettings);
     assertEquals(
         "igsnUserUpdated",
-        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.IGSN).getUsername());
+        reloadedSettings.findByProvider(IdentifierType.IGSN_DATACITE).orElseThrow().getUsername());
     assertEquals(
         "pidinstUserUpdated",
-        reloadedSettings.getIdentifiersSettings().get(InventorySettingType.PIDINST).getUsername());
+        reloadedSettings
+            .findByProvider(IdentifierType.PIDINST_DATACITE)
+            .orElseThrow()
+            .getUsername());
   }
 
   @Test
@@ -121,6 +129,17 @@ public class SystemSettingsApiControllerTest extends SpringTransactionalTest {
     assertPropertyPresent(propertiesMap, "pidinst.datacite.username");
     assertPropertyPresent(propertiesMap, "pidinst.datacite.password");
     assertPropertyPresent(propertiesMap, "pidinst.datacite.repositoryPrefix");
+  }
+
+  @Test
+  public void b2instSystemPropertiesAreSeeded() {
+    // asserts the RSDEV-1176 changeset seeded the four pidinst.b2inst.* properties
+    Map<String, SystemPropertyValue> propertiesMap = sysPropertyMgr.getAllSysadminPropertiesAsMap();
+
+    assertPropertyPresent(propertiesMap, "pidinst.b2inst.enabled");
+    assertPropertyPresent(propertiesMap, "pidinst.b2inst.server.url");
+    assertPropertyPresent(propertiesMap, "pidinst.b2inst.community.id");
+    assertPropertyPresent(propertiesMap, "pidinst.b2inst.token");
   }
 
   private void assertPropertyPresent(

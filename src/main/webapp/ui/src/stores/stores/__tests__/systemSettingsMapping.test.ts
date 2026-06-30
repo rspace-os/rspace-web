@@ -9,22 +9,34 @@ describe("systemSettingsFromApiResponse", () => {
   test("maps the IGSN entry of the new response to the datacite settings shape", () => {
     const response: ApiInventorySystemSettings = {
       identifiersSettings: {
-        IGSN: {
-          provider: "IGSN_DATACITE",
-          serverUrl: "https://api.test.datacite.org",
-          username: "AJFO.JIJEMD",
-          password: "secret",
-          repositoryPrefix: "10.82316",
-          enabled: "true",
-        },
-        PIDINST: {
-          provider: "PIDINST_DATACITE",
-          serverUrl: "https://api.test.datacite.org",
-          username: "ignored",
-          password: "ignored",
-          repositoryPrefix: "99.99999",
-          enabled: "true",
-        },
+        IGSN: [
+          {
+            provider: "IGSN_DATACITE",
+            serverUrl: "https://api.test.datacite.org",
+            username: "AJFO.JIJEMD",
+            password: "secret",
+            repositoryPrefix: "10.82316",
+            enabled: "true",
+          },
+        ],
+        PIDINST: [
+          {
+            provider: "PIDINST_DATACITE",
+            serverUrl: "https://api.test.datacite.org",
+            username: "ignored",
+            password: "ignored",
+            repositoryPrefix: "99.99999",
+            enabled: "true",
+          },
+          {
+            provider: "PIDINST_B2INST",
+            serverUrl: "https://b2inst-test.gwdg.de",
+            username: "ignored-community",
+            password: "ignored-token",
+            repositoryPrefix: "",
+            enabled: "false",
+          },
+        ],
       },
     };
 
