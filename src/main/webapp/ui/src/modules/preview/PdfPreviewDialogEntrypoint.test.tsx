@@ -31,7 +31,8 @@ vi.mock("react-pdf", () => {
     },
     Page: ({ pageNumber, scale }: PageProps) => (
       <div data-scale={String(scale)} data-testid={`mock-pdf-page-${pageNumber}`}>
-        Page {pageNumber}
+        {"\n        Page "}
+        {pageNumber}
       </div>
     ),
   };
@@ -65,7 +66,7 @@ describe("pdf preview dialog island", () => {
       );
     });
 
-    expect(await screen.findByLabelText(/gallery:callablePdfPreview\.title/i)).toBeVisible();
+    expect(await screen.findByLabelText("gallery:callablePdfPreview.title")).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
       "data-file",
       "/public/publicView/Streamfile/17?revision=4",
@@ -99,7 +100,7 @@ describe("pdf preview dialog island", () => {
     await waitFor(() => {
       expect(axiosGetMock).toHaveBeenCalledWith("/Streamfile/ajax/convert/42?outputFormat=pdf&revision=7");
     });
-    expect(await screen.findByLabelText(/gallery:callablePdfPreview\.title/i)).toBeVisible();
+    expect(await screen.findByLabelText("gallery:callablePdfPreview.title")).toBeVisible();
     expect(screen.getByTestId("mock-pdf-document")).toHaveAttribute(
       "data-file",
       "/public/publicView/Streamfile/direct/42?fileName=converted-preview.pdf",

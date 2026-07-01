@@ -87,7 +87,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
           <ContextMenuAction
             onClick={handleOpen}
             icon={icon}
-            label={t("contextMenu.transfer.action")}
+            label={t("common:actions.transfer")}
             as={as}
             ref={ref}
             disabledHelp={disabledHelp}
@@ -121,7 +121,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
                   onClick={onSubmitHandler}
                   disabled={recipient === null}
                   loading={false}
-                  label={t("contextMenu.transfer.action")}
+                  label={t("common:actions.transfer")}
                 />
               </DialogActions>
             </ContextDialog>

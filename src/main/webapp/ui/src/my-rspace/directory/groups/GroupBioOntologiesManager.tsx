@@ -6,11 +6,13 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "../../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -136,20 +138,14 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText component="div">
-                <Trans
+                <TransRichText
                   i18nKey="profile.groups.bioOntologies.allow.text"
                   ns="common"
                   components={{
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component placeholder — children are injected by react-i18next
-                    a: <a href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
+                    a: <Link href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
                   }}
                 />{" "}
-                <Box sx={{ fontSize: "8px" }}>
-                  Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced
-                  functionality via new Web services from the National Center for Biomedical Ontology to access and use
-                  ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub
-                  2011 Jun 14.
-                </Box>
+                <Box sx={{ fontSize: "8px" }}>{t("profile.groups.bioOntologies.allow.citation")}</Box>
               </DialogContentText>
             </DialogContent>
             <DialogActions>
@@ -168,12 +164,11 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText>
-                <Trans
+                <TransRichText
                   i18nKey="profile.groups.bioOntologies.disallow.text"
                   ns="common"
                   components={{
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component placeholder — children are injected by react-i18next
-                    a: <a href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
+                    a: <Link href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
                   }}
                 />
               </DialogContentText>

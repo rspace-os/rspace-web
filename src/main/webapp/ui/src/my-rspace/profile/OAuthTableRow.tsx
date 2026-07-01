@@ -7,8 +7,9 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { OAuthApp } from "@/my-rspace/profile/types";
 
 const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clientId: string) => Promise<void> }) => {
@@ -37,11 +38,10 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clie
             title={t("profile.oauth.createdApps.confirmDeleteTitle")}
             consequences={
               <Typography variant="body1">
-                <Trans
+                <TransRichText
                   ns="common"
                   i18nKey="profile.oauth.createdApps.confirmDeleteText"
                   values={{ appName: app.appName }}
-                  components={[<strong key="strong" />]}
                 />
               </Typography>
             }

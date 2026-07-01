@@ -179,7 +179,7 @@ const DialogContent = observer(
                   event.preventDefault();
                   void saveExistingConfig(config, i);
                 }}
-                aria-label={t("integrations.dataverse.configuredAriaLabel", { name: config.DATAVERSE_ALIAS })}
+                aria-label={t("integrations.dataverse.configuredLabel", { name: config.DATAVERSE_ALIAS })}
               >
                 <CardContent>
                   <Stack spacing={2}>

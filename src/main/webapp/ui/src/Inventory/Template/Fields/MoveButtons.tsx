@@ -38,9 +38,9 @@ function CustomButton({ label, onClick, icon }: CustomButtonArgs) {
 }
 
 export default function MoveButtons({ index, onClick }: MoveButtonsArgs): ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   return (
-    <InputWrapper label={t("fields.templateFields.move.label")}>
+    <InputWrapper label={t("common:actions.move")}>
       <ToggleButtonGroup sx={{ width: "100%" }}>
         <CustomButton
           label={t("fields.templateFields.move.toTop")}

@@ -60,10 +60,10 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         <TableHead>
           <TableRow>
             <TableCell aria-label="common:stoichiometry.inventoryUpdate.selectMoleculeAria" />
-            <TableCell>common:stoichiometry.inventoryUpdate.molecule</TableCell>
-            <TableCell>common:stoichiometry.inventoryUpdate.inStock</TableCell>
-            <TableCell>common:stoichiometry.inventoryUpdate.willUse</TableCell>
-            <TableCell>common:stoichiometry.inventoryUpdate.remaining</TableCell>
+            <TableCell>{"common:stoichiometry.inventoryUpdate.molecule"}</TableCell>
+            <TableCell>{"common:stoichiometry.inventoryUpdate.inStock"}</TableCell>
+            <TableCell>{"common:stoichiometry.inventoryUpdate.willUse"}</TableCell>
+            <TableCell>{"common:stoichiometry.inventoryUpdate.remaining"}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>{ui}</TableBody>

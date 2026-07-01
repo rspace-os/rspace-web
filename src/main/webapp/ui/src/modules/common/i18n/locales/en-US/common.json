@@ -49,20 +49,28 @@
     "add": "Add",
     "back": "Back",
     "cancel": "Cancel",
+    "choose": "Choose",
     "clear": "Clear",
     "close": "Close",
     "confirm": "Confirm",
+    "copy": "Copy",
     "create": "Create",
     "delete": "Delete",
     "dismiss": "Dismiss",
     "done": "Done",
+    "duplicate": "Duplicate",
     "edit": "Edit",
     "export": "Export",
+    "import": "Import",
     "insert": "Insert",
     "invite": "Invite",
+    "login": "Login",
+    "move": "Move",
     "next": "Next",
     "ok": "OK",
     "open": "Open",
+    "remove": "Remove",
+    "restore": "Restore",
     "retry": "Retry",
     "save": "Save",
     "search": "Search",
@@ -70,6 +78,8 @@
     "share": "Share",
     "sign": "Sign",
     "submit": "Submit",
+    "transfer": "Transfer",
+    "trash": "Trash",
     "witness": "Witness"
   },
   "alerts": {
@@ -95,7 +105,7 @@
     "notifications": "Notifications",
     "notificationsAndMessages": "notifications and messages",
     "operatingAs": "Operating as:",
-    "orcidAdd": "Add an ORCID iD to your <0>profile</0>.",
+    "orcidAdd": "Add an ORCID iD to your <a>profile</a>.",
     "pageHeader": "page header",
     "published": "Published",
     "release": "Release",
@@ -126,7 +136,7 @@
     "inputMismatch": "Input does not match confirmation text"
   },
   "errorBoundary": {
-    "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
+    "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a>support@researchspace.com</a> with details of when the issue happens."
   },
   "folderSelectionDialog": {
     "selectedFolder": "Selected folder",
@@ -335,6 +345,7 @@
       "bioOntologies": {
         "allow": {
           "button": "allow BioPortal Ontologies",
+          "citation": "Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced functionality via new Web services from the National Center for Biomedical Ontology to access and use ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun 14.",
           "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
           "title": "Allow BioPortal Ontologies to be used for tag suggestions"
         },
@@ -422,9 +433,9 @@
       },
       "table": {
         "actions": "Actions",
-        "ariaLabel": "enhanced table",
         "autosharing": "Autosharing",
         "group": "Group",
+        "label": "enhanced table",
         "role": "Role"
       },
       "title": "Groups",
@@ -434,7 +445,7 @@
     },
     "oauth": {
       "connectedApps": {
-        "confirmDisconnectText": "Are you sure you want to revoke access from <0>{clientName}</0>?",
+        "confirmDisconnectText": "Are you sure you want to revoke access from <strong>{clientName}</strong>?",
         "confirmDisconnectTitle": "Confirm Disconnect",
         "disconnect": "Disconnect",
         "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
@@ -445,7 +456,7 @@
         "title": "Connected Apps"
       },
       "createdApps": {
-        "confirmDeleteText": "Are you sure you want to delete <0>{appName}</0>? All access and refresh tokens will be revoked.",
+        "confirmDeleteText": "Are you sure you want to delete <strong>{appName}</strong>? All access and refresh tokens will be revoked.",
         "confirmDeleteTitle": "Confirm Deletion",
         "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
         "deleteErrorTitle": "Unable to delete app",
@@ -476,8 +487,8 @@
       "table": {
         "actions": "Actions",
         "appName": "App Name",
-        "ariaLabel": "enhanced table",
         "clientId": "Client ID",
+        "label": "enhanced table",
         "scope": "Scope"
       }
     },
@@ -521,8 +532,8 @@
     "advancedSearch": "advanced search",
     "apachePage": "Apache page",
     "expandField": "Expand field",
-    "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <0>l:</0>",
-    "moreInfo": "For more information, see <0>advanced search</0> and the related <1>Apache page</1>.",
+    "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
+    "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
     "query": "Search query"
   },
   "shareDialog": {
@@ -793,36 +804,15 @@
     },
     "sendMessage": "Send a message"
   },
-  "usersPage": {
-    "aliasDialog": {
-      "description": "usersPage.aliasDialog.description",
-      "errorTitle": "usersPage.aliasDialog.errorTitle",
-      "fieldLabel": "usersPage.aliasDialog.fieldLabel",
-      "menuItem": "usersPage.aliasDialog.menuItem",
-      "submit": "usersPage.aliasDialog.submit",
-      "success": "usersPage.aliasDialog.success",
-      "title": "usersPage.aliasDialog.title"
-    },
-    "piRoleDialog": {
-      "error": "usersPage.piRoleDialog.error",
-      "grantAction": "usersPage.piRoleDialog.grantAction",
-      "grantTitle": "usersPage.piRoleDialog.grantTitle",
-      "loading": "usersPage.piRoleDialog.loading",
-      "passwordLabel": "usersPage.piRoleDialog.passwordLabel",
-      "revokeAction": "usersPage.piRoleDialog.revokeAction",
-      "revokeTitle": "usersPage.piRoleDialog.revokeTitle",
-      "setVerificationPassword": "usersPage.piRoleDialog.setVerificationPassword"
-    }
-  },
   "values": {
     "none": "None"
   },
   "versionLockPicker": {
-    "ariaLabel": "Version Lock Picker",
     "columns": {
       "modified": "Modified",
       "version": "Version"
     },
+    "label": "Version Lock Picker",
     "latest": "Latest",
     "versionValue": "Version {version}"
   },

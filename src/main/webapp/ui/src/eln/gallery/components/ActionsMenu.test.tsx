@@ -240,7 +240,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
-      expect(await screen.findByRole("dialog", { name: /common:shareDialog\.titleSingle/i })).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: "common:shareDialog.titleSingle" })).toBeVisible();
     });
 
     test("Share should pass all selected snippets to the dialog", async () => {
@@ -250,7 +250,7 @@ describe("ActionsMenu", () => {
       const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
-      expect(await screen.findByRole("dialog", { name: /common:shareDialog\.titleMultiple/i })).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: "common:shareDialog.titleMultiple" })).toBeVisible();
 
       // Share info should be requested for both selected snippets.
       await waitFor(() => {
@@ -325,12 +325,12 @@ describe("ActionsMenu", () => {
       await user.click(share);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /common:shareDialog\.titleSingle/i,
+        name: "common:shareDialog.titleSingle",
       });
 
       // Select Bob from the recipient dropdown.
       const recipientDropdown = within(dialog).getByRole("combobox", {
-        name: /common:shareDialog\.autocomplete\.label/i,
+        name: "common:shareDialog.autocomplete.label",
       });
       await user.click(recipientDropdown);
       const bobOption = await screen.findByRole("option", { name: /^Bob/ });
@@ -344,12 +344,12 @@ describe("ActionsMenu", () => {
 
       // Success alert appears...
       expect(await screen.findByRole("alert", undefined, { timeout: 5000 })).toHaveTextContent(
-        /common:shareDialog\.updatedSuccessfully/i,
+        "common:shareDialog.updatedSuccessfully",
       );
 
       // ...and the share dialog closes.
       await waitFor(() => {
-        expect(screen.queryByRole("dialog", { name: /common:shareDialog\.titleSingle/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog", { name: "common:shareDialog.titleSingle" })).not.toBeInTheDocument();
       });
     });
   });

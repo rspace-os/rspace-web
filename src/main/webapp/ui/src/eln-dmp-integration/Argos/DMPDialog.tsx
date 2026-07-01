@@ -15,7 +15,8 @@ import type { GridRowId } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
 import docLinks from "../../assets/DocLinks";
@@ -414,13 +415,16 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              <Trans ns="apps" i18nKey="dmpIntegrations.dialog.argosImportDesc" components={{ strong: <strong /> }} />
+              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.argosImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.argosDocsLink"
-                components={[<Link key="0" href="https://argos.openaire.eu" />, <Link key="1" href={docLinks.argos} />]}
+                components={{
+                  serviceLink: <Link href="https://argos.openaire.eu" />,
+                  helpLink: <Link href={docLinks.argos} />,
+                }}
               />
             </Typography>
           </Box>

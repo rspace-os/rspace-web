@@ -40,7 +40,7 @@ vi.mock("../../Link/VersionLockDialog", () => ({
         data-current-pin={currentVersionPin == null ? "" : String(currentVersionPin)}
       >
         <button type="button" data-testid="version-lock-dialog-confirm-7" onClick={() => onConfirm(7)}>
-          confirm 7
+          {"\n          confirm 7\n        "}
         </button>
       </div>
     ) : null,
@@ -155,15 +155,13 @@ describe("UpdateField — Field Type select includes Link", () => {
 
     expect(screen.queryByRole("combobox", { name: RELATION_TYPE_LABEL })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }),
+      screen.queryByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }),
     ).not.toBeInTheDocument();
 
     await selectFieldType("Link");
 
     expect(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL })).toBeInTheDocument();
-    expect(
-      screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" })).toBeInTheDocument();
   });
 
   it("opens the inventory browser dialog from the Browse Inventory button", async () => {
@@ -177,7 +175,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     );
 
     await selectFieldType("Link");
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.browseInventory/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseInventory" }));
     expect(screen.getByTestId("link-target-browser")).toBeInTheDocument();
   });
 
@@ -194,7 +192,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Linked sample");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SA99");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA99");
 
     await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
 
@@ -232,7 +230,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Linked sample");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SA99");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA99");
 
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
     const setAttributesDirty = extraField.setAttributesDirty;
@@ -261,7 +259,7 @@ describe("UpdateField — Field Type select includes Link", () => {
       </ThemeProvider>,
     );
 
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "0");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "0");
 
     // An existing field must not be mutated until the user presses Update, so
     // that Cancel can revert. The live-sync is scoped to brand-new fields only.
@@ -282,7 +280,7 @@ describe("UpdateField — Field Type select includes Link", () => {
 
     await selectFieldType("Link");
     // provide a valid target but leave the relation type empty
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SA99");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA99");
 
     // the relation prompt appears and is attached to the relation field, while the target
     // field keeps its own default helper text (the prompt must not leak onto the target field)
@@ -302,7 +300,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     );
 
     await selectFieldType("Link");
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.browseEln/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.browseEln" }));
     expect(screen.getByTestId("eln-record-picker")).toBeInTheDocument();
   });
 
@@ -319,7 +317,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Linked doc");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SD42");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SD42");
 
     await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
 
@@ -353,10 +351,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Linked sample");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(
-      screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }),
-      "SA99999",
-    );
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA99999");
 
     await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
 
@@ -381,7 +376,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
     const targetInput = screen.getByRole("textbox", {
-      name: /inventory:fields\.link\.editor\.targetGlobalId/i,
+      name: "inventory:fields.link.editor.targetGlobalId",
     });
     await user.type(targetInput, "SA99999");
     await user.click(screen.getByRole("button", { name: UPDATE_FIELD_LABEL }));
@@ -413,7 +408,7 @@ describe("UpdateField — Field Type select includes Link", () => {
       </ThemeProvider>,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }));
+    await user.clear(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }));
 
     // the model is flagged so the record-level Save reports the missing target
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
@@ -444,7 +439,7 @@ describe("UpdateField — Field Type select includes Link", () => {
       </ThemeProvider>,
     );
 
-    await user.clear(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }));
+    await user.clear(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }));
     await user.click(screen.getByRole("button", { name: CANCEL_UPDATE_LABEL }));
 
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
@@ -465,7 +460,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Pinned link");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SA6v1");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA6v1");
 
     expect(screen.getByText(/without a version.*clock/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: UPDATE_FIELD_LABEL })).toBeDisabled();
@@ -484,7 +479,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("textbox", { name: FIELD_NAME_LABEL }), "Loop");
     await selectFieldType("Link");
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SA1");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA1");
 
     expect(screen.getByRole("button", { name: UPDATE_FIELD_LABEL })).toBeDisabled();
   });
@@ -519,12 +514,12 @@ describe("UpdateField — version pin is edited in the editor and committed on U
     const { record } = renderExistingLinkField();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" }));
     expect(screen.getByTestId("version-lock-dialog")).toHaveAttribute("data-globalid", "SA42");
     await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
 
     // staged in the editor, not yet committed
-    expect(screen.getByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.pinnedVersion")).toBeInTheDocument();
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
     const updateExtraField = record.updateExtraField;
     expect(vi.mocked(updateExtraField)).not.toHaveBeenCalled();
@@ -549,21 +544,21 @@ describe("UpdateField — version pin is edited in the editor and committed on U
     renderExistingLinkField();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" }));
     await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
-    expect(screen.getByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.pinnedVersion")).toBeInTheDocument();
 
     // a pin belongs to a specific target, so retargeting reverts to Latest
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "9");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "9");
 
-    expect(screen.queryByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/^inventory:fields\.link\.editor\.latest$/)).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.editor.pinnedVersion")).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.latest")).toBeInTheDocument();
   });
 
   it("greys the clock for targets that cannot be version-pinned", () => {
     renderExistingLinkField("GL5");
 
-    expect(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
   });
 
   it("greys the clock while editing a no-access committed target", () => {
@@ -580,6 +575,6 @@ describe("UpdateField — version pin is edited in the editor and committed on U
     });
     renderExistingLinkField("SD5");
 
-    expect(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
   });
 });

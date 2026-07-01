@@ -19,8 +19,9 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ComponentType, type ReactNode, useContext, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
 import docLinks from "../../../../assets/DocLinks";
@@ -156,7 +157,7 @@ const IdentifierWrapper = observer(
                 <IconButton
                   onClick={() => setOpenRecommendedSection(!openRecommendedSection)}
                   disabled={false}
-                  aria-label={t("fields.identifiers.wrapper.recommended.ariaLabel")}
+                  aria-label={t("fields.identifiers.wrapper.recommended.label")}
                 >
                   <ExpandCollapseIcon open={openRecommendedSection} />
                 </IconButton>
@@ -185,11 +186,7 @@ const IdentifierWrapper = observer(
             {t("fields.identifiers.wrapper.inventoryFields.title")}
           </Typography>
           <Alert severity="info">
-            <Trans
-              ns="inventory"
-              i18nKey="fields.identifiers.wrapper.inventoryFields.alert"
-              components={{ strong: <strong /> }}
-            />
+            <TransRichText ns="inventory" i18nKey="fields.identifiers.wrapper.inventoryFields.alert" />
           </Alert>
           <FormControlLabel
             control={
@@ -259,23 +256,21 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
     if (identifierState === "draft") return <>{t("fields.identifiers.list.stateInfo.draft")}</>;
     if (identifierState === "findable")
       return (
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="fields.identifiers.list.stateInfo.findable"
           components={{
-            // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-            a: <a href={identifierUrl || ""} target="_blank" rel="noreferrer" />,
+            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
           }}
         />
       );
     if (identifierState === "registered")
       return (
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="fields.identifiers.list.stateInfo.registered"
           components={{
-            // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-            a: <a href={identifierUrl || ""} target="_blank" rel="noreferrer" />,
+            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
           }}
         />
       );
@@ -380,7 +375,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                   <IconButton
                     onClick={() => setOpenIdForm(!openIdForm)}
                     disabled={false}
-                    aria-label={t("fields.identifiers.list.toggleId.ariaLabel")}
+                    aria-label={t("fields.identifiers.list.toggleId.label")}
                   >
                     <ExpandCollapseIcon open={openIdForm} />
                   </IconButton>
@@ -527,11 +522,7 @@ const AssignDialog = observer(
                 }}
               />
               <Alert severity="warning">
-                <Trans
-                  ns="inventory"
-                  i18nKey="fields.identifiers.assignDialog.undoWarningFormatted"
-                  components={{ strong: <strong /> }}
-                />
+                <TransRichText ns="inventory" i18nKey="fields.identifiers.assignDialog.undoWarningFormatted" />
               </Alert>
             </Stack>
           </DialogContent>
@@ -639,12 +630,11 @@ function Identifiers<
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
-          <Trans
+          <TransRichText
             ns="inventory"
             i18nKey="fields.identifiers.formField.explanation"
             components={{
-              // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-              a: <a href={docLinks.IGSNIdentifiers} target="_blank" rel="noreferrer" />,
+              a: richTextLink({ href: docLinks.IGSNIdentifiers, target: "_blank", rel: "noreferrer" }),
             }}
           />
         ) : null

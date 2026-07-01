@@ -10,6 +10,7 @@ import type React from "react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import CustomTooltip from "../../../components/CustomTooltip";
 import DescriptionList from "../../../components/DescriptionList";
 import ImagePreview from "../../../components/ImagePreview";
@@ -225,13 +226,19 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
               fontSize: "0.8em",
             }}
           >
-            <span>{t("detailedListing.card.modified")} </span>
-            <TimeAgoCustom
-              time={record.lastModified}
-              formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
+            <TransRichText
+              ns="inventory"
+              i18nKey="detailedListing.card.modifiedBy"
+              values={{ name: record.modifiedByFullName }}
+              components={{
+                timeAgo: (
+                  <TimeAgoCustom
+                    time={record.lastModified}
+                    formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
+                  />
+                ),
+              }}
             />
-            <span> {t("detailedListing.card.by")} </span>
-            {record.modifiedByFullName}
           </Box>
         ) : null
       }

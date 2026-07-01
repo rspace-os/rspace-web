@@ -1,12 +1,12 @@
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Suspense } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
 import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnectionsEntry";
@@ -61,11 +61,11 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
     }
 
     if (!integrationData?.data?.enabled) {
-      return <Trans i18nKey="profile.raidConnections.notEnabled" ns="common" components={{ a: <Link /> }} />;
+      return <TransRichText i18nKey="profile.raidConnections.notEnabled" ns="common" />;
     }
 
     if (!hasConnectedServers) {
-      return <Trans i18nKey="profile.raidConnections.noConnectedServers" ns="common" components={{ a: <Link /> }} />;
+      return <TransRichText i18nKey="profile.raidConnections.noConnectedServers" ns="common" />;
     }
 
     return null;

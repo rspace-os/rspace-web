@@ -176,7 +176,8 @@ export default function ChemCard(props: ChemCardProps) {
       {
         label: (
           <>
-            M<sub>{t("tinyMce.chemCard.monoisotopicMassSubscript")}</sub>
+            {"M"}
+            <sub>{t("tinyMce.chemCard.monoisotopicMassSubscript")}</sub>
           </>
         ),
         value: chemical.exactMass,

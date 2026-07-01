@@ -167,6 +167,7 @@ export default function NewLabGroup() {
               <Stack spacing={2}>
                 <Typography variant="subtitle1" gutterBottom color={"inherit"}>
                   {t("fields.selectGroupType")}
+                  {" *"}
                 </Typography>
                 <Select
                   value={values.groupType}
@@ -194,6 +195,7 @@ export default function NewLabGroup() {
                     color={values.pisError ? "error" : "inherit"}
                   >
                     {t("fields.selectPi")}
+                    {" *"}
                   </Typography>
                   <UserSelect
                     maxSelected={1}
@@ -213,6 +215,7 @@ export default function NewLabGroup() {
                     color={values.groupOwnerError ? "error" : "inherit"}
                   >
                     {t("fields.selectGroupOwners")}
+                    {" *"}
                   </Typography>
                   <UserSelect
                     users={users}

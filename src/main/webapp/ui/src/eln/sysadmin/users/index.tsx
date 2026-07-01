@@ -64,7 +64,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
 import docLinks from "../../../assets/DocLinks";
@@ -219,10 +220,12 @@ const TagDialog = ({
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="system"
                 i18nKey="usersPage.tagDialog.description"
-                components={[<Link key="link" target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />]}
+                components={{
+                  a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
+                }}
               />
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
@@ -512,7 +515,9 @@ const PiAction = ({
                 }}
               >
                 <DialogTitle>
-                  {t(`usersPage.piRoleDialog.${action === "grant" ? "grantTitle" : "revokeTitle"}`)}
+                  {action === "grant"
+                    ? t("usersPage.piRoleDialog.grantTitle")
+                    : t("usersPage.piRoleDialog.revokeTitle")}
                 </DialogTitle>
                 <DialogContent>
                   {FetchingData.match(verificationPasswordNeeded, {
@@ -554,18 +559,21 @@ const PiAction = ({
                               mb: 2,
                             }}
                           >
-                            <Trans
+                            <TransRichText
                               ns="system"
-                              i18nKey={`usersPage.piRoleDialog.${action === "grant" ? "grantPrompt" : "revokePrompt"}`}
+                              i18nKey={
+                                action === "grant"
+                                  ? "usersPage.piRoleDialog.grantPrompt"
+                                  : "usersPage.piRoleDialog.revokePrompt"
+                              }
                               values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
-                              components={[<strong key="strong" />]}
                             />
                           </DialogContentText>
                           <TextField
                             type="password"
                             autoComplete="current-password"
                             size="small"
-                            label={t("usersPage.piRoleDialog.passwordLabel")}
+                            label={t("usersPage.piRoleDialog.password")}
                             value={password}
                             onChange={(e) => {
                               setPassword(e.target.value);
@@ -590,7 +598,11 @@ const PiAction = ({
                     type="submit"
                     loading={false}
                     disabled={false}
-                    label={t(`usersPage.piRoleDialog.${action === "grant" ? "grantAction" : "revokeAction"}`)}
+                    label={
+                      action === "grant"
+                        ? t("usersPage.piRoleDialog.grantAction")
+                        : t("usersPage.piRoleDialog.revokeAction")
+                    }
                   />
                 </DialogActions>
               </form>
@@ -690,7 +702,7 @@ const SetUsernamAliasAction = ({
                 </DialogContentText>
                 <TextField
                   size="small"
-                  label={t("usersPage.aliasDialog.fieldLabel")}
+                  label={t("usersPage.aliasDialog.field")}
                   value={alias}
                   onChange={(e) => {
                     setAlias(e.target.value);
@@ -814,10 +826,9 @@ const DeleteAction = ({
                   {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
-                        <Trans
+                        <TransRichText
                           ns="system"
                           i18nKey="usersPage.deleteDialog.formsAndTemplatesNotice"
-                          components={[<strong key="owner" />, <strong key="transfer" />, <strong key="admin" />]}
                           values={{
                             ownerOfFormsAndTemplates: t("usersPage.ownerOfFormsAndTemplates"),
                             willTransferOwnership: t("usersPage.willTransferOwnership"),
@@ -842,10 +853,9 @@ const DeleteAction = ({
                         mb: 1,
                       }}
                     >
-                      <Trans
+                      <TransRichText
                         ns="system"
                         i18nKey="usersPage.deleteDialog.formsNotice"
-                        components={[<strong key="owner" />, <strong key="transfer" />, <strong key="admin" />]}
                         values={{
                           ownerOfForms: t("usersPage.ownerOfForms"),
                           willTransferOwnership: t("usersPage.willTransferOwnership"),
@@ -868,11 +878,10 @@ const DeleteAction = ({
                       mb: 1,
                     }}
                   >
-                    <Trans
+                    <TransRichText
                       ns="system"
                       i18nKey="usersPage.deleteDialog.confirmUsername"
                       values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
-                      components={[<strong key="strong" />]}
                     />
                   </Typography>
                 </DialogContentText>
@@ -992,7 +1001,7 @@ const SelectionActions = ({
                 onClick={(e) => {
                   setActionsAnchorEl(e.currentTarget);
                 }}
-                aria-label={t("usersPage.actionsAriaLabel")}
+                aria-label={t("usersPage.actionsLabel")}
                 aria-haspopup="menu"
                 aria-expanded={Boolean(actionsAnchorEl)}
               >
@@ -1279,7 +1288,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         onClick={(e) => {
           setFilterAnchorEl(e.currentTarget);
         }}
-        aria-label={t("usersPage.filterAriaLabel")}
+        aria-label={t("usersPage.filterLabel")}
         aria-haspopup="dialog"
         aria-expanded={Boolean(filterAnchorEl)}
       >
@@ -1768,10 +1777,12 @@ export const UsersPage = (): React.ReactNode => {
                       maxWidth: 575,
                     }}
                   >
-                    <Trans
+                    <TransRichText
                       ns="system"
                       i18nKey="usersPage.intro"
-                      components={[<Link key="link" target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />]}
+                      components={{
+                        a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
+                      }}
                     />
                   </Typography>
                   <Box sx={{ height: 4 }} />

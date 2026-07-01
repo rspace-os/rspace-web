@@ -1,6 +1,6 @@
 import Alert from "@mui/material/Alert";
 import type React from "react";
-import { Trans } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Person } from "../../stores/definitions/Person";
 import type { ReadAccessLevel } from "../../stores/definitions/Record";
 
@@ -36,7 +36,7 @@ export default function LimitedAccessAlert({
   if (readAccessLevel === "full") return null;
   return (
     <Alert severity="info">
-      <Trans
+      <TransRichText
         ns="inventory"
         i18nKey="limitedAccessAlert.message"
         values={{
@@ -44,7 +44,6 @@ export default function LimitedAccessAlert({
           whatLabel,
           owner: owner.fullName,
         }}
-        components={[<br key="br" />]}
       />
     </Alert>
   );

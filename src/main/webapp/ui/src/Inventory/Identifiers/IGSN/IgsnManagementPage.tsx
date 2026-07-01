@@ -14,7 +14,7 @@ import { darken, lighten, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
 import TransRichText from "@/modules/common/i18n/TransRichText";
@@ -82,7 +82,7 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                <Trans
+                <TransRichText
                   ns="inventory"
                   i18nKey="igsnManagement.registerDescription"
                   components={{
@@ -157,7 +157,7 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                <Trans
+                <TransRichText
                   ns="inventory"
                   i18nKey="igsnManagement.manageDescription"
                   components={{
@@ -178,7 +178,7 @@ export default function IgsnManagementPage({
                   size="small"
                   disableElevation
                   startIcon={<ChecklistIcon />}
-                  aria-label={t("igsnManagement.actions.ariaLabel")}
+                  aria-label={t("igsnManagement.actions.label")}
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"

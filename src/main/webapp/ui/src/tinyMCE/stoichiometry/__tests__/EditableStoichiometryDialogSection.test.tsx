@@ -85,7 +85,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
             void tableController?.updateInventoryStock([1]);
           }}
         >
-          Trigger Inventory Save
+          {"\n          Trigger Inventory Save\n        "}
         </button>
       );
     },

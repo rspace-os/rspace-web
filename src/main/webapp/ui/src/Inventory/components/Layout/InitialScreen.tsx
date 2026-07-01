@@ -40,7 +40,7 @@ function InitialScreen(): React.ReactNode {
       icon: <MyBenchIcon />,
     },
     {
-      label: t("layout.sidebar.containers"),
+      label: t("recordTypes.container.plural"),
       onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "CONTAINER" });
@@ -57,7 +57,7 @@ function InitialScreen(): React.ReactNode {
       ),
     },
     {
-      label: t("layout.sidebar.samples"),
+      label: t("recordTypes.sample.plural"),
       onClick: (e: React.MouseEvent<HTMLElement>) => {
         e.stopPropagation();
         navigateToSearch({ resultType: "SAMPLE" });

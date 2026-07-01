@@ -63,10 +63,6 @@
     "content": {
       "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
       "placeMarkers": {
-        "actions": {
-          "open": "Open",
-          "remove": "Remove"
-        },
         "columns": {
           "actions": "Actions",
           "content": "Content",
@@ -83,10 +79,8 @@
     },
     "fields": {
       "canStore": {
-        "containers": "Containers",
         "label": "Can Store",
-        "selectAtLeastOne": "Select at least one.",
-        "subsamples": "Subsamples"
+        "selectAtLeastOne": "Select at least one."
       },
       "gridDimensions": {
         "chooseCommonSize": "Choose a common size",
@@ -157,16 +151,10 @@
   "contextMenu": {
     "actions": {
       "addToBasket": "Add to Basket",
-      "create": "Create",
-      "duplicate": "Duplicate",
-      "export": "Export",
       "makeTopLevel": "Make Top-level",
       "more": "More actions",
-      "move": "Move",
       "printBarcode": "Print Barcode",
-      "removeFromThisBasket": "Remove from This Basket",
-      "restore": "Restore",
-      "trash": "Trash"
+      "removeFromThisBasket": "Remove from This Basket"
     },
     "createDialog": {
       "change": "Change",
@@ -183,14 +171,13 @@
       "loading": "Loading...",
       "noFields": "No fields.",
       "noOptions": "No options available.",
-      "title": "Create new items from <0>{name}</0>"
+      "title": "Create new items from <strong>{name}</strong>"
     },
     "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "splitButton": {
       "moreOptions": "More selection options"
     },
     "transfer": {
-      "action": "Transfer",
       "dialog": {
         "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item.",
         "irrevocable": "This action can only be undone by the recipient or their PI.",
@@ -205,21 +192,16 @@
     }
   },
   "createNew": {
-    "button": "Create",
-    "containers": "Containers",
     "csvImport": "CSV Import",
     "newContainer": "New Container",
     "newInstrument": "New Instrument",
     "newInstrumentTemplate": "New Instrument Template",
     "newSample": "New Sample",
     "newTemplate": "New Template",
-    "samples": "Samples",
-    "subsamples": "Subsamples",
     "thirdPartyImport": "Third-Party Import"
   },
   "detailedListing": {
     "card": {
-      "by": "by",
       "contentLabels": {
         "contents": "Contents",
         "location": "Location",
@@ -228,13 +210,12 @@
         "sample": "Sample",
         "totalQuantity": "Total Quantity"
       },
-      "modified": "Modified",
+      "modifiedBy": "Modified <timeAgo></timeAgo> by {name}",
       "requiredPermissions": "You do not have permission to select this item."
     }
   },
   "export": {
     "dialog": {
-      "containers": "Containers",
       "downloadCsv": "DOWNLOAD CSV",
       "downloadZip": "DOWNLOAD ZIP",
       "exportingAll": "Exporting all items owned by the user.",
@@ -257,7 +238,6 @@
         "zipBundle": "A .ZIP bundle containing .CSV files for each item type.",
         "zipFile": "ZIP Bundle"
       },
-      "samples": "Samples",
       "title": "Export Options"
     },
     "exporter": {
@@ -303,12 +283,11 @@
     "importSuccess": "Successfully imported notebook.",
     "noNotebooks": "No Notebooks",
     "noNotebookSelected": "No Notebook selected.",
-    "selectRadioAriaLabel": "Select notebook: {name}",
+    "selectRadioLabel": "Select notebook: {name}",
     "title": "Import from Fieldmark"
   },
   "fields": {
     "accessPermissions": {
-      "ariaLabel": "Access Permission Setting",
       "editFirst": "You need to be in Edit mode to edit permissions.",
       "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
       "explicitAccess": {
@@ -316,6 +295,7 @@
         "title": "Explicit access list"
       },
       "groupName": "Group Name",
+      "label": "Access Permission Setting",
       "ownerGroups": {
         "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
         "tableNote": "This table lists the groups that the owner is a member of.",
@@ -527,8 +507,8 @@
           "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a>RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
         },
         "toggleId": {
-          "ariaLabel": "Toggle identifier details",
           "hide": "Hide identifier's details",
+          "label": "Toggle identifier details",
           "show": "Show identifier's details"
         },
         "tooltips": {
@@ -569,8 +549,8 @@
         },
         "none": "None",
         "recommended": {
-          "ariaLabel": "Toggle recommended fields section",
           "hide": "Hide recommended fields section",
+          "label": "Toggle recommended fields section",
           "show": "Show recommended fields section",
           "title": "Recommended Identifier Properties"
         },
@@ -659,9 +639,9 @@
         "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
       },
       "elnPicker": {
-        "ariaLabel": "Browse the ELN for a link target",
         "cancel": "Cancel",
         "choose": "Choose",
+        "label": "Browse the ELN for a link target",
         "title": "Browse ELN"
       },
       "gallerySections": {
@@ -671,7 +651,7 @@
         "showLinkedDocs": "Show linked docs"
       },
       "infoDialog": {
-        "ariaLabel": "Info for {globalId}",
+        "label": "Info for {globalId}",
         "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
       },
       "linkField": {
@@ -687,12 +667,12 @@
         "title": "Related inventory items"
       },
       "targetBrowser": {
-        "ariaLabel": "Browse Inventory for link target",
+        "label": "Browse Inventory for link target",
         "title": "Browse Inventory"
       },
       "versionLock": {
-        "ariaLabel": "Version history for {globalId}",
         "cannotResolve": "Cannot resolve version history for {globalId}.",
+        "label": "Version history for {globalId}",
         "lockToSelectedVersion": "Lock to selected version",
         "title": "Version history",
         "titleFor": "Version history for {globalId}"
@@ -736,7 +716,7 @@
       "label": "Quantity",
       "parentSampleOnly": "The parent sample only has one {alias}.",
       "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
-      "totalCalculated": "Total is calculated from the quantites of <0>all {count} {plural}</0>, which can be changed by editing the {plural} individually.",
+      "totalCalculated": "Total is calculated from the quantites of <link>all {count} {plural}</link>, which can be changed by editing the {plural} individually.",
       "totalSingle": "There is only one {alias}.",
       "validation": {
         "positiveOrZero": "Should be a positive number or zero."
@@ -867,12 +847,12 @@
   },
   "igsnManagement": {
     "actions": {
-      "ariaLabel": "Actions menu for selected IGSN IDs",
       "button": "Actions",
       "delete": {
         "subheader": "Does not delete any linked item.",
         "title": "Delete"
       },
+      "label": "Actions menu for selected IGSN IDs",
       "print": {
         "subheader": "Print barcode labels for selected IGSN IDs.",
         "title": "Print"
@@ -943,9 +923,6 @@
     "selectIgsn": "Select IGSN"
   },
   "import": {
-    "actions": {
-      "import": "Import"
-    },
     "browserTitle": "Import CSV | RSpace Inventory",
     "cannotImport": {
       "message": "Some csv documents cannot be imported: check Settings in the",
@@ -959,8 +936,8 @@
       "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
       "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
       "noCsv": "Column conversion is only available once a CSV file has been selected.",
-      "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <0>Containers CSV</0> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
-      "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <0>Samples CSV</0> with mapped \"Import ID\".",
+      "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <link>Containers CSV</link> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
+      "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <link>Samples CSV</link> with mapped \"Import ID\".",
       "parentSampleRequired": "You must select one column that refers to a Sample.",
       "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
       "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
@@ -990,12 +967,7 @@
       "createNewTemplate": "Create new template.",
       "selectTemplate": "Select a template from which these imported samples will be created."
     },
-    "title": "IMPORT",
-    "types": {
-      "containers": "Containers",
-      "samples": "Samples",
-      "subsamples": "Subsamples"
-    }
+    "title": "IMPORT"
   },
   "infoCard": {
     "setAsTarget": "Set as Target"
@@ -1015,24 +987,17 @@
       "message": "The page was not found. You can try again, or use your 'back' button to return to your previous location and navigate from there, or use the sidebar to navigate to your samples and containers. If you can't resolve the problem, please contact an administrator."
     },
     "sidebar": {
-      "containers": "Containers",
       "exportData": "Export Data",
       "igsnIds": "IGSN IDs",
-      "instruments": "Instruments",
-      "instrumentTemplates": "Instrument Templates",
-      "itemsListAriaLabel": "List existing Inventory items",
+      "itemsListLabel": "List existing Inventory items",
       "myBench": "My Bench",
-      "navigationAriaLabel": "Inventory Sidebar Navigation",
-      "otherActionsAriaLabel": "Other places and action",
-      "samples": "Samples",
-      "sampleTemplates": "Sample Templates",
-      "settings": "Settings",
-      "subsamples": "Subsamples",
-      "templates": "Templates"
+      "navigationLabel": "Inventory Sidebar Navigation",
+      "otherActionsLabel": "Other places and action",
+      "settings": "Settings"
     }
   },
   "limitedAccessAlert": {
-    "message": "You do not have permission to see {access} of the details of this {whatLabel}.<0/>To gain full access, please contact the owner, {owner}."
+    "message": "You do not have permission to see {access} of the details of this {whatLabel}.<br/>To gain full access, please contact the owner, {owner}."
   },
   "materialsListing": {
     "actions": {
@@ -1159,22 +1124,10 @@
     "invalidVersion": "Invalid version parameter"
   },
   "permalinkNotFound": {
-    "latestLink": "View the latest version",
-    "typeLabels": {
-      "container": "container",
-      "instrument": "instrument",
-      "instrumentTemplate": "instrument template",
-      "sample": "sample",
-      "sampleTemplate": "sample template",
-      "subsample": "subsample"
-    },
     "unversionedBody": "It may have been deleted, or you may not have permission to view it.",
     "unversionedTitle": "This {typeLabel} could not be found.",
-    "versionedBody": "The version may never have existed.",
+    "versionedBody": "The version may never have existed. <a>View the latest version</a>.",
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
-  },
-  "picker": {
-    "choose": "Choose"
   },
   "print": {
     "contents": {
@@ -1243,6 +1196,43 @@
   "recordTree": {
     "navigateToContainer": "Navigate to container"
   },
+  "recordTypes": {
+    "container": {
+      "lower": "container",
+      "plural": "Containers",
+      "singular": "Container"
+    },
+    "instrument": {
+      "lower": "instrument",
+      "plural": "Instruments",
+      "singular": "Instrument"
+    },
+    "instrumentTemplate": {
+      "lower": "instrument template",
+      "plural": "Instrument Templates",
+      "singular": "Instrument Template"
+    },
+    "sample": {
+      "lower": "sample",
+      "plural": "Samples",
+      "singular": "Sample"
+    },
+    "sampleTemplate": {
+      "lower": "sample template",
+      "plural": "Sample Templates",
+      "singular": "Sample Template"
+    },
+    "subsample": {
+      "lower": "subsample",
+      "plural": "Subsamples",
+      "singular": "Subsample"
+    },
+    "template": {
+      "lower": "template",
+      "plural": "Templates",
+      "singular": "Template"
+    }
+  },
   "sample": {
     "batch": {
       "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
@@ -1254,9 +1244,9 @@
       },
       "linkFieldValue": {
         "apply": "Apply",
-        "applyAriaLabel": "Apply link",
+        "applyLabel": "Apply link",
         "discard": "Discard",
-        "discardAriaLabel": "Discard link changes",
+        "discardLabel": "Discard link changes",
         "none": "None"
       },
       "numberOfSubsamples": {
@@ -1346,21 +1336,11 @@
       },
       "type": {
         "all": "All",
-        "container": "Container",
-        "containers": "Containers",
         "enterQueryFirst": "Enter a search query first.",
-        "instrumentTemplate": "Instrument Template",
-        "instrumentTemplates": "Instrument Templates",
         "instrumentTemplatesNotInContainers": "Instrument Templates cannot be found in containers.",
         "instrumentTemplatesNotOnBenches": "Instrument Templates cannot be found on benches.",
-        "sample": "Sample",
-        "samples": "Samples",
         "samplesNotInContainers": "Samples cannot be found in containers.",
         "samplesNotOnBenches": "Samples cannot be found on benches.",
-        "subsample": "Subsample",
-        "subsamples": "Subsamples",
-        "template": "Template",
-        "templates": "Templates",
         "templatesNotInContainers": "Templates cannot be found in containers.",
         "templatesNotOnBenches": "Templates cannot be found on benches."
       },
@@ -1382,7 +1362,6 @@
       "title": "Empty {recordType}"
     },
     "feedback": {
-      "ariaLabel": "Search status",
       "containerContents": "{count} container contents found.",
       "errorGlobalId": "ERROR",
       "foundGlobalId": "Found {globalId}.",
@@ -1391,6 +1370,7 @@
       "instrumentTemplates": "{count} instrument templates found.",
       "itemsInBasket": "{count} items found in {basketName}.",
       "itemsOnBench": "{count} items found on this bench.",
+      "label": "Search status",
       "loading": "Loading...",
       "results": "{count} search results found.",
       "samples": "{count} samples found.",
@@ -1403,7 +1383,7 @@
     },
     "helpTitle": "Info on searching Inventory.",
     "navigation": {
-      "ariaLabel": "Search and Navigation"
+      "label": "Search and Navigation"
     },
     "noActiveResult": {
       "body": "Let's get you started with the system.",
@@ -1411,14 +1391,14 @@
       "title": "Welcome to RSpace Inventory!"
     },
     "noResults": {
-      "luceneInfo": "For more information on using Lucene queries, see <0>advanced search</0> and the related <1>Apache page</1>.",
+      "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },
     "resultsTable": {
       "actionInProgress": "Action In Progress",
       "allRows": "{count} (All)",
-      "ariaLabel": "Search results",
+      "label": "Search results",
       "select": "Select",
       "selectAll": "Select all",
       "selection": {
@@ -1483,10 +1463,10 @@
       "title": "Batch editing {count} subsamples"
     },
     "details": {
-      "ariaLabel": "Subsample details",
       "imageAlt": "What the subsample, {name}, looks like",
+      "label": "Subsample details",
       "none": "No subsamples",
-      "seeFullDetails": "See full details of <0>{name}</0>"
+      "seeFullDetails": "See full details of <strong>{name}</strong>"
     },
     "sampleFieldsSection": {
       "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."

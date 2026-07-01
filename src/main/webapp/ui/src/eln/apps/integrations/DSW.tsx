@@ -177,7 +177,7 @@ const DialogContent = observer(
                   event.preventDefault();
                   void saveExistingConfig(config, i);
                 }}
-                aria-label={t("integrations.dsw.configuredAriaLabel", { label: config.DSW_ALIAS })}
+                aria-label={t("integrations.dsw.configuredLabel", { label: config.DSW_ALIAS })}
               >
                 <CardContent>
                   <Stack spacing={2}>

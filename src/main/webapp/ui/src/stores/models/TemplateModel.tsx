@@ -1,8 +1,8 @@
 import { delay } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
-import { Trans } from "react-i18next";
 import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../assets/DocLinks";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
@@ -368,7 +368,7 @@ export default class TemplateModel extends SampleModel implements Template {
             size="small"
           />
         </>,
-        <Trans ns="inventory" i18nKey="template.updateSamplesConfirm.body" />,
+        <TransRichText ns="inventory" i18nKey="template.updateSamplesConfirm.body" />,
         i18n.t("inventory:template.updateSamplesConfirm.confirmButton"),
       ))
     )

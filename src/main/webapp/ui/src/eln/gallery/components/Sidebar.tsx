@@ -171,9 +171,9 @@ const NewFolderMenuItem = ({
             <DialogContent>
               {s3Target && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object,
-                  and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of
-                  files will be easier to manage than a folder structure.
+                  {
+                    "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure."
+                  }
                 </Alert>
               )}
               <DialogContentText

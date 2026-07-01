@@ -9,7 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -152,9 +152,7 @@ function GroupPublishManager({
               {t("profile.groups.publication.enable.title")}
             </DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                <Trans i18nKey="profile.groups.publication.enable.text" ns="common" values={{ groupDisplayName }} />
-              </DialogContentText>
+              <DialogContentText>{t("profile.groups.publication.enable.text", { groupDisplayName })}</DialogContentText>
             </DialogContent>
             <DialogActions>
               <DialogButtons onCancel={() => setEnableDialogOpen(false)} onConfirm={allowGroupPublications} />
@@ -170,7 +168,7 @@ function GroupPublishManager({
             <DialogTitle id="group-sharing-dialog-title">{t("profile.groups.publication.disable.title")}</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                <Trans i18nKey="profile.groups.publication.disable.text" ns="common" values={{ groupDisplayName }} />
+                {t("profile.groups.publication.disable.text", { groupDisplayName })}
               </DialogContentText>
             </DialogContent>
             <DialogActions>

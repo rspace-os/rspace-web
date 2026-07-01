@@ -18,7 +18,7 @@ type ExportActionArgs = {
 
 const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, ExportActionArgs>(
   ({ as, closeMenu, disabled, selectedResults }: ExportActionArgs, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
     const [openExportDialog, setOpenExportDialog] = useState(false);
     const { trackEvent } = React.useContext(AnalyticsContext);
@@ -43,7 +43,7 @@ const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Expo
           <ContextMenuAction
             onClick={handleOpen}
             icon={<GetApp />}
-            label={t("contextMenu.actions.export")}
+            label={t("common:actions.export")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

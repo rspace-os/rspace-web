@@ -1,9 +1,9 @@
 import { isEqual, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
-import { Trans } from "react-i18next";
 import type { AxiosProgressEvent } from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../common/InvApiService";
 import { decodeTagString, encodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import { allAreValid, IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -717,7 +717,7 @@ export default class InventoryBaseRecord
       }
       await getRootStore().uiStore.confirm(
         i18n.t("inventory:baseRecord.editSessionExpired.title"),
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="baseRecord.editSessionExpired.body"
           values={{ recordType: this.recordTypeLabel.toLowerCase() }}
@@ -1377,7 +1377,7 @@ export default class InventoryBaseRecord
       if (
         await getRootStore().uiStore.confirm(
           i18n.t("inventory:identifierConfirm.create.title"),
-          <Trans ns="inventory" i18nKey="identifierConfirm.create.body" />,
+          <TransRichText ns="inventory" i18nKey="identifierConfirm.create.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("inventory:identifierConfirm.cancelButton"),
         )

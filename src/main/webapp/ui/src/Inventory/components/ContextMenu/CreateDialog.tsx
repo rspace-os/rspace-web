@@ -26,7 +26,8 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
@@ -485,11 +486,10 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
         }}
       >
         <DialogTitle>
-          <Trans
+          <TransRichText
             ns="inventory"
             i18nKey="contextMenu.createDialog.title"
             values={{ name: existingRecord.name }}
-            components={[<strong key="0" />]}
           />
           <HelpLinkIcon link={docLinks.createDialog} title={t("contextMenu.createDialog.helpTitle")} />
         </DialogTitle>

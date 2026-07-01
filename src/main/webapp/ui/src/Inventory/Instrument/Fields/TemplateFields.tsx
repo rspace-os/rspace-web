@@ -255,7 +255,7 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
       );
     }
 
-    return <Box key={field.name}>Unknown field type: {field.type}</Box>;
+    return <Box key={field.name}>{`Unknown field type: ${field.type}`}</Box>;
   });
 }
 

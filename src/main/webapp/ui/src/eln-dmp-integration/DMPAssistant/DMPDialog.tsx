@@ -11,7 +11,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 import docLinks from "../../assets/DocLinks";
@@ -144,7 +145,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           onChange={toggleSelectAllOnPage}
           disabled={pageIds.length === 0}
           slotProps={{
-            input: { "aria-label": t("dmpIntegrations.dialog.selectAllAriaLabel") },
+            input: { "aria-label": t("dmpIntegrations.dialog.selectAllLabel") },
           }}
         />
       ),
@@ -154,7 +155,9 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           checked={selectedDmpIds.has(String(params.id))}
           onChange={() => toggleDmpSelection(String(params.id))}
           onClick={(e) => e.stopPropagation()}
-          slotProps={{ input: { "aria-label": `Select ${params.row.title}` } }}
+          slotProps={{
+            input: { "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: params.row.title }) },
+          }}
         />
       ),
     },
@@ -210,17 +213,16 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              <Trans
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dmpassistantImportDesc"
-                components={{ strong: <strong /> }}
-              />
+              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.dmpassistantImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmpassistantDocsLink"
-                components={[<Link key="0" href="https://dmp-pgd.ca" />, <Link key="1" href={docLinks.dmpassistant} />]}
+                components={{
+                  serviceLink: <Link href="https://dmp-pgd.ca" />,
+                  helpLink: <Link href={docLinks.dmpassistant} />,
+                }}
               />
             </Typography>
           </Box>

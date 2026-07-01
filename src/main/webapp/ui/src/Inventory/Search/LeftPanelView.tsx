@@ -109,7 +109,7 @@ function LeftPanelView(): React.ReactNode {
       spacing={1}
       data-testid="MainSearch"
       role="navigation"
-      aria-label={t("search.navigation.ariaLabel")}
+      aria-label={t("search.navigation.label")}
     >
       <Box sx={{ width: "100%" }}>
         <Search handleSearch={handleSearch} searchbarAdornment={<RightPanelToggle />} />

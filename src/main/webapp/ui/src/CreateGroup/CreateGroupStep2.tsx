@@ -134,7 +134,7 @@ class createGroupStep2 extends React.Component<any, any> {
           <ThemeProvider theme={materialTheme}>
             <h3>{i18n.t("groups:createGroup.step2.heading")}</h3>
             <RadioGroup
-              aria-label={i18n.t("groups:createGroup.step2.roleAriaLabel")}
+              aria-label={i18n.t("groups:createGroup.step2.roleLabel")}
               name="piRole"
               value={this.state.radioOptions.value}
               onChange={this.handleChange}

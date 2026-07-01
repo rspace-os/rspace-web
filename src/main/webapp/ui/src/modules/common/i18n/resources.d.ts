@@ -46,7 +46,7 @@ export default interface Resources {
     "dmpIntegrations": {
       "argos": "Argos",
       "dialog": {
-        "argosDocsLink": "See <0>argos.openaire.eu</0> and our <1>Argos integration docs</1> for more.",
+        "argosDocsLink": "See <serviceLink>argos.openaire.eu</serviceLink> and our <helpLink>Argos integration docs</helpLink> for more.",
         "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
         "cancelButton": "Cancel",
         "closeButton": "Close",
@@ -66,13 +66,13 @@ export default interface Resources {
           "title": "Title",
           "updatedAt": "Updated At"
         },
-        "dmpassistantDocsLink": "See <0>dmp-pgd.ca</0> and our <1>DMP Assistant integration docs</1> for more.",
+        "dmpassistantDocsLink": "See <serviceLink>dmp-pgd.ca</serviceLink> and our <helpLink>DMP Assistant integration docs</helpLink> for more.",
         "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
-        "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
+        "dmponlineDocsLink": "See <serviceLink>dmponline.dcc.ac.uk</serviceLink> and our <helpLink>DMPonline integration docs</helpLink> for more.",
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-        "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
+        "dmptoolDocsLink": "See <serviceLink>dmptool.org</serviceLink> and our <helpLink>DMPTool integration docs</helpLink> for more.",
         "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
-        "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
+        "dswDocsLink": "See <serviceLink>https://guide.ds-wizard.org/en/latest</serviceLink> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
         "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
         "error": {
           "couldNotGet": "Could not get DMPs: {message}",
@@ -101,9 +101,9 @@ export default interface Resources {
           "filters": "Search filters",
           "funder": "Funder"
         },
-        "selectAllAriaLabel": "Select all DMPs on this page",
-        "selectDmpAriaLabel": "Select {title}",
-        "selectPlanAriaLabel": "Select plan: {label}"
+        "selectAllLabel": "Select all DMPs on this page",
+        "selectDmpLabel": "Select {title}",
+        "selectPlanLabel": "Select plan: {label}"
       },
       "dmpAssistant": "DMP Assistant",
       "dmponline": "DMPonline",
@@ -237,7 +237,7 @@ export default interface Resources {
           "testInvalid": "Connection details are not valid.",
           "testValid": "Connection details are valid."
         },
-        "configuredAriaLabel": "Configured Dataverse with name {name}",
+        "configuredLabel": "Configured Dataverse with name {name}",
         "description": "Explore, analyse, and share data through an open-source research data repository software.",
         "errorGettingConfigs": "There was an error getting the configured Dataverses.",
         "fields": {
@@ -356,7 +356,7 @@ export default interface Resources {
           "testInvalid": "Connection details are not valid.",
           "testValid": "Connection details are valid."
         },
-        "configuredAriaLabel": "Configured DSW with label {label}",
+        "configuredLabel": "Configured DSW with label {label}",
         "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
         "errorGettingConfigs": "There was an error getting the configured DSW instances.",
         "fields": {
@@ -415,7 +415,7 @@ export default interface Resources {
           "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
           "obtainToken": "Obtain an API Token from Fieldmark."
         },
-        "usage": "You can import your <1>Fieldmark</1> notebooks into Inventory"
+        "usage": "You can import your <strong>Fieldmark</strong> notebooks into Inventory"
       },
       "figshare": {
         "alerts": {
@@ -898,7 +898,7 @@ export default interface Resources {
             "smiles": "Enter a SMILES string"
           },
           "searchResults": "Search Results",
-          "searchTypeAriaLabel": "Search type",
+          "searchTypeLabel": "Search type",
           "searchTypes": {
             "nameCas": "Name/CAS",
             "smiles": "SMILES"
@@ -933,7 +933,7 @@ export default interface Resources {
           }
         },
         "instructionsTitle": "Instructions",
-        "reservedShortcutsNote": "Here's <0>a list</0> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+        "reservedShortcutsNote": "Here's <a>a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
         "tabActions": "Actions",
         "tabSymbols": "Symbols",
         "toggleInstructions": "Toggle instructions"
@@ -1040,20 +1040,28 @@ export default interface Resources {
       "add": "Add",
       "back": "Back",
       "cancel": "Cancel",
+      "choose": "Choose",
       "clear": "Clear",
       "close": "Close",
       "confirm": "Confirm",
+      "copy": "Copy",
       "create": "Create",
       "delete": "Delete",
       "dismiss": "Dismiss",
       "done": "Done",
+      "duplicate": "Duplicate",
       "edit": "Edit",
       "export": "Export",
+      "import": "Import",
       "insert": "Insert",
       "invite": "Invite",
+      "login": "Login",
+      "move": "Move",
       "next": "Next",
       "ok": "OK",
       "open": "Open",
+      "remove": "Remove",
+      "restore": "Restore",
       "retry": "Retry",
       "save": "Save",
       "search": "Search",
@@ -1061,6 +1069,8 @@ export default interface Resources {
       "share": "Share",
       "sign": "Sign",
       "submit": "Submit",
+      "transfer": "Transfer",
+      "trash": "Trash",
       "witness": "Witness"
     },
     "alerts": {
@@ -1086,7 +1096,7 @@ export default interface Resources {
       "notifications": "Notifications",
       "notificationsAndMessages": "notifications and messages",
       "operatingAs": "Operating as:",
-      "orcidAdd": "Add an ORCID iD to your <0>profile</0>.",
+      "orcidAdd": "Add an ORCID iD to your <a>profile</a>.",
       "pageHeader": "page header",
       "published": "Published",
       "release": "Release",
@@ -1117,7 +1127,7 @@ export default interface Resources {
       "inputMismatch": "Input does not match confirmation text"
     },
     "errorBoundary": {
-      "message": "Something went wrong! Please refresh the page. If this error persists, please contact <0>support@researchspace.com</0> with details of when the issue happens."
+      "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a>support@researchspace.com</a> with details of when the issue happens."
     },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
@@ -1326,6 +1336,7 @@ export default interface Resources {
         "bioOntologies": {
           "allow": {
             "button": "allow BioPortal Ontologies",
+            "citation": "Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced functionality via new Web services from the National Center for Biomedical Ontology to access and use ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun 14.",
             "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
             "title": "Allow BioPortal Ontologies to be used for tag suggestions"
           },
@@ -1413,9 +1424,9 @@ export default interface Resources {
         },
         "table": {
           "actions": "Actions",
-          "ariaLabel": "enhanced table",
           "autosharing": "Autosharing",
           "group": "Group",
+          "label": "enhanced table",
           "role": "Role"
         },
         "title": "Groups",
@@ -1425,7 +1436,7 @@ export default interface Resources {
       },
       "oauth": {
         "connectedApps": {
-          "confirmDisconnectText": "Are you sure you want to revoke access from <0>{clientName}</0>?",
+          "confirmDisconnectText": "Are you sure you want to revoke access from <strong>{clientName}</strong>?",
           "confirmDisconnectTitle": "Confirm Disconnect",
           "disconnect": "Disconnect",
           "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
@@ -1436,7 +1447,7 @@ export default interface Resources {
           "title": "Connected Apps"
         },
         "createdApps": {
-          "confirmDeleteText": "Are you sure you want to delete <0>{appName}</0>? All access and refresh tokens will be revoked.",
+          "confirmDeleteText": "Are you sure you want to delete <strong>{appName}</strong>? All access and refresh tokens will be revoked.",
           "confirmDeleteTitle": "Confirm Deletion",
           "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
           "deleteErrorTitle": "Unable to delete app",
@@ -1467,8 +1478,8 @@ export default interface Resources {
         "table": {
           "actions": "Actions",
           "appName": "App Name",
-          "ariaLabel": "enhanced table",
           "clientId": "Client ID",
+          "label": "enhanced table",
           "scope": "Scope"
         }
       },
@@ -1512,8 +1523,8 @@ export default interface Resources {
       "advancedSearch": "advanced search",
       "apachePage": "Apache page",
       "expandField": "Expand field",
-      "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <0>l:</0>",
-      "moreInfo": "For more information, see <0>advanced search</0> and the related <1>Apache page</1>.",
+      "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
+      "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
       "query": "Search query"
     },
     "shareDialog": {
@@ -1784,36 +1795,15 @@ export default interface Resources {
       },
       "sendMessage": "Send a message"
     },
-    "usersPage": {
-      "aliasDialog": {
-        "description": "usersPage.aliasDialog.description",
-        "errorTitle": "usersPage.aliasDialog.errorTitle",
-        "fieldLabel": "usersPage.aliasDialog.fieldLabel",
-        "menuItem": "usersPage.aliasDialog.menuItem",
-        "submit": "usersPage.aliasDialog.submit",
-        "success": "usersPage.aliasDialog.success",
-        "title": "usersPage.aliasDialog.title"
-      },
-      "piRoleDialog": {
-        "error": "usersPage.piRoleDialog.error",
-        "grantAction": "usersPage.piRoleDialog.grantAction",
-        "grantTitle": "usersPage.piRoleDialog.grantTitle",
-        "loading": "usersPage.piRoleDialog.loading",
-        "passwordLabel": "usersPage.piRoleDialog.passwordLabel",
-        "revokeAction": "usersPage.piRoleDialog.revokeAction",
-        "revokeTitle": "usersPage.piRoleDialog.revokeTitle",
-        "setVerificationPassword": "usersPage.piRoleDialog.setVerificationPassword"
-      }
-    },
     "values": {
       "none": "None"
     },
     "versionLockPicker": {
-      "ariaLabel": "Version Lock Picker",
       "columns": {
         "modified": "Modified",
         "version": "Version"
       },
+      "label": "Version Lock Picker",
       "latest": "Latest",
       "versionValue": "Version {version}"
     },
@@ -1860,8 +1850,8 @@ export default interface Resources {
       "title": "PDF Preview"
     },
     "carousel": {
-      "ariaLabel": "Carousel view of files",
       "currentFileIndex": "Current file index",
+      "label": "Carousel view of files",
       "next": "Next",
       "previous": "Previous"
     },
@@ -1876,7 +1866,7 @@ export default interface Resources {
     "infoPanel": {
       "details": "Details",
       "dmpDetails": "DMP Details",
-      "nameAriaLabel": "Name",
+      "nameLabel": "Name",
       "noDescriptionPlaceholder": "No description",
       "noNamePlaceholder": "No Name"
     },
@@ -1946,11 +1936,6 @@ export default interface Resources {
       }
     },
     "moveToS3": {
-      "actions": {
-        "copy": "Copy",
-        "move": "Move",
-        "transfer": "Transfer"
-      },
       "destination": {
         "explanation": "The available filestores are configured in the Gallery's filestore section.",
         "label": "Destination S3 filestore",
@@ -2025,7 +2010,7 @@ export default interface Resources {
         "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
         "nominateOtherPi": "Nominate a PI, make me Lab Admin, and supply users for pending invitations.",
         "piInvitationNote": "Note: group wont be created until PI accepts invitation",
-        "roleAriaLabel": "Pi Role",
+        "roleLabel": "Pi Role",
         "searchPlaceholder": "Start typing...",
         "selfPi": "Make me the group PI and invite users"
       },
@@ -2061,10 +2046,10 @@ export default interface Resources {
     "fields": {
       "groupName": "Group's identifying name",
       "optional": "(optional)",
-      "selectGroupOwners": "Select group owners *",
-      "selectGroupType": "Select a group type*",
+      "selectGroupOwners": "Select group owners",
+      "selectGroupType": "Select a group type",
       "selectMembers": "Select group members",
-      "selectPi": "Select one LabGroup PI *"
+      "selectPi": "Select one LabGroup PI"
     },
     "groupType": {
       "lab": "Lab Group",
@@ -2149,10 +2134,6 @@ export default interface Resources {
       "content": {
         "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
         "placeMarkers": {
-          "actions": {
-            "open": "Open",
-            "remove": "Remove"
-          },
           "columns": {
             "actions": "Actions",
             "content": "Content",
@@ -2169,10 +2150,8 @@ export default interface Resources {
       },
       "fields": {
         "canStore": {
-          "containers": "Containers",
           "label": "Can Store",
-          "selectAtLeastOne": "Select at least one.",
-          "subsamples": "Subsamples"
+          "selectAtLeastOne": "Select at least one."
         },
         "gridDimensions": {
           "chooseCommonSize": "Choose a common size",
@@ -2243,16 +2222,10 @@ export default interface Resources {
     "contextMenu": {
       "actions": {
         "addToBasket": "Add to Basket",
-        "create": "Create",
-        "duplicate": "Duplicate",
-        "export": "Export",
         "makeTopLevel": "Make Top-level",
         "more": "More actions",
-        "move": "Move",
         "printBarcode": "Print Barcode",
-        "removeFromThisBasket": "Remove from This Basket",
-        "restore": "Restore",
-        "trash": "Trash"
+        "removeFromThisBasket": "Remove from This Basket"
       },
       "createDialog": {
         "change": "Change",
@@ -2269,14 +2242,13 @@ export default interface Resources {
         "loading": "Loading...",
         "noFields": "No fields.",
         "noOptions": "No options available.",
-        "title": "Create new items from <0>{name}</0>"
+        "title": "Create new items from <strong>{name}</strong>"
       },
       "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
       "splitButton": {
         "moreOptions": "More selection options"
       },
       "transfer": {
-        "action": "Transfer",
         "dialog": {
           "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item.",
           "irrevocable": "This action can only be undone by the recipient or their PI.",
@@ -2291,21 +2263,16 @@ export default interface Resources {
       }
     },
     "createNew": {
-      "button": "Create",
-      "containers": "Containers",
       "csvImport": "CSV Import",
       "newContainer": "New Container",
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
       "newSample": "New Sample",
       "newTemplate": "New Template",
-      "samples": "Samples",
-      "subsamples": "Subsamples",
       "thirdPartyImport": "Third-Party Import"
     },
     "detailedListing": {
       "card": {
-        "by": "by",
         "contentLabels": {
           "contents": "Contents",
           "location": "Location",
@@ -2314,13 +2281,12 @@ export default interface Resources {
           "sample": "Sample",
           "totalQuantity": "Total Quantity"
         },
-        "modified": "Modified",
+        "modifiedBy": "Modified <timeAgo></timeAgo> by {name}",
         "requiredPermissions": "You do not have permission to select this item."
       }
     },
     "export": {
       "dialog": {
-        "containers": "Containers",
         "downloadCsv": "DOWNLOAD CSV",
         "downloadZip": "DOWNLOAD ZIP",
         "exportingAll": "Exporting all items owned by the user.",
@@ -2343,7 +2309,6 @@ export default interface Resources {
           "zipBundle": "A .ZIP bundle containing .CSV files for each item type.",
           "zipFile": "ZIP Bundle"
         },
-        "samples": "Samples",
         "title": "Export Options"
       },
       "exporter": {
@@ -2389,12 +2354,11 @@ export default interface Resources {
       "importSuccess": "Successfully imported notebook.",
       "noNotebookSelected": "No Notebook selected.",
       "noNotebooks": "No Notebooks",
-      "selectRadioAriaLabel": "Select notebook: {name}",
+      "selectRadioLabel": "Select notebook: {name}",
       "title": "Import from Fieldmark"
     },
     "fields": {
       "accessPermissions": {
-        "ariaLabel": "Access Permission Setting",
         "editFirst": "You need to be in Edit mode to edit permissions.",
         "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
         "explicitAccess": {
@@ -2402,6 +2366,7 @@ export default interface Resources {
           "title": "Explicit access list"
         },
         "groupName": "Group Name",
+        "label": "Access Permission Setting",
         "ownerGroups": {
           "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
           "tableNote": "This table lists the groups that the owner is a member of.",
@@ -2613,8 +2578,8 @@ export default interface Resources {
             "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a>RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
           },
           "toggleId": {
-            "ariaLabel": "Toggle identifier details",
             "hide": "Hide identifier's details",
+            "label": "Toggle identifier details",
             "show": "Show identifier's details"
           },
           "tooltips": {
@@ -2655,8 +2620,8 @@ export default interface Resources {
           },
           "none": "None",
           "recommended": {
-            "ariaLabel": "Toggle recommended fields section",
             "hide": "Hide recommended fields section",
+            "label": "Toggle recommended fields section",
             "show": "Show recommended fields section",
             "title": "Recommended Identifier Properties"
           },
@@ -2745,9 +2710,9 @@ export default interface Resources {
           "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
         },
         "elnPicker": {
-          "ariaLabel": "Browse the ELN for a link target",
           "cancel": "Cancel",
           "choose": "Choose",
+          "label": "Browse the ELN for a link target",
           "title": "Browse ELN"
         },
         "gallerySections": {
@@ -2757,7 +2722,7 @@ export default interface Resources {
           "showLinkedDocs": "Show linked docs"
         },
         "infoDialog": {
-          "ariaLabel": "Info for {globalId}",
+          "label": "Info for {globalId}",
           "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
         },
         "linkField": {
@@ -2773,12 +2738,12 @@ export default interface Resources {
           "title": "Related inventory items"
         },
         "targetBrowser": {
-          "ariaLabel": "Browse Inventory for link target",
+          "label": "Browse Inventory for link target",
           "title": "Browse Inventory"
         },
         "versionLock": {
-          "ariaLabel": "Version history for {globalId}",
           "cannotResolve": "Cannot resolve version history for {globalId}.",
+          "label": "Version history for {globalId}",
           "lockToSelectedVersion": "Lock to selected version",
           "title": "Version history",
           "titleFor": "Version history for {globalId}"
@@ -2822,7 +2787,7 @@ export default interface Resources {
         "label": "Quantity",
         "parentSampleOnly": "The parent sample only has one {alias}.",
         "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
-        "totalCalculated": "Total is calculated from the quantites of <0>all {count} {plural}</0>, which can be changed by editing the {plural} individually.",
+        "totalCalculated": "Total is calculated from the quantites of <link>all {count} {plural}</link>, which can be changed by editing the {plural} individually.",
         "totalSingle": "There is only one {alias}.",
         "validation": {
           "positiveOrZero": "Should be a positive number or zero."
@@ -2953,12 +2918,12 @@ export default interface Resources {
     },
     "igsnManagement": {
       "actions": {
-        "ariaLabel": "Actions menu for selected IGSN IDs",
         "button": "Actions",
         "delete": {
           "subheader": "Does not delete any linked item.",
           "title": "Delete"
         },
+        "label": "Actions menu for selected IGSN IDs",
         "print": {
           "subheader": "Print barcode labels for selected IGSN IDs.",
           "title": "Print"
@@ -3029,9 +2994,6 @@ export default interface Resources {
       "selectIgsn": "Select IGSN"
     },
     "import": {
-      "actions": {
-        "import": "Import"
-      },
       "browserTitle": "Import CSV | RSpace Inventory",
       "cannotImport": {
         "message": "Some csv documents cannot be imported: check Settings in the",
@@ -3045,8 +3007,8 @@ export default interface Resources {
         "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
         "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
         "noCsv": "Column conversion is only available once a CSV file has been selected.",
-        "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <0>Containers CSV</0> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
-        "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <0>Samples CSV</0> with mapped \"Import ID\".",
+        "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <link>Containers CSV</link> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
+        "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <link>Samples CSV</link> with mapped \"Import ID\".",
         "parentSampleRequired": "You must select one column that refers to a Sample.",
         "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
         "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
@@ -3076,12 +3038,7 @@ export default interface Resources {
         "createNewTemplate": "Create new template.",
         "selectTemplate": "Select a template from which these imported samples will be created."
       },
-      "title": "IMPORT",
-      "types": {
-        "containers": "Containers",
-        "samples": "Samples",
-        "subsamples": "Subsamples"
-      }
+      "title": "IMPORT"
     },
     "infoCard": {
       "setAsTarget": "Set as Target"
@@ -3101,24 +3058,17 @@ export default interface Resources {
         "message": "The page was not found. You can try again, or use your 'back' button to return to your previous location and navigate from there, or use the sidebar to navigate to your samples and containers. If you can't resolve the problem, please contact an administrator."
       },
       "sidebar": {
-        "containers": "Containers",
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
-        "instrumentTemplates": "Instrument Templates",
-        "instruments": "Instruments",
-        "itemsListAriaLabel": "List existing Inventory items",
+        "itemsListLabel": "List existing Inventory items",
         "myBench": "My Bench",
-        "navigationAriaLabel": "Inventory Sidebar Navigation",
-        "otherActionsAriaLabel": "Other places and action",
-        "sampleTemplates": "Sample Templates",
-        "samples": "Samples",
-        "settings": "Settings",
-        "subsamples": "Subsamples",
-        "templates": "Templates"
+        "navigationLabel": "Inventory Sidebar Navigation",
+        "otherActionsLabel": "Other places and action",
+        "settings": "Settings"
       }
     },
     "limitedAccessAlert": {
-      "message": "You do not have permission to see {access} of the details of this {whatLabel}.<0/>To gain full access, please contact the owner, {owner}."
+      "message": "You do not have permission to see {access} of the details of this {whatLabel}.<br/>To gain full access, please contact the owner, {owner}."
     },
     "materialsListing": {
       "actions": {
@@ -3245,22 +3195,10 @@ export default interface Resources {
       "invalidVersion": "Invalid version parameter"
     },
     "permalinkNotFound": {
-      "latestLink": "View the latest version",
-      "typeLabels": {
-        "container": "container",
-        "instrument": "instrument",
-        "instrumentTemplate": "instrument template",
-        "sample": "sample",
-        "sampleTemplate": "sample template",
-        "subsample": "subsample"
-      },
       "unversionedBody": "It may have been deleted, or you may not have permission to view it.",
       "unversionedTitle": "This {typeLabel} could not be found.",
-      "versionedBody": "The version may never have existed.",
+      "versionedBody": "The version may never have existed. <a>View the latest version</a>.",
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
-    },
-    "picker": {
-      "choose": "Choose"
     },
     "print": {
       "contents": {
@@ -3323,6 +3261,43 @@ export default interface Resources {
     "recordTree": {
       "navigateToContainer": "Navigate to container"
     },
+    "recordTypes": {
+      "container": {
+        "lower": "container",
+        "plural": "Containers",
+        "singular": "Container"
+      },
+      "instrument": {
+        "lower": "instrument",
+        "plural": "Instruments",
+        "singular": "Instrument"
+      },
+      "instrumentTemplate": {
+        "lower": "instrument template",
+        "plural": "Instrument Templates",
+        "singular": "Instrument Template"
+      },
+      "sample": {
+        "lower": "sample",
+        "plural": "Samples",
+        "singular": "Sample"
+      },
+      "sampleTemplate": {
+        "lower": "sample template",
+        "plural": "Sample Templates",
+        "singular": "Sample Template"
+      },
+      "subsample": {
+        "lower": "subsample",
+        "plural": "Subsamples",
+        "singular": "Subsample"
+      },
+      "template": {
+        "lower": "template",
+        "plural": "Templates",
+        "singular": "Template"
+      }
+    },
     "recordsTable": {
       "columns": {
         "globalId": "Global ID",
@@ -3340,9 +3315,9 @@ export default interface Resources {
         },
         "linkFieldValue": {
           "apply": "Apply",
-          "applyAriaLabel": "Apply link",
+          "applyLabel": "Apply link",
           "discard": "Discard",
-          "discardAriaLabel": "Discard link changes",
+          "discardLabel": "Discard link changes",
           "none": "None"
         },
         "numberOfSubsamples": {
@@ -3432,21 +3407,11 @@ export default interface Resources {
         },
         "type": {
           "all": "All",
-          "container": "Container",
-          "containers": "Containers",
           "enterQueryFirst": "Enter a search query first.",
-          "instrumentTemplate": "Instrument Template",
-          "instrumentTemplates": "Instrument Templates",
           "instrumentTemplatesNotInContainers": "Instrument Templates cannot be found in containers.",
           "instrumentTemplatesNotOnBenches": "Instrument Templates cannot be found on benches.",
-          "sample": "Sample",
-          "samples": "Samples",
           "samplesNotInContainers": "Samples cannot be found in containers.",
           "samplesNotOnBenches": "Samples cannot be found on benches.",
-          "subsample": "Subsample",
-          "subsamples": "Subsamples",
-          "template": "Template",
-          "templates": "Templates",
           "templatesNotInContainers": "Templates cannot be found in containers.",
           "templatesNotOnBenches": "Templates cannot be found on benches."
         },
@@ -3468,7 +3433,6 @@ export default interface Resources {
         "title": "Empty {recordType}"
       },
       "feedback": {
-        "ariaLabel": "Search status",
         "containerContents": "{count} container contents found.",
         "errorGlobalId": "ERROR",
         "foundGlobalId": "Found {globalId}.",
@@ -3477,6 +3441,7 @@ export default interface Resources {
         "instrumentsOfTemplate": "{count} instruments of the template found.",
         "itemsInBasket": "{count} items found in {basketName}.",
         "itemsOnBench": "{count} items found on this bench.",
+        "label": "Search status",
         "loading": "Loading...",
         "results": "{count} search results found.",
         "samples": "{count} samples found.",
@@ -3489,7 +3454,7 @@ export default interface Resources {
       },
       "helpTitle": "Info on searching Inventory.",
       "navigation": {
-        "ariaLabel": "Search and Navigation"
+        "label": "Search and Navigation"
       },
       "noActiveResult": {
         "body": "Let's get you started with the system.",
@@ -3497,14 +3462,14 @@ export default interface Resources {
         "title": "Welcome to RSpace Inventory!"
       },
       "noResults": {
-        "luceneInfo": "For more information on using Lucene queries, see <0>advanced search</0> and the related <1>Apache page</1>.",
+        "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
         "title": "No results.",
         "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
       },
       "resultsTable": {
         "actionInProgress": "Action In Progress",
         "allRows": "{count} (All)",
-        "ariaLabel": "Search results",
+        "label": "Search results",
         "select": "Select",
         "selectAll": "Select all",
         "selection": {
@@ -3569,10 +3534,10 @@ export default interface Resources {
         "title": "Batch editing {count} subsamples"
       },
       "details": {
-        "ariaLabel": "Subsample details",
         "imageAlt": "What the subsample, {name}, looks like",
+        "label": "Subsample details",
         "none": "No subsamples",
-        "seeFullDetails": "See full details of <0>{name}</0>"
+        "seeFullDetails": "See full details of <strong>{name}</strong>"
       },
       "sampleFieldsSection": {
         "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
@@ -3611,13 +3576,6 @@ export default interface Resources {
     }
   },
   "public": {
-    "aria": {
-      "alternateIdentifiers": "alternate identifiers",
-      "dates": "dates",
-      "descriptions": "descriptions",
-      "geoLocations": "geolocations",
-      "subjects": "subjects"
-    },
     "footer": {
       "contactInfo": "If you wish to obtain more information about this item, please contact the research data management department at {institution}.",
       "generatedBy": "This page was generated by {institution} using RSpace Public Pages."
@@ -3657,14 +3615,19 @@ export default interface Resources {
       "institutionLogoAlt": "Institution Logo"
     },
     "labels": {
+      "alternateIdentifiers": "alternate identifiers",
       "creator": "Creator:",
       "creatorAffiliation": "Creator Affiliation:",
       "creatorAffiliationIdentifier": "Creator Affiliation Identifier:",
+      "dates": "dates",
+      "descriptions": "descriptions",
+      "geoLocations": "geolocations",
       "igsnId": "IGSN ID:",
       "name": "Name:",
       "organisation": "Organisation:",
       "publicationYear": "Publication Year:",
       "resourceType": "Resource Type:",
+      "subjects": "subjects",
       "urlAvailableAfterPublishing": "URL available after publishing"
     },
     "links": {
@@ -3711,12 +3674,12 @@ export default interface Resources {
       "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
     },
     "usersPage": {
-      "actionsAriaLabel": "Actions menu for selected rows",
       "actionsButton": "Actions",
+      "actionsLabel": "Actions menu for selected rows",
       "aliasDialog": {
         "description": "SysAdmins can set a username alias for a user, enabling both the username and its alias to be used during login. The alias is only recognised during the login process, and does not replace the user’s username as their main identifier inside RSpace.",
         "errorTitle": "Could not set username alias.",
-        "fieldLabel": "Username Alias",
+        "field": "Username Alias",
         "menuItem": "Set Username Alias",
         "submit": "Set Alias",
         "success": "Successfully set username alias.",
@@ -3730,9 +3693,9 @@ export default interface Resources {
       },
       "communityAdmins": "Community Admins",
       "deleteDialog": {
-        "confirmUsername": "To delete <0>{fullName}</0>'s account please enter their username.",
-        "formsAndTemplatesNotice": "The user you are trying to delete is <0>{ownerOfFormsAndTemplates}</0> To ensure continued access to these Forms/Templates, the system<1> {willTransferOwnership}</1> of those files to<2> {thisSystemAdministrator}</2> account. Forms and Templates that are not used by others will be deleted.",
-        "formsNotice": "The user you are trying to delete is <0>{ownerOfForms}</0> To ensure continued access to these Forms, the system<1> {willTransferOwnership}</1> of the Forms to<2> {thisSystemAdministrator}</2> account. Forms that are not used by others will be deleted.",
+        "confirmUsername": "To delete <strong>{fullName}</strong>'s account please enter their username.",
+        "formsAndTemplatesNotice": "The user you are trying to delete is <strong>{ownerOfFormsAndTemplates}</strong> To ensure continued access to these Forms/Templates, the system<strong> {willTransferOwnership}</strong> of those files to<strong> {thisSystemAdministrator}</strong> account. Forms and Templates that are not used by others will be deleted.",
+        "formsNotice": "The user you are trying to delete is <strong>{ownerOfForms}</strong> To ensure continued access to these Forms, the system<strong> {willTransferOwnership}</strong> of the Forms to<strong> {thisSystemAdministrator}</strong> account. Forms that are not used by others will be deleted.",
         "irreversible": "User deletion is irreversible, and all documents will be deleted.",
         "title": "Deletion Confirmation",
         "xmlArchive": "An XML archive will be made of the user's work which will be available for a short time on the server."
@@ -3743,13 +3706,13 @@ export default interface Resources {
         "thisPageOf": "this page of",
         "visibleRows": "Export {scope} rows to CSV"
       },
-      "filterAriaLabel": "Filter users",
+      "filterLabel": "Filter users",
       "filtersButton": "Filters",
       "groupMembership": {
         "showList": "Show list of groups",
         "showListAria": "{count} group(s). Show list of groups."
       },
-      "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <0>Tagging docs</0> for more.",
+      "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <a>Tagging docs</a> for more.",
       "loadingError": "Failed to load listing of users. Please try refreshing.",
       "loadingListing": "Loading listing of users.",
       "ownerOfForms": "the owner of Forms that are used by other users.",
@@ -3757,12 +3720,12 @@ export default interface Resources {
       "piRoleDialog": {
         "error": "ERROR: {error}",
         "grantAction": "Grant",
-        "grantPrompt": "To grant the PI role to <0>{fullName}</0> please re-enter your password.",
+        "grantPrompt": "To grant the PI role to <strong>{fullName}</strong> please re-enter your password.",
         "grantTitle": "Grant user PI role",
         "loading": "Loading",
-        "passwordLabel": "Password",
+        "password": "Password",
         "revokeAction": "Revoke",
-        "revokePrompt": "To revoke the PI role from <0>{fullName}</0> please re-enter your password.",
+        "revokePrompt": "To revoke the PI role from <strong>{fullName}</strong> please re-enter your password.",
         "revokeTitle": "Revoke PI role from user",
         "setVerificationPassword": "Please set your verification password in My RSpace before performing this action."
       },
@@ -3772,7 +3735,7 @@ export default interface Resources {
         "systemAdmins": "System Admins"
       },
       "tagDialog": {
-        "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <0>Read more about tagging users here.</0>",
+        "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <a>Read more about tagging users here.</a>",
         "title": "Tagging {count} {count, plural, one {user} other {users}}"
       },
       "tags": {
@@ -3834,11 +3797,10 @@ export default interface Resources {
           "loginButton": "Login to remaining File Systems",
           "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
           "notLoggedIn": "Not logged in",
+          "password": "Password",
           "passwordBlank": "Password cannot be blank",
-          "passwordLabel": "Password",
-          "submitButton": "Login",
-          "usernameBlank": "Username cannot be blank",
-          "usernameLabel": "Username"
+          "username": "Username",
+          "usernameBlank": "Username cannot be blank"
         },
         "noLinks": {
           "checkSelection": "If that's unexpected, you should check your export selection.",
@@ -3909,7 +3871,7 @@ export default interface Resources {
           "depthInfinity": "Include linked documents to depth infinity",
           "depthLevel": "Include linked documents to depth {level}",
           "depthNone": "Don't include linked documents",
-          "descriptionLabel": "Export Description (optional)",
+          "description": "Export Description (optional)",
           "foldersNote": "Linked folders and notebooks are never included",
           "includeLinksLabel": "Should linked RSpace documents be included in export?"
         },
@@ -3928,8 +3890,8 @@ export default interface Resources {
             "exported": "Exported",
             "lastModified": "Last modified date"
           },
+          "name": "File name",
           "nameHelper": "Name your file",
-          "nameLabel": "File name *",
           "pageFormatLabel": "Page format: ",
           "pageSize": {
             "a4": "A4",
@@ -3938,7 +3900,7 @@ export default interface Resources {
           "setDefault": "Set {pageSize} as default"
         },
         "word": {
-          "nameLabel": "Name your file",
+          "name": "Name your file",
           "pageFormatLabel": "Page format: ",
           "pageSize": {
             "a4": "A4",
@@ -3970,20 +3932,19 @@ export default interface Resources {
         }
       },
       "repositories": {
-        "choiceAriaLabel": "Repository choice",
         "choiceLabel": "Please choose one of your configured repositories to submit your export to:",
         "common": {
-          "descriptionLabel": "Description *",
-          "titleLabel": "Title *"
+          "description": "Description",
+          "title": "Title"
         },
         "dataverse": {
           "descriptionHelper": "Please add a relevant description for your export",
+          "license": "License",
           "licenseHelper": "Please select your license",
-          "licenseLabel": "License *",
           "metadataLanguageHelper": "Please select your metadata language (only if target Dataverse supports it)",
           "metadataLanguageLabel": "Metadata language",
+          "subject": "Subject",
           "subjectHelper": "Please select your subject",
-          "subjectLabel": "Subject *",
           "titleHelper": "Please choose a title, >3 symbols"
         },
         "dmp": {
@@ -3991,26 +3952,29 @@ export default interface Resources {
           "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
         },
         "dryad": {
+          "abstract": "Add an abstract",
           "abstractHelper": "Please add a relevant abstract for your export",
-          "abstractLabel": "Add an abstract *",
+          "grantingOrg": "Granting Organization",
           "grantingOrgHelper": "Enter 3 of more characters to filter list",
-          "grantingOrgLabel": "Granting Organization *",
+          "license": "License",
           "licenseHelper": "Please select your license",
-          "licenseLabel": "License *",
+          "researchDomain": "Research Domain",
           "researchDomainHelper": "Please select your research domain",
-          "researchDomainLabel": "Research Domain *",
           "titleHelper": "Please choose a title, >3 symbols"
         },
         "figshare": {
           "descriptionHelper": "Please add a relevant description for your export",
           "draft": "Draft",
+          "license": "License",
           "licenseHelper": "Please select your license",
-          "licenseLabel": "License *",
           "publish": "Publish",
           "publishingStatus": "Publishing status",
+          "subject": "Subject",
           "subjectHelper": "Please select your subject",
-          "subjectLabel": "Subject *",
           "titleHelper": "Please choose a title, >3 symbols"
+        },
+        "labels": {
+          "choice": "Repository choice"
         },
         "tags": {
           "clearButton": "Clear Tags",
@@ -4022,11 +3986,11 @@ export default interface Resources {
           "addTooltip": "Add author/contact",
           "author": "Author",
           "contact": "Contact",
-          "emailLabel": "Email *",
-          "nameLabel": "Name *",
+          "email": "Email",
+          "name": "Name",
           "peopleHelper": "Add author(s) AND contact(s) to your repository export.",
           "peopleLabel": "People",
-          "typeLabel": "Type *"
+          "type": "Type"
         }
       }
     },
@@ -4126,7 +4090,7 @@ export default interface Resources {
         "emptyName": "Empty name is not permitted.",
         "error": "An error occurred while renaming the document.",
         "name": "Name",
-        "prompt": "Please give a new name for <0>{currentName}</0>",
+        "prompt": "Please give a new name for <strong>{currentName}</strong>",
         "success": "Successfully renamed document.",
         "title": "Rename"
       },

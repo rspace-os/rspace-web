@@ -4,7 +4,7 @@ import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import { type Alert, mkAlert } from "@/stores/contexts/Alert";
 import docLinks from "../../../assets/DocLinks";
 import ImageField, { type ImageData } from "../../../components/Inputs/ImageField";
@@ -52,8 +52,11 @@ function LocationsImageField(): React.ReactNode {
             ns="inventory"
             i18nKey="container.fields.locationsImage.explanation"
             components={{
-              // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
-              a: <a href={docLinks.editLocationsInVisualContainers} target="_blank" rel="noreferrer" />,
+              a: richTextLink({
+                href: docLinks.editLocationsInVisualContainers,
+                target: "_blank",
+                rel: "noreferrer",
+              }),
             }}
           />
         }

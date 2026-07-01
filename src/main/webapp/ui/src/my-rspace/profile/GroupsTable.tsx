@@ -99,7 +99,7 @@ export default function GroupsTable(props: any) {
           <br />
           {groups.length > 0 && fetchSuccess && (
             <TableContainer>
-              <Table size="small" aria-label={t("profile.groups.table.ariaLabel")}>
+              <Table size="small" aria-label={t("profile.groups.table.label")}>
                 <EnhancedTableHead
                   headCells={tableHeaders()}
                   order={order}

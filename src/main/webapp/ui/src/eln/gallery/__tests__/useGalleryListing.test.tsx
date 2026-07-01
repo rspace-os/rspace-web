@@ -48,12 +48,14 @@ function WrapperComponent() {
       }
       return (
         <div>
-          There are {listing.list.length} results.
+          {"\n          There are "}
+          {listing.list.length}
+          {" results.\n          "}
           {listing.loadMore
             .map((loadMore) => (
               // biome-ignore lint/a11y/useButtonType: initial biome migration
               <button key={null} onClick={() => void loadMore()}>
-                Load more
+                {"\n                Load more\n              "}
               </button>
             ))
             .orElse(null)}
@@ -63,7 +65,7 @@ function WrapperComponent() {
               void refreshListing();
             }}
           >
-            Refresh
+            {"\n            Refresh\n          "}
           </button>
         </div>
       );

@@ -43,7 +43,7 @@ export default function Stepper({
         onClick={onMove}
         disabled={disabled || loading}
         loading={loading}
-        label={t("contextMenu.actions.move")}
+        label={t("common:actions.move")}
       />
     ) : (
       <Button size="medium" onClick={handleNext}>

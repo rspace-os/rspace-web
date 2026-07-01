@@ -324,7 +324,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           </Grid>
           {Array.isArray(identifier.subjects) && identifier.subjects.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.subjects")}>
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("labels.subjects")}>
               <Grid>
                 <h3>{t("headings.subjects")}</h3>
               </Grid>
@@ -351,7 +351,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.descriptions) && identifier.descriptions.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.descriptions")}>
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("labels.descriptions")}>
               <Grid>
                 <h3>{t("headings.descriptions")}</h3>
               </Grid>
@@ -364,7 +364,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.alternateIdentifiers) && identifier.alternateIdentifiers.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.alternateIdentifiers")}>
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("labels.alternateIdentifiers")}>
               <Grid>
                 <h3>{t("headings.alternateIdentifiers")}</h3>
               </Grid>
@@ -383,7 +383,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
             </Grid>
           )}
           {Array.isArray(identifier.dates) && identifier.dates.length > 0 && (
-            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("aria.dates")}>
+            <Grid container sx={COLUMN_SX} spacing={1} role="group" aria-label={t("labels.dates")}>
               <Grid>
                 <h3>{t("headings.dates")}</h3>
               </Grid>
@@ -398,7 +398,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
           {Array.isArray(identifier.geoLocations) && identifier.geoLocations.length > 0 && (
             <>
               <h3>{t("headings.geolocations")}</h3>
-              <Grid container direction="row" spacing={1} role="group" aria-label={t("aria.geoLocations")}>
+              <Grid container direction="row" spacing={1} role="group" aria-label={t("labels.geoLocations")}>
                 {identifier.geoLocations.map((gl, i) => (
                   <Grid key={i}>
                     <Card variant="outlined">

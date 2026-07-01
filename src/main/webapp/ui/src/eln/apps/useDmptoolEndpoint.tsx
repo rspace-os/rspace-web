@@ -10,7 +10,7 @@ export function useDmptoolEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "DMPTool";
+  const appName = t("integrations.dmptool.name");
   const api = axios.create({
     baseURL: "/apps/dmptool",
     timeout: ONE_MINUTE_IN_MS,

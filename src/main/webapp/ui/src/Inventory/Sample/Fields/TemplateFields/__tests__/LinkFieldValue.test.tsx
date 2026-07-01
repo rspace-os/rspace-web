@@ -46,7 +46,7 @@ vi.mock("@/Inventory/components/Fields/Link/VersionLockDialog", () => ({
     open ? (
       <div data-testid="version-lock-dialog" data-globalid={globalId}>
         <button type="button" data-testid="version-lock-dialog-confirm-7" onClick={() => onConfirm(7)}>
-          confirm 7
+          {"confirm 7"}
         </button>
       </div>
     ) : null,
@@ -126,14 +126,12 @@ describe("LinkFieldValue", () => {
 
     // a committed link renders via the shared LinkField card, not the inline editor
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
 
     // the editor is now shown
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeInTheDocument();
   });
 
   it("commits the staged link to the field model on Apply", async () => {
@@ -157,7 +155,7 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("button", { name: /edit link/i }));
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
-    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i }));
 
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: {
@@ -179,10 +177,10 @@ describe("LinkFieldValue", () => {
       onChange: () => {},
     });
 
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SS33");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SS33");
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i }));
 
     expect(setAttributesDirty).toHaveBeenCalledWith({
       link: {
@@ -204,14 +202,14 @@ describe("LinkFieldValue", () => {
       onChange: () => {},
     });
 
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "XX5");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "XX5");
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "References" }));
 
     expect(
       screen.getByText(/target must be an inventory item or an eln document, notebook or gallery file/i),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 
@@ -240,7 +238,7 @@ describe("LinkFieldValue", () => {
     expect(setLinkEditInProgress).toHaveBeenLastCalledWith(true);
 
     // discarding restores the committed link and clears the flag
-    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.discardAriaLabel/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.discardLabel/i }));
     expect(setLinkEditInProgress).toHaveBeenLastCalledWith(false);
   });
 
@@ -291,7 +289,7 @@ describe("LinkFieldValue", () => {
     });
 
     // the editor is shown without any user interaction
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeInTheDocument();
     expect(setLinkEditInProgress).not.toHaveBeenCalledWith(true);
   });
 
@@ -315,7 +313,7 @@ describe("LinkFieldValue", () => {
     });
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeInTheDocument();
 
     // record switches to view mode while the editor is still open
     rerender(
@@ -376,7 +374,7 @@ describe("LinkFieldValue", () => {
       onChange: () => {},
     });
 
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeInTheDocument();
     expect(screen.getByText("inventory:formSections.parentSample")).toBeInTheDocument();
   });
 
@@ -402,7 +400,7 @@ describe("LinkFieldValue", () => {
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
 
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeInTheDocument();
     expect(screen.getByText("inventory:formSections.parentSample")).toBeInTheDocument();
   });
 
@@ -434,7 +432,7 @@ describe("LinkFieldValue", () => {
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
 
-    expect(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" })).toBeDisabled();
   });
 
   it("shows None in view mode when the field has no link", () => {
@@ -460,10 +458,10 @@ describe("LinkFieldValue", () => {
       onChange: () => {},
     });
 
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "SS9999");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SS9999");
     await user.click(screen.getByRole("button", { name: /open/i }));
     await user.click(screen.getByRole("option", { name: "References" }));
-    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i }));
 
     expect(
       await screen.findByText(/SS9999 does not exist, or you do not have permission to view it/i),
@@ -495,7 +493,7 @@ describe("LinkFieldValue", () => {
     await user.click(screen.getByRole("option", { name: "IsDerivedFrom" }));
 
     expect(screen.getByText("An item cannot link to itself.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i })).toBeDisabled();
     expect(setAttributesDirty).not.toHaveBeenCalled();
   });
 });
@@ -523,17 +521,17 @@ describe("LinkFieldValue version pin is edited in the editor and committed on Ap
     const { field } = renderCommitted();
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" }));
     expect(screen.getByTestId("version-lock-dialog")).toHaveAttribute("data-globalid", "SA20");
     await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
 
     // staged in the editor, not yet committed
-    expect(screen.getByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.pinnedVersion")).toBeInTheDocument();
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock inspection
     const setAttributesDirty = field.setAttributesDirty;
     expect(vi.mocked(setAttributesDirty)).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyAriaLabel/i }));
+    await user.click(screen.getByRole("button", { name: /sample.fields.linkFieldValue.applyLabel/i }));
 
     expect(vi.mocked(setAttributesDirty)).toHaveBeenCalledWith({
       link: {
@@ -549,14 +547,14 @@ describe("LinkFieldValue version pin is edited in the editor and committed on Ap
     renderCommitted();
 
     await user.click(screen.getByRole("button", { name: /edit link/i }));
-    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.editor\.pinVersionFor/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.editor.pinVersionFor" }));
     await user.click(screen.getByTestId("version-lock-dialog-confirm-7"));
-    expect(screen.getByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.pinnedVersion")).toBeInTheDocument();
 
     // a pin belongs to a specific target, so retargeting reverts to Latest
-    await user.type(screen.getByRole("textbox", { name: /inventory:fields\.link\.editor\.targetGlobalId/i }), "9");
+    await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "9");
 
-    expect(screen.queryByText(/inventory:fields\.link\.editor\.pinnedVersion/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/^inventory:fields\.link\.editor\.latest$/)).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.editor.pinnedVersion")).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.latest")).toBeInTheDocument();
   });
 });

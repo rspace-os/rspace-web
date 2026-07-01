@@ -9,8 +9,9 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import type React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "@/components/RecordTypeIcon";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { useGetWorkspaceRecordInformationAjaxQuery } from "@/modules/workspace/queries";
 import DocumentSections from "./DocumentSections";
 import GallerySections from "./GallerySections";
@@ -89,7 +90,7 @@ function DialogBody({
     if (versionPin != null) {
       return (
         <Alert severity="error">
-          <Trans
+          <TransRichText
             ns="inventory"
             i18nKey="fields.link.elnInfoDialog.versionUnavailable"
             values={{ versionPin, globalId }}
@@ -137,7 +138,7 @@ export default function ElnRecordInfoDialog(props: ElnRecordInfoDialogProps): Re
     <Dialog
       open={props.open}
       onClose={props.onClose}
-      aria-label={t("fields.link.infoDialog.ariaLabel", { globalId: props.globalId })}
+      aria-label={t("fields.link.infoDialog.label", { globalId: props.globalId })}
       fullWidth
       maxWidth="md"
     >

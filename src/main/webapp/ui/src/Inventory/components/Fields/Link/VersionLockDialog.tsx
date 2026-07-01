@@ -168,7 +168,7 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
     <Dialog
       open={props.open}
       onClose={props.onCancel}
-      aria-label={t("fields.link.versionLock.ariaLabel", { globalId: props.globalId })}
+      aria-label={t("fields.link.versionLock.label", { globalId: props.globalId })}
       fullWidth
       maxWidth="md"
     >

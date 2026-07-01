@@ -103,7 +103,8 @@ function AdditionalUserDialog({
             variant="standard"
             error={addPersonDialogSubmitAttempt && !validations.nameCheck}
             name="contactsName"
-            label={t("export.repositories.user.nameLabel")}
+            label={t("export.repositories.user.name")}
+            required
             value={contactsName}
             onChange={({ target: { value } }) => setContactsName(value)}
             margin="normal"
@@ -115,7 +116,8 @@ function AdditionalUserDialog({
             variant="standard"
             error={addPersonDialogSubmitAttempt && !validations.emailCheck}
             name="contactsEmail"
-            label={t("export.repositories.user.emailLabel")}
+            label={t("export.repositories.user.email")}
+            required
             value={contactsEmail}
             onChange={({ target: { value } }) => setContactsEmail(value)}
             margin="normal"
@@ -128,7 +130,8 @@ function AdditionalUserDialog({
             error={addPersonDialogSubmitAttempt && !validations.typeCheck}
             name="contactsType"
             select
-            label={t("export.repositories.user.typeLabel")}
+            label={t("export.repositories.user.type")}
+            required
             value={contactsType}
             onChange={({ target: { value } }) => {
               if (value === "" || value === "Author" || value === "Contact") {

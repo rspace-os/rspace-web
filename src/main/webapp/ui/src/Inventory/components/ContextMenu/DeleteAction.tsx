@@ -17,7 +17,7 @@ type DeleteActionArgs = {
 
 const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, DeleteActionArgs>(
   ({ as, closeMenu, disabled, selectedResults }, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -38,7 +38,7 @@ const DeleteAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Dele
               closeMenu();
             }}
             icon={<DeleteOutlineOutlinedIcon />}
-            label={t("contextMenu.actions.trash")}
+            label={t("common:actions.trash")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

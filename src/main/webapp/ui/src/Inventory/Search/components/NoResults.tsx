@@ -4,8 +4,9 @@ import Link from "@mui/material/Link";
 import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import NoResultsSvg from "@/assets/graphics/NoResults.svg";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 
 type NoResultsArgs = {
@@ -62,18 +63,19 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               maxWidth: "20em",
             }}
           >
-            <Trans
+            <TransRichText
               ns="inventory"
               i18nKey="search.noResults.luceneInfo"
-              components={[
-                <Link key="advanced" href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-                <Link
-                  key="apache"
-                  href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                  rel="noreferrer"
-                  target="_blank"
-                />,
-              ]}
+              components={{
+                luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
+                apacheLink: (
+                  <Link
+                    href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
+                    rel="noreferrer"
+                    target="_blank"
+                  />
+                ),
+              }}
             />
           </Typography>
         </>

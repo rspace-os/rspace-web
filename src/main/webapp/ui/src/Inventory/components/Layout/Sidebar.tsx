@@ -163,7 +163,7 @@ const ContainersNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.containers")}
+        label={t("recordTypes.container.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("CONTAINER")}
         icon={
           <RecordTypeIcon
@@ -207,7 +207,7 @@ const SampleNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.samples")}
+        label={t("recordTypes.sample.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE")}
         icon={
           <RecordTypeIcon
@@ -250,7 +250,7 @@ const InstrumentNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.instruments")}
+        label={t("recordTypes.instrument.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT")}
         icon={<FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} />}
         index={index}
@@ -285,7 +285,7 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.sampleTemplates")}
+        label={t("recordTypes.sampleTemplate.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE_TEMPLATE")}
         icon={
           <RecordTypeIcon
@@ -329,7 +329,7 @@ const InstrumentTemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.instrumentTemplates")}
+        label={t("recordTypes.instrumentTemplate.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
         icon={
           <RecordTypeIcon
@@ -408,7 +408,7 @@ const SubsampleNavItem = observer(
 
     return (
       <DrawerTab
-        label={t("layout.sidebar.subsamples")}
+        label={t("recordTypes.subsample.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SUBSAMPLE")}
         icon={
           <RecordTypeIcon
@@ -534,7 +534,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <Box ref={sidebarRef} aria-label={t("layout.sidebar.navigationAriaLabel")}>
+      <Box ref={sidebarRef} aria-label={t("layout.sidebar.navigationLabel")}>
         <CreateNew onClick={afterClick} />
         <Divider />
         <Box
@@ -545,7 +545,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             position: "relative",
           }}
         >
-          <List component="ul" onClick={afterClick} aria-label={t("layout.sidebar.itemsListAriaLabel")}>
+          <List component="ul" onClick={afterClick} aria-label={t("layout.sidebar.itemsListLabel")}>
             <MyBenchNavItem index={0} tabIndex={getTabIndex(0)} getRef={getRef} />
             <ContainersNavItem index={1} tabIndex={getTabIndex(1)} getRef={getRef} />
             <SampleNavItem index={2} tabIndex={getTabIndex(2)} getRef={getRef} />
@@ -556,7 +556,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
           </List>
           <Divider />
-          <List component="ul" aria-label={t("layout.sidebar.otherActionsAriaLabel")}>
+          <List component="ul" aria-label={t("layout.sidebar.otherActionsLabel")}>
             <ExportNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
             {isSysAdmin && <SettingsNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />}
           </List>

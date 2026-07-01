@@ -12,9 +12,10 @@ import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import docLinks from "../../assets/DocLinks";
@@ -126,11 +127,12 @@ function DSWImportDialogContent({
               <>
                 {errorMsg}
                 <br />
-                <Trans
+                <TransRichText
                   ns="apps"
                   i18nKey="dmpIntegrations.dialog.forMoreInfo"
-                  // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
-                  components={{ a: <a href={docLinks.dsw} rel="noreferrer" /> }}
+                  components={{
+                    a: richTextLink({ href: docLinks.dsw, rel: "noreferrer" }),
+                  }}
                 />
               </>
             ),
@@ -226,21 +228,20 @@ function DSWImportDialogContent({
         >
           <Box>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dswImportDesc"
                 values={{ serverAlias: connection.DSW_ALIAS }}
-                components={{ strong: <strong /> }}
               />
             </Typography>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dswDocsLink"
-                components={[
-                  <Link key="0" href="https://guide.ds-wizard.org/en/latest/" />,
-                  <Link key="1" href={docLinks.dsw} />,
-                ]}
+                components={{
+                  serviceLink: <Link href="https://guide.ds-wizard.org/en/latest/" />,
+                  helpLink: <Link href={docLinks.dsw} />,
+                }}
               />
             </Typography>
           </Box>

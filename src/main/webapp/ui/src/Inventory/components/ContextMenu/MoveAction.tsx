@@ -17,7 +17,7 @@ type MoveActionArgs = {
 
 const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveActionArgs>(
   ({ as, selectedResults, disabled, closeMenu }, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { moveStore } = useStores();
 
     const handleOpen = () => {
@@ -44,7 +44,7 @@ const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveAc
           <ContextMenuAction
             onClick={handleOpen}
             icon={<OpenWithIcon />}
-            label={t("contextMenu.actions.move")}
+            label={t("common:actions.move")}
             as={as}
             ref={ref}
             disabledHelp={disabledHelp}

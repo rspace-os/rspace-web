@@ -11,7 +11,7 @@ import Radio from "@mui/material/Radio";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -63,8 +63,7 @@ function Template(): React.ReactNode {
               ns="inventory"
               i18nKey="sample.fields.template.explanationNew"
               components={{
-                // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                a: <a href={docLinks.createTemplate} target="_blank" rel="noreferrer" />,
+                a: richTextLink({ href: docLinks.createTemplate, target: "_blank", rel: "noreferrer" }),
               }}
             />
           ) : null
@@ -102,8 +101,7 @@ function Template(): React.ReactNode {
               ns="inventory"
               i18nKey="sample.fields.template.explanationCreate"
               components={{
-                // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                a: <a href={docLinks.createTemplate} target="_blank" rel="noreferrer" />,
+                a: richTextLink({ href: docLinks.createTemplate, target: "_blank", rel: "noreferrer" }),
               }}
             />
           ) : null

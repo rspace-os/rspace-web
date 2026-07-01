@@ -125,7 +125,7 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   return (
     <>
       <ScrollBox overflowY="auto" overflowX="auto">
-        <Table size="small" aria-label={t("search.resultsTable.ariaLabel")} stickyHeader>
+        <Table size="small" aria-label={t("search.resultsTable.label")} stickyHeader>
           <CustomTableHead
             selectedCount={search.selectedResults.length}
             onSelectOptions={onSelectOptions}

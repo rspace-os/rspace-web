@@ -8,7 +8,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 
 type FoundLinksListingArgs = {
   maxFileSizeInMB: number | string;
@@ -37,15 +37,12 @@ export default function FileFilters({
     <Card sx={{ p: 1 }}>
       <h2>{t("export.fileStore.filters.heading")}</h2>
       <p>
-        {excludedFileExtensions === "" ? (
-          <Trans i18nKey="export.fileStore.filters.summary" ns="workspace" values={{ sizeMB: maxFileSizeInMB }} />
-        ) : (
-          <Trans
-            i18nKey="export.fileStore.filters.summaryWithExclusions"
-            ns="workspace"
-            values={{ sizeMB: maxFileSizeInMB, extensions: excludedFileExtensions }}
-          />
-        )}
+        {excludedFileExtensions === ""
+          ? t("export.fileStore.filters.summary", { sizeMB: maxFileSizeInMB })
+          : t("export.fileStore.filters.summaryWithExclusions", {
+              sizeMB: maxFileSizeInMB,
+              extensions: excludedFileExtensions,
+            })}
       </p>
       <Button
         variant="outlined"

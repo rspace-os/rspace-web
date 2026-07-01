@@ -461,7 +461,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
       }}
       spacing={1}
       role="region"
-      aria-label={t("carousel.ariaLabel")}
+      aria-label={t("carousel.label")}
     >
       <Stack direction="row" spacing={1}>
         <Button
@@ -483,7 +483,9 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             fontWeight: 500,
           }}
         >
-          {visibleIndex + 1} / {listing.totalHits}
+          {visibleIndex + 1}
+          {" / "}
+          {listing.totalHits}
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup

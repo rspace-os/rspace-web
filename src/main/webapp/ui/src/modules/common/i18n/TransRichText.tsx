@@ -1,18 +1,25 @@
-import Link from "@mui/material/Link";
+import Link, { type LinkProps } from "@mui/material/Link";
 import type React from "react";
-import { createContext, useContext } from "react";
+import { createContext, createElement, useContext } from "react";
 import { Trans } from "react-i18next";
 
-export type RichTextComponents = { a: React.ReactElement };
+export type RichTextComponents = Record<string, React.ReactElement>;
 
-const muiRichTextComponents: RichTextComponents = { a: <Link /> };
+export const richTextLink = (props: LinkProps = {}): React.ReactElement => createElement(Link, props);
+
+const muiRichTextComponents: RichTextComponents = {
+  a: richTextLink(),
+  br: <br />,
+  code: <code />,
+  strong: <strong />,
+};
 
 export const RichTextComponentsContext = createContext<RichTextComponents>(muiRichTextComponents);
 
 export { muiRichTextComponents };
 
 type Props = Omit<React.ComponentProps<typeof Trans>, "components"> & {
-  components?: Partial<RichTextComponents>;
+  components?: RichTextComponents;
 };
 
 export default function TransRichText({ components, ...rest }: Props): React.ReactNode {

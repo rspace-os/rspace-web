@@ -31,6 +31,7 @@
     "rules": {
       "preset": "recommended",
       "style": {
+        "noJsxLiterals": "error",
         "noRestrictedImports": {
           "level": "error",
           "options": {
@@ -50,36 +51,6 @@
     }
   },
   "overrides": [
-    // i18n rollout: noJsxLiterals is enabled per module as each is migrated off
-    // hard-coded strings (the i18n ratchet). This converted-glob list only grows;
-    // once every module is migrated, noJsxLiterals moves to the top-level linter
-    // config and these per-glob overrides are removed.
-    {
-      "includes": [
-        "src/eln/about/**",
-        "src/components/AppBar/AboutRSpaceDialog.tsx",
-        "src/eln/eln-external-workflows/**",
-        "src/components/ConfirmationDialog.tsx",
-        "src/Export/fileStoreComponents/FoundLinksListing.tsx",
-        "src/Export/fileStoreComponents/LoginStatus.tsx",
-        "src/Export/WordExport.tsx",
-        "src/Export/HtmlXmlExport.tsx",
-        "src/Export/PdfExport.tsx",
-        "src/Export/repositories/DigitalCommonsDataRepo.tsx",
-        "src/Export/repositories/ZenodoRepo.tsx",
-        "src/Export/repositories/DryadRepo.tsx",
-        "src/Export/repositories/FigshareRepo.tsx",
-        "src/Export/repositories/DataverseRepo.tsx",
-        "src/Export/FileStoreLogin.tsx"
-      ],
-      "linter": {
-        "rules": {
-          "style": {
-            "noJsxLiterals": "error"
-          }
-        }
-      }
-    },
     {
       "includes": ["src/components/PublicPages/IdentifierPublicPage.tsx"],
       "linter": {

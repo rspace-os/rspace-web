@@ -18,7 +18,7 @@ export default function ErrorView({
       <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <>
-          The Calira server at{" "}
+          {"The Calira server at "}
           <a
             // @ts-expect-error -- tinymce is defined in the parent window
             href={parent.tinymce.activeEditor.settings.clustermarket_url}
@@ -28,10 +28,10 @@ export default function ErrorView({
             {" "}
             {/* @ts-expect-error -- tinymce is defined in the parent window */}
             {parent.tinymce.activeEditor.settings.clustermarket_url}
-          </a>{" "}
-          is down, or CORS for this server has not been configured properly. If you are responsible for setting up the
-          Calira integration, open developer tools and have a look at the console and/or the network tab to find out
-          what the issue is.
+          </a>
+          {
+            " is down, or CORS for this server has not been configured properly. If you are responsible for setting up the Calira integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is."
+          }
         </>
       )}
       {errorReason === ErrorReason.NotFound && t("integrationErrors.calira.notFound")}

@@ -528,7 +528,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         }}
         accessibilityTips={{}}
       />
-      <DialogTitle>Insert from PyRAT</DialogTitle>
+      <DialogTitle>{"Insert from PyRAT"}</DialogTitle>
       <DialogContent>
         {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
         {FetchingData.match(servers as any, {
@@ -543,7 +543,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
             return (
               <>
                 <Typography variant="body1" gutterBottom>
-                  Pick one of your authenticated servers
+                  {"Pick one of your authenticated servers"}
                 </Typography>
                 <List>
                   <Divider />

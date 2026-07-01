@@ -30,6 +30,7 @@ async function createTestI18n(): Promise<I18nInstance> {
           richTextComponentUrlProbe:
             "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
           richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
+          richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
         },
       },
     },
@@ -48,7 +49,7 @@ function RichTextProbe({ i18n }: { i18n: I18nInstance }): React.ReactNode {
           <TestTrans
             i18nKey="richTextTranslationUrlProbe"
             components={{
-              docsLink: <a href="/docs/fallback">fallback docs text</a>,
+              docsLink: <a href="/docs/fallback">{"fallback docs text"}</a>,
             }}
           />
         </p>
@@ -56,7 +57,7 @@ function RichTextProbe({ i18n }: { i18n: I18nInstance }): React.ReactNode {
           <TestTrans
             i18nKey="richTextComponentUrlProbe"
             components={{
-              docsLink: <a href="/docs/from-component">fallback docs text</a>,
+              docsLink: <a href="/docs/from-component">{"fallback docs text"}</a>,
             }}
           />
         </p>
@@ -100,10 +101,14 @@ describe("TransRichText default vocabulary", () => {
           <p>
             <TransRichText i18nKey="richTextDefaultMapProbe" />
           </p>
+          <p>
+            <TransRichText i18nKey="richTextDefaultStrongProbe" />
+          </p>
         </I18nextProvider>
       </ThemeProvider>,
     );
 
     expect(screen.getByRole("link", { name: "docs" })).toHaveAttribute("href", "/docs");
+    expect(screen.getByText("important note").tagName).toBe("STRONG");
   });
 });

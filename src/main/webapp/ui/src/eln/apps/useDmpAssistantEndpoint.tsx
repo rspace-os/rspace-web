@@ -10,7 +10,7 @@ export function useDmpAssistantEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "DMP Assistant";
+  const appName = t("integrations.dmpAssistant.name");
   const api = axios.create({
     baseURL: "/apps/dmpassistant",
     timeout: ONE_MINUTE_IN_MS,

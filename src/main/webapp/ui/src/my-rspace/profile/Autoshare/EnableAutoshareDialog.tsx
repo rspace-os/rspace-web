@@ -12,8 +12,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "../../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -112,7 +113,7 @@ function EnableAutoshareDialog({
         <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.enable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            <Trans
+            <TransRichText
               i18nKey="profile.groups.autosharing.enableUserText"
               ns="common"
               values={{ username, group: group.groupDisplayName }}

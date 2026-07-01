@@ -56,7 +56,8 @@ export default function FigshareRepo({
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label={t("export.repositories.common.titleLabel")}
+          label={t("export.repositories.common.title")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
@@ -69,7 +70,8 @@ export default function FigshareRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label={t("export.repositories.common.descriptionLabel")}
+          label={t("export.repositories.common.description")}
+          required
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
@@ -85,7 +87,8 @@ export default function FigshareRepo({
           error={submitAttempt && !inputValidations.subject}
           name="subject"
           select
-          label={t("export.repositories.figshare.subjectLabel")}
+          label={t("export.repositories.figshare.subject")}
+          required
           defaultValue={""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
@@ -106,7 +109,8 @@ export default function FigshareRepo({
         <TextField
           name="license"
           select
-          label={t("export.repositories.figshare.licenseLabel")}
+          label={t("export.repositories.figshare.license")}
+          required
           defaultValue={0}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}

@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-import { Trans } from "react-i18next";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
@@ -33,12 +33,11 @@ function BarcodesFromField<
       label=""
       explanation={
         fieldOwner.isFieldEditable("barcodes") ? (
-          <Trans
+          <TransRichText
             ns="inventory"
             i18nKey="fields.barcodes.formField.addingBarcodes"
             components={{
-              // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-              a: <a href={docLinks.barcodes} target="_blank" rel="noreferrer" />,
+              a: richTextLink({ href: docLinks.barcodes, target: "_blank", rel: "noreferrer" }),
             }}
           />
         ) : null

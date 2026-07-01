@@ -8,10 +8,11 @@ import type { SwitchProps } from "@mui/material/Switch";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import type { DEFAULT_STATE } from "@/Export/constants";
 import type { RepoDetails } from "@/Export/repositories/common";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 
@@ -88,14 +89,14 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
             <AlertTitle>{t("export.raid.eligible.title")}</AlertTitle>
             <Stack direction="column" spacing={2}>
               <Typography variant="body1">
-                <Trans
+                <TransRichText
                   i18nKey="export.raid.eligible.projectGroupLine"
                   ns="workspace"
                   values={{ name: raidExportStatus.projectGroup.name }}
                 />
               </Typography>
               <Typography variant="body1">
-                <Trans
+                <TransRichText
                   i18nKey="export.raid.eligible.raidDetails"
                   ns="workspace"
                   values={{

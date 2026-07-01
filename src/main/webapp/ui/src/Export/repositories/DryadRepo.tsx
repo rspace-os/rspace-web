@@ -59,7 +59,8 @@ export default function DryadRepo({
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label={t("export.repositories.common.titleLabel")}
+          label={t("export.repositories.common.title")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
@@ -71,7 +72,8 @@ export default function DryadRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label={t("export.repositories.dryad.abstractLabel")}
+          label={t("export.repositories.dryad.abstract")}
+          required
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
@@ -87,7 +89,8 @@ export default function DryadRepo({
           name="subject"
           select
           defaultValue={""}
-          label={t("export.repositories.dryad.researchDomainLabel")}
+          label={t("export.repositories.dryad.researchDomain")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           helperText={t("export.repositories.dryad.researchDomainHelper")}
@@ -105,7 +108,8 @@ export default function DryadRepo({
         <TextField
           name="license"
           select
-          label={t("export.repositories.dryad.licenseLabel")}
+          label={t("export.repositories.dryad.license")}
+          required
           defaultValue={repo.license.licenses.length ? "0" : ""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
@@ -124,7 +128,7 @@ export default function DryadRepo({
         {/* Granting Org */}
         <Autocomplete
           id="dryad-crossref-funders-autocomplete"
-          label={t("export.repositories.dryad.grantingOrgLabel")}
+          label={t("export.repositories.dryad.grantingOrg")}
           options={crossrefFunders}
           getOptionLabel={(option) => option.name}
           isOptionEqualToValue={(option, value) => option.name === value.name}
@@ -135,7 +139,8 @@ export default function DryadRepo({
           renderInput={(params) => (
             <TextField
               {...params}
-              label={t("export.repositories.dryad.grantingOrgLabel")}
+              label={t("export.repositories.dryad.grantingOrg")}
+              required
               error={submitAttempt && !inputValidations.crossrefFunder}
               helperText={t("export.repositories.dryad.grantingOrgHelper")}
             />

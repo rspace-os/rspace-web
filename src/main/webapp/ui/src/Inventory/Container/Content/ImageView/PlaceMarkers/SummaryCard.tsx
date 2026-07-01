@@ -47,7 +47,7 @@ function SummaryCard({
   onClick,
   fullWidth = false,
 }: SummaryCardArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { navigateToRecord } = useNavigateHelpers();
 
   const helperText = location.hasContent ? "" : t("container.content.placeMarkers.emptyLocationHelper");
@@ -72,9 +72,7 @@ function SummaryCard({
             </Box>
             <CardActions>
               {editable && !location.hasContent && (
-                <ActionButton onClick={preventEventBubbling(onRemove)}>
-                  {t("container.content.placeMarkers.actions.remove")}
-                </ActionButton>
+                <ActionButton onClick={preventEventBubbling(onRemove)}>{t("common:actions.remove")}</ActionButton>
               )}
               {!editable && location.content && (
                 <ActionButton
@@ -84,7 +82,7 @@ function SummaryCard({
                     if (location.content) void navigateToRecord(location.content);
                   }}
                 >
-                  {t("container.content.placeMarkers.actions.open")}
+                  {t("common:actions.open")}
                 </ActionButton>
               )}
             </CardActions>

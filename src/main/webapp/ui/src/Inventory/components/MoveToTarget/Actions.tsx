@@ -12,14 +12,14 @@ import Stepper from "./Stepper";
 import TopLevelButton from "./TopLevelButton";
 
 const MoveSubmitButton = observer(({ handleSubmit, isInvalid }: { handleSubmit: () => void; isInvalid: boolean }) => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { moveStore } = useStores();
   return (
     <SubmitSpinner
       onClick={handleSubmit}
       disabled={isInvalid || moveStore.submitting === "TO-OTHER"}
       loading={moveStore.submitting === "TO-OTHER"}
-      label={t("contextMenu.actions.move")}
+      label={t("common:actions.move")}
     />
   );
 });

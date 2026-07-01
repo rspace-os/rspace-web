@@ -10,7 +10,7 @@ export function useOwncloudEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "OwnCloud";
+  const appName = t("integrations.ownCloud.name");
   const api = axios.create({
     baseURL: "/apps/owncloud",
     timeout: ONE_MINUTE_IN_MS,

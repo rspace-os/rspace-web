@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import InstrumentModel from "../../stores/models/InstrumentModel";
 import useStores from "../../stores/use-stores";
@@ -115,6 +116,7 @@ const CustomFieldSection = observer(({ activeResult }: CustomFieldSectionArgs) =
 });
 
 function InstrumentForm(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -125,7 +127,11 @@ function InstrumentForm(): ReactNode {
 
   return (
     <Stepper titleText={activeResult.name} resetScrollPosition={activeResult} factory={activeResult.factory}>
-      <LimitedAccessAlert readAccessLevel={activeResult.readAccessLevel} whatLabel="instrument" owner={owner} />
+      <LimitedAccessAlert
+        readAccessLevel={activeResult.readAccessLevel}
+        whatLabel={t("recordTypes.instrument.lower")}
+        owner={owner}
+      />
       <OverviewSection activeResult={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>

@@ -21,7 +21,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
             });
           }}
         >
-          Export CSV
+          {"\n          Export CSV\n        "}
         </button>
       </div>
     );
@@ -29,7 +29,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
 }));
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell", () => ({
-  default: () => <div>Inventory link cell</div>,
+  default: () => <div>{"Inventory link cell"}</div>,
 }));
 
 globalThis.Blob = NodeBlob as unknown as typeof Blob;

@@ -17,7 +17,7 @@ type RestoreActionArgs = {
 
 const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, RestoreActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: RestoreActionArgs, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -37,7 +37,7 @@ const RestoreAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Res
               closeMenu();
             }}
             icon={<RestoreFromTrashIcon />}
-            label={t("contextMenu.actions.restore")}
+            label={t("common:actions.restore")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

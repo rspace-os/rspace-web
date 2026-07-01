@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
@@ -107,6 +108,7 @@ const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) =>
 });
 
 function InstrumentTemplateForm(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -119,7 +121,7 @@ function InstrumentTemplateForm(): ReactNode {
     <Stepper titleText={activeResult.name} resetScrollPosition={activeResult} factory={activeResult.factory}>
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
-        whatLabel="instrument template"
+        whatLabel={t("recordTypes.instrumentTemplate.lower")}
         owner={owner}
       />
       <OverviewSection activeResult={activeResult} />
@@ -158,7 +160,7 @@ function InstrumentTemplateForm(): ReactNode {
           {activeResult.state === "preview" && (
             <StepperPanel
               icon="instrumentTemplate"
-              title="Instruments"
+              title={t("recordTypes.instrument.plural")}
               sectionName="instruments"
               recordType="instrumentTemplate"
             >

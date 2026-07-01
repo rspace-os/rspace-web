@@ -301,7 +301,7 @@ function ExportRepo({
         <FormControl component="fieldset">
           <FormLabel component="legend">{t("export.repositories.choiceLabel")}</FormLabel>
           <RadioGroup
-            aria-label={t("export.repositories.choiceAriaLabel")}
+            aria-label={t("export.repositories.labels.choice")}
             name="repoChoice"
             value={state.repoChoice.toString()}
             // @ts-expect-error React event handlers are not parameterised by the name prop

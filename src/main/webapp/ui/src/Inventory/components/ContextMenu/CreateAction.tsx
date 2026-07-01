@@ -18,7 +18,7 @@ type CreateActionArgs = {
 
 const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const [openCreateDialog, setOpenCreateDialog] = React.useState(false);
 
     const isFullContainer = (): boolean =>
@@ -51,7 +51,7 @@ const CreateAction = forwardRef<React.ElementRef<typeof MenuItem>, CreateActionA
           <ContextMenuAction
             onClick={onClick}
             icon={<AddBoxIcon />}
-            label={t("contextMenu.actions.create")}
+            label={t("common:actions.create")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

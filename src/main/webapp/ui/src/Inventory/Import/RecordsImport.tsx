@@ -24,7 +24,7 @@ import FileForImport from "./Fields/File";
 import TemplateDetails from "./Fields/TemplateDetails";
 
 function RecordsImport(): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { importStore } = useStores();
   const importData = importStore.importData;
 
@@ -48,18 +48,18 @@ function RecordsImport(): React.ReactNode {
   const notImportable = () => {
     const types: Array<{ route: ImportRecordType; label: string }> = [];
     if (importData?.containersFile && !importData.containersSubmittable)
-      types.push({ route: "CONTAINERS", label: t("import.types.containers") });
+      types.push({ route: "CONTAINERS", label: t("recordTypes.container.plural") });
     if (importData?.samplesFile && !importData.samplesSubmittable)
-      types.push({ route: "SAMPLES", label: t("import.types.samples") });
+      types.push({ route: "SAMPLES", label: t("recordTypes.sample.plural") });
     if (importData?.subSamplesFile && !importData.subSamplesSubmittable)
-      types.push({ route: "SUBSAMPLES", label: t("import.types.subsamples") });
+      types.push({ route: "SUBSAMPLES", label: t("recordTypes.subsample.plural") });
     return types;
   };
 
-  const importButtonLabel = `${t("import.actions.import")} ${[
-    ...(importData?.containersSubmittable ? [t("import.types.containers")] : []),
-    ...(importData?.samplesSubmittable ? [t("import.types.samples")] : []),
-    ...(importData?.subSamplesSubmittable ? [t("import.types.subsamples")] : []),
+  const importButtonLabel = `${t("common:actions.import")} ${[
+    ...(importData?.containersSubmittable ? [t("recordTypes.container.plural")] : []),
+    ...(importData?.samplesSubmittable ? [t("recordTypes.sample.plural")] : []),
+    ...(importData?.subSamplesSubmittable ? [t("recordTypes.subsample.plural")] : []),
   ].join(" + ")}`;
 
   function ImportTabs(_: Record<string, never>) {

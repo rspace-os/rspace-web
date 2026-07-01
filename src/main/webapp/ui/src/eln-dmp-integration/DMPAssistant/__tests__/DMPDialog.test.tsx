@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
@@ -113,6 +113,13 @@ const renderDialog = () =>
     </ThemeProvider>,
   );
 
+const PLAN_CHECKBOX_LABEL = "apps:dmpIntegrations.dialog.selectPlanLabel";
+
+const checkboxForPlan = async (title: string): Promise<HTMLElement> =>
+  within(await screen.findByRole("row", { name: (name) => name.includes(title) })).getByRole("checkbox", {
+    name: PLAN_CHECKBOX_LABEL,
+  });
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios = new MockAdapter(axios);
@@ -130,8 +137,8 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      expect(await screen.findByRole("checkbox", { name: "Select Plan One" })).toBeInTheDocument();
-      expect(screen.getByRole("checkbox", { name: "Select Plan Two" })).toBeInTheDocument();
+      expect(await checkboxForPlan("Plan One")).toBeInTheDocument();
+      expect(await checkboxForPlan("Plan Two")).toBeInTheDocument();
     });
 
     test("clicking a checkbox selects that DMP.", async () => {
@@ -139,9 +146,7 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const cb = await screen.findByRole("checkbox", {
-        name: "Select Plan One",
-      });
+      const cb = await checkboxForPlan("Plan One");
       expect(cb).not.toBeChecked();
 
       fireEvent.click(cb);
@@ -154,9 +159,7 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const cb = await screen.findByRole("checkbox", {
-        name: "Select Plan One",
-      });
+      const cb = await checkboxForPlan("Plan One");
       fireEvent.click(cb);
       expect(cb).toBeChecked();
 
@@ -170,11 +173,9 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const cb1 = await screen.findByRole("checkbox", {
-        name: "Select Plan One",
-      });
-      const cb2 = screen.getByRole("checkbox", { name: "Select Plan Two" });
-      const cb3 = screen.getByRole("checkbox", { name: "Select Plan Three" });
+      const cb1 = await checkboxForPlan("Plan One");
+      const cb2 = await checkboxForPlan("Plan Two");
+      const cb3 = await checkboxForPlan("Plan Three");
 
       fireEvent.click(cb1);
       fireEvent.click(cb3);
@@ -191,7 +192,7 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
+      fireEvent.click(await checkboxForPlan("Plan One"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
@@ -201,12 +202,12 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
+      fireEvent.click(await checkboxForPlan("Plan One"));
+      fireEvent.click(await checkboxForPlan("Plan Two"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
 
-      fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Three" }));
+      fireEvent.click(await checkboxForPlan("Plan Three"));
 
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (3)" })).toBeInTheDocument();
     });
@@ -225,7 +226,7 @@ describe("DMPDialog", () => {
         renderDialog();
 
         // wait until the dialog finishes loading and the Import button is present
-        await screen.findByRole("checkbox", { name: "Select Plan One" });
+        await checkboxForPlan("Plan One");
 
         fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
@@ -241,16 +242,16 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      await screen.findByRole("checkbox", { name: "Select Plan One" });
+      await checkboxForPlan("Plan One");
       const selectAll = screen.getByRole("checkbox", {
-        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllLabel",
       });
       expect(selectAll).not.toBeChecked();
 
       fireEvent.click(selectAll);
 
-      expect(screen.getByRole("checkbox", { name: "Select Plan One" })).toBeChecked();
-      expect(screen.getByRole("checkbox", { name: "Select Plan Two" })).toBeChecked();
+      expect(await checkboxForPlan("Plan One")).toBeChecked();
+      expect(await checkboxForPlan("Plan Two")).toBeChecked();
       expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" })).toBeInTheDocument();
     });
 
@@ -259,16 +260,16 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      await screen.findByRole("checkbox", { name: "Select Plan One" });
+      await checkboxForPlan("Plan One");
       const selectAll = screen.getByRole("checkbox", {
-        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllLabel",
       });
 
       fireEvent.click(selectAll);
       fireEvent.click(selectAll);
 
-      expect(screen.getByRole("checkbox", { name: "Select Plan One" })).not.toBeChecked();
-      expect(screen.getByRole("checkbox", { name: "Select Plan Two" })).not.toBeChecked();
+      expect(await checkboxForPlan("Plan One")).not.toBeChecked();
+      expect(await checkboxForPlan("Plan Two")).not.toBeChecked();
     });
 
     test("renders in the indeterminate state when some but not all DMPs are " + "selected.", async () => {
@@ -276,13 +277,11 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      const cb1 = await screen.findByRole("checkbox", {
-        name: "Select Plan One",
-      });
+      const cb1 = await checkboxForPlan("Plan One");
       fireEvent.click(cb1);
 
       const selectAll = screen.getByRole("checkbox", {
-        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllLabel",
       });
       // MUI Checkbox surfaces indeterminate state via a data attribute on
       // the input rather than the native DOM property (see the upstream
@@ -296,11 +295,11 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
+      fireEvent.click(await checkboxForPlan("Plan One"));
+      fireEvent.click(await checkboxForPlan("Plan Two"));
 
       const selectAll = screen.getByRole("checkbox", {
-        name: "apps:dmpIntegrations.dialog.selectAllAriaLabel",
+        name: "apps:dmpIntegrations.dialog.selectAllLabel",
       });
       expect(selectAll).toBeChecked();
       expect(selectAll).toHaveAttribute("data-indeterminate", "false");
@@ -317,8 +316,8 @@ describe("DMPDialog", () => {
 
       renderDialog();
 
-      fireEvent.click(await screen.findByRole("checkbox", { name: "Select Plan One" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Select Plan Two" }));
+      fireEvent.click(await checkboxForPlan("Plan One"));
+      fireEvent.click(await checkboxForPlan("Plan Two"));
 
       fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton (2)" }));
 

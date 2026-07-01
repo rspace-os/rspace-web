@@ -58,7 +58,7 @@ describe("StringField", () => {
           value="foo"
           slotProps={{
             input: {
-              endAdornment: <span>suffix</span>,
+              endAdornment: <span>{"suffix"}</span>,
             },
           }}
         />

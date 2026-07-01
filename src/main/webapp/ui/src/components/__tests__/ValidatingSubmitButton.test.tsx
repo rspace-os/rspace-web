@@ -13,7 +13,7 @@ describe("ValidatingSubmitButton", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton loading={false} validationResult={Result.Ok(null)} onClick={onClick}>
-          Click me
+          {"\n          Click me\n        "}
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
@@ -29,7 +29,7 @@ describe("ValidatingSubmitButton", () => {
           validationResult={Result.Error<null>([new Error("test")])}
           onClick={onClick}
         >
-          Click me
+          {"\n          Click me\n        "}
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
@@ -44,7 +44,7 @@ describe("ValidatingSubmitButton", () => {
           validationResult={Result.Error<null>([new Error("test")])}
           onClick={() => {}}
         >
-          Click me
+          {"\n          Click me\n        "}
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );
@@ -60,7 +60,7 @@ describe("ValidatingSubmitButton", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <ValidatingSubmitButton loading={true} validationResult={validationResult} onClick={() => {}}>
-          Click me
+          {"\n          Click me\n        "}
         </ValidatingSubmitButton>
       </ThemeProvider>,
     );

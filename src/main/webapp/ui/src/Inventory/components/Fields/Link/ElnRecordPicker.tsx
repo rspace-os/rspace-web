@@ -42,7 +42,7 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
       onClose={props.onCancel}
       fullWidth
       maxWidth="sm"
-      aria-label={t("fields.link.elnPicker.ariaLabel")}
+      aria-label={t("fields.link.elnPicker.label")}
     >
       <DialogTitle>{t("fields.link.elnPicker.title")}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: "40vh" }}>

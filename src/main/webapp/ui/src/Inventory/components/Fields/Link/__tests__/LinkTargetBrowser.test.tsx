@@ -30,10 +30,10 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
   }) => (
     <div data-testid="inventory-picker" data-reset={String(props.resetActiveResultOnClose ?? false)}>
       <button type="button" onClick={() => props.onAddition([{ globalId: "SA42", name: "Sample 42" }])}>
-        pick SA42
+        {"\n        pick SA42\n      "}
       </button>
       <button type="button" onClick={() => props.onAddition([])}>
-        cancel picker
+        {"\n        cancel picker\n      "}
       </button>
     </div>
   ),

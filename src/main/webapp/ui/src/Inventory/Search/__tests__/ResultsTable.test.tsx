@@ -214,7 +214,7 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByLabelText(/inventory:contextMenu\.splitButton\.moreOptions/i));
+      await user.click(screen.getByLabelText("inventory:contextMenu.splitButton.moreOptions"));
       await user.click(await screen.findByText("inventory:search.resultsTable.selection.invert"));
 
       expect(allowedContainer.selected).toBe(false);

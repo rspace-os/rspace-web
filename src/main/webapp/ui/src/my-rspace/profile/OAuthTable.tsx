@@ -122,7 +122,7 @@ export default function OAuthTable() {
       {fetchSuccess && (
         <>
           <TableContainer>
-            <Table size="small" aria-label={t("profile.oauth.table.ariaLabel")}>
+            <Table size="small" aria-label={t("profile.oauth.table.label")}>
               <EnhancedTableHead
                 headCells={headCells}
                 order={order}

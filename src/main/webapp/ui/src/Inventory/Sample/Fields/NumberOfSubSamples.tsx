@@ -3,7 +3,8 @@ import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import NumberField from "../../../components/Inputs/NumberField";
 import RadioField, { OptionExplanation, OptionHeading } from "../../../components/Inputs/RadioField";
 import type SampleModel from "../../../stores/models/SampleModel";
@@ -86,11 +87,7 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                   <>
                     <OptionHeading>{t("sample.fields.numberOfSubsamples.singular.heading")}</OptionHeading>
                     <OptionExplanation>
-                      <Trans
-                        ns="inventory"
-                        i18nKey="sample.fields.numberOfSubsamples.singular.explanation"
-                        components={{ strong: <strong /> }}
-                      />
+                      <TransRichText ns="inventory" i18nKey="sample.fields.numberOfSubsamples.singular.explanation" />
                     </OptionExplanation>
                   </>
                 ),
@@ -101,11 +98,7 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                   <>
                     <OptionHeading>{t("sample.fields.numberOfSubsamples.many.heading")}</OptionHeading>
                     <OptionExplanation>
-                      <Trans
-                        ns="inventory"
-                        i18nKey="sample.fields.numberOfSubsamples.many.explanation"
-                        components={{ strong: <strong /> }}
-                      />
+                      <TransRichText ns="inventory" i18nKey="sample.fields.numberOfSubsamples.many.explanation" />
                     </OptionExplanation>
                   </>
                 ),

@@ -38,7 +38,7 @@ type CreateNewArgs = {
  * that the button stands out on the page.
  */
 function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { searchStore, trackingStore, uiStore, importStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -99,7 +99,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
           height: "32px",
         }}
       >
-        {uiStore.sidebarOpen && <div>{t("createNew.button")}</div>}
+        {uiStore.sidebarOpen && <div>{t("common:actions.create")}</div>}
       </Button>
       <Menu
         open={Boolean(anchorEl)}
@@ -238,7 +238,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         </Divider>
         <AccentMenuItem
           compact
-          title={t("createNew.samples")}
+          title={t("recordTypes.sample.plural")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -259,7 +259,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title={t("createNew.subsamples")}
+          title={t("recordTypes.subsample.plural")}
           avatar={
             <RecordTypeIcon
               record={{
@@ -280,7 +280,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
         />
         <AccentMenuItem
           compact
-          title={t("createNew.containers")}
+          title={t("recordTypes.container.plural")}
           avatar={
             <RecordTypeIcon
               record={{

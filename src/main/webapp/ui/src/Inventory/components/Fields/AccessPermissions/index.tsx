@@ -6,7 +6,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import ChooseToEdit from "../../../../components/Inputs/ChooseToEdit";
 import FormControl from "../../../../components/Inputs/FormControl";
@@ -62,16 +63,15 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
     <>
       {notEditable && <Alert severity="info">{t("fields.accessPermissions.editFirst")}</Alert>}
       <FormControl
-        aria-label={t("fields.accessPermissions.ariaLabel")}
+        aria-label={t("fields.accessPermissions.label")}
         label=""
         explanation={
           <>
-            <Trans
+            <TransRichText
               ns="inventory"
               i18nKey="fields.accessPermissions.explanation"
               components={{
-                // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                a: <a href={docLinks.permissions} target="_blank" rel="noreferrer" />,
+                a: richTextLink({ href: docLinks.permissions, target: "_blank", rel: "noreferrer" }),
               }}
             />
             <br />

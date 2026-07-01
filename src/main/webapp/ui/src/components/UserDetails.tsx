@@ -13,7 +13,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TimeAgo from "react-timeago";
+import TimeAgo from "react-timeago-i18n";
 import axios from "@/common/axios";
 import type { PersonId } from "@/stores/definitions/Person";
 import * as Parsers from "../util/parsers";
@@ -115,7 +115,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
     <TableRow key={group.groupId}>
       <TableCell component="th" scope="row">
         {t("userDetails.roleAt", {
-          role: t(`userDetails.roles.${group.roleInGroup === "PI" ? "pi" : "user"}`),
+          role: group.roleInGroup === "PI" ? t("userDetails.roles.pi") : t("userDetails.roles.user"),
         })}
       </TableCell>
       <TableCell align="right">
@@ -195,7 +195,7 @@ export default function UserDetails(props: UserDetailsArgs): React.ReactNode {
               subheader={
                 user.lastLogin && (
                   <span>
-                    {t("userDetails.lastLogin")} {<TimeAgo date={user.lastLogin} />}
+                    {t("userDetails.lastLogin")} {<TimeAgo date={user.lastLogin} locale="en-US" />}
                   </span>
                 )
               }

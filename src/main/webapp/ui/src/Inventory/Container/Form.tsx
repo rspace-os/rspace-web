@@ -120,7 +120,11 @@ function Form(): ReactNode {
       resetScrollPosition={activeResult}
       factory={activeResult.factory}
     >
-      <LimitedAccessAlert readAccessLevel={activeResult.readAccessLevel} owner={owner} whatLabel="container" />
+      <LimitedAccessAlert
+        readAccessLevel={activeResult.readAccessLevel}
+        owner={owner}
+        whatLabel={t("recordTypes.container.lower")}
+      />
       <OverviewSection activeResult={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>

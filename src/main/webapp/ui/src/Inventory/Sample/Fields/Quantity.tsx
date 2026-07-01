@@ -7,7 +7,8 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
@@ -168,22 +169,25 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
             sample.subSamplesCount === 1 ? (
               t("fields.quantity.totalSingle", { alias: sample.subSampleAlias.alias })
             ) : (
-              <Trans
+              <TransRichText
                 ns="inventory"
                 i18nKey="fields.quantity.totalCalculated"
                 values={{ count: sample.subSamplesCount, plural: sample.subSampleAlias.plural }}
-                components={[
-                  <Link
-                    key="link"
-                    href={
-                      typeof sample.globalId === "string" ? `/inventory/search?parentGlobalId=${sample.globalId}` : "#"
-                    }
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
-                    }}
-                  />,
-                ]}
+                components={{
+                  link: (
+                    <Link
+                      href={
+                        typeof sample.globalId === "string"
+                          ? `/inventory/search?parentGlobalId=${sample.globalId}`
+                          : "#"
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
+                      }}
+                    />
+                  ),
+                }}
               />
             )
           }

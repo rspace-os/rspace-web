@@ -53,12 +53,9 @@ function InstrumentTemplateField(): React.ReactNode {
         label="Instrument Template"
         data-test-id="ChooseInstrumentTemplate"
         explanation={
-          activeResult.isFieldEditable("template") ? (
-            <>
-              If you select an instrument template below, initial metadata and custom fields will be automatically
-              generated.
-            </>
-          ) : null
+          activeResult.isFieldEditable("template")
+            ? "If you select an instrument template below, initial metadata and custom fields will be automatically generated."
+            : null
         }
       >
         <Stack sx={{ flexWrap: "nowrap" }}>

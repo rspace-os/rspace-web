@@ -228,7 +228,7 @@ function HelpDocs() {
         {hasExtraHelpLinks &&
           uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
             <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
-              <ListItemIcon>&nbsp;</ListItemIcon>
+              <ListItemIcon>{"\u00a0"}</ListItemIcon>
               <ListItemText>{label}</ListItemText>
             </MenuItem>
           ))}

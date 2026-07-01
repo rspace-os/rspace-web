@@ -87,7 +87,7 @@ function SearchFeedback(): React.ReactNode {
       icon={false}
       severity={search.fetcher.error ? "warning" : "info"}
       action={<SaveSearch sx={{ p: 0 }} />}
-      aria-label={t("search.feedback.ariaLabel")}
+      aria-label={t("search.feedback.label")}
       role="status"
     >
       {statusText()}

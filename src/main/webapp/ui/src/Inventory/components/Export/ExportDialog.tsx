@@ -134,7 +134,7 @@ export const ExportOptionsWrapper = ({
         </Box>
         {showSamplesModule && (
           <Box sx={optionModuleWrapperSx}>
-            <FormLabel id="samples-options-label">{t("export.dialog.samples")}</FormLabel>
+            <FormLabel id="samples-options-label">{t("recordTypes.sample.plural")}</FormLabel>
             <RadioField
               name={"Export Samples Options"}
               value={exportOptions.includeSubsamplesInSample ?? null}
@@ -155,7 +155,7 @@ export const ExportOptionsWrapper = ({
         )}
         {showContainersModule && (
           <Box sx={optionModuleWrapperSx}>
-            <FormLabel id="containers-options-label">{t("export.dialog.containers")}</FormLabel>
+            <FormLabel id="containers-options-label">{t("recordTypes.container.plural")}</FormLabel>
             <RadioField
               name={"Export Containers Options"}
               value={exportOptions.includeContainerContent ?? null}

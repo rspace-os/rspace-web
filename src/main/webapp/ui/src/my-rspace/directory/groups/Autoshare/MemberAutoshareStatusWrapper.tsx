@@ -50,7 +50,7 @@ function MemberAutoshareStatusWrapper(props: any) {
   }
 
   if (!isLabGroup) {
-    return <> n/a </>;
+    return <>{" n/a "}</>;
   }
   return (
     <AutoshareStatus

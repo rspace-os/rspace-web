@@ -7,11 +7,13 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grow from "@mui/material/Grow";
+import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../assets/DocLinks";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
@@ -60,23 +62,22 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
             />
             <Box>
               <DialogContentText>
-                <Trans ns="common" i18nKey="searchDialog.luceneTip" components={[<code key="code" />]} />
+                <TransRichText ns="common" i18nKey="searchDialog.luceneTip" />
               </DialogContentText>
               <DialogContentText>
-                <Trans
+                <TransRichText
                   ns="common"
                   i18nKey="searchDialog.moreInfo"
-                  components={[
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                    <a key="lucene" href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                    <a
-                      key="apache"
-                      href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                      rel="noreferrer"
-                      target="_blank"
-                    />,
-                  ]}
+                  components={{
+                    luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
+                    apacheLink: (
+                      <Link
+                        href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
+                        rel="noreferrer"
+                        target="_blank"
+                      />
+                    ),
+                  }}
                 />
               </DialogContentText>
             </Box>

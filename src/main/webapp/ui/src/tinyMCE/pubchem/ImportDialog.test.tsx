@@ -133,7 +133,7 @@ describe("ImportDialog", () => {
 
   test("Should have a search type selector", () => {
     render(<ImportDialogStory />);
-    expect(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeAriaLabel" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeLabel" })).toBeVisible();
   });
 
   test("The API endpoint is called when a search is performed", async () => {
@@ -152,7 +152,7 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     // choose SMILES as the search type
-    await user.click(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeAriaLabel" }));
+    await user.click(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeLabel" }));
     await user.click(screen.getByRole("option", { name: "apps:tinyMce.pubchem.dialog.searchTypes.smiles" }));
     await performSearch(user, "aspirin");
     await waitFor(() => {

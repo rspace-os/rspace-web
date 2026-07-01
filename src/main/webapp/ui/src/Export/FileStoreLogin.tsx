@@ -78,7 +78,7 @@ export default function FileStoreLogin({
           <FormControl error aria-describedby="name-error-text">
             <TextField
               variant="standard"
-              label={t("export.fileStore.login.usernameLabel")}
+              label={t("export.fileStore.login.username")}
               value={userName}
               onChange={({ target: { value } }) => setUserName(value)}
               autoComplete="nfsUsername"
@@ -93,7 +93,7 @@ export default function FileStoreLogin({
           <FormControl error aria-describedby="password-error-text">
             <TextField
               variant="standard"
-              label={t("export.fileStore.login.passwordLabel")}
+              label={t("export.fileStore.login.password")}
               type="password"
               value={password}
               onChange={({ target: { value } }) => setPassword(value)}
@@ -111,7 +111,7 @@ export default function FileStoreLogin({
           </Button>
         )}
         <Button variant="contained" color="primary" disabled={loading} onClick={login} data-test-id="login-button">
-          {t("export.fileStore.login.submitButton")}
+          {t("common:actions.login")}
         </Button>
         <Snackbar
           anchorOrigin={{ vertical: "top", horizontal: "right" }}

@@ -7,10 +7,11 @@ import Portal from "@mui/material/Portal";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import axios from "@/common/axios";
 import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import Result from "@/util/result";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
@@ -140,12 +141,7 @@ const RenameDialog = () => {
         <DialogTitle>{t("toolbar.rename.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText variant="body2" sx={{ mb: 2 }}>
-            <Trans
-              ns="workspace"
-              i18nKey="toolbar.rename.prompt"
-              values={{ currentName }}
-              components={[<strong key="strong" />]}
-            />
+            <TransRichText ns="workspace" i18nKey="toolbar.rename.prompt" values={{ currentName }} />
           </DialogContentText>
           <TextField
             size="small"

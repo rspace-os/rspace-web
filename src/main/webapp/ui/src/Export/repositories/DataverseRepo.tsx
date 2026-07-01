@@ -74,7 +74,8 @@ export default function DataverseRepo({
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label={t("export.repositories.common.titleLabel")}
+          label={t("export.repositories.common.title")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
@@ -87,7 +88,8 @@ export default function DataverseRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label={t("export.repositories.common.descriptionLabel")}
+          label={t("export.repositories.common.description")}
+          required
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
@@ -103,7 +105,8 @@ export default function DataverseRepo({
           error={submitAttempt && !inputValidations.subject}
           name="subject"
           select
-          label={t("export.repositories.dataverse.subjectLabel")}
+          label={t("export.repositories.dataverse.subject")}
+          required
           defaultValue={""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
@@ -144,7 +147,8 @@ export default function DataverseRepo({
         <TextField
           name="license"
           select
-          label={t("export.repositories.dataverse.licenseLabel")}
+          label={t("export.repositories.dataverse.license")}
+          required
           defaultValue={0}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}

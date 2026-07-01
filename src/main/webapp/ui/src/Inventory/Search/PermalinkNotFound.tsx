@@ -1,21 +1,21 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import NavigateContext from "../../stores/contexts/Navigate";
 import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
 
 const TYPE_LABEL_KEYS = {
-  sample: "permalinkNotFound.typeLabels.sample",
-  subsample: "permalinkNotFound.typeLabels.subsample",
-  container: "permalinkNotFound.typeLabels.container",
-  sampletemplate: "permalinkNotFound.typeLabels.sampleTemplate",
-  instrument: "permalinkNotFound.typeLabels.instrument",
-  instrumenttemplate: "permalinkNotFound.typeLabels.instrumentTemplate",
+  sample: "recordTypes.sample.lower",
+  subsample: "recordTypes.subsample.lower",
+  container: "recordTypes.container.lower",
+  sampletemplate: "recordTypes.sampleTemplate.lower",
+  instrument: "recordTypes.instrument.lower",
+  instrumenttemplate: "recordTypes.instrumentTemplate.lower",
 } as const satisfies Record<PermalinkType, string>;
 
 type PermalinkNotFoundArgs = {
@@ -39,17 +39,19 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
       {permalink.version != null ? (
         <Alert severity="warning">
           <AlertTitle>{t("permalinkNotFound.versionedTitle", { typeLabel, version: permalink.version })}</AlertTitle>
-          {t("permalinkNotFound.versionedBody")}{" "}
-          <Link
-            href={latestUrl}
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              navigate(latestUrl);
+          <TransRichText
+            ns="inventory"
+            i18nKey="permalinkNotFound.versionedBody"
+            components={{
+              a: richTextLink({
+                href: latestUrl,
+                onClick: (e: React.MouseEvent) => {
+                  e.preventDefault();
+                  navigate(latestUrl);
+                },
+              }),
             }}
-          >
-            {t("permalinkNotFound.latestLink")}
-          </Link>
-          {"."}
+          />
         </Alert>
       ) : (
         <Alert severity="warning">

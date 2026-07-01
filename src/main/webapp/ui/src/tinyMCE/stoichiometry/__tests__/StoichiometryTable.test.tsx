@@ -66,7 +66,7 @@ vi.mock("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable", async () => {
     default: (props: React.ComponentProps<typeof actual.default>) => {
       staticStoichiometryTableSpy(props);
       if (useWrapperStubs.current) {
-        return <div>Static stoichiometry table</div>;
+        return <div>{"Static stoichiometry table"}</div>;
       }
       return <actual.default {...props} />;
     },
@@ -81,7 +81,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog", async () => {
     default: () =>
       useWrapperStubs.current ? (
         <div role="dialog" aria-label="common:stoichiometry.dialog.loadingMoleculeInformation">
-          common:stoichiometry.dialog.loadingMoleculeInformation
+          {"\n          common:stoichiometry.dialog.loadingMoleculeInformation\n        "}
         </div>
       ) : (
         <actual.default />

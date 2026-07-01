@@ -302,7 +302,7 @@ describe("GridDimensions", () => {
     ).orElse(null);
     expect(menuOption).not.toBeNull();
     // biome-ignore lint/style/noNonNullAssertion: initial biome migration
-    expect(menuOption!).toMatch(/inventory:container.fields.gridDimensions.commonSizes.wellPlate96/);
+    expect(menuOption!).toMatch("inventory:container.fields.gridDimensions.commonSizes.wellPlate96");
   });
   test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();

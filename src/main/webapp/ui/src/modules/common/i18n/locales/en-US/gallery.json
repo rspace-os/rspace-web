@@ -34,8 +34,8 @@
     "title": "PDF Preview"
   },
   "carousel": {
-    "ariaLabel": "Carousel view of files",
     "currentFileIndex": "Current file index",
+    "label": "Carousel view of files",
     "next": "Next",
     "previous": "Previous"
   },
@@ -50,7 +50,7 @@
   "infoPanel": {
     "details": "Details",
     "dmpDetails": "DMP Details",
-    "nameAriaLabel": "Name",
+    "nameLabel": "Name",
     "noDescriptionPlaceholder": "No description",
     "noNamePlaceholder": "No Name"
   },
@@ -120,11 +120,6 @@
     }
   },
   "moveToS3": {
-    "actions": {
-      "copy": "Copy",
-      "move": "Move",
-      "transfer": "Transfer"
-    },
     "destination": {
       "explanation": "The available filestores are configured in the Gallery's filestore section.",
       "label": "Destination S3 filestore",

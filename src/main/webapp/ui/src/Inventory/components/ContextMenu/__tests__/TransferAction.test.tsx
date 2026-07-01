@@ -24,7 +24,7 @@ describe("TransferAction", () => {
       expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: false }), undefined);
     });
 
-    await user.click(screen.getAllByText("inventory:contextMenu.transfer.action")[0]);
+    await user.click(screen.getAllByText("common:actions.transfer")[0]);
     await waitFor(() => {
       expect(Dialog).toHaveBeenCalledWith(expect.objectContaining({ open: true }), undefined);
     });

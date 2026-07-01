@@ -1064,8 +1064,11 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
           title="Permanently delete?"
           consequences={
             <Typography variant="body1">
-              This permanently deletes {selection.size} item{selection.size > 1 ? "s" : ""} from the S3 filestore. This
-              cannot be undone.
+              {"This permanently deletes "}
+              {selection.size}
+              {" item"}
+              {selection.size > 1 ? "s" : ""}
+              {" from the S3 filestore. This cannot be undone."}
             </Typography>
           }
           variant="warning"

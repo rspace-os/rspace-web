@@ -10,8 +10,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
 import docLinks from "../../assets/DocLinks";
@@ -127,20 +128,16 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              <Trans
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dmponlineImportDesc"
-                components={{ strong: <strong /> }}
-              />
+              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.dmponlineImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmponlineDocsLink"
-                components={[
-                  <Link key="0" href="https://dmponline.dcc.ac.uk" />,
-                  <Link key="1" href={docLinks.dmponline} />,
-                ]}
+                components={{
+                  serviceLink: <Link href="https://dmponline.dcc.ac.uk" />,
+                  helpLink: <Link href={docLinks.dmponline} />,
+                }}
               />
             </Typography>
           </Box>

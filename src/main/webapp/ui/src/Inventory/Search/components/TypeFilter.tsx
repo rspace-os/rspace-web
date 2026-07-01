@@ -63,13 +63,13 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: t("search.controls.type.container"),
+                recordTypeLabel: t("recordTypes.container.singular"),
                 iconName: "container",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
-          <ListItemText primary={t("search.controls.type.containers")} />
+          <ListItemText primary={t("recordTypes.container.plural")} />
         </MenuItem>
         <MenuItem
           selected={current === "SAMPLE"}
@@ -83,14 +83,14 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: t("search.controls.type.sample"),
+                recordTypeLabel: t("recordTypes.sample.singular"),
                 iconName: "sample",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
           <ListItemText
-            primary={t("search.controls.type.samples")}
+            primary={t("recordTypes.sample.plural")}
             secondary={match<void, string>([
               [() => search.benchSearch, t("search.controls.type.samplesNotOnBenches")],
               [() => search.fetcher.parentIsContainer, t("search.controls.type.samplesNotInContainers")],
@@ -110,13 +110,13 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: t("search.controls.type.subsample"),
+                recordTypeLabel: t("recordTypes.subsample.singular"),
                 iconName: "subsample",
               }}
               color={theme.palette.standardIcon.main}
             />
           </ListItemIcon>
-          <ListItemText primary={t("search.controls.type.subsamples")} />
+          <ListItemText primary={t("recordTypes.subsample.plural")} />
         </MenuItem>
         <MenuItem
           selected={current === "INSTRUMENT"}
@@ -130,7 +130,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} style={{ fontSize: "1em" }} />
           </ListItemIcon>
-          <ListItemText primary="Instruments" />
+          <ListItemText primary={t("recordTypes.instrument.plural")} />
         </MenuItem>
         <MenuItem
           selected={current === "SAMPLE_TEMPLATE"}
@@ -144,7 +144,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: t("search.controls.type.template"),
+                recordTypeLabel: t("recordTypes.template.singular"),
                 iconName: "template",
               }}
               color={theme.palette.standardIcon.main}
@@ -155,7 +155,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText
-            primary={t("search.controls.type.templates")}
+            primary={t("recordTypes.template.plural")}
             secondary={match<void, string>([
               [() => search.benchSearch, t("search.controls.type.templatesNotOnBenches")],
               [() => search.fetcher.parentIsContainer, t("search.controls.type.templatesNotInContainers")],
@@ -175,7 +175,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
           <ListItemIcon>
             <RecordTypeIcon
               record={{
-                recordTypeLabel: t("search.controls.type.instrumentTemplate"),
+                recordTypeLabel: t("recordTypes.instrumentTemplate.singular"),
                 iconName: "instrumentTemplate",
               }}
               color={theme.palette.standardIcon.main}
@@ -186,7 +186,7 @@ export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArg
             />
           </ListItemIcon>
           <ListItemText
-            primary={t("search.controls.type.instrumentTemplates")}
+            primary={t("recordTypes.instrumentTemplate.plural")}
             secondary={match<void, string>([
               [() => search.benchSearch, t("search.controls.type.instrumentTemplatesNotOnBenches")],
               [() => search.fetcher.parentIsContainer, t("search.controls.type.instrumentTemplatesNotInContainers")],

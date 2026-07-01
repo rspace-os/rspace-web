@@ -16,7 +16,7 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
       <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <>
-          The Omero server at{" "}
+          {"The Omero server at "}
           <a
             // @ts-expect-error -- tinymce is defined in the parent window
             href={parent.tinymce?.activeEditor?.settings?.omero_url}
@@ -26,10 +26,10 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
             {" "}
             {/* @ts-expect-error -- tinymce is defined in the parent window */}
             {parent.tinymce?.activeEditor?.settings?.omero_url}
-          </a>{" "}
-          is down, or CORS for this server has not been configured properly. If you are responsible for setting up the
-          Omero integration, open developer tools and have a look at the console and/or the network tab to find out what
-          the issue is.
+          </a>
+          {
+            " is down, or CORS for this server has not been configured properly. If you are responsible for setting up the Omero integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is."
+          }
         </>
       )}
       {errorReason === ErrorReason.NotFound && t("integrationErrors.omero.notFound")}

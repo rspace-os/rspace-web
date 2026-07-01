@@ -8,7 +8,7 @@ function TestComponent() {
   return (
     <Stack spacing={2}>
       <Button onClick={() => openImagePreview("https://via.placeholder.com/800x600/0066cc/ffffff?text=Test+Image")}>
-        Open Image Preview
+        {"\n        Open Image Preview\n      "}
       </Button>
       <Button
         onClick={() =>
@@ -17,10 +17,10 @@ function TestComponent() {
           })
         }
       >
-        Open Image with Caption
+        {"\n        Open Image with Caption\n      "}
       </Button>
       <Button onClick={() => openImagePreview("https://via.placeholder.com/400x300/cc0066/ffffff?text=Small+Image")}>
-        Open Small Image
+        {"\n        Open Small Image\n      "}
       </Button>
     </Stack>
   );
@@ -39,7 +39,7 @@ function TestComponentWithLargeImage() {
 
   return (
     <Button onClick={() => openImagePreview("https://via.placeholder.com/2000x1500/009900/ffffff?text=Large+Image")}>
-      Open Large Image Preview
+      {"\n      Open Large Image Preview\n    "}
     </Button>
   );
 }
@@ -57,7 +57,7 @@ function TestComponentWithErrorImage() {
 
   return (
     <Button onClick={() => openImagePreview("https://invalid-url-that-should-fail.example.com/nonexistent.jpg")}>
-      Open Invalid Image
+      {"\n      Open Invalid Image\n    "}
     </Button>
   );
 }
@@ -79,7 +79,7 @@ function TestComponentWithEmptyCaption() {
         openImagePreview("https://via.placeholder.com/600x400/660099/ffffff?text=No+Caption", { caption: [] })
       }
     >
-      Open Image with Empty Caption
+      {"\n      Open Image with Empty Caption\n    "}
     </Button>
   );
 }

@@ -131,7 +131,7 @@ describe("RaidConnectionsAddForm", () => {
     it("Should render the form with autocomplete field", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByLabelText(/common:profile\.raidConnections\.identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false })).toBeInTheDocument();
     });
 
     it("Should render Add and Cancel buttons", () => {
@@ -152,7 +152,9 @@ describe("RaidConnectionsAddForm", () => {
       givenMockQueryError("Failed to load data");
       renderWithProviders(defaultProps);
 
-      expect(screen.queryByLabelText(/common:profile\.raidConnections\.identifier/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText("common:profile.raidConnections.identifier", { exact: false }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -162,7 +164,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -175,7 +177,7 @@ describe("RaidConnectionsAddForm", () => {
     it("Should display no options message when list is empty", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -189,7 +191,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -223,7 +225,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -249,7 +251,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -275,7 +277,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -297,7 +299,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -316,7 +318,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -337,7 +339,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -356,7 +358,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -387,7 +389,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       // Select an option
       await user.click(autocomplete);
@@ -423,7 +425,7 @@ describe("RaidConnectionsAddForm", () => {
       mockMutationState.error = new Error("Failed to add RAiD");
 
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       // Check if the input has error styling (aria-invalid)
       await waitFor(() => {
@@ -439,7 +441,7 @@ describe("RaidConnectionsAddForm", () => {
         groupId: "67890",
       });
 
-      expect(screen.getByLabelText(/common:profile\.raidConnections\.identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false })).toBeInTheDocument();
     });
 
     it("Should handle special characters in RAiD titles", async () => {
@@ -456,7 +458,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -479,7 +481,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -502,7 +504,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -516,7 +518,7 @@ describe("RaidConnectionsAddForm", () => {
   describe("Form Validation", () => {
     it("Should require RAiD identifier field", () => {
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       expect(autocomplete).toBeRequired();
     });
@@ -549,7 +551,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/common:profile\.raidConnections\.identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 

@@ -18,7 +18,7 @@ type DuplicateActionArgs = {
 
 const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, DuplicateActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: DuplicateActionArgs, ref) => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -43,7 +43,7 @@ const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, D
               closeMenu();
             }}
             icon={<AddToPhotosIcon />}
-            label={t("contextMenu.actions.duplicate")}
+            label={t("common:actions.duplicate")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

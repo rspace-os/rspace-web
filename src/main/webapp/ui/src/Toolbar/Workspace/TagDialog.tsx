@@ -17,7 +17,7 @@ import SubmitSpinnerButton from "../../components/SubmitSpinnerButton";
 import AddTag from "../../components/Tags/AddTag";
 import { encodeTags, parseEncodedTags } from "../../components/Tags/ParseEncodedTagStrings";
 import TagListing from "../../components/Tags/TagListing";
-import TransRichText from "../../modules/common/i18n/TransRichText";
+import TransRichText, { richTextLink } from "../../modules/common/i18n/TransRichText";
 import AlertContext, { type AlertDetails, mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import { areSameTag, type Tag } from "../../stores/definitions/Tag";
@@ -187,8 +187,7 @@ function TagDialog(): React.ReactNode {
             <TransRichText
               i18nKey="toolbar.tags.description"
               ns="workspace"
-              // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
-              components={{ a: <a href={docLinks.tags} rel="noreferrer" target="_blank" /> }}
+              components={{ a: richTextLink({ href: docLinks.tags, rel: "noreferrer", target: "_blank" }) }}
             />
           </Typography>
           <TagListing

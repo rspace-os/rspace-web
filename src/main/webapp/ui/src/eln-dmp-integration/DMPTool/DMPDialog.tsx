@@ -12,8 +12,9 @@ import type { GridRowId } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 import docLinks from "../../assets/DocLinks";
@@ -99,11 +100,12 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               mkAlert({
                 title: t("dmpIntegrations.dialog.error.unableToLoad"),
                 message: (
-                  <Trans
+                  <TransRichText
                     ns="apps"
                     i18nKey="dmpIntegrations.dialog.forMoreInfo"
-                    // biome-ignore lint/a11y/useAnchorContent: Trans provides content from the translation string
-                    components={{ a: <a href={docLinks.dmptoolImportingDmps} rel="noreferrer" /> }}
+                    components={{
+                      a: richTextLink({ href: docLinks.dmptoolImportingDmps, rel: "noreferrer" }),
+                    }}
                   />
                 ),
                 variant: "error",
@@ -218,10 +220,13 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               })}
             </Typography>
             <Typography variant="body2">
-              <Trans
+              <TransRichText
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmptoolDocsLink"
-                components={[<Link key="0" href="https://dmptool.org" />, <Link key="1" href={docLinks.dmptool} />]}
+                components={{
+                  serviceLink: <Link href="https://dmptool.org" />,
+                  helpLink: <Link href={docLinks.dmptool} />,
+                }}
               />
             </Typography>
           </Box>

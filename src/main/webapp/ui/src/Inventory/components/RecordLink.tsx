@@ -195,7 +195,7 @@ export const TopLink = observer(({ overflow = false }: OverflowProps) => {
         size="small"
         sx={interactiveChipSx({ overflow, withoutIcon: true })}
         component="span"
-        label={t("search.controls.type.containers")}
+        label={t("recordTypes.container.plural")}
         onClick={toTopContainers}
       />
     </Typography>

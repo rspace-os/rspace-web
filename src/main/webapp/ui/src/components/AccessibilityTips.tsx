@@ -100,7 +100,9 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.highContrast.enabled")
                 : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            {t(`accessibilityTips.highContrast.instructions.${highContrastModeIsEnabled ? "disable" : "enable"}`)}
+            {highContrastModeIsEnabled
+              ? t("accessibilityTips.highContrast.instructions.disable")
+              : t("accessibilityTips.highContrast.instructions.enable")}
             <br />
             <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
               {t("accessibilityTips.platforms.windows")}
@@ -128,7 +130,9 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.reducedMotion.enabled")
                 : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            {t(`accessibilityTips.reducedMotion.instructions.${reducedMotionModeIsEnabled ? "disable" : "enable"}`)}
+            {reducedMotionModeIsEnabled
+              ? t("accessibilityTips.reducedMotion.instructions.disable")
+              : t("accessibilityTips.reducedMotion.instructions.enable")}
             <br />
             <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">
               {t("accessibilityTips.platforms.macOS")}

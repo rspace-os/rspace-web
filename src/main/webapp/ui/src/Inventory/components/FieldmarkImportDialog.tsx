@@ -7,6 +7,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
+import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
@@ -14,11 +15,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import Result from "@/util/result";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
@@ -372,14 +373,12 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 {t("fieldmarkImport.description")}
               </Typography>
               <Typography variant="body2">
-                <Trans
+                <TransRichText
                   ns="inventory"
                   i18nKey="fieldmarkImport.descriptionLinks"
                   components={{
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                    a1: <a href="https://docs.fieldmark.au" />,
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                    a2: <a href={docLinks.fieldmark} />,
+                    a1: <Link href="https://docs.fieldmark.au" />,
+                    a2: <Link href={docLinks.fieldmark} />,
                   }}
                 />
               </Typography>
@@ -455,7 +454,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     },
                   );
                 }}
-                selectRadioAriaLabelFunc={(row) => t("fieldmarkImport.selectRadioAriaLabel", { name: row.name })}
+                selectRadioAriaLabelFunc={(row) => t("fieldmarkImport.selectRadioLabel", { name: row.name })}
                 disableColumnFilter
                 hideFooter
                 autoHeight
@@ -487,8 +486,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                         ns="inventory"
                         i18nKey="fieldmarkImport.igsnMessage"
                         components={{
-                          // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                          a: <a href={docLinks.IGSNIdentifiers} />,
+                          a: richTextLink({ href: docLinks.IGSNIdentifiers }),
                         }}
                       />
                     </Typography>
@@ -567,7 +565,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
               validationResult={!selectedNotebook ? IsInvalid(t("fieldmarkImport.noNotebookSelected")) : IsValid()}
               loading={importing}
             >
-              {t("import.actions.import")}
+              {t("common:actions.import")}
             </ValidatingSubmitButton>
           </Stack>
         </DialogActions>

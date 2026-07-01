@@ -130,7 +130,9 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
             flexGrow: 1,
           }}
         >
-          <DialogTitle variant="h3">{t(`moveToS3.${isTransferMode ? "transferTitle" : "moveTitle"}`)}</DialogTitle>
+          <DialogTitle variant="h3">
+            {isTransferMode ? t("moveToS3.transferTitle") : t("moveToS3.moveTitle")}
+          </DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
               {FetchingData.match(s3Filestores, {
@@ -168,7 +170,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
                         options={[
                           {
                             value: "keep",
-                            label: t(`moveToS3.${isTransferMode ? "retainSourceCopy" : "retainRspaceCopy"}`),
+                            label: isTransferMode ? t("moveToS3.retainSourceCopy") : t("moveToS3.retainRspaceCopy"),
                           },
                         ]}
                       />
@@ -238,10 +240,10 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
               }}
             >
               {isTransferMode
-                ? t("moveToS3.actions.transfer")
+                ? tCommon("actions.transfer")
                 : retainSourceCopy
-                  ? t("moveToS3.actions.copy")
-                  : t("moveToS3.actions.move")}
+                  ? tCommon("actions.copy")
+                  : tCommon("actions.move")}
             </ValidatingSubmitButton>
           </DialogActions>
         </Box>

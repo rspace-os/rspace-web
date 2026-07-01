@@ -143,7 +143,8 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          Selected: {selectedAnimalIds.length}
+          {"Selected: "}
+          {selectedAnimalIds.length}
         </Typography>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50].filter((c) => c <= count)}

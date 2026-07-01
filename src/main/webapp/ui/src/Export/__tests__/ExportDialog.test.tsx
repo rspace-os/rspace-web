@@ -278,13 +278,13 @@ describe("ExportDialog", () => {
       });
 
       await user.click(
-        await screen.findByRole("radio", { name: /workspace:export.format.chooser.formats.pdfHeading/ }),
+        await screen.findByRole("radio", { name: /^workspace:export.format.chooser.formats.pdfHeading/ }),
       );
-      await user.click(screen.getByRole("checkbox", { name: /workspace:export.format.chooser.exportToRepository/ }));
+      await user.click(screen.getByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }));
 
-      await user.click(screen.getByRole("button", { name: /common:actions.next/ }));
-      await screen.findByRole("textbox", { name: /workspace:export.format.pdf.nameLabel/ });
-      await user.click(screen.getByRole("button", { name: /common:actions.next/ }));
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      await screen.findByRole("textbox", { name: "workspace:export.format.pdf.name" });
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
       await screen.findByRole("radio", { name: /Zenodo/ });
       expect(await screen.findByRole("button", { name: /BT-20/ })).toBeVisible();
     });
@@ -371,7 +371,7 @@ describe("ExportDialog", () => {
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
       fireEvent.mouseDown(screen.getByRole("combobox"));
       fireEvent.click(screen.getByRole("option", { name: "workspace:export.format.word.pageSize.letter" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: /workspace:export.format.word.setDefault/ }));
+      fireEvent.click(screen.getByRole("checkbox", { name: "workspace:export.format.word.setDefault" }));
 
       mockAxios.resetHistory();
       fireEvent.click(screen.getByRole("button", { name: "common:actions.export" }));

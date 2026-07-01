@@ -12,8 +12,9 @@ import { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "../../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -111,7 +112,7 @@ function DisableAutoshareDialog({
         <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.disable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            <Trans
+            <TransRichText
               i18nKey="profile.groups.autosharing.disableUserText"
               ns="common"
               values={{ username, group: group.groupDisplayName }}

@@ -71,9 +71,10 @@ export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeS
       setBarcode={setBarcode}
       loading={loading}
       warning={
-        error
-          ? !loading && <Alert severity="warning">{t("barcodeScanner.cameraError")}</Alert>
-          : !loading && !barcode?.rawValue && <Alert severity="warning">{t("barcodeScanner.otherFormats")}</Alert>
+        !loading &&
+        (error || !barcode?.rawValue) && (
+          <Alert severity="warning">{error ? t("barcodeScanner.cameraError") : t("barcodeScanner.otherFormats")}</Alert>
+        )
       }
       error={error}
     />

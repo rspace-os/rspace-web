@@ -36,7 +36,7 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
     return (
       <div>
         {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-        <button onClick={close}>Close</button>
+        <button onClick={close}>{"Close"}</button>
       </div>
     );
   }),

@@ -19,7 +19,7 @@
       "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
       "nominateOtherPi": "Nominate a PI, make me Lab Admin, and supply users for pending invitations.",
       "piInvitationNote": "Note: group wont be created until PI accepts invitation",
-      "roleAriaLabel": "Pi Role",
+      "roleLabel": "Pi Role",
       "searchPlaceholder": "Start typing...",
       "selfPi": "Make me the group PI and invite users"
     },
@@ -55,10 +55,10 @@
   "fields": {
     "groupName": "Group's identifying name",
     "optional": "(optional)",
-    "selectGroupOwners": "Select group owners *",
-    "selectGroupType": "Select a group type*",
+    "selectGroupOwners": "Select group owners",
+    "selectGroupType": "Select a group type",
     "selectMembers": "Select group members",
-    "selectPi": "Select one LabGroup PI *"
+    "selectPi": "Select one LabGroup PI"
   },
   "groupType": {
     "lab": "Lab Group",

@@ -158,15 +158,15 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       render(<S3FilestoreSidebar />);
 
-      await user.click(await screen.findByRole("button", { name: "Create" }));
-      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
+      await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));
 
       const dialog = await screen.findByRole("dialog");
       // S3 gets the filestore-specific title and the "no native folders" note
-      expect(within(dialog).getByRole("heading", { name: /New Filestore Folder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: /sidebar.createFilestoreFolder/i })).toBeVisible();
       expect(within(dialog).getByText(/S3 has no native concept of folders/i)).toBeVisible();
       await user.type(within(dialog).getByRole("textbox"), "test");
-      await user.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
       // the request goes to the filestore folder endpoint, not the local one
       await waitFor(() => {

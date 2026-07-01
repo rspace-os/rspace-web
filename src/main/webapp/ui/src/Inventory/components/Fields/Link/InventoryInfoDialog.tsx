@@ -9,7 +9,8 @@ import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../../../common/InvApiService";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -91,7 +92,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
     <Dialog
       open={props.open}
       onClose={props.onClose}
-      aria-label={t("fields.link.infoDialog.ariaLabel", { globalId: props.globalId })}
+      aria-label={t("fields.link.infoDialog.label", { globalId: props.globalId })}
       fullWidth
       maxWidth="sm"
     >
@@ -113,7 +114,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                 }}
               >
                 <Typography variant="body2">
-                  <Trans
+                  <TransRichText
                     ns="inventory"
                     i18nKey="fields.link.infoDialog.versionNote"
                     values={{
@@ -122,7 +123,6 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                         iconForInventoryGlobalId(props.globalId)?.recordTypeLabel.toLowerCase() ?? "record",
                       globalId: props.globalId.replace(/v\d+$/, ""),
                     }}
-                    components={{ strong: <strong /> }}
                   />
                 </Typography>
               </Box>

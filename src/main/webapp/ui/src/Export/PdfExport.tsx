@@ -61,7 +61,8 @@ export default function PdfExport({
         variant="standard"
         error={validations.submitAttempt && !validations.inputValidations.exportName}
         id="name"
-        label={t("export.format.pdf.nameLabel")}
+        label={t("export.format.pdf.name")}
+        required
         helperText={t("export.format.pdf.nameHelper")}
         value={exportName}
         onChange={({ target: { value } }) => updateExportDetails("exportName", value)}

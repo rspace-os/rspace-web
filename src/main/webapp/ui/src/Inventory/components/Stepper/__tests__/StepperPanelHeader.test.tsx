@@ -69,7 +69,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
         />
         <Collapse in={open}>
           <label>
-            Set error
+            {"\n            Set error\n            "}
             <input
               onChange={({ target: { value } }) => {
                 setFormSectionError(formSectionError, value, true);
@@ -77,7 +77,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
             />
           </label>
           <label>
-            Unset error
+            {"\n            Unset error\n            "}
             <input
               onChange={({ target: { value } }) => {
                 setFormSectionError(formSectionError, value, false);

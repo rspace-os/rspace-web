@@ -10,8 +10,9 @@ import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "../../../../theme";
 import AdditionalInfo from "./AdditionalInfo";
 
@@ -149,7 +150,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
               </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  <Trans
+                  <TransRichText
                     i18nKey="profile.groups.autosharing.enableGroup.text"
                     ns="common"
                     values={{ groupDisplayName }}
@@ -173,7 +174,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
               </DialogTitle>
               <DialogContent>
                 <DialogContentText>
-                  <Trans
+                  <TransRichText
                     i18nKey="profile.groups.autosharing.disableGroup.text"
                     ns="common"
                     values={{ groupDisplayName }}

@@ -46,7 +46,8 @@ export default function WordExport({
           variant="standard"
           fullWidth
           error={validations.submitAttempt && !validations.inputValidations.exportName}
-          label={t("export.format.word.nameLabel")}
+          label={t("export.format.word.name")}
+          required
           value={exportName}
           onChange={({ target: { value } }) => updateExportDetails("exportName", value)}
           margin="normal"

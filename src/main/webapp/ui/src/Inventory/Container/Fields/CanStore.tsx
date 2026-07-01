@@ -34,7 +34,7 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
   const options: Array<ChoiceOption<"sample" | "container">> = [
     {
       value: "sample",
-      label: t("container.fields.canStore.subsamples"),
+      label: t("recordTypes.subsample.plural"),
       disabled: orElseIfNoAccess(
         mapPermissioned(container.contentSummary, ({ subSampleCount }) => subSampleCount > 0),
         true,
@@ -43,7 +43,7 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
     },
     {
       value: "container",
-      label: t("container.fields.canStore.containers"),
+      label: t("recordTypes.container.plural"),
       disabled: orElseIfNoAccess(
         mapPermissioned(container.contentSummary, ({ containerCount }) => containerCount > 0),
         true,

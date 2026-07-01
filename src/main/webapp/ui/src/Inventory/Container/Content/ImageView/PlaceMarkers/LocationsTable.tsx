@@ -36,7 +36,7 @@ function LocationsTable({
   selected,
   onClick,
 }: LocationsTableArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const tableBody = React.useRef(null);
 
   type CustomEvent = {
@@ -88,7 +88,7 @@ function LocationsTable({
           <ButtonGroup color="primary" size="small">
             {!location.hasContent && (
               <Button onClick={(e: MouseEvent<HTMLButtonElement>) => preventEventBubbling(() => onRemove(mark))(e)}>
-                {t("container.content.placeMarkers.actions.remove")}
+                {t("common:actions.remove")}
               </Button>
             )}
           </ButtonGroup>

@@ -14,7 +14,7 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useRef } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../theme";
 
@@ -145,9 +145,7 @@ export default function OAuthDialog(props: any) {
             {created ? t("profile.oauth.dialog.createdTitle") : t("profile.oauth.dialog.createTitle")}
           </DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              {created && <Trans i18nKey="profile.oauth.dialog.secretWarning" ns="common" />}
-            </DialogContentText>
+            <DialogContentText>{created && t("profile.oauth.dialog.secretWarning")}</DialogContentText>
             {!created && (
               <form onSubmit={handleSubmit}>
                 <TextField

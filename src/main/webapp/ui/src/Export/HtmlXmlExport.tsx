@@ -68,7 +68,7 @@ export default function HtmlXmlExport({
       <TextField
         variant="standard"
         fullWidth
-        label={t("export.format.htmlXml.descriptionLabel")}
+        label={t("export.format.htmlXml.description")}
         multiline
         maxRows="4"
         value={description}
@@ -76,7 +76,7 @@ export default function HtmlXmlExport({
         margin="normal"
         data-test-id="html-xml-description"
         slotProps={{
-          htmlInput: { "aria-label": t("export.format.htmlXml.descriptionLabel") },
+          htmlInput: { "aria-label": t("export.format.htmlXml.description") },
         }}
       />
     </Stack>

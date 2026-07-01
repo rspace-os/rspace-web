@@ -67,7 +67,7 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
       onClose={props.onCancel}
       fullWidth
       maxWidth="md"
-      aria-label={t("fields.link.targetBrowser.ariaLabel")}
+      aria-label={t("fields.link.targetBrowser.label")}
     >
       <DialogTitle>{t("fields.link.targetBrowser.title")}</DialogTitle>
       <DialogContent sx={{ height: "60vh", p: 1 }}>

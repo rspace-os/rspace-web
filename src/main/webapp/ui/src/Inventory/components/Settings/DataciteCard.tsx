@@ -19,7 +19,7 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
-import TransRichText from "../../../modules/common/i18n/TransRichText";
+import TransRichText, { richTextLink } from "../../../modules/common/i18n/TransRichText";
 import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
@@ -82,8 +82,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
               ns="inventory"
               i18nKey="settings.datacite.formHelperText"
               components={{
-                // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                a: <a href="https://datacite.org/" target="_blank" rel="noreferrer" />,
+                a: richTextLink({ href: "https://datacite.org/", target: "_blank", rel: "noreferrer" }),
               }}
             />
           </FormHelperText>

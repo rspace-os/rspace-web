@@ -64,7 +64,7 @@ describe("MoveAction", () => {
         </storesContext.Provider>
       </ThemeProvider>,
     );
-    await user.click(screen.getAllByRole("button", { name: "inventory:contextMenu.actions.move" })[0]);
+    await user.click(screen.getAllByRole("button", { name: "common:actions.move" })[0]);
 
     await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     expect(closeMenu).toHaveBeenCalled();

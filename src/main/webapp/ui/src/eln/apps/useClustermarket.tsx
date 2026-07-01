@@ -10,7 +10,7 @@ export function useClustermarketEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "Calira";
+  const appName = t("integrations.calira.name");
   const api = axios.create({
     baseURL: "/apps/clustermarket",
     timeout: ONE_MINUTE_IN_MS,

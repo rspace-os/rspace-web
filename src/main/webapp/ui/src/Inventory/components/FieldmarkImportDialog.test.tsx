@@ -185,7 +185,7 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -202,7 +202,7 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Notebook No Identifiers"));
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -226,7 +226,7 @@ describe("FieldmarkImportDialog", () => {
       });
       fireEvent.mouseDown(identifierSelect);
       fireEvent.click(await screen.findByRole("option", { name: "sample_id" }));
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       await waitFor(() => {
         const importRequest = mockAxios.history.post.find(
@@ -262,7 +262,7 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       const alert = await screen.findByText("inventory:fieldmarkImport.importNotebook.title");
       const alertContainer = alert.closest('[role="group"]') as HTMLElement;
@@ -296,10 +296,10 @@ describe("FieldmarkImportDialog", () => {
       await renderAndWaitForNotebooks();
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "inventory:import.actions.import" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "common:actions.import" })).toBeDisabled();
       });
 
       (resolveImport as (() => void) | null)?.();
@@ -341,7 +341,7 @@ describe("FieldmarkImportDialog", () => {
 
       await user.click(getRadioForNotebook("Notebook With Identifiers"));
       await screen.findByRole("combobox", { name: "inventory:fieldmarkImport.igsnField.label" });
-      await user.click(screen.getByRole("button", { name: "inventory:import.actions.import" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
 
       expect(await screen.findByText("inventory:fieldmarkImport.importNotebook.title")).toBeVisible();
       expect(

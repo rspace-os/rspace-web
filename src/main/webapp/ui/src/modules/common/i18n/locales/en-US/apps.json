@@ -18,7 +18,7 @@
   "dmpIntegrations": {
     "argos": "Argos",
     "dialog": {
-      "argosDocsLink": "See <0>argos.openaire.eu</0> and our <1>Argos integration docs</1> for more.",
+      "argosDocsLink": "See <serviceLink>argos.openaire.eu</serviceLink> and our <helpLink>Argos integration docs</helpLink> for more.",
       "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
       "cancelButton": "Cancel",
       "closeButton": "Close",
@@ -38,13 +38,13 @@
         "title": "Title",
         "updatedAt": "Updated At"
       },
-      "dmpassistantDocsLink": "See <0>dmp-pgd.ca</0> and our <1>DMP Assistant integration docs</1> for more.",
+      "dmpassistantDocsLink": "See <serviceLink>dmp-pgd.ca</serviceLink> and our <helpLink>DMP Assistant integration docs</helpLink> for more.",
       "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
-      "dmponlineDocsLink": "See <0>dmponline.dcc.ac.uk</0> and our <1>DMPonline integration docs</1> for more.",
+      "dmponlineDocsLink": "See <serviceLink>dmponline.dcc.ac.uk</serviceLink> and our <helpLink>DMPonline integration docs</helpLink> for more.",
       "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-      "dmptoolDocsLink": "See <0>dmptool.org</0> and our <1>DMPTool integration docs</1> for more.",
+      "dmptoolDocsLink": "See <serviceLink>dmptool.org</serviceLink> and our <helpLink>DMPTool integration docs</helpLink> for more.",
       "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
-      "dswDocsLink": "See <0>https://guide.ds-wizard.org/en/latest</0> and our <1>DSW / FAIR Wizard integration docs</1> for more.",
+      "dswDocsLink": "See <serviceLink>https://guide.ds-wizard.org/en/latest</serviceLink> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
       "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
       "error": {
         "couldNotGet": "Could not get DMPs: {message}",
@@ -73,9 +73,9 @@
         "filters": "Search filters",
         "funder": "Funder"
       },
-      "selectAllAriaLabel": "Select all DMPs on this page",
-      "selectDmpAriaLabel": "Select {title}",
-      "selectPlanAriaLabel": "Select plan: {label}"
+      "selectAllLabel": "Select all DMPs on this page",
+      "selectDmpLabel": "Select {title}",
+      "selectPlanLabel": "Select plan: {label}"
     },
     "dmpAssistant": "DMP Assistant",
     "dmponline": "DMPonline",
@@ -209,7 +209,7 @@
         "testInvalid": "Connection details are not valid.",
         "testValid": "Connection details are valid."
       },
-      "configuredAriaLabel": "Configured Dataverse with name {name}",
+      "configuredLabel": "Configured Dataverse with name {name}",
       "description": "Explore, analyse, and share data through an open-source research data repository software.",
       "errorGettingConfigs": "There was an error getting the configured Dataverses.",
       "fields": {
@@ -328,7 +328,7 @@
         "testInvalid": "Connection details are not valid.",
         "testValid": "Connection details are valid."
       },
-      "configuredAriaLabel": "Configured DSW with label {label}",
+      "configuredLabel": "Configured DSW with label {label}",
       "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
       "errorGettingConfigs": "There was an error getting the configured DSW instances.",
       "fields": {
@@ -387,7 +387,7 @@
         "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
         "obtainToken": "Obtain an API Token from Fieldmark."
       },
-      "usage": "You can import your <1>Fieldmark</1> notebooks into Inventory"
+      "usage": "You can import your <strong>Fieldmark</strong> notebooks into Inventory"
     },
     "figshare": {
       "alerts": {
@@ -870,7 +870,7 @@
           "smiles": "Enter a SMILES string"
         },
         "searchResults": "Search Results",
-        "searchTypeAriaLabel": "Search type",
+        "searchTypeLabel": "Search type",
         "searchTypes": {
           "nameCas": "Name/CAS",
           "smiles": "SMILES"
@@ -905,7 +905,7 @@
         }
       },
       "instructionsTitle": "Instructions",
-      "reservedShortcutsNote": "Here's <0>a list</0> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "reservedShortcutsNote": "Here's <a>a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
       "tabActions": "Actions",
       "tabSymbols": "Symbols",
       "toggleInstructions": "Toggle instructions"

@@ -174,7 +174,7 @@ function InventoryPicker({
             }}
             disabled={selectedRecords.length === 0 || hasDisallowedSelection}
           >
-            {t("picker.choose")}
+            {t("common:actions.choose")}
           </Button>
           <Button onClick={handleCancel}>{t("common:actions.cancel")}</Button>
         </CardActions>

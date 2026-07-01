@@ -8,7 +8,7 @@ export function SimplePageWithSidebarToggle(props: Partial<React.ComponentProps<
   return (
     <body>
       <header>
-        <h1>A simple page</h1>
+        <h1>{"A simple page"}</h1>
         <SidebarToggle sidebarOpen={true} setSidebarOpen={() => {}} sidebarId={"sidebar"} {...props} />
       </header>
       <main>

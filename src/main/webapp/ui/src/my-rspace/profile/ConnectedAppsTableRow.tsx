@@ -6,8 +6,9 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 
 const ConnectedAppsTableRow = ({
@@ -37,11 +38,10 @@ const ConnectedAppsTableRow = ({
           title={t("profile.oauth.connectedApps.confirmDisconnectTitle")}
           consequences={
             <Typography variant="body1">
-              <Trans
+              <TransRichText
                 ns="common"
                 i18nKey="profile.oauth.connectedApps.confirmDisconnectText"
                 values={{ clientName: app.clientName }}
-                components={[<strong key="strong" />]}
               />
             </Typography>
           }

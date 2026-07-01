@@ -20,15 +20,18 @@ const TriggersSearchNavigate = ({ skipToParentContext }: TriggersSearchNavigateA
   const { useNavigate } = React.useContext(NavigateContext);
 
   const navigate = useNavigate();
-  // biome-ignore lint/a11y/useButtonType: initial biome migration
-  return <button onClick={() => navigate("/inventory/search?query=foo", { skipToParentContext })}>Click me!</button>;
+  return (
+    <button type="button" onClick={() => navigate("/inventory/search?query=foo", { skipToParentContext })}>
+      {"Click me!"}
+    </button>
+  );
 };
 const TriggersPermalinkNavigate = () => {
   const { useNavigate } = React.useContext(NavigateContext);
 
   const navigate = useNavigate();
   // biome-ignore lint/a11y/useButtonType: initial biome migration
-  return <button onClick={() => navigate("/inventory/container/1")}>Click me!</button>;
+  return <button onClick={() => navigate("/inventory/container/1")}>{"Click me!"}</button>;
 };
 describe("InnerSearchNavigationContext", () => {
   test("navigate calls should update the search parameters.", () => {

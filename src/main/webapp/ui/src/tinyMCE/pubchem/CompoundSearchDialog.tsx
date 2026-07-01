@@ -289,7 +289,7 @@ export default function CompoundSearchDialog({
               <Typography variant="body2">
                 {t("tinyMce.pubchem.dialog.intro.moreInfoPrefix")}{" "}
                 <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
-                  https://pubchem.ncbi.nlm.nih.gov/
+                  {"https://pubchem.ncbi.nlm.nih.gov/"}
                 </Link>{" "}
                 {t("tinyMce.pubchem.dialog.intro.moreInfoMiddle")}{" "}
                 <Link href={docLinks.pubchem}>{t("tinyMce.pubchem.dialog.intro.docsLink")}</Link>{" "}
@@ -326,7 +326,7 @@ export default function CompoundSearchDialog({
                           <FormControl variant="standard" size="small">
                             <Select
                               inputProps={{
-                                "aria-label": t("tinyMce.pubchem.dialog.searchTypeAriaLabel"),
+                                "aria-label": t("tinyMce.pubchem.dialog.searchTypeLabel"),
                                 name: "search-type",
                               }}
                               value={searchType}

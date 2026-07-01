@@ -34,8 +34,9 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Person } from "@/stores/definitions/Person";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
@@ -771,10 +772,12 @@ function GalleryAppBar({
                               }}
                               primary={
                                 userDetails.orcidId === null ? (
-                                  <Trans
+                                  <TransRichText
                                     ns="common"
                                     i18nKey="appBar.orcidAdd"
-                                    components={[<Link key="link" href="/userform" />]}
+                                    components={{
+                                      a: <Link href="/userform" />,
+                                    }}
                                   />
                                 ) : (
                                   <Stack

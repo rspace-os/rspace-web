@@ -10,8 +10,9 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import type { ImportRecordType } from "../../../stores/stores/ImportStore";
 import useStores from "../../../stores/use-stores";
@@ -121,11 +122,13 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       show: hasRows && importData.isSubSamplesImport && importData.parentSamplesImportIdUndefined,
       severity: "info",
       content: (
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="import.columnMapping.parentSampleImportIdMissing"
           values={{ label }}
-          components={[<Link key="link" to={onTypeSelect("SAMPLES")} />]}
+          components={{
+            link: <Link to={onTypeSelect("SAMPLES")} />,
+          }}
         />
       ),
     },
@@ -134,11 +137,13 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       show: hasRows && importData.parentContainersImportIdUndefined,
       severity: "info",
       content: (
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="import.columnMapping.parentContainerImportIdMissing"
           values={{ label }}
-          components={[<Link key="link" to={onTypeSelect("CONTAINERS")} />]}
+          components={{
+            link: <Link to={onTypeSelect("CONTAINERS")} />,
+          }}
         />
       ),
     },

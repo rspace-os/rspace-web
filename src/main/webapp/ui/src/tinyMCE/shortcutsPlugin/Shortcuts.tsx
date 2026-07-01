@@ -7,16 +7,17 @@ import { Alert, AlertTitle } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
 import { produce } from "immer";
 import React from "react";
 import { createRoot } from "react-dom/client";
-import { Trans } from "react-i18next";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import {
   arraysEqual,
   humanize,
@@ -374,18 +375,18 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             )}
             {this.state.instructions && (
               <p>
-                <Trans
+                <TransRichText
                   ns="apps"
                   i18nKey="tinyMce.shortcuts.reservedShortcutsNote"
-                  components={[
-                    // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                    <a
-                      key="link"
-                      target="_blank"
-                      href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
-                      rel="noreferrer"
-                    />,
-                  ]}
+                  components={{
+                    a: (
+                      <Link
+                        target="_blank"
+                        href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
+                        rel="noreferrer"
+                      />
+                    ),
+                  }}
                 />
               </p>
             )}

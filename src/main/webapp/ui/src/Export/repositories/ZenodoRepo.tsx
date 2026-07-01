@@ -90,7 +90,8 @@ export default function ZenodoRepo({
         <TextField
           name="title"
           error={submitAttempt && !inputValidations.title}
-          label={t("export.repositories.common.titleLabel")}
+          label={t("export.repositories.common.title")}
+          required
           onChange={({ target: { value } }) => handleChange({ target: { name: "title", value } })}
           margin="normal"
           fullWidth
@@ -100,7 +101,8 @@ export default function ZenodoRepo({
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
-          label={t("export.repositories.common.descriptionLabel")}
+          label={t("export.repositories.common.description")}
+          required
           name="description"
           multiline
           maxRows="4"

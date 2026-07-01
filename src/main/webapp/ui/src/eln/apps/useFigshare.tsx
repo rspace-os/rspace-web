@@ -10,7 +10,7 @@ export function useFigshareEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "Figshare";
+  const appName = t("integrations.figshare.name");
   const api = axios.create({
     baseURL: "/apps/figshare",
     timeout: ONE_MINUTE_IN_MS,

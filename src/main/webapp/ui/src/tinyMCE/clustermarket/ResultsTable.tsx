@@ -170,7 +170,8 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          Selected: {selectedBookingIds.length}
+          {"Selected: "}
+          {selectedBookingIds.length}
         </Typography>
       </Box>
     </>

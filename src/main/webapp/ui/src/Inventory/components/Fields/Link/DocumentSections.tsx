@@ -9,7 +9,8 @@ import TableBody from "@mui/material/TableBody";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getLinkedByRecords } from "@/modules/workspace/linkedRecords";
 import { getPublicLink } from "@/modules/workspace/publicLink";
 import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
@@ -158,7 +159,7 @@ function SharingAndPublication({
             ))}
             {Object.entries(info.sharedNotebooksAndOwners ?? {}).map(([nb, owner]) => (
               <ListItem key={`nb-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                <Trans
+                <TransRichText
                   ns="inventory"
                   i18nKey="fields.link.documentSections.sharing.intoNotebook"
                   values={{ nb, owner }}
@@ -168,7 +169,7 @@ function SharingAndPublication({
             ))}
             {Object.entries(info.implicitShares ?? {}).map(([nb, owner]) => (
               <ListItem key={`im-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                <Trans
+                <TransRichText
                   ns="inventory"
                   i18nKey="fields.link.documentSections.sharing.implicitlyInNotebook"
                   values={{ nb, owner }}
@@ -236,11 +237,10 @@ export default function DocumentSections({
           }}
         >
           <Typography variant="body2">
-            <Trans
+            <TransRichText
               ns="inventory"
               i18nKey="fields.link.documentSections.versionNote"
               values={{ pinnedVersion, globalId: unversionedGlobalId }}
-              components={{ strong: <strong /> }}
             />
           </Typography>
         </Box>

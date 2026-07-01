@@ -47,11 +47,10 @@
         "loginButton": "Login to remaining File Systems",
         "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
         "notLoggedIn": "Not logged in",
+        "password": "Password",
         "passwordBlank": "Password cannot be blank",
-        "passwordLabel": "Password",
-        "submitButton": "Login",
-        "usernameBlank": "Username cannot be blank",
-        "usernameLabel": "Username"
+        "username": "Username",
+        "usernameBlank": "Username cannot be blank"
       },
       "noLinks": {
         "checkSelection": "If that's unexpected, you should check your export selection.",
@@ -122,7 +121,7 @@
         "depthInfinity": "Include linked documents to depth infinity",
         "depthLevel": "Include linked documents to depth {level}",
         "depthNone": "Don't include linked documents",
-        "descriptionLabel": "Export Description (optional)",
+        "description": "Export Description (optional)",
         "foldersNote": "Linked folders and notebooks are never included",
         "includeLinksLabel": "Should linked RSpace documents be included in export?"
       },
@@ -141,8 +140,8 @@
           "exported": "Exported",
           "lastModified": "Last modified date"
         },
+        "name": "File name",
         "nameHelper": "Name your file",
-        "nameLabel": "File name *",
         "pageFormatLabel": "Page format: ",
         "pageSize": {
           "a4": "A4",
@@ -151,7 +150,7 @@
         "setDefault": "Set {pageSize} as default"
       },
       "word": {
-        "nameLabel": "Name your file",
+        "name": "Name your file",
         "pageFormatLabel": "Page format: ",
         "pageSize": {
           "a4": "A4",
@@ -183,20 +182,19 @@
       }
     },
     "repositories": {
-      "choiceAriaLabel": "Repository choice",
       "choiceLabel": "Please choose one of your configured repositories to submit your export to:",
       "common": {
-        "descriptionLabel": "Description *",
-        "titleLabel": "Title *"
+        "description": "Description",
+        "title": "Title"
       },
       "dataverse": {
         "descriptionHelper": "Please add a relevant description for your export",
+        "license": "License",
         "licenseHelper": "Please select your license",
-        "licenseLabel": "License *",
         "metadataLanguageHelper": "Please select your metadata language (only if target Dataverse supports it)",
         "metadataLanguageLabel": "Metadata language",
+        "subject": "Subject",
         "subjectHelper": "Please select your subject",
-        "subjectLabel": "Subject *",
         "titleHelper": "Please choose a title, >3 symbols"
       },
       "dmp": {
@@ -204,26 +202,29 @@
         "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
       },
       "dryad": {
+        "abstract": "Add an abstract",
         "abstractHelper": "Please add a relevant abstract for your export",
-        "abstractLabel": "Add an abstract *",
+        "grantingOrg": "Granting Organization",
         "grantingOrgHelper": "Enter 3 of more characters to filter list",
-        "grantingOrgLabel": "Granting Organization *",
+        "license": "License",
         "licenseHelper": "Please select your license",
-        "licenseLabel": "License *",
+        "researchDomain": "Research Domain",
         "researchDomainHelper": "Please select your research domain",
-        "researchDomainLabel": "Research Domain *",
         "titleHelper": "Please choose a title, >3 symbols"
       },
       "figshare": {
         "descriptionHelper": "Please add a relevant description for your export",
         "draft": "Draft",
+        "license": "License",
         "licenseHelper": "Please select your license",
-        "licenseLabel": "License *",
         "publish": "Publish",
         "publishingStatus": "Publishing status",
+        "subject": "Subject",
         "subjectHelper": "Please select your subject",
-        "subjectLabel": "Subject *",
         "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "labels": {
+        "choice": "Repository choice"
       },
       "tags": {
         "clearButton": "Clear Tags",
@@ -235,11 +236,11 @@
         "addTooltip": "Add author/contact",
         "author": "Author",
         "contact": "Contact",
-        "emailLabel": "Email *",
-        "nameLabel": "Name *",
+        "email": "Email",
+        "name": "Name",
         "peopleHelper": "Add author(s) AND contact(s) to your repository export.",
         "peopleLabel": "People",
-        "typeLabel": "Type *"
+        "type": "Type"
       }
     }
   },
@@ -339,7 +340,7 @@
       "emptyName": "Empty name is not permitted.",
       "error": "An error occurred while renaming the document.",
       "name": "Name",
-      "prompt": "Please give a new name for <0>{currentName}</0>",
+      "prompt": "Please give a new name for <strong>{currentName}</strong>",
       "success": "Successfully renamed document.",
       "title": "Rename"
     },

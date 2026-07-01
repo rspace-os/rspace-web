@@ -104,7 +104,7 @@ describe("ExportRepo", () => {
                 expect(props.fetchTags).toHaveBeenCalled();
               });
               const repoChoice = await screen.findByRole("radiogroup", {
-                name: "workspace:export.repositories.choiceAriaLabel",
+                name: "workspace:export.repositories.labels.choice",
               });
               expect(
                 await within(repoChoice).findByRole("radio", {

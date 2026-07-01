@@ -13,8 +13,9 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useCallback, useRef, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { Optional } from "@/util/optional";
@@ -144,12 +145,11 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              <Trans
+              <TransRichText
                 ns="inventory"
                 i18nKey="print.options.labelShapeHint"
                 components={{
-                  // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-                  a: <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer" />,
+                  a: richTextLink({ href: docLinks.barcodesPrinting, target: "_blank", rel: "noreferrer" }),
                 }}
               />
             </Alert>

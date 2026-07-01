@@ -206,9 +206,9 @@ importers:
       react-select:
         specifier: 5.10.2
         version: 5.10.2(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
-      react-timeago:
-        specifier: 8.3.0
-        version: 8.3.0(react@19.2.7)
+      react-timeago-i18n:
+        specifier: 2.4.0
+        version: 2.4.0(react@19.2.7)
       react-to-print:
         specifier: 3.3.0
         version: 3.3.0(react@19.2.7)
@@ -4572,10 +4572,11 @@ packages:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
       react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
-  react-timeago@8.3.0:
-    resolution: {integrity: sha512-BeR0hj/5qqTc2+zxzBSQZMky6MmqwOtKseU3CSmcjKR5uXerej2QY34v2d+cdz11PoeVfAdWLX+qjM/UdZkUUg==}
+  react-timeago-i18n@2.4.0:
+    resolution: {integrity: sha512-byohKBNaBfe12/NTo3WhFE/d1lGoA5PG6TSHVlVF6H4/82XQQmjxrfXBlIXKHXJFNP567sm762ZQ4Hz6iy32fQ==}
+    engines: {node: '>=16.0.0'}
     peerDependencies:
-      react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react: ^16.9.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   react-to-print@3.3.0:
     resolution: {integrity: sha512-7j9GIeNZA9glZlbv9mIbIHDOOx+WYfRMbJzh04NiSKjdaeGkxJuKjJQrtRuNKtt5AvEVVjrLCPokZ9yJX51Fvg==}
@@ -10307,7 +10308,7 @@ snapshots:
       - '@types/react'
       - supports-color
 
-  react-timeago@8.3.0(react@19.2.7):
+  react-timeago-i18n@2.4.0(react@19.2.7):
     dependencies:
       react: 19.2.7
 

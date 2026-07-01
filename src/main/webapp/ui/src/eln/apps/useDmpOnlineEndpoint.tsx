@@ -10,7 +10,7 @@ export function useDmpOnlineEndpoint(): {
 } {
   const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
-  const appName = "DMPOnline";
+  const appName = t("integrations.dmponline.name");
   const api = axios.create({
     baseURL: "/apps/dmponline",
     timeout: ONE_MINUTE_IN_MS,

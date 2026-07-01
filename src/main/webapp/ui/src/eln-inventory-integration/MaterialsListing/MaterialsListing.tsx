@@ -142,7 +142,7 @@ const MaterialsLauncher = observer(
                               }}
                             >
                               <Typography variant="inherit" component="span" sx={itemTextSx}>
-                                {i + 1}: {list.name}
+                                {`${i + 1}: ${list.name}`}
                               </Typography>
                               <Typography variant="inherit" component="em" sx={itemTextSx}>
                                 {list.description}

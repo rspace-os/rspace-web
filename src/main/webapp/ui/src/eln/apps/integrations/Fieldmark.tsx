@@ -5,7 +5,8 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import React from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -44,7 +45,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
         helpLinkText={t("integrations.fieldmark.helpLink")}
         website="fieldnote.au/fieldmark"
         docLink="fieldmark"
-        usageText={<Trans ns="apps" i18nKey="integrations.fieldmark.usage" components={{ 1: <strong /> }} />}
+        usageText={<TransRichText ns="apps" i18nKey="integrations.fieldmark.usage" />}
         setupSection={
           <>
             <ol>

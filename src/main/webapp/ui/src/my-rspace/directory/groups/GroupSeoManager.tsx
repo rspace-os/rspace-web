@@ -9,7 +9,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 
@@ -139,9 +139,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
           <Dialog open={enableDialogOpen} onClose={() => setEnableDialogOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle id="group-publication-dialog-title">{t("profile.groups.seo.enable.title")}</DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                <Trans i18nKey="profile.groups.seo.enable.text" ns="common" values={{ groupDisplayName }} />
-              </DialogContentText>
+              <DialogContentText>{t("profile.groups.seo.enable.text", { groupDisplayName })}</DialogContentText>
             </DialogContent>
             <DialogActions>
               <DialogButtons onCancel={() => setEnableDialogOpen(false)} onConfirm={allowGroupSeo} />
@@ -156,9 +154,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
           <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
             <DialogTitle id="group-sharing-dialog-title">{t("profile.groups.seo.disable.title")}</DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                <Trans i18nKey="profile.groups.seo.disable.text" ns="common" values={{ groupDisplayName }} />
-              </DialogContentText>
+              <DialogContentText>{t("profile.groups.seo.disable.text", { groupDisplayName })}</DialogContentText>
             </DialogContent>
             <DialogActions>
               <DialogButtons onCancel={() => setDisableDialogOpen(false)} onConfirm={disableGroupSeo} />

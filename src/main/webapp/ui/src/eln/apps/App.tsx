@@ -12,7 +12,8 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 import docLinks from "../../assets/DocLinks";
@@ -71,13 +72,12 @@ function LoadingSkeleton() {
 function ErrorMessage() {
   return (
     <Alert severity="error">
-      <Trans
+      <TransRichText
         ns="common"
         i18nKey="errorBoundary.message"
-        components={[
-          // biome-ignore lint/a11y/useAnchorContent: Trans component template element, content is injected by Trans
-          <a key={0} href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
-        ]}
+        components={{
+          a: <Link href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
+        }}
       />
     </Alert>
   );

@@ -33,7 +33,7 @@ describe("IdentifierPublicPage", () => {
       await waitFor(() => {
         expect(screen.getByText("public:headings.dates")).toBeVisible();
       });
-      expect(screen.getByRole("group", { name: "public:aria.dates" })).toHaveTextContent("2024-09-05");
+      expect(screen.getByRole("group", { name: "public:labels.dates" })).toHaveTextContent("2024-09-05");
     });
   });
 });

@@ -46,7 +46,7 @@ describe("ZenodoRepo", () => {
 
     render(<Wrapper onChange={handleChange} />);
 
-    await user.type(screen.getByRole("textbox", { name: /titleLabel/ }), "foo");
+    await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.title" }), "foo");
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({
@@ -87,7 +87,7 @@ describe("ZenodoRepo", () => {
     };
 
     render(<Wrapper onChange={handleChange} />);
-    await user.type(screen.getByRole("textbox", { name: /descriptionLabel/ }), "foo");
+    await user.type(screen.getByRole("textbox", { name: "workspace:export.repositories.common.description" }), "foo");
     expect(handleChange).toHaveBeenLastCalledWith(
       expect.objectContaining({
         target: expect.objectContaining({

@@ -102,8 +102,8 @@ export default function DnaPreview(props: DnaPreviewProps) {
                 size="small"
                 aria-label={t("tinyMce.snapGene.zoomControlsAria")}
               >
-                <Button onClick={() => zoomIn()}>+</Button>
-                <Button onClick={() => zoomOut()}>-</Button>
+                <Button onClick={() => zoomIn()}>{"+"}</Button>
+                <Button onClick={() => zoomOut()}>{"-"}</Button>
                 <Button onClick={() => resetTransform()}>{t("tinyMce.snapGene.reset")}</Button>
               </ButtonGroup>
               <TransformComponent wrapperStyle={{ width: "100%" }}>

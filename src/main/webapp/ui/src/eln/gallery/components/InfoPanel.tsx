@@ -207,7 +207,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
           }}
           slotProps={{
             htmlInput: {
-              "aria-label": t("infoPanel.nameAriaLabel"),
+              "aria-label": t("infoPanel.nameLabel"),
               ref: textField,
             },
           }}

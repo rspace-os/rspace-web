@@ -55,7 +55,7 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
 
   return (
     <TableContainer>
-      <Table size="small" aria-label={t("versionLockPicker.ariaLabel")}>
+      <Table size="small" aria-label={t("versionLockPicker.label")}>
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox" />

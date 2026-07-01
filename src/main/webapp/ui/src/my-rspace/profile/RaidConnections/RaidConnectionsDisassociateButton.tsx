@@ -1,8 +1,9 @@
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { useRemoveRaidIdentifierMutation } from "@/modules/raid/mutations";
 
 interface RaidConnectionsDisassociateButtonProps {
@@ -43,7 +44,7 @@ const RaidConnectionsDisassociateButton = ({
         consequences={
           <>
             <Typography variant="body1">
-              <Trans
+              <TransRichText
                 i18nKey="profile.raidConnections.confirmDisassociateText"
                 ns="common"
                 values={{ raidTitle, raidIdentifier }}

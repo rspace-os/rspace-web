@@ -211,7 +211,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
           color="callToAction"
           disableElevation
           variant="contained"
-          aria-label={t("sample.fields.linkFieldValue.applyAriaLabel")}
+          aria-label={t("sample.fields.linkFieldValue.applyLabel")}
           onClick={() => {
             void apply();
           }}
@@ -222,7 +222,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
         </Button>
         <Button
           variant="text"
-          aria-label={t("sample.fields.linkFieldValue.discardAriaLabel")}
+          aria-label={t("sample.fields.linkFieldValue.discardLabel")}
           onClick={discard}
           disabled={!changed && !hasLink}
           data-test-id="DiscardLinkButton"

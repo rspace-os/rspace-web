@@ -12,7 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import { isNotNil } from "es-toolkit";
 import type React from "react";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import LoadingFade from "../../components/LoadingFade";
 import { formatFileSize } from "../../util/files";
 import type { FileSystem } from "../common";
@@ -50,23 +50,16 @@ export default function LinkAvailabilityScan({
         <p>{t("export.fileStore.scan.runHint")}</p>
       ) : (
         <p>
-          {scanResultsAvailableCount === 0 ? (
-            <Trans i18nKey="export.fileStore.scan.noFilesIncluded" ns="workspace" />
-          ) : (
-            <Trans
-              i18nKey="export.fileStore.scan.filesIncluded"
-              ns="workspace"
-              values={{ count: scanResultsAvailableCount, size: formatFileSize(scanResultsTotalFileSize) }}
-            />
-          )}
-          {scanResultsAvailableCount > 0 && scanResultsOmittedCount > 0 && (
-            <Trans
-              i18nKey="export.fileStore.scan.filesSkipped"
-              ns="workspace"
-              values={{ count: scanResultsOmittedCount }}
-            />
-          )}
-          {scanResultsOmittedCount > 0 && <Trans i18nKey="export.fileStore.scan.checkResults" ns="workspace" />}
+          {scanResultsAvailableCount === 0
+            ? t("export.fileStore.scan.noFilesIncluded")
+            : t("export.fileStore.scan.filesIncluded", {
+                count: scanResultsAvailableCount,
+                size: formatFileSize(scanResultsTotalFileSize),
+              })}
+          {scanResultsAvailableCount > 0 &&
+            scanResultsOmittedCount > 0 &&
+            t("export.fileStore.scan.filesSkipped", { count: scanResultsOmittedCount })}
+          {scanResultsOmittedCount > 0 && t("export.fileStore.scan.checkResults")}
         </p>
       )}
       <Button

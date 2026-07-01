@@ -61,7 +61,7 @@ describe("CallableSnippetPreview", () => {
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/gallery:snippetPreview\.title/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
     });
 
     test("Should close the dialog when close button is clicked", async () => {
@@ -70,7 +70,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/gallery:snippetPreview\.title/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
 
       await user.click(screen.getByRole("button", { name: /close/i }));
 
@@ -85,7 +85,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/gallery:snippetPreview\.title/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
 
       await user.keyboard("{Escape}");
 
@@ -109,7 +109,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/gallery:snippetPreview\.loading/i)).toBeVisible();
+      expect(await screen.findByText("gallery:snippetPreview.loading")).toBeVisible();
     });
 
     test("Should display snippet content after loading", async () => {
@@ -143,7 +143,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/gallery:snippetPreview\.error/i)).toBeVisible();
+      expect(await screen.findByText("gallery:snippetPreview.error")).toBeVisible();
     });
   });
 
@@ -156,7 +156,7 @@ describe("CallableSnippetPreview", () => {
 
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(screen.getByText(/gallery:snippetPreview\.title/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
       expect(screen.getByRole("button", { name: /close/i })).toBeVisible();
     });
 

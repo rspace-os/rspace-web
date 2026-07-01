@@ -16,8 +16,8 @@
  */
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
-import { Trans } from "react-i18next";
 import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getErrorMessage } from "@/util/error";
 import type InvApiService from "../../common/InvApiService";
 import type { RadioOption } from "../../components/Inputs/RadioField";
@@ -418,7 +418,7 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.publish.title"),
-          <Trans ns="inventory" i18nKey="identifierConfirm.publish.body" />,
+          <TransRichText ns="inventory" i18nKey="identifierConfirm.publish.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("inventory:identifierConfirm.cancelButton"),
         )
@@ -481,7 +481,7 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.retract.title"),
-          <Trans ns="inventory" i18nKey="identifierConfirm.retract.body" />,
+          <TransRichText ns="inventory" i18nKey="identifierConfirm.retract.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("inventory:identifierConfirm.cancelButton"),
         )

@@ -58,7 +58,7 @@ describe("NumberField", () => {
           value={1}
           slotProps={{
             input: {
-              endAdornment: <span>kg</span>,
+              endAdornment: <span>{"kg"}</span>,
             },
             htmlInput: {
               min: 0,

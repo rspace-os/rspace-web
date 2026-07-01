@@ -41,8 +41,9 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): React.ReactNode
       />
 
       <Typography variant="body2">
-        Select a scope to get the latest plans.
-        <br /> Select a plan and click &quot;Import&quot; to add it to the Gallery.
+        {"Select a scope to get the latest plans."}
+        <br />
+        {'Select a plan and click "Import" to add it to the Gallery.'}
       </Typography>
     </Stack>
   );

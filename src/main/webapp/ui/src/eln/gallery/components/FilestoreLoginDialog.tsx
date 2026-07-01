@@ -101,7 +101,9 @@ const FilestoreLoginDialog = ({
         <DialogTitle>{t("filestoreLoginDialog.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Please authenticate to the filesystem <strong>{filesystemName}</strong>.
+            {"Please authenticate to the filesystem "}
+            <strong>{filesystemName}</strong>
+            {"."}
           </DialogContentText>
           <Stack spacing={2} sx={{ mt: 2 }}>
             <TextField
