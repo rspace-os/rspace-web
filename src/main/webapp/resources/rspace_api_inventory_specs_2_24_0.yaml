@@ -3864,8 +3864,6 @@ components:
         - properties:
             fields:
               $ref: "#/components/schemas/SampleFieldList"
-            extraFields:
-              $ref: "#/components/schemas/ExtraFieldList"
             sharedWith:
               $ref: "#/components/schemas/GroupShareInfoList"
     InstrumentTemplatePost:
@@ -3884,8 +3882,6 @@ components:
           format: int64
         fields:
           $ref: "#/components/schemas/SampleFieldList"
-        extraFields:
-          $ref: "#/components/schemas/ExtraFieldList"
       example:
         name: Microscope template
         description: A template for the lab's microscopes

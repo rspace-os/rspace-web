@@ -7,7 +7,6 @@ import AccessPermissions from "../components/Fields/AccessPermissions";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
 import BarcodesField from "../components/Fields/Barcodes/FormField";
 import DescriptionField from "../components/Fields/Description";
-import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
 import ImageField from "../components/Fields/Image";
 import NameField from "../components/Fields/Name";
 import OwnerField from "../components/Fields/Owner";
@@ -98,10 +97,6 @@ const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) =>
       recordType="instrumentTemplate"
     >
       <CustomFields onErrorStateChange={(field, value) => setFormSectionError(formSectionError, field, value)} />
-      <ExtraFields
-        onErrorStateChange={(field, value) => setFormSectionError(formSectionError, field, value)}
-        result={activeResult}
-      />
     </StepperPanel>
   );
 });
