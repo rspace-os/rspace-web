@@ -90,8 +90,6 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
   // surface the relation error on the relation field once the user has begun entering the link
   const showRelationError =
     isLink && !relationValid && (linkState.relationType !== "" || linkState.targetGlobalId !== "");
-  // the target error shows for any non-empty invalid target, and also when an
-  // existing link's target has been removed ("Target Global ID is required")
   const showTargetError = isLink && !targetValidity.ok && (linkState.targetGlobalId !== "" || !extraField.initial);
 
   const initialLink = linkStateFromExtraField(extraField);
@@ -295,7 +293,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
           color="callToAction"
           disableElevation
           variant="contained"
-          aria-label={t("fields.extraFields.updateField.ariaUpdate")}
+          aria-label={t("fields.extraFields.updateField.updateLabel")}
           onClick={() => {
             void update();
           }}
@@ -308,7 +306,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
           style={{ marginLeft: "10px" }}
           disableElevation
           variant="text"
-          aria-label={t("fields.extraFields.updateField.ariaCancel")}
+          aria-label={t("fields.extraFields.updateField.cancelLabel")}
           onClick={() => (extraField.initial ? record.removeExtraField(null, index) : discardChanges())}
           data-test-id={"DiscardOrCancelButton"}
         >

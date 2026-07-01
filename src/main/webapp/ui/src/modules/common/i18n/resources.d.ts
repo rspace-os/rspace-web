@@ -102,6 +102,7 @@ export default interface Resources {
           "funder": "Funder"
         },
         "selectAllLabel": "Select all DMPs on this page",
+        "selectColumn": "Select",
         "selectDmpLabel": "Select {title}",
         "selectPlanLabel": "Select plan: {label}"
       },
@@ -116,6 +117,10 @@ export default interface Resources {
       },
       "scope": {
         "both": "Both",
+        "instructions": {
+          "selectPlan": "Select a plan and click \"Import\" to add it to the Gallery.",
+          "selectScope": "Select a scope to get the latest plans."
+        },
         "mine": "Mine",
         "name": "DMP Scope Options",
         "public": "Public"
@@ -139,11 +144,11 @@ export default interface Resources {
         "unauthorized": "Invalid Galaxy API Key Please re-enter your API Key on the Apps page.",
         "unknown": "Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was: {errorMessage}"
       },
-      "loadingAria": "Please wait, loading computational workflows associated with this field",
+      "loadingLabel": "Please wait, loading computational workflows associated with this field",
       "noRows": "No Data is attached to this document",
-      "queryingAria": "Please wait, querying galaxy is in progress",
+      "queryingLabel": "Please wait, querying galaxy is in progress",
       "queryingTitle": "Galaxy Query In Progress",
-      "showWorkflowsAria": "Show computational workflows associated with this field"
+      "showWorkflowsLabel": "Show computational workflows associated with this field"
     },
     "integrationCard": {
       "disable": "DISABLE",
@@ -735,6 +740,12 @@ export default interface Resources {
         "usage": "You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
       }
     },
+    "integrationsEndpoint": {
+      "unknownError": "Unknown error",
+      "unknownReason": "Unknown reason",
+      "updateFailed": "Update failed.",
+      "updateSuccess": "Update successful."
+    },
     "page": {
       "introLink": "See Apps Introduction to learn more.",
       "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
@@ -784,6 +795,7 @@ export default interface Resources {
       },
       "filter": {
         "hideOptions": "Hide filtering options",
+        "integerValidation": "Should be an integer",
         "label": "Filter",
         "showOptions": "Show filtering options"
       },
@@ -822,20 +834,28 @@ export default interface Resources {
           "startTime": "Start Time",
           "status": "Status"
         },
-        "maintenanceAria": "maintenance",
+        "maintenanceLabel": "maintenance",
         "maintenanceOnly": "maintenance only",
-        "tableAria": "booking search results"
+        "selectedCount": "Selected: {count}",
+        "tableLabel": "booking search results"
       },
       "galaxy": {
         "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
         "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
         "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+        "chooseDataTitle": "Choose Data",
         "chooseGalaxyServer": "Choose a Galaxy Server",
+        "columns": {
+          "file": "File"
+        },
         "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
         "historyViewedHere": "Your new history can be viewed here:",
         "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
         "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+        "uploadInProgressLabel": "Please wait, uploading data to Galaxy is in progress",
+        "uploadInProgressTitle": "Galaxy Upload In Progress",
         "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+        "viewWorkflowTitle": "View Workflow in Galaxy",
         "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
       },
       "internalLink": {
@@ -851,7 +871,7 @@ export default interface Resources {
         },
         "selectRevision": "Select revision",
         "updateRevisionLink": "Update revision link",
-        "versionTableAria": "internal link revision table"
+        "versionTableLabel": "internal link revision table"
       },
       "omero": {
         "columns": {
@@ -859,7 +879,7 @@ export default interface Resources {
           "notes": "Notes",
           "path": "Path"
         },
-        "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
+        "dataTypeChoiceLabel": "Display all data, only project data, or only screen data",
         "dataTypes": {
           "all": "Projects And Screens",
           "projects": "Projects",
@@ -868,7 +888,10 @@ export default interface Resources {
         "detailsFetched": "details fetched",
         "fetchDetails": "fetch details",
         "filterResults": "Filter results",
+        "getLargeThumbnailLabel": "get large thumbnail",
         "hideImageGrid": "hide image grid",
+        "itemSearchResultsLabel": "item search results",
+        "largeThumbnail": "large thumbnail",
         "loadingData": "Data is loading...",
         "noImage": "no image",
         "redrawImage": "re-draw image",
@@ -903,7 +926,7 @@ export default interface Resources {
             "nameCas": "Name/CAS",
             "smiles": "SMILES"
           },
-          "selectCompoundAria": "Select compound",
+          "selectCompoundLabel": "Select compound",
           "submitButton": "Select Compounds",
           "title": "Search PubChem",
           "validation": {
@@ -915,7 +938,38 @@ export default interface Resources {
         "viewOnPubChem": "View on PubChem"
       },
       "pyrat": {
-        "tableAria": "animal search results"
+        "chooseServer": "Pick one of your authenticated servers",
+        "columns": {
+          "ageDays": "Age (Days)",
+          "building": "Building",
+          "classification": "Classification",
+          "dob": "DOB",
+          "id": "ID",
+          "labId": "Lab ID",
+          "license": "License",
+          "mutations": "Mutations",
+          "project": "Project",
+          "responsible": "Responsible",
+          "sacrificedOn": "Sacrificed On",
+          "sex": "Sex",
+          "strain": "Strain"
+        },
+        "dialogTitle": "Insert from PyRAT",
+        "filters": {
+          "ageDaysFrom": "Age days from",
+          "ageDaysTo": "Age days to",
+          "animalState": "Animal State",
+          "animalType": "Animal Type",
+          "birthDateFrom": "Birth date from",
+          "birthDateTo": "Birth date to",
+          "sacrificedFrom": "Sacrificed from",
+          "sacrificedTo": "Sacrificed to"
+        },
+        "fromPyrat": "From PyRAT",
+        "helpTitle": "PyRAT help",
+        "linkTooltip": "Link to PyRAT",
+        "selectedCount": "Selected: {count}",
+        "tableLabel": "animal search results"
       },
       "shortcuts": {
         "instructions": {
@@ -954,8 +1008,13 @@ export default interface Resources {
           "topCutPosition": "Top cut position",
           "translation": "Translation"
         },
+        "copyFailed": "Couldn't copy to clipboard. Try again manually.",
+        "copySuccess": "Copied to clipboard",
         "copyToClipboard": "Copy to Clipboard",
+        "couldNotLoadDnaPreviewImage": "Could not load DNA preview image.",
+        "dialogTitle": "SnapGene",
         "dnaPreviewAlt": "DNA preview",
+        "dnaPreviewError": "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
         "enzymeSetOptions": {
           "commercialNonredundant": "Commercial nonredundant",
           "sixPlus": "Six plus",
@@ -965,27 +1024,28 @@ export default interface Resources {
         },
         "enzymeSets": "Enzyme Sets",
         "enzymeSites": "Enzyme sites",
-        "enzymeTableAria": "Enzyme table",
-        "enzymeTypeAria": "Enzyme type",
+        "enzymeTableLabel": "Enzyme table",
+        "enzymeTypeLabel": "Enzyme type",
         "imageType": "Image type",
         "linear": "Linear",
-        "linearChoiceAria": "Linear choice",
+        "linearChoiceLabel": "Linear choice",
         "openReadingFrames": "Open Reading Frames",
         "orfTable": "ORF table",
         "readingFrames": {
           "all": "All",
-          "aria": "Reading frame",
           "firstForward": "First forward",
           "firstReverse": "First reverse",
           "forward": "Forward",
+          "label": "Reading frame",
           "reverse": "Reverse"
         },
         "reset": "Reset",
         "showEnzymes": "Show enzymes",
         "showORFs": "Show ORFs",
+        "showRestrictionSites": "Show restriction sites",
         "tabDnaPreview": "DNA preview",
         "viewAsFasta": "View as FASTA",
-        "zoomControlsAria": "Zoom controls"
+        "zoomControlsLabel": "Zoom controls"
       }
     }
   },
@@ -1028,6 +1088,7 @@ export default interface Resources {
       "skipToContent": {
         "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
         "navigation": "Skip to content navigation",
+        "skipToLandmark": "Skip to {landmark}",
         "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
       },
       "tip": "Tip",
@@ -1043,24 +1104,34 @@ export default interface Resources {
       "choose": "Choose",
       "clear": "Clear",
       "close": "Close",
+      "collapse": "Collapse",
       "confirm": "Confirm",
       "copy": "Copy",
       "create": "Create",
+      "created": "Created",
       "delete": "Delete",
       "dismiss": "Dismiss",
       "done": "Done",
+      "download": "Download",
       "duplicate": "Duplicate",
       "edit": "Edit",
+      "expand": "Expand",
       "export": "Export",
       "import": "Import",
       "insert": "Insert",
       "invite": "Invite",
+      "logOut": "Log Out",
       "login": "Login",
       "move": "Move",
       "next": "Next",
+      "no": "No",
+      "none": "None",
       "ok": "OK",
       "open": "Open",
+      "publish": "Publish",
       "remove": "Remove",
+      "republish": "Republish",
+      "resetZoom": "reset zoom",
       "restore": "Restore",
       "retry": "Retry",
       "save": "Save",
@@ -1071,20 +1142,66 @@ export default interface Resources {
       "submit": "Submit",
       "transfer": "Transfer",
       "trash": "Trash",
-      "witness": "Witness"
+      "updated": "Updated",
+      "upload": "Upload",
+      "witness": "Witness",
+      "yes": "Yes",
+      "zoomIn": "zoom in",
+      "zoomOut": "zoom out"
     },
     "alerts": {
+      "countLabel": "There are currently {count} alerts.",
+      "detailsToggleLabel": "{count} sub-messages. Toggle to {expanded, select, true {hide} other {show}}",
+      "moreDetails": "And {count} more...",
+      "toastLabel": "{variant, select, success {success} warning {warning} error {error} notice {notice} other {alert}} alert",
       "warning": "Warning"
     },
     "apiAuthentication": {
       "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
       "warningTitle": "Could not authenticate via API"
     },
+    "apiDocs": {
+      "sources": {
+        "eln": "RSpace ELN",
+        "inventory": "RSpace Inventory"
+      }
+    },
+    "apiErrors": {
+      "chemicals": {
+        "loadElementFailed": "Problem loading chemical element.",
+        "loadElementsFailed": "Loading chemical elements failed.",
+        "saveFailed": "Error saving chemical compounds",
+        "searchFailed": "Error searching for chemical compounds"
+      },
+      "documents": {
+        "moveFailed": "Error moving document"
+      },
+      "folders": {
+        "createFailed": "Error creating folder",
+        "fetchFailed": "Error fetching folder",
+        "fetchTreeFailed": "Error fetching folder tree"
+      },
+      "groups": {
+        "fetchManyFailed": "Error fetching groups",
+        "fetchOneFailed": "Error fetching group"
+      },
+      "share": {
+        "createFailed": "Error creating share",
+        "deleteFailed": "Error deleting share",
+        "fetchFailed": "Error fetching sharing information",
+        "updateFailed": "Error updating share"
+      },
+      "unknown": "An unknown error occurred.",
+      "users": {
+        "fetchGroupMembersFailed": "Error fetching group members"
+      }
+    },
     "appBar": {
       "aboutRSpace": "About RSpace",
       "accountMenu": "Account Menu",
       "apps": "Apps",
       "brandingAlt": "branding",
+      "closeSidebar": "close sidebar",
       "dialogHeader": "dialog header",
       "errorLoadingDetails": "Error loading your details",
       "goTo": "Go to...",
@@ -1095,6 +1212,7 @@ export default interface Resources {
       "messaging": "Messaging",
       "notifications": "Notifications",
       "notificationsAndMessages": "notifications and messages",
+      "openSidebar": "open sidebar",
       "operatingAs": "Operating as:",
       "orcidAdd": "Add an ORCID iD to your <a>profile</a>.",
       "pageHeader": "page header",
@@ -1125,6 +1243,14 @@ export default interface Resources {
     },
     "confirmationDialog": {
       "inputMismatch": "Input does not match confirmation text"
+    },
+    "dirtyNavigation": {
+      "leave": "Leave",
+      "message": "Changes that you made will not be saved.",
+      "title": "Leave the editor?"
+    },
+    "enhancedTableHead": {
+      "selectAllLabel": "select/deselect all"
     },
     "errorBoundary": {
       "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a>support@researchspace.com</a> with details of when the issue happens."
@@ -1245,11 +1371,19 @@ export default interface Resources {
       "dynamicallyLoadedImageEditor": {
         "loadError": "Could not load the image editor at this time. Please check your network connection and refresh."
       },
+      "fileField": {
+        "loadFailed": "Failed to load file. Please try again."
+      },
+      "imageField": {
+        "addImage": "Add Image",
+        "replaceImage": "Replace Image"
+      },
       "optionField": {
         "deleteNewOption": "Delete New Option",
         "deleteOption": "Delete Option: {option}",
         "emptyOption": "Option value cannot be empty",
-        "noOptionSelected": "No option selected"
+        "noOptionSelected": "No option selected",
+        "placeholder": "Option {index}"
       },
       "referenceField": {
         "notYetSupported": "Not yet supported."
@@ -1271,6 +1405,7 @@ export default interface Resources {
         "notFound": "The requested data was not found on this instance of Omero",
         "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
       },
+      "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
       "timeout": "Request timed out.",
       "title": "Error",
       "tryAgainLater": "There is a problem, please try again later",
@@ -1282,7 +1417,18 @@ export default interface Resources {
         "keepEditing": "Keep Editing",
         "text": "You have unsaved changes. Are you sure you want to discard them?",
         "title": "Discard changes?"
-      }
+      },
+      "insertChemicalTitle": "Ketcher Insert Chemical",
+      "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
+    },
+    "loading": "Loading",
+    "pageBranding": {
+      "gallery": "Gallery",
+      "myRSpace": "My RSpace",
+      "other": "Other",
+      "system": "System",
+      "unknown": "Unknown",
+      "workspace": "Workspace"
     },
     "profile": {
       "accountActivity": {
@@ -1329,6 +1475,9 @@ export default interface Resources {
           "folderName": "Folder name",
           "genericError": "Something went wrong. Please, contact support if the issue persists.",
           "inProgress": "Autosharing is in progress",
+          "memberStatus": {
+            "notApplicable": "n/a"
+          },
           "notApplicable": "n/a",
           "onlyLabGroups": "Autosharing is only possible for LabGroups",
           "settingInProgress": "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete"
@@ -1515,6 +1664,28 @@ export default interface Resources {
       "importing": "Importing...",
       "title": "Import from PubChem"
     },
+    "recordTypes": {
+      "document": {
+        "lower": "document",
+        "singular": "Document"
+      },
+      "galleryFile": {
+        "lower": "gallery file",
+        "singular": "Gallery file"
+      },
+      "item": {
+        "lower": "item",
+        "singular": "Item"
+      },
+      "notebook": {
+        "lower": "notebook",
+        "singular": "Notebook"
+      },
+      "record": {
+        "lower": "record",
+        "singular": "Record"
+      }
+    },
     "search": {
       "clearTooltip": "Clear search",
       "placeholder": "Search..."
@@ -1526,6 +1697,18 @@ export default interface Resources {
       "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
       "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
       "query": "Search query"
+    },
+    "sections": {
+      "audios": "sections.audios",
+      "chemistry": "sections.chemistry",
+      "dmps": "sections.dmps",
+      "documents": "sections.documents",
+      "images": "sections.images",
+      "miscellaneous": "sections.miscellaneous",
+      "networkFiles": "sections.networkFiles",
+      "pdfDocuments": "sections.pdfDocuments",
+      "snippets": "sections.snippets",
+      "videos": "sections.videos"
     },
     "shareDialog": {
       "addUsersOrGroups": "Add users or groups to share with",
@@ -1561,12 +1744,14 @@ export default interface Resources {
         "group": "{type} • {memberCount} members",
         "user": "User • {username} • {email}"
       },
+      "permissionSelectLabel": "Set permission for sharing with {recipientName}",
       "permissions": {
         "edit": "Edit",
         "read": "Read",
         "remove": "Remove",
         "unshare": "Unshare"
       },
+      "selectSharedFolderLocation": "Select Shared Folder Location",
       "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
       "titleMultiple": "Share {count} {pluralName}",
       "titleSingle": "Share <strong>{name}</strong>",
@@ -1575,7 +1760,7 @@ export default interface Resources {
     "stoichiometry": {
       "addReagent": {
         "addChemical": "Add Chemical",
-        "menuAria": "add chemical menu",
+        "menuLabel": "add chemical menu",
         "name": "Name",
         "smilesString": "SMILES String",
         "sources": {
@@ -1641,7 +1826,7 @@ export default interface Resources {
         "dialogTitle": "Update Inventory Stock",
         "inStock": "In Stock",
         "irreversibleTitle": "WARNING: This action is irreversible",
-        "irreversibleWarningAria": "Action irreversible warning",
+        "irreversibleWarningLabel": "Action irreversible warning",
         "linkRequired": "Link an inventory item before updating stock.",
         "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
         "missingActualMass": "Define actual mass before updating linked inventory stock.",
@@ -1658,7 +1843,7 @@ export default interface Resources {
         "saveError": "{message} Current stock amounts were refreshed where possible.",
         "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
         "saving": "Saving...",
-        "selectMoleculeAria": "Select molecule",
+        "selectMoleculeLabel": "Select molecule",
         "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
         "selectionError": "Re-select any invalid molecules before saving.",
         "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
@@ -1675,11 +1860,6 @@ export default interface Resources {
         "noPreview": "Stoichiometry Table (no preview)"
       },
       "table": {
-        "aria": {
-          "deleteReagent": "Delete reagent {name}",
-          "selectLimitingReagent": "Select {name} as limiting reagent",
-          "typeSelect": "Select type for {name}"
-        },
         "columns": {
           "actions": "Actions",
           "actualMass": "Actual Mass (g)",
@@ -1694,6 +1874,11 @@ export default interface Resources {
           "notes": "Notes",
           "type": "Type",
           "yieldExcess": "Yield/Excess (%)"
+        },
+        "label": {
+          "deleteReagent": "Delete reagent {name}",
+          "selectLimitingReagent": "Select {name} as limiting reagent",
+          "typeSelect": "Select type for {name}"
         },
         "roles": {
           "product": "Product",
@@ -1711,6 +1896,7 @@ export default interface Resources {
       "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
       "errorFetchingTags": "Error fetching tags",
       "filterSuggestedTags": "Filter suggested tags",
+      "label": "Tags",
       "loading": "Loading...",
       "metadata": {
         "controlledVocabularyName": "Controlled Vocabulary Name",
@@ -1796,7 +1982,9 @@ export default interface Resources {
       "sendMessage": "Send a message"
     },
     "values": {
-      "none": "None"
+      "noValue": "No Value",
+      "none": "None",
+      "unknown": "Unknown"
     },
     "versionLockPicker": {
       "columns": {
@@ -1815,23 +2003,107 @@ export default interface Resources {
 
   },
   "gallery": {
+    "actions": {
+      "delete": {
+        "filesCannotBeDeleted": "Some of the selected files cannot be deleted.",
+        "filesFailed": "Failed to delete files.",
+        "filestoreFailed": "Failed to delete filestore.",
+        "filestoreSuccess": "Successfully deleted filestore.",
+        "itemFailed": "Failed to delete item.",
+        "itemsFailed": "{count, plural, one {Failed to delete item.} other {Failed to delete items.}}",
+        "itemsSuccess": "{count, plural, one {Successfully deleted item.} other {Successfully deleted items.}}",
+        "remoteFailed": "{count, plural, one {Failed to delete 1 item.} other {Failed to delete {count} items.}}",
+        "remoteSuccess": "{count, plural, one {Successfully deleted 1 item.} other {Successfully deleted {count} items.}}"
+      },
+      "description": {
+        "changeFailed": "Failed to change file description.",
+        "missing": "The file does not have a description.",
+        "updateFailed": "Failed to update description.",
+        "updateSuccess": "Successfully updated description."
+      },
+      "download": {
+        "allFailed": "Failed to download all the files.",
+        "failed": "{partial, select, true {Failed to download some of the files.} other {Failed to download the files.}}",
+        "success": "{partial, select, true {Successfully downloaded some of the files.} other {Successfully downloaded the files.}}"
+      },
+      "duplicate": {
+        "filesCannotBeDuplicated": "Some of the selected files cannot be duplicated.",
+        "filesFailed": "Failed to duplicate files.",
+        "itemFailed": "Failed to duplicate item.",
+        "itemsFailed": "{count, plural, one {Failed to duplicate item.} other {Failed to duplicate items.}}",
+        "itemsSuccess": "{count, plural, one {Successfully duplicated item.} other {Successfully duplicated items.}}"
+      },
+      "folder": {
+        "createFailed": "Failed to create new folder.",
+        "createSuccess": "Successfully created new folder."
+      },
+      "inProgress": {
+        "deleting": "Deleting...",
+        "duplicating": "Duplicating...",
+        "moving": "Moving...",
+        "renaming": "Renaming...",
+        "uploading": "Uploading..."
+      },
+      "move": {
+        "filesCannotBeMoved": "Some of the selected files cannot be moved.",
+        "filesFailed": "Failed to move files.",
+        "itemFailed": "Failed to move item.",
+        "itemsFailed": "{count, plural, one {Failed to move item.} other {Failed to move items.}}",
+        "itemsSuccess": "{count, plural, one {Successfully moved item.} other {Successfully moved items.}}",
+        "remoteFailed": "{count, plural, one {Failed to move 1 item.} other {Failed to move {count} items.}}",
+        "remoteSuccess": "{count, plural, one {Successfully moved 1 item.} other {Successfully moved {count} items.}}",
+        "snippetsFolderFailed": "Cannot move files into SNIPPETS folders.",
+        "snippetsFolderMessage": "Share them and they will automatically appear in these folders."
+      },
+      "rename": {
+        "failed": "Failed to rename item.",
+        "fileCannotBeRenamed": "The selected file cannot be renamed.",
+        "fileFailed": "Failed to rename file.",
+        "success": "Successfully renamed item."
+      },
+      "upload": {
+        "failed": "{count, plural, one {Failed to upload file.} other {Failed to upload files.}}",
+        "success": "{count, plural, one {Successfully uploaded file.} other {Successfully uploaded files.}}"
+      },
+      "uploadNewVersion": {
+        "cannotBeSet": "A new version for this file cannot be set.",
+        "failed": "Failed to upload new version.",
+        "fileFailed": "Failed to upload new version for the file.",
+        "success": "Successfully uploaded new version."
+      }
+    },
     "actionsMenu": {
       "actions": "Actions",
       "cannotView": "Cannot view this file because",
+      "deleteS3Confirm": {
+        "body": "This permanently deletes {count} {count, plural, one {item} other {items}} from the S3 filestore. This cannot be undone.",
+        "confirmText": "permanently delete",
+        "confirmTextLabel": "Type 'permanently delete' to confirm",
+        "title": "Permanently delete?"
+      },
       "download": "Download",
+      "downloadImageForEditingFailed": "Failed to download image for editing",
       "export": "Export",
+      "label": "actions",
       "moveToIrods": "Move to iRODS",
       "moveToS3": "Move to S3",
       "nameRequired": "Empty name is not permitted.",
       "open": "Open",
+      "processEditedImageFailed": "Failed to process edited image",
       "rename": "Rename",
       "renameLabel": "Name",
       "renamePrompt": "Please give a new name for {name}.",
+      "saveAsNewImage": "Save as new image",
       "share": "Share",
+      "uploadNewVersion": "Upload New Version",
       "view": "View"
     },
     "addFilestoreDialog": {
+      "addFailed": "Failed to add new filestore",
       "addFilestore": "Add Filestore",
+      "addSuccess": "Successfully added new filestore",
+      "browseFailed": "Failed to browse filestore",
+      "bucketTopLevel": "(bucket top level)",
       "chooseFilesystem": "Choose Filesystem",
       "chooseFolder": "Choose Folder",
       "filesystemHelp": "Your sysadmin needs to configure a file system before it appears here.",
@@ -1840,39 +2112,104 @@ export default interface Resources {
       "folderHelp": "You can configure multiple Filestores from the same File system with different top-level folders, to facilitate accessing deeply-nested content.",
       "folderStep": "Select the top-level Folder for the Filestore",
       "folderStepLabel": "Select the top-level Folder for the Filestore",
+      "loading": "Loading...",
       "nameHelp": "This name is used in RSpace to help you identify the Filestore.",
       "nameLabel": "Filestore name",
       "nameStep": "Name the Filestore",
       "nameStepLabel": "Name the Filestore",
       "noReadAccess": "(no read access; contact your sysadmin)"
     },
+    "callableAsposePreview": {
+      "generatePdfError": "Could not generate a PDF preview for .{fileExtension} documents.",
+      "previewError": "Could not generate preview."
+    },
     "callablePdfPreview": {
       "title": "PDF Preview"
     },
     "carousel": {
       "currentFileIndex": "Current file index",
+      "generatingPdf": "Generating PDF...",
       "label": "Carousel view of files",
+      "loadingImage": "Loading image...",
+      "loadingPdf": "Loading PDF...",
       "next": "Next",
-      "previous": "Previous"
+      "noFolders": "There are no folders.",
+      "previewAlt": "Preview of {name}",
+      "previous": "Previous",
+      "refreshing": "Refreshing..."
+    },
+    "errors": {
+      "parseResponse": "Could not parse response.",
+      "tryRefreshing": "Please try refreshing.",
+      "unknownError": "Unknown error",
+      "unknownReason": "Unknown reason"
     },
     "filestoreLoginDialog": {
       "couldNotAuthenticate": "Could not authenticate",
       "login": "Login",
       "password": "Password",
+      "prompt": "Please authenticate to the filesystem {filesystemName}.",
       "title": "Filestore Login",
       "username": "Username",
       "wrongCredentials": "Wrong credentials?"
     },
+    "filestores": {
+      "logoutFailed": "Failed to log out of {name}",
+      "logoutSuccess": "Logged out of {name}"
+    },
     "infoPanel": {
       "details": "Details",
       "dmpDetails": "DMP Details",
+      "labels": {
+        "addedToS3By": "Added to S3 by",
+        "addedToS3On": "Added to S3 on",
+        "created": "Created",
+        "description": "Description",
+        "doiLink": "DOI Link",
+        "globalId": "Global ID",
+        "link": "Link",
+        "modified": "Modified",
+        "originalImageId": "Original Image ID",
+        "owner": "Owner",
+        "size": "Size",
+        "source": "Source",
+        "totalSize": "Total size",
+        "type": "Type",
+        "version": "Version"
+      },
+      "loading": "Loading",
       "nameLabel": "Name",
       "noDescriptionPlaceholder": "No description",
-      "noNamePlaceholder": "No Name"
+      "noNamePlaceholder": "No Name",
+      "nothingSelected": "Nothing selected.",
+      "sources": {
+        "argos": "ARGOS",
+        "dmpOnline": "DMP Online",
+        "dmpTool": "DMP Tool",
+        "dsw": "DSW / FAIR Wizard",
+        "unknown": "Unknown"
+      }
+    },
+    "irods": {
+      "errors": {
+        "authenticationFailed": "Authentication failed",
+        "copyFailed": "Could not copy file.",
+        "couldNotReachServer": "Could not reach the iRODs server",
+        "filesAlreadyExist": "Some or all of the files already exist",
+        "moveFailed": "Could not move file.",
+        "partialCopyFailed": "Copying some files failed.",
+        "partialMoveFailed": "Moving some files failed."
+      },
+      "success": {
+        "copied": "Successfully copied the files.",
+        "moved": "Successfully moved the files."
+      }
     },
     "landingPage": {
+      "error": "Error: {error}",
       "filestoreEnabledError": "Error checking if filestores are enabled.",
-      "invalidSection": "Not a valid Gallery section."
+      "invalidSection": "Not a valid Gallery section.",
+      "loading": "Loading..."
     },
     "linkedDocumentsPanel": {
       "columns": {
@@ -1882,20 +2219,68 @@ export default interface Resources {
       "heading": "Linked Documents",
       "noRows": "No Linked Documents"
     },
+    "listing": {
+      "alerts": {
+        "processFailed": "Could not process Gallery content.",
+        "refreshFailed": "Error refreshing Gallery listing.",
+        "retrieveFilestoresFailed": "Error retrieving filestores.",
+        "retrieveGalleryFilesFailed": "Error retrieving gallery files.",
+        "retrieveRemoteFilesFailed": "Error retrieving remote files."
+      },
+      "empty": {
+        "addFilestore": "Add a filestore in the Create menu.",
+        "errorLoadingFiles": "Error loading files.",
+        "folder": "The folder \"{folderName}\" is empty.",
+        "folderSearch": "Nothing in the folder \"{folderName}\" matches the search term \"{searchTerm}\".",
+        "loading": "Loading...",
+        "section": "There are no top-level {section}.",
+        "sectionSearch": "There are no top-level {section} that match the search term \"{searchTerm}\"."
+      }
+    },
     "loadMore": "Load More",
     "mainPanel": {
+      "breadcrumbsLabel": "Breadcrumbs",
       "cancelDrag": "Cancel",
+      "cannotDropFiles": "Cannot drop files to upload here.",
       "carouselView": "Carousel",
       "carouselViewDesc": "Flick through all files to find one.",
+      "clearSearch": "Clear",
+      "copyToClipboard": "Copy to clipboard",
+      "filesListingControlsLabel": "files listing controls",
+      "filesListingLabel": "files listing",
       "gridView": "Grid",
       "gridViewDesc": "Browse by thumbnail previews.",
+      "gridViewLabel": "grid view of files",
+      "infoPanelLabel": "info panel",
+      "linkCopied": "Link copied to clipboard successfully.",
+      "linkCopyFailed": "Failed to copy link to clipboard. Please try again.",
+      "noFolders": "There are no folders.",
+      "refreshing": "Refreshing...",
+      "searchCurrentFolderLabel": "Search current folder",
+      "searchPlaceholder": "Search",
+      "searchThisFolder": "Search this folder",
       "sort": "Sort",
+      "sortActions": {
+        "modificationDateAsc": "Tap to sort oldest first",
+        "modificationDateDesc": "Tap to sort newest first",
+        "nameAsc": "Tap to sort from A to Z",
+        "nameDesc": "Tap to sort from Z to A"
+      },
+      "sortListingLabel": "sort listing",
       "sortOptions": {
         "modificationDate": "Modification Date",
         "name": "Name"
       },
+      "sortStatus": {
+        "modificationDateAsc": "(Sorted oldest first)",
+        "modificationDateDesc": "(Sorted newest first)",
+        "nameAsc": "(Sorted from A to Z)",
+        "nameDesc": "(Sorted from Z to A)"
+      },
       "treeView": "Tree",
       "treeViewDesc": "View and manage folder hierarchy.",
+      "versionLabel": "version {version}",
+      "viewOptionsLabel": "view options",
       "views": "Views"
     },
     "moveDialog": {
@@ -1962,6 +2347,7 @@ export default interface Resources {
     },
     "moveWithinFilestore": {
       "description": "Choose a destination folder in this filestore, or move to its top level.",
+      "loading": "Loading...",
       "move": "Move",
       "moveToTopLevel": "Move to top level",
       "title": "Move",
@@ -1969,6 +2355,44 @@ export default interface Resources {
         "noFolder": "No folder is selected.",
         "tooManyFolders": "More than one folder is selected."
       }
+    },
+    "pageTitle": "RSpace Gallery",
+    "pageTitleWithContext": "{pageContext} | RSpace Gallery",
+    "referencingInventoryItems": {
+      "loadFailed": "Error loading related inventory items."
+    },
+    "s3": {
+      "errors": {
+        "copyFailed": "Could not copy files to S3.",
+        "moveFailed": "Could not move files to S3.",
+        "partialCopyFailed": "Copying some files to S3 failed.",
+        "partialMoveFailed": "Moving some files to S3 failed.",
+        "partialTransferFailed": "Transferring some files to S3 failed.",
+        "transferFailed": "Could not transfer files to S3."
+      },
+      "success": {
+        "copied": "Successfully copied the files to S3.",
+        "moved": "Successfully moved the files to S3.",
+        "transferred": "Successfully transferred the files to S3."
+      }
+    },
+    "sections": {
+      "audios": "Audio",
+      "chemistry": "Chemistry",
+      "dmps": "DMPs",
+      "documents": "Documents",
+      "images": "Images",
+      "miscellaneous": "Miscellaneous",
+      "networkFiles": "Filestores",
+      "pdfDocuments": "Exports",
+      "snippets": "Snippets",
+      "videos": "Videos"
+    },
+    "selection": {
+      "empty": "No selection",
+      "files": "{count} {count, plural, one {file} other {files}} selected",
+      "filesAndFolders": "{fileCount} {fileCount, plural, one {file} other {files}}, {folderCount} {folderCount, plural, one {folder} other {folders}} selected",
+      "folders": "{count} {count, plural, one {folder} other {folders}} selected"
     },
     "sidebar": {
       "addFilestore": "Add a Filestore",
@@ -1978,7 +2402,10 @@ export default interface Resources {
       "createFolderNameRequired": "A name is required.",
       "createFolderPrompt": "Please give the new folder a name.",
       "dmpImport": "DMP Import",
+      "dmpsLabel": "DMPs",
       "noFilestoresConfigured": "System Admin has not configured any external filestores.",
+      "s3FolderNote": "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure.",
+      "sectionsDrawerLabel": "gallery sections drawer",
       "uploadFiles": "Upload Files"
     },
     "snippetPreview": {
@@ -1987,7 +2414,21 @@ export default interface Resources {
       "loading": "Loading snippet content...",
       "noContent": "No content available",
       "title": "Snippet Preview: {name}"
-    }
+    },
+    "tinyMce": {
+      "fromGallery": "From Gallery",
+      "insertFromGallery": "Insert from Gallery",
+      "insertSnippetFailed": "An error occurred while inserting the snippet {id}",
+      "pluginName": "Gallery"
+    },
+    "treeView": {
+      "filesLabel": "tree view of files",
+      "noFolders": "There are no folders.",
+      "refreshing": "Refreshing...",
+      "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
+      "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
+    },
+    "unknownOwner": "Unknown owner"
   },
   "groups": {
     "createGroup": {
@@ -2098,6 +2539,16 @@ export default interface Resources {
       }
     },
     "baseRecord": {
+      "alerts": {
+        "attachmentsSaveFailed": "Could not save changes to attachments.",
+        "created": "{name} was successfully created.",
+        "invalidFields": "Please correct the invalid fields and try again.",
+        "loadDetailsFailed": "Could not load full details of {globalId}.",
+        "lockCheckFailed": "Something went wrong while checking the lock for \"{name}\".",
+        "releaseLockFailed": "Relinquishing control of {globalId} failed.",
+        "saveFailed": "Something went wrong and the {recordType} was not saved.",
+        "updated": "{name} updated successfully."
+      },
       "editSessionExpired": {
         "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
         "title": "Your editing session has expired"
@@ -2106,6 +2557,20 @@ export default interface Resources {
         "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
         "continue": "CONTINUE",
         "title": "Your editing session is about to expire"
+      },
+      "unsavedChanges": {
+        "message": "It appears that you already started editing this {recordType} in another browser tab or on another device. We advise you cancel or save those changes first otherwise editing here could result in an error.",
+        "title": "Unsaved changes?"
+      },
+      "validation": {
+        "descriptionTooLong": "Description cannot be longer than 250 characters.",
+        "distinctFieldNames": "All field names must be distinct.",
+        "editLockExpired": "Edit lock has expired. Please refresh.",
+        "nameRequired": "Name cannot be empty.",
+        "nameSingleCharacter": "Name cannot be a single character.",
+        "nameTooLong": "Name cannot be more than 255 characters.",
+        "nameWhitespace": "Name cannot be just whitespace.",
+        "tooManyTags": "Too many tags."
       }
     },
     "baskets": {
@@ -2121,17 +2586,89 @@ export default interface Resources {
         "nameTooLong": "The name should be no longer than 32 characters.",
         "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
       },
+      "alerts": {
+        "addItemsFailed": "Error adding items to Basket.",
+        "contentsUnaffected": "Its contents have not been affected.",
+        "createFailed": "Error creating Basket.",
+        "created": "{name} has been created.",
+        "deleteFailed": "Error deleting Basket.",
+        "deleted": "{name} has been deleted.",
+        "detailsUpdated": "Basket details updated.",
+        "fetchFailed": "Error retrieving Baskets.",
+        "fetchOneFailed": "Error retrieving Basket.",
+        "getContentsFailed": "Error getting Basket contents.",
+        "itemsAdded": "{count, plural, one {Item} other {Items}} successfully added to {name}.",
+        "itemsAlreadyAdded": "The selected items are in {name} already. No items were added.",
+        "itemsRemoved": "{count, plural, one {Item} other {Items}} successfully removed from {name}.",
+        "removeItemsFailed": "Error removing items from Basket.",
+        "selectedItemsAdded": "The selected items have been added to it.",
+        "updateDetailsFailed": "Error updating Basket details."
+      },
       "delete": {
         "bodyPrefix": "You are about to delete {name}.",
         "bodySuffix": "The contents of the Basket will not be affected.",
         "title": "Deleting Basket"
+      },
+      "fallbackName": "The Basket",
+      "newBasket": "New Basket",
+      "pending": {
+        "addItems": "{count, plural, one {Adding item to Basket...} other {Adding items to Basket...}}",
+        "creating": "Creating Basket...",
+        "deleting": "Deleting Basket...",
+        "removeItems": "{count, plural, one {Removing item from Basket...} other {Removing items from Basket...}}",
+        "updateDetails": "Updating Basket details..."
+      }
+    },
+    "breadcrumbs": {
+      "label": "Breadcrumb"
+    },
+    "bulkAlerts": {
+      "error": {
+        "actionFailed": "Could not perform the {operation} action.",
+        "cannotLocateTargetContainer": {
+          "help": "Please try again. If this error persists then contact support.",
+          "title": "Could not locate target container."
+        },
+        "containerNotEmpty": {
+          "help": "Delete the contents first.",
+          "title": "The container '{name}' is not empty."
+        },
+        "refreshAndTryAgain": "Please refresh and try again.",
+        "sampleSubsamplesInContainers": {
+          "help": "Delete these subsamples first or remove them from their container.",
+          "title": "The sample '{name}' includes subsamples that are in containers."
+        }
+      },
+      "success": {
+        "detail": "{operation} \"{name}\".",
+        "items": "Items",
+        "message": "{prefix} successfully {operation}.",
+        "noChanges": "No changes."
       }
     },
     "container": {
+      "availableLocations": {
+        "unlimited": "Unlimited"
+      },
       "batch": {
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+        "imageAlt": "What the {count} containers look like",
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+        "title": "{count} Containers"
       },
       "content": {
+        "contextMenu": {
+          "allLocations": "All locations",
+          "invert": "Invert",
+          "mine": "Mine",
+          "notMine": "Not mine",
+          "nothingSelected": "Nothing selected.",
+          "siblingsOfSelectedSubsample": "Siblings of selected subsample",
+          "tooManySelected": "Too many selected."
+        },
+        "dragAndDrop": {
+          "multipleItemsNotSupported": "Drag and drop does not currently support moving multiple items at once."
+        },
+        "gridViewLabel": "Container contents grid",
         "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
         "placeMarkers": {
           "columns": {
@@ -2142,11 +2679,33 @@ export default interface Resources {
           "emptyLocation": "Empty Location",
           "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
         },
+        "previewAlt": "Preview of {name}",
         "zoom": {
           "ctrlTip": "Tip: Use Ctrl and the - key to zoom the page out to view more of the image.",
           "macTip": "Tip: Use Command and the - key to zoom the page out to view more of the image.",
           "panelAdjuster": "The <a>Panel Adjuster</a> can also be used to provide more room to fully display the image."
         }
+      },
+      "contextMenu": {
+        "contentsSelected": "Cannot modify this container whilst its contents are selected."
+      },
+      "createOptions": {
+        "location": {
+          "label": "Location",
+          "listExplanation": "No location selection required for list containers.",
+          "specificExplanation": "Specify a single location for where the new container should be placed."
+        },
+        "newContainer": {
+          "cannotStore": "Containers cannot be stored inside this container.",
+          "explanation": "The container will be automatically added to this container.",
+          "label": "Container"
+        },
+        "newSample": {
+          "cannotStore": "Subsamples cannot be stored inside this container.",
+          "explanation": "The subsample will be automatically added to this container.",
+          "label": "Sample"
+        },
+        "noEditPermission": "You do not have permission to edit the contents of this container."
       },
       "fields": {
         "canStore": {
@@ -2174,7 +2733,7 @@ export default interface Resources {
           "specifyDimensions": "Or specify the dimensions"
         },
         "gridLabels": {
-          "expandAria": "Expand grid dimension controls group",
+          "expandLabel": "Expand grid dimension controls group",
           "title": "Configure Grid Labels"
         },
         "gridLayout": {
@@ -2217,9 +2776,18 @@ export default interface Resources {
           },
           "type": "Type"
         }
+      },
+      "imageAlt": "What {name} looks like",
+      "newImageAlt": "What the new container looks like",
+      "types": {
+        "bench": "Bench",
+        "grid": "Grid",
+        "list": "List",
+        "visual": "Visual"
       }
     },
     "contextMenu": {
+      "actionInProgress": "Action in progress",
       "actions": {
         "addToBasket": "Add to Basket",
         "makeTopLevel": "Make Top-level",
@@ -2239,13 +2807,33 @@ export default interface Resources {
         },
         "helpTitle": "Info on creating new items.",
         "itemType": "Type of item to create",
+        "loadAdditionalInfoFailed": "Failed to load additional information: {message}",
         "loading": "Loading...",
         "noFields": "No fields.",
         "noOptions": "No options available.",
         "title": "Create new items from <strong>{name}</strong>"
       },
+      "edit": {
+        "batchEdit": "Batch Edit",
+        "batchUnsupported": "Cannot batch edit {globalIds}.",
+        "beingEditedBy": "being edited by {name}",
+        "cannotEditSome": "Cannot edit some selected items.",
+        "cannotEditThis": "Cannot edit this item.",
+        "loadFailed": "Could not load item.",
+        "noPermission": "You do not have permission to edit.",
+        "nothingSelected": "Nothing selected.",
+        "someoneEditingIt": "Someone is already editing it.",
+        "someoneEditingThem": "Someone is already editing them.",
+        "unsavedChanges": {
+          "error": "Unsaved changes",
+          "message": "Please save or cancel your current changes before editing another item.",
+          "title": "Unsaved changes"
+        }
+      },
+      "historicalVersion": "Cannot modify a historical version of a {recordType}.",
       "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
       "splitButton": {
+        "label": "More selection options",
         "moreOptions": "More selection options"
       },
       "transfer": {
@@ -2264,12 +2852,26 @@ export default interface Resources {
     },
     "createNew": {
       "csvImport": "CSV Import",
+      "helpTitles": {
+        "container": "Info on creating containers.",
+        "instrument": "Info on creating instruments.",
+        "instrumentTemplate": "Info on creating instrument templates.",
+        "sample": "Info on creating samples.",
+        "template": "Info on creating templates."
+      },
       "newContainer": "New Container",
       "newInstrument": "New Instrument",
       "newInstrumentTemplate": "New Instrument Template",
       "newSample": "New Sample",
       "newTemplate": "New Template",
       "thirdPartyImport": "Third-Party Import"
+    },
+    "createOptions": {
+      "common": {
+        "fieldDefaultValues": "Field default values",
+        "name": "Name",
+        "templateNameExplanation": "A name for the new template. At least two characters."
+      }
     },
     "detailedListing": {
       "card": {
@@ -2283,7 +2885,12 @@ export default interface Resources {
         },
         "modifiedBy": "Modified <timeAgo></timeAgo> by {name}",
         "requiredPermissions": "You do not have permission to select this item."
-      }
+      },
+      "cardListLabel": "Inventory card list"
+    },
+    "errors": {
+      "expandForMoreDetails": "Expand for more details.",
+      "unknownReason": "Unknown reason."
     },
     "export": {
       "dialog": {
@@ -2308,6 +2915,12 @@ export default interface Resources {
           "subsamplesInclude": "Include Subsamples",
           "zipBundle": "A .ZIP bundle containing .CSV files for each item type.",
           "zipFile": "ZIP Bundle"
+        },
+        "radioLabels": {
+          "containers": "Container export options",
+          "fileType": "File type",
+          "mode": "Export mode",
+          "samples": "Sample export options"
         },
         "title": "Export Options"
       },
@@ -2359,6 +2972,7 @@ export default interface Resources {
     },
     "fields": {
       "accessPermissions": {
+        "addGroup": "Add group",
         "editFirst": "You need to be in Edit mode to edit permissions.",
         "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
         "explicitAccess": {
@@ -2384,11 +2998,18 @@ export default interface Resources {
         },
         "alert": {
           "body": "A file of any type can be attached (e.g. image, document, or chemistry file)",
+          "couldNotFetchImage": "Could not fetch image.",
+          "settingPreviewImage": "Setting preview image.",
           "title": "Attachment"
         },
         "columns": {
           "actions": "Actions",
           "name": "Name"
+        },
+        "errors": {
+          "fetchChemicalFileFailed": "Fetching chemical file failed.",
+          "previewImageUnavailable": "Preview image is unavailable.",
+          "unableToSetPreviewImage": "Unable to set preview image."
         },
         "formField": {
           "explanation": "See the documentation for information on <a>adding attachments</a>."
@@ -2402,12 +3023,28 @@ export default interface Resources {
           "none": "No current attachments",
           "show": "Show attachment listing"
         },
+        "tooltips": {
+          "deleteAfterClicked": "Attachment will be deleted once this item is saved.",
+          "editFirstRemove": "Press Edit to remove this attachment.",
+          "editFirstSetPreviewImage": "Press Edit to set this as the preview image.",
+          "loadingFile": "Loading file",
+          "loadingImage": "Loading image",
+          "preview3d": "3D preview",
+          "preview3dUnsupported": "3D preview is not supported for this file.",
+          "previewImage": "Preview image",
+          "previewImageUnsupported": "Image preview is not supported for this file.",
+          "saveFirst3dPreview": "Save this item before previewing this file in 3D.",
+          "saveFirstImagePreview": "Save this item before previewing this image.",
+          "saveFirstSetPreviewImage": "Save this item before setting this as the preview image.",
+          "setAsPreviewImage": "Set as preview image"
+        },
         "uploadFromDevice": "Upload a file from your device.",
         "validation": {
           "missingGlobalId": "\"{name}\" does not have an RSpace Global Id",
           "noFolders": "Folders cannot be attached to Inventory records.",
           "noSnippets": "Snippets cannot be attached to Inventory records."
-        }
+        },
+        "viewChemicalReadOnly": "View chemical file"
       },
       "barcodes": {
         "actions": {
@@ -2488,17 +3125,23 @@ export default interface Resources {
         "noMoreFields": "No more fields",
         "updateField": {
           "apply": "Apply",
-          "ariaCancel": "Cancel update",
-          "ariaUpdate": "Update field",
           "cancel": "Cancel",
+          "cancelLabel": "Cancel update",
           "discard": "Discard",
-          "update": "Update"
+          "update": "Update",
+          "updateLabel": "Update field"
         },
         "validNumber": "Must be a valid number.",
         "validation": {
           "duplicateName": "You either already have a field with that name or that name is not permitted.",
           "emptyName": "Name should not be empty.",
-          "nameTooLong": "Name must be no longer than 255 characters."
+          "fieldBeingEdited": "The field \"{name}\" is being edited. Update or cancel the edit before saving.",
+          "invalidFieldType": "Invalid field type.",
+          "linkRelationAndTargetRequired": "Link fields require a relation type and target.",
+          "linkTargetRequired": "The link field \"{name}\" needs its Target Global ID set. Set a target or cancel the edit.",
+          "nameTooLong": "Name must be no longer than 255 characters.",
+          "newFieldBeingAdded": "A new field is being added. Apply or discard it before saving.",
+          "textContentMustBeString": "The content of textual extra fields must be a string."
         }
       },
       "identifiers": {
@@ -2534,16 +3177,25 @@ export default interface Resources {
           },
           "createEditPolygon": "Create or Edit a Geolocation Polygon",
           "description": "Description",
+          "hexagonIconLabel": "Polygon",
           "latitudeRange": "Between −90.0˚ and 90.0˚.",
           "longitudeRange": "Between −180.0˚ and 180.0˚.",
+          "map": {
+            "showBoxLabel": "Show box on map",
+            "showPointLabel": "Show point on map",
+            "showPolygonLabel": "Show polygon on map"
+          },
           "none": "None",
           "openPolygonDialog": "Open Polygon Dialog",
           "place": {
+            "placeholder": "Enter place",
             "title": "Place"
           },
           "point": {
             "latitude": "Latitude",
+            "latitudePlaceholder": "Enter latitude",
             "longitude": "Longitude",
+            "longitudePlaceholder": "Enter longitude",
             "title": "Point"
           },
           "polygon": {
@@ -2591,9 +3243,36 @@ export default interface Resources {
           }
         },
         "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
+        "multipleInput": {
+          "addEditFirst": "Press Edit to add another value.",
+          "addNew": "Add another value",
+          "duplicateValue": "This value is a duplicate. Please enter a unique one.",
+          "enterNewValue": "Enter value for new {itemLabel}",
+          "enterValueFor": "Enter value for {fieldLabel}",
+          "enterValueOrRemove": "Enter a value (or remove entry)",
+          "removeEditFirst": "Press Edit to remove this value.",
+          "removeThis": "Remove this value",
+          "valueRequired": "A value is required"
+        },
         "polygonCard": {
+          "addPointAfter": "Add point after this one",
+          "configurationTitle": "Polygon configuration",
+          "editorTitle": "Polygon editor",
+          "enterPointLatitude": "Enter point latitude",
+          "enterPointLongitude": "Enter point longitude",
+          "helpTitle": "Polygon help",
           "inPolygonPointDescription": "Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than the half of the Earth's surface.",
-          "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one."
+          "inPolygonPointLatitude": "In polygon point latitude",
+          "inPolygonPointLongitude": "In polygon point longitude",
+          "pointLatitude": "Point {index} latitude",
+          "pointLongitude": "Point {index} longitude",
+          "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
+          "removePoint": "Remove point",
+          "state": {
+            "complete": "Complete polygon",
+            "empty": "No polygon",
+            "incomplete": "Incomplete polygon"
+          }
         },
         "polygonDialog": {
           "close": "Close",
@@ -2632,6 +3311,7 @@ export default interface Resources {
       },
       "image": {
         "explanation": "Tap to view at full resolution, scroll to exit (or pinch on mobile)",
+        "label": "Image",
         "tooManyToEdit": "The image can only be edited when no more than {max} items are selected."
       },
       "link": {
@@ -2713,13 +3393,29 @@ export default interface Resources {
           "cancel": "Cancel",
           "choose": "Choose",
           "label": "Browse the ELN for a link target",
-          "title": "Browse ELN"
+          "title": "Browse ELN",
+          "workspaceTreeLabel": "Workspace tree"
         },
         "gallerySections": {
+          "labels": {
+            "caption": "Caption",
+            "creationDate": "Creation Date",
+            "extension": "Extension",
+            "fileSize": "File Size",
+            "lastModified": "Last Modified",
+            "originalImage": "Original Image",
+            "owner": "Owner",
+            "type": "Type",
+            "uniqueId": "Unique ID",
+            "version": "Version"
+          },
           "noReferences": "There are no references to this file.",
           "preview": "Preview",
           "referencedBy": "This file is referenced by:",
-          "showLinkedDocs": "Show linked docs"
+          "showLinkedDocs": "Show linked docs",
+          "uploadFailed": "Upload failed.",
+          "uploadNewVersion": "Upload new version",
+          "uploading": "Uploading..."
         },
         "infoDialog": {
           "label": "Info for {globalId}",
@@ -2730,9 +3426,17 @@ export default interface Resources {
           "editToChangePinned": "Edit the link to change the pinned version",
           "noAccess": "No access",
           "noPermission": "You do not have permission to view this item",
+          "openLabel": "Open {globalId}",
+          "pinVersionLabel": "Pin version for {globalId}",
+          "showInfoLabel": "Show info for {globalId}",
           "targetDeleted": "Target deleted"
         },
         "relatedInventoryItems": {
+          "columns": {
+            "globalId": "Global ID",
+            "name": "Name",
+            "relation": "Relation"
+          },
           "loading": "Loading...",
           "none": "No Inventory items link to this {recordTypeName}.",
           "title": "Related inventory items"
@@ -2740,6 +3444,12 @@ export default interface Resources {
         "targetBrowser": {
           "label": "Browse Inventory for link target",
           "title": "Browse Inventory"
+        },
+        "targetValidation": {
+          "noVersionSuffix": "Enter the Global ID without a version. To pin the link to a version, use the clock icon.",
+          "required": "Target Global ID is required.",
+          "selfLink": "An item cannot link to itself.",
+          "supportedType": "Target must be an Inventory item or an ELN document, notebook or gallery file."
         },
         "versionLock": {
           "cannotResolve": "Cannot resolve version history for {globalId}.",
@@ -2787,7 +3497,9 @@ export default interface Resources {
         "label": "Quantity",
         "parentSampleOnly": "The parent sample only has one {alias}.",
         "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
+        "perAlias": "per {alias}",
         "totalCalculated": "Total is calculated from the quantites of <link>all {count} {plural}</link>, which can be changed by editing the {plural} individually.",
+        "totalLabel": "Total Quantity",
         "totalSingle": "There is only one {alias}.",
         "validation": {
           "positiveOrZero": "Should be a positive number or zero."
@@ -2878,9 +3590,14 @@ export default interface Resources {
       "accessPermissions": "Access Permissions",
       "attachments": "Attachments",
       "barcodes": "Barcodes",
+      "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
+      "collapseAll": "Collapse All",
+      "collapseSection": "Collapse section",
       "containersBeingEdited": "Containers being edited",
       "customFields": "Custom Fields",
       "details": "Details",
+      "expandAll": "Expand All",
+      "expandSection": "Expand section",
       "identifiers": "Identifiers",
       "information": "Information",
       "itemsBeingEdited": "Items being edited",
@@ -2914,6 +3631,64 @@ export default interface Resources {
       "retract": {
         "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to retract this Identifier"
+      }
+    },
+    "identifierModel": {
+      "alerts": {
+        "doiRequired": "DOI must be known",
+        "publishFailed": "The identifier could not be published.",
+        "published": "The identifier {doi} has been published.",
+        "republishAfterRetractFailed": "Identifier has been retracted. Tap publish to try again.\n{reason}",
+        "republishFailed": "The identifier could not be republished.",
+        "republished": "The identifier {doi} has been republished.",
+        "retractFailed": "The identifier could not be retracted.",
+        "retracted": "The identifier {doi} has been retracted."
+      },
+      "creatorTypes": {
+        "organizational": "Organizational",
+        "personal": "Personal"
+      },
+      "dateTypes": {
+        "accepted": "Accepted",
+        "available": "Available",
+        "collected": "Collected",
+        "copyrighted": "Copyrighted",
+        "created": "Created",
+        "issued": "Issued",
+        "other": "Other",
+        "submitted": "Submitted",
+        "updated": "Updated",
+        "valid": "Valid",
+        "withdrawn": "Withdrawn"
+      },
+      "descriptionTypes": {
+        "abstract": "Abstract",
+        "methods": "Methods"
+      },
+      "recommendedFields": {
+        "classificationCode": "Classification Code",
+        "schemeUri": "Scheme URI",
+        "subjectScheme": "Subject Scheme",
+        "type": "Type",
+        "valueUri": "Value URI"
+      }
+    },
+    "identifiers": {
+      "alerts": {
+        "assignError": "Could not assign identifier.",
+        "assignSuccess": "Successfully assigned identifier.",
+        "createFailed": "The Identifier could not be created.",
+        "created": "Identifier {doi} created.",
+        "deleteError": "Could not delete identifier.",
+        "deleteOneFailed": "Could not delete one identifier.",
+        "deletePartialFailure": "Some identifiers could not be deleted.",
+        "deleteSuccess": "Successfully deleted identifiers.",
+        "deletedOne": "Successfully deleted identifier.",
+        "draftDeleteFailed": "The Identifier draft could not be deleted.",
+        "draftDeleted": "Identifier draft deleted.",
+        "fetchError": "Could not fetch identifiers.",
+        "registerError": "Could not register identifier.",
+        "registerSuccess": "Successfully registered identifier."
       }
     },
     "igsnManagement": {
@@ -3011,6 +3786,7 @@ export default interface Resources {
         "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <link>Samples CSV</link> with mapped \"Import ID\".",
         "parentSampleRequired": "You must select one column that refers to a Sample.",
         "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
+        "selectMapping": "Select mapping for {fieldName}",
         "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
         "unconverted": "You have one or more columns selected without conversion. The columns' data will not be used."
       },
@@ -3018,6 +3794,12 @@ export default interface Resources {
       "customFieldName": "Custom Field Name",
       "fieldTypeMenu": {
         "options": "Options"
+      },
+      "fields": {
+        "customFieldType": "Custom field type",
+        "fieldNameValidation": "You either already have a field with that name or that name is not permitted.",
+        "templateName": "Template Name",
+        "templateNameValidation": "Template name is required."
       },
       "file": {
         "clearFileAndMappings": "Clear File and Mappings",
@@ -3029,9 +3811,20 @@ export default interface Resources {
       "helpTitle": "Info on importing.",
       "importDocumentation": "Import Documentation",
       "landmark": "Import main content",
+      "records": {
+        "importedRecord": "Imported \"{name}\".",
+        "importing": "Importing Records...",
+        "invalidData": "Could not import invalid {type} data.",
+        "row": "Row {row}",
+        "success": "{type} successfully imported."
+      },
       "sections": {
         "columnConversion": "CSV Column Conversion Settings",
         "templateDetails": "Template Details"
+      },
+      "submit": {
+        "mayHaveCompleted": "Something went wrong but the import may have completed.",
+        "recordsNotImported": "Something went wrong and some records were not imported."
       },
       "templateDetails": {
         "chooseExistingTemplate": "Choose existing template.",
@@ -3041,15 +3834,51 @@ export default interface Resources {
       "title": "IMPORT"
     },
     "infoCard": {
+      "info": "Info",
+      "noPermission": "You do not have permission to open this item.",
       "setAsTarget": "Set as Target"
     },
+    "instrument": {
+      "createOptions": {
+        "template": {
+          "explanation": "Create an instrument template from this instrument, to easily create similar instruments.",
+          "fieldDefaultsExplanation": "All of the instrument's custom fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+          "label": "Instrument Template"
+        }
+      },
+      "imageAlt": "What the instrument looks like",
+      "templateFields": {
+        "invalid": "Invalid",
+        "mandatory": "Mandatory",
+        "unknownFieldType": "Unknown field type: {type}"
+      }
+    },
     "instrumentTemplate": {
+      "createOptions": {
+        "instrument": {
+          "explanation": "Create a new instrument based on this template.",
+          "label": "Instrument"
+        }
+      },
       "customFields": {
         "addFieldTooltip": "Add field",
         "noCustomFields": "No custom fields"
-      }
+      },
+      "field": {
+        "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
+        "fetchError": "Could not fetch instrument template details.",
+        "label": "Instrument Template",
+        "loading": "Loading",
+        "noTemplate": "No template",
+        "noTemplateTitle": "No Template",
+        "unknownReason": "Unknown reason.",
+        "version": "Version {version}"
+      },
+      "imageAlt": "What the instrument template looks like",
+      "newImageAlt": "A visual representation of the instrument template"
     },
     "layout": {
+      "hideRightPanel": "Hide right panel",
       "initialScreen": {
         "navigateTo": "Navigate to:"
       },
@@ -3057,6 +3886,7 @@ export default interface Resources {
         "heading": "Page not found.",
         "message": "The page was not found. You can try again, or use your 'back' button to return to your previous location and navigate from there, or use the sidebar to navigate to your samples and containers. If you can't resolve the problem, please contact an administrator."
       },
+      "showRightPanel": "Show right panel",
       "sidebar": {
         "exportData": "Export Data",
         "igsnIds": "IGSN IDs",
@@ -3093,6 +3923,21 @@ export default interface Resources {
         "moveAllToBench": "Move all to my bench",
         "viewInNewTab": "View in new tab"
       },
+      "alerts": {
+        "createFailed": "Something went wrong while creating {name}",
+        "created": "{name} was successfully created.",
+        "deleteFailed": "Something went wrong while deleting {name}",
+        "deleted": "{name} was successfully deleted.",
+        "exportFailed": "Something went wrong while exporting {name}",
+        "fetchEditPermissionFailed": "Could not fetch permission to edit.",
+        "fetchFailed": "Could not fetch List of Materials data.",
+        "updateFailed": "Something went wrong while updating {name}",
+        "updated": "{name} was successfully updated."
+      },
+      "confirmDelete": {
+        "message": "This list and information about used quantities will not be available anymore. The inventory items will not be affected by this action.",
+        "title": "Are you sure you want to delete this list?"
+      },
       "dialog": {
         "creatingList": "Creating list...",
         "emptyList": "Use \"Add items\" to add materials to this list.",
@@ -3104,6 +3949,11 @@ export default interface Resources {
         "title": "List of Materials (Inventory)",
         "updatingList": "Updating list..."
       },
+      "errors": {
+        "notEnoughLeft": "Not enough left, reduce or unselect",
+        "positiveOrZero": "Enter a positive or zero",
+        "unitCategoriesMustMatch": "Unit categories must match"
+      },
       "launcher": {
         "newList": "New List of Materials",
         "showAssociatedLists": "Show list of materials associated with this field"
@@ -3112,6 +3962,10 @@ export default interface Resources {
         "description": "Description",
         "id": "ID",
         "name": "List Name"
+      },
+      "pending": {
+        "deleting": "Deleting {name}...",
+        "exporting": "Exporting {name}..."
       },
       "table": {
         "batchSelect": {
@@ -3137,7 +3991,9 @@ export default interface Resources {
     },
     "mixed": {
       "batch": {
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+        "imageAlt": "What all of the items look like",
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+        "title": "{count} Items"
       }
     },
     "moreInfo": {
@@ -3181,14 +4037,44 @@ export default interface Resources {
     "moveToTarget": {
       "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
       "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+      "errors": {
+        "moveFailed": "Move failed."
+      },
+      "helpTitle": "Moving help",
       "hideItems": "Hide items being moved",
       "loading": "Loading",
-      "movingItem": "Moving <0></0>",
+      "loadingEllipsis": "Loading...",
+      "messages": {
+        "benchSelected": "This will move the item to your bench.",
+        "canStoreOnly": "This container can only store {types}.",
+        "containerSelected": "This will move the item into the selected container.",
+        "deletedDestination": "The selected destination has been deleted.",
+        "movingIntoItself": "An item cannot be moved into itself.",
+        "noPermission": "You do not have permission to move to this destination.",
+        "notEnoughSpace": "There is not enough space in this destination.",
+        "selectLocations": "Select locations for the items being moved.",
+        "selectMoreLocations": "Select {count} more {count, plural, one {location} other {locations}}.",
+        "selectionComplete": "Selection complete.",
+        "visualContainerNoImage": "This visual container does not have an image.",
+        "visualContainerNoLocations": "This visual container does not have any locations."
+      },
+      "movingItem": "Moving <name></name>",
       "movingItems": "Moving {count} items",
+      "myBench": "My Bench",
       "nextItem": "Next item to be placed:",
+      "ownerBench": "{owner}'s Bench",
       "pickDestination": "Pick Destination",
       "selectedDestination": "Selected Destination:",
+      "selectionHelp": {
+        "singleColumnBench": "Select a destination from the list.",
+        "wideBench": "Select a destination from the list or tree."
+      },
       "showItems": "Show items being moved"
+    },
+    "peopleField": {
+      "errors": {
+        "couldNotGetGroupMembers": "Could not get group members."
+      }
     },
     "permalink": {
       "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -3199,6 +4085,14 @@ export default interface Resources {
       "unversionedTitle": "This {typeLabel} could not be found.",
       "versionedBody": "The version may never have existed. <a>View the latest version</a>.",
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
+    },
+    "person": {
+      "alerts": {
+        "exportFailed": "Data export failed."
+      },
+      "pending": {
+        "exportData": "Exporting User Data..."
+      }
     },
     "print": {
       "contents": {
@@ -3248,6 +4142,21 @@ export default interface Resources {
       }
     },
     "recordDetails": {
+      "labels": {
+        "contents": "Contents",
+        "description": "Description",
+        "galleryFile": "Gallery File",
+        "globalId": "Global ID",
+        "location": "Location",
+        "modified": "Modified",
+        "name": "Name",
+        "owner": "Owner",
+        "quantity": "Quantity",
+        "sample": "Sample",
+        "size": "Size",
+        "tags": "Tags",
+        "version": "Version"
+      },
       "modifiedBy": "by {user}"
     },
     "recordInfo": {
@@ -3259,9 +4168,25 @@ export default interface Resources {
       }
     },
     "recordTree": {
-      "navigateToContainer": "Navigate to container"
+      "navigateToContainer": "Navigate to container",
+      "thumbnailAlt": "Thumbnail for {name}"
     },
     "recordTypes": {
+      "attachment": {
+        "lower": "attachment",
+        "plural": "Attachments",
+        "singular": "Attachment"
+      },
+      "basket": {
+        "lower": "basket",
+        "plural": "Baskets",
+        "singular": "Basket"
+      },
+      "bench": {
+        "lower": "bench",
+        "plural": "Benches",
+        "singular": "Bench"
+      },
       "container": {
         "lower": "container",
         "plural": "Containers",
@@ -3305,8 +4230,40 @@ export default interface Resources {
       }
     },
     "sample": {
+      "alerts": {
+        "updateToLatestFailed": "Updating sample to latest template failed.",
+        "updateToLatestSuccess": "Sample updated to latest template successfully."
+      },
       "batch": {
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+        "imageAlt": "What the {count} samples look like",
+        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+        "title": "{count} Samples"
+      },
+      "contextMenu": {
+        "subsamplesSelected": "Cannot modify this sample whilst its subsamples are selected."
+      },
+      "createOptions": {
+        "newSubsamples": {
+          "countExplanation": "Between 1 and 100.",
+          "countLabel": "Number of new subsamples",
+          "explanation": "Additional subsamples will be created with the specified quantity.",
+          "label": "Subsamples, by creating new ones",
+          "quantityExplanation": "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+          "quantityLabel": "Quantity per subsample"
+        },
+        "noEditPermission": "You do not have permission to edit this sample.",
+        "split": {
+          "countExplanation": "The total number of subsamples wanted, including the source (between 2 and 100)",
+          "countLabel": "Number of new subsamples",
+          "explanation": "Subsamples will be created by dividing the existing subsample quantity amongst them.",
+          "label": "Subsamples, by splitting the existing subsample",
+          "tooManySubsamples": "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead."
+        },
+        "template": {
+          "explanation": "Create a template from this sample, to easily create similar samples.",
+          "fieldDefaultsExplanation": "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+          "label": "Template"
+        }
       },
       "fields": {
         "expiryDate": {
@@ -3334,6 +4291,14 @@ export default interface Resources {
           },
           "type": "Type"
         },
+        "quantity": {
+          "label": "Quantity",
+          "perAlias": "Quantity per {alias}",
+          "templateUnitsExplanation": "Quantity units can also be changed by editing templates.",
+          "total": "{quantity} {unit} in total",
+          "totalLabel": "{quantity} in total",
+          "validation": "Should be a positive value, of no more than 3 decimal places, or zero."
+        },
         "source": {
           "label": "Source",
           "options": {
@@ -3359,7 +4324,8 @@ export default interface Resources {
             "ultFrozen": "ULT Frozen"
           },
           "specify": "Specify",
-          "unit": "Unit"
+          "unit": "Unit",
+          "unspecified": "Unspecified"
         },
         "template": {
           "alertExpand": "Expand to select a template.",
@@ -3372,11 +4338,70 @@ export default interface Resources {
         },
         "unknownFieldType": "Unknown field type: {type}"
       },
+      "imageAlt": "What the sample looks like",
+      "newImageAlt": "What the new sample looks like",
+      "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
       "subsamplesSection": {
-        "tapToPreview": "Tap one of the {plural} in the search section to preview it below."
+        "tapToPreview": "Tap one of the {plural} in the search section to preview it below.",
+        "title": "{count} {alias}"
       }
     },
     "search": {
+      "actions": {
+        "cancel": {
+          "inProgress": "Cancelling..."
+        },
+        "createInstrumentTemplate": {
+          "failed": "Instrument template creation failed.",
+          "success": "Instrument template created successfully."
+        },
+        "createSubsamples": {
+          "failed": "Subsample creation failed.",
+          "success": "Successfully created new subsamples."
+        },
+        "createTemplate": {
+          "failed": "Template creation failed.",
+          "success": "Template created successfully."
+        },
+        "duplicate": {
+          "failed": "Duplication failed.",
+          "inProgress": "Duplicating...",
+          "newBenchItems": "Newly created {items} are placed on your Bench."
+        },
+        "export": {
+          "failed": "Data export failed.",
+          "inProgress": "Exporting..."
+        },
+        "restore": {
+          "failed": "Restore failed.",
+          "inProgress": "Restoring..."
+        },
+        "split": {
+          "failed": "Splitting subsample failed.",
+          "inProgress": "Splitting...",
+          "newSubsamplesOnBench": "Newly created subsamples are placed on your Bench."
+        },
+        "transfer": {
+          "failed": "Transfer failed.",
+          "inProgress": "Transferring...",
+          "movedToBench": "The records have been moved to {username}'s bench"
+        },
+        "trash": {
+          "emptySamplePrompt": "Send Sample {name} to trash too?",
+          "failed": "Sending to trash failed.",
+          "inProgress": "Sending to trash...",
+          "moveAllToTrash": "Move all to trash",
+          "samplesWithStoredSubsamples": {
+            "container": "(in {name} {globalId})",
+            "detail": "Could not trash \"{name}\" {container}",
+            "message": "Please move them to the trash first.",
+            "title": "Some of the samples could not be trashed because the subsamples are in containers."
+          }
+        },
+        "update": {
+          "failed": "Update failed."
+        }
+      },
       "controls": {
         "nameDialog": {
           "cancel": "Cancel",
@@ -3432,6 +4457,10 @@ export default interface Resources {
         "body": "Nothing here yet.",
         "title": "Empty {recordType}"
       },
+      "errors": {
+        "performSearchFailed": "Could not perform search.",
+        "searchFailed": "Search failed."
+      },
       "feedback": {
         "containerContents": "{count} container contents found.",
         "errorGlobalId": "ERROR",
@@ -3466,6 +4495,18 @@ export default interface Resources {
         "title": "No results.",
         "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
       },
+      "parameterChips": {
+        "basket": "Basket: {basket}",
+        "benchOwner": "Bench Owner: {owner}",
+        "contentsOf": "Contents of: {globalId}",
+        "owner": "Owner: {owner}",
+        "status": "Status: {status}",
+        "type": "Type: {type}",
+        "unknown": "Unknown"
+      },
+      "results": {
+        "selectResultItem": "Select {name}"
+      },
       "resultsTable": {
         "actionInProgress": "Action In Progress",
         "allRows": "{count} (All)",
@@ -3483,16 +4524,21 @@ export default interface Resources {
         }
       },
       "savedList": {
-        "deleteAria": "delete saved item",
         "deleteBasket": "Delete Basket",
+        "deleteLabel": "delete saved item",
         "deleteSavedSearch": "Delete Saved Search",
-        "editAria": "edit saved item",
+        "editLabel": "edit saved item",
         "editName": "Edit name",
         "noBaskets": "There are no Baskets yet. To create one: select some results and then 'Add to Basket'.",
         "noSavedSearches": "There are no Saved Searches yet."
       }
     },
     "settings": {
+      "alerts": {
+        "fetchFailed": "Could not get System Settings.",
+        "updateFailed": "Could not update System Settings.",
+        "updateSuccess": "System Settings have been updated."
+      },
       "datacite": {
         "connectionFailed": "Connection failed. {message}",
         "connectionSucceeded": "Connection succeeded",
@@ -3500,6 +4546,7 @@ export default interface Resources {
         "fieldRequiredError": "A valid value is required",
         "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a>DataCite</a> using your Repository account credentials.",
         "formLabel": "DataCite IGSN Integration",
+        "helpTitle": "DataCite help",
         "labels": {
           "enabled": "Enabled",
           "password": "Password",
@@ -3512,6 +4559,7 @@ export default interface Resources {
           "production": "Production",
           "test": "Test"
         },
+        "serverUrlLabel": "DataCite Server URL",
         "statusOptions": {
           "disabled": "Disabled",
           "enabled": "Enabled"
@@ -3525,7 +4573,19 @@ export default interface Resources {
         "title": "Configure Inventory (for System Administrators)"
       }
     },
+    "sortProperties": {
+      "created": "Created",
+      "globalId": "Global ID",
+      "lastModified": "Last Modified",
+      "name": "Name",
+      "type": "Type"
+    },
     "subsample": {
+      "alerts": {
+        "noteCreateFailed": "Creating note failed.",
+        "noteCreated": "Note successfully created.",
+        "noteSaveFailed": "Could not save the new note(s)."
+      },
       "batch": {
         "imageAlt": "What the {count} subsamples look like",
         "itemsTableLabel": "Subsamples being edited",
@@ -3533,17 +4593,59 @@ export default interface Resources {
         "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
         "title": "Batch editing {count} subsamples"
       },
+      "createOptions": {
+        "noEditPermission": "You do not have permission to edit this subsample.",
+        "split": {
+          "countExplanation": "The total number of subsamples wanted, including the source (between 2 and 100)",
+          "countLabel": "Number of new subsamples",
+          "explanation": "New subsamples will be created by dividing the quantity of this subsample equally amongst them.",
+          "label": "Subsample, by splitting"
+        }
+      },
       "details": {
         "imageAlt": "What the subsample, {name}, looks like",
         "label": "Subsample details",
         "none": "No subsamples",
         "seeFullDetails": "See full details of <strong>{name}</strong>"
       },
+      "imageAlt": "What the subsample looks like",
+      "limitedAccessLabel": "subsample, or its parent sample",
       "sampleFieldsSection": {
-        "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
+        "parentSampleExplanation": "These fields belong to <recordLink></recordLink>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
+      },
+      "validation": {
+        "quantityRequired": "Quantity must be set"
+      }
+    },
+    "tableColumns": {
+      "containerType": "Container Type",
+      "contents": "Contents",
+      "expiryDate": "Expiry Date",
+      "numberOfEmptyLocations": "Number of Empty Locations",
+      "owner": "Owner",
+      "sample": "Sample",
+      "subsamplesCount": "Subsamples Count",
+      "tags": "Tags"
+    },
+    "tables": {
+      "adjustableHeadCell": {
+        "columnOptions": "Column options"
       }
     },
     "template": {
+      "alerts": {
+        "updateExistingSamples": "Update existing samples?",
+        "updateLatestFailed": "Updating samples to latest template version failed."
+      },
+      "contextMenu": {
+        "historicalVersion": "Cannot modify a historical version of a template."
+      },
+      "createOptions": {
+        "sample": {
+          "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
+          "label": "Sample"
+        }
+      },
       "fields": {
         "customField": {
           "deleteField": "{fieldType} field will be deleted from this template.",
@@ -3557,6 +4659,9 @@ export default interface Resources {
           "version": "This is version {version} of the template."
         }
       },
+      "imageAlt": "A visual representation of the samples that are to be created from this template",
+      "newImageAlt": "A visual representation of the samples that will be created from this new template",
+      "permissionsExplanation": "This template will also be accessible to anyone who has access to a sample that has been created from it.",
       "summary": {
         "loading": "Loading",
         "noTemplate": "No Template"
@@ -3673,14 +4778,38 @@ export default interface Resources {
       "unlinkHelpPrefix": "A ROR ID is linked to this RSpace Instance. Click on",
       "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
     },
+    "tags": {
+      "errorFetchingTags": "Error fetching tags",
+      "noMatchingSuggestions": "No matching suggestions",
+      "tryAgain": "Please try again.",
+      "typeTagInstead": "Type the tag instead.",
+      "useNewTagHint": "Type to create a new tag."
+    },
     "usersPage": {
       "actionsButton": "Actions",
       "actionsLabel": "Actions menu for selected rows",
+      "alerts": {
+        "accountDeleteFailed": "Could not delete user's account.",
+        "accountDeleted": "Successfully deleted user's account.",
+        "accountDisableFailed": "Could not disable account.",
+        "accountDisabled": "Successfully disabled account.",
+        "accountEnableFailed": "Could not enable account.",
+        "accountEnabled": "Successfully enabled account.",
+        "accountUnlockFailed": "Could not unlock account.",
+        "accountUnlocked": "Successfully unlocked account.",
+        "piRoleGrantFailed": "Could not grant PI role to user.",
+        "piRoleGranted": "Successfully granted PI role to user.",
+        "piRoleRevokeFailed": "Could not revoke user's PI role.",
+        "piRoleRevoked": "Successfully revoked PI role from user.",
+        "tagsSaveFailed": "Could not save tags.",
+        "tagsSaved": "Successfully saved tags."
+      },
       "aliasDialog": {
         "description": "SysAdmins can set a username alias for a user, enabling both the username and its alias to be used during login. The alias is only recognised during the login process, and does not replace the user’s username as their main identifier inside RSpace.",
         "errorTitle": "Could not set username alias.",
         "field": "Username Alias",
         "menuItem": "Set Username Alias",
+        "onlyOneUser": "Only one user can have an alias set at a time.",
         "submit": "Set Alias",
         "success": "Successfully set username alias.",
         "title": "Set Username Alias"
@@ -3689,28 +4818,58 @@ export default interface Resources {
       "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
       "columns": {
         "button": "Columns",
-        "locked": "Locked"
+        "creationDate": "Creation Date",
+        "disabled": "Disabled",
+        "documents": "Documents",
+        "email": "Email",
+        "enabled": "Enabled",
+        "firstName": "First Name",
+        "fullName": "Full Name",
+        "groupMembership": "Group Membership",
+        "lastLogin": "Last Login",
+        "lastName": "Last Name",
+        "locked": "Locked",
+        "role": "Role",
+        "tags": "Tags",
+        "usage": "Usage",
+        "username": "Username",
+        "usernameAlias": "Username Alias"
       },
       "communityAdmins": "Community Admins",
       "deleteDialog": {
         "confirmUsername": "To delete <strong>{fullName}</strong>'s account please enter their username.",
+        "disabledByDeployment": "The deployment property \"sysadmin.delete.user\" is false.",
         "formsAndTemplatesNotice": "The user you are trying to delete is <strong>{ownerOfFormsAndTemplates}</strong> To ensure continued access to these Forms/Templates, the system<strong> {willTransferOwnership}</strong> of those files to<strong> {thisSystemAdministrator}</strong> account. Forms and Templates that are not used by others will be deleted.",
         "formsNotice": "The user you are trying to delete is <strong>{ownerOfForms}</strong> To ensure continued access to these Forms, the system<strong> {willTransferOwnership}</strong> of the Forms to<strong> {thisSystemAdministrator}</strong> account. Forms that are not used by others will be deleted.",
         "irreversible": "User deletion is irreversible, and all documents will be deleted.",
+        "onlyOneUser": "Only one user can be deleted at a time.",
         "title": "Deletion Confirmation",
+        "transferAndDelete": "Transfer Forms/Templates And Delete",
+        "usernameMismatch": "Usernames do not match.",
         "xmlArchive": "An XML archive will be made of the user's work which will be available for a short time on the server."
+      },
+      "enableDisable": {
+        "disable": "Disable",
+        "enable": "Enable",
+        "menuItem": "Enable / Disable",
+        "onlyOneUser": "Only one user can be enabled / disabled at a time."
       },
       "export": {
         "allRows": "Export all rows to CSV",
+        "onlyOneUser": "Only one user's work can be exported at a time.",
         "selected": "selected",
         "thisPageOf": "this page of",
-        "visibleRows": "Export {scope} rows to CSV"
+        "visibleRows": "Export {scope} rows to CSV",
+        "work": "Export Work"
       },
       "filterLabel": "Filter users",
+      "filtersActive": "{count, plural, one {# filter active} other {# filters active}}",
       "filtersButton": "Filters",
       "groupMembership": {
+        "count": "{count, plural, one {# group} other {# groups}}",
+        "panelLabel": "Groups",
         "showList": "Show list of groups",
-        "showListAria": "{count} group(s). Show list of groups."
+        "showListLabel": "{count} group(s). Show list of groups."
       },
       "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <a>Tagging docs</a> for more.",
       "loadingError": "Failed to load listing of users. Please try refreshing.",
@@ -3718,33 +4877,64 @@ export default interface Resources {
       "ownerOfForms": "the owner of Forms that are used by other users.",
       "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
       "piRoleDialog": {
+        "adminSelected": "The selected user is an admin.",
         "error": "ERROR: {error}",
         "grantAction": "Grant",
+        "grantMenuItem": "Grant PI role",
         "grantPrompt": "To grant the PI role to <strong>{fullName}</strong> please re-enter your password.",
         "grantTitle": "Grant user PI role",
         "loading": "Loading",
+        "onlyOneUser": "Only one user can be modified at a time.",
         "password": "Password",
         "revokeAction": "Revoke",
+        "revokeMenuItem": "Revoke PI role",
         "revokePrompt": "To revoke the PI role from <strong>{fullName}</strong> please re-enter your password.",
         "revokeTitle": "Revoke PI role from user",
         "setVerificationPassword": "Please set your verification password in My RSpace before performing this action."
+      },
+      "roleLabels": {
+        "admin": "Admin",
+        "pi": "PI",
+        "sysadmin": "Sysadmin",
+        "user": "User"
+      },
+      "search": {
+        "users": "Search users"
+      },
+      "selection": {
+        "moreThanOneSelected": "More than one user is selected",
+        "noSelection": "No selection",
+        "noneSelected": "No users selected",
+        "usersSelected": "{count, plural, one {# user selected} other {# users selected}}"
       },
       "summary": {
         "availableSeats": "Available Seats",
         "communityAdmins": "Community Admins",
         "systemAdmins": "System Admins"
       },
+      "tableActionsLabel": "Users table actions",
+      "tableLabel": "users",
       "tagDialog": {
         "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <a>Read more about tagging users here.</a>",
+        "menuItem": "Add/Remove Tags",
         "title": "Tagging {count} {count, plural, one {user} other {users}}"
       },
       "tags": {
+        "count": "{count, plural, one {# tag} other {# tags}}",
+        "filterSuggested": "Filter suggested tags",
+        "panelLabel": "Tags",
         "showList": "Show list of tags",
-        "showListAria": "{count} tag(s). Show list of tags."
+        "showListLabel": "{count} tag(s). Show list of tags."
       },
       "thisSystemAdministrator": "this System Administrator",
+      "title": "Users",
       "totalUsers": "Total Users",
       "totalUsersTooltip": "All users including admins and those with disabled accounts.",
+      "unlock": {
+        "menuItem": "Unlock",
+        "onlyLockedAccounts": "Only locked accounts can be unlocked.",
+        "onlyOneUser": "Only one user can be unlocked at a time."
+      },
       "willTransferOwnership": "will transfer ownership"
     }
   },
@@ -3859,7 +5049,7 @@ export default interface Resources {
           "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
           "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
           "revisionsSection": "Revisions",
-          "selectAria": "Select Export",
+          "selectLabel": "Select Export",
           "wordErrors": {
             "allMedia": "All selected items are attachments — there are no RSpace documents to export.",
             "folder": "Word export is only available for a single document, and you've selected a folder.",
@@ -4059,6 +5249,9 @@ export default interface Resources {
         },
         "description": "Select the documents you want to combine into a single CSV file. Documents with identical structures will be automatically aligned, including form data and content. If documents have different structures, additional columns will be created to accommodate all information.",
         "exportRows": "Export {selection, select, selected {selected} other {all}} rows to CSV",
+        "labels": {
+          "documentsTable": "Documents"
+        },
         "loadingDocuments": "Reading documents…",
         "readError": "Could not read all of the documents",
         "title": "Export Documents to CSV",
@@ -4071,7 +5264,7 @@ export default interface Resources {
       },
       "newFolder": {
         "creating": "Creating a new folder...",
-        "nameAria": "Folder name",
+        "nameLabel": "Folder name",
         "navigateAfterCreate": "Navigate to the created folder",
         "placeholder": "Enter a name, /or/a/path to create multiple folders",
         "title": "Create a folder",

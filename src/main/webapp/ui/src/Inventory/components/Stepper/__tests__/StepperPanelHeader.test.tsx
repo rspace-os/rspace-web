@@ -104,13 +104,13 @@ describe("StepperPanelHeader", () => {
           for (const error of errors) {
             await replaceInputValue(user, "Set error", error);
           }
-          await user.click(screen.getByRole("button", { name: "Collapse section" }));
+          await user.click(screen.getByRole("button", { name: "inventory:formSections.collapseSection" }));
           await waitFor(() => {
-            expect(screen.getByRole("button", { name: "Expand section" })).toBeVisible();
+            expect(screen.getByRole("button", { name: "inventory:formSections.expandSection" })).toBeVisible();
           });
-          expect(parseInt((await screen.findByLabelText("Expand section")).textContent ?? "", 10)).toEqual(
-            errors.length,
-          );
+          expect(
+            parseInt((await screen.findByLabelText("inventory:formSections.expandSection")).textContent ?? "", 10),
+          ).toEqual(errors.length);
         },
       ),
       { numRuns: 10 },
@@ -127,10 +127,10 @@ describe("StepperPanelHeader", () => {
           await replaceInputValue(user, "Set error", error);
         }
 
-        await user.click(screen.getByLabelText("Collapse section"));
-        expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toBeLessThanOrEqual(
-          errors.length,
-        );
+        await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
+        expect(
+          parseInt(screen.getByLabelText("inventory:formSections.expandSection").textContent ?? "", 10),
+        ).toBeLessThanOrEqual(errors.length);
       }),
       { numRuns: 10 },
     );
@@ -141,9 +141,9 @@ describe("StepperPanelHeader", () => {
 
     render(<DummyFormSection result={new DummyResult()} />);
     await replaceInputValue(user, "Set error", "an error");
-    expect(screen.getByLabelText("Collapse section")).not.toHaveTextContent("1");
-    await user.click(screen.getByLabelText("Collapse section"));
-    expect(screen.getByLabelText("Expand section")).toHaveTextContent("1");
+    expect(screen.getByLabelText("inventory:formSections.collapseSection")).not.toHaveTextContent("1");
+    await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
+    expect(screen.getByLabelText("inventory:formSections.expandSection")).toHaveTextContent("1");
   });
   const arbitraryErrorsAndErrorsToRemove = () =>
     fc
@@ -168,15 +168,17 @@ describe("StepperPanelHeader", () => {
         for (const error of errors) {
           await replaceInputValue(user, "Set error", error);
         }
-        await user.click(screen.getByRole("button", { name: "Collapse section" }));
-        expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toEqual(errors.length);
-        await user.click(screen.getByRole("button", { name: "Expand section" }));
+        await user.click(screen.getByRole("button", { name: "inventory:formSections.collapseSection" }));
+        expect(parseInt(screen.getByLabelText("inventory:formSections.expandSection").textContent ?? "", 10)).toEqual(
+          errors.length,
+        );
+        await user.click(screen.getByRole("button", { name: "inventory:formSections.expandSection" }));
         for (const errorToRemove of errorsToRemove) {
           await replaceInputValue(user, "Unset error", errorToRemove);
         }
-        await user.click(screen.getByRole("button", { name: "Collapse section" }));
+        await user.click(screen.getByRole("button", { name: "inventory:formSections.collapseSection" }));
         if (errors.length - errorsToRemove.length > 0) {
-          expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toEqual(
+          expect(parseInt(screen.getByLabelText("inventory:formSections.expandSection").textContent ?? "", 10)).toEqual(
             errors.length - errorsToRemove.length,
           );
         } else {
@@ -199,22 +201,22 @@ describe("StepperPanelHeader", () => {
 
     render(<DummyFormSection result={result} />);
     await replaceInputValue(user, "Set error", "an error");
-    await user.click(screen.getByRole("button", { name: "Collapse section" }));
+    await user.click(screen.getByRole("button", { name: "inventory:formSections.collapseSection" }));
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Expand section" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "inventory:formSections.expandSection" })).toBeVisible();
     });
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Expand section" })).toHaveTextContent("1");
+      expect(screen.getByRole("button", { name: "inventory:formSections.expandSection" })).toHaveTextContent("1");
     });
 
     result.setEditing(false);
     // trigger a re-render
-    await user.click(screen.getByLabelText("Expand section"));
+    await user.click(screen.getByLabelText("inventory:formSections.expandSection"));
     await waitFor(() => {
-      expect(screen.getByLabelText("Collapse section")).toBeVisible();
+      expect(screen.getByLabelText("inventory:formSections.collapseSection")).toBeVisible();
     });
 
-    await user.click(screen.getByLabelText("Collapse section"));
-    expect(screen.getByLabelText("Expand section")).not.toHaveTextContent("1");
+    await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
+    expect(screen.getByLabelText("inventory:formSections.expandSection")).not.toHaveTextContent("1");
   });
 });

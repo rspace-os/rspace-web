@@ -201,7 +201,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
                 }}
                 color="primary"
                 size="medium"
-                aria-label={t("externalWorkflows.showWorkflowsAria")}
+                aria-label={t("externalWorkflows.showWorkflowsLabel")}
                 aria-haspopup="menu"
                 sx={{ zIndex: "initial" }}
               >
@@ -211,7 +211,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
           </Box>
           <Modal
             open={querying}
-            aria-label={t("externalWorkflows.queryingAria")}
+            aria-label={t("externalWorkflows.queryingLabel")}
             title={t("externalWorkflows.queryingTitle")}
           >
             <Grid
@@ -251,7 +251,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
             <Fab
               disabled={true}
               size="medium"
-              aria-label={t("externalWorkflows.loadingAria")}
+              aria-label={t("externalWorkflows.loadingLabel")}
               aria-haspopup="menu"
               sx={{ zIndex: "initial" }}
             >

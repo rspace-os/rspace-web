@@ -61,7 +61,7 @@ export class StoichiometryDialogPage {
     await this.table
       .getByRole("row")
       .filter({ has: page.getByRole("gridcell", { name, exact: true }) })
-      .getByRole("radio", { name: "common:stoichiometry.table.aria.selectLimitingReagent" })
+      .getByRole("radio", { name: "common:stoichiometry.table.label.selectLimitingReagent" })
       .click();
   }
 

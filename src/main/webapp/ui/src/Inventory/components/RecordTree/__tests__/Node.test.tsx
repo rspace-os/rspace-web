@@ -99,6 +99,6 @@ describe("Node", () => {
         </SearchContext.Provider>
       </ThemeProvider>,
     );
-    expect(screen.getByRole("treeitem", { name: /Container/ })).toBeVisible();
+    expect(screen.getByRole("treeitem", { name: /inventory:recordTypes\.container\.singular/i })).toBeVisible();
   });
 });

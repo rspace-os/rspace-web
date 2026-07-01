@@ -164,7 +164,7 @@ describe("Sidebar", () => {
       const dialog = await screen.findByRole("dialog");
       // S3 gets the filestore-specific title and the "no native folders" note
       expect(within(dialog).getByRole("heading", { name: /sidebar.createFilestoreFolder/i })).toBeVisible();
-      expect(within(dialog).getByText(/S3 has no native concept of folders/i)).toBeVisible();
+      expect(within(dialog).getByText("gallery:sidebar.s3FolderNote")).toBeVisible();
       await user.type(within(dialog).getByRole("textbox"), "test");
       await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 

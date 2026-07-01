@@ -491,7 +491,7 @@ export class ListOfMaterials {
       this.id = data.id; // making list 'not new'
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully created.`,
+          message: i18n.t("inventory:materialsListing.alerts.created", { name: this.name }),
           variant: "success",
         }),
       );
@@ -515,11 +515,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while updating ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.createFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,
@@ -556,7 +556,7 @@ export class ListOfMaterials {
 
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully updated.`,
+          message: i18n.t("inventory:materialsListing.alerts.updated", { name: this.name }),
           variant: "success",
         }),
       );
@@ -580,11 +580,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while updating ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.updateFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,
@@ -610,19 +610,22 @@ export class ListOfMaterials {
     if (!id) throw new Error("A new list cannot be deleted.");
 
     const confirmation = await getRootStore().uiStore.confirm(
-      "Are you sure you want to delete this list?",
-      "This list and information about used quantities will not be available anymore. The inventory items will not be affected by this action.",
-      "Yes",
-      "No",
+      i18n.t("inventory:materialsListing.confirmDelete.title"),
+      i18n.t("inventory:materialsListing.confirmDelete.message"),
+      i18n.t("common:actions.yes"),
+      i18n.t("common:actions.no"),
     );
     if (!confirmation) return confirmation;
 
     this.setLoading(true);
     try {
-      await showToastWhilstPending(`Deleting ${this.name}...`, InvApiService.delete<void>(`listOfMaterials`, id));
+      await showToastWhilstPending(
+        i18n.t("inventory:materialsListing.pending.deleting", { name: this.name }),
+        InvApiService.delete<void>(`listOfMaterials`, id),
+      );
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully deleted.`,
+          message: i18n.t("inventory:materialsListing.alerts.deleted", { name: this.name }),
           variant: "success",
         }),
       );
@@ -634,8 +637,8 @@ export class ListOfMaterials {
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while deleting ${this.name}`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:materialsListing.alerts.deleteFailed", { name: this.name }),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -676,7 +679,7 @@ export class ListOfMaterials {
         }),
       );
       const { data } = await showToastWhilstPending(
-        `Exporting ${this.name}...`,
+        i18n.t("inventory:materialsListing.pending.exporting", { name: this.name }),
         InvApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
@@ -707,11 +710,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while exporting ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.exportFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,

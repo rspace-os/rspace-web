@@ -11,6 +11,7 @@ import SearchContext from "../../../stores/contexts/Search";
 import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
 import { match, toTitleCase } from "../../../util/Util";
+import { translateAdjustableTableLabel } from "../../components/Tables/adjustableTableLabels";
 import type { SortProperty } from "../../components/Tables/SortableProperty";
 
 const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
@@ -58,7 +59,7 @@ function SortControls(): React.ReactNode {
   };
 
   const menuItemLabel = (key: string, label: AdjustableTableRowLabel) =>
-    `${label} ${match<string, string>([
+    `${translateAdjustableTableLabel(label, t)} ${match<string, string>([
       [(k) => !search.fetcher.isCurrentSort(k), ""],
       [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, t("search.controls.sort.ascending")],
       [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, t("search.controls.sort.descending")],

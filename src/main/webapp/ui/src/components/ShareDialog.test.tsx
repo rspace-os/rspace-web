@@ -473,10 +473,10 @@ describe("ShareDialog", () => {
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
 
       // the user saves the new share
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       // the Save button should have changed to Done
-      expect(await within(dialog).findByRole("button", { name: "Done" })).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: "common:actions.done" })).toBeVisible();
 
       // a POST request should have been made to create the share
       expect(
@@ -498,9 +498,9 @@ describe("ShareDialog", () => {
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Alice and Bob's Group/ }));
 
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
-      expect(await within(dialog).findByRole("button", { name: "Done" })).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: "common:actions.done" })).toBeVisible();
 
       expect(findRequest("post", ({ url }) => url === "/api/v1/share")).toBeDefined();
     });
@@ -538,9 +538,9 @@ describe("ShareDialog", () => {
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Alice and Bob's Group/ }));
 
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
-      expect(await within(dialog).findByRole("button", { name: "Done" })).toBeVisible();
+      expect(await within(dialog).findByRole("button", { name: "common:actions.done" })).toBeVisible();
 
       // a POST request should have been made to create the share
       expect(findRequest("post", ({ url }) => url === "/api/v1/share")).toBeDefined();
@@ -582,7 +582,7 @@ describe("ShareDialog", () => {
       await user.click(await screen.findByRole("option", { name: "common:shareDialog.permissions.unshare" }));
 
       // the user saves the new share
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       // a DELETE request should have been made to remove the share
       await waitFor(() => {
@@ -611,7 +611,7 @@ describe("ShareDialog", () => {
       await user.click(await screen.findByRole("option", { name: "common:shareDialog.permissions.edit" }));
 
       // the user saves the new share
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       // a PUT request should have been made to update Bob's permission to EDIT
       await waitFor(() => {
@@ -656,7 +656,7 @@ describe("ShareDialog", () => {
       await user.click(await screen.findByRole("option", { name: "common:shareDialog.permissions.read" }));
 
       // the user saves the new share
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       // a PUT request should have been made to update the group's permission to READ
       await waitFor(() => {
@@ -701,7 +701,7 @@ describe("ShareDialog", () => {
 
       // the user selects a different folder in the folder selection dialog
       const folderDialog = await screen.findByRole("dialog", {
-        name: "Select Shared Folder Location",
+        name: "common:shareDialog.selectSharedFolderLocation",
       });
       const treeItem = await within(folderDialog).findByText("alice-bob");
       await user.click(treeItem);
@@ -713,13 +713,13 @@ describe("ShareDialog", () => {
       await waitFor(() => {
         expect(
           screen.queryByRole("dialog", {
-            name: "Select Shared Folder Location",
+            name: "common:shareDialog.selectSharedFolderLocation",
           }),
         ).toBeNull();
       });
 
       // the user saves the new share
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       // a POST request should have been made to move the document to the new folder
       await waitFor(() => {
@@ -810,7 +810,7 @@ describe("ShareDialog", () => {
       });
       await user.click(recipientDropdown);
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
-      await user.click(within(dialog).getByRole("button", { name: "Save" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.save" }));
 
       await waitFor(
         () => {
@@ -833,7 +833,7 @@ describe("ShareDialog", () => {
         name: "common:shareDialog.titleSingle",
       });
       // With no changes the submit button reads "Done".
-      const doneButton = within(dialog).getByRole("button", { name: "Done" });
+      const doneButton = within(dialog).getByRole("button", { name: "common:actions.done" });
       await user.click(doneButton);
       await waitFor(() => {
         expect(screen.queryByRole("dialog", { name: "common:shareDialog.titleSingle" })).toBeNull();

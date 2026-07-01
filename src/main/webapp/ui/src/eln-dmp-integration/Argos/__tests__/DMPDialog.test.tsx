@@ -119,7 +119,7 @@ describe("DMPDialog", () => {
       },
       { timeout: 2000 },
     );
-    await user.click(screen.getByRole("radio", { name: "Select plan: Foo" }));
+    await user.click(screen.getAllByRole("radio", { name: "apps:dmpIntegrations.dialog.selectPlanLabel" })[0]);
     await user.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
     await waitFor(() => {
       expect(

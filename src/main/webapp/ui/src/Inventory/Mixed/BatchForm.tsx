@@ -41,7 +41,7 @@ function OverviewSection({
       sectionName="overview"
       recordType="mixed"
     >
-      <Image fieldOwner={collection} alt="What all of the items look like" />
+      <Image fieldOwner={collection} alt={t("mixed.batch.imageAlt")} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
           <Alert severity="info">{t("mixed.batch.largeImageWarning")}</Alert>
@@ -95,7 +95,7 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   return (
     <FormWrapper
       recordType="mixed"
-      titleText={`Batch editing ${records.size} items`}
+      titleText={t("mixed.batch.title", { count: records.size })}
       editableObject={searchStore.search.batchEditableInstance}
     >
       <StepperPanel title={t("formSections.information")} sectionName="information" recordType="mixed">

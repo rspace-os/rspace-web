@@ -199,6 +199,7 @@ function TreeListing({
   /** Root S3 listing only: prepend the "(bucket top level)" option once the folders have loaded. */
   showBucketTopLevel?: boolean;
 }): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const api = React.useRef(
@@ -247,7 +248,7 @@ function TreeListing({
                   addAlert(
                     mkAlert({
                       variant: "error",
-                      title: "Failed to browse filestore",
+                      title: t("addFilestoreDialog.browseFailed"),
                       message: Parsers.objectPath(["data", "message"], response)
                         .flatMap(Parsers.isString)
                         .orElse(e.message),
@@ -266,11 +267,11 @@ function TreeListing({
   // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
   // every option appears at once rather than top-level looking like the only choice.
   if (showBucketTopLevel && loading) {
-    return <TreeItem itemId="__loading__" label="Loading..." disabled />;
+    return <TreeItem itemId="__loading__" label={t("addFilestoreDialog.loading")} disabled />;
   }
   return (
     <>
-      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" />}
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label={t("addFilestoreDialog.bucketTopLevel")} />}
       {listing.map(
         ({ folder, name }) =>
           folder && (
@@ -377,7 +378,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
           }}
           slotProps={{
             htmlInput: {
-              "aria-label": "Filestore name",
+              "aria-label": t("addFilestoreDialog.nameLabel"),
             },
           }}
         />
@@ -463,7 +464,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully added new filestore",
+          message: t("addFilestoreDialog.addSuccess"),
         }),
       );
       onClose(true);
@@ -476,7 +477,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Failed to add new filestore",
+            title: t("addFilestoreDialog.addFailed"),
             message,
           }),
         );

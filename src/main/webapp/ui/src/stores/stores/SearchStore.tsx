@@ -170,7 +170,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error retrieving Baskets.",
+          title: i18n.t("inventory:baskets.alerts.fetchFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -189,7 +189,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: `Error retrieving Basket.`,
+          title: i18n.t("inventory:baskets.alerts.fetchOneFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -202,7 +202,7 @@ export default class SearchStore {
     const { uiStore } = this.rootStore;
     try {
       const res = await showToastWhilstPending(
-        "Creating Basket...",
+        i18n.t("inventory:baskets.pending.creating"),
         ApiService.post<BasketAttrs>("baskets", { name, globalIds: items }),
       );
       if (res.status === 201 && res.data) {
@@ -210,8 +210,8 @@ export default class SearchStore {
         await this.getBaskets();
         uiStore.addAlert(
           mkAlert({
-            title: `${res.data.name} has been created.`,
-            message: items ? "The selected items have been added to it." : "",
+            title: i18n.t("inventory:baskets.alerts.created", { name: res.data.name }),
+            message: items ? i18n.t("inventory:baskets.alerts.selectedItemsAdded") : "",
             variant: "success",
             isInfinite: false,
           }),
@@ -220,7 +220,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error creating Basket.",
+          title: i18n.t("inventory:baskets.alerts.createFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -233,7 +233,7 @@ export default class SearchStore {
     const { uiStore } = this.rootStore;
     try {
       if (id) {
-        const name = this.savedBaskets.find((b) => b.id === id)?.name ?? "The Basket";
+        const name = this.savedBaskets.find((b) => b.id === id)?.name ?? i18n.t("inventory:baskets.fallbackName");
         if (
           await uiStore.confirm(
             i18n.t("baskets.delete.title", { ns: "inventory" }),
@@ -246,14 +246,17 @@ export default class SearchStore {
             i18n.t("identifierConfirm.cancelButton", { ns: "inventory" }),
           )
         ) {
-          const res = await showToastWhilstPending("Deleting Basket...", ApiService.delete<void>(`baskets`, id));
+          const res = await showToastWhilstPending(
+            i18n.t("inventory:baskets.pending.deleting"),
+            ApiService.delete<void>(`baskets`, id),
+          );
           if (res.status === 200) {
             // refetch to update list
             await this.getBaskets();
             uiStore.addAlert(
               mkAlert({
-                title: `${name} has been deleted.`,
-                message: "Its contents have not been affected.",
+                title: i18n.t("inventory:baskets.alerts.deleted", { name }),
+                message: i18n.t("inventory:baskets.alerts.contentsUnaffected"),
                 variant: "success",
                 isInfinite: false,
               }),
@@ -266,7 +269,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error deleting Basket.",
+          title: i18n.t("inventory:baskets.alerts.deleteFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,

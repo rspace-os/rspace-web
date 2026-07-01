@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { globalId } from "@/stores/definitions/BaseRecord";
 import { UiPreferences } from "../../hooks/api/useUiPreference";
 import { mkAlert } from "../../stores/contexts/Alert";
@@ -23,6 +24,7 @@ type SearchRouterArgs = {
 };
 
 const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
+  const { t } = useTranslation("inventory");
   const { searchStore, uiStore } = useStores();
   const { search } = searchStore;
 
@@ -51,8 +53,8 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
         console.error(error);
         uiStore.addAlert(
           mkAlert({
-            title: "Search failed.",
-            message: getErrorMessage(error, "Unknown reason."),
+            title: t("search.errors.searchFailed"),
+            message: getErrorMessage(error, t("errors.unknownReason")),
             variant: "error",
             isInfinite: true,
           }),

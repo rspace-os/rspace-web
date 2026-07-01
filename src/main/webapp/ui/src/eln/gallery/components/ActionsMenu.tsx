@@ -110,6 +110,7 @@ const UploadNewVersionMenuItem = ({
    */
   folderId: FetchingData.Fetched<Id>;
 }) => {
+  const { t } = useTranslation("gallery");
   const { uploadNewVersion } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
   const selection = useGallerySelection();
@@ -134,7 +135,7 @@ const UploadNewVersionMenuItem = ({
   return (
     <>
       <AccentMenuItem
-        title="Upload New Version"
+        title={t("actionsMenu.uploadNewVersion")}
         subheader={uploadNewVersionAllowed
           .get()
           .map(() => "")
@@ -292,6 +293,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -601,7 +603,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             },
             list: {
               disablePadding: true,
-              "aria-label": "actions",
+              "aria-label": t("actionsMenu.label"),
             },
           }}
         >
@@ -663,7 +665,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             />
           )}
           <AccentMenuItem
-            title="Edit"
+            title={tCommon("actions.edit")}
             subheader={editingAllowed
               .get()
               .map(() => "")
@@ -692,7 +694,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                         addAlert(
                           mkAlert({
                             variant: "error",
-                            title: "Failed to download image for editing",
+                            title: t("actionsMenu.downloadImageForEditingFailed"),
                             message: e.message,
                           }),
                         );
@@ -707,7 +709,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={editingAllowed.get().isError}
           />
           <AccentMenuItem
-            title="Duplicate"
+            title={tCommon("actions.duplicate")}
             subheader={duplicateAllowed
               .get()
               .map(() => "")
@@ -724,7 +726,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={duplicateAllowed.get().isError}
           />
           <AccentMenuItem
-            title="Move"
+            title={tCommon("actions.move")}
             subheader={moveAllowed
               .get()
               .map(() => "")
@@ -770,7 +772,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               .orElse(null);
           })()}
           <AccentMenuItem
-            title="Rename"
+            title={t("actionsMenu.rename")}
             subheader={renameAllowed
               .get()
               .map(() => "")
@@ -1014,7 +1016,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             .map((filestore) => (
               <AccentMenuItem
                 key={filestore.id}
-                title="Log Out"
+                title={tCommon("actions.logOut")}
                 subheader={logOutAllowed
                   .get()
                   .map(() => "")
@@ -1033,7 +1035,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             ))
             .orElse(null)}
           <AccentMenuItem
-            title="Delete"
+            title={tCommon("actions.delete")}
             subheader={deleteAllowed
               .get()
               .map(() => "")
@@ -1061,19 +1063,13 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
       )}
       {deleteConfirmOpen && (
         <ConfirmationDialog
-          title="Permanently delete?"
+          title={t("actionsMenu.deleteS3Confirm.title")}
           consequences={
-            <Typography variant="body1">
-              {"This permanently deletes "}
-              {selection.size}
-              {" item"}
-              {selection.size > 1 ? "s" : ""}
-              {" from the S3 filestore. This cannot be undone."}
-            </Typography>
+            <Typography variant="body1">{t("actionsMenu.deleteS3Confirm.body", { count: selection.size })}</Typography>
           }
           variant="warning"
-          confirmText="permanently delete"
-          confirmTextLabel="Type 'permanently delete' to confirm"
+          confirmText={t("actionsMenu.deleteS3Confirm.confirmText")}
+          confirmTextLabel={t("actionsMenu.deleteS3Confirm.confirmTextLabel")}
           callback={() => {
             void deleteFiles(selection.asSet()).then(() => {
               void refreshListing();
@@ -1090,7 +1086,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
         close={() => {
           setImageEditorBlob(null);
         }}
-        submitButtonLabel="Save as new image"
+        submitButtonLabel={t("actionsMenu.saveAsNewImage")}
         submitHandler={(newBlob) => {
           void (async () => {
             try {
@@ -1123,7 +1119,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 addAlert(
                   mkAlert({
                     variant: "error",
-                    title: "Failed to process edited image",
+                    title: t("actionsMenu.processEditedImageFailed"),
                     message: e.message,
                   }),
                 );

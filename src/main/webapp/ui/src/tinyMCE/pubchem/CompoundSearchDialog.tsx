@@ -115,7 +115,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             onChange={(e) => onSelected(compound, e.target.checked)}
             slotProps={{
               input: {
-                "aria-label": t("tinyMce.pubchem.dialog.selectCompoundAria"),
+                "aria-label": t("tinyMce.pubchem.dialog.selectCompoundLabel"),
               },
             }}
           />

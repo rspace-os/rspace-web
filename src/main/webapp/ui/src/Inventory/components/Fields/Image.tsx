@@ -32,7 +32,7 @@ function Image<
   return (
     <BatchFormField
       value={itemImage}
-      label="Preview Image"
+      label={t("fields.image.label")}
       disabled={!fieldOwner.isFieldEditable("image")}
       explanation={itemImage ? t("fields.image.explanation") : null}
       canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit && !tooManytoBatchThis}

@@ -280,7 +280,7 @@ describe("FolderTree", () => {
     await user.hover(researchProjects);
 
     const addButton = within(researchProjects).getByRole("button", {
-      name: "Add subfolder to Research Projects",
+      name: "common:folderTree.addSubfolder",
     });
     expect(addButton).toBeVisible();
   });
@@ -313,7 +313,7 @@ describe("FolderTree", () => {
     // the user clicks the add folder button for a folder
     await user.click(
       within(researchProjects).getByRole("button", {
-        name: "Add subfolder to Research Projects",
+        name: "common:folderTree.addSubfolder",
       }),
     );
 
@@ -351,7 +351,7 @@ describe("FolderTree", () => {
     const user = userEvent.setup();
     await user.click(
       within(researchProjects).getByRole("button", {
-        name: "Add subfolder to Research Projects",
+        name: "common:folderTree.addSubfolder",
       }),
     );
 

@@ -95,7 +95,7 @@ export default function DMPTableSmall({
                       value={"dmpUserInternalId"}
                       checked={isSelected}
                       slotProps={{
-                        input: { "aria-label": "Plan selection" },
+                        input: { "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: plan.dmpTitle }) },
                       }}
                     />
                   </Box>

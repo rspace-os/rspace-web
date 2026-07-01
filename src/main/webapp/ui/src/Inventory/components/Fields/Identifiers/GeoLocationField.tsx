@@ -107,7 +107,7 @@ const GeoLocationField = ({
               ...COORD_RANGE_Y,
             },
           }}
-          placeholder="e.g. 51.478"
+          placeholder={t("fields.identifiers.geoLocationField.point.latitudePlaceholder")}
           size="small"
           variant="standard"
           fullWidth
@@ -146,7 +146,7 @@ const GeoLocationField = ({
               ...COORD_RANGE_X,
             },
           }}
-          placeholder="e.g. 0.0"
+          placeholder={t("fields.identifiers.geoLocationField.point.longitudePlaceholder")}
           size="small"
           variant="standard"
           fullWidth
@@ -202,7 +202,7 @@ const GeoLocationField = ({
           <InputWrapper label={t("fields.identifiers.geoLocationField.description")}>
             <TextField
               size="small"
-              placeholder="e.g. Royal Observatory, Greenwich"
+              placeholder={t("fields.identifiers.geoLocationField.place.placeholder")}
               variant="standard"
               fullWidth
               slotProps={{
@@ -366,7 +366,7 @@ const GeoLocationField = ({
                 title={t("fields.identifiers.geoLocationField.openPolygonDialog")}
                 onClick={() => setOpenPolygonDialog(true)}
               >
-                <HexagonIcon color="primary" aria-label="hexagon icon" />
+                <HexagonIcon color="primary" aria-label={t("fields.identifiers.geoLocationField.hexagonIconLabel")} />
               </IconButton>
               <Typography component="span" variant="body2">
                 {t("fields.identifiers.geoLocationField.createEditPolygon")}

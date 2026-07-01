@@ -26,6 +26,7 @@ type OverviewSectionArgs = {
 };
 
 const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -34,7 +35,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
   return (
     <StepperPanel
       icon="instrument"
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="instrument"
@@ -51,7 +52,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
         <>
           <InstrumentTemplateField />
           <LocationField fieldOwner={activeResult} />
-          <ImageField fieldOwner={activeResult} alt="What the instrument looks like" />
+          <ImageField fieldOwner={activeResult} alt={t("instrument.imageAlt")} />
         </>
       )}
     </StepperPanel>
@@ -63,6 +64,7 @@ type DetailsSectionArgs = {
 };
 
 const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -71,7 +73,7 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
   return (
     <StepperPanel
       icon="instrument"
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="instrument"
@@ -90,6 +92,7 @@ type CustomFieldSectionArgs = {
 };
 
 const CustomFieldSection = observer(({ activeResult }: CustomFieldSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -98,7 +101,7 @@ const CustomFieldSection = observer(({ activeResult }: CustomFieldSectionArgs) =
   return (
     <StepperPanel
       icon="instrument"
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="instrument"
@@ -136,17 +139,32 @@ function InstrumentForm(): ReactNode {
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
-          <StepperPanel icon="instrument" title="Barcodes" sectionName="barcodes" recordType="instrument">
+          <StepperPanel
+            icon="instrument"
+            title={t("formSections.barcodes")}
+            sectionName="barcodes"
+            recordType="instrument"
+          >
             <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
           </StepperPanel>
         </>
       )}
       {activeResult.readAccessLevel === "full" && (
         <>
-          <StepperPanel icon="instrument" title="Identifiers" sectionName="identifiers" recordType="instrument">
+          <StepperPanel
+            icon="instrument"
+            title={t("formSections.identifiers")}
+            sectionName="identifiers"
+            recordType="instrument"
+          >
             <IdentifiersField fieldOwner={activeResult} />
           </StepperPanel>
-          <StepperPanel icon="instrument" title="Attachments" sectionName="attachments" recordType="instrument">
+          <StepperPanel
+            icon="instrument"
+            title={t("formSections.attachments")}
+            sectionName="attachments"
+            recordType="instrument"
+          >
             <AttachmentsField fieldOwner={activeResult} />
           </StepperPanel>
           <CustomFieldSection activeResult={activeResult} />

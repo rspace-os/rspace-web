@@ -414,7 +414,7 @@ describe("StoichiometryTable", () => {
       const benzeneRow = getDataRow("Benzene");
       expect(
         within(benzeneRow).getByRole("radio", {
-          name: "common:stoichiometry.table.aria.selectLimitingReagent",
+          name: "common:stoichiometry.table.label.selectLimitingReagent",
         }),
       ).toBeChecked();
     });

@@ -54,7 +54,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
       {activeResult.readAccessLevel !== "public" && (
         <>
           <TemplateField />
-          <ImageField fieldOwner={activeResult} alt="What the sample looks like" />
+          <ImageField fieldOwner={activeResult} alt={t("sample.imageAlt")} />
         </>
       )}
     </StepperPanel>
@@ -179,20 +179,20 @@ function Form(): React.ReactNode {
             sectionName="permissions"
             recordType="sample"
           >
-            <AccessPermissions
-              fieldOwner={activeResult}
-              additionalExplanation="Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples."
-            />
+            <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("sample.permissionsExplanation")} />
           </StepperPanel>
           <MoreFieldsSection activeResult={activeResult} />
           {activeResult.state === "preview" ? (
             <StepperPanel
               icon="subsample"
-              title={`${activeResult.subSamples.length} ${capitaliseJustFirstChar(
-                activeResult.subSamples.length === 1
-                  ? activeResult.subSampleAlias.alias
-                  : activeResult.subSampleAlias.plural,
-              )}`}
+              title={t("sample.subsamplesSection.title", {
+                count: activeResult.subSamples.length,
+                alias: capitaliseJustFirstChar(
+                  activeResult.subSamples.length === 1
+                    ? activeResult.subSampleAlias.alias
+                    : activeResult.subSampleAlias.plural,
+                ),
+              })}
               sectionName="subsamples"
               recordType="sample"
             >

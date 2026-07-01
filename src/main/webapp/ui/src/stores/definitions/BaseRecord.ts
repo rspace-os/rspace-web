@@ -1,4 +1,4 @@
-import { match } from "../../util/Util";
+import i18n from "@/modules/common/i18n";
 
 /**
  * IDs are used to identify a record within a given class of record i.e. to
@@ -68,35 +68,49 @@ export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
  * record.
  */
 export const inventoryRecordTypeLabels = {
-  sample: "Sample",
-  subsample: "Subsample",
-  container: "Container",
-  sampleTemplate: "Sample Template",
-  bench: "Bench",
-  basket: "Basket",
-  instrument: "Instrument",
-  instrumentTemplate: "Instrument Template",
+  get sample(): string {
+    return i18n.t("inventory:recordTypes.sample.singular");
+  },
+  get subsample(): string {
+    return i18n.t("inventory:recordTypes.subsample.singular");
+  },
+  get container(): string {
+    return i18n.t("inventory:recordTypes.container.singular");
+  },
+  get sampleTemplate(): string {
+    return i18n.t("inventory:recordTypes.sampleTemplate.singular");
+  },
+  get bench(): string {
+    return i18n.t("inventory:recordTypes.bench.singular");
+  },
+  get basket(): string {
+    return i18n.t("inventory:recordTypes.basket.singular");
+  },
+  get instrument(): string {
+    return i18n.t("inventory:recordTypes.instrument.singular");
+  },
+  get instrumentTemplate(): string {
+    return i18n.t("inventory:recordTypes.instrumentTemplate.singular");
+  },
 };
 
 /**
  * Given a Global ID of an *Inventory* record, return a label for the type of
  * record.
  */
-export const globalIdToInventoryRecordTypeLabel: (
+export const globalIdToInventoryRecordTypeLabel = (
   globalId: GlobalId,
-) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] = match([
-  [(globalId: GlobalId) => globalIdPatterns.sample.test(globalId), inventoryRecordTypeLabels.sample],
-  [(globalId: GlobalId) => globalIdPatterns.subsample.test(globalId), inventoryRecordTypeLabels.subsample],
-  [(globalId: GlobalId) => globalIdPatterns.container.test(globalId), inventoryRecordTypeLabels.container],
-  [(globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId), inventoryRecordTypeLabels.sampleTemplate],
-  [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
-  [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
-  [(globalId: GlobalId) => globalIdPatterns.instrument.test(globalId), inventoryRecordTypeLabels.instrument],
-  [
-    (globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId),
-    inventoryRecordTypeLabels.instrumentTemplate,
-  ],
-]);
+): (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] => {
+  if (globalIdPatterns.sample.test(globalId)) return inventoryRecordTypeLabels.sample;
+  if (globalIdPatterns.subsample.test(globalId)) return inventoryRecordTypeLabels.subsample;
+  if (globalIdPatterns.container.test(globalId)) return inventoryRecordTypeLabels.container;
+  if (globalIdPatterns.sampleTemplate.test(globalId)) return inventoryRecordTypeLabels.sampleTemplate;
+  if (globalIdPatterns.bench.test(globalId)) return inventoryRecordTypeLabels.bench;
+  if (globalIdPatterns.basket.test(globalId)) return inventoryRecordTypeLabels.basket;
+  if (globalIdPatterns.instrument.test(globalId)) return inventoryRecordTypeLabels.instrument;
+  if (globalIdPatterns.instrumentTemplate.test(globalId)) return inventoryRecordTypeLabels.instrumentTemplate;
+  throw new Error("No pattern matches");
+};
 
 /**
  * Creates the Global ID string for a given record type and ID.

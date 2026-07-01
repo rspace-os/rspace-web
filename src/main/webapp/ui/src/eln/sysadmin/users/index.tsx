@@ -277,7 +277,7 @@ const TagDialog = ({
                   await setTags(addedTags, deletedTags);
                   addAlert(
                     mkAlert({
-                      message: "Successfully saved tags.",
+                      message: t("usersPage.alerts.tagsSaved"),
                       variant: "success",
                     }),
                   );
@@ -287,7 +287,7 @@ const TagDialog = ({
                   if (error instanceof Error) {
                     addAlert(
                       mkAlert({
-                        title: "Could not save tags.",
+                        title: t("usersPage.alerts.tagsSaveFailed"),
                         message: error.message,
                         variant: "error",
                       }),
@@ -298,7 +298,7 @@ const TagDialog = ({
                 }
               })();
             }}
-            label="Save"
+            label={tCommon("actions.save")}
           />
         </DialogActions>
       </Dialog>
@@ -306,6 +306,8 @@ const TagDialog = ({
   );
 };
 const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserListing> }) => {
+  const { t } = useTranslation("system");
+  const { t: tCommon } = useTranslation("common");
   const [searchTerm, setSearchTerm] = React.useState("");
   return (
     // biome-ignore lint/a11y/useSemanticElements: initial biome migration
@@ -340,7 +342,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
              */
             type: "input",
             role: "searchbox",
-            "aria-label": "Search users",
+            "aria-label": t("usersPage.search.users"),
           },
           input: {
             startAdornment: (
@@ -356,7 +358,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
             endAdornment:
               searchTerm !== "" ? (
                 <IconButtonWithTooltip
-                  title="Clear"
+                  title={tCommon("actions.clear")}
                   icon={
                     <CloseIcon
                       sx={{
@@ -380,7 +382,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
           },
         }}
         size="small"
-        placeholder="Search"
+        placeholder={tCommon("actions.search")}
       />
     </form>
   );
@@ -410,7 +412,7 @@ const PiAction = ({
     user: User;
     action: "revoke" | "grant";
   }> = selectedUser
-    .mapError(() => new Error("Only one user can be modified at a time."))
+    .mapError(() => new Error(t("usersPage.piRoleDialog.onlyOneUser")))
     .flatMap((user) => {
       if (user.isPi)
         return Result.Ok({
@@ -422,7 +424,7 @@ const PiAction = ({
           user,
           action: "grant",
         });
-      return Result.Error([new Error("The selected user is an admin.")]);
+      return Result.Error([new Error(t("usersPage.piRoleDialog.adminSelected"))]);
     });
   return (
     <>
@@ -438,8 +440,12 @@ const PiAction = ({
         </ListItemIcon>
         <ListItemText
           primary={allowedPiAction
-            .map(({ action }) => (action === "grant" ? "Grant PI role" : "Revoke PI role"))
-            .orElse("Grant PI role")}
+            .map(({ action }) =>
+              action === "grant"
+                ? t("usersPage.piRoleDialog.grantMenuItem")
+                : t("usersPage.piRoleDialog.revokeMenuItem"),
+            )
+            .orElse(t("usersPage.piRoleDialog.grantMenuItem"))}
           secondary={allowedPiAction.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
@@ -471,7 +477,7 @@ const PiAction = ({
                         addAlert(
                           mkAlert({
                             variant: "success",
-                            message: "Successfully granted PI role to user.",
+                            message: t("usersPage.alerts.piRoleGranted"),
                           }),
                         );
                         setOpen(false);
@@ -480,7 +486,7 @@ const PiAction = ({
                         if (error instanceof Error) {
                           addAlert(
                             mkAlert({
-                              title: "Could not grant PI role to user.",
+                              title: t("usersPage.alerts.piRoleGrantFailed"),
                               message: error.message,
                               variant: "error",
                             }),
@@ -494,7 +500,7 @@ const PiAction = ({
                         addAlert(
                           mkAlert({
                             variant: "success",
-                            message: "Successfully revoked PI role from user.",
+                            message: t("usersPage.alerts.piRoleRevoked"),
                           }),
                         );
                         setOpen(false);
@@ -503,7 +509,7 @@ const PiAction = ({
                         if (error instanceof Error) {
                           addAlert(
                             mkAlert({
-                              title: "Could not revoke user's PI role.",
+                              title: t("usersPage.alerts.piRoleRevokeFailed"),
                               message: error.message,
                               variant: "error",
                             }),
@@ -626,7 +632,7 @@ const SetUsernamAliasAction = ({
   const [open, setOpen] = React.useState(false);
   const [alias, setAlias] = React.useState("");
   const allowedToSetAlias: Result<User> = selectedUser.mapError(
-    () => new Error("Only one user can have an alias set at a time."),
+    () => new Error(t("usersPage.aliasDialog.onlyOneUser")),
   );
   return (
     <>
@@ -750,8 +756,8 @@ const DeleteAction = ({
   const allowedToDelete: Result<User> = FetchingData.getSuccessValue(canDelete)
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
-    .mapError(() => new Error('The deployment property "sysadmin.delete.user" is false.'))
-    .flatMap(() => selectedUser.mapError(() => new Error("Only one user can be deleted at a time.")));
+    .mapError(() => new Error(t("usersPage.deleteDialog.disabledByDeployment")))
+    .flatMap(() => selectedUser.mapError(() => new Error(t("usersPage.deleteDialog.onlyOneUser"))));
   return (
     <>
       <MenuItem
@@ -764,7 +770,7 @@ const DeleteAction = ({
           <RemoveUserIcon />
         </ListItemIcon>
         <ListItemText
-          primary="Delete"
+          primary={tCommon("actions.delete")}
           secondary={allowedToDelete.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
@@ -790,12 +796,12 @@ const DeleteAction = ({
                 e.preventDefault();
                 void (async () => {
                   try {
-                    if (username !== user.username) throw new Error("Usernames do not match.");
+                    if (username !== user.username) throw new Error(t("usersPage.deleteDialog.usernameMismatch"));
                     await user.delete();
                     addAlert(
                       mkAlert({
                         variant: "success",
-                        message: "Successfully deleted user's account.",
+                        message: t("usersPage.alerts.accountDeleted"),
                       }),
                     );
                     setOpen(false);
@@ -804,7 +810,7 @@ const DeleteAction = ({
                     if (error instanceof Error) {
                       addAlert(
                         mkAlert({
-                          title: "Could not delete user's account.",
+                          title: t("usersPage.alerts.accountDeleteFailed"),
                           message: error.message,
                           variant: "error",
                         }),
@@ -887,7 +893,7 @@ const DeleteAction = ({
                 </DialogContentText>
                 <TextField
                   size="small"
-                  label="Username"
+                  label={t("usersPage.columns.username")}
                   value={username}
                   onChange={(e) => {
                     setUsername(e.target.value);
@@ -911,8 +917,8 @@ const DeleteAction = ({
                   disabled={false}
                   label={
                     user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers
-                      ? "Transfer Forms/Templates And Delete"
-                      : "Delete"
+                      ? t("usersPage.deleteDialog.transferAndDelete")
+                      : tCommon("actions.delete")
                   }
                 />
               </DialogActions>
@@ -936,12 +942,10 @@ const SelectionActions = ({
   const [actionsAnchorEl, setActionsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagDialogOpen, setTagDialogOpen] = React.useState(false);
   const exportAllowed: Result<React.ReactNode> =
-    selectedIds.length === 1
-      ? Result.Ok(null)
-      : Result.Error([new Error("Only one user's work can be exported at a time.")]);
+    selectedIds.length === 1 ? Result.Ok(null) : Result.Error([new Error(t("usersPage.export.onlyOneUser"))]);
   const selectedUsers: Result<ReadonlyArray<User>> =
     selectedIds.length === 0
-      ? Result.Error([new Error("No users selected")])
+      ? Result.Error([new Error(t("usersPage.selection.noneSelected"))])
       : Result.all(
           ...selectedIds.map((id) =>
             FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)),
@@ -949,14 +953,16 @@ const SelectionActions = ({
         );
   const selectedUser: Result<User> = Result.fromNullable(selectedIds.at(0), new Error("selectedIds is empty"))
     .flatMap((id) =>
-      selectedIds.length > 1 ? Result.Error<UserId>([new Error("More than one user is selected")]) : Result.Ok(id),
+      selectedIds.length > 1
+        ? Result.Error<UserId>([new Error(t("usersPage.selection.moreThanOneSelected"))])
+        : Result.Ok(id),
     )
     .flatMap((id) => FetchingData.getSuccessValue(fetchedListing).flatMap((listing) => listing.getById(id)));
   const enableDisableAction: Result<{
     user: User;
     action: "enable" | "disable";
   }> = selectedUser
-    .mapError(() => new Error("Only one user can be enabled / disabled at a time."))
+    .mapError(() => new Error(t("usersPage.enableDisable.onlyOneUser")))
     .map((user) =>
       user.enabled
         ? {
@@ -969,9 +975,9 @@ const SelectionActions = ({
           },
     );
   const unlockAction: Result<User> = selectedUser
-    .mapError(() => new Error("Only one user can be unlocked at a time."))
+    .mapError(() => new Error(t("usersPage.unlock.onlyOneUser")))
     .flatMap((user) =>
-      user.locked ? Result.Ok(user) : Result.Error([new Error("Only locked accounts can be unlocked.")]),
+      user.locked ? Result.Ok(user) : Result.Error([new Error(t("usersPage.unlock.onlyLockedAccounts"))]),
     );
   return (
     <>
@@ -1037,7 +1043,7 @@ const SelectionActions = ({
                   <ListItemIcon>
                     <TagIcon />
                   </ListItemIcon>
-                  <ListItemText primary="Add/Remove Tags" />
+                  <ListItemText primary={t("usersPage.tagDialog.menuItem")} />
                 </MenuItem>
                 <EventBoundary>
                   {selectedUsers
@@ -1066,7 +1072,7 @@ const SelectionActions = ({
                     <ExportIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Export Work"
+                    primary={t("usersPage.export.work")}
                     secondary={exportAllowed.orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
@@ -1087,7 +1093,7 @@ const SelectionActions = ({
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Successfully unlocked account.",
+                              message: t("usersPage.alerts.accountUnlocked"),
                             }),
                           );
                           setActionsAnchorEl(null);
@@ -1095,7 +1101,7 @@ const SelectionActions = ({
                           if (error instanceof Error) {
                             addAlert(
                               mkAlert({
-                                title: "Could not unlock account.",
+                                title: t("usersPage.alerts.accountUnlockFailed"),
                                 message: error.message,
                                 variant: "error",
                               }),
@@ -1110,7 +1116,7 @@ const SelectionActions = ({
                     <LockIcon />
                   </ListItemIcon>
                   <ListItemText
-                    primary="Unlock"
+                    primary={t("usersPage.unlock.menuItem")}
                     secondary={unlockAction.map(() => null).orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
@@ -1135,7 +1141,7 @@ const SelectionActions = ({
                             addAlert(
                               mkAlert({
                                 variant: "success",
-                                message: "Successfully enabled account.",
+                                message: t("usersPage.alerts.accountEnabled"),
                               }),
                             );
                             setActionsAnchorEl(null);
@@ -1143,7 +1149,7 @@ const SelectionActions = ({
                             if (error instanceof Error) {
                               addAlert(
                                 mkAlert({
-                                  title: "Could not enable account.",
+                                  title: t("usersPage.alerts.accountEnableFailed"),
                                   message: error.message,
                                   variant: "error",
                                 }),
@@ -1157,7 +1163,7 @@ const SelectionActions = ({
                             addAlert(
                               mkAlert({
                                 variant: "success",
-                                message: "Successfully disabled account.",
+                                message: t("usersPage.alerts.accountDisabled"),
                               }),
                             );
                             setActionsAnchorEl(null);
@@ -1165,7 +1171,7 @@ const SelectionActions = ({
                             if (error instanceof Error) {
                               addAlert(
                                 mkAlert({
-                                  title: "Could not disable account.",
+                                  title: t("usersPage.alerts.accountDisableFailed"),
                                   message: error.message,
                                   variant: "error",
                                 }),
@@ -1182,8 +1188,12 @@ const SelectionActions = ({
                   </ListItemIcon>
                   <ListItemText
                     primary={enableDisableAction
-                      .map(({ action }) => (action === "disable" ? "Disable" : "Enable"))
-                      .orElse("Enable / Disable")}
+                      .map(({ action }) =>
+                        action === "disable"
+                          ? t("usersPage.enableDisable.disable")
+                          : t("usersPage.enableDisable.enable"),
+                      )
+                      .orElse(t("usersPage.enableDisable.menuItem"))}
                     secondary={enableDisableAction.map(() => null).orElseGet(([error]) => error.message)}
                     slotProps={{
                       secondary: {
@@ -1208,8 +1218,8 @@ const SelectionActions = ({
               }}
             >
               {selectedIds.length > 0
-                ? `${selectedIds.length} user${selectedIds.length > 1 ? "s" : ""} selected`
-                : "No selection"}
+                ? t("usersPage.selection.usersSelected", { count: selectedIds.length })
+                : t("usersPage.selection.noSelection")}
             </Typography>
           </Stack>
         ),
@@ -1231,6 +1241,7 @@ const SelectionActions = ({
 };
 const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) => {
   const { t } = useTranslation("system");
+  const { t: tCommon } = useTranslation("common");
   const [filterAnchorEl, setFilterAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
@@ -1271,7 +1282,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
   };
   return (
     <DataGridToolbar
-      aria-label="Users table actions"
+      aria-label={t("usersPage.tableActionsLabel")}
       style={{
         width: "100%",
         display: "flex",
@@ -1298,7 +1309,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
             label={tags.length}
             size="small"
             color="primary"
-            aria-label={`${tags.length} filter${tags.length === 1 ? "" : "s"} active`}
+            aria-label={t("usersPage.filtersActive", { count: tags.length })}
             sx={{
               ml: 1,
               height: 20,
@@ -1313,7 +1324,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
         onClose={() => {
           setFilterAnchorEl(null);
         }}
-        ariaLabel="Filters"
+        ariaLabel={t("usersPage.filtersButton")}
       >
         <Card>
           <CardContent
@@ -1343,7 +1354,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                     }}
                   />
                 }
-                label="Tags"
+                label={tCommon("tags.label")}
               />
               <Stack direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
                 <Box sx={{ width: 30, flexShrink: 0 }} />
@@ -1366,7 +1377,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                   <Box>
                     <Chip
                       icon={<AddIcon />}
-                      label="Add Tag"
+                      label={tCommon("tags.addTag")}
                       color="primary"
                       skipFocusWhenDisabled
                       onClick={(e) => {
@@ -1456,7 +1467,7 @@ export const UsersPage = (): React.ReactNode => {
   );
   const columns = [
     DataGridColumn.newColumnWithValueMapper("fullNameSurnameFirst", (v) => v, {
-      headerName: "Full Name",
+      headerName: t("usersPage.columns.fullName"),
       flex: 1,
       renderCell: (params: { value?: string; row: User; tabIndex: number }): React.ReactNode => {
         if (!params.value) return null;
@@ -1475,15 +1486,15 @@ export const UsersPage = (): React.ReactNode => {
       disableExport: true,
     }),
     DataGridColumn.newColumnWithFieldName<"firstName", User>("firstName", {
-      headerName: "First Name",
+      headerName: t("usersPage.columns.firstName"),
       flex: 1,
     }),
     DataGridColumn.newColumnWithFieldName<"lastName", User>("lastName", {
-      headerName: "Last Name",
+      headerName: t("usersPage.columns.lastName"),
       flex: 1,
     }),
     DataGridColumn.newColumnWithFieldName<"email", User>("email", {
-      headerName: "Email",
+      headerName: t("usersPage.columns.email"),
       flex: 1,
     }),
     DataGridColumn.newColumnWithValueMapper<"role", User>(
@@ -1491,55 +1502,55 @@ export const UsersPage = (): React.ReactNode => {
       (role) => {
         const roles = role.split(",");
         const labels = [];
-        if (roles.includes("ROLE_ADMIN")) labels.push("Admin");
-        if (roles.includes("ROLE_PI")) labels.push("PI");
-        if (roles.includes("ROLE_SYSADMIN")) labels.push("Sysadmin");
-        if (roles.includes("ROLE_USER")) labels.push("User");
+        if (roles.includes("ROLE_ADMIN")) labels.push(t("usersPage.roleLabels.admin"));
+        if (roles.includes("ROLE_PI")) labels.push(t("usersPage.roleLabels.pi"));
+        if (roles.includes("ROLE_SYSADMIN")) labels.push(t("usersPage.roleLabels.sysadmin"));
+        if (roles.includes("ROLE_USER")) labels.push(t("usersPage.roleLabels.user"));
         return labels.join(", ");
       },
       {
-        headerName: "Role",
+        headerName: t("usersPage.columns.role"),
         sortable: false,
         flex: 1,
       },
     ),
     DataGridColumn.newColumnWithFieldName<"username", User>("username", {
-      headerName: "Username",
+      headerName: t("usersPage.columns.username"),
       flex: 1,
     }),
     DataGridColumn.newColumnWithValueMapper<"recordCount", User>("recordCount", (recordCount) => `${recordCount}`, {
-      headerName: "Documents",
+      headerName: t("usersPage.columns.documents"),
       flex: 1,
     }),
     DataGridColumn.newColumnWithFieldName<"fileUsage", User>("fileUsage", {
-      headerName: "Usage",
+      headerName: t("usersPage.columns.usage"),
       flex: 1,
       renderCell: (params: { value?: number }) => formatFileSize(params.value),
     }),
     DataGridColumn.newColumnWithFieldName<"lastLogin", User>("lastLogin", {
-      headerName: "Last Login",
+      headerName: t("usersPage.columns.lastLogin"),
       flex: 1,
       valueFormatter: (value: Optional<Date>) => value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"created", User>("created", {
-      headerName: "Creation Date",
+      headerName: t("usersPage.columns.creationDate"),
       flex: 1,
       valueFormatter: (value: Optional<Date>) => value.map((l) => l.toLocaleString()).orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"enabled", User>("enabled", {
-      headerName: "Enabled",
+      headerName: t("usersPage.columns.enabled"),
       flex: 1,
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
       renderCell: (params: { value?: boolean }) =>
         params.value ? (
-          <TickIcon color="success" aria-label="Enabled" aria-hidden="false" />
+          <TickIcon color="success" aria-label={t("usersPage.columns.enabled")} aria-hidden="false" />
         ) : (
-          <CrossIcon color="error" aria-label="Disabled" aria-hidden="false" />
+          <CrossIcon color="error" aria-label={t("usersPage.columns.disabled")} aria-hidden="false" />
         ),
     }),
     DataGridColumn.newColumnWithFieldName<"locked", User>("locked", {
-      headerName: "Locked",
+      headerName: t("usersPage.columns.locked"),
       flex: 1,
       sortable: false,
       valueFormatter: (value: boolean) => (value ? "true" : "false"),
@@ -1547,7 +1558,7 @@ export const UsersPage = (): React.ReactNode => {
         params.value ? <LockIcon color="error" aria-label={t("usersPage.columns.locked")} aria-hidden="false" /> : "—",
     }),
     DataGridColumn.newColumnWithFieldName<"groups", User>("groups", {
-      headerName: "Group Membership",
+      headerName: t("usersPage.columns.groupMembership"),
       flex: 1,
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
@@ -1560,7 +1571,7 @@ export const UsersPage = (): React.ReactNode => {
             role="none"
             tabIndex={-1}
             variant="filled"
-            label={`${value.length} group${value.length === 1 ? "" : "s"}`}
+            label={t("usersPage.groupMembership.count", { count: value.length })}
             onDelete={(e: React.MouseEvent<HTMLButtonElement>) => {
               setGroupsAnchorEl(e.currentTarget);
               setGroupsList(value);
@@ -1570,7 +1581,7 @@ export const UsersPage = (): React.ReactNode => {
                 sx={{
                   mr: 0,
                 }}
-                ariaLabel={t("usersPage.groupMembership.showListAria", { count: value.length })}
+                ariaLabel={t("usersPage.groupMembership.showListLabel", { count: value.length })}
                 title={t("usersPage.groupMembership.showList")}
                 tabIndex={params.tabIndex}
                 size="small"
@@ -1593,7 +1604,7 @@ export const UsersPage = (): React.ReactNode => {
       },
     }),
     DataGridColumn.newColumnWithFieldName<"tags", User>("tags", {
-      headerName: "Tags",
+      headerName: t("usersPage.columns.tags"),
       flex: 1,
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
@@ -1606,7 +1617,7 @@ export const UsersPage = (): React.ReactNode => {
             role="none"
             tabIndex={-1}
             variant="filled"
-            label={`${value.length} tag${value.length === 1 ? "" : "s"}`}
+            label={t("usersPage.tags.count", { count: value.length })}
             onDelete={(e: React.MouseEvent<HTMLButtonElement>) => {
               setTagsAnchorEl(e.currentTarget);
               setTagsList(value);
@@ -1616,7 +1627,7 @@ export const UsersPage = (): React.ReactNode => {
                 sx={{
                   mr: 0,
                 }}
-                ariaLabel={t("usersPage.tags.showListAria", { count: value.length })}
+                ariaLabel={t("usersPage.tags.showListLabel", { count: value.length })}
                 title={t("usersPage.tags.showList")}
                 tabIndex={params.tabIndex}
                 size="small"
@@ -1639,7 +1650,7 @@ export const UsersPage = (): React.ReactNode => {
       },
     }),
     DataGridColumn.newColumnWithFieldName<"usernameAlias", User>("usernameAlias", {
-      headerName: "Username Alias",
+      headerName: t("usersPage.columns.usernameAlias"),
       flex: 1,
       sortable: false,
     }),
@@ -1664,7 +1675,7 @@ export const UsersPage = (): React.ReactNode => {
               variant="outlined"
             >
               <CardHeader
-                title="Users"
+                title={t("usersPage.title")}
                 sx={(theme) => ({
                   borderBottom: theme.borders.themedDialogTitle?.(200, 90, 20),
                   paddingTop: theme.spacing(1.5),
@@ -1814,7 +1825,7 @@ export const UsersPage = (): React.ReactNode => {
                             m: 0,
                           },
                         }}
-                        aria-label="users"
+                        aria-label={t("usersPage.tableLabel")}
                         autoHeight
                         columns={columns}
                         rows={FetchingData.match(userListing, {
@@ -1949,7 +1960,11 @@ export const UsersPage = (): React.ReactNode => {
                         showToolbar
                       />
                     </Box>
-                    <Panel anchorEl={groupsAnchorEl} onClose={() => setGroupsAnchorEl(null)} ariaLabel="Groups">
+                    <Panel
+                      anchorEl={groupsAnchorEl}
+                      onClose={() => setGroupsAnchorEl(null)}
+                      ariaLabel={t("usersPage.groupMembership.panelLabel")}
+                    >
                       <List
                         sx={{
                           p: 0,
@@ -1962,7 +1977,11 @@ export const UsersPage = (): React.ReactNode => {
                         ))}
                       </List>
                     </Panel>
-                    <Panel anchorEl={tagsAnchorEl} onClose={() => setTagsAnchorEl(null)} ariaLabel="Tags">
+                    <Panel
+                      anchorEl={tagsAnchorEl}
+                      onClose={() => setTagsAnchorEl(null)}
+                      ariaLabel={t("usersPage.tags.panelLabel")}
+                    >
                       <List
                         sx={{
                           p: 0,

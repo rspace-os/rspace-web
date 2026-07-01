@@ -14,7 +14,7 @@ describe("adjustableTableOptions", () => {
       expect(optionValue).not.toBeNull();
       // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
-      expect(cellContent().data).toEqual("Unlimited");
+      expect(cellContent().data).toEqual("inventory:container.availableLocations.unlimited");
     });
     test("Empty grid containers should render the number of locations.", () => {
       const container = makeMockContainer({

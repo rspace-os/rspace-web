@@ -71,7 +71,7 @@ describe("StepperPanel", () => {
           </FormSectionsContext.Provider>
         </ThemeProvider>,
       );
-      await user.click(screen.getByLabelText("Expand section"));
+      await user.click(screen.getByLabelText("inventory:formSections.expandSection"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", true);
     });
     test("Collapse button works correctly", async () => {
@@ -92,7 +92,7 @@ describe("StepperPanel", () => {
           </FormSectionsContext.Provider>
         </ThemeProvider>,
       );
-      await user.click(screen.getByLabelText("Collapse section"));
+      await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
       expect(setExpanded).toHaveBeenCalledWith("container", "bar", false);
     });
   });
@@ -128,16 +128,16 @@ describe("StepperPanel", () => {
       const setAllExpanded = vi.fn();
 
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={true} />);
-      await user.click(screen.getByLabelText("Collapse section"));
-      await user.click(screen.getByRole("button", { name: "Collapse All" }));
+      await user.click(screen.getByLabelText("inventory:formSections.collapseSection"));
+      await user.click(screen.getByRole("button", { name: "inventory:formSections.collapseAll" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", false);
     });
     test("Expand all", async () => {
       const user = userEvent.setup();
       const setAllExpanded = vi.fn();
       render(<TestComponent setAllExpanded={setAllExpanded} openInit={false} />);
-      await user.click(screen.getByLabelText("Expand section"));
-      await user.click(screen.getByRole("button", { name: "Expand All" }));
+      await user.click(screen.getByLabelText("inventory:formSections.expandSection"));
+      await user.click(screen.getByRole("button", { name: "inventory:formSections.expandAll" }));
       expect(setAllExpanded).toHaveBeenCalledWith("container", true);
     });
   });

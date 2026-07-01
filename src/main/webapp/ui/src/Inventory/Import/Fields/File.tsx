@@ -20,6 +20,9 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
   const fileByRecordTypeLoaded = importStore.importData?.byRecordType("fileLoaded");
   const fileLoaded = importStore.importData?.byRecordType("fileLoaded");
   const submitting = importStore.isCurrentImportState("submitting");
+  const buttonLabel = fileByRecordTypeLoaded
+    ? t("import.file.replaceCsvFile", { recordType: labelByRecordType })
+    : t("import.file.selectCsvFile", { recordType: labelByRecordType });
 
   return (
     <>
@@ -28,9 +31,7 @@ function FileForImport({ loadedFile }: FileArgs): React.ReactNode {
           <Grid sx={{ flexGrow: 1 }}>
             <FileField
               accept=".csv"
-              buttonLabel={t(fileByRecordTypeLoaded ? "import.file.replaceCsvFile" : "import.file.selectCsvFile", {
-                recordType: labelByRecordType,
-              })}
+              buttonLabel={buttonLabel}
               name="file"
               data-test-id="csvFile"
               onChange={({ file }) => importStore.importData?.setFile(file)}

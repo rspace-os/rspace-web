@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import InvApiService from "../../common/InvApiService";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import { getErrorMessage } from "../../util/error";
@@ -98,8 +99,8 @@ export default class MaterialsStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not fetch List of Materials data.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:materialsListing.alerts.fetchFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -127,8 +128,8 @@ export default class MaterialsStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not fetch List of Materials data.`,
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:materialsListing.alerts.fetchFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -151,8 +152,8 @@ export default class MaterialsStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not fetch List of Materials data.`,
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:materialsListing.alerts.fetchFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -230,8 +231,8 @@ export default class MaterialsStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not fetch permission to edit.`,
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:materialsListing.alerts.fetchEditPermissionFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );

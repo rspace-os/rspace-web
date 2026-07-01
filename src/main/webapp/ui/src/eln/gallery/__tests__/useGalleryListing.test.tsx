@@ -190,7 +190,7 @@ describe("useGalleryListing", () => {
       expect(screen.getByTestId("owner-id")).toHaveTextContent("null");
     });
 
-    expect(screen.getByTestId("owner-name")).toHaveTextContent("Unknown owner");
+    expect(screen.getByTestId("owner-name")).toHaveTextContent("gallery:unknownOwner");
     expect(screen.getByTestId("owner-username")).toHaveTextContent("null");
     expect(screen.getByTestId("is-shared-folder")).toHaveTextContent("false");
   });

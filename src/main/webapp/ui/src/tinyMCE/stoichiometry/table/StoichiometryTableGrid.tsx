@@ -97,7 +97,7 @@ export default function StoichiometryTableGrid({
               color="error"
               size="small"
               disabled={activeChemId !== null && row.role !== "AGENT"}
-              aria-label={t("stoichiometry.table.aria.deleteReagent", { name: row.name })}
+              aria-label={t("stoichiometry.table.label.deleteReagent", { name: row.name })}
               onClick={() => {
                 onDeleteReagent?.(row.id);
               }}
@@ -187,7 +187,7 @@ export default function StoichiometryTableGrid({
               }}
               slotProps={{
                 input: {
-                  "aria-label": t("stoichiometry.table.aria.selectLimitingReagent", { name: params.row.name }),
+                  "aria-label": t("stoichiometry.table.label.selectLimitingReagent", { name: params.row.name }),
                 },
               }}
             />

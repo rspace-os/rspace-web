@@ -306,7 +306,7 @@ function CreateNew({ onClick }: CreateNewArgs): React.ReactNode {
             </Divider>
             <AccentMenuItem
               compact
-              title="Fieldmark"
+              title={t("fieldmarkImport.appBarTitle")}
               avatar={<CardMedia image={FieldmarkIcon} />}
               backgroundColor={FIELDMARK_COLOR.background}
               foregroundColor={FIELDMARK_COLOR.backgroundContrastText}

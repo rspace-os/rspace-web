@@ -47,7 +47,7 @@ export default function GridDimensionsAndLayout({ container }: GridDimensionsAnd
             aria-controls={contentId}
             aria-expanded={open}
             action={
-              <IconButton onClick={() => setOpen(!open)} aria-label={t("container.fields.gridLabels.expandAria")}>
+              <IconButton onClick={() => setOpen(!open)} aria-label={t("container.fields.gridLabels.expandLabel")}>
                 <ExpandCollapseIcon open={open} />
               </IconButton>
             }

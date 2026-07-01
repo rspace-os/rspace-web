@@ -60,30 +60,30 @@ export type IdentifierGeoLocation = {
 const creatorTypeOptions: Array<RadioOption<string>> = [
   {
     value: "Personal",
-    label: "Personal",
+    label: i18n.t("inventory:identifierModel.creatorTypes.personal"),
   },
   {
     value: "Organizational",
-    label: "Organizational",
+    label: i18n.t("inventory:identifierModel.creatorTypes.organizational"),
   },
 ];
 
 const identifierDescriptionOptions: Array<DropdownOption> = [
-  { value: "ABSTRACT", label: "Abstract" },
-  { value: "METHODS", label: "Methods" },
+  { value: "ABSTRACT", label: i18n.t("inventory:identifierModel.descriptionTypes.abstract") },
+  { value: "METHODS", label: i18n.t("inventory:identifierModel.descriptionTypes.methods") },
 ];
 const identifierDateOptions: Array<DropdownOption> = [
-  { value: "ACCEPTED", label: "Accepted" },
-  { value: "AVAILABLE", label: "Available" },
-  { value: "COPYRIGHTED", label: "Copyrighted" },
-  { value: "COLLECTED", label: "Collected" },
-  { value: "CREATED", label: "Created" },
-  { value: "ISSUED", label: "Issued" },
-  { value: "SUBMITTED", label: "Submitted" },
-  { value: "UPDATED", label: "Updated" },
-  { value: "VALID", label: "Valid" },
-  { value: "WITHDRAWN", label: "Withdrawn" },
-  { value: "OTHER", label: "Other" },
+  { value: "ACCEPTED", label: i18n.t("inventory:identifierModel.dateTypes.accepted") },
+  { value: "AVAILABLE", label: i18n.t("inventory:identifierModel.dateTypes.available") },
+  { value: "COPYRIGHTED", label: i18n.t("inventory:identifierModel.dateTypes.copyrighted") },
+  { value: "COLLECTED", label: i18n.t("inventory:identifierModel.dateTypes.collected") },
+  { value: "CREATED", label: i18n.t("inventory:identifierModel.dateTypes.created") },
+  { value: "ISSUED", label: i18n.t("inventory:identifierModel.dateTypes.issued") },
+  { value: "SUBMITTED", label: i18n.t("inventory:identifierModel.dateTypes.submitted") },
+  { value: "UPDATED", label: i18n.t("inventory:identifierModel.dateTypes.updated") },
+  { value: "VALID", label: i18n.t("inventory:identifierModel.dateTypes.valid") },
+  { value: "WITHDRAWN", label: i18n.t("inventory:identifierModel.dateTypes.withdrawn") },
+  { value: "OTHER", label: i18n.t("inventory:identifierModel.dateTypes.other") },
 ];
 
 /**
@@ -115,12 +115,12 @@ export const subFieldsForNew: object = {
 };
 
 export const RECOMMENDED_FIELDS_LABELS = {
-  type: "Type",
-  freeType: "Type",
-  subjectScheme: "Subject Scheme",
-  schemeURI: "Scheme URI",
-  valueURI: "Value URI",
-  classificationCode: "Classification Code",
+  type: i18n.t("inventory:identifierModel.recommendedFields.type"),
+  freeType: i18n.t("inventory:identifierModel.recommendedFields.type"),
+  subjectScheme: i18n.t("inventory:identifierModel.recommendedFields.subjectScheme"),
+  schemeURI: i18n.t("inventory:identifierModel.recommendedFields.schemeUri"),
+  valueURI: i18n.t("inventory:identifierModel.recommendedFields.valueUri"),
+  classificationCode: i18n.t("inventory:identifierModel.recommendedFields.classificationCode"),
 };
 
 export default class IdentifierModel implements Identifier {
@@ -311,7 +311,7 @@ export default class IdentifierModel implements Identifier {
         value: this.descriptions,
         handler: (v) => this.setDescriptions(v as Array<IdentifierDescription>),
         options: identifierDescriptionOptions,
-        selectAriaLabel: "Description Type",
+        selectLabelLabel: "Description Type",
       },
       {
         key: "Alternate Identifiers",
@@ -323,7 +323,7 @@ export default class IdentifierModel implements Identifier {
         value: this.dates,
         handler: (v) => this.setDates(v as Array<IdentifierDate>),
         options: identifierDateOptions,
-        selectAriaLabel: "Event Type",
+        selectLabelLabel: "Event Type",
       },
       {
         key: "Geolocations",
@@ -443,7 +443,7 @@ export default class IdentifierModel implements Identifier {
         });
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been published.`,
+            message: i18n.t("inventory:identifierModel.alerts.published", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -452,8 +452,8 @@ export default class IdentifierModel implements Identifier {
       // in case of errors like 422 the server provides a specific response message that we want to display
       addAlert(
         mkAlert({
-          title: `The identifier could not be published.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifierModel.alerts.publishFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -493,7 +493,7 @@ export default class IdentifierModel implements Identifier {
         this.updateState(response.data.state);
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been retracted.`,
+            message: i18n.t("inventory:identifierModel.alerts.retracted", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -501,8 +501,8 @@ export default class IdentifierModel implements Identifier {
     } catch (error) {
       addAlert(
         mkAlert({
-          title: `The identifier could not be retracted.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifierModel.alerts.retractFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -532,8 +532,8 @@ export default class IdentifierModel implements Identifier {
     if (this.id === null || typeof this.id === "undefined") {
       addAlert(
         mkAlert({
-          title: "Identifier could not be re-published",
-          message: "DOI must be known",
+          title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+          message: i18n.t("inventory:identifierModel.alerts.doiRequired"),
           variant: "error",
         }),
       );
@@ -549,8 +549,8 @@ export default class IdentifierModel implements Identifier {
       } catch (error) {
         addAlert(
           mkAlert({
-            title: `The identifier could not be republished.`,
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -580,7 +580,7 @@ export default class IdentifierModel implements Identifier {
         });
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been republished.`,
+            message: i18n.t("inventory:identifierModel.alerts.republished", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -592,8 +592,10 @@ export default class IdentifierModel implements Identifier {
          */
         addAlert(
           mkAlert({
-            title: `The identifier could not be republished.`,
-            message: `Identifier has been retracted. Tap publish to try again.\n${getErrorMessage(error, "Unknown reason.")}`,
+            title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+            message: i18n.t("inventory:identifierModel.alerts.republishAfterRetractFailed", {
+              reason: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+            }),
             variant: "error",
           }),
         );

@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
-import { color, currentPage } from "@/util/pageBranding";
+import { color, currentPageKey } from "@/util/pageBranding";
 import docLinks from "../../assets/DocLinks";
 import InputWrapper from "../../components/Inputs/InputWrapper";
 import NoValue from "../../components/NoValue";
@@ -46,7 +46,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
    * subheadings and derive the accented theme from the current page.
    */
   return (
-    <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+    <ThemeProvider theme={createAccentedTheme(color(currentPageKey()))}>
       <HeadingContext level={4}>
         <InputWrapper
           error={false}

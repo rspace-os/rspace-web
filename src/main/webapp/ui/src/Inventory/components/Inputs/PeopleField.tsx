@@ -4,6 +4,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import type { Person, Username } from "../../../stores/definitions/Person";
 import type PersonModel from "../../../stores/models/PersonModel";
@@ -29,6 +30,7 @@ function PeopleField({
   recipient,
   excludedUsernames,
 }: PeopleFieldArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     peopleStore,
     searchStore: { search },
@@ -62,7 +64,7 @@ function PeopleField({
           if (e instanceof Error) {
             addAlert(
               mkAlert({
-                title: "Could not get members of your groups",
+                title: t("peopleField.errors.couldNotGetGroupMembers"),
                 message: e.message,
                 variant: "error",
               }),

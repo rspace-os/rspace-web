@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
 import DateField from "../../../components/Inputs/DateField";
 import NumberField from "../../../components/Inputs/NumberField";
@@ -23,15 +24,16 @@ type TemplateFieldsArgs = {
 };
 
 function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (instrument.fields ?? []).map((field: Field) => {
     const commonProps = {
       disabled: !instrument.isFieldEditable("fields"),
       label: field.name,
       error: (field.mandatory && !field.hasContent) || field.error,
       helperText: field.mandatory
-        ? "This field is mandatory. Please enter a value."
+        ? t("instrument.templateFields.mandatory")
         : field.error
-          ? "Invalid value. Please enter a valid value."
+          ? t("instrument.templateFields.invalid")
           : "",
       required: field.mandatory,
     };
@@ -255,7 +257,7 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
       );
     }
 
-    return <Box key={field.name}>{`Unknown field type: ${field.type}`}</Box>;
+    return <Box key={field.name}>{t("instrument.templateFields.unknownFieldType", { type: field.type })}</Box>;
   });
 }
 

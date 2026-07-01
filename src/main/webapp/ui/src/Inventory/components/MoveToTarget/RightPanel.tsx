@@ -13,14 +13,17 @@ import MoveInstructions from "./MoveInstructions";
 
 const Title = observer(() => {
   const { moveStore, peopleStore } = useStores();
+  const { t } = useTranslation("inventory");
   const activeResult = moveStore.activeResult;
   if (moveStore.loading || !activeResult) {
-    return "Loading...";
+    return t("moveToTarget.loadingEllipsis");
   }
   if (activeResult.isWorkbench && activeResult.ownerLabel && peopleStore.currentUser?.bench?.globalId) {
     const ownerPrefix =
-      activeResult.globalId === peopleStore.currentUser.bench.globalId ? "My" : `${activeResult.ownerLabel}'s`;
-    return `${ownerPrefix} Bench`;
+      activeResult.globalId === peopleStore.currentUser.bench.globalId
+        ? t("moveToTarget.myBench")
+        : t("moveToTarget.ownerBench", { owner: activeResult.ownerLabel });
+    return ownerPrefix;
   }
   return <NameWithBadge record={activeResult} />;
 });

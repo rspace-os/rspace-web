@@ -27,6 +27,16 @@
     }
   },
   "baseRecord": {
+    "alerts": {
+      "attachmentsSaveFailed": "Could not save changes to attachments.",
+      "created": "{name} was successfully created.",
+      "invalidFields": "Please correct the invalid fields and try again.",
+      "loadDetailsFailed": "Could not load full details of {globalId}.",
+      "lockCheckFailed": "Something went wrong while checking the lock for \"{name}\".",
+      "releaseLockFailed": "Relinquishing control of {globalId} failed.",
+      "saveFailed": "Something went wrong and the {recordType} was not saved.",
+      "updated": "{name} updated successfully."
+    },
     "editSessionExpired": {
       "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
       "title": "Your editing session has expired"
@@ -35,6 +45,20 @@
       "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
       "continue": "CONTINUE",
       "title": "Your editing session is about to expire"
+    },
+    "unsavedChanges": {
+      "message": "It appears that you already started editing this {recordType} in another browser tab or on another device. We advise you cancel or save those changes first otherwise editing here could result in an error.",
+      "title": "Unsaved changes?"
+    },
+    "validation": {
+      "descriptionTooLong": "Description cannot be longer than 250 characters.",
+      "distinctFieldNames": "All field names must be distinct.",
+      "editLockExpired": "Edit lock has expired. Please refresh.",
+      "nameRequired": "Name cannot be empty.",
+      "nameSingleCharacter": "Name cannot be a single character.",
+      "nameTooLong": "Name cannot be more than 255 characters.",
+      "nameWhitespace": "Name cannot be just whitespace.",
+      "tooManyTags": "Too many tags."
     }
   },
   "baskets": {
@@ -50,17 +74,89 @@
       "nameTooLong": "The name should be no longer than 32 characters.",
       "title": "{count, plural, one {Adding Item to Basket} other {Adding Items to Basket}}"
     },
+    "alerts": {
+      "addItemsFailed": "Error adding items to Basket.",
+      "contentsUnaffected": "Its contents have not been affected.",
+      "created": "{name} has been created.",
+      "createFailed": "Error creating Basket.",
+      "deleted": "{name} has been deleted.",
+      "deleteFailed": "Error deleting Basket.",
+      "detailsUpdated": "Basket details updated.",
+      "fetchFailed": "Error retrieving Baskets.",
+      "fetchOneFailed": "Error retrieving Basket.",
+      "getContentsFailed": "Error getting Basket contents.",
+      "itemsAdded": "{count, plural, one {Item} other {Items}} successfully added to {name}.",
+      "itemsAlreadyAdded": "The selected items are in {name} already. No items were added.",
+      "itemsRemoved": "{count, plural, one {Item} other {Items}} successfully removed from {name}.",
+      "removeItemsFailed": "Error removing items from Basket.",
+      "selectedItemsAdded": "The selected items have been added to it.",
+      "updateDetailsFailed": "Error updating Basket details."
+    },
     "delete": {
       "bodyPrefix": "You are about to delete {name}.",
       "bodySuffix": "The contents of the Basket will not be affected.",
       "title": "Deleting Basket"
+    },
+    "fallbackName": "The Basket",
+    "newBasket": "New Basket",
+    "pending": {
+      "addItems": "{count, plural, one {Adding item to Basket...} other {Adding items to Basket...}}",
+      "creating": "Creating Basket...",
+      "deleting": "Deleting Basket...",
+      "removeItems": "{count, plural, one {Removing item from Basket...} other {Removing items from Basket...}}",
+      "updateDetails": "Updating Basket details..."
+    }
+  },
+  "breadcrumbs": {
+    "label": "Breadcrumb"
+  },
+  "bulkAlerts": {
+    "error": {
+      "actionFailed": "Could not perform the {operation} action.",
+      "cannotLocateTargetContainer": {
+        "help": "Please try again. If this error persists then contact support.",
+        "title": "Could not locate target container."
+      },
+      "containerNotEmpty": {
+        "help": "Delete the contents first.",
+        "title": "The container '{name}' is not empty."
+      },
+      "refreshAndTryAgain": "Please refresh and try again.",
+      "sampleSubsamplesInContainers": {
+        "help": "Delete these subsamples first or remove them from their container.",
+        "title": "The sample '{name}' includes subsamples that are in containers."
+      }
+    },
+    "success": {
+      "detail": "{operation} \"{name}\".",
+      "items": "Items",
+      "message": "{prefix} successfully {operation}.",
+      "noChanges": "No changes."
     }
   },
   "container": {
+    "availableLocations": {
+      "unlimited": "Unlimited"
+    },
     "batch": {
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      "imageAlt": "What the {count} containers look like",
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+      "title": "{count} Containers"
     },
     "content": {
+      "contextMenu": {
+        "allLocations": "All locations",
+        "invert": "Invert",
+        "mine": "Mine",
+        "nothingSelected": "Nothing selected.",
+        "notMine": "Not mine",
+        "siblingsOfSelectedSubsample": "Siblings of selected subsample",
+        "tooManySelected": "Too many selected."
+      },
+      "dragAndDrop": {
+        "multipleItemsNotSupported": "Drag and drop does not currently support moving multiple items at once."
+      },
+      "gridViewLabel": "Container contents grid",
       "locationsAlert": "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.",
       "placeMarkers": {
         "columns": {
@@ -71,11 +167,33 @@
         "emptyLocation": "Empty Location",
         "emptyLocationHelper": "This location can be chosen as the destination in a move operation."
       },
+      "previewAlt": "Preview of {name}",
       "zoom": {
         "ctrlTip": "Tip: Use Ctrl and the - key to zoom the page out to view more of the image.",
         "macTip": "Tip: Use Command and the - key to zoom the page out to view more of the image.",
         "panelAdjuster": "The <a>Panel Adjuster</a> can also be used to provide more room to fully display the image."
       }
+    },
+    "contextMenu": {
+      "contentsSelected": "Cannot modify this container whilst its contents are selected."
+    },
+    "createOptions": {
+      "location": {
+        "label": "Location",
+        "listExplanation": "No location selection required for list containers.",
+        "specificExplanation": "Specify a single location for where the new container should be placed."
+      },
+      "newContainer": {
+        "cannotStore": "Containers cannot be stored inside this container.",
+        "explanation": "The container will be automatically added to this container.",
+        "label": "Container"
+      },
+      "newSample": {
+        "cannotStore": "Subsamples cannot be stored inside this container.",
+        "explanation": "The subsample will be automatically added to this container.",
+        "label": "Sample"
+      },
+      "noEditPermission": "You do not have permission to edit the contents of this container."
     },
     "fields": {
       "canStore": {
@@ -103,7 +221,7 @@
         "specifyDimensions": "Or specify the dimensions"
       },
       "gridLabels": {
-        "expandAria": "Expand grid dimension controls group",
+        "expandLabel": "Expand grid dimension controls group",
         "title": "Configure Grid Labels"
       },
       "gridLayout": {
@@ -146,9 +264,18 @@
         },
         "type": "Type"
       }
+    },
+    "imageAlt": "What {name} looks like",
+    "newImageAlt": "What the new container looks like",
+    "types": {
+      "bench": "Bench",
+      "grid": "Grid",
+      "list": "List",
+      "visual": "Visual"
     }
   },
   "contextMenu": {
+    "actionInProgress": "Action in progress",
     "actions": {
       "addToBasket": "Add to Basket",
       "makeTopLevel": "Make Top-level",
@@ -168,13 +295,33 @@
       },
       "helpTitle": "Info on creating new items.",
       "itemType": "Type of item to create",
+      "loadAdditionalInfoFailed": "Failed to load additional information: {message}",
       "loading": "Loading...",
       "noFields": "No fields.",
       "noOptions": "No options available.",
       "title": "Create new items from <strong>{name}</strong>"
     },
+    "edit": {
+      "batchEdit": "Batch Edit",
+      "batchUnsupported": "Cannot batch edit {globalIds}.",
+      "beingEditedBy": "being edited by {name}",
+      "cannotEditSome": "Cannot edit some selected items.",
+      "cannotEditThis": "Cannot edit this item.",
+      "loadFailed": "Could not load item.",
+      "noPermission": "You do not have permission to edit.",
+      "nothingSelected": "Nothing selected.",
+      "someoneEditingIt": "Someone is already editing it.",
+      "someoneEditingThem": "Someone is already editing them.",
+      "unsavedChanges": {
+        "error": "Unsaved changes",
+        "message": "Please save or cancel your current changes before editing another item.",
+        "title": "Unsaved changes"
+      }
+    },
+    "historicalVersion": "Cannot modify a historical version of a {recordType}.",
     "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "splitButton": {
+      "label": "More selection options",
       "moreOptions": "More selection options"
     },
     "transfer": {
@@ -193,12 +340,26 @@
   },
   "createNew": {
     "csvImport": "CSV Import",
+    "helpTitles": {
+      "container": "Info on creating containers.",
+      "instrument": "Info on creating instruments.",
+      "instrumentTemplate": "Info on creating instrument templates.",
+      "sample": "Info on creating samples.",
+      "template": "Info on creating templates."
+    },
     "newContainer": "New Container",
     "newInstrument": "New Instrument",
     "newInstrumentTemplate": "New Instrument Template",
     "newSample": "New Sample",
     "newTemplate": "New Template",
     "thirdPartyImport": "Third-Party Import"
+  },
+  "createOptions": {
+    "common": {
+      "fieldDefaultValues": "Field default values",
+      "name": "Name",
+      "templateNameExplanation": "A name for the new template. At least two characters."
+    }
   },
   "detailedListing": {
     "card": {
@@ -212,7 +373,12 @@
       },
       "modifiedBy": "Modified <timeAgo></timeAgo> by {name}",
       "requiredPermissions": "You do not have permission to select this item."
-    }
+    },
+    "cardListLabel": "Inventory card list"
+  },
+  "errors": {
+    "expandForMoreDetails": "Expand for more details.",
+    "unknownReason": "Unknown reason."
   },
   "export": {
     "dialog": {
@@ -237,6 +403,12 @@
         "subsamplesInclude": "Include Subsamples",
         "zipBundle": "A .ZIP bundle containing .CSV files for each item type.",
         "zipFile": "ZIP Bundle"
+      },
+      "radioLabels": {
+        "containers": "Container export options",
+        "fileType": "File type",
+        "mode": "Export mode",
+        "samples": "Sample export options"
       },
       "title": "Export Options"
     },
@@ -288,6 +460,7 @@
   },
   "fields": {
     "accessPermissions": {
+      "addGroup": "Add group",
       "editFirst": "You need to be in Edit mode to edit permissions.",
       "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
       "explicitAccess": {
@@ -313,11 +486,18 @@
       },
       "alert": {
         "body": "A file of any type can be attached (e.g. image, document, or chemistry file)",
+        "couldNotFetchImage": "Could not fetch image.",
+        "settingPreviewImage": "Setting preview image.",
         "title": "Attachment"
       },
       "columns": {
         "actions": "Actions",
         "name": "Name"
+      },
+      "errors": {
+        "fetchChemicalFileFailed": "Fetching chemical file failed.",
+        "previewImageUnavailable": "Preview image is unavailable.",
+        "unableToSetPreviewImage": "Unable to set preview image."
       },
       "formField": {
         "explanation": "See the documentation for information on <a>adding attachments</a>."
@@ -331,12 +511,28 @@
         "none": "No current attachments",
         "show": "Show attachment listing"
       },
+      "tooltips": {
+        "deleteAfterClicked": "Attachment will be deleted once this item is saved.",
+        "editFirstRemove": "Press Edit to remove this attachment.",
+        "editFirstSetPreviewImage": "Press Edit to set this as the preview image.",
+        "loadingFile": "Loading file",
+        "loadingImage": "Loading image",
+        "preview3d": "3D preview",
+        "preview3dUnsupported": "3D preview is not supported for this file.",
+        "previewImage": "Preview image",
+        "previewImageUnsupported": "Image preview is not supported for this file.",
+        "saveFirst3dPreview": "Save this item before previewing this file in 3D.",
+        "saveFirstImagePreview": "Save this item before previewing this image.",
+        "saveFirstSetPreviewImage": "Save this item before setting this as the preview image.",
+        "setAsPreviewImage": "Set as preview image"
+      },
       "uploadFromDevice": "Upload a file from your device.",
       "validation": {
         "missingGlobalId": "\"{name}\" does not have an RSpace Global Id",
         "noFolders": "Folders cannot be attached to Inventory records.",
         "noSnippets": "Snippets cannot be attached to Inventory records."
-      }
+      },
+      "viewChemicalReadOnly": "View chemical file"
     },
     "barcodes": {
       "actions": {
@@ -417,16 +613,22 @@
       "noMoreFields": "No more fields",
       "updateField": {
         "apply": "Apply",
-        "ariaCancel": "Cancel update",
-        "ariaUpdate": "Update field",
         "cancel": "Cancel",
+        "cancelLabel": "Cancel update",
         "discard": "Discard",
-        "update": "Update"
+        "update": "Update",
+        "updateLabel": "Update field"
       },
       "validation": {
         "duplicateName": "You either already have a field with that name or that name is not permitted.",
         "emptyName": "Name should not be empty.",
-        "nameTooLong": "Name must be no longer than 255 characters."
+        "fieldBeingEdited": "The field \"{name}\" is being edited. Update or cancel the edit before saving.",
+        "invalidFieldType": "Invalid field type.",
+        "linkRelationAndTargetRequired": "Link fields require a relation type and target.",
+        "linkTargetRequired": "The link field \"{name}\" needs its Target Global ID set. Set a target or cancel the edit.",
+        "nameTooLong": "Name must be no longer than 255 characters.",
+        "newFieldBeingAdded": "A new field is being added. Apply or discard it before saving.",
+        "textContentMustBeString": "The content of textual extra fields must be a string."
       },
       "validNumber": "Must be a valid number."
     },
@@ -463,16 +665,25 @@
         },
         "createEditPolygon": "Create or Edit a Geolocation Polygon",
         "description": "Description",
+        "hexagonIconLabel": "Polygon",
         "latitudeRange": "Between −90.0˚ and 90.0˚.",
         "longitudeRange": "Between −180.0˚ and 180.0˚.",
+        "map": {
+          "showBoxLabel": "Show box on map",
+          "showPointLabel": "Show point on map",
+          "showPolygonLabel": "Show polygon on map"
+        },
         "none": "None",
         "openPolygonDialog": "Open Polygon Dialog",
         "place": {
+          "placeholder": "Enter place",
           "title": "Place"
         },
         "point": {
           "latitude": "Latitude",
+          "latitudePlaceholder": "Enter latitude",
           "longitude": "Longitude",
+          "longitudePlaceholder": "Enter longitude",
           "title": "Point"
         },
         "polygon": {
@@ -520,9 +731,36 @@
         }
       },
       "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
+      "multipleInput": {
+        "addEditFirst": "Press Edit to add another value.",
+        "addNew": "Add another value",
+        "duplicateValue": "This value is a duplicate. Please enter a unique one.",
+        "enterNewValue": "Enter value for new {itemLabel}",
+        "enterValueFor": "Enter value for {fieldLabel}",
+        "enterValueOrRemove": "Enter a value (or remove entry)",
+        "removeEditFirst": "Press Edit to remove this value.",
+        "removeThis": "Remove this value",
+        "valueRequired": "A value is required"
+      },
       "polygonCard": {
+        "addPointAfter": "Add point after this one",
+        "configurationTitle": "Polygon configuration",
+        "editorTitle": "Polygon editor",
+        "enterPointLatitude": "Enter point latitude",
+        "enterPointLongitude": "Enter point longitude",
+        "helpTitle": "Polygon help",
         "inPolygonPointDescription": "Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than the half of the Earth's surface.",
-        "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one."
+        "inPolygonPointLatitude": "In polygon point latitude",
+        "inPolygonPointLongitude": "In polygon point longitude",
+        "pointLatitude": "Point {index} latitude",
+        "pointLongitude": "Point {index} longitude",
+        "polygonDescription": "You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points that form a closed shape. The first and last points have the same coordinates, editing the first point will automatically update the last one.",
+        "removePoint": "Remove point",
+        "state": {
+          "complete": "Complete polygon",
+          "empty": "No polygon",
+          "incomplete": "Incomplete polygon"
+        }
       },
       "polygonDialog": {
         "close": "Close",
@@ -561,6 +799,7 @@
     },
     "image": {
       "explanation": "Tap to view at full resolution, scroll to exit (or pinch on mobile)",
+      "label": "Image",
       "tooManyToEdit": "The image can only be edited when no more than {max} items are selected."
     },
     "link": {
@@ -642,13 +881,29 @@
         "cancel": "Cancel",
         "choose": "Choose",
         "label": "Browse the ELN for a link target",
-        "title": "Browse ELN"
+        "title": "Browse ELN",
+        "workspaceTreeLabel": "Workspace tree"
       },
       "gallerySections": {
+        "labels": {
+          "caption": "Caption",
+          "creationDate": "Creation Date",
+          "extension": "Extension",
+          "fileSize": "File Size",
+          "lastModified": "Last Modified",
+          "originalImage": "Original Image",
+          "owner": "Owner",
+          "type": "Type",
+          "uniqueId": "Unique ID",
+          "version": "Version"
+        },
         "noReferences": "There are no references to this file.",
         "preview": "Preview",
         "referencedBy": "This file is referenced by:",
-        "showLinkedDocs": "Show linked docs"
+        "showLinkedDocs": "Show linked docs",
+        "uploadFailed": "Upload failed.",
+        "uploading": "Uploading...",
+        "uploadNewVersion": "Upload new version"
       },
       "infoDialog": {
         "label": "Info for {globalId}",
@@ -659,9 +914,17 @@
         "editToChangePinned": "Edit the link to change the pinned version",
         "noAccess": "No access",
         "noPermission": "You do not have permission to view this item",
+        "openLabel": "Open {globalId}",
+        "pinVersionLabel": "Pin version for {globalId}",
+        "showInfoLabel": "Show info for {globalId}",
         "targetDeleted": "Target deleted"
       },
       "relatedInventoryItems": {
+        "columns": {
+          "globalId": "Global ID",
+          "name": "Name",
+          "relation": "Relation"
+        },
         "loading": "Loading...",
         "none": "No Inventory items link to this {recordTypeName}.",
         "title": "Related inventory items"
@@ -669,6 +932,12 @@
       "targetBrowser": {
         "label": "Browse Inventory for link target",
         "title": "Browse Inventory"
+      },
+      "targetValidation": {
+        "noVersionSuffix": "Enter the Global ID without a version. To pin the link to a version, use the clock icon.",
+        "required": "Target Global ID is required.",
+        "selfLink": "An item cannot link to itself.",
+        "supportedType": "Target must be an Inventory item or an ELN document, notebook or gallery file."
       },
       "versionLock": {
         "cannotResolve": "Cannot resolve version history for {globalId}.",
@@ -716,7 +985,9 @@
       "label": "Quantity",
       "parentSampleOnly": "The parent sample only has one {alias}.",
       "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
+      "perAlias": "per {alias}",
       "totalCalculated": "Total is calculated from the quantites of <link>all {count} {plural}</link>, which can be changed by editing the {plural} individually.",
+      "totalLabel": "Total Quantity",
       "totalSingle": "There is only one {alias}.",
       "validation": {
         "positiveOrZero": "Should be a positive number or zero."
@@ -807,9 +1078,14 @@
     "accessPermissions": "Access Permissions",
     "attachments": "Attachments",
     "barcodes": "Barcodes",
+    "batchEditingItemsTitle": "{label} (Click to {open, select, true {close} other {expand}} list)",
+    "collapseAll": "Collapse All",
+    "collapseSection": "Collapse section",
     "containersBeingEdited": "Containers being edited",
     "customFields": "Custom Fields",
     "details": "Details",
+    "expandAll": "Expand All",
+    "expandSection": "Expand section",
     "identifiers": "Identifiers",
     "information": "Information",
     "itemsBeingEdited": "Items being edited",
@@ -843,6 +1119,64 @@
     "retract": {
       "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the Public API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
       "title": "You are about to retract this Identifier"
+    }
+  },
+  "identifierModel": {
+    "alerts": {
+      "doiRequired": "DOI must be known",
+      "published": "The identifier {doi} has been published.",
+      "publishFailed": "The identifier could not be published.",
+      "republishAfterRetractFailed": "Identifier has been retracted. Tap publish to try again.\n{reason}",
+      "republished": "The identifier {doi} has been republished.",
+      "republishFailed": "The identifier could not be republished.",
+      "retracted": "The identifier {doi} has been retracted.",
+      "retractFailed": "The identifier could not be retracted."
+    },
+    "creatorTypes": {
+      "organizational": "Organizational",
+      "personal": "Personal"
+    },
+    "dateTypes": {
+      "accepted": "Accepted",
+      "available": "Available",
+      "collected": "Collected",
+      "copyrighted": "Copyrighted",
+      "created": "Created",
+      "issued": "Issued",
+      "other": "Other",
+      "submitted": "Submitted",
+      "updated": "Updated",
+      "valid": "Valid",
+      "withdrawn": "Withdrawn"
+    },
+    "descriptionTypes": {
+      "abstract": "Abstract",
+      "methods": "Methods"
+    },
+    "recommendedFields": {
+      "classificationCode": "Classification Code",
+      "schemeUri": "Scheme URI",
+      "subjectScheme": "Subject Scheme",
+      "type": "Type",
+      "valueUri": "Value URI"
+    }
+  },
+  "identifiers": {
+    "alerts": {
+      "assignError": "Could not assign identifier.",
+      "assignSuccess": "Successfully assigned identifier.",
+      "created": "Identifier {doi} created.",
+      "createFailed": "The Identifier could not be created.",
+      "deletedOne": "Successfully deleted identifier.",
+      "deleteError": "Could not delete identifier.",
+      "deleteOneFailed": "Could not delete one identifier.",
+      "deletePartialFailure": "Some identifiers could not be deleted.",
+      "deleteSuccess": "Successfully deleted identifiers.",
+      "draftDeleted": "Identifier draft deleted.",
+      "draftDeleteFailed": "The Identifier draft could not be deleted.",
+      "fetchError": "Could not fetch identifiers.",
+      "registerError": "Could not register identifier.",
+      "registerSuccess": "Successfully registered identifier."
     }
   },
   "igsnManagement": {
@@ -940,11 +1274,18 @@
       "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <link>Samples CSV</link> with mapped \"Import ID\".",
       "parentSampleRequired": "You must select one column that refers to a Sample.",
       "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
+      "selectMapping": "Select mapping for {fieldName}",
       "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
       "unconverted": "You have one or more columns selected without conversion. The columns' data will not be used."
     },
     "customDetails": "Custom details",
     "customFieldName": "Custom Field Name",
+    "fields": {
+      "customFieldType": "Custom field type",
+      "fieldNameValidation": "You either already have a field with that name or that name is not permitted.",
+      "templateName": "Template Name",
+      "templateNameValidation": "Template name is required."
+    },
     "fieldTypeMenu": {
       "options": "Options"
     },
@@ -958,9 +1299,20 @@
     "helpTitle": "Info on importing.",
     "importDocumentation": "Import Documentation",
     "landmark": "Import main content",
+    "records": {
+      "importedRecord": "Imported \"{name}\".",
+      "importing": "Importing Records...",
+      "invalidData": "Could not import invalid {type} data.",
+      "row": "Row {row}",
+      "success": "{type} successfully imported."
+    },
     "sections": {
       "columnConversion": "CSV Column Conversion Settings",
       "templateDetails": "Template Details"
+    },
+    "submit": {
+      "mayHaveCompleted": "Something went wrong but the import may have completed.",
+      "recordsNotImported": "Something went wrong and some records were not imported."
     },
     "templateDetails": {
       "chooseExistingTemplate": "Choose existing template.",
@@ -970,15 +1322,51 @@
     "title": "IMPORT"
   },
   "infoCard": {
+    "info": "Info",
+    "noPermission": "You do not have permission to open this item.",
     "setAsTarget": "Set as Target"
   },
+  "instrument": {
+    "createOptions": {
+      "template": {
+        "explanation": "Create an instrument template from this instrument, to easily create similar instruments.",
+        "fieldDefaultsExplanation": "All of the instrument's custom fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+        "label": "Instrument Template"
+      }
+    },
+    "imageAlt": "What the instrument looks like",
+    "templateFields": {
+      "invalid": "Invalid",
+      "mandatory": "Mandatory",
+      "unknownFieldType": "Unknown field type: {type}"
+    }
+  },
   "instrumentTemplate": {
+    "createOptions": {
+      "instrument": {
+        "explanation": "Create a new instrument based on this template.",
+        "label": "Instrument"
+      }
+    },
     "customFields": {
       "addFieldTooltip": "Add field",
       "noCustomFields": "No custom fields"
-    }
+    },
+    "field": {
+      "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
+      "fetchError": "Could not fetch instrument template details.",
+      "label": "Instrument Template",
+      "loading": "Loading",
+      "noTemplate": "No template",
+      "noTemplateTitle": "No Template",
+      "unknownReason": "Unknown reason.",
+      "version": "Version {version}"
+    },
+    "imageAlt": "What the instrument template looks like",
+    "newImageAlt": "A visual representation of the instrument template"
   },
   "layout": {
+    "hideRightPanel": "Hide right panel",
     "initialScreen": {
       "navigateTo": "Navigate to:"
     },
@@ -986,6 +1374,7 @@
       "heading": "Page not found.",
       "message": "The page was not found. You can try again, or use your 'back' button to return to your previous location and navigate from there, or use the sidebar to navigate to your samples and containers. If you can't resolve the problem, please contact an administrator."
     },
+    "showRightPanel": "Show right panel",
     "sidebar": {
       "exportData": "Export Data",
       "igsnIds": "IGSN IDs",
@@ -1022,6 +1411,21 @@
       "moveAllToBench": "Move all to my bench",
       "viewInNewTab": "View in new tab"
     },
+    "alerts": {
+      "created": "{name} was successfully created.",
+      "createFailed": "Something went wrong while creating {name}",
+      "deleted": "{name} was successfully deleted.",
+      "deleteFailed": "Something went wrong while deleting {name}",
+      "exportFailed": "Something went wrong while exporting {name}",
+      "fetchEditPermissionFailed": "Could not fetch permission to edit.",
+      "fetchFailed": "Could not fetch List of Materials data.",
+      "updated": "{name} was successfully updated.",
+      "updateFailed": "Something went wrong while updating {name}"
+    },
+    "confirmDelete": {
+      "message": "This list and information about used quantities will not be available anymore. The inventory items will not be affected by this action.",
+      "title": "Are you sure you want to delete this list?"
+    },
     "dialog": {
       "creatingList": "Creating list...",
       "emptyList": "Use \"Add items\" to add materials to this list.",
@@ -1033,6 +1437,11 @@
       "title": "List of Materials (Inventory)",
       "updatingList": "Updating list..."
     },
+    "errors": {
+      "notEnoughLeft": "Not enough left, reduce or unselect",
+      "positiveOrZero": "Enter a positive or zero",
+      "unitCategoriesMustMatch": "Unit categories must match"
+    },
     "launcher": {
       "newList": "New List of Materials",
       "showAssociatedLists": "Show list of materials associated with this field"
@@ -1041,6 +1450,10 @@
       "description": "Description",
       "id": "ID",
       "name": "List Name"
+    },
+    "pending": {
+      "deleting": "Deleting {name}...",
+      "exporting": "Exporting {name}..."
     },
     "table": {
       "batchSelect": {
@@ -1066,7 +1479,9 @@
   },
   "mixed": {
     "batch": {
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      "imageAlt": "What all of the items look like",
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+      "title": "{count} Items"
     }
   },
   "moreInfo": {
@@ -1110,14 +1525,44 @@
   "moveToTarget": {
     "dragDropInstructions": "Select one or more grid cells in the container's \"Locations and Content\" section and then tap and hold to enter drag-and-drop mode.",
     "dragDropTip": "Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new locations.",
+    "errors": {
+      "moveFailed": "Move failed."
+    },
+    "helpTitle": "Moving help",
     "hideItems": "Hide items being moved",
     "loading": "Loading",
-    "movingItem": "Moving <0></0>",
+    "loadingEllipsis": "Loading...",
+    "messages": {
+      "benchSelected": "This will move the item to your bench.",
+      "canStoreOnly": "This container can only store {types}.",
+      "containerSelected": "This will move the item into the selected container.",
+      "deletedDestination": "The selected destination has been deleted.",
+      "movingIntoItself": "An item cannot be moved into itself.",
+      "noPermission": "You do not have permission to move to this destination.",
+      "notEnoughSpace": "There is not enough space in this destination.",
+      "selectionComplete": "Selection complete.",
+      "selectLocations": "Select locations for the items being moved.",
+      "selectMoreLocations": "Select {count} more {count, plural, one {location} other {locations}}.",
+      "visualContainerNoImage": "This visual container does not have an image.",
+      "visualContainerNoLocations": "This visual container does not have any locations."
+    },
+    "movingItem": "Moving <name></name>",
     "movingItems": "Moving {count} items",
+    "myBench": "My Bench",
     "nextItem": "Next item to be placed:",
+    "ownerBench": "{owner}'s Bench",
     "pickDestination": "Pick Destination",
     "selectedDestination": "Selected Destination:",
+    "selectionHelp": {
+      "singleColumnBench": "Select a destination from the list.",
+      "wideBench": "Select a destination from the list or tree."
+    },
     "showItems": "Show items being moved"
+  },
+  "peopleField": {
+    "errors": {
+      "couldNotGetGroupMembers": "Could not get group members."
+    }
   },
   "permalink": {
     "invalidId": "\"{id}\" is not a valid {recordType} id.",
@@ -1128,6 +1573,14 @@
     "unversionedTitle": "This {typeLabel} could not be found.",
     "versionedBody": "The version may never have existed. <a>View the latest version</a>.",
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
+  },
+  "person": {
+    "alerts": {
+      "exportFailed": "Data export failed."
+    },
+    "pending": {
+      "exportData": "Exporting User Data..."
+    }
   },
   "print": {
     "contents": {
@@ -1177,6 +1630,21 @@
     }
   },
   "recordDetails": {
+    "labels": {
+      "contents": "Contents",
+      "description": "Description",
+      "galleryFile": "Gallery File",
+      "globalId": "Global ID",
+      "location": "Location",
+      "modified": "Modified",
+      "name": "Name",
+      "owner": "Owner",
+      "quantity": "Quantity",
+      "sample": "Sample",
+      "size": "Size",
+      "tags": "Tags",
+      "version": "Version"
+    },
     "modifiedBy": "by {user}"
   },
   "recordInfo": {
@@ -1194,9 +1662,25 @@
     }
   },
   "recordTree": {
-    "navigateToContainer": "Navigate to container"
+    "navigateToContainer": "Navigate to container",
+    "thumbnailAlt": "Thumbnail for {name}"
   },
   "recordTypes": {
+    "attachment": {
+      "lower": "attachment",
+      "plural": "Attachments",
+      "singular": "Attachment"
+    },
+    "basket": {
+      "lower": "basket",
+      "plural": "Baskets",
+      "singular": "Basket"
+    },
+    "bench": {
+      "lower": "bench",
+      "plural": "Benches",
+      "singular": "Bench"
+    },
     "container": {
       "lower": "container",
       "plural": "Containers",
@@ -1234,8 +1718,40 @@
     }
   },
   "sample": {
+    "alerts": {
+      "updateToLatestFailed": "Updating sample to latest template failed.",
+      "updateToLatestSuccess": "Sample updated to latest template successfully."
+    },
     "batch": {
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error."
+      "imageAlt": "What the {count} samples look like",
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+      "title": "{count} Samples"
+    },
+    "contextMenu": {
+      "subsamplesSelected": "Cannot modify this sample whilst its subsamples are selected."
+    },
+    "createOptions": {
+      "newSubsamples": {
+        "countExplanation": "Between 1 and 100.",
+        "countLabel": "Number of new subsamples",
+        "explanation": "Additional subsamples will be created with the specified quantity.",
+        "label": "Subsamples, by creating new ones",
+        "quantityExplanation": "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+        "quantityLabel": "Quantity per subsample"
+      },
+      "noEditPermission": "You do not have permission to edit this sample.",
+      "split": {
+        "countExplanation": "The total number of subsamples wanted, including the source (between 2 and 100)",
+        "countLabel": "Number of new subsamples",
+        "explanation": "Subsamples will be created by dividing the existing subsample quantity amongst them.",
+        "label": "Subsamples, by splitting the existing subsample",
+        "tooManySubsamples": "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead."
+      },
+      "template": {
+        "explanation": "Create a template from this sample, to easily create similar samples.",
+        "fieldDefaultsExplanation": "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+        "label": "Template"
+      }
     },
     "fields": {
       "expiryDate": {
@@ -1263,6 +1779,14 @@
         },
         "type": "Type"
       },
+      "quantity": {
+        "label": "Quantity",
+        "perAlias": "Quantity per {alias}",
+        "templateUnitsExplanation": "Quantity units can also be changed by editing templates.",
+        "total": "{quantity} {unit} in total",
+        "totalLabel": "{quantity} in total",
+        "validation": "Should be a positive value, of no more than 3 decimal places, or zero."
+      },
       "source": {
         "label": "Source",
         "options": {
@@ -1288,7 +1812,8 @@
           "ultFrozen": "ULT Frozen"
         },
         "specify": "Specify",
-        "unit": "Unit"
+        "unit": "Unit",
+        "unspecified": "Unspecified"
       },
       "template": {
         "alertExpand": "Expand to select a template.",
@@ -1301,11 +1826,70 @@
       },
       "unknownFieldType": "Unknown field type: {type}"
     },
+    "imageAlt": "What the sample looks like",
+    "newImageAlt": "What the new sample looks like",
+    "permissionsExplanation": "Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples.",
     "subsamplesSection": {
-      "tapToPreview": "Tap one of the {plural} in the search section to preview it below."
+      "tapToPreview": "Tap one of the {plural} in the search section to preview it below.",
+      "title": "{count} {alias}"
     }
   },
   "search": {
+    "actions": {
+      "cancel": {
+        "inProgress": "Cancelling..."
+      },
+      "createInstrumentTemplate": {
+        "failed": "Instrument template creation failed.",
+        "success": "Instrument template created successfully."
+      },
+      "createSubsamples": {
+        "failed": "Subsample creation failed.",
+        "success": "Successfully created new subsamples."
+      },
+      "createTemplate": {
+        "failed": "Template creation failed.",
+        "success": "Template created successfully."
+      },
+      "duplicate": {
+        "failed": "Duplication failed.",
+        "inProgress": "Duplicating...",
+        "newBenchItems": "Newly created {items} are placed on your Bench."
+      },
+      "export": {
+        "failed": "Data export failed.",
+        "inProgress": "Exporting..."
+      },
+      "restore": {
+        "failed": "Restore failed.",
+        "inProgress": "Restoring..."
+      },
+      "split": {
+        "failed": "Splitting subsample failed.",
+        "inProgress": "Splitting...",
+        "newSubsamplesOnBench": "Newly created subsamples are placed on your Bench."
+      },
+      "transfer": {
+        "failed": "Transfer failed.",
+        "inProgress": "Transferring...",
+        "movedToBench": "The records have been moved to {username}'s bench"
+      },
+      "trash": {
+        "emptySamplePrompt": "Send Sample {name} to trash too?",
+        "failed": "Sending to trash failed.",
+        "inProgress": "Sending to trash...",
+        "moveAllToTrash": "Move all to trash",
+        "samplesWithStoredSubsamples": {
+          "container": "(in {name} {globalId})",
+          "detail": "Could not trash \"{name}\" {container}",
+          "message": "Please move them to the trash first.",
+          "title": "Some of the samples could not be trashed because the subsamples are in containers."
+        }
+      },
+      "update": {
+        "failed": "Update failed."
+      }
+    },
     "controls": {
       "nameDialog": {
         "cancel": "Cancel",
@@ -1361,6 +1945,10 @@
       "body": "Nothing here yet.",
       "title": "Empty {recordType}"
     },
+    "errors": {
+      "performSearchFailed": "Could not perform search.",
+      "searchFailed": "Search failed."
+    },
     "feedback": {
       "containerContents": "{count} container contents found.",
       "errorGlobalId": "ERROR",
@@ -1395,6 +1983,18 @@
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },
+    "parameterChips": {
+      "basket": "Basket: {basket}",
+      "benchOwner": "Bench Owner: {owner}",
+      "contentsOf": "Contents of: {globalId}",
+      "owner": "Owner: {owner}",
+      "status": "Status: {status}",
+      "type": "Type: {type}",
+      "unknown": "Unknown"
+    },
+    "results": {
+      "selectResultItem": "Select {name}"
+    },
     "resultsTable": {
       "actionInProgress": "Action In Progress",
       "allRows": "{count} (All)",
@@ -1412,16 +2012,21 @@
       }
     },
     "savedList": {
-      "deleteAria": "delete saved item",
       "deleteBasket": "Delete Basket",
+      "deleteLabel": "delete saved item",
       "deleteSavedSearch": "Delete Saved Search",
-      "editAria": "edit saved item",
+      "editLabel": "edit saved item",
       "editName": "Edit name",
       "noBaskets": "There are no Baskets yet. To create one: select some results and then 'Add to Basket'.",
       "noSavedSearches": "There are no Saved Searches yet."
     }
   },
   "settings": {
+    "alerts": {
+      "fetchFailed": "Could not get System Settings.",
+      "updateFailed": "Could not update System Settings.",
+      "updateSuccess": "System Settings have been updated."
+    },
     "datacite": {
       "connectionFailed": "Connection failed. {message}",
       "connectionSucceeded": "Connection succeeded",
@@ -1429,6 +2034,7 @@
       "fieldRequiredError": "A valid value is required",
       "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a>DataCite</a> using your Repository account credentials.",
       "formLabel": "DataCite IGSN Integration",
+      "helpTitle": "DataCite help",
       "labels": {
         "enabled": "Enabled",
         "password": "Password",
@@ -1441,6 +2047,7 @@
         "production": "Production",
         "test": "Test"
       },
+      "serverUrlLabel": "DataCite Server URL",
       "statusOptions": {
         "disabled": "Disabled",
         "enabled": "Enabled"
@@ -1454,7 +2061,19 @@
       "title": "Configure Inventory (for System Administrators)"
     }
   },
+  "sortProperties": {
+    "created": "Created",
+    "globalId": "Global ID",
+    "lastModified": "Last Modified",
+    "name": "Name",
+    "type": "Type"
+  },
   "subsample": {
+    "alerts": {
+      "noteCreated": "Note successfully created.",
+      "noteCreateFailed": "Creating note failed.",
+      "noteSaveFailed": "Could not save the new note(s)."
+    },
     "batch": {
       "imageAlt": "What the {count} subsamples look like",
       "itemsTableLabel": "Subsamples being edited",
@@ -1462,17 +2081,59 @@
       "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
       "title": "Batch editing {count} subsamples"
     },
+    "createOptions": {
+      "noEditPermission": "You do not have permission to edit this subsample.",
+      "split": {
+        "countExplanation": "The total number of subsamples wanted, including the source (between 2 and 100)",
+        "countLabel": "Number of new subsamples",
+        "explanation": "New subsamples will be created by dividing the quantity of this subsample equally amongst them.",
+        "label": "Subsample, by splitting"
+      }
+    },
     "details": {
       "imageAlt": "What the subsample, {name}, looks like",
       "label": "Subsample details",
       "none": "No subsamples",
       "seeFullDetails": "See full details of <strong>{name}</strong>"
     },
+    "imageAlt": "What the subsample looks like",
+    "limitedAccessLabel": "subsample, or its parent sample",
     "sampleFieldsSection": {
-      "parentSampleExplanation": "These fields belong to <0></0>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
+      "parentSampleExplanation": "These fields belong to <recordLink></recordLink>, the parent sample of this {alias}. To edit these fields, please edit the sample directly."
+    },
+    "validation": {
+      "quantityRequired": "Quantity must be set"
+    }
+  },
+  "tableColumns": {
+    "containerType": "Container Type",
+    "contents": "Contents",
+    "expiryDate": "Expiry Date",
+    "numberOfEmptyLocations": "Number of Empty Locations",
+    "owner": "Owner",
+    "sample": "Sample",
+    "subsamplesCount": "Subsamples Count",
+    "tags": "Tags"
+  },
+  "tables": {
+    "adjustableHeadCell": {
+      "columnOptions": "Column options"
     }
   },
   "template": {
+    "alerts": {
+      "updateExistingSamples": "Update existing samples?",
+      "updateLatestFailed": "Updating samples to latest template version failed."
+    },
+    "contextMenu": {
+      "historicalVersion": "Cannot modify a historical version of a template."
+    },
+    "createOptions": {
+      "sample": {
+        "explanation": "Tapping create will open the new sample form, with this template pre-populated.",
+        "label": "Sample"
+      }
+    },
     "fields": {
       "customField": {
         "deleteField": "{fieldType} field will be deleted from this template.",
@@ -1486,6 +2147,9 @@
         "version": "This is version {version} of the template."
       }
     },
+    "imageAlt": "A visual representation of the samples that are to be created from this template",
+    "newImageAlt": "A visual representation of the samples that will be created from this new template",
+    "permissionsExplanation": "This template will also be accessible to anyone who has access to a sample that has been created from it.",
     "summary": {
       "loading": "Loading",
       "noTemplate": "No Template"

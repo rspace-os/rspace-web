@@ -1,6 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
+import i18n from "@/modules/common/i18n";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -72,7 +73,9 @@ export default function useReferencingInventoryItems(globalId: string | null): {
                     id: parseInt(g.replace(/^[A-Z]{2}/, ""), 10) || null,
                     globalId: g,
                     name: n,
-                    recordTypeLabel: INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.recordTypeLabel ?? "Item",
+                    recordTypeLabel:
+                      INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.recordTypeLabel ??
+                      i18n.t("common:recordTypes.item.singular"),
                     iconName: INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.iconName ?? "container",
                     permalinkURL: `/globalId/${g}`,
                   },
@@ -84,7 +87,7 @@ export default function useReferencingInventoryItems(globalId: string | null): {
       setItems(rows);
     } catch (e) {
       console.error(e);
-      setErrorMessage("Error loading related inventory items.");
+      setErrorMessage(i18n.t("gallery:referencingInventoryItems.loadFailed"));
     } finally {
       setLoading(false);
     }

@@ -218,7 +218,7 @@ describe("MoveToIrods", () => {
       await user.type(screen.getByLabelText("gallery:moveToIrods.login.password", { selector: "input" }), "secret");
       await user.click(screen.getByRole("button", { name: "gallery:moveToIrods.submit" }));
 
-      expect(await screen.findByText(/successfully moved/i)).toBeVisible();
+      expect(await screen.findByText(/gallery:irods\.success\.moved/i)).toBeVisible();
       const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(moveRequest).toBeDefined();
       const body = JSON.parse(moveRequest?.data as string) as {
@@ -241,7 +241,7 @@ describe("MoveToIrods", () => {
       await user.type(screen.getByLabelText("gallery:moveToIrods.login.password", { selector: "input" }), "hunter2");
       await user.click(screen.getByRole("button", { name: "gallery:moveToIrods.submit" }));
 
-      expect(await screen.findByText(/successfully moved/i)).toBeVisible();
+      expect(await screen.findByText(/gallery:irods\.success\.moved/i)).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/uploadFromGallery")).toBe(true);
     });
 
@@ -257,7 +257,7 @@ describe("MoveToIrods", () => {
       // The submit button stays labelled "Move"; ticking "Retain a copy" routes it to a copy.
       await user.click(screen.getByRole("button", { name: "gallery:moveToIrods.submit" }));
 
-      expect(await screen.findByText(/successfully copied/i)).toBeVisible();
+      expect(await screen.findByText(/gallery:irods\.success\.copied/i)).toBeVisible();
       const copyRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(copyRequest).toBeDefined();
       const body = JSON.parse(copyRequest?.data as string) as { removeOriginalFromRspace: boolean };
@@ -274,7 +274,7 @@ describe("MoveToIrods", () => {
       await user.type(screen.getByLabelText("gallery:moveToIrods.login.password", { selector: "input" }), "secret");
       await user.click(screen.getByRole("button", { name: "gallery:moveToIrods.submit" }));
 
-      expect(await screen.findByText(/successfully moved/i)).toBeVisible();
+      expect(await screen.findByText(/gallery:irods\.success\.moved/i)).toBeVisible();
       const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       const body = JSON.parse(moveRequest?.data as string) as { recordIds: unknown };
       expect(body.recordIds).toEqual(expect.arrayContaining([123, 456]));

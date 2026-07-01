@@ -72,10 +72,29 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   const helperText = t("fields.templateFields.alias.helperText", { min, max });
   const aliasDisabled = !fieldOwner.isFieldEditable("subSampleAlias");
   const aliasValue = fieldOwner.fieldValues.subSampleAlias;
-  const aliasOptions = ALIAS_DEFAULTS.map((value) => ({
-    value,
-    label: t(`fields.templateFields.alias.defaults.${value}`),
-  }));
+  const aliasOptions = ALIAS_DEFAULTS.map((value): RadioOption<DefaultAliasOption> => {
+    switch (value) {
+      case "aliquot":
+        return { value, label: t("fields.templateFields.alias.defaults.aliquot") };
+      case "component":
+        return { value, label: t("fields.templateFields.alias.defaults.component") };
+      case "individual":
+        return { value, label: t("fields.templateFields.alias.defaults.individual") };
+      case "piece":
+        return { value, label: t("fields.templateFields.alias.defaults.piece") };
+      case "portion":
+        return { value, label: t("fields.templateFields.alias.defaults.portion") };
+      case "section":
+        return { value, label: t("fields.templateFields.alias.defaults.section") };
+      case "subsample":
+        return { value, label: t("fields.templateFields.alias.defaults.subsample") };
+      case "unit":
+        return { value, label: t("fields.templateFields.alias.defaults.unit") };
+      case "volume":
+        return { value, label: t("fields.templateFields.alias.defaults.volume") };
+    }
+    throw new Error(`Unknown alias default: ${value}`);
+  });
   const radioButtons: Array<RadioOption<DefaultAliasOption | "custom">> = [
     ...aliasOptions,
     { value: "custom", label: t("fields.templateFields.alias.custom") },

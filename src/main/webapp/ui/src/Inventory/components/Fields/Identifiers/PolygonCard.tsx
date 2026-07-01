@@ -27,12 +27,6 @@ import {
 } from "./GeoLocationField";
 import { isEmpty } from "./MultipleInputHandler";
 
-const POLYGON_CARD_MESSAGES: PolygonMessages = {
-  empty: "An empty Polygon will not be included in the Geolocation.",
-  incomplete: "All points values need to be completed in order for the Polygon to be used.",
-  complete: "All points are completed, the Polygon can be included in the Geolocation.",
-};
-
 const PolygonEditor = observer(
   ({
     geoLocation,
@@ -81,7 +75,7 @@ const PolygonEditor = observer(
             md: 5,
           }}
         >
-          <InputWrapper label={`Point ${i + 1} Latitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.pointLatitude", { pointNumber: i + 1 })}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
@@ -91,7 +85,7 @@ const PolygonEditor = observer(
                 data-test-id={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
-                placeholder="Enter Point Latitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLatitude")}
                 onChange={({ target: { value } }) => {
                   geoLocationPolygon.set(i, "pointLatitude", value);
                   doUpdateIdentifiers();
@@ -117,7 +111,7 @@ const PolygonEditor = observer(
             md: 5,
           }}
         >
-          <InputWrapper label={`Point ${i + 1} Longitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.pointLongitude", { pointNumber: i + 1 })}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
@@ -127,7 +121,7 @@ const PolygonEditor = observer(
                 data-test-id={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
-                placeholder="Enter Point Longitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLongitude")}
                 onChange={({ target: { value } }) => {
                   geoLocationPolygon.set(i, "pointLongitude", value);
                   doUpdateIdentifiers();
@@ -153,7 +147,14 @@ const PolygonEditor = observer(
             md: 1,
           }}
         >
-          {canBeAdded(i) ? <AddButton onClick={() => handleAddPoint(i)} title={`Add Point after ${i + 1}`} /> : " "}
+          {canBeAdded(i) ? (
+            <AddButton
+              onClick={() => handleAddPoint(i)}
+              title={t("fields.identifiers.polygonCard.addPointAfter", { pointNumber: i + 1 })}
+            />
+          ) : (
+            " "
+          )}
         </Grid>
         <Grid
           size={{
@@ -161,7 +162,10 @@ const PolygonEditor = observer(
           }}
         >
           {canBeRemoved(i) ? (
-            <RemoveButton onClick={() => handleRemovePoint(i)} title={`Remove Point ${i + 1}`} />
+            <RemoveButton
+              onClick={() => handleRemovePoint(i)}
+              title={t("fields.identifiers.polygonCard.removePoint", { pointNumber: i + 1 })}
+            />
           ) : (
             " "
           )}
@@ -179,6 +183,11 @@ type PolygonCardArgs = {
 
 function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCardArgs): ReactNode {
   const { t } = useTranslation("inventory");
+  const polygonCardMessages: PolygonMessages = {
+    empty: t("fields.identifiers.polygonCard.state.empty"),
+    incomplete: t("fields.identifiers.polygonCard.state.incomplete"),
+    complete: t("fields.identifiers.polygonCard.state.complete"),
+  };
   const InPolygonPointEditor = observer((): ReactNode => {
     const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation = geoLocation;
     return (
@@ -196,7 +205,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             md: 5,
           }}
         >
-          <InputWrapper label={`In Polygon Point Latitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.inPolygonPointLatitude")}>
             {editable ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
@@ -206,7 +215,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 data-test-id={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
-                placeholder="Enter Point Latitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLatitude")}
                 onChange={({ target: { value } }) => {
                   runInAction(() => {
                     geoLocationInPolygonPoint.pointLatitude = value;
@@ -239,7 +248,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             md: 5,
           }}
         >
-          <InputWrapper label={`In Polygon Point Longitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.inPolygonPointLongitude")}>
             {editable ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
@@ -249,7 +258,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 data-test-id={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}
-                placeholder="Enter Point Longitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLongitude")}
                 onChange={({ target: { value } }) => {
                   runInAction(() => {
                     geoLocationInPolygonPoint.pointLongitude = value;
@@ -287,8 +296,10 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
       <CardContent sx={{ pt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormLabel>
-            {`Polygon ${editable ? "Editor" : "Configuration"}`}
-            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add a Polygon to your IGSN ID Geolocation" />
+            {editable
+              ? t("fields.identifiers.polygonCard.editorTitle")
+              : t("fields.identifiers.polygonCard.configurationTitle")}
+            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title={t("fields.identifiers.polygonCard.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
             {t("fields.identifiers.polygonCard.polygonDescription")}
@@ -297,7 +308,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             <PolygonStateAlert
               polygonEmpty={polygonEmpty}
               polygonComplete={geoLocation.geoLocationPolygon.isValid}
-              textMessages={POLYGON_CARD_MESSAGES}
+              textMessages={polygonCardMessages}
             />
           </Box>
           <PolygonEditor geoLocation={geoLocation} editable={editable} doUpdateIdentifiers={doUpdateIdentifiers} />

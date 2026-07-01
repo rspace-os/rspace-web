@@ -212,7 +212,7 @@ function FormatChoice({
     <Grid container>
       <h3>{t("export.format.chooser.heading")}</h3>
       <RadioGroup
-        aria-label={t("export.format.chooser.selectAria")}
+        aria-label={t("export.format.chooser.selectLabel")}
         name="exportType"
         value={archiveType}
         // @ts-expect-error TypeScript doesn't realise that the value can only be one of the ArchiveType values

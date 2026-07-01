@@ -109,7 +109,7 @@
         "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
         "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
         "revisionsSection": "Revisions",
-        "selectAria": "Select Export",
+        "selectLabel": "Select Export",
         "wordErrors": {
           "allMedia": "All selected items are attachments — there are no RSpace documents to export.",
           "folder": "Word export is only available for a single document, and you've selected a folder.",
@@ -309,6 +309,9 @@
       },
       "description": "Select the documents you want to combine into a single CSV file. Documents with identical structures will be automatically aligned, including form data and content. If documents have different structures, additional columns will be created to accommodate all information.",
       "exportRows": "Export {selection, select, selected {selected} other {all}} rows to CSV",
+      "labels": {
+        "documentsTable": "Documents"
+      },
       "loadingDocuments": "Reading documents…",
       "readError": "Could not read all of the documents",
       "title": "Export Documents to CSV",
@@ -321,7 +324,7 @@
     },
     "newFolder": {
       "creating": "Creating a new folder...",
-      "nameAria": "Folder name",
+      "nameLabel": "Folder name",
       "navigateAfterCreate": "Navigate to the created folder",
       "placeholder": "Enter a name, /or/a/path to create multiple folders",
       "title": "Create a folder",

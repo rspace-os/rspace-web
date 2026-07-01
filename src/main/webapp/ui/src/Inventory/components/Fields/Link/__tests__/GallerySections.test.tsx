@@ -143,12 +143,16 @@ describe("GallerySections", () => {
 
   it("shows the upload-new-version control when the file is editable (VIEW_MODE)", () => {
     renderGallery();
-    expect(screen.getByRole("button", { name: /upload new version/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+    ).toBeInTheDocument();
   });
 
   it("hides the upload-new-version control for a revision (historical) view", () => {
     renderGallery({ info: { ...imageInfo, revision: 5 } });
-    expect(screen.queryByRole("button", { name: /upload new version/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("uploads the picked file and notifies the parent on success", async () => {

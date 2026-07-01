@@ -67,9 +67,9 @@ describe("Carousel", () => {
     const user = userEvent.setup();
     render(<SimpleCarousel />);
 
-    await user.click(screen.getByRole("button", { name: /zoom in/i }));
+    await user.click(screen.getByRole("button", { name: /common:actions\.zoomIn/i }));
     await user.click(screen.getByRole("button", { name: /carousel.next/i }));
 
-    expect(screen.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /common:actions\.resetZoom/i })).toBeDisabled();
   });
 });

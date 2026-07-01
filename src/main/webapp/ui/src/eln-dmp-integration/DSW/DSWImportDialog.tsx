@@ -303,7 +303,7 @@ function DSWImportDialogContent({
               onSelectionChange={(newSelectionId: GridRowId) => {
                 setSelectedPlan(DMPs.find((d) => d.id === newSelectionId));
               }}
-              selectRadioAriaLabelFunc={(row) => `Select plan: ${row.name}`}
+              selectRadioAriaLabelFunc={(row) => t("dmpIntegrations.dialog.selectPlanLabel", { label: row.name })}
               initialState={{
                 columns: {
                   columnVisibilityModel: {

@@ -649,7 +649,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row
-          aria-label={t("tinyMce.omero.dataTypeChoiceAria")}
+          aria-label={t("tinyMce.omero.dataTypeChoiceLabel")}
           name="data type choice"
           defaultValue={dataTypeChoice}
           onChange={handleDataTypeChange}

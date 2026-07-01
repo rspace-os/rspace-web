@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import type * as FetchingData from "../../../util/fetchingData";
@@ -11,8 +12,8 @@ const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
 
 function handleErrors(
   response: unknown,
-  successMessage = "Successfully moved the files to S3.",
-  partialFailureMessage = "Moving some files to S3 failed.",
+  successMessage: string = i18n.t("gallery:s3.success.moved"),
+  partialFailureMessage: string = i18n.t("gallery:s3.errors.partialMoveFailed"),
 ): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
@@ -79,7 +80,7 @@ function handleErrors(
     .orElse(
       mkAlert({
         variant: "error",
-        message: "Could not parse response.",
+        message: i18n.t("gallery:errors.parseResponse"),
       }),
     );
 }
@@ -135,8 +136,10 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         addAlert(
           handleErrors(
             response,
-            operation === "copy" ? "Successfully copied the files to S3." : "Successfully moved the files to S3.",
-            operation === "copy" ? "Copying some files to S3 failed." : "Moving some files to S3 failed.",
+            operation === "copy" ? i18n.t("gallery:s3.success.copied") : i18n.t("gallery:s3.success.moved"),
+            operation === "copy"
+              ? i18n.t("gallery:s3.errors.partialCopyFailed")
+              : i18n.t("gallery:s3.errors.partialMoveFailed"),
           ),
         );
       } catch (e) {
@@ -145,11 +148,12 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Unknown error");
+          .orElse(i18n.t("gallery:errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not ${operation} files to S3.`,
+            title:
+              operation === "copy" ? i18n.t("gallery:s3.errors.copyFailed") : i18n.t("gallery:s3.errors.moveFailed"),
             message: errorMsg,
           }),
         );
@@ -179,8 +183,8 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           addAlert(
             handleErrors(
               response,
-              "Successfully transferred the files to S3.",
-              "Transferring some files to S3 failed.",
+              i18n.t("gallery:s3.success.transferred"),
+              i18n.t("gallery:s3.errors.partialTransferFailed"),
             ),
           );
         }
@@ -190,11 +194,11 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Unknown error");
+          .orElse(i18n.t("gallery:errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not transfer files to S3.",
+            title: i18n.t("gallery:s3.errors.transferFailed"),
             message: errorMsg,
           }),
         );
@@ -278,7 +282,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Error loading S3 filestores"),
+          .orElse(i18n.t("gallery:listing.alerts.retrieveFilestoresFailed")),
       );
       console.error(e);
     } finally {

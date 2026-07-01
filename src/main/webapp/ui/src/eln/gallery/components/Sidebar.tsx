@@ -40,7 +40,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
-import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
+import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
@@ -171,9 +171,7 @@ const NewFolderMenuItem = ({
             <DialogContent>
               {s3Target && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  {
-                    "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure."
-                  }
+                  {t("sidebar.s3FolderNote")}
                 </Alert>
               )}
               <DialogContentText
@@ -402,7 +400,7 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
   if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
-      <Divider textAlign="left" aria-label="DMPs">
+      <Divider textAlign="left" aria-label={t("sidebar.dmpsLabel")}>
         {t("sidebar.dmpImport")}
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
@@ -440,6 +438,7 @@ const Sidebar = ({
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const { t } = useTranslation("gallery");
   const { t: tCommon } = useTranslation("common");
   React.useEffect(() => {
     autorun(() => {
@@ -462,7 +461,7 @@ const Sidebar = ({
         if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
       role="region"
-      aria-label="gallery sections drawer"
+      aria-label={t("sidebar.sectionsDrawerLabel")}
       id={id}
       ref={sidebarRef as React.Ref<HTMLDivElement>}
       sx={{
@@ -580,7 +579,7 @@ const Sidebar = ({
             }}
           >
             <DrawerTab
-              label={gallerySectionLabel.Images}
+              label={t("sections.images")}
               icon={gallerySectionIcon.Images}
               index={0}
               tabIndex={getTabIndex(0)}
@@ -593,7 +592,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Audios}
+              label={t("sections.audios")}
               icon={gallerySectionIcon.Audios}
               index={1}
               tabIndex={getTabIndex(1)}
@@ -606,7 +605,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Videos}
+              label={t("sections.videos")}
               icon={gallerySectionIcon.Videos}
               index={2}
               tabIndex={getTabIndex(2)}
@@ -619,7 +618,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Documents}
+              label={t("sections.documents")}
               icon={gallerySectionIcon.Documents}
               index={3}
               tabIndex={getTabIndex(3)}
@@ -632,7 +631,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Chemistry}
+              label={t("sections.chemistry")}
               icon={gallerySectionIcon.Chemistry}
               index={4}
               tabIndex={getTabIndex(4)}
@@ -645,7 +644,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Miscellaneous}
+              label={t("sections.miscellaneous")}
               icon={gallerySectionIcon.Miscellaneous}
               index={5}
               tabIndex={getTabIndex(5)}
@@ -658,7 +657,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Snippets}
+              label={t("sections.snippets")}
               icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
@@ -680,7 +679,7 @@ const Sidebar = ({
             {showFilestores && (
               <DrawerTab
                 key={null}
-                label={gallerySectionLabel.NetworkFiles}
+                label={t("sections.networkFiles")}
                 icon={gallerySectionIcon.NetworkFiles}
                 index={7}
                 tabIndex={getTabIndex(7)}
@@ -694,7 +693,7 @@ const Sidebar = ({
               />
             )}
             <DrawerTab
-              label={gallerySectionLabel.DMPs}
+              label={t("sections.dmps")}
               icon={gallerySectionIcon.DMPs}
               index={showFilestores ? 8 : 7}
               tabIndex={getTabIndex(showFilestores ? 8 : 7)}
@@ -707,7 +706,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.PdfDocuments}
+              label={t("sections.pdfDocuments")}
               icon={gallerySectionIcon.PdfDocuments}
               index={showFilestores ? 9 : 8}
               tabIndex={getTabIndex(showFilestores ? 9 : 8)}

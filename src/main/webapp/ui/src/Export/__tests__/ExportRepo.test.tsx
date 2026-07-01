@@ -120,7 +120,7 @@ describe("ExportRepo", () => {
               const dmpTable = await screen.findByRole("table");
               (
                 await within(dmpTable).findAllByRole("checkbox", {
-                  name: "Plan selection",
+                  name: "apps:dmpIntegrations.dialog.selectPlanLabel",
                 })
               ).forEach((c, i) => {
                 if (indexes.has(i)) fireEvent.click(c);

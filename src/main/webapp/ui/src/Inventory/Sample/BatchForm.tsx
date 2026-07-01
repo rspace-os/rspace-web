@@ -43,7 +43,7 @@ function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
       sectionName="overview"
       recordType="sample"
     >
-      <Image fieldOwner={collection} alt={`What the ${collection.size} samples look like`} />
+      <Image fieldOwner={collection} alt={t("sample.batch.imageAlt", { count: collection.size })} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
           <Alert severity="info">{t("sample.batch.largeImageWarning")}</Alert>
@@ -111,7 +111,7 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   return (
     <FormWrapper
       recordType="sample"
-      titleText={`Batch editing ${records.size} samples`}
+      titleText={t("sample.batch.title", { count: records.size })}
       editableObject={searchStore.search.batchEditableInstance}
     >
       <StepperPanel icon="sample" title={t("formSections.information")} sectionName="information" recordType="sample">
@@ -131,7 +131,7 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
         <AccessPermissions
           fieldOwner={collection}
           hideOwnersGroups
-          additionalExplanation="Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples."
+          additionalExplanation={t("sample.permissionsExplanation")}
         />
       </StepperPanel>
     </FormWrapper>

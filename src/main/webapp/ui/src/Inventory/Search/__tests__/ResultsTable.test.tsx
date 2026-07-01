@@ -18,7 +18,7 @@ import materialTheme from "../../../theme";
 import { menuIDs } from "../../../util/menuIDs";
 import ResultsTable from "../ResultsTable";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
+const REQUIRED_PERMISSIONS_TOOLTIP = "inventory:detailedListing.card.requiredPermissions";
 
 const renderResultsTable = (search: Search) => {
   const rootStore = makeMockRootStore({
@@ -145,7 +145,7 @@ describe("Results Table", () => {
       renderResultsTable(search);
 
       const checkbox = screen.getByRole("checkbox", {
-        name: /select result item/i,
+        name: "inventory:search.results.selectResultItem",
       });
       expect(checkbox).toBeDisabled();
 

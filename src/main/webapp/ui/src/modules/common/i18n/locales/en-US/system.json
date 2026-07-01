@@ -24,14 +24,38 @@
     "unlinkHelpPrefix": "A ROR ID is linked to this RSpace Instance. Click on",
     "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
   },
+  "tags": {
+    "errorFetchingTags": "Error fetching tags",
+    "noMatchingSuggestions": "No matching suggestions",
+    "tryAgain": "Please try again.",
+    "typeTagInstead": "Type the tag instead.",
+    "useNewTagHint": "Type to create a new tag."
+  },
   "usersPage": {
     "actionsButton": "Actions",
     "actionsLabel": "Actions menu for selected rows",
+    "alerts": {
+      "accountDeleted": "Successfully deleted user's account.",
+      "accountDeleteFailed": "Could not delete user's account.",
+      "accountDisabled": "Successfully disabled account.",
+      "accountDisableFailed": "Could not disable account.",
+      "accountEnabled": "Successfully enabled account.",
+      "accountEnableFailed": "Could not enable account.",
+      "accountUnlocked": "Successfully unlocked account.",
+      "accountUnlockFailed": "Could not unlock account.",
+      "piRoleGranted": "Successfully granted PI role to user.",
+      "piRoleGrantFailed": "Could not grant PI role to user.",
+      "piRoleRevoked": "Successfully revoked PI role from user.",
+      "piRoleRevokeFailed": "Could not revoke user's PI role.",
+      "tagsSaved": "Successfully saved tags.",
+      "tagsSaveFailed": "Could not save tags."
+    },
     "aliasDialog": {
       "description": "SysAdmins can set a username alias for a user, enabling both the username and its alias to be used during login. The alias is only recognised during the login process, and does not replace the user’s username as their main identifier inside RSpace.",
       "errorTitle": "Could not set username alias.",
       "field": "Username Alias",
       "menuItem": "Set Username Alias",
+      "onlyOneUser": "Only one user can have an alias set at a time.",
       "submit": "Set Alias",
       "success": "Successfully set username alias.",
       "title": "Set Username Alias"
@@ -40,28 +64,58 @@
     "billableUsersTooltip": "Enabled users and PIs, excluding admins.",
     "columns": {
       "button": "Columns",
-      "locked": "Locked"
+      "creationDate": "Creation Date",
+      "disabled": "Disabled",
+      "documents": "Documents",
+      "email": "Email",
+      "enabled": "Enabled",
+      "firstName": "First Name",
+      "fullName": "Full Name",
+      "groupMembership": "Group Membership",
+      "lastLogin": "Last Login",
+      "lastName": "Last Name",
+      "locked": "Locked",
+      "role": "Role",
+      "tags": "Tags",
+      "usage": "Usage",
+      "username": "Username",
+      "usernameAlias": "Username Alias"
     },
     "communityAdmins": "Community Admins",
     "deleteDialog": {
       "confirmUsername": "To delete <strong>{fullName}</strong>'s account please enter their username.",
+      "disabledByDeployment": "The deployment property \"sysadmin.delete.user\" is false.",
       "formsAndTemplatesNotice": "The user you are trying to delete is <strong>{ownerOfFormsAndTemplates}</strong> To ensure continued access to these Forms/Templates, the system<strong> {willTransferOwnership}</strong> of those files to<strong> {thisSystemAdministrator}</strong> account. Forms and Templates that are not used by others will be deleted.",
       "formsNotice": "The user you are trying to delete is <strong>{ownerOfForms}</strong> To ensure continued access to these Forms, the system<strong> {willTransferOwnership}</strong> of the Forms to<strong> {thisSystemAdministrator}</strong> account. Forms that are not used by others will be deleted.",
       "irreversible": "User deletion is irreversible, and all documents will be deleted.",
+      "onlyOneUser": "Only one user can be deleted at a time.",
       "title": "Deletion Confirmation",
+      "transferAndDelete": "Transfer Forms/Templates And Delete",
+      "usernameMismatch": "Usernames do not match.",
       "xmlArchive": "An XML archive will be made of the user's work which will be available for a short time on the server."
+    },
+    "enableDisable": {
+      "disable": "Disable",
+      "enable": "Enable",
+      "menuItem": "Enable / Disable",
+      "onlyOneUser": "Only one user can be enabled / disabled at a time."
     },
     "export": {
       "allRows": "Export all rows to CSV",
+      "onlyOneUser": "Only one user's work can be exported at a time.",
       "selected": "selected",
       "thisPageOf": "this page of",
-      "visibleRows": "Export {scope} rows to CSV"
+      "visibleRows": "Export {scope} rows to CSV",
+      "work": "Export Work"
     },
     "filterLabel": "Filter users",
+    "filtersActive": "{count, plural, one {# filter active} other {# filters active}}",
     "filtersButton": "Filters",
     "groupMembership": {
+      "count": "{count, plural, one {# group} other {# groups}}",
+      "panelLabel": "Groups",
       "showList": "Show list of groups",
-      "showListAria": "{count} group(s). Show list of groups."
+      "showListLabel": "{count} group(s). Show list of groups."
     },
     "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <a>Tagging docs</a> for more.",
     "loadingError": "Failed to load listing of users. Please try refreshing.",
@@ -69,33 +123,64 @@
     "ownerOfForms": "the owner of Forms that are used by other users.",
     "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
     "piRoleDialog": {
+      "adminSelected": "The selected user is an admin.",
       "error": "ERROR: {error}",
       "grantAction": "Grant",
+      "grantMenuItem": "Grant PI role",
       "grantPrompt": "To grant the PI role to <strong>{fullName}</strong> please re-enter your password.",
       "grantTitle": "Grant user PI role",
       "loading": "Loading",
+      "onlyOneUser": "Only one user can be modified at a time.",
       "password": "Password",
       "revokeAction": "Revoke",
+      "revokeMenuItem": "Revoke PI role",
       "revokePrompt": "To revoke the PI role from <strong>{fullName}</strong> please re-enter your password.",
       "revokeTitle": "Revoke PI role from user",
       "setVerificationPassword": "Please set your verification password in My RSpace before performing this action."
+    },
+    "roleLabels": {
+      "admin": "Admin",
+      "pi": "PI",
+      "sysadmin": "Sysadmin",
+      "user": "User"
+    },
+    "search": {
+      "users": "Search users"
+    },
+    "selection": {
+      "moreThanOneSelected": "More than one user is selected",
+      "noneSelected": "No users selected",
+      "noSelection": "No selection",
+      "usersSelected": "{count, plural, one {# user selected} other {# users selected}}"
     },
     "summary": {
       "availableSeats": "Available Seats",
       "communityAdmins": "Community Admins",
       "systemAdmins": "System Admins"
     },
+    "tableActionsLabel": "Users table actions",
+    "tableLabel": "users",
     "tagDialog": {
       "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <a>Read more about tagging users here.</a>",
+      "menuItem": "Add/Remove Tags",
       "title": "Tagging {count} {count, plural, one {user} other {users}}"
     },
     "tags": {
+      "count": "{count, plural, one {# tag} other {# tags}}",
+      "filterSuggested": "Filter suggested tags",
+      "panelLabel": "Tags",
       "showList": "Show list of tags",
-      "showListAria": "{count} tag(s). Show list of tags."
+      "showListLabel": "{count} tag(s). Show list of tags."
     },
     "thisSystemAdministrator": "this System Administrator",
+    "title": "Users",
     "totalUsers": "Total Users",
     "totalUsersTooltip": "All users including admins and those with disabled accounts.",
+    "unlock": {
+      "menuItem": "Unlock",
+      "onlyLockedAccounts": "Only locked accounts can be unlocked.",
+      "onlyOneUser": "Only one user can be unlocked at a time."
+    },
     "willTransferOwnership": "will transfer ownership"
   }
 }

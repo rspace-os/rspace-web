@@ -59,7 +59,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       <Table aria-label="Inventory update test table">
         <TableHead>
           <TableRow>
-            <TableCell aria-label="common:stoichiometry.inventoryUpdate.selectMoleculeAria" />
+            <TableCell aria-label="common:stoichiometry.inventoryUpdate.selectMoleculeLabel" />
             <TableCell>{"common:stoichiometry.inventoryUpdate.molecule"}</TableCell>
             <TableCell>{"common:stoichiometry.inventoryUpdate.inStock"}</TableCell>
             <TableCell>{"common:stoichiometry.inventoryUpdate.willUse"}</TableCell>

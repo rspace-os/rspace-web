@@ -153,7 +153,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
         {!disabled && (
           <Box sx={{ position: "absolute", top: 0, right: 0, zIndex: 1 }}>
             <IconButtonWithTooltip
-              title="Edit link"
+              title={t("fields.link.linkField.editLink")}
               size="small"
               onClick={() => setEditing(true)}
               icon={<SettingsIcon fontSize="small" />}

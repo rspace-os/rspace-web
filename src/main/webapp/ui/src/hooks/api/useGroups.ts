@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
@@ -73,8 +74,8 @@ export default function useGroups(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error fetching groups",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: i18n.t("common:apiErrors.groups.fetchManyFailed"),
+          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch groups", {
@@ -96,8 +97,8 @@ export default function useGroups(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching group",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: i18n.t("common:apiErrors.groups.fetchOneFailed"),
+            message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch group", {

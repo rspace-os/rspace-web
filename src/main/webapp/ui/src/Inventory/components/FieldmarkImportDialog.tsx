@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
+import i18n from "@/modules/common/i18n";
 import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import Result from "@/util/result";
 import createAccentedTheme from "../../accentedTheme";
@@ -54,7 +55,7 @@ class ResponseContainer implements LinkableRecord {
   }
 
   get recordTypeLabel(): string {
-    return "Container";
+    return i18n.t("inventory:recordTypes.container.singular");
   }
 
   get iconName(): string {

@@ -18,7 +18,7 @@ describe("NumberField", () => {
       disabled     | value | noValueLabel | expectFn
       ${true}      | ${0}  | ${undefined} | ${expectTextField(0)}
       ${true}      | ${0}  | ${"foo"}     | ${expectTextField(0)}
-      ${true}      | ${""} | ${undefined} | ${expectLabel("None")}
+      ${true}      | ${""} | ${undefined} | ${expectLabel("common:values.none")}
       ${true}      | ${""} | ${"foo"}     | ${expectLabel("foo")}
       ${false}     | ${0}  | ${undefined} | ${expectTextField(0)}
       ${false}     | ${0}  | ${"foo"}     | ${expectTextField(0)}

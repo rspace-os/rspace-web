@@ -267,7 +267,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
             sx={{ minWidth: 750 }}
             aria-labelledby="tableTitle"
             size="small"
-            aria-label={t("tinyMce.internalLink.versionTableAria")}
+            aria-label={t("tinyMce.internalLink.versionTableLabel")}
           >
             <EnhancedTableHead
               headCells={headCells}

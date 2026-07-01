@@ -1,5 +1,6 @@
 import { type ApiReferenceConfigurationWithMultipleSources, ApiReferenceReact } from "@scalar/api-reference-react";
 import React from "react";
+import i18n from "@/modules/common/i18n";
 import "@scalar/api-reference-react/style.css";
 
 /**
@@ -52,14 +53,14 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
   return {
     sources: [
       {
-        title: "RSpace ELN",
+        title: i18n.t("apiDocs.sources.eln", { ns: "common" }),
         slug: "rspace-eln",
         url: `${baseUrl}/resources/rspace_api_specs_2_23_0.yaml`,
         default: true,
         agent: DISABLED_AGENT,
       },
       {
-        title: "RSpace Inventory",
+        title: i18n.t("apiDocs.sources.inventory", { ns: "common" }),
         slug: "rspace-inventory",
         url: `${baseUrl}/resources/rspace_api_inventory_specs_2_24_0.yaml`,
         agent: DISABLED_AGENT,

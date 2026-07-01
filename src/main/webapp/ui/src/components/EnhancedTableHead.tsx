@@ -5,6 +5,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Order } from "../util/types";
 import TableSortLabel from "./TableSortLabel";
 
@@ -49,6 +50,7 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
   const createSortHandler = (property: COLUMN_ID_TYPE) => (event: React.MouseEvent<HTMLSpanElement>) => {
     onRequestSort(event, property);
   };
+  const { t } = useTranslation("common");
   return (
     <TableHead>
       <TableRow>
@@ -61,7 +63,7 @@ export default function EnhancedTableHead<COLUMN_ID_TYPE extends React.Key>(
               onChange={onSelectAllClick}
               slotProps={{
                 input: {
-                  "aria-label": "select/deselect all",
+                  "aria-label": t("enhancedTableHead.selectAllLabel"),
                 },
               }}
             />

@@ -836,7 +836,9 @@ export function ShareDialog({
                                         <FormControl size="small" sx={{ minWidth: 120 }}>
                                           <Select
                                             inputProps={{
-                                              "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                              "aria-label": t("shareDialog.permissionSelectLabel", {
+                                                recipientName: share.recipientName,
+                                              }),
                                             }}
                                             value={getCurrentPermission(share)}
                                             onChange={(e) => {
@@ -924,7 +926,9 @@ export function ShareDialog({
                                         <FormControl size="small" sx={{ minWidth: 120 }}>
                                           <Select
                                             inputProps={{
-                                              "aria-label": `Set permission for sharing with ${newShare.recipientName}`,
+                                              "aria-label": t("shareDialog.permissionSelectLabel", {
+                                                recipientName: newShare.recipientName,
+                                              }),
                                             }}
                                             value={newShare.permission}
                                             onChange={(e) => {
@@ -1030,7 +1034,9 @@ export function ShareDialog({
                                           <FormControl size="small" sx={{ minWidth: 120 }} disabled>
                                             <Select
                                               inputProps={{
-                                                "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                                "aria-label": t("shareDialog.permissionSelectLabel", {
+                                                  recipientName: share.recipientName,
+                                                }),
                                               }}
                                               value={share.permission}
                                               onChange={() => {
@@ -1152,7 +1158,9 @@ export function ShareDialog({
                             <FormControl size="small" sx={{ minWidth: 80 }}>
                               <Select
                                 inputProps={{
-                                  "aria-label": `Set permission for sharing with ${share.recipientName}`,
+                                  "aria-label": t("shareDialog.permissionSelectLabel", {
+                                    recipientName: share.recipientName,
+                                  }),
                                 }}
                                 value={share.permission}
                                 onChange={(e) => {
@@ -1301,12 +1309,12 @@ export function ShareDialog({
           setSelectedShareForFolderChange(null);
         }}
         rootFolderId={selectedShareForFolderChange?.sharedFolderId}
-        title="Select Shared Folder Location"
+        title={t("shareDialog.selectSharedFolderLocation")}
       />
       <DialogActions>
         {hasChanges && <Button onClick={handleCancel}>{t("actions.cancel")}</Button>}
         <ValidatingSubmitButton loading={saving} onClick={() => void handleSave()} validationResult={validationResult}>
-          {hasChanges ? "Save" : "Done"}
+          {hasChanges ? t("actions.save") : t("actions.done")}
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>

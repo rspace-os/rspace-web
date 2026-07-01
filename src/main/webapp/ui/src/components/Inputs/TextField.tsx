@@ -1,5 +1,6 @@
 import DOMPurify from "dompurify";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 import Editor from "./StyledTinyMceEditor";
 
@@ -18,6 +19,7 @@ export type TextFieldArgs = {
 };
 
 export default function TextField({ onChange, ...props }: TextFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const handleEditorChange = (content: string) => {
     const e = {
       target: {
@@ -38,7 +40,7 @@ export default function TextField({ onChange, ...props }: TextFieldArgs): React.
         ></span>
       );
     }
-    return <NoValue label={props.noValueLabel ?? "None"} />;
+    return <NoValue label={props.noValueLabel ?? t("values.none")} />;
   }
   return (
     <Editor

@@ -37,6 +37,7 @@
     "skipToContent": {
       "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
       "navigation": "Skip to content navigation",
+      "skipToLandmark": "Skip to {landmark}",
       "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
     },
     "tip": "Tip",
@@ -52,24 +53,34 @@
     "choose": "Choose",
     "clear": "Clear",
     "close": "Close",
+    "collapse": "Collapse",
     "confirm": "Confirm",
     "copy": "Copy",
     "create": "Create",
+    "created": "Created",
     "delete": "Delete",
     "dismiss": "Dismiss",
     "done": "Done",
+    "download": "Download",
     "duplicate": "Duplicate",
     "edit": "Edit",
+    "expand": "Expand",
     "export": "Export",
     "import": "Import",
     "insert": "Insert",
     "invite": "Invite",
     "login": "Login",
+    "logOut": "Log Out",
     "move": "Move",
     "next": "Next",
+    "no": "No",
+    "none": "None",
     "ok": "OK",
     "open": "Open",
+    "publish": "Publish",
     "remove": "Remove",
+    "republish": "Republish",
+    "resetZoom": "reset zoom",
     "restore": "Restore",
     "retry": "Retry",
     "save": "Save",
@@ -80,20 +91,66 @@
     "submit": "Submit",
     "transfer": "Transfer",
     "trash": "Trash",
-    "witness": "Witness"
+    "updated": "Updated",
+    "upload": "Upload",
+    "witness": "Witness",
+    "yes": "Yes",
+    "zoomIn": "zoom in",
+    "zoomOut": "zoom out"
   },
   "alerts": {
+    "countLabel": "There are currently {count} alerts.",
+    "detailsToggleLabel": "{count} sub-messages. Toggle to {expanded, select, true {hide} other {show}}",
+    "moreDetails": "And {count} more...",
+    "toastLabel": "{variant, select, success {success} warning {warning} error {error} notice {notice} other {alert}} alert",
     "warning": "Warning"
   },
   "apiAuthentication": {
     "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
     "warningTitle": "Could not authenticate via API"
   },
+  "apiDocs": {
+    "sources": {
+      "eln": "RSpace ELN",
+      "inventory": "RSpace Inventory"
+    }
+  },
+  "apiErrors": {
+    "chemicals": {
+      "loadElementFailed": "Problem loading chemical element.",
+      "loadElementsFailed": "Loading chemical elements failed.",
+      "saveFailed": "Error saving chemical compounds",
+      "searchFailed": "Error searching for chemical compounds"
+    },
+    "documents": {
+      "moveFailed": "Error moving document"
+    },
+    "folders": {
+      "createFailed": "Error creating folder",
+      "fetchFailed": "Error fetching folder",
+      "fetchTreeFailed": "Error fetching folder tree"
+    },
+    "groups": {
+      "fetchManyFailed": "Error fetching groups",
+      "fetchOneFailed": "Error fetching group"
+    },
+    "share": {
+      "createFailed": "Error creating share",
+      "deleteFailed": "Error deleting share",
+      "fetchFailed": "Error fetching sharing information",
+      "updateFailed": "Error updating share"
+    },
+    "unknown": "An unknown error occurred.",
+    "users": {
+      "fetchGroupMembersFailed": "Error fetching group members"
+    }
+  },
   "appBar": {
     "aboutRSpace": "About RSpace",
     "accountMenu": "Account Menu",
     "apps": "Apps",
     "brandingAlt": "branding",
+    "closeSidebar": "close sidebar",
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
     "goTo": "Go to...",
@@ -104,6 +161,7 @@
     "messaging": "Messaging",
     "notifications": "Notifications",
     "notificationsAndMessages": "notifications and messages",
+    "openSidebar": "open sidebar",
     "operatingAs": "Operating as:",
     "orcidAdd": "Add an ORCID iD to your <a>profile</a>.",
     "pageHeader": "page header",
@@ -134,6 +192,14 @@
   },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
+  },
+  "dirtyNavigation": {
+    "leave": "Leave",
+    "message": "Changes that you made will not be saved.",
+    "title": "Leave the editor?"
+  },
+  "enhancedTableHead": {
+    "selectAllLabel": "select/deselect all"
   },
   "errorBoundary": {
     "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a>support@researchspace.com</a> with details of when the issue happens."
@@ -254,11 +320,19 @@
     "dynamicallyLoadedImageEditor": {
       "loadError": "Could not load the image editor at this time. Please check your network connection and refresh."
     },
+    "fileField": {
+      "loadFailed": "Failed to load file. Please try again."
+    },
+    "imageField": {
+      "addImage": "Add Image",
+      "replaceImage": "Replace Image"
+    },
     "optionField": {
       "deleteNewOption": "Delete New Option",
       "deleteOption": "Delete Option: {option}",
       "emptyOption": "Option value cannot be empty",
-      "noOptionSelected": "No option selected"
+      "noOptionSelected": "No option selected",
+      "placeholder": "Option {index}"
     },
     "referenceField": {
       "notYetSupported": "Not yet supported."
@@ -280,6 +354,7 @@
       "notFound": "The requested data was not found on this instance of Omero",
       "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
     },
+    "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
     "timeout": "Request timed out.",
     "title": "Error",
     "tryAgainLater": "There is a problem, please try again later",
@@ -291,7 +366,18 @@
       "keepEditing": "Keep Editing",
       "text": "You have unsaved changes. Are you sure you want to discard them?",
       "title": "Discard changes?"
-    }
+    },
+    "insertChemicalTitle": "Ketcher Insert Chemical",
+    "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
+  },
+  "loading": "Loading",
+  "pageBranding": {
+    "gallery": "Gallery",
+    "myRSpace": "My RSpace",
+    "other": "Other",
+    "system": "System",
+    "unknown": "Unknown",
+    "workspace": "Workspace"
   },
   "profile": {
     "accountActivity": {
@@ -338,6 +424,9 @@
         "folderName": "Folder name",
         "genericError": "Something went wrong. Please, contact support if the issue persists.",
         "inProgress": "Autosharing is in progress",
+        "memberStatus": {
+          "notApplicable": "n/a"
+        },
         "notApplicable": "n/a",
         "onlyLabGroups": "Autosharing is only possible for LabGroups",
         "settingInProgress": "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete"
@@ -524,6 +613,28 @@
     "importSelected": "Import Selected",
     "title": "Import from PubChem"
   },
+  "recordTypes": {
+    "document": {
+      "lower": "document",
+      "singular": "Document"
+    },
+    "galleryFile": {
+      "lower": "gallery file",
+      "singular": "Gallery file"
+    },
+    "item": {
+      "lower": "item",
+      "singular": "Item"
+    },
+    "notebook": {
+      "lower": "notebook",
+      "singular": "Notebook"
+    },
+    "record": {
+      "lower": "record",
+      "singular": "Record"
+    }
+  },
   "search": {
     "clearTooltip": "Clear search",
     "placeholder": "Search..."
@@ -535,6 +646,18 @@
     "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
     "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
     "query": "Search query"
+  },
+  "sections": {
+    "audios": "sections.audios",
+    "chemistry": "sections.chemistry",
+    "dmps": "sections.dmps",
+    "documents": "sections.documents",
+    "images": "sections.images",
+    "miscellaneous": "sections.miscellaneous",
+    "networkFiles": "sections.networkFiles",
+    "pdfDocuments": "sections.pdfDocuments",
+    "snippets": "sections.snippets",
+    "videos": "sections.videos"
   },
   "shareDialog": {
     "addUsersOrGroups": "Add users or groups to share with",
@@ -576,6 +699,8 @@
       "remove": "Remove",
       "unshare": "Unshare"
     },
+    "permissionSelectLabel": "Set permission for sharing with {recipientName}",
+    "selectSharedFolderLocation": "Select Shared Folder Location",
     "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
     "titleMultiple": "Share {count} {pluralName}",
     "titleSingle": "Share <strong>{name}</strong>",
@@ -584,7 +709,7 @@
   "stoichiometry": {
     "addReagent": {
       "addChemical": "Add Chemical",
-      "menuAria": "add chemical menu",
+      "menuLabel": "add chemical menu",
       "name": "Name",
       "smilesString": "SMILES String",
       "sources": {
@@ -650,7 +775,7 @@
       "dialogTitle": "Update Inventory Stock",
       "inStock": "In Stock",
       "irreversibleTitle": "WARNING: This action is irreversible",
-      "irreversibleWarningAria": "Action irreversible warning",
+      "irreversibleWarningLabel": "Action irreversible warning",
       "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
       "linkRequired": "Link an inventory item before updating stock.",
       "missingActualMass": "Define actual mass before updating linked inventory stock.",
@@ -668,7 +793,7 @@
       "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
       "saving": "Saving...",
       "selectionError": "Re-select any invalid molecules before saving.",
-      "selectMoleculeAria": "Select molecule",
+      "selectMoleculeLabel": "Select molecule",
       "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
       "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
       "unnamedMolecule": "Unnamed molecule",
@@ -684,11 +809,6 @@
       "noPreview": "Stoichiometry Table (no preview)"
     },
     "table": {
-      "aria": {
-        "deleteReagent": "Delete reagent {name}",
-        "selectLimitingReagent": "Select {name} as limiting reagent",
-        "typeSelect": "Select type for {name}"
-      },
       "columns": {
         "actions": "Actions",
         "actualMass": "Actual Mass (g)",
@@ -703,6 +823,11 @@
         "notes": "Notes",
         "type": "Type",
         "yieldExcess": "Yield/Excess (%)"
+      },
+      "label": {
+        "deleteReagent": "Delete reagent {name}",
+        "selectLimitingReagent": "Select {name} as limiting reagent",
+        "typeSelect": "Select type for {name}"
       },
       "roles": {
         "product": "Product",
@@ -720,6 +845,7 @@
     "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
     "errorFetchingTags": "Error fetching tags",
     "filterSuggestedTags": "Filter suggested tags",
+    "label": "Tags",
     "loading": "Loading...",
     "metadata": {
       "controlledVocabularyName": "Controlled Vocabulary Name",
@@ -805,7 +931,9 @@
     "sendMessage": "Send a message"
   },
   "values": {
-    "none": "None"
+    "none": "None",
+    "noValue": "No Value",
+    "unknown": "Unknown"
   },
   "versionLockPicker": {
     "columns": {

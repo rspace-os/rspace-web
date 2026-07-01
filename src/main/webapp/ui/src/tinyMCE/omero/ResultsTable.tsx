@@ -201,7 +201,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
       <>
         <TableContainer sx={{ mb: "40px" }} ref={ref}>
           <Table
-            aria-label="item search results"
+            aria-label={t("tinyMce.omero.itemSearchResultsLabel")}
             sx={{
               display: "table",
               overflowX: "auto",
@@ -405,7 +405,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         color="primary"
                                         slotProps={{
                                           input: {
-                                            "aria-label": "get large thumbnail",
+                                            "aria-label": t("tinyMce.omero.getLargeThumbnailLabel"),
                                           },
                                         }}
                                       />
@@ -418,7 +418,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         },
                                       },
                                     }}
-                                    label={`large thumbnail`}
+                                    label={t("tinyMce.omero.largeThumbnail")}
                                   />
                                 )}
                               </div>

@@ -603,10 +603,10 @@ export default class InventoryBaseRecord
   validate(): ValidationResult {
     const validateName = () => {
       if (!this.isFieldEditable("name")) return IsValid();
-      if (this.name.length < 1) return IsInvalid("Name cannot be empty.");
-      if (this.name.length < 2) return IsInvalid("Name cannot be a single character.");
-      if (this.name.length > 255) return IsInvalid("Name cannot be more than 255 characters.");
-      if (this.name.trim().length < 1) return IsInvalid("Name cannot be just whitespace.");
+      if (this.name.length < 1) return IsInvalid(i18n.t("inventory:baseRecord.validation.nameRequired"));
+      if (this.name.length < 2) return IsInvalid(i18n.t("inventory:baseRecord.validation.nameSingleCharacter"));
+      if (this.name.length > 255) return IsInvalid(i18n.t("inventory:baseRecord.validation.nameTooLong"));
+      if (this.name.trim().length < 1) return IsInvalid(i18n.t("inventory:baseRecord.validation.nameWhitespace"));
       return IsValid();
     };
 
@@ -614,19 +614,19 @@ export default class InventoryBaseRecord
       if (!this.isFieldEditable("description")) return IsValid();
       if (typeof this.description === "undefined" || this.description === null) return IsValid();
       if (this.description.length <= 250) return IsValid();
-      return IsInvalid("Description cannot be longer than 250 characters.");
+      return IsInvalid(i18n.t("inventory:baseRecord.validation.descriptionTooLong"));
     };
 
     const validateTags = () => {
       if (!this.isFieldEditable("tags")) return IsValid();
       if (typeof this.tags === "undefined" || this.tags === null) return IsValid();
-      if (this.tags.join(",").length > 255) return IsInvalid("Too many tags.");
+      if (this.tags.join(",").length > 255) return IsInvalid(i18n.t("inventory:baseRecord.validation.tooManyTags"));
       return IsValid();
     };
 
     const validateExtraFields = () => {
       if (new Set(this.fieldNamesInUse).size !== this.fieldNamesInUse.length)
-        return IsInvalid("All field names must be distinct.");
+        return IsInvalid(i18n.t("inventory:baseRecord.validation.distinctFieldNames"));
       return allAreValid(this.extraFields.map((e) => e.isValid));
     };
 
@@ -635,7 +635,7 @@ export default class InventoryBaseRecord
 
   get submittable(): ValidationResult {
     return this.validate().flatMap(() => {
-      if (this.lockExpired) return IsInvalid("Edit lock has expired. Please refresh.");
+      if (this.lockExpired) return IsInvalid(i18n.t("inventory:baseRecord.validation.editLockExpired"));
       return IsValid();
     });
   }
@@ -756,8 +756,10 @@ export default class InventoryBaseRecord
       if (!silent) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: `Relinquishing control of ${this.globalId ?? "UNKNOWN"} failed`,
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:baseRecord.alerts.releaseLockFailed", {
+              globalId: this.globalId ?? i18n.t("common:values.unknown"),
+            }),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -786,8 +788,8 @@ export default class InventoryBaseRecord
       if (!silent) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: `Something went wrong while checking the lock for "${this.name}"`,
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:baseRecord.alerts.lockCheckFailed", { name: this.name }),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -841,14 +843,10 @@ export default class InventoryBaseRecord
             if (!silent) {
               getRootStore().uiStore.addAlert(
                 mkAlert({
-                  title: "Unsaved changes?",
-                  message:
-                    "It appears that you already started editing this " +
-                    this.recordTypeLabel.toLowerCase() +
-                    " " +
-                    "in another browser tab or on another device. We advise " +
-                    "you cancel or save those changes first otherwise " +
-                    "editing here could result in an error.",
+                  title: i18n.t("inventory:baseRecord.unsavedChanges.title"),
+                  message: i18n.t("inventory:baseRecord.unsavedChanges.message", {
+                    recordType: this.recordTypeLabel.toLowerCase(),
+                  }),
                   variant: "warning",
                   isInfinite: true,
                 }),
@@ -994,8 +992,10 @@ export default class InventoryBaseRecord
       if (!silent) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: `Could not load full details of ${this.globalId ?? "UNKNOWN"}.`,
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:baseRecord.alerts.loadDetailsFailed", {
+              globalId: this.globalId ?? "UNKNOWN",
+            }),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -1038,8 +1038,8 @@ export default class InventoryBaseRecord
       } catch (error) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: "Could not save changes to attachments.",
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:baseRecord.alerts.attachmentsSaveFailed"),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -1050,7 +1050,7 @@ export default class InventoryBaseRecord
       await searchStore.search.setActiveResult(newRecord);
       uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully created.`,
+          message: i18n.t("inventory:baseRecord.alerts.created", { name: this.name }),
           variant: "success",
         }),
       );
@@ -1072,7 +1072,7 @@ export default class InventoryBaseRecord
             .flatMap(Parsers.isArray)
             .elseThrow();
           const newAlert = mkAlert({
-            message: "Please correct the invalid fields and try again.",
+            message: i18n.t("inventory:baseRecord.alerts.invalidFields"),
             variant: "error",
             details: Result.any(
               ...validationErrors.map((e) =>
@@ -1099,8 +1099,8 @@ export default class InventoryBaseRecord
         } catch {
           getRootStore().uiStore.addAlert(
             mkAlert({
-              title: `Something went wrong and the ${this.recordType} was not saved.`,
-              message: getErrorMessage(error, "Unknown reason."),
+              title: i18n.t("inventory:baseRecord.alerts.saveFailed", { recordType: this.recordType }),
+              message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
               variant: "error",
             }),
           );
@@ -1145,8 +1145,8 @@ export default class InventoryBaseRecord
       } catch (error) {
         getRootStore().uiStore.addAlert(
           mkAlert({
-            title: "Could not save changes to attachments.",
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:baseRecord.alerts.attachmentsSaveFailed"),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -1156,7 +1156,7 @@ export default class InventoryBaseRecord
       getRootStore().searchStore.search.replaceResult(this);
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} updated successfully.`,
+          message: i18n.t("inventory:baseRecord.alerts.updated", { name: this.name }),
           variant: "success",
         }),
       );
@@ -1176,7 +1176,7 @@ export default class InventoryBaseRecord
             .flatMap(Parsers.isArray)
             .elseThrow();
           const newAlert = mkAlert({
-            message: "Please correct the invalid fields and try again.",
+            message: i18n.t("inventory:baseRecord.alerts.invalidFields"),
             variant: "error",
             details: Result.any(
               ...validationErrors.map((e) =>
@@ -1203,8 +1203,8 @@ export default class InventoryBaseRecord
         } catch {
           getRootStore().uiStore.addAlert(
             mkAlert({
-              title: `Something went wrong and the ${this.recordType} was not saved.`,
-              message: getErrorMessage(error, "Unknown reason."),
+              title: i18n.t("inventory:baseRecord.alerts.saveFailed", { recordType: this.recordType }),
+              message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
               variant: "error",
             }),
           );
@@ -1392,7 +1392,7 @@ export default class InventoryBaseRecord
         getRootStore().searchStore.search.replaceResult(this);
         getRootStore().uiStore.addAlert(
           mkAlert({
-            message: `Identifier ${response.data.doi} created.`,
+            message: i18n.t("inventory:identifiers.alerts.created", { doi: response.data.doi }),
             variant: "success",
           }),
         );
@@ -1401,8 +1401,8 @@ export default class InventoryBaseRecord
       // in case of errors like 404 the server provides a specific response message that we want to display
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `The Identifier could not be created.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifiers.alerts.createFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -1430,7 +1430,7 @@ export default class InventoryBaseRecord
           this.identifiers.splice(index, 1);
           getRootStore().uiStore.addAlert(
             mkAlert({
-              message: `Identifier draft deleted.`,
+              message: i18n.t("inventory:identifiers.alerts.draftDeleted"),
               variant: "success",
             }),
           );
@@ -1439,8 +1439,8 @@ export default class InventoryBaseRecord
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `The Identifier draft could not be deleted.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifiers.alerts.draftDeleteFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -1512,7 +1512,9 @@ export default class InventoryBaseRecord
 
   contextMenuDisabled(): string | null {
     return this.historicalVersion
-      ? `Cannot modify a historical version of a ${this.recordTypeLabel.toLowerCase() || "record"}.`
+      ? i18n.t("inventory:contextMenu.historicalVersion", {
+          recordType: this.recordTypeLabel.toLowerCase() || i18n.t("common:recordTypes.record.lower"),
+        })
       : null;
   }
 
@@ -1593,9 +1595,9 @@ export default class InventoryBaseRecord
        * code branch, avoiding the need to duplicate the template string logic
        */
       if (!owner.isCurrentUser) throw new Error("Not current user");
-      return "My Bench";
+      return i18n.t("inventory:moveToTarget.myBench");
     } catch {
-      return `${owner.fullName}'s Bench`;
+      return i18n.t("inventory:moveToTarget.ownerBench", { owner: owner.fullName });
     }
   }
 

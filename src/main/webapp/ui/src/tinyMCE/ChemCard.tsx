@@ -280,7 +280,9 @@ export default function ChemCard(props: ChemCardProps) {
           }}
         >
           <TableBody>
-            {chem.reaction && <PropertyRow label="Formula" value={renderFormattedFormula(chem.formula)} />}
+            {chem.reaction && (
+              <PropertyRow label={t("tinyMce.chemCard.formula")} value={renderFormattedFormula(chem.formula)} />
+            )}
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}
             {chem.molecules.map((m) => chemInfoTable(m))}

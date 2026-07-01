@@ -243,7 +243,7 @@ export default function Filter({
               variant="outlined"
               value={config.value}
               error={!valid[key]}
-              helperText={!valid[key] ? "Should be an integer" : null}
+              helperText={!valid[key] ? t("pyrat.filter.integerValidation") : null}
               onChange={(event) => handleFilterChange(event, key, config)}
               fullWidth
               slotProps={{

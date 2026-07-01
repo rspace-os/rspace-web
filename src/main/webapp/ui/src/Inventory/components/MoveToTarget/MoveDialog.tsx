@@ -1,7 +1,8 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -28,10 +29,10 @@ const DialogTitle = <RecordLike extends Record>({ beingMoved }: DialogTitleArgs<
       return "";
     if (beingMoved.length > 1) return t("moveToTarget.movingItems", { count: beingMoved.length });
     return (
-      <Trans
+      <TransRichText
         ns="inventory"
         i18nKey="moveToTarget.movingItem"
-        components={[<NameWithBadge key="name" record={beingMoved[0]} />]}
+        components={{ name: <NameWithBadge record={beingMoved[0]} /> }}
       />
     );
   };

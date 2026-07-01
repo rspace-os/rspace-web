@@ -52,6 +52,7 @@ function DnaPreview({
   idOfDnaPreviewTab: string;
 }) {
   const { t } = useTranslation("apps");
+  const { t: tCommon } = useTranslation("common");
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
@@ -100,26 +101,25 @@ function DnaPreview({
         </Select>
         <FormControlLabel
           control={<Switch checked={showEnzymes} onChange={({ target: { checked } }) => setShowEnzymes(checked)} />}
-          label="Show restriction sites"
+          label={t("tinyMce.snapGene.showRestrictionSites")}
         />
         <FormControlLabel
           control={<Switch checked={showORFs} onChange={({ target: { checked } }) => setShowORFs(checked)} />}
-          label="Show ORFs"
+          label={t("tinyMce.snapGene.showORFs")}
         />
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup>
-          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label="zoom in">
+          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label={tCommon("actions.zoomIn")}>
             <ZoomInIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label="zoom out">
+          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label={tCommon("actions.zoomOut")}>
             <ZoomOutIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom(1)} aria-label="reset zoom">
+          <IconButton onClick={() => setZoom(1)} aria-label={tCommon("actions.resetZoom")}>
             <ResetZoomIcon />
           </IconButton>
         </ButtonGroup>
       </Stack>
-      {}
       <Box
         sx={{
           borderRadius: "3px",
@@ -164,10 +164,10 @@ function DnaPreview({
         ) : (
           <Box
             component="img"
-            alt={`DNA preview of ${file.name}`}
+            alt={t("tinyMce.snapGene.dnaPreviewAlt", { name: file.name })}
             {...(image !== null ? { src: image } : {})}
             onError={() => {
-              setError("Coult not load DNA preview image.");
+              setError(t("tinyMce.snapGene.couldNotLoadDnaPreviewImage"));
             }}
             sx={{
               maxHeight: "100%",
@@ -184,30 +184,6 @@ function DnaPreview({
   );
 }
 
-const enzymeSetOptions = {
-  UNIQUE_SIX_PLUS: "Unique six plus",
-  UNIQUE: "Unique",
-  SIX_PLUS: "Six plus",
-  UNIQUE_AND_DUAL: "Unique and dual",
-  COMMERCIAL_NONREDUNDANT: "Commercial nonredundant",
-};
-
-const enzymeHeadCells = [
-  { id: "name", numeric: false, disablePadding: false, label: "Enzyme" },
-  {
-    id: "bottomCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Bottom cut position",
-  },
-  {
-    id: "topCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Top cut position",
-  },
-];
-
 function RestrictionSites({
   show,
   file,
@@ -218,6 +194,28 @@ function RestrictionSites({
   idOfRestrictionSitesTab: string;
 }) {
   const { t } = useTranslation("apps");
+  const enzymeSetOptions = {
+    UNIQUE_SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.uniqueSixPlus"),
+    UNIQUE: t("tinyMce.snapGene.enzymeSetOptions.unique"),
+    SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.sixPlus"),
+    UNIQUE_AND_DUAL: t("tinyMce.snapGene.enzymeSetOptions.uniqueAndDual"),
+    COMMERCIAL_NONREDUNDANT: t("tinyMce.snapGene.enzymeSetOptions.commercialNonredundant"),
+  };
+  const enzymeHeadCells = [
+    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.enzyme") },
+    {
+      id: "bottomCutPosition",
+      numeric: true,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.bottomCutPosition"),
+    },
+    {
+      id: "topCutPosition",
+      numeric: true,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.topCutPosition"),
+    },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
   const [page, setPage] = React.useState(0);
@@ -318,7 +316,7 @@ function RestrictionSites({
         {!error && !loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table stickyHeader size="small" aria-label="Enzyme table">
+              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.enzymeTableLabel")}>
                 <EnhancedTableHead
                   headCells={enzymeHeadCells}
                   order={order}
@@ -368,7 +366,7 @@ function RestrictionSites({
             {t("tinyMce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinyMce.snapGene.enzymeTypeLabel")}
             name="enzymeSet"
             value={enzymeSet}
             onChange={(event) => setEnzymeSet(event.target.value)}
@@ -431,45 +429,12 @@ function ViewAsFasta({
 }
 
 const readingFrameOptions = {
-  ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
-  FORWARD: { label: "Forward", filter: [1, 2, 3] },
-  REVERSE: { label: "Reverse", filter: [-1, -2, -3] },
-  FIRST_FORWARD: { label: "First forward", filter: [1] },
-  FIRST_REVERSE: { label: "First reverse", filter: [-1] },
+  ALL: { filter: [-3, -2, -1, 1, 2, 3] },
+  FORWARD: { filter: [1, 2, 3] },
+  REVERSE: { filter: [-1, -2, -3] },
+  FIRST_FORWARD: { filter: [1] },
+  FIRST_REVERSE: { filter: [-1] },
 };
-
-const orfHeadCells = [
-  {
-    id: "fullRangeBegin",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range Begin",
-  },
-  {
-    id: "fullRangeEnd",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range End",
-  },
-  {
-    id: "molecularWeight",
-    numeric: false,
-    disablePadding: false,
-    label: "Molecular Weight",
-  },
-  {
-    id: "readingFrame",
-    numeric: false,
-    disablePadding: false,
-    label: "Reading Frame",
-  },
-  {
-    id: "translation",
-    numeric: false,
-    disablePadding: false,
-    label: "Translation",
-  },
-];
 
 type Orf = {
   id: number;
@@ -482,6 +447,45 @@ type Orf = {
 
 function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: GalleryFile; idOfOrfTableTab: string }) {
   const { t } = useTranslation("apps");
+  const readingFrameLabels: Record<keyof typeof readingFrameOptions, string> = {
+    ALL: t("tinyMce.snapGene.readingFrames.all"),
+    FORWARD: t("tinyMce.snapGene.readingFrames.forward"),
+    REVERSE: t("tinyMce.snapGene.readingFrames.reverse"),
+    FIRST_FORWARD: t("tinyMce.snapGene.readingFrames.firstForward"),
+    FIRST_REVERSE: t("tinyMce.snapGene.readingFrames.firstReverse"),
+  };
+  const orfHeadCells = [
+    {
+      id: "fullRangeBegin",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.fullRangeBegin"),
+    },
+    {
+      id: "fullRangeEnd",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.fullRangeEnd"),
+    },
+    {
+      id: "molecularWeight",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.molecularWeight"),
+    },
+    {
+      id: "readingFrame",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.readingFrame"),
+    },
+    {
+      id: "translation",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.snapGene.columns.translation"),
+    },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
@@ -557,7 +561,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
         {!loading && !error && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table stickyHeader size="small" aria-label="ORF table">
+              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.orfTable")}>
                 <EnhancedTableHead
                   headCells={orfHeadCells}
                   order={order}
@@ -605,7 +609,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
             {t("tinyMce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinyMce.snapGene.readingFrames.label")}
             name="enzymeSet"
             value={readingFrameOption}
             onChange={(event) => setReadingFrameOption(event.target.value as keyof typeof readingFrameOptions)}
@@ -615,7 +619,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
                 value={key}
                 key={key}
                 control={<Radio color="primary" />}
-                label={readingFrameOptions[key].label}
+                label={readingFrameLabels[key]}
                 labelPlacement="start"
               />
             ))}
@@ -666,6 +670,7 @@ export function useSnapGenePreview(): {
 export function CallableSnapGenePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
+  const { t } = useTranslation("apps");
   const { t: tCommon } = useTranslation("common");
   const idOfDnaPreviewTab = React.useId();
   const idOfRestrictionSitesTab = React.useId();
@@ -718,18 +723,18 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="DNA preview"
+                  aria-label={t("tinyMce.snapGene.tabDnaPreview")}
                   aria-selected={tab === "DNA preview"}
                   id={idOfDnaPreviewTab}
                 >
                   <ListItemButton selected={tab === "DNA preview"} onClick={(e) => switchTab(e, "DNA preview")}>
-                    <ListItemText primary="DNA Preview" />
+                    <ListItemText primary={t("tinyMce.snapGene.tabDnaPreview")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="Restriction sites"
+                  aria-label={t("tinyMce.snapGene.enzymeSites")}
                   aria-selected={tab === "Restriction sites"}
                   id={idOfRestrictionSitesTab}
                 >
@@ -737,29 +742,29 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                     selected={tab === "Restriction sites"}
                     onClick={(e) => switchTab(e, "Restriction sites")}
                   >
-                    <ListItemText primary="Restriction Sites" />
+                    <ListItemText primary={t("tinyMce.snapGene.enzymeSites")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="FASTA"
+                  aria-label={t("tinyMce.snapGene.viewAsFasta")}
                   aria-selected={tab === "View as FASTA"}
                   id={idOfViewAsFastaTab}
                 >
                   <ListItemButton selected={tab === "View as FASTA"} onClick={(e) => switchTab(e, "View as FASTA")}>
-                    <ListItemText primary="FASTA" />
+                    <ListItemText primary={t("tinyMce.snapGene.viewAsFasta")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="ORF table"
+                  aria-label={t("tinyMce.snapGene.orfTable")}
                   aria-selected={tab === "ORF table"}
                   id={idOfOrfTableTab}
                 >
                   <ListItemButton selected={tab === "ORF table"} onClick={(e) => switchTab(e, "ORF table")}>
-                    <ListItemText primary="ORF Table" />
+                    <ListItemText primary={t("tinyMce.snapGene.orfTable")} />
                   </ListItemButton>
                 </ListItem>
               </Drawer>

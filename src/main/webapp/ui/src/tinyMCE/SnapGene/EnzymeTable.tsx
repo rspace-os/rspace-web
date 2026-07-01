@@ -130,7 +130,7 @@ export default function EnzymeTable(props: any) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.enzymeTableAria")}>
+              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.enzymeTableLabel")}>
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
@@ -180,7 +180,7 @@ export default function EnzymeTable(props: any) {
             {t("tinyMce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.enzymeTypeAria")}
+            aria-label={t("tinyMce.snapGene.enzymeTypeLabel")}
             name="enzymeSet"
             value={enzymeSet}
             onChange={(event) => handleChange(event.target.value)}

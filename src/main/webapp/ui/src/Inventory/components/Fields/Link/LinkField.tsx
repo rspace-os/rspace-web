@@ -113,7 +113,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           />
           <IconButton
             size="small"
-            aria-label={`Show info for ${props.link.targetGlobalId}`}
+            aria-label={t("fields.link.linkField.showInfoLabel", { globalId: props.link.targetGlobalId })}
             // an unreadable ("No access") target has nothing to show and its
             // info route is just an error page, so grey out info alongside the
             // (already-disabled) version-pin clock. Recomputed from the target
@@ -131,7 +131,11 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             // wrapper says so, since a disabled button cannot.
             <Tooltip title={t("fields.link.linkField.editToChangePinned")}>
               <span>
-                <IconButton size="small" aria-label={`Pin version for ${props.link.targetGlobalId}`} disabled>
+                <IconButton
+                  size="small"
+                  aria-label={t("fields.link.linkField.pinVersionLabel", { globalId: props.link.targetGlobalId })}
+                  disabled
+                >
                   <HistoryIcon fontSize="small" />
                 </IconButton>
               </span>
@@ -165,7 +169,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               href={openHref}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Open ${props.link.targetGlobalId}`}
+              aria-label={t("fields.link.linkField.openLabel", { globalId: props.link.targetGlobalId })}
             >
               {t("common:actions.open")}
             </Button>

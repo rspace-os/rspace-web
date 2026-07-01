@@ -181,7 +181,7 @@ export default function StoichiometryInventoryUpdateDialog({
               severity="warning"
               icon={
                 <WarningAmberIcon
-                  aria-label={t("stoichiometry.inventoryUpdate.irreversibleWarningAria")}
+                  aria-label={t("stoichiometry.inventoryUpdate.irreversibleWarningLabel")}
                   fontSize="small"
                   sx={{
                     color: "warning.main",
@@ -216,7 +216,7 @@ export default function StoichiometryInventoryUpdateDialog({
                   <TableRow>
                     <TableCell
                       padding="checkbox"
-                      aria-label={t("stoichiometry.inventoryUpdate.selectMoleculeAria")}
+                      aria-label={t("stoichiometry.inventoryUpdate.selectMoleculeLabel")}
                       width={52}
                       sx={{
                         px: 0.5,

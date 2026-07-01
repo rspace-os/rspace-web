@@ -38,7 +38,7 @@ describe("StoichiometryTableTypeDropdown", () => {
 
     await user.click(
       screen.getByRole("combobox", {
-        name: "common:stoichiometry.table.aria.typeSelect",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     );
     await user.click(await screen.findByRole("option", { name: "common:stoichiometry.table.roles.product" }));

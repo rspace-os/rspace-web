@@ -69,7 +69,7 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
         onRecordChanged();
       })
       .catch((e: unknown) => {
-        setUploadError(e instanceof Error ? e.message : "Upload failed.");
+        setUploadError(e instanceof Error ? e.message : t("fields.link.gallerySections.uploadFailed"));
       })
       .finally(() => setUploading(false));
   }
@@ -84,24 +84,34 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
         <Box sx={{ flex: "1 1 18rem" }}>
           <Table size="small">
             <TableBody>
-              <MetaRow label="Unique Id">
+              <MetaRow label={t("fields.link.gallerySections.labels.uniqueId")}>
                 <GlobalIdLink globalId={info.oid.idString} />
               </MetaRow>
-              <MetaRow label="Type">{info.type}</MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.type")}>{info.type}</MetaRow>
               {info.version != null && (info.version > 1 || isRevisionView) ? (
-                <MetaRow label="Version">{info.version}</MetaRow>
+                <MetaRow label={t("fields.link.gallerySections.labels.version")}>{info.version}</MetaRow>
               ) : null}
-              {info.size != null ? <MetaRow label="File size">{formatFileSize(info.size)}</MetaRow> : null}
-              {info.extension ? <MetaRow label="Extension">{info.extension}</MetaRow> : null}
-              <MetaRow label="Owner">{info.ownerFullName}</MetaRow>
-              <MetaRow label="Creation Date">{info.creationDateWithClientTimezoneOffset}</MetaRow>
-              <MetaRow label="Last Modified">{info.modificationDateWithClientTimezoneOffset}</MetaRow>
+              {info.size != null ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.fileSize")}>{formatFileSize(info.size)}</MetaRow>
+              ) : null}
+              {info.extension ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.extension")}>{info.extension}</MetaRow>
+              ) : null}
+              <MetaRow label={t("fields.link.gallerySections.labels.owner")}>{info.ownerFullName}</MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.creationDate")}>
+                {info.creationDateWithClientTimezoneOffset}
+              </MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.lastModified")}>
+                {info.modificationDateWithClientTimezoneOffset}
+              </MetaRow>
               {info.originalImageOid ? (
-                <MetaRow label="Original Image">
+                <MetaRow label={t("fields.link.gallerySections.labels.originalImage")}>
                   <GlobalIdLink globalId={info.originalImageOid.idString} />
                 </MetaRow>
               ) : null}
-              {info.description ? <MetaRow label="Caption">{info.description}</MetaRow> : null}
+              {info.description ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.caption")}>{info.description}</MetaRow>
+              ) : null}
             </TableBody>
           </Table>
         </Box>
@@ -136,7 +146,9 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
         {canUpload ? (
           <>
             <Button size="small" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-              {uploading ? "Uploading…" : "Upload new version"}
+              {uploading
+                ? t("fields.link.gallerySections.uploading")
+                : t("fields.link.gallerySections.uploadNewVersion")}
             </Button>
             <input
               ref={fileInputRef}

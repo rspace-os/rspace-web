@@ -40,7 +40,7 @@ function Template(): React.ReactNode {
         uiStore.addAlert(
           mkAlert({
             title: t("sample.fields.template.couldNotFetchError"),
-            message: getErrorMessage(error, "Unknown reason."),
+            message: getErrorMessage(error, t("errors.unknownReason")),
             variant: "error",
           }),
         );

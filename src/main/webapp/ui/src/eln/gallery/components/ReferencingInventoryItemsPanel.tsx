@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
@@ -25,6 +26,7 @@ type ReferencingItemRow = ReferencingInventoryItem & { rowId: string };
  */
 export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }): React.ReactNode {
   const apiRef = useGridApiRef();
+  const { t } = useTranslation("inventory");
   const referencing = useReferencingInventoryItems(typeof file.globalId === "string" ? file.globalId : null);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -40,24 +42,24 @@ export function ReferencingInventoryItemsPanel({ file }: { file: GalleryFile }):
   return (
     <Box component="section" sx={{ mt: 0.5, "--DataGrid-overlayHeight": "40px", flexGrow: 1 }}>
       <Typography variant="h4" component="h4">
-        {"Related inventory items"}
+        {t("fields.link.relatedInventoryItems.title")}
       </Typography>
       <DataGrid
         columns={[
           DataGridColumn.newColumnWithFieldName<"name", ReferencingItemRow>("name", {
-            headerName: "Name",
+            headerName: t("fields.link.relatedInventoryItems.columns.name"),
             flex: 1,
             sortable: false,
             resizable: true,
           }),
           DataGridColumn.newColumnWithFieldName<"relationType", ReferencingItemRow>("relationType", {
-            headerName: "Relation",
+            headerName: t("fields.link.relatedInventoryItems.columns.relation"),
             flex: 0,
             sortable: false,
             resizable: true,
           }),
           DataGridColumn.newColumnWithFieldName<"globalId", ReferencingItemRow>("globalId", {
-            headerName: "Global ID",
+            headerName: t("fields.link.relatedInventoryItems.columns.globalId"),
             flex: 0,
             resizable: true,
             sortable: false,

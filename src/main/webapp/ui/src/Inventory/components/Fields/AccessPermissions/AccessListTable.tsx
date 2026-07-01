@@ -40,7 +40,7 @@ export default function AccessListTable({
               <Grid>{t("fields.accessPermissions.groupName")}</Grid>
               <Grid>
                 <IconButtonWithTooltip
-                  title="Add a group"
+                  title={t("fields.accessPermissions.addGroup")}
                   icon={<AddIcon />}
                   onClick={(event) => {
                     setAddButton(event.currentTarget);

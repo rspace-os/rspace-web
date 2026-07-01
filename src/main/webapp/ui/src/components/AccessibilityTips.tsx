@@ -63,7 +63,8 @@ function AccessibilityTipsPopup({
   const { t } = useTranslation("common");
   const highContrastModeIsEnabled = window.matchMedia("(prefers-contrast: more)").matches;
   const reducedMotionModeIsEnabled = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const elementTypeLabel = t(`accessibilityTips.elementTypes.${elementType}`);
+  const elementTypeLabel =
+    elementType === "dialog" ? t("accessibilityTips.elementTypes.dialog") : t("accessibilityTips.elementTypes.page");
   return (
     <Popover
       open={Boolean(anchorEl)}

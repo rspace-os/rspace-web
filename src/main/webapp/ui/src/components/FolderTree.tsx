@@ -173,7 +173,7 @@ const TreeItemContent = ({
       <span>{folder.name}</span>
       {folder.type !== "NOTEBOOK" && (
         <IconButtonWithTooltip
-          title={`Add subfolder to ${folder.name}`}
+          title={t("folderTree.addSubfolder", { folderName: folder.name })}
           icon={<AddIcon fontSize="small" />}
           size="small"
           onClick={(e) => {

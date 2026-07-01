@@ -14,7 +14,6 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ApiRecordType, InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import type { ExportFileType, ExportMode, ExportOptions, OptionalContent } from "@/stores/definitions/Search";
-import { toTitleCase } from "@/util/Util";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import ContextDialog from "../ContextMenu/ContextDialog";
@@ -89,6 +88,21 @@ export const ExportOptionsWrapper = ({
   ];
 
   const exportedRecordTypes: Array<ApiRecordType> = [...new Set(selectedResults?.map(({ type }) => type))];
+  const recordTypePluralLabels: Record<ApiRecordType, string> = {
+    CONTAINER: t("recordTypes.container.plural"),
+    INSTRUMENT: t("recordTypes.instrument.plural"),
+    INSTRUMENT_TEMPLATE: t("recordTypes.instrumentTemplate.plural"),
+    SAMPLE: t("recordTypes.sample.plural"),
+    SAMPLE_TEMPLATE: t("recordTypes.sampleTemplate.plural"),
+    SUBSAMPLE: t("recordTypes.subsample.plural"),
+  };
+  const exportedTypesLabel = exportedRecordTypes.map((type) => recordTypePluralLabels[type]).join(", ");
+  const exportSummary =
+    exportType === "userData"
+      ? t("export.dialog.exportingAll")
+      : exportType === "contextMenu"
+        ? t("export.dialog.exportingContextMenu", { types: exportedTypesLabel })
+        : t("export.dialog.exportingList", { types: exportedTypesLabel });
 
   const showSamplesModule: boolean = exportedRecordTypes.includes("SAMPLE");
   const showContainersModule: boolean = exportedRecordTypes.includes("CONTAINER") || exportType === "userData";
@@ -97,18 +111,14 @@ export const ExportOptionsWrapper = ({
     <>
       <DialogContentText component="span">
         <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-          {exportType === "userData"
-            ? t("export.dialog.exportingAll")
-            : t(exportType === "contextMenu" ? "export.dialog.exportingContextMenu" : "export.dialog.exportingList", {
-                types: exportedRecordTypes.map((type) => `${toTitleCase(type)}s`).join(", "),
-              })}
+          {exportSummary}
         </Typography>
       </DialogContentText>
       <FormControl component="fieldset" fullWidth>
         <Box sx={optionModuleWrapperSx}>
           <FormLabel id="export-mode-radiogroup-label">{t("export.dialog.mode")}</FormLabel>
           <RadioField
-            name={"Export Mode Options"}
+            name={t("export.dialog.radioLabels.mode")}
             value={exportOptions.exportMode}
             onChange={({ target }) => {
               if (target.value)
@@ -136,7 +146,7 @@ export const ExportOptionsWrapper = ({
           <Box sx={optionModuleWrapperSx}>
             <FormLabel id="samples-options-label">{t("recordTypes.sample.plural")}</FormLabel>
             <RadioField
-              name={"Export Samples Options"}
+              name={t("export.dialog.radioLabels.samples")}
               value={exportOptions.includeSubsamplesInSample ?? null}
               onChange={({ target }) => {
                 if (target.value)
@@ -157,7 +167,7 @@ export const ExportOptionsWrapper = ({
           <Box sx={optionModuleWrapperSx}>
             <FormLabel id="containers-options-label">{t("recordTypes.container.plural")}</FormLabel>
             <RadioField
-              name={"Export Containers Options"}
+              name={t("export.dialog.radioLabels.containers")}
               value={exportOptions.includeContainerContent ?? null}
               onChange={({ target }) => {
                 if (target.value)
@@ -182,7 +192,7 @@ export const ExportOptionsWrapper = ({
         <Box sx={optionModuleWrapperSx}>
           <FormLabel id="export-mode-radiogroup-label">{t("export.dialog.fileType")}</FormLabel>
           <RadioField
-            name={"Export File Type Options"}
+            name={t("export.dialog.radioLabels.fileType")}
             value={exportOptions.resultFileType ?? null}
             onChange={({ target }) => {
               if (target.value)
@@ -246,7 +256,7 @@ export default function ExportDialog({
         <Button onClick={handleClose} disabled={false}>
           {t("common:actions.cancel")}
         </Button>
-        <SubmitSpinner onClick={onSubmitHandler} disabled={false} loading={false} label="Export" />
+        <SubmitSpinner onClick={onSubmitHandler} disabled={false} loading={false} label={t("common:actions.export")} />
       </DialogActions>
     </ContextDialog>
   );

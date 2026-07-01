@@ -326,7 +326,7 @@ describe("StoichiometryDialog", () => {
     await screen.findByRole("grid");
 
     const radios = screen.getAllByRole("radio", {
-      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+      name: "common:stoichiometry.table.label.selectLimitingReagent",
     });
     await user.click(radios[1]);
 
@@ -341,7 +341,7 @@ describe("StoichiometryDialog", () => {
     await screen.findByRole("grid");
 
     const radios = screen.getAllByRole("radio", {
-      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+      name: "common:stoichiometry.table.label.selectLimitingReagent",
     });
     await user.click(radios[1]);
 
@@ -360,7 +360,7 @@ describe("StoichiometryDialog", () => {
     await screen.findByRole("grid");
 
     const radios = screen.getAllByRole("radio", {
-      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+      name: "common:stoichiometry.table.label.selectLimitingReagent",
     });
     await user.click(radios[1]);
 

@@ -113,7 +113,7 @@ const MoveWithinFilestoreDialog = observer(
         <DialogContent sx={{ pt: 0 }}>
           <Box sx={{ overflowY: "auto" }}>
             {FetchingData.match(galleryListing, {
-              loading: () => <PlaceholderLabel>{"Loading..."}</PlaceholderLabel>,
+              loading: () => <PlaceholderLabel>{t("moveWithinFilestore.loading")}</PlaceholderLabel>,
               error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
               success: (listing) => (
                 <TreeView

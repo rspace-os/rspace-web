@@ -74,6 +74,7 @@
         "funder": "Funder"
       },
       "selectAllLabel": "Select all DMPs on this page",
+      "selectColumn": "Select",
       "selectDmpLabel": "Select {title}",
       "selectPlanLabel": "Select plan: {label}"
     },
@@ -88,6 +89,10 @@
     },
     "scope": {
       "both": "Both",
+      "instructions": {
+        "selectPlan": "Select a plan and click \"Import\" to add it to the Gallery.",
+        "selectScope": "Select a scope to get the latest plans."
+      },
       "mine": "Mine",
       "name": "DMP Scope Options",
       "public": "Public"
@@ -111,11 +116,11 @@
       "unauthorized": "Invalid Galaxy API Key Please re-enter your API Key on the Apps page.",
       "unknown": "Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was: {errorMessage}"
     },
-    "loadingAria": "Please wait, loading computational workflows associated with this field",
+    "loadingLabel": "Please wait, loading computational workflows associated with this field",
     "noRows": "No Data is attached to this document",
-    "queryingAria": "Please wait, querying galaxy is in progress",
+    "queryingLabel": "Please wait, querying galaxy is in progress",
     "queryingTitle": "Galaxy Query In Progress",
-    "showWorkflowsAria": "Show computational workflows associated with this field"
+    "showWorkflowsLabel": "Show computational workflows associated with this field"
   },
   "integrationCard": {
     "disable": "DISABLE",
@@ -707,6 +712,12 @@
       "usage": "You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
     }
   },
+  "integrationsEndpoint": {
+    "unknownError": "Unknown error",
+    "unknownReason": "Unknown reason",
+    "updateFailed": "Update failed.",
+    "updateSuccess": "Update successful."
+  },
   "page": {
     "introLink": "See Apps Introduction to learn more.",
     "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
@@ -756,6 +767,7 @@
     },
     "filter": {
       "hideOptions": "Hide filtering options",
+      "integerValidation": "Should be an integer",
       "label": "Filter",
       "showOptions": "Show filtering options"
     },
@@ -794,20 +806,28 @@
         "startTime": "Start Time",
         "status": "Status"
       },
-      "maintenanceAria": "maintenance",
+      "maintenanceLabel": "maintenance",
       "maintenanceOnly": "maintenance only",
-      "tableAria": "booking search results"
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "booking search results"
     },
     "galaxy": {
       "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
       "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
       "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+      "chooseDataTitle": "Choose Data",
       "chooseGalaxyServer": "Choose a Galaxy Server",
+      "columns": {
+        "file": "File"
+      },
       "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
       "historyViewedHere": "Your new history can be viewed here:",
       "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
       "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+      "uploadInProgressLabel": "Please wait, uploading data to Galaxy is in progress",
+      "uploadInProgressTitle": "Galaxy Upload In Progress",
       "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+      "viewWorkflowTitle": "View Workflow in Galaxy",
       "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
     },
     "internalLink": {
@@ -823,7 +843,7 @@
       },
       "selectRevision": "Select revision",
       "updateRevisionLink": "Update revision link",
-      "versionTableAria": "internal link revision table"
+      "versionTableLabel": "internal link revision table"
     },
     "omero": {
       "columns": {
@@ -831,7 +851,7 @@
         "notes": "Notes",
         "path": "Path"
       },
-      "dataTypeChoiceAria": "Display all data, only project data, or only screen data",
+      "dataTypeChoiceLabel": "Display all data, only project data, or only screen data",
       "dataTypes": {
         "all": "Projects And Screens",
         "projects": "Projects",
@@ -840,7 +860,10 @@
       "detailsFetched": "details fetched",
       "fetchDetails": "fetch details",
       "filterResults": "Filter results",
+      "getLargeThumbnailLabel": "get large thumbnail",
       "hideImageGrid": "hide image grid",
+      "itemSearchResultsLabel": "item search results",
+      "largeThumbnail": "large thumbnail",
       "loadingData": "Data is loading...",
       "noImage": "no image",
       "redrawImage": "re-draw image",
@@ -875,7 +898,7 @@
           "nameCas": "Name/CAS",
           "smiles": "SMILES"
         },
-        "selectCompoundAria": "Select compound",
+        "selectCompoundLabel": "Select compound",
         "submitButton": "Select Compounds",
         "title": "Search PubChem",
         "validation": {
@@ -887,7 +910,38 @@
       "viewOnPubChem": "View on PubChem"
     },
     "pyrat": {
-      "tableAria": "animal search results"
+      "chooseServer": "Pick one of your authenticated servers",
+      "columns": {
+        "ageDays": "Age (Days)",
+        "building": "Building",
+        "classification": "Classification",
+        "dob": "DOB",
+        "id": "ID",
+        "labId": "Lab ID",
+        "license": "License",
+        "mutations": "Mutations",
+        "project": "Project",
+        "responsible": "Responsible",
+        "sacrificedOn": "Sacrificed On",
+        "sex": "Sex",
+        "strain": "Strain"
+      },
+      "dialogTitle": "Insert from PyRAT",
+      "filters": {
+        "ageDaysFrom": "Age days from",
+        "ageDaysTo": "Age days to",
+        "animalState": "Animal State",
+        "animalType": "Animal Type",
+        "birthDateFrom": "Birth date from",
+        "birthDateTo": "Birth date to",
+        "sacrificedFrom": "Sacrificed from",
+        "sacrificedTo": "Sacrificed to"
+      },
+      "fromPyrat": "From PyRAT",
+      "helpTitle": "PyRAT help",
+      "linkTooltip": "Link to PyRAT",
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "animal search results"
     },
     "shortcuts": {
       "instructions": {
@@ -926,8 +980,13 @@
         "topCutPosition": "Top cut position",
         "translation": "Translation"
       },
+      "copyFailed": "Couldn't copy to clipboard. Try again manually.",
+      "copySuccess": "Copied to clipboard",
       "copyToClipboard": "Copy to Clipboard",
+      "couldNotLoadDnaPreviewImage": "Could not load DNA preview image.",
+      "dialogTitle": "SnapGene",
       "dnaPreviewAlt": "DNA preview",
+      "dnaPreviewError": "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
       "enzymeSetOptions": {
         "commercialNonredundant": "Commercial nonredundant",
         "sixPlus": "Six plus",
@@ -937,27 +996,28 @@
       },
       "enzymeSets": "Enzyme Sets",
       "enzymeSites": "Enzyme sites",
-      "enzymeTableAria": "Enzyme table",
-      "enzymeTypeAria": "Enzyme type",
+      "enzymeTableLabel": "Enzyme table",
+      "enzymeTypeLabel": "Enzyme type",
       "imageType": "Image type",
       "linear": "Linear",
-      "linearChoiceAria": "Linear choice",
+      "linearChoiceLabel": "Linear choice",
       "openReadingFrames": "Open Reading Frames",
       "orfTable": "ORF table",
       "readingFrames": {
         "all": "All",
-        "aria": "Reading frame",
         "firstForward": "First forward",
         "firstReverse": "First reverse",
         "forward": "Forward",
+        "label": "Reading frame",
         "reverse": "Reverse"
       },
       "reset": "Reset",
       "showEnzymes": "Show enzymes",
       "showORFs": "Show ORFs",
+      "showRestrictionSites": "Show restriction sites",
       "tabDnaPreview": "DNA preview",
       "viewAsFasta": "View as FASTA",
-      "zoomControlsAria": "Zoom controls"
+      "zoomControlsLabel": "Zoom controls"
     }
   }
 }

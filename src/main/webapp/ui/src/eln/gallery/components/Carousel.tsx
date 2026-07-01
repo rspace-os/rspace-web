@@ -205,6 +205,7 @@ const PreviewWrapper = ({
 };
 
 const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; visible: boolean }) => {
+  const { t } = useTranslation("gallery");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canPreviewAsPdf = usePdfPreviewOfGalleryFile();
   const canPreviewWithAspose = useAsposePreviewOfGalleryFile();
@@ -302,9 +303,9 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
   }
 
   let loadingLabel = null;
-  if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = "Loading image...";
-  if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = "Loading PDF...";
-  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = "Generating PDF...";
+  if (imageUrl !== null && imageUrl.tag === "loading") loadingLabel = t("carousel.loadingImage");
+  if (pdfUrl !== null && pdfUrl.tag === "loading") loadingLabel = t("carousel.loadingPdf");
+  if (asposePdfUrl !== null && asposePdfUrl.tag === "loading") loadingLabel = t("carousel.generatingPdf");
   if (loadingLabel !== null)
     return (
       <PreviewWrapper file={file} previewingAsPdf={true} visible={visible}>
@@ -323,7 +324,7 @@ const Preview = ({ file, zoom, visible }: { file: GalleryFile; zoom: number; vis
       <PreviewWrapper file={file} previewingAsPdf={false} visible={visible}>
         <Box
           component="img"
-          alt={`Preview of ${file.name}`}
+          alt={t("carousel.previewAlt", { name: file.name })}
           src={imageSrc}
           sx={{
             maxHeight: "100%",
@@ -385,6 +386,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   const selection = useGallerySelection();
   const [zoom, setZoom] = React.useState(1);
   const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
 
   React.useEffect(() => {
     if (listing.tag !== "list") return;
@@ -446,7 +448,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   if (listing.tag === "empty")
     return (
       <PlaceholderLabel>
-        {listing.refreshing ? "Refreshing..." : (listing.reason ?? "There are no folders.")}
+        {listing.refreshing ? t("carousel.refreshing") : (listing.reason ?? t("carousel.noFolders"))}
       </PlaceholderLabel>
     );
   return (
@@ -499,7 +501,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             onClick={() => {
               setZoom((z) => z * ZOOM_SCALE_FACTOR);
             }}
-            aria-label="zoom in"
+            aria-label={tCommon("actions.zoomIn")}
             size="small"
           >
             <ZoomInIcon />
@@ -517,7 +519,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
               setZoom(1);
             }}
             disabled={zoom === 1}
-            aria-label="reset zoom"
+            aria-label={tCommon("actions.resetZoom")}
             size="small"
           >
             <ResetZoomIcon />
@@ -535,7 +537,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
               setZoom((z) => z / ZOOM_SCALE_FACTOR);
             }}
             disabled={zoom === 1}
-            aria-label="zoom out"
+            aria-label={tCommon("actions.zoomOut")}
             size="small"
           >
             <ZoomOutIcon />

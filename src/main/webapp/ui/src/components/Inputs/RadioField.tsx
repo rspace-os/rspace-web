@@ -138,7 +138,7 @@ function RadioField<OptionValue extends string>({
                     editing: true,
                   });
                 }}
-                placeholder={`Option ${i + 1}`}
+                placeholder={t("inputs.optionField.placeholder", { index: i + 1 })}
                 error={option.value === ""}
                 helperText={option.value.length === 0 ? t("inputs.optionField.emptyOption") : null}
                 slotProps={{

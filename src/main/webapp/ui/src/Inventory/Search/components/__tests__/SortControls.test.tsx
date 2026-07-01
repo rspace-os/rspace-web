@@ -8,6 +8,7 @@ import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mo
 import { sortProperties } from "../../../../stores/models/InventoryBaseRecord";
 import Search from "../../../../stores/models/Search";
 import materialTheme from "../../../../theme";
+import { translateAdjustableTableLabel } from "../../../components/Tables/adjustableTableLabels";
 import SortControls from "../SortControls";
 
 describe("SortControls", () => {
@@ -33,10 +34,11 @@ describe("SortControls", () => {
     if (selectedOptions.length !== 1) throw new Error("Invalid menu selection");
 
     const selectedOption = selectedOptions[0];
+    const selectedLabel = translateAdjustableTableLabel(selectedOption.label, (key) => `inventory:${key}`);
     expect(
       screen.getByRole("menuitem", {
         name: new RegExp(
-          `${selectedOption.label} (inventory:search\\.controls\\.sort\\.ascending|inventory:search\\.controls\\.sort\\.descending)`,
+          `${selectedLabel} (inventory:search\\.controls\\.sort\\.ascending|inventory:search\\.controls\\.sort\\.descending)`,
         ),
       }),
     ).toHaveAttribute("aria-current", "true");

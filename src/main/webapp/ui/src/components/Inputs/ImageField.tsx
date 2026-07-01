@@ -103,7 +103,7 @@ function ImageField({
   }, [imageAsObjectURL]);
   return (
     <>
-      {disabled && !imageAsObjectURL && <NoValue label={noValueLabel ?? "None"} />}
+      {disabled && !imageAsObjectURL && <NoValue label={noValueLabel ?? t("values.none")} />}
       {showPreview && imageAsObjectURL && (
         <Grid
           container
@@ -127,7 +127,7 @@ function ImageField({
         <>
           <FileField
             accept=".png, .jpg, .jpeg, .gif"
-            buttonLabel={imageAsObjectURL ? "Replace Image" : "Add Image"}
+            buttonLabel={imageAsObjectURL ? t("inputs.imageField.replaceImage") : t("inputs.imageField.addImage")}
             data-test-id={imageAsObjectURL ? "ReplaceImageButton" : "AddImageButton"}
             id={id}
             onChange={imageSelection}

@@ -7,6 +7,7 @@ import type React from "react";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
+import { translateAdjustableTableLabel } from "@/Inventory/components/Tables/adjustableTableLabels";
 import { isSortable, sortProperties } from "@/stores/models/InventoryBaseRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
@@ -68,7 +69,7 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
               {isSortable(mainProperty.key) ? (
                 <SortableProperty property={mainProperty} />
               ) : (
-                <span>{search.uiConfig.mainColumn}</span>
+                <span>{translateAdjustableTableLabel(search.uiConfig.mainColumn, t)}</span>
               )}
             </TableCell>
             <AdjustableHeadCell

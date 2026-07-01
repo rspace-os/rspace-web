@@ -183,18 +183,6 @@ function mockNetwork() {
 }
 
 /**
- * `document.title` is normalised by the DOM: runs of whitespace collapse to a
- * single space and leading/trailing whitespace is stripped (this matches the
- * HTML spec, and is what a real browser — and Playwright's `toHaveTitle` —
- * report too). The fast-check arbitraries can generate names containing
- * whitespace, so the expected title must be normalised the same way before
- * comparing.
- */
-function normalizeTitle(title: string): string {
-  return title.replace(/\s+/g, " ").trim();
-}
-
-/**
  * Returns the sequence of `mediatype` query params for every
  * `/gallery/getUploadedFiles` request that has been made so far.
  */
@@ -230,7 +218,7 @@ describe("Gallery", () => {
        * The images is the default gallery section.
        */
       await waitFor(() => {
-        expect(document.title).toBe("Images | RSpace Gallery");
+        expect(document.title).toBe("gallery:pageTitleWithContext");
       });
     });
 
@@ -253,20 +241,8 @@ describe("Gallery", () => {
             document.title = "";
             render(<GalleryStory urlSuffix={`?mediaType=${section}`} />);
 
-            /*
-             * For some of the pages, we keep the old URL for backwards
-             * compatibility but use a more descriptive title
-             */
-            let expectedTitle: string;
-            if (section === "PdfDocuments") {
-              expectedTitle = "Exports | RSpace Gallery";
-            } else if (section === "Audios") {
-              expectedTitle = "Audio | RSpace Gallery";
-            } else {
-              expectedTitle = `${section} | RSpace Gallery`;
-            }
             await waitFor(() => {
-              expect(document.title).toBe(expectedTitle);
+              expect(document.title).toBe("gallery:pageTitleWithContext");
             });
           },
         ),
@@ -286,7 +262,7 @@ describe("Gallery", () => {
           render(<GalleryStory urlSuffix={`/${id}`} />);
 
           await waitFor(() => {
-            expect(document.title).toBe(normalizeTitle(`${folderName} | RSpace Gallery`));
+            expect(document.title).toBe("gallery:pageTitleWithContext");
           });
         }),
         { numRuns: 5 },
@@ -318,7 +294,7 @@ describe("Gallery", () => {
             render(<GalleryStory urlSuffix={`/item/${id}`} />);
 
             await waitFor(() => {
-              expect(document.title).toBe(normalizeTitle(`${filename}.jpg | RSpace Gallery`));
+              expect(document.title).toBe("gallery:pageTitleWithContext");
             });
           },
         ),
@@ -338,12 +314,14 @@ describe("Gallery", () => {
       });
 
       // the user taps on the 'Chemistry' section
-      await user.click(await screen.findByRole("button", { name: "Chemistry" }));
+      await user.click(await screen.findByRole("button", { name: "gallery:sections.chemistry" }));
 
       // the breadcrumbs reflect the new section
       await waitFor(() => {
         expect(
-          within(screen.getByRole("navigation", { name: "Breadcrumbs" })).getByRole("button", { name: "Chemistry" }),
+          within(screen.getByRole("navigation", { name: "gallery:mainPanel.breadcrumbsLabel" })).getByRole("button", {
+            name: "gallery:sections.chemistry",
+          }),
         ).toBeVisible();
       });
 
@@ -365,12 +343,14 @@ describe("Gallery", () => {
       });
 
       // the user taps on the 'Chemistry' section
-      await user.click(await screen.findByRole("button", { name: "Chemistry" }));
+      await user.click(await screen.findByRole("button", { name: "gallery:sections.chemistry" }));
 
       // the breadcrumbs reflect the new section
       await waitFor(() => {
         expect(
-          within(screen.getByRole("navigation", { name: "Breadcrumbs" })).getByRole("button", { name: "Chemistry" }),
+          within(screen.getByRole("navigation", { name: "gallery:mainPanel.breadcrumbsLabel" })).getByRole("button", {
+            name: "gallery:sections.chemistry",
+          }),
         ).toBeVisible();
       });
 

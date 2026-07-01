@@ -19,7 +19,7 @@ export default function StoichiometryTableTypeDropdown({
   onClose,
 }: StoichiometryTableTypeDropdownProps): React.ReactNode {
   const { t } = useTranslation("common");
-  const ariaLabel = t("stoichiometry.table.aria.typeSelect", {
+  const ariaLabel = t("stoichiometry.table.label.typeSelect", {
     name: rowName ?? t("stoichiometry.inventoryUpdate.unnamedMolecule"),
   });
   const options = [

@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import { pick } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../../stores/contexts/Search";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import OverlayLoadingSpinner from "../../../components/OverlayLoadingSpinner";
@@ -12,6 +13,7 @@ import LocationContent from "../LocationContent";
 import LocationWrapper from "./LocationWrapper";
 
 function PreviewImage(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { scopedResult, search } = useContext(SearchContext);
 
   const noSelection = search.uiConfig.selectionMode === "NONE";
@@ -95,7 +97,7 @@ function PreviewImage(): React.ReactNode {
         <Box
           component="img"
           src={container.locationsImage || undefined}
-          alt="Container preview"
+          alt={t("container.content.previewAlt")}
           sx={{
             width: "auto",
             height: "auto",

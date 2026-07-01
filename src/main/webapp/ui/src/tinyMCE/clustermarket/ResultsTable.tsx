@@ -67,7 +67,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label={t("tinyMce.clustermarket.tableAria")}>
+        <Table aria-label={t("tinyMce.clustermarket.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -170,8 +170,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          {"Selected: "}
-          {selectedBookingIds.length}
+          {t("tinyMce.clustermarket.selectedCount", { count: selectedBookingIds.length })}
         </Typography>
       </Box>
     </>

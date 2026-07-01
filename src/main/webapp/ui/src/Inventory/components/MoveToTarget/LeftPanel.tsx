@@ -19,9 +19,9 @@ function LeftPanel(_: LeftPanelArgs) {
     if (!(moveStore.search?.activeResult instanceof ContainerModel)) return null;
     if (moveStore.search.activeResult.isWorkbench && moveStore.search.fetcher.parentIsBench) {
       if (isSingleColumnLayout) {
-        return "Press 'Next', followed by 'Move', to move the selected items to this bench.";
+        return t("moveToTarget.selectionHelp.singleColumnBench");
       }
-      return "Press 'Move' in the bottom-right to move the selected items to this bench.";
+      return t("moveToTarget.selectionHelp.wideBench");
     }
     return null;
   };
@@ -41,7 +41,7 @@ function LeftPanel(_: LeftPanelArgs) {
             <Typography variant="h6" component="h3">
               {t("moveToTarget.pickDestination")}
               {" "}
-              <HelpLinkIcon link={docLinks.moving} title="Info on moving items." />
+              <HelpLinkIcon link={docLinks.moving} title={t("moveToTarget.helpTitle")} />
             </Typography>
           }
           selectionHelpText={selectionHelpText()}

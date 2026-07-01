@@ -16,7 +16,7 @@ describe("StringField", () => {
   describe("Renders correctly", () => {
     test.each`
       disabled     | value    | noValueLabel | expectFn
-      ${true}      | ${""}    | ${undefined} | ${expectLabel("None")}
+      ${true}      | ${""}    | ${undefined} | ${expectLabel("common:values.none")}
       ${true}      | ${""}    | ${"foo"}     | ${expectLabel("foo")}
       ${true}      | ${"bar"} | ${undefined} | ${expectTextField("bar")}
       ${true}      | ${"bar"} | ${"foo"}     | ${expectTextField("bar")}

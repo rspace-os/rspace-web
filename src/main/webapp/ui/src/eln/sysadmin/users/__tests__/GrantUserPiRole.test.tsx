@@ -71,7 +71,7 @@ describe("Grant User PI Role", () => {
 
       await user.click(checkbox);
       await user.click(screen.getByRole("button", { name: /usersPage\.actionsLabel/ }));
-      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(await screen.findByRole("menuitem", { name: /system:usersPage\.piRoleDialog\.grantMenuItem/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(
@@ -113,7 +113,7 @@ describe("Grant User PI Role", () => {
 
       await user.click(checkbox);
       await user.click(screen.getByRole("button", { name: /usersPage\.actionsLabel/ }));
-      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(await screen.findByRole("menuitem", { name: /system:usersPage\.piRoleDialog\.grantMenuItem/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       await waitFor(() => {

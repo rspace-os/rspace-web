@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Menu from "@mui/material/Menu";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 import FieldTypeMenuItem from "./FieldTypeMenuItem";
 import UploadFormControl from "./FormControl";
@@ -11,10 +12,11 @@ type FieldTypeMenuArgs = {
 };
 
 function FieldTypeMenu({ columnFieldMap }: FieldTypeMenuArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
   return (
     <Box sx={{ p: 1 }}>
-      <UploadFormControl label="Custom Field Type">
+      <UploadFormControl label={t("import.fields.customFieldType")}>
         <FieldTypeMenuItem
           field={columnFieldMap.chosenFieldType}
           onClick={(e) => setAnchorEl(e.currentTarget)}

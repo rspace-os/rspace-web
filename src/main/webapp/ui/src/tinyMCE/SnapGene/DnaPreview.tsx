@@ -65,11 +65,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
   }, [appliedState, setDisabled, state]);
 
   const onImageError = () => {
-    RS.confirm(
-      "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
-      "warning",
-      "infinite",
-    );
+    RS.confirm(t("tinyMce.snapGene.dnaPreviewError"), "warning", "infinite");
     setLoadedImage(image);
   };
 
@@ -100,7 +96,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                   zIndex: 100,
                 }}
                 size="small"
-                aria-label={t("tinyMce.snapGene.zoomControlsAria")}
+                aria-label={t("tinyMce.snapGene.zoomControlsLabel")}
               >
                 <Button onClick={() => zoomIn()}>{"+"}</Button>
                 <Button onClick={() => zoomOut()}>{"-"}</Button>
@@ -132,7 +128,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
             {t("tinyMce.snapGene.imageType")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.linearChoiceAria")}
+            aria-label={t("tinyMce.snapGene.linearChoiceLabel")}
             name="linear"
             value={state.linear.toString()}
             onChange={(event) => handleChange(event.target.name as keyof DnaPreviewState, event.target.value)}

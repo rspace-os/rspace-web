@@ -11,7 +11,7 @@ import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../components/RemoveButton";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
-import { match, toYesNo } from "../../../util/Util";
+import { match } from "../../../util/Util";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
 import NameField from "./CustomFieldNameField";
 import DefaultValueField from "./DefaultValueField";
@@ -41,7 +41,8 @@ const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
 });
 
 const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: boolean }) => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
+  const mandatoryLabel = field.mandatory ? t("common:actions.yes") : t("common:actions.no");
   return (
     <InputWrapper label={t("fields.templateFields.customField.mandatory")}>
       {editing ? (
@@ -55,7 +56,7 @@ const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: bo
           edge="start"
         />
       ) : (
-        toYesNo(field.mandatory)
+        mandatoryLabel
       )}
     </InputWrapper>
   );

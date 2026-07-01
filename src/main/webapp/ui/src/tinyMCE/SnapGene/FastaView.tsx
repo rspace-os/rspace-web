@@ -50,9 +50,9 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
     el?.select(); // Select the <textarea> content
     try {
       document.execCommand("copy");
-      RS.confirm("Copied to clipboard", "notice", 3000);
+      RS.confirm(t("tinyMce.snapGene.copySuccess"), "notice", 3000);
     } catch {
-      RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
+      RS.confirm(t("tinyMce.snapGene.copyFailed"), "warning", 5000);
     }
     if (el) {
       document.body.removeChild(el); // Remove the <textarea> element

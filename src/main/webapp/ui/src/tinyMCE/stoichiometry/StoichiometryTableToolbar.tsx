@@ -113,7 +113,7 @@ const StoichiometryTableToolbar = ({
             slotProps={{
               list: {
                 disablePadding: true,
-                "aria-label": t("stoichiometry.addReagent.menuAria"),
+                "aria-label": t("stoichiometry.addReagent.menuLabel"),
               },
             }}
           >

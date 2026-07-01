@@ -75,7 +75,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
         <FormControl>
           <FormLabel>
             {t("settings.datacite.formLabel")}
-            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add IGSN Identifiers to your Inventory Items" />
+            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title={t("settings.datacite.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
             <TransRichText
@@ -87,7 +87,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
             />
           </FormHelperText>
           <RadioField
-            name={"DataCite Integration Settings"}
+            name={t("settings.datacite.formLabel")}
             value={updatedSettings.enabled}
             onChange={({ target }) => {
               if (target.value !== null && typeof target.value !== "undefined") {
@@ -145,7 +145,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
                   {entry[0] === "serverUrl" && (
                     <Grid sx={{ width: "200px" }}>
                       <RadioField
-                        name={"DataCite Server URL"}
+                        name={t("settings.datacite.serverUrlLabel")}
                         value={updatedSettings.serverUrl}
                         onChange={({ target }) => {
                           if (target.value !== null && typeof target.value !== "undefined") {
@@ -201,7 +201,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
               .catch((e) => {
                 setLastTestResult({
                   response: "failed",
-                  message: getErrorMessage(e, "Unknown reason."),
+                  message: getErrorMessage(e, t("errors.unknownReason")),
                 });
               });
           }}

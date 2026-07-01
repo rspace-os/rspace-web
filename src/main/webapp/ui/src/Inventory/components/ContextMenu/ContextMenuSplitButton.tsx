@@ -77,7 +77,7 @@ export default function ContextMenuSplitButton({
                 variant="text"
                 size="small"
                 ref={anchorRef}
-                aria-label="split button"
+                aria-label={t("contextMenu.splitButton.label")}
               >
                 <Button
                   onClick={options[selectedIndex].selection}

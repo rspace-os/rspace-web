@@ -2,6 +2,7 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { ErrorReason } from "./Enums";
 
 export default function ErrorView({
@@ -12,27 +13,25 @@ export default function ErrorView({
   errorMessage: string;
 }): React.ReactNode {
   const { t } = useTranslation("common");
+  // @ts-expect-error -- tinymce is defined in the parent window
+  const clustermarketUrl = parent.tinymce.activeEditor.settings.clustermarket_url;
 
   return (
     <Alert severity="error">
       <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
-        <>
-          {"The Calira server at "}
-          <a
-            // @ts-expect-error -- tinymce is defined in the parent window
-            href={parent.tinymce.activeEditor.settings.clustermarket_url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {" "}
-            {/* @ts-expect-error -- tinymce is defined in the parent window */}
-            {parent.tinymce.activeEditor.settings.clustermarket_url}
-          </a>
-          {
-            " is down, or CORS for this server has not been configured properly. If you are responsible for setting up the Calira integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is."
-          }
-        </>
+        <TransRichText
+          ns="common"
+          i18nKey="integrationErrors.serverUnavailable"
+          values={{ appName: "Calira", url: clustermarketUrl }}
+          components={{
+            serverLink: (
+              <a href={clustermarketUrl} target="_blank" rel="noreferrer">
+                {clustermarketUrl}
+              </a>
+            ),
+          }}
+        />
       )}
       {errorReason === ErrorReason.NotFound && t("integrationErrors.calira.notFound")}
       {/* when an OAuth token expires the Clustermarket API responds with 401 response.

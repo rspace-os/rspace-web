@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
@@ -13,17 +14,17 @@ const parseOperationError = (error: unknown): Result<string> =>
     .flatMap(ArrayUtils.head)
     .flatMap(Parsers.isString)
     .map((errorMsg) => {
-      if (/attempt to overwrite file/.test(errorMsg)) return "Some or all of the files already exist";
-      if (/AuthenticationException/.test(errorMsg)) return "Authentication failed";
-      if (/InvalidUserException/.test(errorMsg)) return "Authentication failed";
-      if (/java.net.UnknownHostException/.test(errorMsg)) return "Could not reach the iRODs server";
+      if (/attempt to overwrite file/.test(errorMsg)) return i18n.t("gallery:irods.errors.filesAlreadyExist");
+      if (/AuthenticationException/.test(errorMsg)) return i18n.t("gallery:irods.errors.authenticationFailed");
+      if (/InvalidUserException/.test(errorMsg)) return i18n.t("gallery:irods.errors.authenticationFailed");
+      if (/java.net.UnknownHostException/.test(errorMsg)) return i18n.t("gallery:irods.errors.couldNotReachServer");
       return errorMsg;
     });
 
 function handleErrors(
   response: unknown,
-  successMessage = "Successfully moved the files.",
-  partialFailureMessage = "Moving some files failed.",
+  successMessage: string = i18n.t("gallery:irods.success.moved"),
+  partialFailureMessage: string = i18n.t("gallery:irods.errors.partialMoveFailed"),
 ): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
@@ -98,7 +99,7 @@ function handleErrors(
     .orElse(
       mkAlert({
         variant: "error",
-        message: "Could not parse response.",
+        message: i18n.t("gallery:errors.parseResponse"),
       }),
     );
 }
@@ -178,19 +179,24 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
         addAlert(
           handleErrors(
             response,
-            operation === "copy" ? "Successfully copied the files." : "Successfully moved the files.",
-            operation === "copy" ? "Copying some files failed." : "Moving some files failed.",
+            operation === "copy" ? i18n.t("gallery:irods.success.copied") : i18n.t("gallery:irods.success.moved"),
+            operation === "copy"
+              ? i18n.t("gallery:irods.errors.partialCopyFailed")
+              : i18n.t("gallery:irods.errors.partialMoveFailed"),
           ),
         );
       } catch (e) {
         console.error(e);
         // Fall back to a safe message rather than throwing while handling the
         // error, which would suppress the user-facing alert (mirrors the S3 flow).
-        const errorMsg = parseOperationError(e).orElse("Unknown error");
+        const errorMsg = parseOperationError(e).orElse(i18n.t("gallery:errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: operation === "copy" ? "Could not copy file." : "Could not move file.",
+            title:
+              operation === "copy"
+                ? i18n.t("gallery:irods.errors.copyFailed")
+                : i18n.t("gallery:irods.errors.moveFailed"),
             message: errorMsg,
           }),
         );
@@ -292,7 +298,7 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
               .flatMap(ArrayUtils.head)
               .flatMap(Parsers.isString);
           })
-          .orElse("Error parsing error"),
+          .orElse(i18n.t("gallery:errors.parseResponse")),
       );
       console.error(e);
     } finally {

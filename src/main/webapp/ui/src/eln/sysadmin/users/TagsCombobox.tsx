@@ -240,7 +240,6 @@ function TagsComboboxContent({
   onClose,
   allowNewTags = true,
 }: Omit<TagsComboboxArgs, "anchorEl">): React.ReactNode {
-  const { t } = useTranslation("common");
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [filter, setFilter] = useState("");
@@ -404,6 +403,7 @@ function TagsComboboxContent({
   }, []);
 
   const textFieldId = useId();
+  const { t } = useTranslation("system");
   return (
     <>
       <div
@@ -415,7 +415,7 @@ function TagsComboboxContent({
       >
         <TextField
           variant="standard"
-          label="Filter suggested tags"
+          label={t("usersPage.tags.filterSuggested")}
           inputRef={setInputRef}
           onFocus={() => {
             /*

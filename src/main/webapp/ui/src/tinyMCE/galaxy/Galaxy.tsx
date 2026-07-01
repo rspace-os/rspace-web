@@ -216,7 +216,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
       <ThemeProvider theme={materialTheme}>
         <HeadingContext level={3}>
           {historyId && (
-            <TitledBox title="View Workflow in Galaxy" border>
+            <TitledBox title={t("tinyMce.galaxy.viewWorkflowTitle")} border>
               <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                 <p>{t("tinyMce.galaxy.historyViewedHere")} </p>
                 <p>
@@ -240,7 +240,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
           )}
           {!historyId && (
             <>
-              <TitledBox title="Choose Data" border>
+              <TitledBox title={t("tinyMce.galaxy.chooseDataTitle")} border>
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
@@ -280,8 +280,8 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   )}
                   <Modal
                     open={uploading}
-                    aria-label="Please wait, uploading data to galaxy is in progress"
-                    title={"Galaxy Upload In Progress"}
+                    aria-label={t("tinyMce.galaxy.uploadInProgressLabel")}
+                    title={t("tinyMce.galaxy.uploadInProgressTitle")}
                   >
                     <Grid
                       container
@@ -311,7 +311,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>("html", {
                     maxWidth: 370,
-                    headerName: "File",
+                    headerName: t("tinyMce.galaxy.columns.file"),
                     flex: 1,
                     sortable: false,
                     renderCell: ({ row }) => (

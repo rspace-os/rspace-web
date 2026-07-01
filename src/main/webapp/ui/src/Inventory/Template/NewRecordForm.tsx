@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import TemplateModel from "../../stores/models/TemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -47,10 +46,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
         record={activeResult}
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
-      <ImageField
-        fieldOwner={activeResult}
-        alt="A visual representation of the samples that will be created from this new template"
-      />
+      <ImageField fieldOwner={activeResult} alt={t("template.newImageAlt")} />
     </StepperPanel>
   );
 });
@@ -123,9 +119,9 @@ export default function NewRecordForm(): React.ReactNode {
       <Stepper
         helpLink={{
           link: docLinks.createTemplate,
-          title: "Info on creating new templates.",
+          title: t("createNew.helpTitles.template"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.sampleTemplate}`}
+        titleText={t("createNew.newTemplate")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>
@@ -133,10 +129,7 @@ export default function NewRecordForm(): React.ReactNode {
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
         <StepperPanel title={t("formSections.accessPermissions")} sectionName="permissions" recordType="sampleTemplate">
-          <AccessPermissions
-            fieldOwner={activeResult}
-            additionalExplanation="This template will also be accessible to anyone who has access to a sample that has been created from it."
-          />
+          <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("template.permissionsExplanation")} />
         </StepperPanel>
         <FieldsSection activeResult={activeResult} />
       </Stepper>

@@ -137,7 +137,7 @@ export class StoichiometryTablePage {
 
   limitingReagentRadio(name: string): Locator {
     return this.rowByCellValue(name).getByRole("radio", {
-      name: "common:stoichiometry.table.aria.selectLimitingReagent",
+      name: "common:stoichiometry.table.label.selectLimitingReagent",
     });
   }
 

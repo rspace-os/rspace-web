@@ -66,7 +66,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label={t("tinyMce.pyrat.tableAria")}>
+        <Table aria-label={t("tinyMce.pyrat.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -143,8 +143,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          {"Selected: "}
-          {selectedAnimalIds.length}
+          {t("tinyMce.pyrat.selectedCount", { count: selectedAnimalIds.length })}
         </Typography>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50].filter((c) => c <= count)}

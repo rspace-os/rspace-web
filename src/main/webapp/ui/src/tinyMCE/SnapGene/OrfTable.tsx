@@ -185,7 +185,7 @@ export default function OrfTable(props: any) {
             {t("tinyMce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.readingFrames.aria")}
+            aria-label={t("tinyMce.snapGene.readingFrames.label")}
             name="enzymeSet"
             value={readingFrameOption}
             onChange={(event) => handleChange(event.target.value)}

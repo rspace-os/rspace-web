@@ -18,6 +18,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { observer } from "mobx-react-lite";
 import { default as React, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 type ConfirmState = {
@@ -116,6 +117,7 @@ type ConfirmProviderArgs = {
 
 function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const { t } = useTranslation("common");
 
   return (
     <ConfirmContext.Provider value={{ confirmState, setConfirmState }}>
@@ -146,7 +148,7 @@ function ConfirmProvider({ children }: ConfirmProviderArgs): React.ReactNode {
             }}
             loading={Boolean(confirmState?.confirmationSpinner)}
             disabled={Boolean(confirmState?.confirmationSpinner)}
-            label={confirmState?.yesLabel ?? "OK"}
+            label={confirmState?.yesLabel ?? t("actions.ok")}
           />
         </DialogActions>
       </Dialog>

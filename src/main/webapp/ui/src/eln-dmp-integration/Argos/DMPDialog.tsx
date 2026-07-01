@@ -484,7 +484,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               onSelectionChange={(newSelectionId: GridRowId) => {
                 setSelectedPlan(DMPs.find((d) => d.id === newSelectionId) ?? null);
               }}
-              selectRadioAriaLabelFunc={(row) => `Select plan: ${row.label}`}
+              selectRadioAriaLabelFunc={(row) => t("dmpIntegrations.dialog.selectPlanLabel", { label: row.label })}
               initialState={{
                 columns: {
                   columnVisibilityModel: {

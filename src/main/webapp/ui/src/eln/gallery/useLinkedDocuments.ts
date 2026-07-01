@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -39,7 +40,7 @@ class LinkableDocument implements LinkableRecord {
   }
 
   get recordTypeLabel(): string {
-    return "Document";
+    return i18n.t("common:recordTypes.document.singular");
   }
 
   get iconName(): string {

@@ -1,5 +1,6 @@
 import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import type { Instrument } from "@/stores/definitions/Instrument";
 import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
@@ -411,7 +412,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Sending to trash...",
+        i18n.t("inventory:search.actions.trash.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -470,14 +471,21 @@ export default class Search implements SearchInterface {
         uiStore.addAlert(
           mkAlert({
             variant: "error",
-            title: "Some of the samples could not be trashed because the subsamples are in containers.",
-            message: "Please move them to the trash first.",
+            title: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.title"),
+            message: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.message"),
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => {
               const parentContainer = ss.parentContainers.at(0);
               return {
-                title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
-                  parentContainer ? `(in ${parentContainer.name} ${parentContainer.globalId ?? ""})` : ""
-                }`,
+                title: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.detail", {
+                  name: ss.name ?? "UNKNOWN",
+                  container:
+                    parentContainer !== undefined
+                      ? i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.container", {
+                          name: parentContainer.name,
+                          globalId: parentContainer.globalId ?? "",
+                        })
+                      : "",
+                }),
                 variant: "error",
                 record: factory.newRecord({
                   ...ss,
@@ -486,7 +494,7 @@ export default class Search implements SearchInterface {
                 } as any as Record<string, unknown> & { globalId: GlobalId }),
               };
             }),
-            actionLabel: "Move all to trash",
+            actionLabel: i18n.t("inventory:search.actions.trash.moveAllToTrash"),
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
             },
@@ -517,8 +525,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Sending to trash failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.trash.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -582,10 +590,10 @@ export default class Search implements SearchInterface {
     for (const sample of nowEmptySamples) {
       uiStore.addAlert(
         mkAlert({
-          message: `Send Sample ${sample.name} to trash too?`,
+          message: i18n.t("inventory:search.actions.trash.emptySamplePrompt", { name: sample.name }),
           variant: "notice",
           isInfinite: true,
-          actionLabel: "yes",
+          actionLabel: i18n.t("common:actions.yes"),
           onActionClick: () => {
             void (async () => {
               await this.deleteRecords([sample]);
@@ -608,7 +616,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Restoring...",
+        i18n.t("inventory:search.actions.restore.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -641,8 +649,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Restore failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.restore.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -684,7 +692,7 @@ export default class Search implements SearchInterface {
     const { peopleStore, uiStore } = getRootStore();
     try {
       const { data } = await showToastWhilstPending(
-        "Duplicating...",
+        i18n.t("inventory:search.actions.duplicate.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -728,7 +736,9 @@ export default class Search implements SearchInterface {
         newRecords,
         "duplicated",
         () => "created",
-        newBenchItems.length > 0 ? `Newly created ${newBenchItems.join(" and ")} are placed on your Bench.` : null,
+        newBenchItems.length > 0
+          ? i18n.t("inventory:search.actions.duplicate.newBenchItems", { items: newBenchItems.join(" and ") })
+          : null,
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
       await this.fetcher.performInitialSearch(null);
@@ -738,8 +748,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Duplication failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.duplicate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -758,7 +768,7 @@ export default class Search implements SearchInterface {
     const { peopleStore, uiStore } = getRootStore();
     try {
       const { data } = await showToastWhilstPending(
-        "Splitting...",
+        i18n.t("inventory:search.actions.split.inProgress"),
         ApiService.post<Array<SubSampleAttrs>>(`subSamples/${id}/actions/split`, {
           split: true,
           numSubSamples: `${copies}`,
@@ -779,16 +789,16 @@ export default class Search implements SearchInterface {
           }),
         ],
         "split",
-        (r) => (r === subsample ? "Updated" : "Created"),
-        "Newly created subsamples are placed on your Bench.",
+        (r) => (r === subsample ? i18n.t("common:actions.updated") : i18n.t("common:actions.created")),
+        i18n.t("inventory:search.actions.split.newSubsamplesOnBench"),
       );
       await this.updateStateAfterSplit(subsample);
     } catch (error) {
       console.error(error);
       uiStore.addAlert(
         mkAlert({
-          title: "Splitting subsample failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.split.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           duration: 8000,
         }),
@@ -842,7 +852,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Transferring...",
+        i18n.t("inventory:search.actions.transfer.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -863,7 +873,9 @@ export default class Search implements SearchInterface {
       const recordsOnBench = successfullyTranferred.every(
         (r) => (r instanceof ContainerModel || r instanceof SubSampleModel) && r.isDirectlyOnWorkbench,
       );
-      const helpMessage = recordsOnBench ? `The records have been moved to ${username}'s bench` : null;
+      const translatedHelpMessage = recordsOnBench
+        ? i18n.t("inventory:search.actions.transfer.movedToBench", { username })
+        : null;
 
       handleDetailedErrors(
         data.errorCount,
@@ -874,13 +886,13 @@ export default class Search implements SearchInterface {
         "transfer",
         (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
-      handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", helpMessage);
+      handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Transfer failed.",
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.transfer.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -942,7 +954,7 @@ export default class Search implements SearchInterface {
       const template = factory.newRecord(data);
       uiStore.addAlert(
         mkAlert({
-          message: `Template created successfully.`,
+          message: i18n.t("inventory:search.actions.createTemplate.success"),
           variant: "success",
           details: [
             {
@@ -957,8 +969,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Template creation failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createTemplate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1021,7 +1033,7 @@ export default class Search implements SearchInterface {
       const template = factory.newRecord(data);
       uiStore.addAlert(
         mkAlert({
-          message: `Instrument template created successfully.`,
+          message: i18n.t("inventory:search.actions.createInstrumentTemplate.success"),
           variant: "success",
           details: [
             {
@@ -1037,8 +1049,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Instrument template creation failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createInstrumentTemplate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1087,7 +1099,7 @@ export default class Search implements SearchInterface {
 
       uiStore.addAlert(
         mkAlert({
-          message: "Successfully created new subsamples.",
+          message: i18n.t("inventory:search.actions.createSubsamples.success"),
           variant: "success",
           details: successfullyCreated.map((r) => ({
             title: r.name,
@@ -1099,8 +1111,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Subsample creation failed.",
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createSubsamples.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1148,7 +1160,7 @@ export default class Search implements SearchInterface {
         }),
       );
       const { data } = await showToastWhilstPending(
-        "Exporting...",
+        i18n.t("inventory:search.actions.export.inProgress"),
         ApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
@@ -1172,8 +1184,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Data export failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.export.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -1466,7 +1478,7 @@ export default class Search implements SearchInterface {
       loading: this.editLoading === "batch",
       cancel: () =>
         showToastWhilstPending<void>(
-          "Cancelling...",
+          i18n.t("inventory:search.actions.cancel.inProgress"),
           new Promise((resolve) =>
             (async () => {
               this.editLoading = "batch";
@@ -1528,8 +1540,8 @@ export default class Search implements SearchInterface {
         } catch (error) {
           uiStore.addAlert(
             mkAlert({
-              title: "Update failed.",
-              message: getErrorMessage(error, "Unknown reason"),
+              title: i18n.t("inventory:search.actions.update.failed"),
+              message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
               variant: "error",
             }),
           );

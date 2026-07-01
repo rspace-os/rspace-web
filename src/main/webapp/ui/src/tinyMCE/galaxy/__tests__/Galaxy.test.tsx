@@ -90,7 +90,7 @@ describe("Galaxy Upload Data tests", () => {
         name: /galaxy eu server/,
       });
       const columnHeadings = await screen.findAllByRole("columnheader");
-      expect(columnHeadings[1]).toHaveTextContent("File");
+      expect(columnHeadings[1]).toHaveTextContent("apps:tinyMce.galaxy.columns.file");
     });
     test("displays attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);

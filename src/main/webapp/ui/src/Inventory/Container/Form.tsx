@@ -48,7 +48,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: ContainerMod
         <>
           <LocationField fieldOwner={activeResult} />
           <OrganizationField container={activeResult} />
-          <ContainerImage fieldOwner={activeResult} alt={`What ${activeResult.name} looks like`} />
+          <ContainerImage fieldOwner={activeResult} alt={t("container.imageAlt", { name: activeResult.name })} />
         </>
       )}
     </StepperPanel>

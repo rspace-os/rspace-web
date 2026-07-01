@@ -25,6 +25,7 @@ type OverviewSectionArgs = {
 };
 
 const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -33,7 +34,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -47,7 +48,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
       />
       <OwnerField fieldOwner={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
-        <ImageField fieldOwner={activeResult} alt="What the instrument template looks like" />
+        <ImageField fieldOwner={activeResult} alt={t("instrumentTemplate.imageAlt")} />
       )}
     </StepperPanel>
   );
@@ -58,6 +59,7 @@ type DetailsSectionArgs = {
 };
 
 const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -66,7 +68,7 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -85,6 +87,7 @@ type ExtraFieldSectionArgs = {
 };
 
 const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -93,7 +96,7 @@ const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) =>
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -130,7 +133,7 @@ function InstrumentTemplateForm(): ReactNode {
           <DetailsSection activeResult={activeResult} />
           <StepperPanel
             icon="instrumentTemplate"
-            title="Barcodes"
+            title={t("formSections.barcodes")}
             sectionName="barcodes"
             recordType="instrumentTemplate"
           >
@@ -142,7 +145,7 @@ function InstrumentTemplateForm(): ReactNode {
         <>
           <StepperPanel
             icon="instrumentTemplate"
-            title="Attachments"
+            title={t("formSections.attachments")}
             sectionName="attachments"
             recordType="instrumentTemplate"
           >
@@ -150,7 +153,7 @@ function InstrumentTemplateForm(): ReactNode {
           </StepperPanel>
           <StepperPanel
             icon="instrumentTemplate"
-            title="Access Permissions"
+            title={t("formSections.accessPermissions")}
             sectionName="permissions"
             recordType="instrumentTemplate"
           >

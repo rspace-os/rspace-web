@@ -2,7 +2,8 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import type { Person } from "../../stores/definitions/Person";
@@ -64,7 +65,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
         <>
           <SampleField fieldOwner={activeResult} />
           <LocationField fieldOwner={activeResult} />
-          <ImageField fieldOwner={activeResult} alt="What the subsample looks like" />
+          <ImageField fieldOwner={activeResult} alt={t("subsample.imageAlt")} />
         </>
       )}
     </StepperPanel>
@@ -152,11 +153,11 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
         {t("formSections.parentSample")}
       </Heading>
       <Typography variant="body2">
-        <Trans
+        <TransRichText
           ns="inventory"
           i18nKey="subsample.sampleFieldsSection.parentSampleExplanation"
           values={{ alias: activeResult.alias.alias }}
-          components={[<RecordLink key="recordLink" record={activeResult.sample} />]}
+          components={{ recordLink: <RecordLink record={activeResult.sample} /> }}
         />
       </Typography>
       <Heading
@@ -287,7 +288,7 @@ function SubSampleForm(): ReactNode {
     >
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
-        whatLabel="subsample, or its parent sample"
+        whatLabel={t("subsample.limitedAccessLabel")}
         owner={owner}
       />
       {activeResult.readAccessLevel === "full" && <SampleFieldsSection activeResult={activeResult} />}

@@ -1,5 +1,6 @@
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import SampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Sample";
 import ApiService from "../../common/InvApiService";
@@ -664,7 +665,7 @@ export default class SampleModel
       await ApiService.post<void>(`samples/${this.id}/actions/updateToLatestTemplateVersion`, {});
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: "Sample updated to latest template successfully.",
+          message: i18n.t("inventory:sample.alerts.updateToLatestSuccess"),
           variant: "success",
         }),
       );
@@ -672,8 +673,8 @@ export default class SampleModel
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Updating sample to latest template failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:sample.alerts.updateToLatestFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -690,7 +691,7 @@ export default class SampleModel
     return (
       super.contextMenuDisabled() ??
       (this.hasSelectedSubsample && searchShowsSelection
-        ? "Cannot modify this sample whilst its subsamples are selected."
+        ? i18n.t("inventory:sample.contextMenu.subsamplesSelected")
         : null)
     );
   }
@@ -781,8 +782,8 @@ export default class SampleModel
       ...super.noValueLabel,
       sampleSource: null,
       expiryDate: null,
-      storageTempMin: "Unspecified",
-      storageTempMax: "Unspecified",
+      storageTempMin: i18n.t("inventory:sample.fields.storageTemperature.unspecified"),
+      storageTempMax: i18n.t("inventory:sample.fields.storageTemperature.unspecified"),
       subSampleAlias: null,
     };
   }
@@ -833,31 +834,28 @@ export default class SampleModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    let splitExplanation = "Subsamples will be created by dividing the existing subsample quantity amongst them.";
-    if (this.subSamples.length > 1)
-      splitExplanation =
-        "Cannot split a sample with more than one subsample; open the create dialog from a subsample instead.";
-    if (!this.canEdit) splitExplanation = "You do not have permission to edit this sample.";
+    let splitExplanation: string = i18n.t("inventory:sample.createOptions.split.explanation");
+    if (this.subSamples.length > 1) splitExplanation = i18n.t("inventory:sample.createOptions.split.tooManySubsamples");
+    if (!this.canEdit) splitExplanation = i18n.t("inventory:sample.createOptions.noEditPermission");
 
     return [
       {
-        label: "Subsamples, by creating new ones",
+        label: i18n.t("inventory:sample.createOptions.newSubsamples.label"),
         explanation: this.canEdit
-          ? "Additional subsamples will be created with the specified quantity."
-          : "You do not have permission to edit this sample.",
+          ? i18n.t("inventory:sample.createOptions.newSubsamples.explanation")
+          : i18n.t("inventory:sample.createOptions.noEditPermission"),
         parameters: [
           {
-            label: "Number of new subsamples",
-            explanation: "Between 1 and 100.",
+            label: i18n.t("inventory:sample.createOptions.newSubsamples.countLabel"),
+            explanation: i18n.t("inventory:sample.createOptions.newSubsamples.countExplanation"),
             state: this.createOptionsParametersState.newSubsamplesCount,
             validState: () =>
               this.createOptionsParametersState.split.copies >= 2 &&
               this.createOptionsParametersState.split.copies <= 100,
           },
           {
-            label: "Quantity per subsample",
-            explanation:
-              "The starting quantity for each new subsample. The sample's total quantity will increase after creation of the new subsamples.",
+            label: i18n.t("inventory:sample.createOptions.newSubsamples.quantityLabel"),
+            explanation: i18n.t("inventory:sample.createOptions.newSubsamples.quantityExplanation"),
             state: this.createOptionsParametersState.newSubsamplesQuantity,
             validState: () => this.createOptionsParametersState.newSubsamplesQuantity.quantity !== "",
           },
@@ -881,13 +879,13 @@ export default class SampleModel
         },
       },
       {
-        label: "Subsamples, by splitting the existing subsample",
+        label: i18n.t("inventory:sample.createOptions.split.label"),
         explanation: splitExplanation,
         disabled: this.subSamples.length > 1 || !this.canEdit,
         parameters: [
           {
-            label: "Number of new subsamples",
-            explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
+            label: i18n.t("inventory:sample.createOptions.split.countLabel"),
+            explanation: i18n.t("inventory:sample.createOptions.split.countExplanation"),
             state: this.createOptionsParametersState.split,
             validState: () =>
               this.createOptionsParametersState.split.copies >= 2 &&
@@ -906,19 +904,18 @@ export default class SampleModel
         },
       },
       {
-        label: "Template",
-        explanation: "Create a template from this sample, to easily create similar samples.",
+        label: i18n.t("inventory:sample.createOptions.template.label"),
+        explanation: i18n.t("inventory:sample.createOptions.template.explanation"),
         parameters: [
           {
-            label: "Name",
-            explanation: "A name for the new template. At least two characters.",
+            label: i18n.t("inventory:createOptions.common.name"),
+            explanation: i18n.t("inventory:createOptions.common.templateNameExplanation"),
             state: this.createOptionsParametersState.name,
             validState: () => this.createOptionsParametersState.name.value.length >= 2,
           },
           {
-            label: "Field default values",
-            explanation:
-              "All of the sample fields will be included in the template. Select which fields should also retain their current value as a default field value.",
+            label: i18n.t("inventory:createOptions.common.fieldDefaultValues"),
+            explanation: i18n.t("inventory:sample.createOptions.template.fieldDefaultsExplanation"),
             state: this.createOptionsParametersState.fields,
             validState: () => true,
           },

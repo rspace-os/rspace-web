@@ -445,9 +445,9 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
         .catch((error) => {
           addAlert(
             mkAlert({
-              message: `Failed to load additional information: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
+              message: t("contextMenu.createDialog.loadAdditionalInfoFailed", {
+                message: error instanceof Error ? error.message : String(error),
+              }),
               variant: "error",
             }),
           );

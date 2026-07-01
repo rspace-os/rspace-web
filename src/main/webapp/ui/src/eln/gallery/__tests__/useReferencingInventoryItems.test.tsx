@@ -103,7 +103,7 @@ describe("useReferencingInventoryItems", () => {
     const { result } = renderHook(() => useReferencingInventoryItems("GL5"));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.errorMessage).toMatch(/related inventory items/i);
+    expect(result.current.errorMessage).toMatch(/gallery:referencingInventoryItems\.loadFailed/);
     expect(result.current.items).toHaveLength(0);
   });
 

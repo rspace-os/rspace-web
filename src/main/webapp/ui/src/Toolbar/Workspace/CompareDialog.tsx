@@ -405,7 +405,7 @@ function CompareDialog(): React.ReactNode {
           <Typography variant="body2">{t("toolbar.compareDialog.description")}</Typography>
           <Box sx={{ width: "100%" }}>
             <DataGrid
-              aria-label="documents"
+              aria-label={t("toolbar.compareDialog.labels.documentsTable")}
               autoHeight
               columns={columns}
               rows={documents}

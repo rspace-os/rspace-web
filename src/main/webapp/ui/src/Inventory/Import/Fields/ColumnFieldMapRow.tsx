@@ -59,7 +59,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
             checked={columnFieldMap.selected}
             onChange={() => columnFieldMap.toggleSelected()}
             color="default"
-            name={`Select mapping for ${columnFieldMap.fieldName}`}
+            name={t("import.columnMapping.selectMapping", { fieldName: columnFieldMap.fieldName })}
             data-test-id={columnFieldMap.fieldName}
           />
         </TableCell>

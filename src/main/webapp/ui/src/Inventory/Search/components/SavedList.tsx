@@ -94,7 +94,7 @@ function SavedList<T extends SavedItem>({
                 )}
                 <CustomTooltip title={t("search.savedList.editName")}>
                   <IconButton
-                    aria-label={t("search.savedList.editAria")}
+                    aria-label={t("search.savedList.editLabel")}
                     onClick={(e) => {
                       e.stopPropagation();
                       setIndex(i);
@@ -114,7 +114,7 @@ function SavedList<T extends SavedItem>({
                 >
                   <IconButton
                     edge="end"
-                    aria-label={t("search.savedList.deleteAria")}
+                    aria-label={t("search.savedList.deleteLabel")}
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleDelete(item);

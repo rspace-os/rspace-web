@@ -169,7 +169,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "aspirin");
     const checkbox = await screen.findByRole("checkbox", {
-      name: "apps:tinyMce.pubchem.dialog.selectCompoundAria",
+      name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
     });
     expect(checkbox).toBeChecked();
     /*
@@ -185,12 +185,12 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
     await waitFor(() => {
-      expect(screen.getAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundAria" }).length).toBe(
+      expect(screen.getAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }).length).toBe(
         2,
       );
     });
     const checkboxes = screen.getAllByRole("checkbox", {
-      name: "apps:tinyMce.pubchem.dialog.selectCompoundAria",
+      name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
     });
     for (const checkbox of checkboxes) {
       expect(checkbox).not.toBeChecked();
@@ -203,7 +203,7 @@ describe("ImportDialog", () => {
     await performSearch(user, "multiple");
     const firstCheckbox = (
       await screen.findAllByRole("checkbox", {
-        name: "apps:tinyMce.pubchem.dialog.selectCompoundAria",
+        name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
       })
     )[0];
     await user.click(firstCheckbox);
@@ -220,7 +220,7 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundAria" });
+    await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" });
 
     // clicking import without selecting any compounds shows a validation warning
     await user.click(screen.getByRole("button", { name: "common:pubchemImport.importSelected" }));
@@ -233,7 +233,7 @@ describe("ImportDialog", () => {
 
     // selecting a compound clears the warning
     await user.click(
-      (await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundAria" }))[0],
+      (await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }))[0],
     );
     await waitFor(() => {
       expect(screen.queryByRole("alert")).toBe(null);

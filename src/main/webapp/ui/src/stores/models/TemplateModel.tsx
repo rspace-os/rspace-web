@@ -342,10 +342,10 @@ export default class TemplateModel extends SampleModel implements Template {
       );
       if (this.version !== oldVersion && samplesToBeUpdated.length > 0) {
         const newToast = mkAlert({
-          message: "Update existing samples?",
+          message: i18n.t("inventory:template.alerts.updateExistingSamples"),
           variant: "notice",
           isInfinite: true,
-          actionLabel: "yes",
+          actionLabel: i18n.t("common:actions.yes"),
           onActionClick: () => void this.updateSamplesToLatest(),
         });
         latest.addScopedToast(newToast);
@@ -402,8 +402,8 @@ export default class TemplateModel extends SampleModel implements Template {
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Updating samples to latest template version failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:template.alerts.updateLatestFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -414,7 +414,7 @@ export default class TemplateModel extends SampleModel implements Template {
   contextMenuDisabled(): string | null {
     return (
       super.contextMenuDisabled() ??
-      (this.historicalVersion ? "Cannot modify a historical version of a template." : null)
+      (this.historicalVersion ? i18n.t("inventory:template.contextMenu.historicalVersion") : null)
     );
   }
 
@@ -535,8 +535,8 @@ export default class TemplateModel extends SampleModel implements Template {
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Sample",
-        explanation: "Tapping create will open the new sample form, with this template pre-populated.",
+        label: i18n.t("inventory:template.createOptions.sample.label"),
+        explanation: i18n.t("inventory:template.createOptions.sample.explanation"),
         onReset: () => {
           // nothing to reset
         },

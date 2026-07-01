@@ -1,5 +1,6 @@
 import { action, makeObservable, observable, override } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
 import type { _LINK } from "@/util/types";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import type { BarcodeAttrs } from "../definitions/Barcode";
@@ -113,7 +114,7 @@ export default class InstrumentTemplateModel
   }
 
   get cardTypeLabel(): string {
-    return "Instrument Template";
+    return inventoryRecordTypeLabels.instrumentTemplate;
   }
 
   get recordTypeLabel(): string {
@@ -239,8 +240,8 @@ export default class InstrumentTemplateModel
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Instrument",
-        explanation: "Create a new instrument based on this template.",
+        label: i18n.t("inventory:instrumentTemplate.createOptions.instrument.label"),
+        explanation: i18n.t("inventory:instrumentTemplate.createOptions.instrument.explanation"),
         onReset: () => {},
         onSubmit: async () => {
           void getRootStore().searchStore.createNewInstrument({

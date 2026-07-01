@@ -132,7 +132,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
   const columns = [
     {
       field: "__select__",
-      headerName: "Select",
+      headerName: t("dmpIntegrations.dialog.selectColumn"),
       width: 70,
       flex: 0,
       sortable: false,

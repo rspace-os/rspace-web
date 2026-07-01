@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
 import { capitaliseJustFirstChar } from "../../util/Util";
@@ -59,7 +58,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: SampleModel 
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
       <TemplateField />
-      <ImageField fieldOwner={activeResult} alt="What the new sample looks like" />
+      <ImageField fieldOwner={activeResult} alt={t("sample.newImageAlt")} />
     </StepperPanel>
   );
 });
@@ -187,9 +186,9 @@ function NewRecordForm(): React.ReactNode {
       <Stepper
         helpLink={{
           link: docLinks.createSample,
-          title: "Info on creating new samples.",
+          title: t("createNew.helpTitles.sample"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.sample}`}
+        titleText={t("createNew.newSample")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>
@@ -211,10 +210,7 @@ function NewRecordForm(): React.ReactNode {
           sectionName="permissions"
           recordType="sample"
         >
-          <AccessPermissions
-            fieldOwner={activeResult}
-            additionalExplanation="Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples."
-          />
+          <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("sample.permissionsExplanation")} />
         </StepperPanel>
         <MoreFieldsSection activeResult={activeResult} />
         <SubSamplesSection activeResult={activeResult} />

@@ -4,6 +4,7 @@ import Badge from "@mui/material/Badge";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import { match } from "../../../util/Util";
@@ -12,6 +13,8 @@ import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMen
 import useNavigateHelpers from "../../useNavigateHelpers";
 
 function ContentContextMenu(): React.ReactNode {
+  const { t } = useTranslation("inventory");
+  const { t: tCommon } = useTranslation("common");
   const { navigateToRecord } = useNavigateHelpers();
   const { search, scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
@@ -27,31 +30,31 @@ function ContentContextMenu(): React.ReactNode {
 
   const onSelectOptions: Array<SplitButtonOption> = [
     {
-      text: "All locations",
+      text: t("container.content.contextMenu.allLocations"),
       selection: () => {
         locations.filter((l) => !l.content || !search.alwaysFilterOut(l.content)).map((l) => l.toggleSelected(true));
       },
     },
     {
-      text: "Siblings of selected subsample",
+      text: t("container.content.contextMenu.siblingsOfSelectedSubsample"),
       selection: () => {
         selectedSubsampleLocations.map((l) => l.siblings.map((s) => s.toggleSelected(true)));
       },
     },
     {
-      text: "None",
+      text: tCommon("actions.none"),
       selection: () => {
         selectedLocations.map((l) => l.toggleSelected(false));
       },
     },
     {
-      text: "Invert",
+      text: t("container.content.contextMenu.invert"),
       selection: () => {
         locations.map((l) => l.toggleSelected(null));
       },
     },
     {
-      text: "Mine",
+      text: t("container.content.contextMenu.mine"),
       selection: () => {
         locations.map(
           (l) => l.toggleSelected(l.content?.currentUserIsOwner === true), // if currentUserIsOwner cannot be determined then don't select
@@ -59,7 +62,7 @@ function ContentContextMenu(): React.ReactNode {
       },
     },
     {
-      text: "Not Mine",
+      text: t("container.content.contextMenu.notMine"),
       selection: () => {
         locations.map(
           (l) => l.toggleSelected(l.content?.currentUserIsOwner === false), // if currentUserIsOwner cannot be determined then don't select
@@ -76,10 +79,10 @@ function ContentContextMenu(): React.ReactNode {
         void navigateToRecord(selectedResults[0]);
       },
       icon: <OpenInBrowserIcon />,
-      label: "Open",
+      label: tCommon("actions.open"),
       disabledHelp: match<void, string>([
-        [() => selectedResults.length === 0, "Nothing selected."],
-        [() => selectedResults.length > 1, "More than 1 item selected."],
+        [() => selectedResults.length === 0, t("container.content.contextMenu.nothingSelected")],
+        [() => selectedResults.length > 1, t("container.content.contextMenu.tooManySelected")],
         [() => true, ""],
       ])(),
       variant: "filled" as const,
@@ -101,7 +104,7 @@ function ContentContextMenu(): React.ReactNode {
       menuID="content"
       prefixActions={prefixActions}
       selectedResults={selectedResults}
-      forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
+      forceDisabled={search.processingContextActions ? t("contextMenu.actionInProgress") : ""}
     />
   );
 }

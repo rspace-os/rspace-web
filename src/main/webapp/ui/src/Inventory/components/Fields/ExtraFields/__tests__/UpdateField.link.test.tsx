@@ -62,8 +62,8 @@ import UpdateField from "../UpdateField";
 
 const FIELD_NAME_LABEL = "inventory:fields.extraFields.fields.fieldName";
 const RELATION_TYPE_LABEL = "inventory:fields.extraFields.fields.relationType";
-const UPDATE_FIELD_LABEL = "inventory:fields.extraFields.updateField.ariaUpdate";
-const CANCEL_UPDATE_LABEL = "inventory:fields.extraFields.updateField.ariaCancel";
+const UPDATE_FIELD_LABEL = "inventory:fields.extraFields.updateField.updateLabel";
+const CANCEL_UPDATE_LABEL = "inventory:fields.extraFields.updateField.cancelLabel";
 const RELATION_HELPER = "inventory:fields.extraFields.link.relationHelper";
 const TARGET_HELPER = "inventory:fields.extraFields.link.targetHelper";
 const TARGET_NOT_FOUND = "inventory:fields.extraFields.link.targetNotFound";
@@ -415,7 +415,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     const setInvalidInput = extraField.setInvalidInput;
     expect(vi.mocked(setInvalidInput)).toHaveBeenLastCalledWith(true);
     // and the target field itself explains what is wrong
-    expect(screen.getByText(/target global id is required/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.targetValidation.required")).toBeInTheDocument();
   });
 
   it("clears the invalid flag when the edit is cancelled", async () => {
@@ -462,7 +462,7 @@ describe("UpdateField — Field Type select includes Link", () => {
     await user.type(screen.getByRole("combobox", { name: RELATION_TYPE_LABEL }), "References");
     await user.type(screen.getByRole("textbox", { name: "inventory:fields.link.editor.targetGlobalId" }), "SA6v1");
 
-    expect(screen.getByText(/without a version.*clock/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.targetValidation.noVersionSuffix")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: UPDATE_FIELD_LABEL })).toBeDisabled();
   });
 

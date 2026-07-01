@@ -169,7 +169,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
                   },
                 });
               }}
-              selectRadioAriaLabelFunc={(row) => `Select ${row.title}`}
+              selectRadioAriaLabelFunc={(row) => t("dmpIntegrations.dialog.selectPlanLabel", { label: row.title })}
               initialState={{
                 columns: {
                   columnVisibilityModel: {

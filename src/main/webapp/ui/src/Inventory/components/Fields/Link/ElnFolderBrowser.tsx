@@ -265,7 +265,7 @@ export default function ElnFolderBrowser({
         </Box>
       )}
       <Tree<FolderTreeNode, string>
-        aria-label="Browse the ELN workspace for a link target"
+        aria-label={t("fields.link.elnPicker.workspaceTreeLabel")}
         getId={(node) => node.id.toString()}
         itemChildrenIndentation={20}
         slots={{ expandIcon: ExpandArrow, collapseIcon: CollapseArrow }}

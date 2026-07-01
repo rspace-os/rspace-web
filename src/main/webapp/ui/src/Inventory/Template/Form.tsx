@@ -44,10 +44,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
       />
       <OwnerField fieldOwner={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
-        <ImageField
-          fieldOwner={activeResult}
-          alt="A visual representation of the samples that are to be created from this template"
-        />
+        <ImageField fieldOwner={activeResult} alt={t("template.imageAlt")} />
       )}
     </StepperPanel>
   );
@@ -139,10 +136,7 @@ function Form(): ReactNode {
             sectionName="permissions"
             recordType="sampleTemplate"
           >
-            <AccessPermissions
-              fieldOwner={activeResult}
-              additionalExplanation="This template will also be accessible to anyone who has access to a sample that has been created from it."
-            />
+            <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("template.permissionsExplanation")} />
           </StepperPanel>
           <FieldsSection activeResult={activeResult} />
           {activeResult.state === "preview" ? (

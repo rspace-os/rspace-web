@@ -114,7 +114,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale * 1.2);
                 }}
-                aria-label="zoom in"
+                aria-label={tCommon("actions.zoomIn")}
                 size="small"
               >
                 <ZoomInIcon />
@@ -132,7 +132,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                   setScale(1);
                 }}
                 disabled={scale === 1}
-                aria-label="reset zoom"
+                aria-label={tCommon("actions.resetZoom")}
                 size="small"
               >
                 <ResetZoomIcon />
@@ -149,7 +149,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale / 1.2);
                 }}
-                aria-label="zoom out"
+                aria-label={tCommon("actions.zoomOut")}
                 size="small"
               >
                 <ZoomOutIcon />

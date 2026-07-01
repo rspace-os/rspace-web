@@ -150,7 +150,7 @@ const CollapseContents = observer(
         } catch (e: unknown) {
           uiStore.addAlert(
             mkAlert({
-              title: "Unable to retrieve barcode image.",
+              title: t("fields.barcodes.alerts.unableToRetrieveBarcodeImage"),
               message: e instanceof Error ? e.message : String(e),
               variant: "error",
             }),

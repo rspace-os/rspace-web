@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
@@ -135,8 +136,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching folder tree",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: i18n.t("common:apiErrors.folders.fetchTreeFailed"),
+            message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch folder tree", {
@@ -164,8 +165,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching folder",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: i18n.t("common:apiErrors.folders.fetchFailed"),
+            message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch folder", {
@@ -206,8 +207,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error creating folder",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: i18n.t("common:apiErrors.folders.createFailed"),
+            message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
           }),
         );
         throw new Error("Could not create folder", {

@@ -1,5 +1,6 @@
 import React, { useContext } from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getByKey, Optional } from "../../util/optional";
@@ -1356,15 +1357,15 @@ export function useIntegrationsEndpoint(): {
             if (typeof errorMsg === "string") {
               throw new Error(errorMsg);
             } else {
-              throw new Error(errorMsg.errorMessages.at(0) ?? "Unknown reason");
+              throw new Error(errorMsg.errorMessages.at(0) ?? i18n.t("apps:integrationsEndpoint.unknownReason"));
             }
           }
-          throw new Error("Unknown error");
+          throw new Error(i18n.t("apps:integrationsEndpoint.unknownError"));
         } else {
           addAlert(
             mkAlert({
               variant: "success",
-              message: "Update successful.",
+              message: i18n.t("apps:integrationsEndpoint.updateSuccess"),
             }),
           );
           switch (integration) {
@@ -1435,7 +1436,7 @@ export function useIntegrationsEndpoint(): {
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Update failed.",
+              title: i18n.t("apps:integrationsEndpoint.updateFailed"),
               message: e.message,
             }),
           );
@@ -1467,7 +1468,7 @@ export function useIntegrationsEndpoint(): {
       if (response.data.errorMsg !== null && typeof response.data.errorMsg !== "undefined") {
         throw new Error(response.data.errorMsg);
       }
-      throw new Error("Unknown reason");
+      throw new Error(i18n.t("apps:integrationsEndpoint.unknownReason"));
     } else {
       switch (appName) {
         case "ARGOS":

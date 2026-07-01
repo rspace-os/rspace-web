@@ -1,9 +1,11 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import TableSortLabel from "../../../components/TableSortLabel";
 import SearchContext from "../../../stores/contexts/Search";
 import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import { translateAdjustableTableLabel } from "./adjustableTableLabels";
 
 export type SortProperty = {
   key: string;
@@ -16,6 +18,7 @@ type SortablePropertyArgs = {
 };
 
 function SortableProperty({ property }: SortablePropertyArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
 
   const setOrder = (key: string) => {
@@ -31,7 +34,7 @@ function SortableProperty({ property }: SortablePropertyArgs): React.ReactNode {
       direction={search.fetcher.order}
       onClick={() => setOrder(property.key)}
     >
-      {property.label}
+      {translateAdjustableTableLabel(property.label, t)}
     </TableSortLabel>
   );
 }

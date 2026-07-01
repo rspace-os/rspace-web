@@ -2,8 +2,10 @@ import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import Analytics from "../../components/Analytics";
 
 const KetcherDialog = React.lazy(() => import("../../components/Ketcher/KetcherDialog"));
@@ -63,6 +65,7 @@ function showErrorAlert(message: string): void {
  * a global variable.
  */
 export const KetcherViewer = (): React.ReactNode => {
+  const { t } = useTranslation("common");
   const [existingChemical, setExistingChemical] = useState("");
   const [dialogIsOpen, setDialogIsOpen] = useState(true);
 
@@ -88,18 +91,18 @@ export const KetcherViewer = (): React.ReactNode => {
         });
 
         if (!response.data) {
-          showErrorAlert("Problem loading chemical element.");
+          showErrorAlert(t("apiErrors.chemicals.loadElementFailed"));
           return;
         }
         setExistingChemical(response.data);
       } catch {
-        showErrorAlert("Loading chemical elements failed.");
+        showErrorAlert(t("apiErrors.chemicals.loadElementsFailed"));
       }
     };
 
     if (selectedChemicalElement) {
       loadChemicalFile(selectedChemicalElement).catch(() => {
-        showErrorAlert("Loading chemical elements failed.");
+        showErrorAlert(t("apiErrors.chemicals.loadElementsFailed"));
       });
     }
   }, []);
@@ -136,7 +139,7 @@ export const KetcherViewer = (): React.ReactNode => {
       <KetcherDialog
         isOpen={dialogIsOpen}
         handleInsert={() => {}}
-        title={"Ketcher Chemical Viewer (Read-Only)"}
+        title={t("ketcher.viewerTitle")}
         existingChem={existingChemical}
         handleClose={handleClose}
         readOnly={true}
@@ -155,7 +158,9 @@ document.addEventListener("DOMContentLoaded", () => {
       root.render(
         <Analytics>
           <MuiCssLayerProvider>
-            <KetcherViewer />
+            <I18nRoot namespaces={["common"]}>
+              <KetcherViewer />
+            </I18nRoot>
           </MuiCssLayerProvider>
         </Analytics>,
       );

@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import type { Filestore } from "./useGalleryListing";
@@ -24,7 +25,7 @@ export default function useFilestoresEndpoint(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: `Logged out of ${filestore.name}`,
+          message: i18n.t("gallery:filestores.logoutSuccess", { name: filestore.name }),
         }),
       );
     } catch (e) {
@@ -32,7 +33,7 @@ export default function useFilestoresEndpoint(): {
       addAlert(
         mkAlert({
           variant: "error",
-          message: `Failed to log out of ${filestore.name}`,
+          message: i18n.t("gallery:filestores.logoutFailed", { name: filestore.name }),
         }),
       );
     }

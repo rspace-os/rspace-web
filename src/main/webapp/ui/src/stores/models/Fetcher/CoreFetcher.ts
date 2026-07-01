@@ -1,5 +1,6 @@
 import { omitBy, pick, pickBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../../common/InvApiService";
 import * as Parsers from "../../../util/parsers";
@@ -442,8 +443,8 @@ export default class CoreFetcher {
       }
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Could not perform search.`,
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.errors.performSearchFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)

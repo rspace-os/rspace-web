@@ -9,6 +9,7 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ChemistryIcon from "../../../../assets/graphics/ChemistryIcon";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -24,6 +25,7 @@ import Preview from "./PreviewAction";
 const KetcherDialog = React.lazy(() => import("../../../../components/Ketcher/KetcherDialog"));
 
 const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) => {
+  const { t } = useTranslation("inventory");
   const { loadingString, chemicalString, isChemicalFile, chemistrySupported } = attachment;
 
   const [showPreview, setShowPreview] = useState(true);
@@ -44,12 +46,12 @@ const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) =>
           chemicalString
             ? ""
             : loadingString
-              ? "Loading file"
+              ? t("fields.attachments.tooltips.loadingFile")
               : chemistrySupported
-                ? "Preview file as 3D structure"
+                ? t("fields.attachments.tooltips.preview3d")
                 : isChemicalFile && !attachment.id
-                  ? "Save first to enable 3D preview"
-                  : "3D Preview is not supported for this file type"
+                  ? t("fields.attachments.tooltips.saveFirst3dPreview")
+                  : t("fields.attachments.tooltips.preview3dUnsupported")
         }
         size="small"
         color="primary"
@@ -74,7 +76,7 @@ const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) =>
           <KetcherDialog
             isOpen
             handleInsert={() => {}}
-            title={"View Chemical (Read-only)"}
+            title={t("fields.attachments.viewChemicalReadOnly")}
             existingChem={attachment.chemicalString}
             handleClose={() => {
               setShowPreview(false);
@@ -87,17 +89,20 @@ const ChemicalPreview = observer(({ attachment }: { attachment: Attachment }) =>
   );
 });
 
-const Download = ({ attachment }: { attachment: Attachment }) => (
-  <IconButtonWithTooltip
-    title="Download"
-    size="small"
-    color="primary"
-    onClick={() => {
-      void attachment.download();
-    }}
-    icon={<DownloadIcon />}
-  />
-);
+const Download = ({ attachment }: { attachment: Attachment }) => {
+  const { t } = useTranslation("common");
+  return (
+    <IconButtonWithTooltip
+      title={t("actions.download")}
+      size="small"
+      color="primary"
+      onClick={() => {
+        void attachment.download();
+      }}
+      icon={<DownloadIcon />}
+    />
+  );
+};
 
 const SetAsPreviewImage = <
   Fields extends {
@@ -114,11 +119,12 @@ const SetAsPreviewImage = <
   disabled: boolean;
   fieldOwner?: FieldOwner;
 }): ReactNode => {
+  const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
 
   const storeImage = async (dataURL: string | null, file: Blob | null) => {
-    if (!fieldOwner) throw new Error("The preview image cannot be set as the item is not available.");
-    if (!dataURL || !file) throw new Error("Unable to set attachment as preview image.");
+    if (!fieldOwner) throw new Error(t("fields.attachments.errors.previewImageUnavailable"));
+    if (!dataURL || !file) throw new Error(t("fields.attachments.errors.unableToSetPreviewImage"));
     const scaledImage = await capImageAt1MB(file, dataURL);
     fieldOwner.setFieldsDirty({
       image: scaledImage,
@@ -126,7 +132,7 @@ const SetAsPreviewImage = <
     });
     uiStore.addAlert(
       mkAlert({
-        message: `Setting ${attachment.name} as preview image. Please Save the item to confirm.`,
+        message: t("fields.attachments.alert.settingPreviewImage", { name: attachment.name }),
         variant: "notice",
         isInfinite: false,
       }),
@@ -140,7 +146,7 @@ const SetAsPreviewImage = <
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Could not fetch image",
+          title: t("fields.attachments.alert.couldNotFetchImage"),
           message: (e as Error).message,
           variant: "error",
         }),
@@ -151,10 +157,10 @@ const SetAsPreviewImage = <
     <IconButtonWithTooltip
       title={
         disabled && !attachment.previewSupported
-          ? "Save first to enable setting this file as the item's Preview Image."
+          ? t("fields.attachments.tooltips.saveFirstSetPreviewImage")
           : disabled
-            ? "First press Edit to set as Preview Image."
-            : "Set as Preview Image"
+            ? t("fields.attachments.tooltips.editFirstSetPreviewImage")
+            : t("fields.attachments.tooltips.setAsPreviewImage")
       }
       size="small"
       color="primary"
@@ -182,6 +188,8 @@ function AttachmentTableRow<
   editable: boolean;
   chemistryProvider: string;
 }): ReactNode {
+  const { t } = useTranslation("inventory");
+  const { t: tCommon } = useTranslation("common");
   return (
     <TableRow>
       <TableCell>
@@ -211,9 +219,9 @@ function AttachmentTableRow<
                 attachment.remove();
               }}
               disabled={!editable}
-              tooltipAfterClicked="Attachment will be deleted once this item is saved."
-              tooltipBeforeClicked="Remove"
-              tooltipWhenDisabled="First press Edit to remove this attachment."
+              tooltipAfterClicked={t("fields.attachments.tooltips.deleteAfterClicked")}
+              tooltipBeforeClicked={tCommon("actions.remove")}
+              tooltipWhenDisabled={t("fields.attachments.tooltips.editFirstRemove")}
             />
           </Grid>
         </Grid>

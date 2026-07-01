@@ -111,7 +111,7 @@ export default function NewNotebook() {
               onChange={(e) => setName(e.target.value)}
               data-test-id="new-folder-name"
               slotProps={{
-                htmlInput: { "aria-label": t("toolbar.newFolder.nameAria") },
+                htmlInput: { "aria-label": t("toolbar.newFolder.nameLabel") },
               }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>

@@ -78,7 +78,10 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     if (unitStore.units.length) {
       const totalQuantity = sample.quantityValue * count;
       return Optional.present(
-        `${totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2)} ${sample.quantityUnitLabel} in total`,
+        t("sample.fields.quantity.total", {
+          quantity: totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2),
+          unit: sample.quantityUnitLabel,
+        }),
       );
     }
 
@@ -89,7 +92,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     if (valid) {
       return null;
     }
-    return "Should be a positive value, of no more than 3 decimal places, or zero.";
+    return t("sample.fields.quantity.validation");
   };
 
   const alias = sample.subSampleAlias;
@@ -104,7 +107,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     return ["dimensionless", "volume", "mass"];
   };
 
-  const totalQuantityString = `${sample.quantityLabel} in total`;
+  const totalQuantityString = t("sample.fields.quantity.totalLabel", { quantity: sample.quantityLabel });
 
   return (
     <>
@@ -120,8 +123,12 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
           }}
         >
           <FormField
-            label={`Quantity${(sample.newSampleSubSamplesCount ?? 2) > 1 ? ` per ${alias.alias}` : ""}`}
-            explanation="Quantity units can also be changed by editing templates."
+            label={
+              (sample.newSampleSubSamplesCount ?? 2) > 1
+                ? t("sample.fields.quantity.perAlias", { alias: alias.alias })
+                : t("sample.fields.quantity.label")
+            }
+            explanation={t("sample.fields.quantity.templateUnitsExplanation")}
             value={amount}
             error={!valid}
             helperText={errorMessage()}
@@ -147,8 +154,9 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
                         />
                         {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
                           <InputAdornment position="start">
-                            {"per "}
-                            {sample.template ? alias.alias : "subsample"}
+                            {t("fields.quantity.perAlias", {
+                              alias: sample.template ? alias.alias : t("recordTypes.subsample.lower"),
+                            })}
                           </InputAdornment>
                         )}
                       </>
@@ -162,7 +170,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
       )}
       {sample.id !== null && typeof sample.id !== "undefined" && Boolean(sample.quantity) && (
         <FormField
-          label="Total Quantity"
+          label={t("fields.quantity.totalLabel")}
           value={totalQuantityString}
           disabled
           explanation={

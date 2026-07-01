@@ -316,7 +316,7 @@ function Clustermarket({
               color="primary"
               slotProps={{
                 input: {
-                  "aria-label": t("tinyMce.clustermarket.maintenanceAria"),
+                  "aria-label": t("tinyMce.clustermarket.maintenanceLabel"),
                 },
               }}
             />

@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import ContainerModel from "../../stores/models/ContainerModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -48,7 +47,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: ContainerMod
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
       <Organization container={activeResult} />
-      <ContainerImage fieldOwner={activeResult} alt="What the new container looks like" />
+      <ContainerImage fieldOwner={activeResult} alt={t("container.newImageAlt")} />
     </StepperPanel>
   );
 });
@@ -114,9 +113,9 @@ export default function NewRecordForm(): React.ReactNode {
       <Stepper
         helpLink={{
           link: docLinks.createContainer,
-          title: "Info on creating new containers.",
+          title: t("createNew.helpTitles.container"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.container}`}
+        titleText={t("createNew.newContainer")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>

@@ -99,7 +99,7 @@ describe("StoichiometryTableGrid", () => {
 
     expect(
       screen.getByRole("combobox", {
-        name: "common:stoichiometry.table.aria.typeSelect",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     ).toBeVisible();
   });
@@ -109,7 +109,7 @@ describe("StoichiometryTableGrid", () => {
 
     expect(
       screen.queryByRole("combobox", {
-        name: "common:stoichiometry.table.aria.typeSelect",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     ).not.toBeInTheDocument();
 
@@ -124,7 +124,7 @@ describe("StoichiometryTableGrid", () => {
 
     await user.click(
       screen.getByRole("combobox", {
-        name: "common:stoichiometry.table.aria.typeSelect",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     );
     await user.click(await screen.findByRole("option", { name: "common:stoichiometry.table.roles.product" }));
@@ -147,17 +147,17 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "reactant",
       molecule: makeMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "product",
       molecule: makeProductMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "agent",
       molecule: makeAgentMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows an enabled delete button for $label rows when there is no active chemId", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} />);
@@ -170,12 +170,12 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "reactant",
       molecule: makeMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "product",
       molecule: makeProductMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows a disabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);
@@ -187,7 +187,7 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "agent",
       molecule: makeAgentMolecule(),
-      buttonName: "common:stoichiometry.table.aria.deleteReagent",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows an enabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);

@@ -102,7 +102,9 @@ const SkipToContentButton: React.FC = () => {
                 }
               }}
             >
-              <ListItemText primary={`Skip to ${landmark.name}`} />
+              <ListItemText
+                primary={t("accessibilityTips.skipToContent.skipToLandmark", { landmark: landmark.name })}
+              />
             </ListItemButton>
           </ListItem>
         ))}

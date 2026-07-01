@@ -105,9 +105,9 @@ describe("InstrumentModel constructor", () => {
     expect(instrument.iconName).toBe("instrument");
   });
 
-  test("cardTypeLabel is 'Instrument'", () => {
+  test("cardTypeLabel is 'inventory:recordTypes.instrument.singular'", () => {
     const instrument = makeMockInstrument();
-    expect(instrument.cardTypeLabel).toBe("Instrument");
+    expect(instrument.cardTypeLabel).toBe("inventory:recordTypes.instrument.singular");
   });
 
   test("is usable in Lists of Materials", () => {
