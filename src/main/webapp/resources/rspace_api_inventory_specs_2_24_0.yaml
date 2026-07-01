@@ -1571,7 +1571,7 @@ paths:
 
         ## Types of  field
 
-        Zero more SampleFields define additional metadata fields for the sample.
+        Zero more InventoryEntityFields define additional metadata fields for the sample.
       tags:
         - Sample Templates
       requestBody:
@@ -3838,7 +3838,7 @@ components:
             sharedWith:
               $ref: "#/components/schemas/GroupShareInfoList"
             fields:
-              $ref: "#/components/schemas/SampleFieldList"
+              $ref: "#/components/schemas/InventoryEntityFieldList"
             extraFields:
               $ref: "#/components/schemas/ExtraFieldList"
     InstrumentTemplateInfo:
@@ -3863,7 +3863,7 @@ components:
         - $ref: "#/components/schemas/InstrumentTemplateInfo"
         - properties:
             fields:
-              $ref: "#/components/schemas/SampleFieldList"
+              $ref: "#/components/schemas/InventoryEntityFieldList"
             sharedWith:
               $ref: "#/components/schemas/GroupShareInfoList"
     InstrumentTemplatePost:
@@ -3881,7 +3881,7 @@ components:
           type: integer
           format: int64
         fields:
-          $ref: "#/components/schemas/SampleFieldList"
+          $ref: "#/components/schemas/InventoryEntityFieldList"
       example:
         name: Microscope template
         description: A template for the lab's microscopes
@@ -4047,7 +4047,7 @@ components:
             sharedWith:
               $ref: "#/components/schemas/GroupShareInfoList"
             fields:
-              $ref: "#/components/schemas/SampleFieldList"
+              $ref: "#/components/schemas/InventoryEntityFieldList"
             extraFields:
               $ref: "#/components/schemas/ExtraFieldList"
             subSamples:
@@ -4278,7 +4278,7 @@ components:
               type: integer
               description: The id of a template unit, from the /units endpoint
     SampleTemplateList:
-      description: List of the fields in a Sample or SubSample
+      description: List of Sample Template summary objects
       type: array
       items:
         $ref: "#/components/schemas/SampleTemplateInfo"
@@ -4288,7 +4288,7 @@ components:
         - $ref: "#/components/schemas/SampleTemplateInfo"
         - properties:
             fields:
-              $ref: "#/components/schemas/SampleFieldList"
+              $ref: "#/components/schemas/InventoryEntityFieldList"
     SampleTemplatePost:
       description: Definition of a new SampleTemplate, including fields
       properties:
@@ -4311,7 +4311,7 @@ components:
         tags:
           $ref: "#/components/schemas/TagList"
         fields:
-          $ref: "#/components/schemas/SampleFieldList"
+          $ref: "#/components/schemas/InventoryEntityFieldList"
       example:
         name: Restriction enzyme.
         description: A template for commercial restriction enzymes used in our lab
@@ -4364,14 +4364,14 @@ components:
         unitId:
           type: integer
           description: id of a quantity unit
-    SampleField:
+    InventoryEntityField:
       description: |
-        A field in a sample or subsample.
+        A field in an Inventory entity (Sample, SampleTemplate, SubSample, Instrument or InstrumentTemplate).
       properties:
         id:
           type: integer
           format: int64
-          description: Unique identifier for the SampleField
+          description: Unique identifier for the InventoryEntityField
         globalId:
           type: string
           description: A unique identifier amongst all RSpace data types.
@@ -4381,7 +4381,7 @@ components:
         lastModified:
           type: string
           format: date-time
-          description: The last modified time of this SampleField, in ISO-8601 format.
+          description: The last modified time of this InventoryEntityField, in ISO-8601 format.
         type:
           type: string
           description: The data type of this field
@@ -4399,7 +4399,7 @@ components:
         content:
           type: string
           description: >
-            The content as a string. For SampleFields of type 'text' this will
+            The content as a string. For InventoryEntityFields of type 'text' this will
             be HTML.
         definition:
           type: object
@@ -4419,11 +4419,11 @@ components:
           description: list of selected values for radio/choice field
           items:
             type: string
-    SampleFieldList:
-      description: List of the fields in a Sample
+    InventoryEntityFieldList:
+      description: List of the fields in an Inventory entity (Sample, SampleTemplate, SubSample, Instrument or InstrumentTemplate)
       type: array
       items:
-        $ref: "#/components/schemas/SampleField"
+        $ref: "#/components/schemas/InventoryEntityField"
     ExtraField:
       description: Information about extra field.
       properties:
