@@ -422,7 +422,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.argosDocsLink"
                 components={{
-                  serviceLink: <Link href="https://argos.openaire.eu" />,
                   helpLink: <Link href={docLinks.argos} />,
                 }}
               />

@@ -109,7 +109,7 @@ export function AboutRSpaceContent(): React.ReactElement {
       })}
 
       <Typography variant="body2" align="center" gutterBottom sx={{ mt: 3 }}>
-        {t("license.oss")}
+        {t("license")}
       </Typography>
       <Typography variant="caption" align="center" color="textSecondary">
         {t("copyright")}

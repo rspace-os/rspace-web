@@ -220,7 +220,6 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmpassistantDocsLink"
                 components={{
-                  serviceLink: <Link href="https://dmp-pgd.ca" />,
                   helpLink: <Link href={docLinks.dmpassistant} />,
                 }}
               />

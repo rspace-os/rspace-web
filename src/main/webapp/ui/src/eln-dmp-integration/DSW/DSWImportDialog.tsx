@@ -239,7 +239,6 @@ function DSWImportDialogContent({
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dswDocsLink"
                 components={{
-                  serviceLink: <Link href="https://guide.ds-wizard.org/en/latest/" />,
                   helpLink: <Link href={docLinks.dsw} />,
                 }}
               />

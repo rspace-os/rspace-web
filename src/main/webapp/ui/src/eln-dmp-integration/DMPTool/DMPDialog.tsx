@@ -224,7 +224,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmptoolDocsLink"
                 components={{
-                  serviceLink: <Link href="https://dmptool.org" />,
                   helpLink: <Link href={docLinks.dmptool} />,
                 }}
               />

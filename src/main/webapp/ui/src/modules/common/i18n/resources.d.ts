@@ -2,9 +2,7 @@
 export default interface Resources {
   "about": {
     "copyright": "© 2026 ResearchSpace",
-    "license": {
-      "oss": "RSpace is open-source under AGPL, and powered by open-source libraries."
-    },
+    "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
     "links": {
       "changelog": "Changelog",
       "sourceCode": "Source Code",
@@ -40,7 +38,7 @@ export default interface Resources {
     "dmpIntegrations": {
       "argos": "Argos",
       "dialog": {
-        "argosDocsLink": "See <serviceLink>argos.openaire.eu</serviceLink> and our <helpLink>Argos integration docs</helpLink> for more.",
+        "argosDocsLink": "See <a href=\"https://argos.openaire.eu\">argos.openaire.eu</a> and our <helpLink>Argos integration docs</helpLink> for more.",
         "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
         "columns": {
           "contactAffiliation": "Contact Affiliation",
@@ -58,13 +56,13 @@ export default interface Resources {
           "title": "Title",
           "updatedAt": "Updated At"
         },
-        "dmpassistantDocsLink": "See <serviceLink>dmp-pgd.ca</serviceLink> and our <helpLink>DMP Assistant integration docs</helpLink> for more.",
+        "dmpassistantDocsLink": "See <a href=\"https://dmp-pgd.ca\">dmp-pgd.ca</a> and our <helpLink>DMP Assistant integration docs</helpLink> for more.",
         "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
-        "dmponlineDocsLink": "See <serviceLink>dmponline.dcc.ac.uk</serviceLink> and our <helpLink>DMPonline integration docs</helpLink> for more.",
+        "dmponlineDocsLink": "See <a href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</a> and our <helpLink>DMPonline integration docs</helpLink> for more.",
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-        "dmptoolDocsLink": "See <serviceLink>dmptool.org</serviceLink> and our <helpLink>DMPTool integration docs</helpLink> for more.",
+        "dmptoolDocsLink": "See <a href=\"https://dmptool.org\">dmptool.org</a> and our <helpLink>DMPTool integration docs</helpLink> for more.",
         "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
-        "dswDocsLink": "See <serviceLink>https://guide.ds-wizard.org/en/latest</serviceLink> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
+        "dswDocsLink": "See <a href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</a> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
         "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
         "error": {
           "couldNotGet": "Could not get DMPs: {message}",

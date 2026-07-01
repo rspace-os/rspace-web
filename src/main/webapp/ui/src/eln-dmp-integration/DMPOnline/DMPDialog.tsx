@@ -135,7 +135,6 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
                 ns="apps"
                 i18nKey="dmpIntegrations.dialog.dmponlineDocsLink"
                 components={{
-                  serviceLink: <Link href="https://dmponline.dcc.ac.uk" />,
                   helpLink: <Link href={docLinks.dmponline} />,
                 }}
               />

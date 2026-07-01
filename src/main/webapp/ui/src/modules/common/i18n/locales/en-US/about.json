@@ -1,8 +1,6 @@
 {
   "copyright": "© 2026 ResearchSpace",
-  "license": {
-    "oss": "RSpace is open-source under AGPL, and powered by open-source libraries."
-  },
+  "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
   "links": {
     "changelog": "Changelog",
     "sourceCode": "Source Code",
