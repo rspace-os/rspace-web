@@ -55,7 +55,8 @@ const FilestoreLoginDialog = ({
   const { addAlert } = React.useContext(AlertContext);
 
   return (
-    <Dialog open onClose={onClose}>
+    // Blocking auth step: keep above the gallery dialog it opens over.
+    <Dialog open onClose={onClose} sx={{ zIndex: 2000 }}>
       <form
         onSubmit={(e) => {
           void (async () => {
