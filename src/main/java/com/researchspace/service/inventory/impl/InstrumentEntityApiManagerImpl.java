@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import com.axiope.search.InventorySearchConfig.InventorySearchDeletedOption;
+import com.researchspace.api.v1.auth.ApiRuntimeException;
 import com.researchspace.api.v1.model.ApiFieldToModelFieldFactory;
 import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInstrumentEntity;
@@ -10,6 +11,7 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
@@ -32,16 +34,23 @@ import com.researchspace.model.inventory.InstrumentEntity;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLink;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.record.IActiveUserStrategy;
+import com.researchspace.service.inventory.DataCiteRelationType;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
+import com.researchspace.service.inventory.InventoryLinkManager;
+import com.researchspace.service.inventory.InventoryLinkValidator;
 import com.researchspace.service.inventory.InventoryMoveHelper;
 import com.researchspace.service.inventory.SampleApiManager;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
@@ -60,6 +69,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired InventoryEntityFieldDao inventoryEntityFieldDao;
   private @Autowired SampleApiManager sampleApiManager;
+  private @Autowired InventoryLinkManager inventoryLinkManager;
   private @Autowired InventoryMoveHelper inventoryMoveHelper;
   private @Autowired InventoryAuditApiManager inventoryAuditMgr;
   private @Autowired ApiFieldToModelFieldFactory apiFieldToModelFieldFactory;
@@ -177,11 +187,119 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
       String newFieldContent = apiField.getContent();
       InventoryEntityField inventoryEntityField = inventoryEntityFieldList.get(i);
 
-      if (inventoryEntityField.isOptionsStoringField()) {
+      if (inventoryEntityField instanceof InventoryLinkField) {
+        applyLinkFieldValue((InventoryLinkField) inventoryEntityField, apiField, user);
+      } else if (inventoryEntityField.isOptionsStoringField()) {
         inventoryEntityField.setSelectedOptions(apiField.getSelectedOptions());
       } else {
         inventoryEntityField.setFieldData(newFieldContent);
       }
+    }
+  }
+
+  /**
+   * Applies a link value to a structured link field, going through the {@link InventoryLinkManager}
+   * so the target is parsed/validated and the Envers revision captured. Mirrors the implementation
+   * in {@link SampleApiManagerImpl}.
+   */
+  private boolean applyLinkFieldValue(
+      InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
+    ApiInventoryLink apiLink = apiField.getLink();
+    String target = apiLink == null ? null : apiLink.getTargetGlobalId();
+    InventoryLink existing = field.getLink();
+    if (target == null || target.trim().isEmpty()) {
+      if (existing == null) {
+        return false;
+      }
+      field.setLink(null);
+      return true;
+    }
+    Long effectivePin =
+        apiLink.derivedVersionPin() != null ? apiLink.derivedVersionPin() : apiLink.getVersionPin();
+    GlobalIdentifier incoming = parseTargetOrNull(target);
+    if (existing != null
+        && incoming != null
+        && incoming.getPrefix() == existing.getTargetPrefix()
+        && Objects.equals(incoming.getDbId(), existing.getTargetDbId())
+        && Objects.equals(effectivePin, existing.getVersionPin())
+        && Objects.equals(apiLink.getRelationType(), existing.getRelationType())) {
+      return false;
+    }
+    assertRelationAllowed(field, apiLink.getRelationType());
+    if (existing != null) {
+      field.setLink(inventoryLinkManager.updateLink(existing, apiLink, user));
+    } else {
+      field.setLink(inventoryLinkManager.createLink(apiLink, user));
+    }
+    return true;
+  }
+
+  /**
+   * Applies link values to an existing instrument's structured link fields (the update path). The
+   * DTO apply loop leaves link fields untouched because it cannot reach the service-layer {@link
+   * InventoryLinkManager}; this matches each modified link field by id and applies it here.
+   */
+  private boolean applyLinkFieldValuesOnUpdate(
+      ApiInstrument apiInstrument, Instrument dbInstrument, User user) {
+    if (apiInstrument.getFields() == null) {
+      return false;
+    }
+    boolean changed = false;
+    for (ApiInventoryEntityField apiField : apiInstrument.getFields()) {
+      if (apiField.isNewFieldRequest()
+          || apiField.isDeleteFieldRequest()
+          || apiField.getId() == null) {
+        continue;
+      }
+      Optional<InventoryEntityField> dbFieldOpt =
+          dbInstrument.getActiveFields().stream()
+              .filter(
+                  f ->
+                      f instanceof InventoryLinkField
+                          && Objects.equals(f.getId(), apiField.getId()))
+              .findFirst();
+      if (dbFieldOpt.isPresent()) {
+        rejectSelfLink(apiField.getLink(), dbInstrument);
+        changed |= applyLinkFieldValue((InventoryLinkField) dbFieldOpt.get(), apiField, user);
+      }
+    }
+    return changed;
+  }
+
+  private void assertRelationAllowed(InventoryLinkField field, String relationType) {
+    if (!DataCiteRelationType.isValid(relationType)) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeInvalid", relationType);
+    }
+    String allowed = field.getAllowedRelationTypes();
+    if (allowed == null || allowed.trim().isEmpty()) {
+      return;
+    }
+    if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+    }
+  }
+
+  private void rejectSelfLink(ApiInventoryLink apiLink, Instrument dbInstrument) {
+    if (apiLink == null || dbInstrument.getOid() == null) {
+      return;
+    }
+    GlobalIdentifier target = parseTargetOrNull(apiLink.getTargetGlobalId());
+    if (target == null) {
+      return;
+    }
+    if (InventoryLinkValidator.isSelfLink(target, dbInstrument.getOid().toString())) {
+      throw new ApiRuntimeException(
+          "errors.inventory.field.link.selfLinkForbidden", apiLink.getTargetGlobalId());
+    }
+  }
+
+  private GlobalIdentifier parseTargetOrNull(String targetGlobalId) {
+    try {
+      return new GlobalIdentifier(targetGlobalId);
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      return null;
     }
   }
 
@@ -263,6 +381,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
           identifiersHelper.createAssignRequestedIdentifiers(
               apiInstrument.getIdentifiers(), dbInstrument, user);
       contentChanged |= apiInstrument.applyChangesToDatabaseInstrument(dbInstrument, user);
+      contentChanged |= applyLinkFieldValuesOnUpdate(apiInstrument, dbInstrument, user);
       contentChanged |= saveSharingACLForIncomingApiInvRec(dbInstrument, apiInstrument);
       contentChanged |= saveIncomingInstrumentImage(dbInstrument, apiInstrument, user);
       InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNames(dbInstrument);
