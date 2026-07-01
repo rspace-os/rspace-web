@@ -1044,38 +1044,26 @@ export default interface Resources {
   },
   "common": {
     "accessibilityTips": {
-      "browsers": {
-        "chrome": "Chrome",
-        "edge": "Edge",
-        "firefox": "Firefox",
-        "safari": "Safari"
-      },
       "buttonLabel": "Accessibility tips",
       "elementTypes": {
         "dialog": "dialog",
         "page": "page"
       },
       "highContrast": {
-        "enabled": "High contrast mode is enabled.",
-        "instructions": {
-          "disable": "To disable, turn off your device's high contrast setting:",
-          "enable": "To enable, turn on your device's high contrast setting:"
+        "body": {
+          "disable": "To disable, turn off your device's high contrast setting:<br/><a href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</a>, <a href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</a>, <a href=\"https://support.apple.com/en-us/111773\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>",
+          "enable": "To enable, turn on your device's high contrast setting:<br/><a href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</a>, <a href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</a>, <a href=\"https://support.apple.com/en-us/111773\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>"
         },
+        "enabled": "High contrast mode is enabled.",
         "supported": "This {elementType} supports a high contrast mode."
       },
       "menuLabel": "Accessibility Tips",
-      "platforms": {
-        "android": "Android",
-        "iOS": "iOS",
-        "macOS": "macOS",
-        "windows": "Windows"
-      },
       "reducedMotion": {
-        "enabled": "Reduced motion mode is enabled.",
-        "instructions": {
-          "disable": "To disable, turn off your device's reduced motion setting:",
-          "enable": "To enable, turn on your device's reduced motion setting:"
+        "body": {
+          "disable": "To disable, turn off your device's reduced motion setting:<br/><a href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</a>, <a href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>",
+          "enable": "To enable, turn on your device's reduced motion setting:<br/><a href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</a>, <a href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>"
         },
+        "enabled": "Reduced motion mode is enabled.",
         "supported": "This {elementType} supports a reduced motion mode."
       },
       "skipToContent": {
@@ -1086,7 +1074,7 @@ export default interface Resources {
       },
       "tip": "Tip",
       "zoom": {
-        "instructions": "To enable, adjust your browser's settings:",
+        "body": "To enable, adjust your browser's settings:<br/><a href=\"https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop\">Chrome</a>, <a href=\"https://support.apple.com/en-gb/guide/safari/ibrw1068/mac\">Safari</a>, <a href=\"https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a\">Edge</a>, <a href=\"https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages\">Firefox</a>",
         "supported": "This {elementType} supports up to 200% zoom magnification."
       }
     },
@@ -1207,7 +1195,7 @@ export default interface Resources {
       "notificationsAndMessages": "notifications and messages",
       "openSidebar": "open sidebar",
       "operatingAs": "Operating as:",
-      "orcidAdd": "Add an ORCID iD to your <a>profile</a>.",
+      "orcidAdd": "Add an ORCID iD to your <a href=\"/userform\">profile</a>.",
       "pageHeader": "page header",
       "published": "Published",
       "release": "Release",
@@ -1246,7 +1234,7 @@ export default interface Resources {
       "selectAllLabel": "select/deselect all"
     },
     "errorBoundary": {
-      "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a>support@researchspace.com</a> with details of when the issue happens."
+      "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a href=\"mailto:support@researchspace.com\" rel=\"noreferrer\" target=\"_blank\">support@researchspace.com</a> with details of when the issue happens."
     },
     "folderSelectionDialog": {
       "selectedFolder": "Selected folder",
@@ -1479,13 +1467,13 @@ export default interface Resources {
           "allow": {
             "button": "allow BioPortal Ontologies",
             "citation": "Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced functionality via new Web services from the National Center for Biomedical Ontology to access and use ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun 14.",
-            "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
+            "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
             "title": "Allow BioPortal Ontologies to be used for tag suggestions"
           },
           "disabledButton": "disallow Ontologies",
           "disallow": {
             "button": "disallow BioPortal Ontologies",
-            "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
+            "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
             "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
           },
           "onlyEnterprise": "Only available on Enterprise"
@@ -1722,7 +1710,7 @@ export default interface Resources {
       "locationLabel": "Location: {location}",
       "multipleSelection": {
         "allItems": "All {count} {pluralName}",
-        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <a>shared {pluralName} page</a>.",
+        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <a href=\"/record/share/manage\">shared {pluralName} page</a>.",
         "heading": "Adding shares to {count} {itemName}",
         "newSharesHeading": "New shares to be added:",
         "someItems": "{documentCount} of {totalCount} {itemName}"
@@ -4524,7 +4512,7 @@ export default interface Resources {
         "connectionSucceeded": "Connection succeeded",
         "detailsLabel": "Details",
         "fieldRequiredError": "A valid value is required",
-        "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a>DataCite</a> using your Repository account credentials.",
+        "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a href=\"https://datacite.org/\" target=\"_blank\" rel=\"noreferrer\">DataCite</a> using your Repository account credentials.",
         "formLabel": "DataCite IGSN Integration",
         "helpTitle": "DataCite help",
         "labels": {

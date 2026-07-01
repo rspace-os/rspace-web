@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { render, screen } from "@/__tests__/customQueries";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-import ErrorBoundary from "../ErrorBoundary";
+import ErrorBoundary, { MessageBoundary } from "../ErrorBoundary";
 import { ErrorComponent } from "../ErrorBoundary.story";
 
 describe("ErrorBoundary", () => {
@@ -20,5 +20,17 @@ describe("ErrorBoundary", () => {
       </ErrorBoundary>,
     );
     expect(screen.getByText("Something went wrong.")).toBeVisible();
+  });
+
+  test("When rendering the error message itself throws, MessageBoundary falls back to plain untranslated text.", () => {
+    const ThrowingMessage = (): never => {
+      throw new Error("message render failed");
+    };
+    render(
+      <MessageBoundary>
+        <ThrowingMessage />
+      </MessageBoundary>,
+    );
+    expect(screen.getByText(/Something went wrong! Please refresh the page/)).toBeVisible();
   });
 });

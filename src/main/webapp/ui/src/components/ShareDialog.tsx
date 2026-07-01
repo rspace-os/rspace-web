@@ -8,7 +8,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
 import Portal from "@mui/material/Portal";
@@ -1078,7 +1077,6 @@ export function ShareDialog({
                     ns="common"
                     i18nKey="shareDialog.multipleSelection.description"
                     values={{ pluralName }}
-                    components={{ a: <Link href="/record/share/manage" /> }}
                   />
                 </Typography>
                 {newShares.size > 0 && (

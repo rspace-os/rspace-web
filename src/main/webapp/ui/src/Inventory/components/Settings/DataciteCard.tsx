@@ -19,7 +19,7 @@ import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
-import TransRichText, { richTextLink } from "../../../modules/common/i18n/TransRichText";
+import TransRichText from "../../../modules/common/i18n/TransRichText";
 import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
@@ -78,13 +78,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
             <HelpLinkIcon link={docLinks.IGSNIdentifiers} title={t("settings.datacite.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
-            <TransRichText
-              ns="inventory"
-              i18nKey="settings.datacite.formHelperText"
-              components={{
-                a: richTextLink({ href: "https://datacite.org/", target: "_blank", rel: "noreferrer" }),
-              }}
-            />
+            <TransRichText ns="inventory" i18nKey="settings.datacite.formHelperText" />
           </FormHelperText>
           <RadioField
             name={t("settings.datacite.formLabel")}

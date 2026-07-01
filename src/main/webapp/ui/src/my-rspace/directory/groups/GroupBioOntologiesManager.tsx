@@ -6,7 +6,6 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useState } from "react";
@@ -138,13 +137,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText component="div">
-                <TransRichText
-                  i18nKey="profile.groups.bioOntologies.allow.text"
-                  ns="common"
-                  components={{
-                    a: <Link href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
-                  }}
-                />{" "}
+                <TransRichText i18nKey="profile.groups.bioOntologies.allow.text" ns="common" />{" "}
                 <Box sx={{ fontSize: "8px" }}>{t("profile.groups.bioOntologies.allow.citation")}</Box>
               </DialogContentText>
             </DialogContent>
@@ -164,13 +157,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText>
-                <TransRichText
-                  i18nKey="profile.groups.bioOntologies.disallow.text"
-                  ns="common"
-                  components={{
-                    a: <Link href="https://bioportal.bioontology.org/ontologies" target="_blank" rel="noreferrer" />,
-                  }}
-                />
+                <TransRichText i18nKey="profile.groups.bioOntologies.disallow.text" ns="common" />
               </DialogContentText>
             </DialogContent>
             <DialogActions>

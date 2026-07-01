@@ -72,13 +72,7 @@ function LoadingSkeleton() {
 function ErrorMessage() {
   return (
     <Alert severity="error">
-      <TransRichText
-        ns="common"
-        i18nKey="errorBoundary.message"
-        components={{
-          a: <Link href="mailto:support@researchspace.com" rel="noreferrer" target="_blank" />,
-        }}
-      />
+      <TransRichText ns="common" i18nKey="errorBoundary.message" />
     </Alert>
   );
 }

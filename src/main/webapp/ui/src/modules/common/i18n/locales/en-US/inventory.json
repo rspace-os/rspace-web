@@ -2026,7 +2026,7 @@
       "connectionSucceeded": "Connection succeeded",
       "detailsLabel": "Details",
       "fieldRequiredError": "A valid value is required",
-      "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a>DataCite</a> using your Repository account credentials.",
+      "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a href=\"https://datacite.org/\" target=\"_blank\" rel=\"noreferrer\">DataCite</a> using your Repository account credentials.",
       "formLabel": "DataCite IGSN Integration",
       "helpTitle": "DataCite help",
       "labels": {

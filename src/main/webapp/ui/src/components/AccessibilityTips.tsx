@@ -1,12 +1,12 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import Link from "@mui/material/Link";
 import { paperClasses } from "@mui/material/Paper";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AccentMenuItem from "./AccentMenuItem";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 
@@ -101,23 +101,14 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.highContrast.enabled")
                 : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            {highContrastModeIsEnabled
-              ? t("accessibilityTips.highContrast.instructions.disable")
-              : t("accessibilityTips.highContrast.instructions.enable")}
-            <br />
-            <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
-              {t("accessibilityTips.platforms.windows")}
-            </Link>
-            {", "}
-            <Link href="https://support.apple.com/en-gb/guide/mac-help/unac089/mac">
-              {t("accessibilityTips.platforms.macOS")}
-            </Link>
-            {", "}
-            <Link href="https://support.apple.com/en-us/111773">{t("accessibilityTips.platforms.iOS")}</Link>
-            {", "}
-            <Link href="https://support.google.com/accessibility/android/answer/11183305">
-              {t("accessibilityTips.platforms.android")}
-            </Link>
+            <TransRichText
+              ns="common"
+              i18nKey={
+                highContrastModeIsEnabled
+                  ? "accessibilityTips.highContrast.body.disable"
+                  : "accessibilityTips.highContrast.body.enable"
+              }
+            />
           </Alert>
         )}
         {supportsReducedMotion && (
@@ -131,43 +122,20 @@ function AccessibilityTipsPopup({
                 ? t("accessibilityTips.reducedMotion.enabled")
                 : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            {reducedMotionModeIsEnabled
-              ? t("accessibilityTips.reducedMotion.instructions.disable")
-              : t("accessibilityTips.reducedMotion.instructions.enable")}
-            <br />
-            <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">
-              {t("accessibilityTips.platforms.macOS")}
-            </Link>
-            {", "}
-            <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">
-              {t("accessibilityTips.platforms.iOS")}
-            </Link>
-            {", "}
-            <Link href="https://support.google.com/accessibility/android/answer/11183305">
-              {t("accessibilityTips.platforms.android")}
-            </Link>
+            <TransRichText
+              ns="common"
+              i18nKey={
+                reducedMotionModeIsEnabled
+                  ? "accessibilityTips.reducedMotion.body.disable"
+                  : "accessibilityTips.reducedMotion.body.enable"
+              }
+            />
           </Alert>
         )}
         {supports2xZoom && (
           <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
             <AlertTitle>{t("accessibilityTips.zoom.supported", { elementType: elementTypeLabel })}</AlertTitle>
-            {t("accessibilityTips.zoom.instructions")}
-            <br />
-            <Link href="https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop">
-              {t("accessibilityTips.browsers.chrome")}
-            </Link>
-            {", "}
-            <Link href="https://support.apple.com/en-gb/guide/safari/ibrw1068/mac">
-              {t("accessibilityTips.browsers.safari")}
-            </Link>
-            {", "}
-            <Link href="https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a">
-              {t("accessibilityTips.browsers.edge")}
-            </Link>
-            {", "}
-            <Link href="https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages">
-              {t("accessibilityTips.browsers.firefox")}
-            </Link>
+            <TransRichText ns="common" i18nKey="accessibilityTips.zoom.body" />
           </Alert>
         )}
         {supportsSkipToContent && (
