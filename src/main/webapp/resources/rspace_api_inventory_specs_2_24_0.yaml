@@ -1571,7 +1571,7 @@ paths:
 
         ## Types of  field
 
-        Zero more InventoryEntityFields define additional metadata fields for the sample.
+        Zero or more InventoryEntityFields define additional metadata fields for the sample template.
       tags:
         - Sample Templates
       requestBody:
@@ -4420,7 +4420,7 @@ components:
           items:
             type: string
     InventoryEntityFieldList:
-      description: List of the fields in an Inventory entity (Sample, SampleTemplate, SubSample, Instrument or InstrumentTemplate)
+      description: List of the fields in an Inventory entity (Sample, Sample Template, SubSample, Instrument or Instrument Template)
       type: array
       items:
         $ref: "#/components/schemas/InventoryEntityField"
