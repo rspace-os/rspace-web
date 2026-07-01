@@ -13,13 +13,17 @@ import JwtService from "./JwtService";
 
 type JSON = unknown;
 
-const getAuthWarningToast = () =>
-  mkAlert({
+// Lazily memoised: i18n initialises asynchronously, so the strings can't be
+// resolved at module load. Caching the single alert keeps a stable id so the
+// later removeAlert calls actually match the alert that was added.
+let authWarningToast: ReturnType<typeof mkAlert> | undefined;
+const getAuthWarningToast = (): ReturnType<typeof mkAlert> =>
+  (authWarningToast ??= mkAlert({
     variant: "warning",
     title: i18n.t("apiAuthentication.warningTitle"),
     message: i18n.t("apiAuthentication.warningMessage"),
     isInfinite: true,
-  });
+  }));
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {

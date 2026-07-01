@@ -34,14 +34,6 @@ export type InventoryUpdateStockDisplay = {
   warningText: string | null;
 };
 
-function tCommon(key: string, options?: Record<string, unknown>): string {
-  const commonT = i18n.getFixedT(null, "common") as (
-    translationKey: string,
-    translationOptions?: Record<string, unknown>,
-  ) => string;
-  return commonT(key, options);
-}
-
 function formatInventoryUpdateMetricValue(value: number | null): string {
   if (value === null || Number.isNaN(value)) {
     return "—";
@@ -133,18 +125,19 @@ function buildInventoryUpdateStockDisplay(
     willUse: makeStockMetric(willUseValue, unitLabel),
     remaining: makeStockMetric(remainingValue, unitLabel),
     remainingStatus,
-    warningText: remainingStatus === "negative" ? tCommon("stoichiometry.inventoryLink.insufficientStock") : null,
+    warningText: remainingStatus === "negative" ? i18n.t("common:stoichiometry.inventoryLink.insufficientStock") : null,
   };
 }
 
 function getInventoryUpdateDisabledReasonText(reason: InventoryUpdateSelectionDisabledReason): string {
-  return {
-    missingInventoryLink: tCommon("stoichiometry.inventoryUpdate.linkRequired"),
-    linkedStockUnavailable: tCommon("stoichiometry.inventoryUpdate.linkedStockUnavailable"),
-    nonMassInventoryQuantity: tCommon("stoichiometry.inventoryUpdate.nonMassInventoryQuantity"),
-    missingActualMass: tCommon("stoichiometry.inventoryUpdate.missingActualMass"),
-    insufficientStock: tCommon("stoichiometry.inventoryLink.insufficientStock"),
-  }[reason];
+  const keys = {
+    missingInventoryLink: "common:stoichiometry.inventoryUpdate.linkRequired",
+    linkedStockUnavailable: "common:stoichiometry.inventoryUpdate.linkedStockUnavailable",
+    nonMassInventoryQuantity: "common:stoichiometry.inventoryUpdate.nonMassInventoryQuantity",
+    missingActualMass: "common:stoichiometry.inventoryUpdate.missingActualMass",
+    insufficientStock: "common:stoichiometry.inventoryLink.insufficientStock",
+  } as const;
+  return i18n.t(keys[reason]);
 }
 
 export function getInventoryUpdateEligibility(
@@ -192,7 +185,7 @@ export function getInventoryUpdateEligibility(
   return {
     disabledReason,
     helperText: stockDeducted
-      ? tCommon("stoichiometry.inventoryUpdate.stockDeductedWarning")
+      ? i18n.t("common:stoichiometry.inventoryUpdate.stockDeductedWarning")
       : disabledReason === null || disabledReason === "insufficientStock"
         ? null
         : getInventoryUpdateDisabledReasonText(disabledReason),
