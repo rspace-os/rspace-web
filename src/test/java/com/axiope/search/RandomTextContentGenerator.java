@@ -1,9 +1,7 @@
 package com.axiope.search;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -11,8 +9,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.time.StopWatch;
 
 /** For generating random text content with standard word frequency distribution. */
 public class RandomTextContentGenerator {
@@ -21,45 +17,6 @@ public class RandomTextContentGenerator {
   String[] allWords;
   Set<String> usedWords = new HashSet<String>();
   File contentDirecotory = null;
-
-  /**
-   * Generates a file of random text content following standard word frequency distribution
-   *
-   * @param txt
-   * @param avNumLines
-   * @throws IOException
-   */
-  void generateWords(String fielName, int avNumLines) throws IOException {
-    final int LINE_LENGTH = 50;
-    // final int NUM_LINES=2000;
-    int DICTIONARY_SIZE = 19999;
-    int EXPECTED_WORD_SIZE = 10;
-    int SENTENCE_LENGTH = 15;
-    int numLines = calculateNumLines(avNumLines);
-    Random r = new Random();
-    StopWatch sw = new StopWatch();
-    sw.start();
-    StringBuffer sb = createStringBuffer(LINE_LENGTH, EXPECTED_WORD_SIZE);
-    File file = new File(contentDirecotory.getAbsolutePath() + File.separator + fielName);
-    FileOutputStream fos = new FileOutputStream(file);
-    for (int i = 0; i < numLines; i++) {
-      for (int j = 0; j < LINE_LENGTH; j++) {
-        int random = r.nextInt(cumulativeCount[DICTIONARY_SIZE - 1]);
-        int index = Arrays.binarySearch(cumulativeCount, random);
-        int posindex = Math.abs(index);
-        String word = allWords[posindex];
-        usedWords.add(word);
-        sb.append(word + " ");
-        if (j % SENTENCE_LENGTH == 0) {
-          sb.append(". ");
-        }
-      }
-
-      sw.split();
-      IOUtils.write(sb.toString() + "\n", fos);
-      sb = createStringBuffer(LINE_LENGTH, EXPECTED_WORD_SIZE);
-    }
-  }
 
   private StringBuffer createStringBuffer(final int LINE_LENGTH, int EXPECTED_WORD_SIZE) {
     StringBuffer sb;
@@ -132,12 +89,6 @@ public class RandomTextContentGenerator {
    */
   public void deleteContentOnExit(boolean b) {
     this.deleteContentOnExit = b;
-  }
-
-  void tidyUp() {
-    if (deleteContentOnExit) {
-      deleteContent();
-    }
   }
 
   private boolean isinitialised = false;

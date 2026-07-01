@@ -19,7 +19,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.security.Principal;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import lombok.Value;
@@ -39,10 +38,8 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.mockito.stubbing.OngoingStubbing;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
@@ -210,12 +207,5 @@ public class ProtocolsIOOAuthTest {
     at.setRefreshToken("newrefresh");
     at.setExpiresIn(1000L);
     return new ResponseEntity<AccessToken>(at, HttpStatus.OK);
-  }
-
-  private HttpHeaders setUpHeadersWithAccessToken(String token) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-    headers.add("Authorization", "Bearer " + token);
-    return headers;
   }
 }

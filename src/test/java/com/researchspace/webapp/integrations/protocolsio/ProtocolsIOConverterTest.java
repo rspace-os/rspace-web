@@ -68,12 +68,6 @@ public class ProtocolsIOConverterTest {
       downloadCount++;
     }
 
-    Folder doCreateTargetFolder(
-        StructuredDocument rspaceDocument, User subject, Map<String, File> imagesMap) {
-      folderCreateInvoked = true;
-      return TestFactory.createAFolder("any", TestFactory.createAnyUser("any"));
-    }
-
     protected StructuredDocument updateFieldContent(
         User creator,
         Document jsoupDoc,
