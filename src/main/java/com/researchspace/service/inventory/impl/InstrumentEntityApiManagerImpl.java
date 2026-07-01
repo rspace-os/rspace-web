@@ -202,7 +202,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
    * so the target is parsed/validated and the Envers revision captured. Mirrors the implementation
    * in {@link SampleApiManagerImpl}.
    */
-  private boolean applyLinkFieldValue(
+  boolean applyLinkFieldValue(
       InventoryLinkField field, ApiInventoryEntityField apiField, User user) {
     ApiInventoryLink apiLink = apiField.getLink();
     String target = apiLink == null ? null : apiLink.getTargetGlobalId();
