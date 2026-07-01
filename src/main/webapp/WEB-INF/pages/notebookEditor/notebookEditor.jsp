@@ -2,6 +2,8 @@
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
 <jsp:include page="notebookHeader.jsp" />
 
+<body>
+
   <script>
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
@@ -15,8 +17,6 @@
 
   <script src="<rst:assetUrl value='/scripts/pages/messaging/notifications.js'/>"></script>
   <script src="<rst:assetUrl value='/scripts/pages/messaging/messages.js'/>"></script>
-
-<body>
   <div class="mainDocumentView">
     <axt:fileTreeBrowser />
     <div class="documentPanel">
@@ -68,3 +68,5 @@
   <rst:bundle bundle="externalWorkFlows" />
   <rst:bundle bundle="jupyterNotebooks" />
   <!--End React Scripts -->
+</body>
+</html>

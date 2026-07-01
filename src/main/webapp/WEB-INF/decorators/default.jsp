@@ -8,14 +8,14 @@
       let currentUser = "${sessionScope.userInfo.username}";
 
       window.onload = function () {
-        var loadTime = window.performance.timing.domContentLoadedEventEnd-window.performance.timing.navigationStart; 
+        var loadTime = window.performance.timing.domContentLoadedEventEnd-window.performance.timing.navigationStart;
         console.log('Page load time is '+ loadTime);
       }
     </script>
     <%@ include file="/common/meta.jsp"%>
     <rst:viteClient />
     <title>
-        <decorator:title /> | <fmt:message key="webapp.name" />
+        <sitemesh:write property='title'/> | <fmt:message key="webapp.name" />
     </title>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" />
     <link media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" rel="stylesheet" />
@@ -35,8 +35,8 @@
     <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
     <jsp:include page="/scripts/templates/blockUI.html"/>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
-    
-    <decorator:head />
+
+    <sitemesh:write property='head'/>
 
     <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
 
@@ -58,15 +58,13 @@
         </script>
 
 </head>
-<body
-    <decorator:getProperty property="body.id" writeEntireProperty="true"/>
-    <decorator:getProperty property="body.class" writeEntireProperty="true"/>>
+<body id="<sitemesh:write property='body.id'/>" class="<sitemesh:write property='body.class'/>">
 
     <div id="page" style="display:none">
         <jsp:include page="/common/header.jsp" />
         <div id="content" class="clearfix">
             <div id="main">
-                <decorator:body />
+                <sitemesh:write property='body'/>
             </div>
 
         </div>
@@ -74,7 +72,7 @@
             <jsp:include page="/common/footer.jsp" />
         </div>
     </div>
-    
+
     <div id="fade" class="black_overlay"></div>
 </body>
 </html>
