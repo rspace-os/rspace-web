@@ -55,7 +55,8 @@ const FilestoreLoginDialog = ({
   const { addAlert } = React.useContext(AlertContext);
 
   return (
-    // Blocking auth step: keep above the gallery dialog it opens over.
+    // Blocking auth step, opened over the "Add a Filestore" stepper. Match the
+    // PDF preview: 2000 keeps it above the raised picker layers and legacy jQuery dialogs.
     <Dialog open onClose={onClose} sx={{ zIndex: 2000 }}>
       <form
         onSubmit={(e) => {

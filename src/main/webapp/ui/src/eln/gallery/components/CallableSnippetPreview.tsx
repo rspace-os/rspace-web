@@ -58,7 +58,7 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
       >
         {children}
       </SnippetPreviewContext.Provider>
-      {/* Keep above the gallery info panel, which is raised in the picker. */}
+      {/* Match the PDF preview: 2000 keeps it above the raised picker layers and legacy jQuery dialogs. */}
       <Dialog
         open={snippetFile !== null}
         fullWidth
