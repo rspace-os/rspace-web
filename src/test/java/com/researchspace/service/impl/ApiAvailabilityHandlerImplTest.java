@@ -11,6 +11,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.testutils.TestFactory;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummy;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorDummyError;
 import org.junit.jupiter.api.BeforeEach;
@@ -148,6 +149,19 @@ class ApiAvailabilityHandlerImplTest {
                     anyUser, InventorySettingType.PIDINST));
     assertEquals(
         "PIDINST integration is not enabled on this RSpace instance.", exception.getMessage());
+  }
+
+  @Test
+  void pidinstAvailableViaB2instWhenDataciteDisabled() {
+    DataCiteConnectorDummy dummyConnector = new DataCiteConnectorDummy();
+    dummyConnector.setEnabled(InventorySettingType.PIDINST, false);
+    handler.setDataCiteConnector(dummyConnector);
+    B2instConnector b2instConnector = Mockito.mock(B2instConnector.class);
+    Mockito.when(b2instConnector.isConfiguredAndEnabled()).thenReturn(true);
+    handler.setB2instConnector(b2instConnector);
+    setSystemProperty(SystemPropertyName.INVENTORY_AVAILABLE, Boolean.TRUE);
+
+    assertTrue(handler.isInventoryAndIdentifierTypeEnabled(anyUser, InventorySettingType.PIDINST));
   }
 
   @Test

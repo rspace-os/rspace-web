@@ -7,6 +7,7 @@ import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +16,7 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   @Autowired private SystemPropertyPermissionManager systemPropertyManager;
   @Autowired private DataCiteConnector dataCiteConnector;
+  @Autowired private B2instConnector b2instConnector;
   @Autowired private MessageSourceUtils messages;
 
   private static final ServiceOperationResult<String> enabledResult =
@@ -37,6 +39,10 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
   @Override
   public void setDataCiteConnector(DataCiteConnector dataciteConnector) {
     this.dataCiteConnector = dataciteConnector;
+  }
+
+  void setB2instConnector(B2instConnector b2instConnector) {
+    this.b2instConnector = b2instConnector;
   }
 
   @Override
@@ -87,6 +93,11 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
   }
 
   private boolean isIdentifierConnectorEnabled(InventorySettingType settingType) {
+    if (InventorySettingType.PIDINST.equals(settingType)
+        && b2instConnector != null
+        && b2instConnector.isConfiguredAndEnabled()) {
+      return true;
+    }
     return dataCiteConnector != null
         && dataCiteConnector.isDataCiteConfiguredAndEnabled(settingType);
   }

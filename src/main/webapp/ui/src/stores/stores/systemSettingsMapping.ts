@@ -27,16 +27,25 @@ export type SystemSettings = {
   datacite: DataciteSettings;
 };
 
-/** A single identifier-settings entry as returned/accepted by the API. */
-export type IdentifierSettings = DataciteSettings & {
+/**
+ * A single identifier-settings entry as returned/accepted by the API. Unlike the DataCite-only
+ * dialog model, `serverUrl` is free-form here because a B2INST provider points at a B2INST host
+ * rather than one of the two DataCite URLs.
+ */
+export type IdentifierSettings = Omit<DataciteSettings, "serverUrl"> & {
   provider: IdentifierProvider;
+  serverUrl: string;
 };
 
-/** Shape returned by GET /system/settings. */
+/**
+ * Shape returned by GET /system/settings. Each setting type holds an array of providers (PIDINST
+ * carries both PIDINST_DATACITE and PIDINST_B2INST). The full multi-provider settings UI is
+ * RSDEV-1180; here we only keep the existing IGSN/DataCite dialog working.
+ */
 export type ApiInventorySystemSettings = {
   identifiersSettings: {
-    IGSN?: IdentifierSettings;
-    PIDINST?: IdentifierSettings;
+    IGSN?: IdentifierSettings[];
+    PIDINST?: IdentifierSettings[];
   };
 };
 
@@ -53,14 +62,16 @@ const DEFAULT_DATACITE_SETTINGS: DataciteSettings = {
  * the `provider` field. Falls back to safe defaults if the IGSN entry is absent.
  */
 export function systemSettingsFromApiResponse(response: ApiInventorySystemSettings): SystemSettings {
-  const igsn = response?.identifiersSettings?.IGSN;
+  const igsnEntries = response?.identifiersSettings?.IGSN;
+  const igsn = igsnEntries?.find((entry) => entry.provider === "IGSN_DATACITE") ?? igsnEntries?.[0];
   if (!igsn) {
     return { datacite: { ...DEFAULT_DATACITE_SETTINGS } };
   }
   return {
     datacite: {
       enabled: igsn.enabled,
-      serverUrl: igsn.serverUrl,
+      // the IGSN/DataCite entry is expected to use one of the DataCite URLs the dialog offers
+      serverUrl: igsn.serverUrl as DataCiteServerUrl,
       username: igsn.username,
       password: igsn.password,
       repositoryPrefix: igsn.repositoryPrefix,

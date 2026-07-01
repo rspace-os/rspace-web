@@ -24,6 +24,7 @@ import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import com.researchspace.service.inventory.InventoryIdentifierApiManager;
 import com.researchspace.service.inventory.SampleApiManager;
 import com.researchspace.testutils.TestFactory;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import javax.ws.rs.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ class InventoryIdentifiersApiControllerTest {
   @Mock private InstrumentEntityApiManager mockInstrumentApiMgr;
   @Mock private SampleApiManager mockSampleApiMgr;
   @Mock private DataCiteConnector mockDataCiteConnector;
+  @Mock private B2instConnector mockB2instConnector;
   @Mock private MessageSourceUtils mockMessages;
 
   private InventoryIdentifiersApiController controller;
@@ -55,6 +57,7 @@ class InventoryIdentifiersApiControllerTest {
     ReflectionTestUtils.setField(controller, "instrumentApiMgr", mockInstrumentApiMgr);
     ReflectionTestUtils.setField(controller, "sampleApiMgr", mockSampleApiMgr);
     ReflectionTestUtils.setField(controller, "dataCiteConnector", mockDataCiteConnector);
+    ReflectionTestUtils.setField(controller, "b2instConnector", mockB2instConnector);
     ReflectionTestUtils.setField(controller, "messages", mockMessages);
     user = TestFactory.createAnyUser("any");
   }
@@ -74,6 +77,16 @@ class InventoryIdentifiersApiControllerTest {
 
     assertTrue(controller.testPidinstConnection(user));
     verify(mockDataCiteConnector).testDataCiteConnection(InventorySettingType.PIDINST);
+  }
+
+  @Test
+  void testPidinstConnectionRoutesToB2instWhenB2instEnabled() {
+    when(mockB2instConnector.isConfiguredAndEnabled()).thenReturn(true);
+    when(mockB2instConnector.testConnection()).thenReturn(true);
+
+    assertTrue(controller.testPidinstConnection(user));
+    verify(mockB2instConnector).testConnection();
+    verify(mockDataCiteConnector, never()).testDataCiteConnection(InventorySettingType.PIDINST);
   }
 
   private ApiInventoryRecordInfo recordWithOneIdentifier() {

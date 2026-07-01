@@ -236,7 +236,7 @@ const InstrumentNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -319,7 +319,7 @@ const InstrumentTemplateNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();

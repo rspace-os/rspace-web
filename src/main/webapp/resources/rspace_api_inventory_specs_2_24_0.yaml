@@ -3393,7 +3393,35 @@ paths:
         - System Settings (System Admin only)
       responses:
         "200":
-          description: List of baskets belonging to the current user
+          description: >
+            Identifier settings grouped by type. Each type holds an array of providers; PIDINST
+            carries both PIDINST_DATACITE and PIDINST_B2INST, of which at most one is enabled at a
+            time. For PIDINST_B2INST the generic username/password fields carry the community id and
+            the API token respectively, and repositoryPrefix is unused.
+          content:
+            application/json:
+              schema:
+                example:
+                  identifiersSettings:
+                    IGSN:
+                      - provider: IGSN_DATACITE
+                        serverUrl: https://api.datacite.org
+                        username: AJFO.JIJEMD
+                        password: <password>
+                        repositoryPrefix: "10.82316"
+                        enabled: "true"
+                    PIDINST:
+                      - provider: PIDINST_DATACITE
+                        serverUrl: https://api.datacite.org
+                        username: ""
+                        password: ""
+                        repositoryPrefix: ""
+                        enabled: "false"
+                      - provider: PIDINST_B2INST
+                        serverUrl: https://b2inst-test.gwdg.de
+                        username: <community id>
+                        password: <api token>
+                        enabled: "false"
     put:
       summary: Update settings
       description: update settings
@@ -3413,7 +3441,10 @@ paths:
         description: >
           Settings for a single identifier type to update. The `provider` selects which
           configuration is updated: `IGSN_DATACITE` updates the IGSN configuration, while
-          `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration.
+          `PIDINST_DATACITE` or `PIDINST_B2INST` updates the PIDINST configuration. Enabling one
+          PIDINST provider automatically disables the other. For `PIDINST_B2INST` the `username`
+          field carries the community id and the `password` field carries the API token;
+          `repositoryPrefix` is unused.
         required: true
       responses:
         "200":

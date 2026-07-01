@@ -171,12 +171,30 @@ function setAllSectionValues<T extends RecordType>(
   return result;
 }
 
+type PartialFormSectionsState = Partial<{
+  [K in RecordType]: Partial<FormSectionsState[K]>;
+}>;
+
+function mergeWithDefaults(stored: PartialFormSectionsState): FormSectionsState {
+  const defaults = defaultFormSectionExpandedState();
+  const result = {} as FormSectionsState;
+  for (const recordType of Object.keys(defaults) as Array<RecordType>) {
+    (result as Record<string, unknown>)[recordType] = {
+      ...defaults[recordType],
+      ...(stored[recordType] ?? {}),
+    };
+  }
+  return result;
+}
+
 export default function SynchroniseFormSections({ children }: SynchroniseFormSectionsArgs): React.ReactNode {
-  const [formSectionExpandedState, setFormSectionExpandedState] = useUiPreference(
-    PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED,
-    {
-      defaultValue: defaultFormSectionExpandedState(),
-    },
+  // Temporary solution.  See https://researchspace.atlassian.net/browse/RSDEV-1221 for a preferred implementation.
+  const [storedState, setFormSectionExpandedState] = useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
+    defaultValue: defaultFormSectionExpandedState(),
+  });
+  const formSectionExpandedState = React.useMemo(
+    () => mergeWithDefaults(storedState as PartialFormSectionsState),
+    [storedState],
   );
   return (
     <FormSectionsContext.Provider
