@@ -58,7 +58,14 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
       >
         {children}
       </SnippetPreviewContext.Provider>
-      <Dialog open={snippetFile !== null} fullWidth maxWidth="md" onClose={() => setSnippetFile(null)}>
+      {/* Keep above the gallery info panel, which is raised in the picker. */}
+      <Dialog
+        open={snippetFile !== null}
+        fullWidth
+        maxWidth="md"
+        onClose={() => setSnippetFile(null)}
+        sx={{ zIndex: 2000 }}
+      >
         <DialogTitle>Snippet Preview: {snippetFile?.name}</DialogTitle>
         <DialogContent dividers>
           {loading ? (
