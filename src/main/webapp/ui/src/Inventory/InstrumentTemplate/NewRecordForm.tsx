@@ -93,8 +93,8 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createInstrumentTemplate,
-          title: "Info on creating new instrument templates.",
+          link: docLinks.createTemplate,
+          title: "Info on creating and using sample and instrument templates.",
         }}
         titleText={`New ${inventoryRecordTypeLabels.instrumentTemplate}`}
         resetScrollPosition={Symbol("always reset scroll")}
