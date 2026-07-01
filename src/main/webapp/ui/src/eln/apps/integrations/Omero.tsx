@@ -83,7 +83,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
               action="/apps/omero/connect"
               method="POST"
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener"
             >
               <Stack spacing={1}>
                 <TextField
