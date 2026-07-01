@@ -99,8 +99,7 @@ const StoichiometryTableInventoryLinkCell = ({
   onRemoveInventoryLink,
   onUndoRemoveInventoryLink,
 }: StoichiometryTableInventoryLinkCellProps) => {
-  const { t, i18n } = useTranslation(["common", "inventory"]);
-  const inventoryT = i18n.getFixedT(null, "inventory") as (translationKey: string) => string;
+  const { t } = useTranslation(["common", "inventory"]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerSearch] = useState(() => createInventoryPickerSearch(t("stoichiometry.inventoryLink.alreadyLinked")));
   const linkedInventoryItemGlobalIdSet = new Set(linkedInventoryItemGlobalIds);
@@ -184,7 +183,7 @@ const StoichiometryTableInventoryLinkCell = ({
   }
 
   if (inventoryLink) {
-    const record = toLinkedSubsampleRecord(inventoryLink, inventoryT("search.type.subsample"));
+    const record = toLinkedSubsampleRecord(inventoryLink, t("inventory:recordTypes.subsample.singular"));
     const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
     const showInsufficientStockIndicator = showInsufficientStockWarning && !showStockDeductedIndicator;
 

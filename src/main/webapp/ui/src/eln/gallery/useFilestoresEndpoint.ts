@@ -1,6 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import type { Filestore } from "./useGalleryListing";
@@ -10,6 +10,7 @@ export default function useFilestoresEndpoint(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
 
   const logout = async (filestore: Filestore) => {
     try {
@@ -25,7 +26,7 @@ export default function useFilestoresEndpoint(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: i18n.t("gallery:filestores.logoutSuccess", { name: filestore.name }),
+          message: t("filestores.logoutSuccess", { name: filestore.name }),
         }),
       );
     } catch (e) {
@@ -33,7 +34,7 @@ export default function useFilestoresEndpoint(): {
       addAlert(
         mkAlert({
           variant: "error",
-          message: i18n.t("gallery:filestores.logoutFailed", { name: filestore.name }),
+          message: t("filestores.logoutFailed", { name: filestore.name }),
         }),
       );
     }

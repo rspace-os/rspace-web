@@ -59,7 +59,6 @@ declare global {
 
 class PubchemPlugin {
   constructor(editor: Editor) {
-    const tCommon = i18n.getFixedT(null, "common");
     function* renderPubchem(
       domContainer: HTMLElement,
     ): Generator<void, void, React.ComponentProps<typeof ImportDialog>> {
@@ -105,7 +104,7 @@ class PubchemPlugin {
 
     // Add a button to the toolbar
     editor.ui.registry.addButton("pubchem", {
-      tooltip: tCommon("stoichiometry.addReagent.sources.pubChem.dialogTitle"),
+      tooltip: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction() {
         pubchemRenderer.next({
@@ -124,7 +123,7 @@ class PubchemPlugin {
 
     // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPubchem", {
-      text: tCommon("stoichiometry.addReagent.sources.pubChem.dialogTitle"),
+      text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction() {
         pubchemRenderer.next({
@@ -146,7 +145,7 @@ class PubchemPlugin {
       window.insertActions = new Map();
     }
     window.insertActions.set("optPubchem", {
-      text: tCommon("stoichiometry.addReagent.sources.pubChem.title"),
+      text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.title"),
       icon: "pubchem",
       action: () => {
         pubchemRenderer.next({

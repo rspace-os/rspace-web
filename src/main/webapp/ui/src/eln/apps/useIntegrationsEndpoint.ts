@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
 import { getByKey, Optional } from "../../util/optional";
@@ -1312,6 +1312,7 @@ export function useIntegrationsEndpoint(): {
     timeout: ONE_MINUTE_IN_MS,
   });
   const { addAlert } = useContext(AlertContext);
+  const { t } = useTranslation("apps");
 
   const allIntegrations = async (): Promise<IntegrationStates> => {
     const states = await api.get<
@@ -1357,15 +1358,15 @@ export function useIntegrationsEndpoint(): {
             if (typeof errorMsg === "string") {
               throw new Error(errorMsg);
             } else {
-              throw new Error(errorMsg.errorMessages.at(0) ?? i18n.t("apps:integrationsEndpoint.unknownReason"));
+              throw new Error(errorMsg.errorMessages.at(0) ?? t("integrationsEndpoint.unknownReason"));
             }
           }
-          throw new Error(i18n.t("apps:integrationsEndpoint.unknownError"));
+          throw new Error(t("integrationsEndpoint.unknownError"));
         } else {
           addAlert(
             mkAlert({
               variant: "success",
-              message: i18n.t("apps:integrationsEndpoint.updateSuccess"),
+              message: t("integrationsEndpoint.updateSuccess"),
             }),
           );
           switch (integration) {
@@ -1436,14 +1437,14 @@ export function useIntegrationsEndpoint(): {
           addAlert(
             mkAlert({
               variant: "error",
-              title: i18n.t("apps:integrationsEndpoint.updateFailed"),
+              title: t("integrationsEndpoint.updateFailed"),
               message: e.message,
             }),
           );
         throw e;
       }
     },
-    [],
+    [t],
   );
 
   const saveAppOptions = async <I extends Integration>(
@@ -1468,7 +1469,7 @@ export function useIntegrationsEndpoint(): {
       if (response.data.errorMsg !== null && typeof response.data.errorMsg !== "undefined") {
         throw new Error(response.data.errorMsg);
       }
-      throw new Error(i18n.t("apps:integrationsEndpoint.unknownReason"));
+      throw new Error(t("integrationsEndpoint.unknownReason"));
     } else {
       switch (appName) {
         case "ARGOS":

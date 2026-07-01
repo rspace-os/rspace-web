@@ -185,8 +185,7 @@ async function listPlans(
       );
       throw new Error(error.message);
     }
-    const commonT = i18n.getFixedT(null, "common") as (key: "errors.unknown") => string;
-    throw new Error(commonT("errors.unknown"));
+    throw new Error(i18n.t("common:apiErrors.unknown"));
   }
 }
 

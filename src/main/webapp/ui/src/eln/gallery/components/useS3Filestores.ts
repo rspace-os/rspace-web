@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
@@ -116,6 +117,7 @@ export type S3Filestore = {
 export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3Filestore>> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [filestores, setFilestores] = React.useState<Result<ReadonlyArray<S3Filestore>>>(Result.Ok([]));
@@ -136,10 +138,8 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         addAlert(
           handleErrors(
             response,
-            operation === "copy" ? i18n.t("gallery:s3.success.copied") : i18n.t("gallery:s3.success.moved"),
-            operation === "copy"
-              ? i18n.t("gallery:s3.errors.partialCopyFailed")
-              : i18n.t("gallery:s3.errors.partialMoveFailed"),
+            operation === "copy" ? t("s3.success.copied") : t("s3.success.moved"),
+            operation === "copy" ? t("s3.errors.partialCopyFailed") : t("s3.errors.partialMoveFailed"),
           ),
         );
       } catch (e) {
@@ -148,12 +148,11 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse(i18n.t("gallery:errors.unknownError"));
+          .orElse(t("errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title:
-              operation === "copy" ? i18n.t("gallery:s3.errors.copyFailed") : i18n.t("gallery:s3.errors.moveFailed"),
+            title: operation === "copy" ? t("s3.errors.copyFailed") : t("s3.errors.moveFailed"),
             message: errorMsg,
           }),
         );
@@ -180,13 +179,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
             destPath,
             deleteSource,
           });
-          addAlert(
-            handleErrors(
-              response,
-              i18n.t("gallery:s3.success.transferred"),
-              i18n.t("gallery:s3.errors.partialTransferFailed"),
-            ),
-          );
+          addAlert(handleErrors(response, t("s3.success.transferred"), t("s3.errors.partialTransferFailed")));
         }
       } catch (e) {
         console.error(e);
@@ -194,11 +187,11 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse(i18n.t("gallery:errors.unknownError"));
+          .orElse(t("errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: i18n.t("gallery:s3.errors.transferFailed"),
+            title: t("s3.errors.transferFailed"),
             message: errorMsg,
           }),
         );
@@ -282,7 +275,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse(i18n.t("gallery:listing.alerts.retrieveFilestoresFailed")),
+          .orElse(t("listing.alerts.retrieveFilestoresFailed")),
       );
       console.error(e);
     } finally {

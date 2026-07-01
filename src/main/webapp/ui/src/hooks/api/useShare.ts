@@ -1,6 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -104,6 +104,7 @@ export default function useShare(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   async function getShareInfo(globalId: string): Promise<ShareInfoResponse> {
     try {
@@ -117,8 +118,8 @@ export default function useShare(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.share.fetchFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.share.fetchFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch sharing information", {
@@ -171,8 +172,8 @@ export default function useShare(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.share.fetchFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.share.fetchFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch sharing information for multiple items", {
@@ -214,8 +215,8 @@ export default function useShare(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.share.createFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.share.createFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not create share", {
@@ -240,8 +241,8 @@ export default function useShare(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.share.updateFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.share.updateFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not update share", {
@@ -261,8 +262,8 @@ export default function useShare(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.share.deleteFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.share.deleteFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not delete share", {

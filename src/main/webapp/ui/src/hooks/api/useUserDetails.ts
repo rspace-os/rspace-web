@@ -1,6 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
@@ -32,6 +32,7 @@ export default function useUserDetails(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   const getGroupMembers = React.useCallback(async (): Promise<ReadonlyArray<GroupMember>> => {
     try {
@@ -45,15 +46,15 @@ export default function useUserDetails(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.users.fetchGroupMembersFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.users.fetchGroupMembersFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch group members", {
         cause: e,
       });
     }
-  }, [getToken, addAlert]);
+  }, [getToken, addAlert, t]);
 
   return { getGroupMembers };
 }

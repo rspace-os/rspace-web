@@ -1,6 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import useOauthToken from "../auth/useOauthToken";
@@ -61,6 +61,7 @@ export default function useGroups(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   const getGroups = React.useCallback(async (): Promise<ReadonlyArray<Group>> => {
     try {
@@ -74,15 +75,15 @@ export default function useGroups(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: i18n.t("common:apiErrors.groups.fetchManyFailed"),
-          message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+          title: t("apiErrors.groups.fetchManyFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch groups", {
         cause: e,
       });
     }
-  }, [getToken, addAlert]);
+  }, [getToken, addAlert, t]);
 
   const getGroup = React.useCallback(
     async (groupId: number): Promise<GroupDetail> => {
@@ -97,8 +98,8 @@ export default function useGroups(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: i18n.t("common:apiErrors.groups.fetchOneFailed"),
-            message: getErrorMessage(e, i18n.t("common:apiErrors.unknown")),
+            title: t("apiErrors.groups.fetchOneFailed"),
+            message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch group", {
@@ -106,7 +107,7 @@ export default function useGroups(): {
         });
       }
     },
-    [getToken, addAlert],
+    [getToken, addAlert, t],
   );
 
   return { getGroups, getGroup };

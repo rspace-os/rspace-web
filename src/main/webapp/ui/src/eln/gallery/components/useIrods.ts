@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
@@ -147,6 +148,7 @@ export type IrodsLocation = {
 export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLocation>> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [configuredLocations, setConfiguredLocations] = React.useState<Result<ReadonlyArray<IrodsLocation>>>(
@@ -179,24 +181,19 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
         addAlert(
           handleErrors(
             response,
-            operation === "copy" ? i18n.t("gallery:irods.success.copied") : i18n.t("gallery:irods.success.moved"),
-            operation === "copy"
-              ? i18n.t("gallery:irods.errors.partialCopyFailed")
-              : i18n.t("gallery:irods.errors.partialMoveFailed"),
+            operation === "copy" ? t("irods.success.copied") : t("irods.success.moved"),
+            operation === "copy" ? t("irods.errors.partialCopyFailed") : t("irods.errors.partialMoveFailed"),
           ),
         );
       } catch (e) {
         console.error(e);
         // Fall back to a safe message rather than throwing while handling the
         // error, which would suppress the user-facing alert (mirrors the S3 flow).
-        const errorMsg = parseOperationError(e).orElse(i18n.t("gallery:errors.unknownError"));
+        const errorMsg = parseOperationError(e).orElse(t("errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title:
-              operation === "copy"
-                ? i18n.t("gallery:irods.errors.copyFailed")
-                : i18n.t("gallery:irods.errors.moveFailed"),
+            title: operation === "copy" ? t("irods.errors.copyFailed") : t("irods.errors.moveFailed"),
             message: errorMsg,
           }),
         );
@@ -298,7 +295,7 @@ export default function useIrods(): FetchingData.Fetched<ReadonlyArray<IrodsLoca
               .flatMap(ArrayUtils.head)
               .flatMap(Parsers.isString);
           })
-          .orElse(i18n.t("gallery:errors.parseResponse")),
+          .orElse(t("errors.parseResponse")),
       );
       console.error(e);
     } finally {

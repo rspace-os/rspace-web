@@ -1,5 +1,5 @@
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import i18n from "@/modules/common/i18n";
 
 export type Repository = {
   description: string;
@@ -21,7 +21,7 @@ export function useGitHubEndpoint(): {
   getAllRepositories: (authToken: string) => Promise<Array<Repository>>;
   oauthUrl: () => Promise<string>;
 } {
-  const commonT = i18n.getFixedT(null, "common") as (key: "errors.unknown") => string;
+  const { t } = useTranslation();
   const api = axios.create({
     baseURL: "/github",
     timeout: ONE_MINUTE_IN_MS,
@@ -46,13 +46,13 @@ export function useGitHubEndpoint(): {
         if (typeof errorMsg === "string") {
           throw new Error(errorMsg);
         } else {
-          throw new Error(errorMsg.errorMessages.at(0) ?? commonT("errors.unknown"));
+          throw new Error(errorMsg.errorMessages.at(0) ?? t("apiErrors.unknown"));
         }
       }
     } else {
       return response.data.data;
     }
-    throw new Error(commonT("errors.unknown"));
+    throw new Error(t("apiErrors.unknown"));
   };
 
   const oauthUrl = async (): Promise<string> => {
