@@ -24,7 +24,7 @@ type FieldmarkArgs = {
  * below..
  */
 function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [apiKey, setApiKey] = React.useState(integrationState.credentials.FIELDMARK_USER_TOKEN.orElse(""));
 
   return (
@@ -80,7 +80,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("actions.save")}</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

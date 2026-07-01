@@ -420,7 +420,7 @@ export default class IdentifierModel implements Identifier {
           i18n.t("inventory:identifierConfirm.publish.title"),
           <TransRichText ns="inventory" i18nKey="identifierConfirm.publish.body" />,
           i18n.t("common:actions.ok"),
-          i18n.t("inventory:identifierConfirm.cancelButton"),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -483,7 +483,7 @@ export default class IdentifierModel implements Identifier {
           i18n.t("inventory:identifierConfirm.retract.title"),
           <TransRichText ns="inventory" i18nKey="identifierConfirm.retract.body" />,
           i18n.t("common:actions.ok"),
-          i18n.t("inventory:identifierConfirm.cancelButton"),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");

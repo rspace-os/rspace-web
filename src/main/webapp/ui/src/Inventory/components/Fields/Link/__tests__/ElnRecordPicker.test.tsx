@@ -120,7 +120,7 @@ describe("ElnRecordPicker", () => {
     const user = userEvent.setup();
     renderPicker({ onCancel });
 
-    await user.click(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(onCancel).toHaveBeenCalled();
   });

@@ -147,7 +147,7 @@ const SearchControls = ({
   setPage,
 }: SearchControlsArgs) => {
   const { addAlert } = useContext(AlertContext);
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [searchParameters, setSearchParameters]: UseState<Omit<SearchParameters, "page" | "pageSize">> = useState({
     like: null as string | null,
     grantsLike: null as string | null,
@@ -347,7 +347,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [DMPs, setDMPs] = useState<Array<PlanSummary>>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [selectedPlan, setSelectedPlan] = useState<PlanSummary | null>(null);
@@ -555,7 +555,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           </nav>
           <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
             <Button onClick={() => setOpen(false)} disabled={importing}>
-              {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
+              {selectedPlan ? t("common:actions.cancel") : t("common:actions.close")}
             </Button>
             <ValidatingSubmitButton
               onClick={() => {
@@ -564,7 +564,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               validationResult={!selectedPlan ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
               loading={importing}
             >
-              {t("dmpIntegrations.dialog.importButton")}
+              {t("common:actions.import")}
             </ValidatingSubmitButton>
           </Stack>
         </Stack>

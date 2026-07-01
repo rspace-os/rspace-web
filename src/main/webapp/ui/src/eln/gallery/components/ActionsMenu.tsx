@@ -110,7 +110,7 @@ const UploadNewVersionMenuItem = ({
    */
   folderId: FetchingData.Fetched<Id>;
 }) => {
-  const { t } = useTranslation("gallery");
+  const { t } = useTranslation(["gallery", "common"]);
   const { uploadNewVersion } = useGalleryActions();
   const { trackEvent } = React.useContext(AnalyticsContext);
   const selection = useGallerySelection();
@@ -218,7 +218,7 @@ const RenameDialog = ({ open, onClose, file }: { open: boolean; onClose: () => v
   const [newName, setNewName] = React.useState("");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
-  const { t } = useTranslation("gallery");
+  const { t } = useTranslation(["gallery", "common"]);
   const { t: tCommon } = useTranslation("common");
   return (
     <Dialog
@@ -292,7 +292,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const theme = useTheme();
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("gallery");
+  const { t } = useTranslation(["gallery", "common"]);
   const { t: tCommon } = useTranslation("common");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
@@ -611,7 +611,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             .get()
             .map((file) => (
               <AccentMenuItem
-                title={t("actionsMenu.open")}
+                title={t("common:actions.open")}
                 avatar={<FolderOpenIcon />}
                 onClick={() => {
                   openFolder(file);
@@ -811,7 +811,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             }}
           />
           <AccentMenuItem
-            title={t("actionsMenu.download")}
+            title={t("common:actions.download")}
             subheader={downloadAllowed
               .get()
               .map(() => "")
@@ -827,7 +827,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={downloadAllowed.get().isError}
           />
           <AccentMenuItem
-            title={t("actionsMenu.share")}
+            title={t("common:actions.share")}
             subheader={shareAllowed
               .get()
               .map(() => "")
@@ -863,7 +863,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               .orElse(null)}
           </EventBoundary>
           <AccentMenuItem
-            title={t("actionsMenu.export")}
+            title={t("common:actions.export")}
             subheader={exportAllowed
               .get()
               .map(() => "")

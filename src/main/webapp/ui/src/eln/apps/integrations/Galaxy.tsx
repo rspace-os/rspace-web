@@ -29,7 +29,7 @@ type GalaxyArgs = {
  * Galaxy uses API-key based authentication, as implemented by the form below.
  */
 function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -116,7 +116,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                             });
                           }}
                         />
-                        <Button type="submit">{t("actions.save")}</Button>
+                        <Button type="submit">{t("common:actions.save")}</Button>
                         <Button
                           onClick={() => {
                             void deleteAppOptions("GALAXY", server.optionsId)
@@ -146,7 +146,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                               });
                           }}
                         >
-                          {t("actions.delete")}
+                          {t("common:actions.delete")}
                         </Button>
                       </Stack>
                     </form>
@@ -160,7 +160,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  {t("actions.add")}
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}

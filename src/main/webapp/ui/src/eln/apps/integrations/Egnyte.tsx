@@ -21,7 +21,7 @@ type EgnyteArgs = {
  * Egnyte has a domain URL that is configured by the this text field.
  */
 function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [url, setUrl] = useState(integrationState.credentials.EGNYTE_DOMAIN);
 
   return (
@@ -80,7 +80,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("actions.save")}</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

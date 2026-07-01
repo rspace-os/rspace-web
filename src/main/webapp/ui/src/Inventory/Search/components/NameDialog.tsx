@@ -58,7 +58,7 @@ const NameDialog = ({
   existingNames,
   onChange,
 }: NameDialogArgs): React.ReactNode => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const [error, setError] = useState<boolean>(false);
 
   const noDuplicates = (): boolean => {
@@ -121,13 +121,8 @@ const NameDialog = ({
         </FormControl>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>{t("search.controls.nameDialog.cancel")}</Button>
-        <SubmitSpinner
-          onClick={onSubmitHandler}
-          disabled={error}
-          loading={false}
-          label={t("search.controls.nameDialog.save")}
-        />
+        <Button onClick={() => setOpen(false)}>{t("common:actions.cancel")}</Button>
+        <SubmitSpinner onClick={onSubmitHandler} disabled={error} loading={false} label={t("common:actions.save")} />
       </DialogActions>
     </Dialog>
   );

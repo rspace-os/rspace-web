@@ -212,14 +212,14 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.download/i }));
+      expectMenuItemDisabled(await screen.findByRole("menuitem", { name: /common:actions\.download/i }));
     });
 
     test("Share should always be visible and enabled when only snippets are selected", async () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemEnabled(share));
     });
@@ -228,7 +228,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithMixedSelection />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       expectMenuItemDisabled(share);
     });
@@ -237,7 +237,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
       expect(await screen.findByRole("dialog", { name: "common:shareDialog.titleSingle" })).toBeVisible();
@@ -247,7 +247,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithMultipleSnippets />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
       expect(await screen.findByRole("dialog", { name: "common:shareDialog.titleMultiple" })).toBeVisible();
@@ -264,7 +264,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippetMissingGlobalId />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemDisabled(share));
       expect(share).toHaveTextContent(/Cannot share snippets that are missing global IDs\./i);
     });
@@ -273,7 +273,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippetInSharedFolderOwnedBySelf />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemEnabled(share));
     });
@@ -282,7 +282,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippetInSharedFolderOwnedByOther />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
       expect(share).toHaveTextContent(/Only owners of the snippet can change its share settings\./i);
@@ -292,7 +292,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippetInSystemSharedFolder />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       await waitFor(() => expectMenuItemDisabled(share));
       expect(share).toHaveTextContent(/Only owners of the snippet can change its share settings\./i);
@@ -310,7 +310,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       expect(share).toBeVisible();
       expectMenuItemDisabled(share);
       expect(share).toHaveTextContent(/Loading user information\.\.\./i);
@@ -320,7 +320,7 @@ describe("ActionsMenu", () => {
       const user = userEvent.setup();
       renderStory(<ActionsMenuWithSnippet />);
       await openMenu(user);
-      const share = await screen.findByRole("menuitem", { name: /gallery:actionsMenu\.share/i });
+      const share = await screen.findByRole("menuitem", { name: /common:actions\.share/i });
       await waitFor(() => expectMenuItemEnabled(share));
       await user.click(share);
 

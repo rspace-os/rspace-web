@@ -37,7 +37,7 @@ type MSTeamsArgs = {
  * Teams channel.
  */
 function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = useContext(AlertContext);
   const [newChannelName, setNewChannelName] = useState<string | null>(null);
@@ -116,7 +116,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                   })();
                                 }}
                               >
-                                {t("actions.remove")}
+                                {t("common:actions.remove")}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -132,7 +132,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                           setNewWebhook("");
                         }}
                       >
-                        {t("actions.add")}
+                        {t("common:actions.add")}
                       </Button>
                     ) : (
                       <Card variant="outlined">
@@ -191,7 +191,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                             />
                           </CardContent>
                           <CardActions>
-                            <Button type="submit">{t("actions.save")}</Button>
+                            <Button type="submit">{t("common:actions.save")}</Button>
                           </CardActions>
                         </form>
                       </Card>

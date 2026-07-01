@@ -35,7 +35,7 @@ export interface RaidConnectedMessage extends Record<string, unknown> {
 export const RAID_CONNECTION_CHANNEL = "rspace.apps.raid.connection";
 
 const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -271,7 +271,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                         </form>
                       )}
                       <form onSubmit={handleDeleteConnection(server.optionsId, server.alias)}>
-                        <Button type="submit">{t("actions.delete")}</Button>
+                        <Button type="submit">{t("common:actions.delete")}</Button>
                       </form>
                     </Stack>
                   ))}
@@ -284,7 +284,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  {t("actions.add")}
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}

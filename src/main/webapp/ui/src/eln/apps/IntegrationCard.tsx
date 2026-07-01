@@ -139,7 +139,7 @@ function IntegrationCard<Credentials>({
   website,
   setupSection,
 }: IntegrationCardArgs<Credentials>): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = useState(false);
   const mode = integrationState.mode;
   const theme = useTheme();
@@ -502,7 +502,7 @@ function IntegrationCard<Credentials>({
               setOpen(false);
             }}
           >
-            {t("actions.close")}
+            {t("common:actions.close")}
           </Button>
           {integrationState.mode !== "EXTERNAL" && (
             <Button

@@ -77,7 +77,7 @@ function DSWImportDialogContent({
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
 
   const [DMPs, setDMPs] = React.useState<Array<DswProjectWithOrigin>>([]);
   const [selectedPlan, setSelectedPlan] = useState<DswProjectWithOrigin | null>();
@@ -338,7 +338,7 @@ function DSWImportDialogContent({
       <DialogActions>
         <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
           <Button onClick={() => setOpen(false)} disabled={importing}>
-            {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
+            {selectedPlan ? t("common:actions.cancel") : t("common:actions.close")}
           </Button>
           <ValidatingSubmitButton
             onClick={() => {
@@ -347,7 +347,7 @@ function DSWImportDialogContent({
             validationResult={!selectedPlan?.id ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
             loading={importing}
           >
-            {t("dmpIntegrations.dialog.importButton")}
+            {t("common:actions.import")}
           </ValidatingSubmitButton>
         </Stack>
       </DialogActions>

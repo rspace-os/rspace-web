@@ -67,7 +67,7 @@ const CollapseContents = observer(
     editable: boolean;
     connectedItem?: InventoryRecord;
   }): ReactNode => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const { uiStore } = useStores();
     const barcodes = fieldOwner.fieldValues.barcodes;
     const imgUrlsAvailable = Boolean(connectedItem) && barcodes.every((b) => b.imageUrl);
@@ -234,7 +234,7 @@ const CollapseContents = observer(
                             onClick={() => remove(b)}
                             disabled={!editable || !b.isDeletable}
                             tooltipAfterClicked={t("fields.barcodes.actions.deleteAfterClicked")}
-                            tooltipBeforeClicked={t("fields.barcodes.actions.remove")}
+                            tooltipBeforeClicked={t("common:actions.remove")}
                             tooltipWhenDisabled={
                               b.isDeletable
                                 ? t("fields.barcodes.actions.removeNeedsEdit")
@@ -324,7 +324,7 @@ function FieldCard<
 }): ReactNode {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   const editable = fieldOwner.isFieldEditable("barcodes");
   const barcodes = fieldOwner.fieldValues.barcodes;
@@ -400,7 +400,7 @@ function FieldCard<
                       ],
                     });
                   }}
-                  buttonPrefix={t("fields.barcodes.actions.save")}
+                  buttonPrefix={t("common:actions.save")}
                 />
               </Popover>
               <CustomTooltip

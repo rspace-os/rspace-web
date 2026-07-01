@@ -40,7 +40,7 @@ export default function IgsnManagementPage({
   selectedIgsns: RsSet<Identifier>;
   setSelectedIgsns: (newSelectedIgsns: RsSet<Identifier>) => void;
 }): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const mainContentRef = useLandmark(t("igsnManagement.landmark"));
@@ -125,7 +125,7 @@ export default function IgsnManagementPage({
                   </Stack>
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>{t("igsnManagement.cancel")}</Button>
+                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>{t("common:actions.cancel")}</Button>
                   <SubmitSpinnerButton
                     onClick={() => {
                       void (async () => {

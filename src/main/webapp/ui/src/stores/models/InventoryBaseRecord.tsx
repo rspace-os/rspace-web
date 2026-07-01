@@ -1379,7 +1379,7 @@ export default class InventoryBaseRecord
           i18n.t("inventory:identifierConfirm.create.title"),
           <TransRichText ns="inventory" i18nKey="identifierConfirm.create.body" />,
           i18n.t("common:actions.ok"),
-          i18n.t("inventory:identifierConfirm.cancelButton"),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         const globalId = this.globalId;
@@ -1420,7 +1420,7 @@ export default class InventoryBaseRecord
           i18n.t("identifierConfirm.delete.title", { ns: "inventory" }),
           i18n.t("identifierConfirm.delete.body", { ns: "inventory" }),
           i18n.t("common:actions.ok"),
-          i18n.t("identifierConfirm.cancelButton", { ns: "inventory" }),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         if (!id) throw new Error("DOI Id must be known.");

@@ -29,7 +29,7 @@ type PyratArgs = {
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
 function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -116,7 +116,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                             });
                           }}
                         />
-                        <Button type="submit">{t("actions.save")}</Button>
+                        <Button type="submit">{t("common:actions.save")}</Button>
                         <Button
                           onClick={() => {
                             void deleteAppOptions("PYRAT", server.optionsId)
@@ -146,7 +146,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                               });
                           }}
                         >
-                          {t("actions.delete")}
+                          {t("common:actions.delete")}
                         </Button>
                       </Stack>
                     </form>
@@ -160,7 +160,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  {t("actions.add")}
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}

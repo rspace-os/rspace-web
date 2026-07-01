@@ -47,7 +47,7 @@ type PreviewRecordWithOptionalFields = InventoryRecord & {
  * Dialog to preview public page for an identifier
  */
 const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): React.ReactNode => {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   if (!id.rsPublicId) return null;
   const publicId: string = id.rsPublicId;
@@ -126,7 +126,7 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
             <Alert severity="warning">{t("fields.identifiers.publicPreviewDialog.missingDetails")}</Alert>
           </Box>
         )}
-        <Button onClick={onClose}>{t("fields.identifiers.publicPreviewDialog.close")}</Button>
+        <Button onClick={onClose}>{t("common:actions.close")}</Button>
         <PublishButton identifier={id} />
       </DialogActions>
     </Dialog>

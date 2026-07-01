@@ -243,7 +243,7 @@ export default class SearchStore {
               {i18n.t("baskets.delete.bodySuffix", { ns: "inventory" })}
             </>,
             i18n.t("common:actions.ok"),
-            i18n.t("identifierConfirm.cancelButton", { ns: "inventory" }),
+            i18n.t("common:actions.cancel"),
           )
         ) {
           const res = await showToastWhilstPending(

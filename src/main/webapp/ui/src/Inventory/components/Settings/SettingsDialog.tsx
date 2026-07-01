@@ -20,7 +20,7 @@ type SettingsDialogArgs = {
 
 function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode {
   const { authStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   const [fetchingSystemSettings, setFetchingSystemSettings] = useState<
     null | { state: "loading" } | { state: "loaded" } | { state: "error"; error: string }
@@ -67,7 +67,7 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>{t("settings.dialog.close")}</Button>
+        <Button onClick={handleClose}>{t("common:actions.close")}</Button>
       </DialogActions>
     </Dialog>
   );

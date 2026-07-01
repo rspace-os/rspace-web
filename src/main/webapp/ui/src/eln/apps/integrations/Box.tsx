@@ -31,7 +31,7 @@ type BoxArgs = {
  * document editor.
  */
 function Box({ integrationState, update }: BoxArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [linkType, setLinkType] = React.useState(integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE"));
 
   return (
@@ -129,7 +129,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                   </RadioGroup>
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("actions.save")}</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

@@ -46,7 +46,7 @@ import PublishButton from "./PublishButton";
 
 const IdentifierWrapper = observer(
   ({ activeResult, id, editable }: { activeResult: InventoryRecord; id: Identifier; editable: boolean }): ReactNode => {
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
     const isRadio = (field: IdentifierField): boolean => Boolean(field.radioOptions);
 
     /* different name to avoid confusion with 'editable' (parent) */
@@ -244,7 +244,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const editable = activeResult.isFieldEditable("identifiers");
   const { addAlert } = useContext(AlertContext);
   const { uiStore } = useStores();
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   const StateInfo = ({
     identifierState,
@@ -494,7 +494,7 @@ const AssignDialog = observer(
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
     const { trackEvent } = useContext(AnalyticsContext);
-    const { t } = useTranslation("inventory");
+    const { t } = useTranslation(["inventory", "common"]);
 
     return (
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -534,7 +534,7 @@ const AssignDialog = observer(
               }}
               color="primary"
             >
-              {t("fields.identifiers.assignDialog.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={false}
@@ -574,7 +574,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
 

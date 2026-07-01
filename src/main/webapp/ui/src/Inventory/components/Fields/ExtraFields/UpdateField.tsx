@@ -53,7 +53,7 @@ function linkStateFromExtraField(extraField: ExtraField): LinkState {
 }
 
 export default function UpdateField({ extraField, index, record }: UpdateFieldArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const [fieldState, setFieldState] = useState<{
     name: string;
     type: ExtraFieldType | "";
@@ -310,9 +310,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
           onClick={() => (extraField.initial ? record.removeExtraField(null, index) : discardChanges())}
           data-test-id={"DiscardOrCancelButton"}
         >
-          {extraField.initial
-            ? t("fields.extraFields.updateField.discard")
-            : t("fields.extraFields.updateField.cancel")}
+          {extraField.initial ? t("fields.extraFields.updateField.discard") : t("common:actions.cancel")}
         </Button>
       </Grid>
     </Grid>

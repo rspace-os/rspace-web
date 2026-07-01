@@ -28,7 +28,7 @@ export interface ElnRecordPickerProps {
  * MobX so it can be reused outside the Inventory dialog.
  */
 export default function ElnRecordPicker(props: ElnRecordPickerProps): React.ReactElement {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const [selection, setSelection] = React.useState<ElnRecordPickerResult | null>(null);
 
   // a reopened dialog must not retain (and offer to Choose) a stale selection
@@ -60,7 +60,7 @@ export default function ElnRecordPicker(props: ElnRecordPickerProps): React.Reac
         >
           {t("fields.link.elnPicker.choose")}
         </Button>
-        <Button onClick={props.onCancel}>{t("fields.link.elnPicker.cancel")}</Button>
+        <Button onClick={props.onCancel}>{t("common:actions.cancel")}</Button>
       </DialogActions>
     </Dialog>
   );

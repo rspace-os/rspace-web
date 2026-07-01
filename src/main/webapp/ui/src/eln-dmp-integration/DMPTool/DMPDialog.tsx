@@ -60,7 +60,7 @@ export type Plan = {
 function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
 
   const [DMPHost, setDMPHost] = React.useState<string | null>();
   const [DMPs, setDMPs] = useState<Array<Plan>>([]);
@@ -324,7 +324,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
       <DialogActions>
         <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
           <Button onClick={() => setOpen(false)} disabled={importing}>
-            {selectedPlan ? t("dmpIntegrations.dialog.cancelButton") : t("dmpIntegrations.dialog.closeButton")}
+            {selectedPlan ? t("common:actions.cancel") : t("common:actions.close")}
           </Button>
           <ValidatingSubmitButton
             onClick={() => {
@@ -333,7 +333,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             validationResult={!selectedPlan?.id ? IsInvalid(t("dmpIntegrations.dialog.noDmpSelected")) : IsValid()}
             loading={importing}
           >
-            {t("dmpIntegrations.dialog.importButton")}
+            {t("common:actions.import")}
           </ValidatingSubmitButton>
         </Stack>
       </DialogActions>

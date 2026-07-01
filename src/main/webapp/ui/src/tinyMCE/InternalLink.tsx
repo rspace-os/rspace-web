@@ -111,19 +111,19 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
   const { t } = useTranslation(["apps", "common"]);
   const LATEST_REVISION_LABEL = t("tinyMce.internalLink.alwaysLatest");
   const headCells: Array<Cell<RevisionSortKey>> = [
-    { id: "version", numeric: true, disablePadding: false, label: t("tinyMce.internalLink.headCells.version") },
-    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.internalLink.headCells.name") },
+    { id: "version", numeric: true, disablePadding: false, label: t("tinyMce.internalLink.columns.version") },
+    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.internalLink.columns.name") },
     {
       id: "ownerFullName",
       numeric: false,
       disablePadding: false,
-      label: t("tinyMce.internalLink.headCells.modifiedBy"),
+      label: t("tinyMce.internalLink.columns.modifiedBy"),
     },
     {
       id: "modificationDate",
       numeric: false,
       disablePadding: false,
-      label: t("tinyMce.internalLink.headCells.modified"),
+      label: t("tinyMce.internalLink.columns.modified"),
     },
   ];
   const handleClose = (): void => {

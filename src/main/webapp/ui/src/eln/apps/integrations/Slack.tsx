@@ -56,7 +56,7 @@ const DialogContent = observer(
     linkedChannels: UnwrapArray<IntegrationStates["SLACK"]["credentials"]>;
     integrationState: IntegrationStates["SLACK"];
   }) => {
-    const { t } = useTranslation("apps");
+    const { t } = useTranslation(["apps", "common"]);
     const [loadingNewChannel, setLoadingNewChannel] = useState(false);
     const [newChannel, setNewChannel] = useState<Channel | null>(null);
     const { addAlert } = useContext(AlertContext);
@@ -228,7 +228,7 @@ const DialogContent = observer(
                   </Stack>
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">{t("actions.save")}</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                   <Button
                     onClick={() => {
                       void (async () => {
@@ -258,7 +258,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    {t("actions.remove")}
+                    {t("common:actions.remove")}
                   </Button>
                 </CardActions>
               </form>
@@ -337,15 +337,15 @@ const DialogContent = observer(
                       setNewChannel(null);
                     }}
                   >
-                    {t("actions.cancel")}
+                    {t("common:actions.cancel")}
                   </Button>
-                  <Button type="submit">{t("actions.save")}</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>
           ) : (
             <Button disabled={loadingNewChannel} onClick={() => void addHandler()}>
-              {loadingNewChannel ? t("integrations.slack.loadingChannel") : t("actions.add")}
+              {loadingNewChannel ? t("integrations.slack.loadingChannel") : t("common:actions.add")}
             </Button>
           )}
         </Box>
@@ -367,7 +367,7 @@ type SlackArgs = {
  * been deprecated.
  */
 function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}

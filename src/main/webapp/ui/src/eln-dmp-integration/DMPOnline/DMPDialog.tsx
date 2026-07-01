@@ -48,7 +48,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 }
 
 const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   const [selection, setSelection] = React.useState<DmpSummary | null>(null);
   const [importing, setImporting] = React.useState(false);
 
@@ -251,13 +251,13 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>{t("dmpIntegrations.dialog.closeButton")}</Button>
+        <Button onClick={() => setOpen(false)}>{t("common:actions.close")}</Button>
         <ValidatingSubmitButton
           validationResult={selection ? IsValid() : IsInvalid(t("dmpIntegrations.dialog.noDmpIsSelected"))}
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          {t("dmpIntegrations.dialog.importButton")}
+          {t("common:actions.import")}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

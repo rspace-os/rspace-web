@@ -61,7 +61,7 @@ type NewConfig = {
 
 const DialogContent = observer(
   ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DATAVERSE"] }) => {
-    const { t } = useTranslation("apps");
+    const { t } = useTranslation(["apps", "common"]);
     const { addAlert } = useContext(AlertContext);
     const { test } = useDataverseTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -255,7 +255,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    {t("actions.delete")}
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     disabled={config.dirty}
@@ -290,7 +290,7 @@ const DialogContent = observer(
                       config.DATAVERSE_ALIAS === "" || config.DATAVERSE_URL === "" || config.DATAVERSE_APIKEY === ""
                     }
                   >
-                    {t("actions.save")}
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -354,7 +354,7 @@ const DialogContent = observer(
                       setNewConfig(null);
                     }}
                   >
-                    {t("actions.delete")}
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     variant="outlined"
@@ -373,7 +373,7 @@ const DialogContent = observer(
                       newConfig.DATAVERSE_APIKEY === ""
                     }
                   >
-                    {t("actions.save")}
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -393,7 +393,7 @@ const DialogContent = observer(
             );
           }}
         >
-          {t("actions.add")}
+          {t("common:actions.add")}
         </Button>
       </Stack>
     );
@@ -416,7 +416,7 @@ type DataverseArgs = {
 };
 
 function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}

@@ -19,7 +19,7 @@ type PolygonDialogArgs = {
 };
 
 function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifiers }: PolygonDialogArgs): ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const handleClose = () => {
     setOpen(false);
   };
@@ -34,7 +34,7 @@ function PolygonDialog({ open, setOpen, editable, geoLocation, doUpdateIdentifie
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          {t("fields.identifiers.polygonDialog.close")}
+          {t("common:actions.close")}
         </Button>
       </DialogActions>
     </Dialog>

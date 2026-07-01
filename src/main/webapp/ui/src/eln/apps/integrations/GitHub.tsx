@@ -45,7 +45,7 @@ const DialogContent = observer(
     linkedRepos: UnwrapArray<IntegrationStates["GITHUB"]["credentials"]>;
     integrationState: IntegrationStates["GITHUB"];
   }) => {
-    const { t } = useTranslation("apps");
+    const { t } = useTranslation(["apps", "common"]);
     const { addAlert } = useContext(AlertContext);
     const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
     const { getAllRepositories, oauthUrl } = useGitHubEndpoint();
@@ -179,7 +179,7 @@ const DialogContent = observer(
                         })();
                       }}
                     >
-                      {t("actions.remove")}
+                      {t("common:actions.remove")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -263,7 +263,7 @@ const DialogContent = observer(
                             })();
                           }}
                         >
-                          {t("actions.add")}
+                          {t("common:actions.add")}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -281,7 +281,7 @@ const DialogContent = observer(
                 void addHandler();
               }}
             >
-              {loadingAllRepositories ? t("integrations.github.repositories.loading") : t("actions.add")}
+              {loadingAllRepositories ? t("integrations.github.repositories.loading") : t("common:actions.add")}
             </Button>
           </Box>
         )}
@@ -313,7 +313,7 @@ type GitHubArgs = {
  * further refined once the old apps page has been deprecated.
  */
 function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}

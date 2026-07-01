@@ -544,9 +544,7 @@
         "printAllBarcodes": "Print all barcodes",
         "printQrCode": "Print QR code",
         "printUnsupported": "Barcode print is not supported or you do not have permission.",
-        "remove": "Remove",
         "removeNeedsEdit": "First press Edit to remove this barcode.",
-        "save": "Save",
         "scan": "Scan a barcode to associate.",
         "scanNeedsEdit": "Press Edit to scan a barcode."
       },
@@ -613,7 +611,6 @@
       "noMoreFields": "No more fields",
       "updateField": {
         "apply": "Apply",
-        "cancel": "Cancel",
         "cancelLabel": "Cancel update",
         "discard": "Discard",
         "update": "Update",
@@ -635,7 +632,6 @@
     "identifiers": {
       "assignDialog": {
         "alreadyAssigned": "The selected IGSN ID is already assigned to another item.",
-        "cancel": "Cancel",
         "link": "Link",
         "noIgsnSelected": "No IGSN ID selected.",
         "selectExisting": "Select an existing IGSN ID to link to this item.",
@@ -697,15 +693,20 @@
         }
       },
       "list": {
+        "columns": {
+          "identifier": "Identifier",
+          "state": "State",
+          "type": "Type"
+        },
         "deleteOrRetract": {
           "delete": "Delete",
           "retract": "Retract"
         },
         "editFirst": "To update any details, press Edit first.",
         "headers": {
-          "identifier": "Identifier",
-          "state": "State",
-          "type": "Type"
+          "identifier": "fields.identifiers.list.headers.identifier",
+          "state": "fields.identifiers.list.headers.state",
+          "type": "fields.identifiers.list.headers.type"
         },
         "hide": "Hide",
         "igsnDocLink": "See IGSN Documentation for details",
@@ -763,11 +764,9 @@
         }
       },
       "polygonDialog": {
-        "close": "Close",
         "title": "Geolocation Polygon"
       },
       "publicPreviewDialog": {
-        "close": "Close",
         "helpTitle": "Info on handling Identifiers.",
         "missingDetails": "Some required details are missing. To enable publishing, please fill them in.",
         "title": "Review your page before publishing"
@@ -878,7 +877,6 @@
         "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
       },
       "elnPicker": {
-        "cancel": "Cancel",
         "choose": "Choose",
         "label": "Browse the ELN for a link target",
         "title": "Browse ELN",
@@ -1103,7 +1101,6 @@
     "title": "This is version {version} of the {type}."
   },
   "identifierConfirm": {
-    "cancelButton": "CANCEL",
     "create": {
       "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
       "title": "You are about to create an Identifier"
@@ -1201,7 +1198,6 @@
       "register": "Register",
       "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
     },
-    "cancel": "Cancel",
     "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <a>see the IGSN ID documentation</a>.",
     "landmark": "IGSN management main content",
     "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
@@ -1892,16 +1888,14 @@
     },
     "controls": {
       "nameDialog": {
-        "cancel": "Cancel",
         "duplicateName": "This name is already taken. Please modify it.",
         "helperText": "Please enter a unique name, no longer than 32 characters.",
         "invalidLength": "Please enter minimum 1 and maximum 32 characters.",
-        "name": "Name",
-        "save": "Save"
+        "name": "Name"
       },
       "saveSearch": {
         "defaultName": "New saved search",
-        "saveSearch": "Save search"
+        "label": "Save search"
       },
       "searchbar": {
         "clearSearch": "Clear search",
@@ -2055,7 +2049,6 @@
       "testConnection": "Test Connection"
     },
     "dialog": {
-      "close": "Close",
       "error": "Error",
       "loading": "Loading",
       "title": "Configure Inventory (for System Administrators)"

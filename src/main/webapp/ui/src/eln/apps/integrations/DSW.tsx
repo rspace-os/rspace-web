@@ -61,7 +61,7 @@ type NewConfig = {
 
 const DialogContent = observer(
   ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DSW"] }) => {
-    const { t } = useTranslation("apps");
+    const { t } = useTranslation(["apps", "common"]);
     const { addAlert } = useContext(AlertContext);
     const { test } = useDSWTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -254,7 +254,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    {t("actions.delete")}
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     disabled={config.dirty}
@@ -287,7 +287,7 @@ const DialogContent = observer(
                     type="submit"
                     disabled={config.DSW_ALIAS === "" || config.DSW_URL === "" || config.DSW_APIKEY === ""}
                   >
-                    {t("actions.save")}
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -350,7 +350,7 @@ const DialogContent = observer(
                       setNewConfig(null);
                     }}
                   >
-                    {t("actions.delete")}
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     variant="outlined"
@@ -365,7 +365,7 @@ const DialogContent = observer(
                     type="submit"
                     disabled={newConfig.DSW_ALIAS === "" || newConfig.DSW_URL === "" || newConfig.DSW_APIKEY === ""}
                   >
-                    {t("actions.save")}
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -384,7 +384,7 @@ const DialogContent = observer(
             );
           }}
         >
-          {t("actions.add")}
+          {t("common:actions.add")}
         </Button>
       </Stack>
     );
@@ -407,7 +407,7 @@ type DSWArgs = {
 };
 
 function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}

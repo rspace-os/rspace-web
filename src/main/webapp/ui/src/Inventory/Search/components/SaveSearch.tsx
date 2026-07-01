@@ -34,7 +34,7 @@ function SaveSearch({ sx }: SaveSearchArgs): React.ReactNode {
     <>
       {!search.fetcher.permalink && !search.fetcher.error && !searchStore.searchIsSaved ? (
         <IconButtonWithTooltip
-          title={t("search.controls.saveSearch.saveSearch")}
+          title={t("search.controls.saveSearch.label")}
           size="small"
           data-test-id="save-search"
           onClick={handleOpen}
