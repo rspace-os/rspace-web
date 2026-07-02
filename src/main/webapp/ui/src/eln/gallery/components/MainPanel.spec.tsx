@@ -311,7 +311,7 @@ describe("MainPanel", () => {
       await panel.copyToClipboardButton.click();
       await expect.element(panel.clipboardSuccessAlert()).toBeVisible();
 
-      expect(capturedClipboardText).toMatch(/\?mediaType=Images/);
+      expect(capturedClipboardText).toContain("?mediaType=Images");
     });
 
     test("A outer folder is selected — clipboard contains the gallery-section link", async () => {
@@ -329,7 +329,7 @@ describe("MainPanel", () => {
       await panel.copyToClipboardButton.click();
       await expect.element(panel.clipboardSuccessAlert()).toBeVisible();
 
-      expect(capturedClipboardText).toMatch(/\?mediaType=Images/);
+      expect(capturedClipboardText).toContain("?mediaType=Images");
     });
 
     test("The inner folder is selected — clipboard contains a link to the file's parent folder", async () => {
@@ -353,7 +353,7 @@ describe("MainPanel", () => {
        * copy button should refer to the parent folder of the selected file and not
        * the current root folder.
        */
-      expect(capturedClipboardText).toMatch(/\/gallery\/1/);
+      expect(capturedClipboardText).toContain("/gallery/1");
     });
   });
 

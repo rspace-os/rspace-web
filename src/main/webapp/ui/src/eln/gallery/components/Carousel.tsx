@@ -485,9 +485,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             fontWeight: 500,
           }}
         >
-          {visibleIndex + 1}
-          {" / "}
-          {listing.totalHits}
+          {`${visibleIndex + 1} / ${listing.totalHits}`}
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup

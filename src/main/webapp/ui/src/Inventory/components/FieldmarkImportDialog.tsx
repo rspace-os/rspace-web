@@ -20,7 +20,7 @@ import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import i18n from "@/modules/common/i18n";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import Result from "@/util/result";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
@@ -485,9 +485,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                       <TransRichText
                         ns="inventory"
                         i18nKey="fieldmarkImport.igsnMessage"
-                        components={{
-                          a: richTextLink({ href: docLinks.IGSNIdentifiers }),
-                        }}
+                        values={{ link: docLinks.IGSNIdentifiers }}
                       />
                     </Typography>
                   )}

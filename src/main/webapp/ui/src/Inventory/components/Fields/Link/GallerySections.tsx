@@ -179,8 +179,7 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
                 {linked.readable.map((r) => (
                   <ListItem key={r.globalId} disableGutters sx={{ display: "list-item", py: 0 }}>
                     <GlobalIdLink globalId={r.globalId} />
-                    {": "}
-                    {r.name}
+                    {`: ${r.name}`}
                   </ListItem>
                 ))}
               </List>

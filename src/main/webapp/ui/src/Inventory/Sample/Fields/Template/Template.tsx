@@ -11,7 +11,7 @@ import Radio from "@mui/material/Radio";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -62,9 +62,7 @@ function Template(): React.ReactNode {
             <TransRichText
               ns="inventory"
               i18nKey="sample.fields.template.explanationNew"
-              components={{
-                a: richTextLink({ href: docLinks.createTemplate, target: "_blank", rel: "noreferrer" }),
-              }}
+              values={{ link: docLinks.createTemplate }}
             />
           ) : null
         }
@@ -100,9 +98,7 @@ function Template(): React.ReactNode {
             <TransRichText
               ns="inventory"
               i18nKey="sample.fields.template.explanationCreate"
-              components={{
-                a: richTextLink({ href: docLinks.createTemplate, target: "_blank", rel: "noreferrer" }),
-              }}
+              values={{ link: docLinks.createTemplate }}
             />
           ) : null
         }

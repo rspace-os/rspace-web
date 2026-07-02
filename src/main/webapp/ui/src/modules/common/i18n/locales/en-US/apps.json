@@ -47,7 +47,7 @@
         "unableToLoad": "Unable to load DMPs.",
         "unableToLoadProjects": "Unable to load projects."
       },
-      "forMoreInfo": "For more information <a>visit our docs</a>.",
+      "forMoreInfo": "For more information <a href=\"{link}\" rel=\"noreferrer\">visit our docs</a>.",
       "importButtonCount": "Import ({count})",
       "importDmpIntoGallery": "Import a DMP into the Gallery",
       "importDmpsIntoGallery": "Import DMPs into the Gallery",

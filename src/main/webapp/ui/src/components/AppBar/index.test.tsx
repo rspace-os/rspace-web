@@ -45,31 +45,31 @@ describe("App Bar", () => {
      * screen readers when we don't show the heading to all users.
      */
     test("On Workspace, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Workspace" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="workspace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("common:appBar.sections.workspace.title");
     });
 
     test("On Inventory, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Inventory" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="inventory" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("common:appBar.sections.inventory.title");
     });
 
     test("On Gallery, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Gallery" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="gallery" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("common:appBar.sections.gallery.title");
     });
 
     test("On System, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="System" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="system" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("common:appBar.sections.system.title");
     });
 
     test("On My RSpace, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="My RSpace" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="myRSpace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent("common:appBar.sections.myRSpace.title");
     });

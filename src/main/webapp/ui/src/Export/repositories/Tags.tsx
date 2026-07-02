@@ -8,7 +8,7 @@ import type React from "react";
 import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { color, currentPageKey } from "@/util/pageBranding";
 import docLinks from "../../assets/DocLinks";
 import InputWrapper from "../../components/Inputs/InputWrapper";
@@ -70,9 +70,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
             <TransRichText
               i18nKey="export.repositories.tags.helperText"
               ns="workspace"
-              components={{
-                a: richTextLink({ href: docLinks.controlledVocabularies, target: "_blank", rel: "noreferrer" }),
-              }}
+              values={{ link: docLinks.controlledVocabularies }}
             />
           </FormHelperText>
           {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (

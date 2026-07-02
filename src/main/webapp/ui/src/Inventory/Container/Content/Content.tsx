@@ -3,7 +3,7 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import SearchContext from "../../../stores/contexts/Search";
 import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
@@ -45,7 +45,7 @@ function ImageContainerZoomHelpText() {
       <TransRichText
         ns="inventory"
         i18nKey="container.content.zoom.panelAdjuster"
-        components={{ a: richTextLink({ href: docLinks.panelAdjuster, rel: "noreferrer", target: "_blank" }) }}
+        values={{ link: docLinks.panelAdjuster }}
       />
     </>
   );

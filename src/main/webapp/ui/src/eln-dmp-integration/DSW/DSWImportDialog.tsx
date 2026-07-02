@@ -15,7 +15,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
 import docLinks from "../../assets/DocLinks";
@@ -127,13 +127,7 @@ function DSWImportDialogContent({
               <>
                 {errorMsg}
                 <br />
-                <TransRichText
-                  ns="apps"
-                  i18nKey="dmpIntegrations.dialog.forMoreInfo"
-                  components={{
-                    a: richTextLink({ href: docLinks.dsw, rel: "noreferrer" }),
-                  }}
-                />
+                <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.forMoreInfo" values={{ link: docLinks.dsw }} />
               </>
             ),
             variant: "error",

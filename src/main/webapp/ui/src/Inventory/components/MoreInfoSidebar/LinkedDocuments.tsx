@@ -25,7 +25,7 @@ import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import NoValue from "../../../components/NoValue";
 import UserDetails from "../../../components/UserDetails";
-import TransRichText, { richTextLink } from "../../../modules/common/i18n/TransRichText";
+import TransRichText from "../../../modules/common/i18n/TransRichText";
 import type { GlobalId } from "../../../stores/definitions/BaseRecord";
 import type { Document, DocumentAttrs } from "../../../stores/definitions/Document";
 import type { Factory } from "../../../stores/definitions/Factory";
@@ -170,9 +170,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
                 <TransRichText
                   ns="inventory"
                   i18nKey="moreInfo.linkedDocumentsHelp.listOfMaterials"
-                  components={{
-                    a: richTextLink({ href: docLinks.listOfMaterials, rel: "noreferrer", target: "_blank" }),
-                  }}
+                  values={{ link: docLinks.listOfMaterials }}
                 />
               </Typography>
             </Box>

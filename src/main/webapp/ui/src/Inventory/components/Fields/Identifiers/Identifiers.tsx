@@ -21,7 +21,7 @@ import { observer } from "mobx-react-lite";
 import React, { type ComponentType, type ReactNode, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
 import docLinks from "../../../../assets/DocLinks";
@@ -259,9 +259,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
         <TransRichText
           ns="inventory"
           i18nKey="fields.identifiers.list.stateInfo.findable"
-          components={{
-            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
-          }}
+          values={{ link: identifierUrl || "" }}
         />
       );
     if (identifierState === "registered")
@@ -269,9 +267,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
         <TransRichText
           ns="inventory"
           i18nKey="fields.identifiers.list.stateInfo.registered"
-          components={{
-            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
-          }}
+          values={{ link: identifierUrl || "" }}
         />
       );
     throw new Error("Invalid state");
@@ -633,9 +629,7 @@ function Identifiers<
           <TransRichText
             ns="inventory"
             i18nKey="fields.identifiers.formField.explanation"
-            components={{
-              a: richTextLink({ href: docLinks.IGSNIdentifiers, target: "_blank", rel: "noreferrer" }),
-            }}
+            values={{ link: docLinks.IGSNIdentifiers }}
           />
         ) : null
       }

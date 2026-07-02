@@ -73,7 +73,7 @@ export default interface Resources {
           "unableToLoad": "Unable to load DMPs.",
           "unableToLoadProjects": "Unable to load projects."
         },
-        "forMoreInfo": "For more information <a>visit our docs</a>.",
+        "forMoreInfo": "For more information <a href=\"{link}\" rel=\"noreferrer\">visit our docs</a>.",
         "importButtonCount": "Import ({count})",
         "importDmpIntoGallery": "Import a DMP into the Gallery",
         "importDmpsIntoGallery": "Import DMPs into the Gallery",
@@ -1404,14 +1404,6 @@ export default interface Resources {
       "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
     },
     "loading": "Loading",
-    "pageBranding": {
-      "gallery": "Gallery",
-      "myRSpace": "My RSpace",
-      "other": "Other",
-      "system": "System",
-      "unknown": "Unknown",
-      "workspace": "Workspace"
-    },
     "profile": {
       "accountActivity": {
         "action": "Action",
@@ -1710,19 +1702,19 @@ export default interface Resources {
       },
       "locationLabel": "Location: {location}",
       "multipleSelection": {
-        "allItems": "All {count} {pluralName}",
-        "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <a href=\"/record/share/manage\">shared {pluralName} page</a>.",
-        "heading": "Adding shares to {count} {itemName}",
+        "allItems": "All {count} {itemType, select, snippet {snippets} other {documents}}",
+        "description": "Use the field above to add new shares. The share status of multiple {itemType, select, snippet {snippets} other {documents}} can be edited on the <a href=\"/record/share/manage\">shared {itemType, select, snippet {snippets} other {documents}} page</a>.",
+        "heading": "Adding shares to {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
         "newSharesHeading": "New shares to be added:",
-        "someItems": "{documentCount} of {totalCount} {itemName}"
+        "someItems": "{documentCount} of {totalCount} {itemType, select, snippet {snippets} other {documents}}"
       },
-      "noDirectShares": "This {singularName} is not directly shared with anyone.",
+      "noDirectShares": "This {itemType, select, snippet {snippet} other {document}} is not directly shared with anyone.",
       "notebookShares": {
         "heading": "As {docName} is shared into Notebooks, it is also shared with:",
         "inheritedPermissions": "Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to alter the notebook's permissions."
       },
       "optionDescriptions": {
-        "alreadyShared": "All of the {pluralName} have already been shared with {recipientName}",
+        "alreadyShared": "All of the {itemType, select, snippet {snippets} other {documents}} have already been shared with {recipientName}",
         "group": "{type} • {memberCount} members",
         "user": "User • {username} • {email}"
       },
@@ -1735,7 +1727,8 @@ export default interface Resources {
       },
       "selectSharedFolderLocation": "Select Shared Folder Location",
       "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
-      "titleMultiple": "Share {count} {pluralName}",
+      "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
+      "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
       "titleSingle": "Share <strong>{name}</strong>",
       "updatedSuccessfully": "Shares updated successfully."
     },
@@ -2658,7 +2651,7 @@ export default interface Resources {
         "zoom": {
           "ctrlTip": "Tip: Use Ctrl and the - key to zoom the page out to view more of the image.",
           "macTip": "Tip: Use Command and the - key to zoom the page out to view more of the image.",
-          "panelAdjuster": "The <a>Panel Adjuster</a> can also be used to provide more room to fully display the image."
+          "panelAdjuster": "The <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Panel Adjuster</a> can also be used to provide more room to fully display the image."
         }
       },
       "contextMenu": {
@@ -2719,7 +2712,7 @@ export default interface Resources {
           "alt": "The marked locations of {name}",
           "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
           "editLocations": "Edit Locations",
-          "explanation": "See the documentation for information on <a>choosing an image and marking locations</a>.",
+          "explanation": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">choosing an image and marking locations</a>.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
@@ -2933,7 +2926,7 @@ export default interface Resources {
         "loading": "Loading available IGSN ID fields...",
         "noIgsn": "Do not use IGSN IDs"
       },
-      "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a>DataCite IGSN ID integration</a> to be enabled.",
+      "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a href=\"{link}\">DataCite IGSN ID integration</a> to be enabled.",
       "importError": "Could not import notebook.",
       "importNotebook": {
         "message": "Importing notebook \"{name}\" from Fieldmark.",
@@ -2949,7 +2942,7 @@ export default interface Resources {
       "accessPermissions": {
         "addGroup": "Add group",
         "editFirst": "You need to be in Edit mode to edit permissions.",
-        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a>access permissions</a>, including under what circumstances some infomation may be more widely shared.",
+        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">access permissions</a>, including under what circumstances some infomation may be more widely shared.",
         "explicitAccess": {
           "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
           "title": "Explicit access list"
@@ -2987,7 +2980,7 @@ export default interface Resources {
           "unableToSetPreviewImage": "Unable to set preview image."
         },
         "formField": {
-          "explanation": "See the documentation for information on <a>adding attachments</a>."
+          "explanation": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding attachments</a>."
         },
         "linkGalleryItems": "Link to existing items in the Gallery.",
         "noDescription": "No description",
@@ -3046,7 +3039,7 @@ export default interface Resources {
           "description": "Description"
         },
         "formField": {
-          "addingBarcodes": "See the documentation for information on <a>adding barcodes</a>."
+          "addingBarcodes": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding barcodes</a>."
         },
         "noDescription": "No description",
         "printContents": {
@@ -3134,7 +3127,7 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <a>adding and publishing identifiers</a>."
+          "explanation": "See the Documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding and publishing identifiers</a>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",
@@ -3202,8 +3195,8 @@ export default interface Resources {
           "show": "Show",
           "stateInfo": {
             "draft": "This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.",
-            "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <a>RSpace landing page</a>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a>RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
+            "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">RSpace landing page</a>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
           },
           "toggleId": {
             "hide": "Hide identifier's details",
@@ -3989,7 +3982,7 @@ export default interface Resources {
       },
       "linkedDocumentsHelp": {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
-        "listOfMaterials": "Adding this item to a document's <a>List of Materials</a> will add an entry for the document in this panel."
+        "listOfMaterials": "Adding this item to a document's <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">List of Materials</a> will add an entry for the document in this panel."
       },
       "updateSamples": "Update Samples",
       "versionHistory": {
@@ -4054,7 +4047,7 @@ export default interface Resources {
     "permalinkNotFound": {
       "unversionedBody": "It may have been deleted, or you may not have permission to view it.",
       "unversionedTitle": "This {typeLabel} could not be found.",
-      "versionedBody": "The version may never have existed. <a>View the latest version</a>.",
+      "versionedBody": "The version may never have existed. <a href=\"{link}\">View the latest version</a>.",
       "versionedTitle": "Version {version} of this {typeLabel} could not be found."
     },
     "person": {
@@ -4101,7 +4094,7 @@ export default interface Resources {
         "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
         "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
         "labelPrinterHint": "Print one label per sticker (Zebra printer).",
-        "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a>documentation</a>.",
+        "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">documentation</a>.",
         "large": "Large",
         "printCopies": "Print Copies",
         "printLayout": "Print Layout",
@@ -4302,8 +4295,8 @@ export default interface Resources {
           "alertExpand": "Expand to select a template.",
           "alertSelect": "Select a template from the list below.",
           "couldNotFetchError": "Could not fetch template details.",
-          "explanationCreate": "See the documentation for information on <a>how to create custom templates</a>.",
-          "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a>(Learn more about sample templates)</a>",
+          "explanationCreate": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">how to create custom templates</a>.",
+          "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">(Learn more about sample templates)</a>",
           "label": "Sample Template",
           "noTemplate": "No template"
         },
@@ -5136,7 +5129,7 @@ export default interface Resources {
         },
         "tags": {
           "clearButton": "Clear Tags",
-          "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a>Tagging Documents and using Controlled Vocabularies</a>.",
+          "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Tagging Documents and using Controlled Vocabularies</a>.",
           "label": "Tags and Controlled Vocabulary Terms"
         },
         "user": {
@@ -5287,7 +5280,7 @@ export default interface Resources {
         "placeholder": "Select tag(s)"
       },
       "tags": {
-        "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a>Read more about creating, importing, and using Tags here.</a>",
+        "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Read more about creating, importing, and using Tags here.</a>",
         "getTagsError": "Could not get tags.",
         "invalidTags": "Some tags are invalid",
         "multipleErrors": "There are multiple errors.",

@@ -3,10 +3,8 @@ import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
-import NavigateContext from "../../stores/contexts/Navigate";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
 
 const TYPE_LABEL_KEYS = {
@@ -29,8 +27,6 @@ type PermalinkNotFoundArgs = {
  */
 function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
-  const { useNavigate } = useContext(NavigateContext);
-  const navigate = useNavigate();
   const latestUrl = `/inventory/${permalink.type}/${permalink.id}`;
   const typeLabel = t(TYPE_LABEL_KEYS[permalink.type]);
 
@@ -39,19 +35,7 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
       {permalink.version != null ? (
         <Alert severity="warning">
           <AlertTitle>{t("permalinkNotFound.versionedTitle", { typeLabel, version: permalink.version })}</AlertTitle>
-          <TransRichText
-            ns="inventory"
-            i18nKey="permalinkNotFound.versionedBody"
-            components={{
-              a: richTextLink({
-                href: latestUrl,
-                onClick: (e: React.MouseEvent) => {
-                  e.preventDefault();
-                  navigate(latestUrl);
-                },
-              }),
-            }}
-          />
+          <TransRichText ns="inventory" i18nKey="permalinkNotFound.versionedBody" values={{ link: latestUrl }} />
         </Alert>
       ) : (
         <Alert severity="warning">

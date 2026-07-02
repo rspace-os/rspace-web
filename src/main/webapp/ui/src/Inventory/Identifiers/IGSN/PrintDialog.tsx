@@ -15,7 +15,7 @@ import { observer } from "mobx-react-lite";
 import React, { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import { mkAlert } from "../../../stores/contexts/Alert";
@@ -117,9 +117,7 @@ export const PrintOptionsWrapper = ({ printOptions, setPrintOptions }: OptionsWr
               <TransRichText
                 ns="inventory"
                 i18nKey="print.options.labelShapeHint"
-                components={{
-                  a: richTextLink({ href: docLinks.barcodesPrinting, target: "_blank", rel: "noreferrer" }),
-                }}
+                values={{ link: docLinks.barcodesPrinting }}
               />
             </Alert>
           )}

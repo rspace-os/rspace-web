@@ -283,6 +283,23 @@ const OrcidIcon = () => (
     </g>
   </svg>
 );
+/**
+ * Stable, untranslated identifiers for the main tabbed sections of the
+ * product. Callers of the "page" variant pass one of these as `currentPage`
+ * to mark the active tab; the AppBar maps each key to its translated label
+ * (`appBar.sections.<key>.title`/`.subheader`).
+ */
+export type TabKey = "workspace" | "gallery" | "inventory" | "system" | "myRSpace";
+const TAB_KEYS: ReadonlyArray<TabKey> = ["workspace", "gallery", "inventory", "system", "myRSpace"];
+
+/**
+ * Gives editors autocomplete for the known `TabKey` literals while still
+ * accepting any other string (dialog titles, non-tab pages like "Apps").
+ * The `Record<never, never>` intersection preserves the literal suggestions
+ * that a bare `TabKey | string` would collapse away.
+ */
+type TabKeyHint = TabKey | (string & Record<never, never>);
+
 type GalleryAppBarArgs = {
   /**
    * The app bar is used across the top of the pages that consistitute most of
@@ -296,11 +313,14 @@ type GalleryAppBarArgs = {
    * The app bar is used across the product on whole pages and some dialogs. If
    * the variant is "page" then we provide a series of links for jumping
    * between the main parts of the product and if the `currentPage` is one of
-   * them then it is shown as active (e.g. "Gallery", "Inventory",
-   * "Workspace"). If the variant is "dialog" then `currentPage` is just used
-   * to show a heading.
+   * the stable tab keys (see {@link TabKey}, e.g. "gallery", "inventory",
+   * "workspace") then that tab is shown as active. The keys are deliberately
+   * not translated: they are stable identifiers that callers pass and that we
+   * compare against here; only the labels shown to the user are translated.
+   * If the variant is "dialog" then `currentPage` is just used to show a
+   * heading, so any (already-translated) string may be passed.
    */
-  currentPage: string;
+  currentPage: TabKeyHint;
 
   /**
    * Some pages have a sidebar that needs a toggle for opening and closing.
@@ -368,23 +388,24 @@ function GalleryAppBar({
       showMyLabGroups: false,
     });
 
-  const isTabbedPage = ["Workspace", "Gallery", "Inventory", "System", "My RSpace"].includes(currentPage);
+  const isTabbedPage = (TAB_KEYS as ReadonlyArray<string>).includes(currentPage);
 
   /*
-   * Translated title/subheader for each tabbed section, keyed by the page
-   * identifier passed in `currentPage`. The identifiers themselves stay in
-   * English because they are compared against `currentPage` to mark the active
-   * tab; only the displayed labels are translated.
+   * Translated title/subheader for each tabbed section, keyed by the stable
+   * tab key passed in `currentPage`. The keys themselves stay untranslated
+   * because they are compared against `currentPage` to mark the active tab;
+   * only the displayed labels are translated.
    */
-  const sectionLabels: Record<string, { title: string; subheader: string }> = {
-    Workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
-    Gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
-    Inventory: { title: t("appBar.sections.inventory.title"), subheader: t("appBar.sections.inventory.subheader") },
-    "My RSpace": { title: t("appBar.sections.myRSpace.title"), subheader: t("appBar.sections.myRSpace.subheader") },
-    System: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
+  const sectionLabels: Record<TabKey, { title: string; subheader: string }> = {
+    workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
+    gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
+    inventory: { title: t("appBar.sections.inventory.title"), subheader: t("appBar.sections.inventory.subheader") },
+    myRSpace: { title: t("appBar.sections.myRSpace.title"), subheader: t("appBar.sections.myRSpace.subheader") },
+    system: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
   };
 
-  const displayPage = (page: string): string => sectionLabels[page]?.title ?? page;
+  const displayPage = (page: string): string =>
+    (sectionLabels as Record<string, { title: string; subheader: string }>)[page]?.title ?? page;
 
   return (
     <I18nRoot namespaces={["common", "about"]}>
@@ -495,27 +516,27 @@ function GalleryAppBar({
               component="nav"
               aria-label={t("appBar.mainLinks")}
             >
-              <Link target="_self" aria-current={currentPage === "Workspace" ? "page" : false} href="/workspace">
-                {sectionLabels.Workspace.title}
+              <Link target="_self" aria-current={currentPage === "workspace" ? "page" : false} href="/workspace">
+                {sectionLabels.workspace.title}
               </Link>
-              <Link target="_self" aria-current={currentPage === "Gallery" ? "page" : false} href="/gallery">
-                {sectionLabels.Gallery.title}
+              <Link target="_self" aria-current={currentPage === "gallery" ? "page" : false} href="/gallery">
+                {sectionLabels.gallery.title}
               </Link>
               {showInventory && (
-                <Link target="_self" aria-current={currentPage === "Inventory" ? "page" : false} href="/inventory">
-                  {sectionLabels.Inventory.title}
+                <Link target="_self" aria-current={currentPage === "inventory" ? "page" : false} href="/inventory">
+                  {sectionLabels.inventory.title}
                 </Link>
               )}
               <Link
                 target="_self"
-                aria-current={currentPage === "My RSpace" ? "page" : false}
+                aria-current={currentPage === "myRSpace" ? "page" : false}
                 href={showMyLabGroups ? "/groups/viewPIGroup" : "/userform"}
               >
-                {sectionLabels["My RSpace"].title}
+                {sectionLabels.myRSpace.title}
               </Link>
               {showSystem && (
-                <Link target="_self" aria-current={currentPage === "System" ? "page" : false} href="/system">
-                  {sectionLabels.System.title}
+                <Link target="_self" aria-current={currentPage === "system" ? "page" : false} href="/system">
+                  {sectionLabels.system.title}
                 </Link>
               )}
             </Stack>
@@ -582,67 +603,67 @@ function GalleryAppBar({
                 }}
               >
                 <AccentMenuItem
-                  title={sectionLabels.Workspace.title}
+                  title={sectionLabels.workspace.title}
                   avatar={<NotebookIcon />}
-                  subheader={sectionLabels.Workspace.subheader}
+                  subheader={sectionLabels.workspace.subheader}
                   foregroundColor={WORKSPACE_COLOR.contrastText}
                   backgroundColor={WORKSPACE_COLOR.main}
                   onClick={() => {
                     window.location.href = "/workspace";
                     handleAppMenuClose();
                   }}
-                  current={currentPage === "Workspace" ? "page" : false}
+                  current={currentPage === "workspace" ? "page" : false}
                 />
                 <AccentMenuItem
-                  title={sectionLabels.Gallery.title}
+                  title={sectionLabels.gallery.title}
                   avatar={<FileIcon />}
-                  subheader={sectionLabels.Gallery.subheader}
+                  subheader={sectionLabels.gallery.subheader}
                   foregroundColor={GALLERY_COLOR.contrastText}
                   backgroundColor={GALLERY_COLOR.main}
                   onClick={() => {
                     window.location.href = "/gallery";
                     handleAppMenuClose();
                   }}
-                  current={currentPage === "Gallery" ? "page" : false}
+                  current={currentPage === "gallery" ? "page" : false}
                 />
                 {showInventory && (
                   <AccentMenuItem
-                    title={sectionLabels.Inventory.title}
+                    title={sectionLabels.inventory.title}
                     avatar={<FlaskIcon />}
-                    subheader={sectionLabels.Inventory.subheader}
+                    subheader={sectionLabels.inventory.subheader}
                     foregroundColor={INVENTORY_COLOR.contrastText}
                     backgroundColor={INVENTORY_COLOR.main}
                     onClick={() => {
                       window.location.href = "/inventory";
                       handleAppMenuClose();
                     }}
-                    current={currentPage === "Inventory" ? "page" : false}
+                    current={currentPage === "inventory" ? "page" : false}
                   />
                 )}
                 <AccentMenuItem
-                  title={sectionLabels["My RSpace"].title}
+                  title={sectionLabels.myRSpace.title}
                   avatar={<ProfileIcon />}
-                  subheader={sectionLabels["My RSpace"].subheader}
+                  subheader={sectionLabels.myRSpace.subheader}
                   foregroundColor={OTHER_COLOR.contrastText}
                   backgroundColor={OTHER_COLOR.main}
                   onClick={() => {
                     window.location.href = showMyLabGroups ? "/groups/viewPIGroup" : "/userform";
                     setAccountMenuAnchorEl(null);
                   }}
-                  current={currentPage === "My RSpace" ? "page" : false}
+                  current={currentPage === "myRSpace" ? "page" : false}
                 />
                 {showSystem && (
                   <AccentMenuItem
-                    title={sectionLabels.System.title}
+                    title={sectionLabels.system.title}
                     avatar={<SystemIcon />}
-                    subheader={sectionLabels.System.subheader}
+                    subheader={sectionLabels.system.subheader}
                     foregroundColor={SYSADMIN_COLOR.contrastText}
                     backgroundColor={SYSADMIN_COLOR.main}
                     onClick={() => {
                       window.location.href = "/system";
                       handleAppMenuClose();
                     }}
-                    current={currentPage === "System" ? "page" : false}
+                    current={currentPage === "system" ? "page" : false}
                   />
                 )}
               </Menu>

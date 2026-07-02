@@ -189,7 +189,7 @@ const WholePage = ({
                   <Stack sx={{ height: "100%" }}>
                     <AppBar
                       variant="page"
-                      currentPage="Gallery"
+                      currentPage="gallery"
                       sidebarToggle={
                         <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                       }

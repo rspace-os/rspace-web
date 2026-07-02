@@ -14,7 +14,7 @@ import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
 import docLinks from "../../assets/DocLinks";
@@ -103,9 +103,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                   <TransRichText
                     ns="apps"
                     i18nKey="dmpIntegrations.dialog.forMoreInfo"
-                    components={{
-                      a: richTextLink({ href: docLinks.dmptoolImportingDmps, rel: "noreferrer" }),
-                    }}
+                    values={{ link: docLinks.dmptoolImportingDmps }}
                   />
                 ),
                 variant: "error",

@@ -228,7 +228,7 @@
       },
       "tags": {
         "clearButton": "Clear Tags",
-        "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a>Tagging Documents and using Controlled Vocabularies</a>.",
+        "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Tagging Documents and using Controlled Vocabularies</a>.",
         "label": "Tags and Controlled Vocabulary Terms"
       },
       "user": {
@@ -376,7 +376,7 @@
       "searchPlaceholder": "Search"
     },
     "tags": {
-      "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a>Read more about creating, importing, and using Tags here.</a>",
+      "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Read more about creating, importing, and using Tags here.</a>",
       "getTagsError": "Could not get tags.",
       "invalidTags": "Some tags are invalid",
       "multipleErrors": "There are multiple errors.",

@@ -1,14 +1,12 @@
-import Link, { type LinkProps } from "@mui/material/Link";
+import Link from "@mui/material/Link";
 import type React from "react";
 import { createContext, createElement, useContext } from "react";
 import { Trans } from "react-i18next";
 
 export type RichTextComponents = Record<string, React.ReactElement>;
 
-export const richTextLink = (props: LinkProps = {}): React.ReactElement => createElement(Link, props);
-
 const muiRichTextComponents: RichTextComponents = {
-  a: richTextLink(),
+  a: createElement(Link),
   br: <br />,
   code: <code />,
   strong: <strong />,

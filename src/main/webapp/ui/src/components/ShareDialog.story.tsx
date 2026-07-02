@@ -56,15 +56,7 @@ export function SharedSnippetWithAGroup() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD3"]}
-              names={["Another shared snippet"]}
-              singularName="snippet"
-              pluralName="snippets"
-              isSnippet
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared snippet"]} isSnippet />
           </DialogBoundary>
         </Alerts>
       </Portal>

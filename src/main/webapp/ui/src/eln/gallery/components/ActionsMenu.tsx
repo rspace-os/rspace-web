@@ -855,8 +855,6 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                   }}
                   globalIds={globalIds}
                   names={names}
-                  singularName="snippet"
-                  pluralName="snippets"
                   isSnippet={selection.asSet().some((f) => f.isSnippet)}
                 />
               ))

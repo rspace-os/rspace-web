@@ -359,14 +359,6 @@
     "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
   },
   "loading": "Loading",
-  "pageBranding": {
-    "gallery": "Gallery",
-    "myRSpace": "My RSpace",
-    "other": "Other",
-    "system": "System",
-    "unknown": "Unknown",
-    "workspace": "Workspace"
-  },
   "profile": {
     "accountActivity": {
       "action": "Action",
@@ -665,19 +657,19 @@
     },
     "locationLabel": "Location: {location}",
     "multipleSelection": {
-      "allItems": "All {count} {pluralName}",
-      "description": "Use the field above to add new shares. The share status of multiple {pluralName} can be edited on the <a href=\"/record/share/manage\">shared {pluralName} page</a>.",
-      "heading": "Adding shares to {count} {itemName}",
+      "allItems": "All {count} {itemType, select, snippet {snippets} other {documents}}",
+      "description": "Use the field above to add new shares. The share status of multiple {itemType, select, snippet {snippets} other {documents}} can be edited on the <a href=\"/record/share/manage\">shared {itemType, select, snippet {snippets} other {documents}} page</a>.",
+      "heading": "Adding shares to {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
       "newSharesHeading": "New shares to be added:",
-      "someItems": "{documentCount} of {totalCount} {itemName}"
+      "someItems": "{documentCount} of {totalCount} {itemType, select, snippet {snippets} other {documents}}"
     },
-    "noDirectShares": "This {singularName} is not directly shared with anyone.",
+    "noDirectShares": "This {itemType, select, snippet {snippet} other {document}} is not directly shared with anyone.",
     "notebookShares": {
       "heading": "As {docName} is shared into Notebooks, it is also shared with:",
       "inheritedPermissions": "Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to alter the notebook's permissions."
     },
     "optionDescriptions": {
-      "alreadyShared": "All of the {pluralName} have already been shared with {recipientName}",
+      "alreadyShared": "All of the {itemType, select, snippet {snippets} other {documents}} have already been shared with {recipientName}",
       "group": "{type} • {memberCount} members",
       "user": "User • {username} • {email}"
     },
@@ -690,7 +682,8 @@
     "permissionSelectLabel": "Set permission for sharing with {recipientName}",
     "selectSharedFolderLocation": "Select Shared Folder Location",
     "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
-    "titleMultiple": "Share {count} {pluralName}",
+    "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
+    "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
     "titleSingle": "Share <strong>{name}</strong>",
     "updatedSuccessfully": "Shares updated successfully."
   },

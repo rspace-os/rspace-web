@@ -16,7 +16,7 @@ import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import BigIconButton from "../../../../components/BigIconButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
@@ -264,9 +264,7 @@ function Attachments<
           <TransRichText
             ns="inventory"
             i18nKey="fields.attachments.formField.explanation"
-            components={{
-              a: richTextLink({ href: docLinks.attachments, target: "_blank", rel: "noreferrer" }),
-            }}
+            values={{ link: docLinks.attachments }}
           />
         ) : null
       }

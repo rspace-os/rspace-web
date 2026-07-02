@@ -90,8 +90,6 @@ export type ShareDialogProps = {
   open: boolean;
   onClose: () => void;
   names: ReadonlyArray<DocumentName>;
-  singularName?: string;
-  pluralName?: string;
   isSnippet?: boolean;
 };
 
@@ -143,16 +141,15 @@ function ShareDialogFromGlobalEvent(): React.ReactNode {
   return <ShareDialog open={open} onClose={onClose} globalIds={globalIds} names={names} />;
 }
 
-export function ShareDialog({
-  open,
-  onClose,
-  globalIds,
-  names,
-  singularName = "document",
-  pluralName = "documents",
-  isSnippet = false,
-}: ShareDialogProps) {
+export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false }: ShareDialogProps) {
   const { t } = useTranslation("common");
+  /*
+   * The noun for the shared items ("document" vs "snippet") is selected inside
+   * each ICU message via `itemType`, so every locale supplies its own
+   * correctly-declined and pluralised noun. It is derived from `isSnippet`
+   * rather than passed as a separate prop.
+   */
+  const itemType = isSnippet ? "snippet" : "document";
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -592,7 +589,7 @@ export function ShareDialog({
         {names.length === 1 ? (
           <TransRichText ns="common" i18nKey="shareDialog.titleSingle" values={{ name: names[0] }} />
         ) : (
-          t("shareDialog.titleMultiple", { count: names.length, pluralName })
+          t("shareDialog.titleMultiple", { count: names.length, itemType })
         )}
       </DialogTitle>
       <DialogContent>
@@ -705,7 +702,7 @@ export function ShareDialog({
                     <Typography variant="caption" color="text.secondary">
                       {option.isDisabled
                         ? t("shareDialog.optionDescriptions.alreadyShared", {
-                            pluralName,
+                            itemType,
                             recipientName:
                               option.optionType === "GROUP" ? option.name : `${option.firstName} ${option.lastName}`,
                           })
@@ -779,7 +776,7 @@ export function ShareDialog({
                 <Stack spacing={3}>
                   {(() => {
                     const globalId = globalIds[0];
-                    const docName = names[0] || `this ${singularName}`;
+                    const docName = names[0] || t("shareDialog.thisItem", { itemType });
                     const directShares = shareData.get(globalId)?.directShares ?? [];
                     const notebookShares = shareData.get(globalId)?.notebookShares ?? [];
                     const docNewShares = newShares.get(globalId) ?? [];
@@ -789,7 +786,7 @@ export function ShareDialog({
                         <Stack spacing={3}>
                           {allDirectShares.length === 0 ? (
                             <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                              {t("shareDialog.noDirectShares", { singularName })}
+                              {t("shareDialog.noDirectShares", { itemType })}
                             </Typography>
                           ) : (
                             <TableContainer component={Paper} variant="outlined">
@@ -1069,14 +1066,14 @@ export function ShareDialog({
                 <Typography variant="h3" gutterBottom>
                   {t("shareDialog.multipleSelection.heading", {
                     count: globalIds.length,
-                    itemName: globalIds.length === 1 ? singularName : pluralName,
+                    itemType,
                   })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   <TransRichText
                     ns="common"
                     i18nKey="shareDialog.multipleSelection.description"
-                    values={{ pluralName }}
+                    values={{ itemType }}
                   />
                 </Typography>
                 {newShares.size > 0 && (
@@ -1131,12 +1128,12 @@ export function ShareDialog({
                                 {documentCount === globalIds.length
                                   ? t("shareDialog.multipleSelection.allItems", {
                                       count: globalIds.length,
-                                      pluralName,
+                                      itemType,
                                     })
                                   : t("shareDialog.multipleSelection.someItems", {
                                       documentCount,
                                       totalCount: globalIds.length,
-                                      itemName: globalIds.length === 1 ? singularName : pluralName,
+                                      itemType,
                                     })}
                               </Typography>
                               {share.recipientType === "GROUP" && (

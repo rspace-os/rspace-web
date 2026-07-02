@@ -7,7 +7,7 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import ChooseToEdit from "../../../../components/Inputs/ChooseToEdit";
 import FormControl from "../../../../components/Inputs/FormControl";
@@ -70,9 +70,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
             <TransRichText
               ns="inventory"
               i18nKey="fields.accessPermissions.explanation"
-              components={{
-                a: richTextLink({ href: docLinks.permissions, target: "_blank", rel: "noreferrer" }),
-              }}
+              values={{ link: docLinks.permissions }}
             />
             <br />
             <p>{additionalExplanation}</p>
