@@ -15,6 +15,13 @@
       that Jetty/Tomcat reject ("Ambiguous URI empty segment").
     -->
 
+    <!-- Decorate error responses too, matching SiteMesh 2 / PageFilter. Without this, SiteMesh 3
+         stops buffering as soon as a response sets a non-200 status, so Spring MVC error views
+         rendered inline with an error status (e.g. the access-denied "error" view from
+         ControllerExceptionHandler) come back undecorated. Does not affect the container
+         403/404 pages, which are ERROR-dispatched and no longer routed through this filter. -->
+    <include-error-pages>true</include-error-pages>
+
     <!-- Paths that must never be decorated (evaluated before the decorator mappings below). -->
     <mapping path="*/ajax/*" exclude="true"/>
     <mapping path="/scripts/**" exclude="true"/>
