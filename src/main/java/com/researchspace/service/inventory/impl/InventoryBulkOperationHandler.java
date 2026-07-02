@@ -123,8 +123,7 @@ public class InventoryBulkOperationHandler {
           }
           ApiInventoryRecordInfo operationResult = operation.apply(recInfo, user);
           if (operationResult != null) {
-            if (operationResult.getClass().isInstance(ApiSample.class)) {
-              ApiSample apiSample = (ApiSample) operationResult;
+            if (operationResult instanceof ApiSample apiSample) {
               if (!apiSample.getCanBeDeleted()) {
                 ApiError err =
                     new ApiError(
