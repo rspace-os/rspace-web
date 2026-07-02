@@ -114,80 +114,69 @@ paths:
                     $ref: "#/components/schemas/DocumentInfoList"
                   _links:
                     $ref: "#/components/schemas/LinkItemList"
-            totalHits:
-              examples:
-                response:
-                  value: 10
-            pageNumber:
-              examples:
-                response:
-                  value: 2
-            documents:
-              examples:
-                response:
-                  value:
-                    - id: 1242
-                      globalId: SD1242
-                      name: Entry 3
-                      created: 2016-12-07T13:07:57.000Z
-                      lastModified: 2016-12-07T13:07:56.668Z
-                      parentFolderId: 1221
-                      signed: false
-                      tags: null
-                      form:
-                        id: 589826
-                        globalId: FM589826
-                        name: Basic Document
-                        stableId: 1481116074543null
-                        version: 0
-                      owner:
-                        id: 950272
-                        username: mattk
-                        email: mattk@myrspace.com
-                        firstName: Matt
-                        lastName: K
-                        homeFolderId: 23456
-                      _links:
-                        - link: https://myrspace.com/api/v1/documents/1242
-                          rel: self
-                    - id: 1241
-                      globalId: SD1241
-                      name: Entry 2
-                      created: 2016-12-07T13:07:57.000Z
-                      lastModified: 2016-12-07T13:07:56.666Z
-                      parentFolderId: 1221
-                      signed: false
-                      tags: null
-                      form:
-                        id: 589826
-                        globalId: FM589826
-                        name: Basic Document
-                        stableId: 1481116074543null
-                        version: 0
-                      owner:
-                        id: 950272
-                        username: mattk
-                        email: mattk@myrspace.com
-                        firstName: Matt
-                        lastName: K
-                        homeFolderId: 23456
-                      _links:
-                        - link: https://myrspace.com/api/v1/documents/1241
-                          rel: self
-            _links:
-              examples:
-                response:
-                  value:
-                    - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=1
-                      rel: prev
-                    - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=0
-                      rel: first
-                    - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=3
-                      rel: next
-                    - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=4
-                      rel: last
-                    - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=2
-                      rel: self
+              example:
+                totalHits: 10
+                pageNumber: 2
+                documents:
+                  - id: 1242
+                    globalId: SD1242
+                    name: Entry 3
+                    created: 2016-12-07T13:07:57.000Z
+                    lastModified: 2016-12-07T13:07:56.668Z
+                    parentFolderId: 1221
+                    signed: false
+                    tags: null
+                    form:
+                      id: 589826
+                      globalId: FM589826
+                      name: Basic Document
+                      stableId: 1481116074543null
+                      version: 0
+                    owner:
+                      id: 950272
+                      username: mattk
+                      email: mattk@myrspace.com
+                      firstName: Matt
+                      lastName: K
+                      homeFolderId: 23456
+                    _links:
+                      - link: https://myrspace.com/api/v1/documents/1242
+                        rel: self
+                  - id: 1241
+                    globalId: SD1241
+                    name: Entry 2
+                    created: 2016-12-07T13:07:57.000Z
+                    lastModified: 2016-12-07T13:07:56.666Z
+                    parentFolderId: 1221
+                    signed: false
+                    tags: null
+                    form:
+                      id: 589826
+                      globalId: FM589826
+                      name: Basic Document
+                      stableId: 1481116074543null
+                      version: 0
+                    owner:
+                      id: 950272
+                      username: mattk
+                      email: mattk@myrspace.com
+                      firstName: Matt
+                      lastName: K
+                      homeFolderId: 23456
+                    _links:
+                      - link: https://myrspace.com/api/v1/documents/1241
+                        rel: self
+                _links:
+                  - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=1
+                    rel: prev
+                  - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=0
+                    rel: first
+                  - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=3
+                    rel: next
+                  - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=4
+                    rel: last
+                  - link: https://myrspace.com/api/v1/documents?pageSize=2&pageNumber=2
+                    rel: self
         "422":
           $ref: "#/components/responses/UnprocessableQuery"
         "429":
@@ -659,44 +648,33 @@ paths:
                     $ref: "#/components/schemas/FormList"
                   _links:
                     $ref: "#/components/schemas/LinkItemList"
-            totalHits:
-              examples:
-                response:
-                  value: 1
-            pageNumber:
-              examples:
-                response:
-                  value: 0
-            forms:
-              examples:
-                response:
-                  value:
-                    - id: 1
-                      globalId: FM1
-                      stableId: abcde12345
-                      version: 22
-                      name: Freshwater Algal sample
-                      tags: algae,grant1234
-                      publishingState: PUBLISHED
-                      accessControl:
-                        ownerPermissionType: WRITE
-                        groupPermissionType: NONE
-                    - id: 2
-                      globalId: FM2
-                      stableId: fgdehd2345
-                      version: 2
-                      name: Marine Algal sample
-                      tags: algae,grant234
-                      publishingState: PUBLISHED
-                      accessControl:
-                        ownerPermissionType: WRITE
-                        groupPermissionType: READ
-            _links:
-              examples:
-                response:
-                  value:
-                    - link: https://myrspace.com/api/v1/forms?query=Algal sample
-                      rel: self
+              example:
+                totalHits: 1
+                pageNumber: 0
+                forms:
+                  - id: 1
+                    globalId: FM1
+                    stableId: abcde12345
+                    version: 22
+                    name: Freshwater Algal sample
+                    tags: algae,grant1234
+                    publishingState: PUBLISHED
+                    accessControl:
+                      ownerPermissionType: WRITE
+                      groupPermissionType: NONE
+                  - id: 2
+                    globalId: FM2
+                    stableId: fgdehd2345
+                    version: 2
+                    name: Marine Algal sample
+                    tags: algae,grant234
+                    publishingState: PUBLISHED
+                    accessControl:
+                      ownerPermissionType: WRITE
+                      groupPermissionType: READ
+                _links:
+                  - link: https://myrspace.com/api/v1/forms?query=Algal sample
+                    rel: self
     post:
       summary: Create a new Form
       description: >
@@ -1170,60 +1148,49 @@ paths:
                     $ref: "#/components/schemas/FileList"
                   _links:
                     $ref: "#/components/schemas/LinkItemList"
-            totalHits:
-              examples:
-                response:
-                  value: 3
-            pageNumber:
-              examples:
-                response:
-                  value: 0
-            files:
-              examples:
-                response:
-                  value:
-                    - id: 1246
-                      globalId: GL1246
-                      name: lemmings.gif
-                      caption: TexasRed/Hoechst/FITC
-                      contentType: image/gif
-                      created: 2016-12-07T13:07:57.000Z
-                      size: 7348
-                      _links:
-                        - link: https://myrspace.com/api/v1/files/1246
-                          rel: self
-                        - link: https://myrspace.com/api/v1/files/1246/file
-                          rel: enclosure
-                    - id: 1245
-                      globalId: GL1245
-                      name: anaphase.jpg
-                      caption: TexasRed/Hoechst/FITC
-                      contentType: image/jpeg
-                      created: 2016-11-07T13:07:57.000Z
-                      size: 14426
-                      _links:
-                        - link: https://myrspace.com/api/v1/files/1245
-                          rel: self
-                        - link: https://myrspace.com/api/v1/files/1245/file
-                          rel: enclosure
-                    - id: 1231
-                      globalId: GL1231
-                      name: Picture1.png
-                      caption: test image uploaded from mobile.
-                      contentType: image/x-png
-                      created: 2017-12-05T13:07:57.000Z
-                      size: 40721
-                      _links:
-                        - link: https://myrspace.com/api/v1/files/1231
-                          rel: self
-                        - link: https://myrspace.com/api/v1/files/1231/file
-                          rel: enclosure
-            _links:
-              examples:
-                response:
-                  value:
-                    - link: https://myrspace.com/api/v1/files?pageNumber=0&mediaType=image
-                      rel: self
+              example:
+                totalHits: 3
+                pageNumber: 0
+                files:
+                  - id: 1246
+                    globalId: GL1246
+                    name: lemmings.gif
+                    caption: TexasRed/Hoechst/FITC
+                    contentType: image/gif
+                    created: 2016-12-07T13:07:57.000Z
+                    size: 7348
+                    _links:
+                      - link: https://myrspace.com/api/v1/files/1246
+                        rel: self
+                      - link: https://myrspace.com/api/v1/files/1246/file
+                        rel: enclosure
+                  - id: 1245
+                    globalId: GL1245
+                    name: anaphase.jpg
+                    caption: TexasRed/Hoechst/FITC
+                    contentType: image/jpeg
+                    created: 2016-11-07T13:07:57.000Z
+                    size: 14426
+                    _links:
+                      - link: https://myrspace.com/api/v1/files/1245
+                        rel: self
+                      - link: https://myrspace.com/api/v1/files/1245/file
+                        rel: enclosure
+                  - id: 1231
+                    globalId: GL1231
+                    name: Picture1.png
+                    caption: test image uploaded from mobile.
+                    contentType: image/x-png
+                    created: 2017-12-05T13:07:57.000Z
+                    size: 40721
+                    _links:
+                      - link: https://myrspace.com/api/v1/files/1231
+                        rel: self
+                      - link: https://myrspace.com/api/v1/files/1231/file
+                        rel: enclosure
+                _links:
+                  - link: https://myrspace.com/api/v1/files?pageNumber=0&mediaType=image
+                    rel: self
     post:
       summary: Create a new file in the Gallery
       description: >

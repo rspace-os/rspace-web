@@ -1,5 +1,4 @@
 import Box from "@mui/material/Box";
-import { pick } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +29,8 @@ function PreviewImage(): React.ReactNode {
   } | null>(null);
   const resizeObserver = useRef(
     new ResizeObserver((entries) => {
-      setImageDimensions(pick(entries[0].target.getBoundingClientRect(), ["width", "height"]));
+      const { width, height } = entries[0].target.getBoundingClientRect();
+      setImageDimensions({ width, height });
     }),
   );
   const imgRef = useRef<HTMLImageElement | null>(null);
@@ -97,7 +97,7 @@ function PreviewImage(): React.ReactNode {
         <Box
           component="img"
           src={container.locationsImage || undefined}
-          alt={t("container.content.previewAlt")}
+          alt={t("container.content.previewAlt", { name: container.name })}
           sx={{
             width: "auto",
             height: "auto",

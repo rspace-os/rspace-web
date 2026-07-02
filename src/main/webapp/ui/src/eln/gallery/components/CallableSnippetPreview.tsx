@@ -60,7 +60,14 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
       >
         {children}
       </SnippetPreviewContext.Provider>
-      <Dialog open={snippetFile !== null} fullWidth maxWidth="md" onClose={() => setSnippetFile(null)}>
+      {/* Match the PDF preview: 2000 keeps it above the raised picker layers and legacy jQuery dialogs. */}
+      <Dialog
+        open={snippetFile !== null}
+        fullWidth
+        maxWidth="md"
+        onClose={() => setSnippetFile(null)}
+        sx={{ zIndex: 2000 }}
+      >
         <DialogTitle>{t("snippetPreview.title", { name: snippetFile?.name })}</DialogTitle>
         <DialogContent dividers>
           {loading ? (

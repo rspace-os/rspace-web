@@ -550,6 +550,7 @@
         "connectError": "Could not connect to OMERO",
         "connectSuccess": "Successfully connected to OMERO."
       },
+      "credentialsFormLabel": "OMERO credentials",
       "description": "View, manage, and share your microscopy image data with an extensible central repository.",
       "fields": {
         "password": "Password",

@@ -78,13 +78,11 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
               <li>{t("integrations.omero.setup.toolbar")}</li>
             </ol>
             <form
+              aria-label={t("integrations.omero.credentialsFormLabel")}
               action="/apps/omero/connect"
               method="POST"
-              onSubmit={(event) => {
-                const popupName = `rspace-omero-connect-${Date.now()}`;
-                window.open("about:blank", popupName, "noopener,noreferrer");
-                event.currentTarget.target = popupName;
-              }}
+              target="_blank"
+              rel="noopener"
             >
               <Stack spacing={1}>
                 <TextField
