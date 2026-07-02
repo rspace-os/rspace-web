@@ -31,7 +31,6 @@
     "jasmine-core": "^3.5.0",
     "jasmine-jquery": "^2.1.1",
     "font-awesome": "fontawesome#^4.7.0",
-    "slick-carousel": "slick.js#^1.6.0",
     "select2": "~4.0",
     "mathjs": "^3.17.0",
     "jquery.scrollTo": "^2.1.2",
