@@ -9,6 +9,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import React, { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import UserDetails from "@/components/UserDetails";
 import { stripDiacritics } from "@/util/StringUtils";
 
@@ -29,6 +30,7 @@ type UserListProps = {
 };
 
 export default function UserList({ listTitle, onSelect, selected, users }: UserListProps) {
+  const { t } = useTranslation("groups");
   const [searchTerm, setSearchTerm] = React.useState("");
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +98,7 @@ export default function UserList({ listTitle, onSelect, selected, users }: UserL
       <TextField
         variant="standard"
         fullWidth
-        label="Search..."
+        label={t("userBox.search")}
         margin="dense"
         value={searchTerm}
         onChange={handleSearch}
@@ -107,7 +109,7 @@ export default function UserList({ listTitle, onSelect, selected, users }: UserL
       />
       {visibleUsers.length === 0 && (
         <Box sx={{ color: "grey" }} data-test-id={`${listTitleId}-empty`}>
-          No users found
+          {t("userBox.noUsersFound")}
         </Box>
       )}
       {visibleUsers.length > 0 && (

@@ -30,7 +30,7 @@ function AdjustableCell<T extends AdjustableTableRowLabel>({
 
   const cellContent: CellContent = selectedContent;
   if (cellContent.renderOption === "node") {
-    content = cellContent.data ?? <>&mdash;</>;
+    content = cellContent.data ?? "—";
   } else if (cellContent.renderOption === "name") {
     content = <RecordLink record={cellContent.data} overflow />;
   } else if (cellContent.renderOption === "globalId") {

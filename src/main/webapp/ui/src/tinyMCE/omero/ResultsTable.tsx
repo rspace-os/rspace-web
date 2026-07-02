@@ -8,6 +8,7 @@ import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import React, { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
 import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
@@ -141,6 +142,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     },
     ref,
   ) => {
+    const { t } = useTranslation("apps");
     const renderWells = (
       wells:
         | OmeroItem["imageGridDetails"][number][number][number]
@@ -199,7 +201,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
       <>
         <TableContainer sx={{ mb: "40px" }} ref={ref}>
           <Table
-            aria-label="item search results"
+            aria-label={t("tinyMce.omero.itemSearchResultsLabel")}
             sx={{
               display: "table",
               overflowX: "auto",
@@ -314,7 +316,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                     id={`${item.type}_details_fetched_${item.id}`}
                                     sx={{ fontWeight: "bold" }}
                                   >
-                                    details fetched
+                                    {t("tinyMce.omero.detailsFetched")}
                                   </Box>
                                 ) : (
                                   <a
@@ -326,7 +328,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       item.fetched = true;
                                     }}
                                   >
-                                    {item.type === "image" ? "re-draw image" : "fetch details"}
+                                    {item.type === "image"
+                                      ? t("tinyMce.omero.redrawImage")
+                                      : t("tinyMce.omero.fetchDetails")}
                                   </a>
                                 )}
                                 {item.gridShown ? (
@@ -338,7 +342,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       hideChildren(item, true);
                                     }}
                                   >
-                                    hide image grid{" "}
+                                    {t("tinyMce.omero.hideImageGrid")}{" "}
                                     {item.samplesUrls && item.samplesUrls.length > 1 ? " (there are other fields)" : ""}
                                   </a>
                                 ) : item.type === "plateAcquisition" ? (
@@ -357,7 +361,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                             data-testid={`${item.type}_show_grid_${item.id}`}
                                             sx={{ fontWeight: "bold" }}
                                           >
-                                            show grid of wells for field {pos + 1}
+                                            {t("tinyMce.omero.showGridOfWellsForField", { field: pos + 1 })}
                                           </Box>
                                         </a>
                                       </div>
@@ -377,7 +381,8 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         data-testid={`${item.type}_show_grid_${item.id}`}
                                         sx={{ fontWeight: "bold" }}
                                       >
-                                        show image grid {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
+                                        {t("tinyMce.omero.showImageGrid")}
+                                        {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
                                       </Box>
                                     </a>
                                   </div>
@@ -400,7 +405,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         color="primary"
                                         slotProps={{
                                           input: {
-                                            "aria-label": "get large thumbnail",
+                                            "aria-label": t("tinyMce.omero.getLargeThumbnailLabel"),
                                           },
                                         }}
                                       />
@@ -413,7 +418,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         },
                                       },
                                     }}
-                                    label={`large thumbnail`}
+                                    label={t("tinyMce.omero.largeThumbnail")}
                                   />
                                 )}
                               </div>
@@ -424,7 +429,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   href={getLinkToOmero(item, omero_web_url)}
                                   rel="noreferrer"
                                 >
-                                  see in omero
+                                  {t("tinyMce.omero.seeInOmero")}
                                 </a>
                               </div>
                               <div id={`${item.type}_fetch_children_${item.id}`}>
@@ -489,7 +494,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
           }}
         >
           <Typography component="span" variant="body2" color="textPrimary">
-            Selected: {selectedItemIds.length}
+            {t("tinyMce.omero.selectedCount", { count: selectedItemIds.length })}
           </Typography>
         </Box>
       </>

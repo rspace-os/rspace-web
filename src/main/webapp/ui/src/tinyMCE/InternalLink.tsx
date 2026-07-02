@@ -16,8 +16,10 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import type { InternalLinkInsertParams, RevisionIdentifier, TinyMceEditor } from "@/tinyMCE/types";
 import EnhancedTableHead, { type Cell } from "../components/EnhancedTableHead";
 import UserDetails from "../components/UserDetails";
@@ -72,33 +74,6 @@ declare global {
   }
 }
 const LATEST_REVISION_SELECTION = "__latest__" as const;
-const LATEST_REVISION_LABEL = "Always automatically update link to latest version";
-const headCells: Array<Cell<RevisionSortKey>> = [
-  {
-    id: "version",
-    numeric: true,
-    disablePadding: false,
-    label: "Version",
-  },
-  {
-    id: "name",
-    numeric: false,
-    disablePadding: false,
-    label: "Name",
-  },
-  {
-    id: "ownerFullName",
-    numeric: false,
-    disablePadding: false,
-    label: "Modified by",
-  },
-  {
-    id: "modificationDate",
-    numeric: false,
-    disablePadding: false,
-    label: "Modified",
-  },
-];
 function matchesVersion(left: RevisionVersion | null | undefined, right: RevisionVersion | null | undefined): boolean {
   return left != null && right != null && String(left) === String(right);
 }
@@ -133,6 +108,24 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
   const [selected, setSelected] = React.useState<RevisionSelection | null>(null);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const { t } = useTranslation(["apps", "common"]);
+  const LATEST_REVISION_LABEL = t("tinyMce.internalLink.alwaysLatest");
+  const headCells: Array<Cell<RevisionSortKey>> = [
+    { id: "version", numeric: true, disablePadding: false, label: t("tinyMce.internalLink.columns.version") },
+    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.internalLink.columns.name") },
+    {
+      id: "ownerFullName",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.internalLink.columns.modifiedBy"),
+    },
+    {
+      id: "modificationDate",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinyMce.internalLink.columns.modified"),
+    },
+  ];
   const handleClose = (): void => {
     setOpen(false);
   };
@@ -207,15 +200,17 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
   }, [props.id, props.version]);
   return (
     <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" fullWidth={true} maxWidth="lg">
-      <DialogTitle id="form-dialog-title">Internal link version options</DialogTitle>
+      <DialogTitle id="form-dialog-title">{t("tinyMce.internalLink.dialogTitle")}</DialogTitle>
       <DialogContent>
         <Toolbar sx={{ pl: 2, pr: 1 }}>
           <Typography sx={{ flex: "1 1 100%" }} color="inherit" variant="subtitle1">
-            The link currently points at {props.version ? `version ${props.version}.` : "latest version."}
+            {t("tinyMce.internalLink.currentTarget", {
+              version: props.version ?? null,
+            })}
           </Typography>
         </Toolbar>
         {latestRevision && (
-          <Table sx={{ minWidth: 750 }} size="small" aria-label="Internal link version options">
+          <Table sx={{ minWidth: 750 }} size="small" aria-label={t("tinyMce.internalLink.dialogTitle")}>
             <TableBody>
               <TableRow
                 hover
@@ -234,7 +229,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                     name="radio-button-demo"
                     slotProps={{
                       input: {
-                        "aria-label": "D",
+                        "aria-label": LATEST_REVISION_LABEL,
                       },
                     }}
                   />
@@ -265,10 +260,15 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
           }}
           gutterBottom
         >
-          Or choose a version that the link should always point at:
+          {t("tinyMce.internalLink.chooseVersion")}
         </Typography>
         <TableContainer>
-          <Table sx={{ minWidth: 750 }} aria-labelledby="tableTitle" size="small" aria-label="enhanced table">
+          <Table
+            sx={{ minWidth: 750 }}
+            aria-labelledby="tableTitle"
+            size="small"
+            aria-label={t("tinyMce.internalLink.versionTableLabel")}
+          >
             <EnhancedTableHead
               headCells={headCells}
               order={order}
@@ -302,7 +302,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
                           name="radio-button-demo"
                           slotProps={{
                             input: {
-                              "aria-label": "Select revision",
+                              "aria-label": t("tinyMce.internalLink.selectRevision"),
                             },
                           }}
                         />
@@ -353,7 +353,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
         <Button
           onClick={handleInsert}
@@ -366,7 +366,7 @@ export default function InternalLink(props: InternalLinkProps): React.ReactEleme
             (props.version == null && isLatestSelection(selected))
           }
         >
-          Update revision link
+          {t("tinyMce.internalLink.updateRevisionLink")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -386,10 +386,12 @@ document.addEventListener("tinymce-insert-revision", (event: Event): void => {
   // MUI v5 useStyles cannot be used in the same component as the root
   // MuiThemeProvider.
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <I18nRoot namespaces={["apps", "common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <InternalLink id={detail.id} version={detail.version} initialEl={normalizeInitialElement(detail.el)} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
   );
 });

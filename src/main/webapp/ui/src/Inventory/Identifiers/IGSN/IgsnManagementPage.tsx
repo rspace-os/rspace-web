@@ -14,8 +14,10 @@ import { darken, lighten, useTheme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { useLandmark } from "../../../components/LandmarksContext";
@@ -38,9 +40,10 @@ export default function IgsnManagementPage({
   selectedIgsns: RsSet<Identifier>;
   setSelectedIgsns: (newSelectedIgsns: RsSet<Identifier>) => void;
 }): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
-  const mainContentRef = useLandmark("IGSN management main content");
+  const mainContentRef = useLandmark(t("igsnManagement.landmark"));
   const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] = React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
   const [registeringInProgress, setRegisteringInProgress] = React.useState(false);
@@ -55,23 +58,23 @@ export default function IgsnManagementPage({
       }}
       ref={mainContentRef}
       role="main"
-      aria-label="IGSN management main content"
+      aria-label={t("igsnManagement.landmark")}
     >
-      <VisuallyHiddenHeading variant="h2">IGSN Management Page</VisuallyHiddenHeading>
+      <VisuallyHiddenHeading variant="h2">{t("igsnManagement.pageTitle")}</VisuallyHiddenHeading>
       <HeadingContext level={3}>
         <Stack spacing={2}>
-          <TitledBox title="IGSN IDs" border>
+          <TitledBox title={t("igsnManagement.sections.ids")} border>
             <Typography>
-              The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all
-              within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through
-              the DataCite DOI infrastructure. To learn more,{" "}
-              <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers}>
-                see the IGSN ID documentation
-              </Link>
-              .
+              <TransRichText
+                ns="inventory"
+                i18nKey="igsnManagement.idsDescription"
+                components={{
+                  a: <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers} />,
+                }}
+              />
             </Typography>
           </TitledBox>
-          <TitledBox title="Register IGSN IDs" border>
+          <TitledBox title={t("igsnManagement.sections.register")} border>
             <Stack
               spacing={2}
               sx={{
@@ -79,30 +82,31 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                You can register and associate an IGSN ID with an existing item in Inventory by selecting{" "}
-                <Typography variant="button" component="kbd">
-                  Create new IGSN ID
-                </Typography>{" "}
-                under its <cite>Identifiers</cite> heading.
+                <TransRichText
+                  ns="inventory"
+                  i18nKey="igsnManagement.registerDescription"
+                  components={{
+                    kbd: <Typography variant="button" component="kbd" />,
+                    cite: <cite />,
+                  }}
+                />
               </Typography>
-              <Typography>
-                You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:
-              </Typography>
+              <Typography>{t("igsnManagement.bulkRegister.summary")}</Typography>
               <Button
                 variant="contained"
                 color="primary"
                 disableElevation
                 onClick={() => setBulkRegisterDialogOpen(true)}
               >
-                Bulk Register
+                {t("igsnManagement.bulkRegister.button")}
               </Button>
               <Dialog open={bulkRegisterDialogOpen} onClose={() => setBulkRegisterDialogOpen(false)}>
-                <DialogTitle>Bulk Register IGSN IDs</DialogTitle>
+                <DialogTitle>{t("igsnManagement.bulkRegister.dialogTitle")}</DialogTitle>
                 <DialogContent>
                   <Stack spacing={3}>
-                    <Typography>IGSN IDs in Draft state will be created.</Typography>
+                    <Typography>{t("igsnManagement.bulkRegister.createdMessage")}</Typography>
                     <TextField
-                      label="Number of new IGSN IDs"
+                      label={t("igsnManagement.bulkRegister.numberLabel")}
                       type="number"
                       value={numberOfNewIdentifiers}
                       onChange={(e) => setNumberOfNewIdentifiers(Number(e.target.value))}
@@ -121,7 +125,7 @@ export default function IgsnManagementPage({
                   </Stack>
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>Cancel</Button>
+                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>{t("common:actions.cancel")}</Button>
                   <SubmitSpinnerButton
                     onClick={() => {
                       void (async () => {
@@ -139,13 +143,13 @@ export default function IgsnManagementPage({
                     }}
                     disabled={registeringInProgress}
                     loading={registeringInProgress}
-                    label="Register"
+                    label={t("igsnManagement.bulkRegister.register")}
                   />
                 </DialogActions>
               </Dialog>
             </Stack>
           </TitledBox>
-          <TitledBox title="Manage IGSN IDs" border>
+          <TitledBox title={t("igsnManagement.sections.manage")} border>
             <Stack
               spacing={0.5}
               sx={{
@@ -153,8 +157,14 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite>{" "}
-                section of the <strong>Linked Item</strong>.
+                <TransRichText
+                  ns="inventory"
+                  i18nKey="igsnManagement.manageDescription"
+                  components={{
+                    cite: <cite />,
+                    strong: <strong />,
+                  }}
+                />
               </Typography>
               <Box
                 sx={{
@@ -168,7 +178,7 @@ export default function IgsnManagementPage({
                   size="small"
                   disableElevation
                   startIcon={<ChecklistIcon />}
-                  aria-label="Actions menu for selected IGSN IDs"
+                  aria-label={t("igsnManagement.actions.label")}
                   aria-haspopup="menu"
                   aria-expanded={false}
                   id="actions-menu"
@@ -177,7 +187,7 @@ export default function IgsnManagementPage({
                     setActionsAnchorEl(event.currentTarget);
                   }}
                 >
-                  Actions
+                  {t("igsnManagement.actions.button")}
                 </Button>
                 <Menu
                   anchorEl={actionsAnchorEl}
@@ -191,8 +201,8 @@ export default function IgsnManagementPage({
                   }}
                 >
                   <AccentMenuItem
-                    title="Print"
-                    subheader="Print barcode labels for selected IGSN IDs."
+                    title={t("igsnManagement.actions.print.title")}
+                    subheader={t("igsnManagement.actions.print.subheader")}
                     onClick={() => {
                       setPrintDialogOpen(true);
                     }}
@@ -208,8 +218,8 @@ export default function IgsnManagementPage({
                     itemsToPrint={[...selectedIgsns]}
                   />
                   <AccentMenuItem
-                    title="Delete"
-                    subheader="Does not delete any linked item."
+                    title={t("igsnManagement.actions.delete.title")}
+                    subheader={t("igsnManagement.actions.delete.subheader")}
                     onClick={() => {
                       void deleteIdentifiers(selectedIgsns).then(() => {
                         if (refreshListing) void refreshListing();

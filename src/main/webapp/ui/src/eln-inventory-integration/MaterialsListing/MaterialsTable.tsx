@@ -14,6 +14,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../components/GlobalId";
 import IconButtonWithTooltip from "../../components/IconButtonWithTooltip";
 import UserDetails from "../../components/UserDetails";
@@ -23,6 +24,8 @@ import { hasQuantity } from "../../stores/models/HasQuantity";
 import type { ListOfMaterials, Material } from "../../stores/models/MaterialsModel";
 import SubSampleModel from "../../stores/models/SubSampleModel";
 import UsedQuantityField from "./UsedQuantityField";
+
+const EM_DASH = "—";
 
 const colorCodedQuantity = (
   material: Material,
@@ -77,6 +80,7 @@ function TableSubCell({
 }
 function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs): React.ReactNode {
   const theme = useTheme();
+  const { t } = useTranslation("inventory");
   const quantityColors = {
     warningRed: theme.palette.warningRed,
     modifiedHighlight: theme.palette.modifiedHighlight,
@@ -85,7 +89,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
   const editingMode = list.editingMode;
   const materials = list.materials;
   const editableMaterials = materials.filter((m) => m.invRec instanceof SubSampleModel);
-  const [selectOption, setSelectOption] = useState("None");
+  const [selectOption, setSelectOption] = useState("none");
   const afterToggleUpdates = (material: Material) => {
     if (material.selected) {
       material.setEditing(true, false);
@@ -119,17 +123,20 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
   }, [list.mixedSelectedCategories]);
   const multipleSelectOptions = [
     {
-      name: "None",
+      label: t("materialsListing.table.batchSelect.none"),
+      value: "none",
       // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       handler: () => editableMaterials.filter((m) => m.selected).forEach((m) => handleSelect(m)),
     },
     {
-      name: "All",
+      label: t("materialsListing.table.batchSelect.all"),
+      value: "all",
       // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       handler: () => editableMaterials.filter((m) => !m.selected).forEach((m) => handleSelect(m)),
     },
     {
-      name: "Invert",
+      label: t("materialsListing.table.batchSelect.invert"),
+      value: "invert",
       // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
       handler: () => editableMaterials.forEach((m) => handleSelect(m)),
     },
@@ -159,15 +166,15 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
           >
             <TableCell sx={tableRowCellSx}>
               <Box component="span" sx={{ flex: 5 }}>
-                Name
+                {t("materialsListing.table.columns.name")}
               </Box>
-              <Tooltip title="For subsamples only" enterDelay={200}>
+              <Tooltip title={t("materialsListing.table.subsamplesOnly")} enterDelay={200}>
                 <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
-                  Consumed Quantity
+                  {t("materialsListing.table.columns.consumedQuantity")}
                 </Box>
               </Tooltip>
               <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
-                Inventory Quantity
+                {t("materialsListing.table.columns.inventoryQuantity")}
               </Box>
             </TableCell>
             {editingMode ? (
@@ -181,7 +188,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                   }}
                 >
                   <Box component="span" sx={!isSingleColumn ? { textAlign: "center" } : undefined}>
-                    Batch Edit
+                    {t("materialsListing.table.columns.batchEdit")}
                   </Box>
                   <Select
                     sx={{
@@ -193,17 +200,17 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                     variant="standard"
                   >
                     {multipleSelectOptions.map((option) => (
-                      <MenuItem key={option.name} value={option.name} onClick={option.handler}>
-                        {option.name}
+                      <MenuItem key={option.value} value={option.value} onClick={option.handler}>
+                        {option.label}
                       </MenuItem>
                     ))}
                   </Select>
                 </Box>
                 <Box component="span" sx={{ flex: 4, textAlign: "center" }}>
-                  Additional Consumed Quantity
+                  {t("materialsListing.table.columns.additionalConsumedQuantity")}
                 </Box>
                 <Box component="span" sx={{ flex: 3, textAlign: "center" }}>
-                  Update Inventory Quantity
+                  {t("materialsListing.table.columns.updateInventoryQuantity")}
                 </Box>
               </TableCell>
             ) : (
@@ -215,13 +222,13 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                     ...(!isSingleColumn ? { textAlign: "center" } : {}),
                   }}
                 >
-                  Location
+                  {t("materialsListing.table.columns.location")}
                 </Box>
                 <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
-                  Global ID
+                  {t("materialsListing.table.columns.globalId")}
                 </Box>
                 <Box component="span" sx={{ flex: 2, textAlign: "center" }}>
-                  Owner
+                  {t("materialsListing.table.columns.owner")}
                 </Box>
               </TableCell>
             )}
@@ -276,7 +283,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                     </Box>
                     {onRemove && (
                       <IconButtonWithTooltip
-                        title="Remove from list"
+                        title={t("materialsListing.table.removeFromList")}
                         icon={<ClearIcon />}
                         size="small"
                         sx={{
@@ -297,7 +304,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {material.usedQuantity ? material.usedQuantityLabel : <>&mdash;</>}
+                    {material.usedQuantity ? material.usedQuantityLabel : EM_DASH}
                   </TableSubCell>
                   <TableSubCell
                     data-test-id={`material-inventory-quantity-${globalId}`}
@@ -306,7 +313,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                       color: colorCodedQuantity(material, list, quantityColors),
                     }}
                   >
-                    {hasQuantity(record).isEmpty() || noQuantitySample ? <>&mdash;</> : material.inventoryQuantityLabel}
+                    {hasQuantity(record).isEmpty() || noQuantitySample ? EM_DASH : material.inventoryQuantityLabel}
                   </TableSubCell>
                 </TableCell>
                 {editingMode && material.canEditQuantity ? (
@@ -335,7 +342,7 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                         disabled={!material.selected || list.mixedSelectedCategories}
                         slotProps={{
                           input: {
-                            "aria-label": "Linked quantities",
+                            "aria-label": t("materialsListing.table.linkedQuantities"),
                           },
                         }}
                       />
@@ -346,11 +353,9 @@ function MaterialsTable({ list, isSingleColumn, onRemove, canEdit }: TableArgs):
                     <TableSubCell flex={3}>
                       <Checkbox disabled={true} />
                     </TableSubCell>
-                    <TableSubCell flex={4}>
-                      <>&mdash;</>
-                    </TableSubCell>
+                    <TableSubCell flex={4}>{EM_DASH}</TableSubCell>
                     <TableSubCell sx={{ color: theme.palette.primary.main }} flex={3}>
-                      <>&mdash;</>
+                      {EM_DASH}
                     </TableSubCell>
                   </TableCell>
                 ) : (

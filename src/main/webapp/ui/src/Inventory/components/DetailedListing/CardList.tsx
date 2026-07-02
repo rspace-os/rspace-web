@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
 import Card from "./Card";
@@ -11,6 +12,7 @@ type CardListArgs = {
 };
 
 function CardList({ records }: CardListArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
@@ -21,7 +23,7 @@ function CardList({ records }: CardListArgs): React.ReactNode {
         direction="row"
         sx={{ width: "100%", ml: -0.25, mb: 1, alignItems: "stretch" }}
         role="list"
-        aria-label="Search results as cards"
+        aria-label={t("detailedListing.cardListLabel")}
       >
         {records.map((r, i) => (
           <Grid

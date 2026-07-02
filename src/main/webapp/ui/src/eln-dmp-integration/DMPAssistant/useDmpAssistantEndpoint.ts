@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import AlertContext, { type Alert, mkAlert } from "../../stores/contexts/Alert";
 import type * as FetchingData from "../../util/fetchingData";
 import { Optional } from "../../util/optional";
@@ -102,7 +103,7 @@ export async function importDmpsIntoGallery(
     if (error !== null) throw new Error(error.errorMessages[0]);
     addAlert(
       mkAlert({
-        message: dmps.length === 1 ? "Successfully imported DMP." : `Successfully imported ${dmps.length} DMPs.`,
+        message: i18n.t("dmpIntegrations.endpoint.importSuccess", { ns: "apps", count: dmps.length }),
         variant: "success",
       }),
     );
@@ -110,7 +111,7 @@ export async function importDmpsIntoGallery(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: dmps.length === 1 ? "Failed to import DMP." : "Failed to import DMPs.",
+          title: i18n.t("dmpIntegrations.endpoint.importFailed", { ns: "apps", count: dmps.length }),
           message: error.message,
           variant: "error",
         }),
@@ -177,14 +178,14 @@ async function listPlans(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: "Failed to get available DMPs.",
+          title: i18n.t("dmpIntegrations.endpoint.listFailed", { ns: "apps" }),
           message: error.message,
           variant: "error",
         }),
       );
       throw new Error(error.message);
     }
-    throw new Error("Unknown error");
+    throw new Error(i18n.t("common:apiErrors.unknown"));
   }
 }
 

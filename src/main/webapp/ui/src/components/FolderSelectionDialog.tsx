@@ -6,6 +6,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { FolderTreeNode } from "../hooks/api/useFolders";
 import FolderTree from "./FolderTree";
 
@@ -22,8 +23,9 @@ export default function FolderSelectionDialog({
   onClose,
   onFolderSelect,
   rootFolderId,
-  title = "Select Folder",
+  title,
 }: FolderSelectionDialogProps): React.ReactNode {
+  const { t } = useTranslation("common");
   const [selectedFolder, setSelectedFolder] = React.useState<FolderTreeNode | null>(null);
 
   const handleFolderSelect = React.useCallback((folder: FolderTreeNode | null) => {
@@ -50,7 +52,7 @@ export default function FolderSelectionDialog({
 
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="md" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle>{title ?? t("folderSelectionDialog.title")}</DialogTitle>
       <DialogContent>
         <Box sx={{ minHeight: 300, maxHeight: 500 }}>
           <FolderTree onFolderSelect={handleFolderSelect} rootFolderId={rootFolderId} />
@@ -60,9 +62,9 @@ export default function FolderSelectionDialog({
             sx={{ mt: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}
             role="status"
             aria-live="polite"
-            aria-label="Selected folder"
+            aria-label={t("folderSelectionDialog.selectedFolder")}
           >
-            <Typography variant="subtitle2">Selected folder:</Typography>
+            <Typography variant="subtitle2">{t("folderSelectionDialog.selectedFolderWithColon")}</Typography>
             <Typography variant="body2" color="text.secondary">
               {selectedFolder.name}
             </Typography>
@@ -70,9 +72,9 @@ export default function FolderSelectionDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancel}>Cancel</Button>
+        <Button onClick={handleCancel}>{t("actions.cancel")}</Button>
         <Button color="callToAction" onClick={handleConfirm} variant="contained" disabled={!selectedFolder}>
-          Select
+          {t("actions.select")}
         </Button>
       </DialogActions>
     </Dialog>

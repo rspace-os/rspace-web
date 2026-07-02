@@ -4,6 +4,7 @@ import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import useReferencingInventoryItems from "@/eln/gallery/useReferencingInventoryItems";
 
 /**
@@ -21,19 +22,24 @@ export default function RelatedInventoryItems({
   /** Lower-case noun for the empty message, e.g. "document", "notebook", "file". */
   recordTypeName: string;
 }): React.ReactElement {
+  const { t } = useTranslation("inventory");
   const { items, loading, errorMessage } = useReferencingInventoryItems(globalId);
 
   return (
     <Box>
-      <Typography variant="subtitle2">Related inventory items</Typography>
-      {loading && <Typography variant="body2">Loading…</Typography>}
+      <Typography variant="subtitle2">{t("fields.link.relatedInventoryItems.title")}</Typography>
+      {loading && <Typography variant="body2">{t("fields.link.relatedInventoryItems.loading")}</Typography>}
       {errorMessage && (
         <Typography variant="body2" color="error">
           {errorMessage}
         </Typography>
       )}
       {!loading && !errorMessage && items.length === 0 && (
-        <Typography variant="body2">No Inventory items link to this {recordTypeName}.</Typography>
+        <Typography variant="body2">
+          {t("fields.link.relatedInventoryItems.none", {
+            recordTypeName,
+          })}
+        </Typography>
       )}
       {items.length > 0 && (
         <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
@@ -44,12 +50,9 @@ export default function RelatedInventoryItems({
               <Link href={`/globalId/${item.globalId}`} target="_blank" rel="noopener noreferrer">
                 {item.globalId}
               </Link>
-              : {item.name}
+              {`: ${item.name}`}
               {item.relationType ? (
-                <Typography variant="caption" component="em">
-                  {" "}
-                  ({item.relationType})
-                </Typography>
+                <Typography variant="caption" component="em">{` (${item.relationType})`}</Typography>
               ) : null}
             </ListItem>
           ))}

@@ -5,6 +5,7 @@ import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 import RemoveButton from "../../components/RemoveButton";
 
@@ -41,6 +42,7 @@ export default function ChoiceField<OptionValue extends string>({
   onOptionRemove = () => {},
   hideWhenDisabled = true,
 }: ChoiceFieldArgs<OptionValue>): React.ReactNode {
+  const { t } = useTranslation("common");
   const updateSelected = (newValues: ReadonlyArray<OptionValue>) => {
     onChange?.({ target: { name, value: newValues } });
   };
@@ -70,7 +72,7 @@ export default function ChoiceField<OptionValue extends string>({
   };
 
   return disabled && value.length === 0 && hideWhenDisabled ? (
-    <NoValue label="No option selected" />
+    <NoValue label={t("inputs.optionField.noOptionSelected")} />
   ) : (
     <FormGroup>
       {filteredOptions().map((option, i) => (
@@ -109,7 +111,7 @@ export default function ChoiceField<OptionValue extends string>({
           />
           {!disabled && allowOptionDeletion && !option.editing && (
             <RemoveButton
-              title={`Delete Option: ${option.value}`}
+              title={t("inputs.optionField.deleteOption", { option: option.value })}
               onClick={() => {
                 if (value.includes(option.value)) handleRemoveOption(option.value);
                 onOptionRemove(i);
@@ -132,15 +134,15 @@ export default function ChoiceField<OptionValue extends string>({
                   editing: true,
                 });
               }}
-              placeholder={`Option ${i + 1}`}
+              placeholder={t("inputs.optionField.placeholder", { index: i + 1 })}
               error={option.value === ""}
-              helperText={option.value.length === 0 ? "Option value cannot be empty" : null}
+              helperText={option.value.length === 0 ? t("inputs.optionField.emptyOption") : null}
               slotProps={{
                 input: {
                   endAdornment: (
                     <InputAdornment position="end">
                       <RemoveButton
-                        title="Delete New Option"
+                        title={t("inputs.optionField.deleteNewOption")}
                         onClick={() => {
                           if (value.includes(option.value)) handleRemoveOption(option.value);
                           onOptionRemove(i);

@@ -18,7 +18,9 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Link as ReactRouterLink } from "react-router";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import GlobalId from "../../../components/GlobalId";
 import type { Search } from "../../../stores/definitions/Search";
@@ -59,6 +61,7 @@ type SubsampleDetailsArgs = {
 };
 
 function SubsampleDetails({ search }: SubsampleDetailsArgs) {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   const cardId = React.useId();
 
@@ -90,7 +93,9 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
   }, [search.filteredResults, processingCardNav, search]);
 
   const subsample = search.activeResult;
-  if (subsample === null || typeof subsample === "undefined") return <Wrapper>No subsamples</Wrapper>;
+  if (subsample === null || typeof subsample === "undefined") {
+    return <Wrapper>{t("subsample.details.none")}</Wrapper>;
+  }
   const index = search.filteredResults.findIndex((x) => x.globalId === subsample.globalId);
 
   if (!(subsample instanceof SubSampleModel)) throw new Error("All Subsamples must be instances of SubSampleModel");
@@ -99,7 +104,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
     <Wrapper>
       <Card
         role="region"
-        aria-label="Subsample details"
+        aria-label={t("subsample.details.label")}
         id={cardId}
         variant="outlined"
         sx={{
@@ -139,7 +144,12 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         <CardContent>
           <Stack spacing={2}>
             <LocationField fieldOwner={subsample} />
-            <ImageField fieldOwner={subsample} alt={`What the subsample, ${subsample.name}, looks like`} />
+            <ImageField
+              fieldOwner={subsample}
+              alt={t("subsample.details.imageAlt", {
+                name: subsample.name,
+              })}
+            />
             <QuantityField
               fieldOwner={subsample}
               quantityCategory={subsample.quantityCategory}
@@ -147,7 +157,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
             />
             <Description fieldOwner={subsample} onErrorStateChange={() => {}} />
             <FormField
-              label="Barcodes"
+              label={t("formSections.barcodes")}
               value={null}
               renderInput={() => (
                 <BarcodesField fieldOwner={subsample} factory={subsample.factory} connectedItem={subsample} />
@@ -159,7 +169,11 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         <CardActions>
           <Typography align="center" sx={{ width: "100%" }}>
             <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
-              See full details of <strong>{subsample.name}</strong>
+              <TransRichText
+                ns="inventory"
+                i18nKey="subsample.details.seeFullDetails"
+                values={{ name: subsample.name }}
+              />
             </Link>
           </Typography>
         </CardActions>

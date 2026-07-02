@@ -1,6 +1,7 @@
 import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
 import SubSampleIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/SubSample";
 import ApiService from "../../common/InvApiService";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
@@ -236,15 +237,15 @@ export default class SubSampleModel
 
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: "Note successfully created.",
+          message: i18n.t("inventory:subsample.alerts.noteCreated"),
           variant: "success",
         }),
       );
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Creating note failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:subsample.alerts.noteCreateFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           duration: 8000,
         }),
@@ -254,7 +255,7 @@ export default class SubSampleModel
   }
 
   get cardTypeLabel(): string {
-    return "Subsample";
+    return inventoryRecordTypeLabels.subsample;
   }
 
   get recordTypeLabel(): string {
@@ -292,7 +293,7 @@ export default class SubSampleModel
     if (noteResults.some(({ status }) => status === "rejected")) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: "Could not save the new note(s).",
+          message: i18n.t("inventory:subsample.alerts.noteSaveFailed"),
           variant: "error",
           details: noteResults
             .filter((n) => n.status === "rejected")
@@ -373,7 +374,7 @@ export default class SubSampleModel
   validate(): ValidationResult {
     return super.validate().flatMap(() => {
       if (this.quantity?.numericValue !== "") return IsValid();
-      return IsInvalid("Quantity must be set");
+      return IsInvalid(i18n.t("inventory:subsample.validation.quantityRequired"));
     });
   }
 
@@ -384,14 +385,14 @@ export default class SubSampleModel
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Subsample, by splitting",
+        label: i18n.t("inventory:subsample.createOptions.split.label"),
         explanation: this.canEdit
-          ? "New subsamples will be created by diving the quantity of this subsample equally amongst them."
-          : "You do not have permission to edit this subsample.",
+          ? i18n.t("inventory:subsample.createOptions.split.explanation")
+          : i18n.t("inventory:subsample.createOptions.noEditPermission"),
         parameters: [
           {
-            label: "Number of new subsamples",
-            explanation: "The total number of subsamples wanted, including the source (between 2 and 100)",
+            label: i18n.t("inventory:subsample.createOptions.split.countLabel"),
+            explanation: i18n.t("inventory:subsample.createOptions.split.countExplanation"),
             state: this.createOptionsParametersState.split,
             validState: () =>
               this.createOptionsParametersState.split.copies >= 2 &&

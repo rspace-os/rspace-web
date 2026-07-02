@@ -5,6 +5,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import StyledMenu from "../../../components/StyledMenu";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -44,6 +45,7 @@ function ExtendedContextMenu({
   basketSearch,
   ...rest
 }: ExtendedContextMenuArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const prefixRef = useRef<HTMLDivElement | null>(null);
   const [overflow, setOverflow] = useState<Set<number>>(new Set());
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -104,7 +106,7 @@ function ExtendedContextMenu({
         })}
       </Box>
       <IconButtonWithTooltip
-        title="More actions"
+        title={t("contextMenu.actions.more")}
         icon={<MoreHorizIcon />}
         aria-haspopup="menu"
         size="medium"

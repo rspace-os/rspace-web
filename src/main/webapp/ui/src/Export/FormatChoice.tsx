@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { OptionExplanation, OptionHeading } from "../components/Inputs/RadioField";
 import { useDeploymentProperty } from "../hooks/api/useDeploymentProperty";
@@ -28,13 +29,6 @@ type RepoOption = {
 type RepoUiConfig = Omit<Repo, "repoCfg"> & {
   options: Record<string, RepoOption>;
 };
-
-const WORD_ERRORS = [
-  "Word export is only available for a single document, and you have selected more than one.",
-  "Word export is only available for a single document, and you've selected a folder.",
-  "Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
-  "All selected items are attachments — there are no RSpace documents to export.",
-];
 
 type FormatChoiceArgs = {
   exportConfigUpdate: {
@@ -65,7 +59,16 @@ function FormatChoice({
   fileStoresSelected,
   updateFileStores,
 }: FormatChoiceArgs): React.ReactNode {
-  const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState(Optional.present("Loading"));
+  const { t } = useTranslation("workspace");
+  const wordErrors = [
+    t("export.format.chooser.wordErrors.multiple"),
+    t("export.format.chooser.wordErrors.folder"),
+    t("export.format.chooser.wordErrors.notebook"),
+    t("export.format.chooser.wordErrors.allMedia"),
+  ];
+  const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState<Optional<string>>(
+    Optional.present(t("export.format.chooser.loading")),
+  );
   const [pdfAvailable, setPdfAvailable] = useState(false);
   const [wordAvailable, setWordAvailable] = useState(false);
   const [wordAvailabilityMessage, setWordAvailabilityMessage] = useState("");
@@ -80,9 +83,7 @@ function FormatChoice({
         const repos = response.data;
         if (!Array.isArray(repos)) throw new Error(repos.exceptionMessage);
         if (repos.length === 0) {
-          setMsgBlockingRepoChoice(
-            Optional.present("You have not setup a repository, to do so please activate them within Apps"),
-          );
+          setMsgBlockingRepoChoice(Optional.present(t("export.format.chooser.noRepoSetup")));
           return;
         }
         setMsgBlockingRepoChoice(Optional.empty());
@@ -134,11 +135,7 @@ function FormatChoice({
         exportConfigUpdate("repoData", normalizedRepos);
       })
       .catch(() => {
-        setMsgBlockingRepoChoice(
-          Optional.present(
-            "Export to repository is not available because there was an error fetching repository configurations.",
-          ),
-        );
+        setMsgBlockingRepoChoice(Optional.present(t("export.format.chooser.repoFetchError")));
       });
   };
 
@@ -189,10 +186,10 @@ function FormatChoice({
 
     setWordAvailable(wordExportAllowed);
 
-    if (disabledBecauseMultiple) setWordAvailabilityMessage(WORD_ERRORS[0]);
-    if (disabledBecauseFolder) setWordAvailabilityMessage(WORD_ERRORS[1]);
-    if (disabledBecauseNotebook) setWordAvailabilityMessage(WORD_ERRORS[2]);
-    if (disabledBecauseAllMedia) setWordAvailabilityMessage(WORD_ERRORS[3]);
+    if (disabledBecauseMultiple) setWordAvailabilityMessage(wordErrors[0]);
+    if (disabledBecauseFolder) setWordAvailabilityMessage(wordErrors[1]);
+    if (disabledBecauseNotebook) setWordAvailabilityMessage(wordErrors[2]);
+    if (disabledBecauseAllMedia) setWordAvailabilityMessage(wordErrors[3]);
   };
 
   useEffect(() => {
@@ -213,9 +210,9 @@ function FormatChoice({
 
   return (
     <Grid container>
-      <h3>Choose an appropriate format for your export</h3>
+      <h3>{t("export.format.chooser.heading")}</h3>
       <RadioGroup
-        aria-label="Select Export"
+        aria-label={t("export.format.chooser.selectLabel")}
         name="exportType"
         value={archiveType}
         // @ts-expect-error TypeScript doesn't realise that the value can only be one of the ArchiveType values
@@ -227,10 +224,8 @@ function FormatChoice({
             control={<Radio data-test-id="zip-html" color="primary" />}
             label={
               <>
-                <OptionHeading>.ZIP bundle containing .HTML files</OptionHeading>
-                <OptionExplanation>
-                  Exported data, notebooks and attached files can be accessed offline with a browser.
-                </OptionExplanation>
+                <OptionHeading>{t("export.format.chooser.formats.htmlHeading")}</OptionHeading>
+                <OptionExplanation>{t("export.format.chooser.formats.htmlExplanation")}</OptionExplanation>
               </>
             }
           />
@@ -239,11 +234,8 @@ function FormatChoice({
             control={<Radio data-test-id="zip-xml" color="primary" />}
             label={
               <>
-                <OptionHeading>.ZIP bundle containing .XML files</OptionHeading>
-                <OptionExplanation>
-                  Exported data is machine readable. Good for archiving, or transferring data from one RSpace server or
-                  user to another.
-                </OptionExplanation>
+                <OptionHeading>{t("export.format.chooser.formats.xmlHeading")}</OptionHeading>
+                <OptionExplanation>{t("export.format.chooser.formats.xmlExplanation")}</OptionExplanation>
               </>
             }
           />
@@ -253,16 +245,11 @@ function FormatChoice({
             control={<Radio data-test-id="pdf" color="primary" />}
             label={
               <>
-                <OptionHeading>PDF file</OptionHeading>
+                <OptionHeading>{t("export.format.chooser.formats.pdfHeading")}</OptionHeading>
                 <OptionExplanation>
-                  {pdfAvailable ? (
-                    <>
-                      A read-only version of your RSpace documents will be placed in the &apos;Exports&apos; area of the
-                      Gallery
-                    </>
-                  ) : (
-                    <>All selected items are attachments &mdash; there are no RSpace documents to export.</>
-                  )}
+                  {pdfAvailable
+                    ? t("export.format.chooser.formats.pdfAvailable")
+                    : t("export.format.chooser.formats.pdfUnavailable")}
                 </OptionExplanation>
               </>
             }
@@ -272,10 +259,8 @@ function FormatChoice({
             control={<Radio data-test-id="zip-eln" color="primary" />}
             label={
               <>
-                <OptionHeading>RO-Crate</OptionHeading>
-                <OptionExplanation>
-                  An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.
-                </OptionExplanation>
+                <OptionHeading>{t("export.format.chooser.formats.elnHeading")}</OptionHeading>
+                <OptionExplanation>{t("export.format.chooser.formats.elnExplanation")}</OptionExplanation>
               </>
             }
           />
@@ -286,16 +271,9 @@ function FormatChoice({
               control={<Radio data-test-id="doc" color="primary" />}
               label={
                 <>
-                  <OptionHeading>.DOC file</OptionHeading>
+                  <OptionHeading>{t("export.format.chooser.formats.docHeading")}</OptionHeading>
                   <OptionExplanation>
-                    {wordAvailable ? (
-                      <>
-                        MS Word version of your RSpace documents will be placed in the &apos;Exports&apos; area of the
-                        Gallery.
-                      </>
-                    ) : (
-                      wordAvailabilityMessage
-                    )}
+                    {wordAvailable ? t("export.format.chooser.formats.docAvailable") : wordAvailabilityMessage}
                   </OptionExplanation>
                 </>
               }
@@ -304,7 +282,7 @@ function FormatChoice({
         </Stack>
       </RadioGroup>
       <Typography variant="h6" component="h3" sx={{ marginTop: "20px" }}>
-        Choose additional destinations
+        {t("export.format.chooser.additionalDestinations")}
       </Typography>
       <Grid size={12}>
         <FormControlLabel
@@ -319,12 +297,12 @@ function FormatChoice({
               slotProps={{ input: { role: "checkbox" } }}
             />
           }
-          label={msgBlockingRepoChoice.orElse("Export to a repository")}
+          label={msgBlockingRepoChoice.orElse(t("export.format.chooser.exportToRepository"))}
         />
       </Grid>
       {allowFileStores && (archiveType === "html" || archiveType === "xml" || archiveType === "eln") && (
         <Grid size={12}>
-          <h3>Filestores</h3>
+          <h3>{t("export.format.chooser.filestoresSection")}</h3>
           <FormControlLabel
             control={
               <Switch
@@ -339,13 +317,13 @@ function FormatChoice({
                 slotProps={{ input: { role: "checkbox" } }}
               />
             }
-            label="Include filestore links"
+            label={t("export.format.chooser.includeFilestoreLinks")}
           />
         </Grid>
       )}
       {(archiveType === "xml" || archiveType === "eln") && (
         <Grid size={12}>
-          <h3>Revisions</h3>
+          <h3>{t("export.format.chooser.revisionsSection")}</h3>
           <FormControlLabel
             control={
               <Switch
@@ -359,7 +337,7 @@ function FormatChoice({
                 slotProps={{ input: { role: "checkbox" } }}
               />
             }
-            label="Check to include all previous versions of your documents, or leave unchecked for only current version"
+            label={t("export.format.chooser.includeAllVersions")}
           />
         </Grid>
       )}

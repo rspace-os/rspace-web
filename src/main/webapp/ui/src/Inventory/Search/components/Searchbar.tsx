@@ -10,6 +10,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import SearchDialog from "../../../components/SearchDialog";
 import useIsTextWiderThanField from "../../../hooks/ui/useIsTextWiderThanField";
@@ -20,6 +21,7 @@ type FormArgs = {
 };
 
 const Form = observer(({ handleSearch }: FormArgs) => {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
 
   const handleChange = ({ target: { value } }: { target: { value: string } }) => {
@@ -52,7 +54,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
     >
       <TextField
         data-test-id="s-search-input-normal"
-        placeholder="Search"
+        placeholder={t("search.controls.searchbar.search")}
         value={search.fetcher.query ?? ""}
         onChange={handleChange}
         sx={{ flexGrow: 1 }}
@@ -61,7 +63,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
             startAdornment: (
               <InputAdornment position="start">
                 <IconButton
-                  aria-label="Search"
+                  aria-label={t("search.controls.searchbar.search")}
                   data-test-id="s-search-submit"
                   onClick={onSearch}
                   size="small"
@@ -75,11 +77,11 @@ const Form = observer(({ handleSearch }: FormArgs) => {
               ? {
                   endAdornment: (
                     <InputAdornment position="end">
-                      <CustomTooltip title="Clear search">
+                      <CustomTooltip title={t("search.controls.searchbar.clearSearch")}>
                         <IconButton
                           size="small"
                           data-test-id="reset-search"
-                          aria-label="close"
+                          aria-label={t("search.controls.searchbar.clearSearch")}
                           color="inherit"
                           onClick={handleReset}
                         >
@@ -93,7 +95,7 @@ const Form = observer(({ handleSearch }: FormArgs) => {
           },
 
           htmlInput: {
-            "aria-label": "Search",
+            "aria-label": t("search.controls.searchbar.search"),
             type: "search",
             ref: inputRef,
           },

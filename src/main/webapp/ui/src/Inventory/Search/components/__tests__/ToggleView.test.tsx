@@ -17,10 +17,10 @@ describe("ToggleView", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Change view" }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:search.controls.view.changeView" }));
     expect(
       screen.getByRole("menuitem", {
-        name: TYPE_LABEL[(Object.keys(TYPE_LABEL) as Array<keyof typeof TYPE_LABEL>)[0]],
+        name: "inventory:search.controls.view.list",
       }),
     ).toHaveAttribute("aria-current", "true");
   });

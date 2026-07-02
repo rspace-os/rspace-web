@@ -3,6 +3,7 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import type { SearchView } from "../../stores/definitions/Search";
@@ -25,13 +26,14 @@ function MainSearch({
   TABS = ["LIST", "TREE", "CARD"],
   searchbarAdornment,
 }: MainSearchArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <Stack spacing={1}>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
         <Box sx={{ flexGrow: 1 }}>
           <Searchbar handleSearch={handleSearch} />
         </Box>
-        <HelpLinkIcon link={docLinks.search} title="Info on searching Inventory." />
+        <HelpLinkIcon link={docLinks.search} title={t("search.helpTitle")} />
         {size === "small" && <SearchDisplayControls TABS={TABS} />}
         {Boolean(searchbarAdornment) && searchbarAdornment}
       </Stack>

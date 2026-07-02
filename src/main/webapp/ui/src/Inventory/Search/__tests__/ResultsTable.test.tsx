@@ -18,7 +18,7 @@ import materialTheme from "../../../theme";
 import { menuIDs } from "../../../util/menuIDs";
 import ResultsTable from "../ResultsTable";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
+const REQUIRED_PERMISSIONS_TOOLTIP = "inventory:detailedListing.card.requiredPermissions";
 
 const renderResultsTable = (search: Search) => {
   const rootStore = makeMockRootStore({
@@ -145,7 +145,7 @@ describe("Results Table", () => {
       renderResultsTable(search);
 
       const checkbox = screen.getByRole("checkbox", {
-        name: /select result item/i,
+        name: "inventory:search.results.selectResultItem",
       });
       expect(checkbox).toBeDisabled();
 
@@ -181,7 +181,7 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByRole("button", { name: /select all/i }));
+      await user.click(screen.getByRole("button", { name: "inventory:search.resultsTable.selectAll" }));
 
       expect(allowedContainer.selected).toBe(true);
       expect(disallowedContainer.selected).toBe(false);
@@ -214,8 +214,8 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByLabelText(/more selection options/i));
-      await user.click(await screen.findByText("Invert"));
+      await user.click(screen.getByLabelText("inventory:contextMenu.splitButton.moreOptions"));
+      await user.click(await screen.findByText("inventory:search.resultsTable.selection.invert"));
 
       expect(allowedContainer.selected).toBe(false);
       expect(disallowedContainer.selected).toBe(false);

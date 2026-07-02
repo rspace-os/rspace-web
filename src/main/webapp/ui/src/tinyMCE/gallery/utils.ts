@@ -1,3 +1,4 @@
+import i18n from "@/modules/common/i18n";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import type { InternalLinkInsertParams, TinyMceEditor } from "@/tinyMCE/types";
 
@@ -244,6 +245,6 @@ async function insertSnippetFromGallery(data: WorkspaceRecordInformation) {
       getRS().tinymceInsertContent(result);
     }
   } catch {
-    alert(`An error occurred while inserting the snippet ${data.id}`);
+    alert(i18n.t("gallery:tinyMce.insertSnippetFailed", { id: data.id }));
   }
 }

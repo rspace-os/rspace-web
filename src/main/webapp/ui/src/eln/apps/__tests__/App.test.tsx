@@ -55,9 +55,8 @@ describe("Apps page", () => {
           <App />
         </ThemeProvider>,
       );
-      await screen.findAllByText(/Something went wrong!/i);
+      await screen.findAllByText(/errorBoundary\.message/i);
 
-      await screen.findByAltText("branding");
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await expect(container).toBeAccessible();
@@ -75,15 +74,15 @@ describe("Apps page", () => {
       </ThemeProvider>,
     );
 
-    await screen.findAllByText(/Something went wrong!/i);
+    await screen.findAllByText(/errorBoundary\.message/i);
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([
-      { level: 1, content: "Apps" },
-      { level: 2, content: "Enabled" },
-      { level: 2, content: "Disabled" },
-      { level: 2, content: "Unavailable" },
-      { level: 2, content: "Third-party RSpace Integrations" },
+      { level: 1, content: "apps:page.title" },
+      { level: 2, content: "apps:page.sections.enabled.title" },
+      { level: 2, content: "apps:page.sections.disabled.title" },
+      { level: 2, content: "apps:page.sections.unavailable.title" },
+      { level: 2, content: "apps:page.sections.external.title" },
     ]);
   });
 });

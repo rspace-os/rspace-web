@@ -67,7 +67,7 @@ describe("DSWImportDialog", () => {
       </ThemeProvider>,
     );
     await waitFor(() => {
-      expect(screen.getByText("No projects found")).toBeVisible();
+      expect(screen.getByText("apps:dmpIntegrations.dialog.noProjects")).toBeVisible();
     });
   });
 
@@ -109,9 +109,9 @@ describe("DSWImportDialog", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText("Select").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Name").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Description").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Updated At").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.name").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.description").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.updatedAt").length).toBeGreaterThan(0);
 
       expect(screen.getByText("MockProject01")).toBeVisible();
       expect(screen.getByText("MockProject02")).toBeVisible();

@@ -7,9 +7,11 @@ import Portal from "@mui/material/Portal";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import axios from "@/common/axios";
 import ValidatingSubmitButton from "@/components/ValidatingSubmitButton";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import Result from "@/util/result";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/workspace";
@@ -38,6 +40,7 @@ export default function Wrapper(): React.ReactNode {
 }
 
 const RenameDialog = () => {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = React.useState(false);
   const [documentId, setDocumentId] = React.useState("");
   const [currentName, setCurrentName] = React.useState("");
@@ -79,7 +82,7 @@ const RenameDialog = () => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully renamed document.",
+            message: t("toolbar.rename.success"),
           }),
         );
         trackEvent("user:renames:document:workspace");
@@ -95,7 +98,7 @@ const RenameDialog = () => {
         addAlert(
           mkAlert({
             variant: "error",
-            message: "An error occurred while renaming the document.",
+            message: t("toolbar.rename.error"),
             details: data.error.errorMessages.map((msg: string) => ({
               variant: "error",
               title: msg,
@@ -109,7 +112,7 @@ const RenameDialog = () => {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "An error occurred while renaming the document.",
+            title: t("toolbar.rename.error"),
             message: e.message,
           }),
         );
@@ -135,14 +138,14 @@ const RenameDialog = () => {
           void handleSubmit();
         }}
       >
-        <DialogTitle>Rename</DialogTitle>
+        <DialogTitle>{t("toolbar.rename.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText variant="body2" sx={{ mb: 2 }}>
-            Please give a new name for <strong>{currentName}</strong>
+            <TransRichText ns="workspace" i18nKey="toolbar.rename.prompt" values={{ currentName }} />
           </DialogContentText>
           <TextField
             size="small"
-            label="Name"
+            label={t("toolbar.rename.name")}
             value={newName}
             onChange={({ target: { value } }) => setNewName(value)}
           />
@@ -153,7 +156,7 @@ const RenameDialog = () => {
               handleClose();
             }}
           >
-            Cancel
+            {t("common:actions.cancel")}
           </Button>
           <ValidatingSubmitButton
             loading={submitting}
@@ -161,10 +164,10 @@ const RenameDialog = () => {
               void handleSubmit();
             }}
             validationResult={
-              newName.length === 0 ? Result.Error([new Error("Empty name is not permitted.")]) : Result.Ok(null)
+              newName.length === 0 ? Result.Error([new Error(t("toolbar.rename.emptyName"))]) : Result.Ok(null)
             }
           >
-            Rename
+            {t("toolbar.rename.title")}
           </ValidatingSubmitButton>
         </DialogActions>
       </form>

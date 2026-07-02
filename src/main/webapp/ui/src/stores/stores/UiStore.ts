@@ -2,6 +2,7 @@ import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
 import type React from "react";
 import { isMobile } from "react-device-detect";
+import i18n from "@/modules/common/i18n";
 import theme from "../../theme";
 import type { Panel } from "../../util/types";
 import { match } from "../../util/Util";
@@ -260,8 +261,12 @@ export default class UiStore {
   confirmDiscardAnyChanges(): Promise<boolean> {
     // returns boolean -- true means the caller is free to navigate away from record
     if (this.dirty) {
-      return this.confirm("Leave the editor?", "Changes that you made will not be saved.", "Leave", "Cancel", () =>
-        this.discardChangesCallback(),
+      return this.confirm(
+        i18n.t("common:dirtyNavigation.title"),
+        i18n.t("common:dirtyNavigation.message"),
+        i18n.t("common:dirtyNavigation.leave"),
+        i18n.t("common:actions.cancel"),
+        () => this.discardChangesCallback(),
       );
     }
     return Promise.resolve(true);

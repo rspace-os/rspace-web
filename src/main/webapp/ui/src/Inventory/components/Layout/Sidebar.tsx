@@ -9,6 +9,7 @@ import List from "@mui/material/List";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { InvalidState } from "@/util/error";
 import { mapNullable } from "@/util/Util";
 import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
@@ -112,6 +113,7 @@ const MyBenchNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { peopleStore, searchStore, uiStore } = useStores();
     const { navigateToSearch } = useNavigateHelpers();
     const currentUser = peopleStore.currentUser;
@@ -127,7 +129,7 @@ const MyBenchNavItem = observer(
 
     return (
       <DrawerTab
-        label="My Bench"
+        label={t("layout.sidebar.myBench")}
         selected={(isSearchListing() && currentUser && searchStore.search.onUsersBench(currentUser)) ?? false}
         icon={<MyBenchIcon />}
         index={index}
@@ -153,6 +155,7 @@ const ContainersNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -160,7 +163,7 @@ const ContainersNavItem = observer(
 
     return (
       <DrawerTab
-        label="Containers"
+        label={t("recordTypes.container.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("CONTAINER")}
         icon={
           <RecordTypeIcon
@@ -196,6 +199,7 @@ const SampleNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -203,7 +207,7 @@ const SampleNavItem = observer(
 
     return (
       <DrawerTab
-        label="Samples"
+        label={t("recordTypes.sample.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE")}
         icon={
           <RecordTypeIcon
@@ -238,6 +242,7 @@ const InstrumentNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -245,7 +250,7 @@ const InstrumentNavItem = observer(
 
     return (
       <DrawerTab
-        label="Instruments"
+        label={t("recordTypes.instrument.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT")}
         icon={<FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} />}
         index={index}
@@ -272,6 +277,7 @@ const TemplateNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -279,13 +285,7 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label={
-          <>
-            Sample
-            <br />
-            Templates
-          </>
-        }
+        label={t("recordTypes.sampleTemplate.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE_TEMPLATE")}
         icon={
           <RecordTypeIcon
@@ -321,6 +321,7 @@ const InstrumentTemplateNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -328,13 +329,7 @@ const InstrumentTemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label={
-          <>
-            Instrument
-            <br />
-            Templates
-          </>
-        }
+        label={t("recordTypes.instrumentTemplate.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
         icon={
           <RecordTypeIcon
@@ -370,6 +365,7 @@ const IgsnNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { uiStore } = useStores();
     const { useNavigate } = React.useContext(NavigateContext);
     const { trackEvent } = React.useContext(AnalyticsContext);
@@ -377,7 +373,7 @@ const IgsnNavItem = observer(
 
     return (
       <DrawerTab
-        label="IGSN IDs"
+        label={t("layout.sidebar.igsnIds")}
         selected={/identifiers\/igsn/.test(window.location.pathname)}
         icon={<IgsnIcon sx={{ width: "16px", height: "16px" }} />}
         index={index}
@@ -404,6 +400,7 @@ const SubsampleNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
     const benchSearch = searchStore.search.benchSearch;
@@ -411,7 +408,7 @@ const SubsampleNavItem = observer(
 
     return (
       <DrawerTab
-        label="Subsamples"
+        label={t("recordTypes.subsample.plural")}
         selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SUBSAMPLE")}
         icon={
           <RecordTypeIcon
@@ -446,6 +443,7 @@ const ExportNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const {
       peopleStore: { currentUser },
       uiStore,
@@ -457,7 +455,7 @@ const ExportNavItem = observer(
     return (
       <>
         <DrawerTab
-          label="Export Data"
+          label={t("layout.sidebar.exportData")}
           onClick={() => {
             trackEvent("user:open:allTheirItemsExportDialog:InventorySidebar");
             setOpenExportDialog(true);
@@ -492,12 +490,13 @@ const SettingsNavItem = observer(
     tabIndex: number;
     getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
+    const { t } = useTranslation("inventory");
     const { uiStore } = useStores();
     const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
     return (
       <>
         <DrawerTab
-          label="Settings"
+          label={t("layout.sidebar.settings")}
           onClick={() => {
             setOpenSettingsDialog(true);
           }}
@@ -519,6 +518,7 @@ type SidebarArgs = {
 };
 
 function Sidebar({ id }: SidebarArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { uiStore, peopleStore } = useStores();
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");
@@ -534,7 +534,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
 
   return (
     <CustomDrawer id={id}>
-      <Box ref={sidebarRef} aria-label="Inventory Sidebar Navigation">
+      <Box ref={sidebarRef} aria-label={t("layout.sidebar.navigationLabel")}>
         <CreateNew onClick={afterClick} />
         <Divider />
         <Box
@@ -545,7 +545,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             position: "relative",
           }}
         >
-          <List component="ul" onClick={afterClick} aria-label="List existing Inventory items">
+          <List component="ul" onClick={afterClick} aria-label={t("layout.sidebar.itemsListLabel")}>
             <MyBenchNavItem index={0} tabIndex={getTabIndex(0)} getRef={getRef} />
             <ContainersNavItem index={1} tabIndex={getTabIndex(1)} getRef={getRef} />
             <SampleNavItem index={2} tabIndex={getTabIndex(2)} getRef={getRef} />
@@ -556,7 +556,7 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
           </List>
           <Divider />
-          <List component="ul" aria-label="Other places and action">
+          <List component="ul" aria-label={t("layout.sidebar.otherActionsLabel")}>
             <ExportNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
             {isSysAdmin && <SettingsNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />}
           </List>

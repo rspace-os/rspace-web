@@ -24,10 +24,10 @@ vi.mock("../ElnFolderBrowser", () => ({
           })
         }
       >
-        select doc
+        {"select doc"}
       </button>
       <button type="button" onClick={() => onSelectionChange(null)}>
-        select folder
+        {"select folder"}
       </button>
     </div>
   ),
@@ -59,7 +59,7 @@ describe("ElnRecordPicker", () => {
 
   it("disables Choose until a target is selected", () => {
     renderPicker();
-    expect(screen.getByRole("button", { name: /choose/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
   });
 
   it("confirms the selected target via Choose rather than on click, so expandable items can be browsed into", async () => {
@@ -71,7 +71,7 @@ describe("ElnRecordPicker", () => {
     // selection alone must not close the dialog or report a pick
     expect(onPick).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: /choose/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" }));
     expect(onPick).toHaveBeenCalledWith({
       globalId: "SD9",
       name: "Browsed doc",
@@ -84,10 +84,10 @@ describe("ElnRecordPicker", () => {
     renderPicker();
 
     await user.click(screen.getByRole("button", { name: /select doc/i }));
-    expect(screen.getByRole("button", { name: /choose/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeEnabled();
 
     await user.click(screen.getByRole("button", { name: /select folder/i }));
-    expect(screen.getByRole("button", { name: /choose/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
   });
 
   it("forgets the previous selection when reopened", async () => {
@@ -112,7 +112,7 @@ describe("ElnRecordPicker", () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByRole("button", { name: /choose/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
   });
 
   it("cancels via the Cancel button", async () => {
@@ -120,7 +120,7 @@ describe("ElnRecordPicker", () => {
     const user = userEvent.setup();
     renderPicker({ onCancel });
 
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(onCancel).toHaveBeenCalled();
   });

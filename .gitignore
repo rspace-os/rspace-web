@@ -82,3 +82,5 @@ src/main/webapp/ui/junit.xml
 # Playwright outputs (repo root; written by the component-test runner)
 /test-results/
 /playwright-report/
+# Playwright MCP output (snapshots, console logs, screenshots from browser driving)
+.playwright-mcp/

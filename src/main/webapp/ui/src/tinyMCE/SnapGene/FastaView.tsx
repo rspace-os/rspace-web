@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import React, { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import LoadingCircular from "../../components/LoadingCircular";
 
@@ -19,6 +20,7 @@ type FastaViewProps = {
  * Displays the FASTA sequence for a SnapGene file and lets the user copy it.
  */
 export default function FastaView({ id, setDisabled }: FastaViewProps) {
+  const { t } = useTranslation("apps");
   const [loading, setLoading] = React.useState(true);
   const [sequence, setSequence] = React.useState("");
 
@@ -48,9 +50,9 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
     el?.select(); // Select the <textarea> content
     try {
       document.execCommand("copy");
-      RS.confirm("Copied to clipboard", "notice", 3000);
+      RS.confirm(t("tinyMce.snapGene.copySuccess"), "notice", 3000);
     } catch {
-      RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
+      RS.confirm(t("tinyMce.snapGene.copyFailed"), "warning", 5000);
     }
     if (el) {
       document.body.removeChild(el); // Remove the <textarea> element
@@ -100,7 +102,7 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
       </Grid>
       <Grid sx={{ textAlign: "right" }} size={2}>
         <Button onClick={copyToClipboard} color="primary" variant="outlined" disabled={loading}>
-          Copy to Clipboard
+          {t("tinyMce.snapGene.copyToClipboard")}
         </Button>
       </Grid>
     </>

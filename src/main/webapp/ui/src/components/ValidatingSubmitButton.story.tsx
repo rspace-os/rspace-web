@@ -20,17 +20,21 @@ export const SimpleExample = ({ onClick = () => {} }: { onClick: () => void }) =
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ padding: "20px" }}>
-        <h3>Validating Submit Button</h3>
+        <h3>{"Validating Submit Button"}</h3>
         <Box sx={{ marginBottom: "10px" }}>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsValid())}>Set Valid</button>
+          <button onClick={() => setValidationResult(IsValid())}>{"Set Valid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>Set Invalid</button>
+          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>Toggle Loading ({loading ? "Off" : "On"})</button>
+          <button onClick={() => setLoading(!loading)}>
+            {"Toggle Loading ("}
+            {loading ? "Off" : "On"}
+            {")"}
+          </button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
-          Submit
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>
@@ -62,14 +66,18 @@ export const ProgressExample = ({ onClick = () => {} }: { onClick: () => void })
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ padding: "20px" }}>
-        <h3>Validating Submit Button with Progress</h3>
+        <h3>{"Validating Submit Button with Progress"}</h3>
         <Box sx={{ marginBottom: "10px" }}>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsValid())}>Set Valid</button>
+          <button onClick={() => setValidationResult(IsValid())}>{"Set Valid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>Set Invalid</button>
+          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>Toggle Loading ({loading ? "Off" : "On"})</button>
+          <button onClick={() => setLoading(!loading)}>
+            {"Toggle Loading ("}
+            {loading ? "Off" : "On"}
+            {")"}
+          </button>
         </Box>
         <ValidatingSubmitButton
           validationResult={validationResult}
@@ -77,7 +85,7 @@ export const ProgressExample = ({ onClick = () => {} }: { onClick: () => void })
           progress={progress}
           onClick={handleClick}
         >
-          Submit
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>
@@ -95,17 +103,21 @@ export const HighContrastExample = ({ onClick = () => {} }: { onClick: () => voi
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Box sx={{ padding: "20px" }}>
-        <h3>Validating Submit Button (High Contrast)</h3>
+        <h3>{"Validating Submit Button (High Contrast)"}</h3>
         <Box sx={{ marginBottom: "10px" }}>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsValid())}>Set Valid</button>
+          <button onClick={() => setValidationResult(IsValid())}>{"Set Valid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>Set Invalid</button>
+          <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>Toggle Loading ({loading ? "Off" : "On"})</button>
+          <button onClick={() => setLoading(!loading)}>
+            {"Toggle Loading ("}
+            {loading ? "Off" : "On"}
+            {")"}
+          </button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
-          Submit
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>

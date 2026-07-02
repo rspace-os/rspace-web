@@ -15,6 +15,7 @@ import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import { forwardRef, useId } from "react";
+import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import type { Alert as AlertType } from "../../stores/contexts/Alert";
 import GlobalId from "../GlobalId";
@@ -45,6 +46,7 @@ type SnackbarContentWrapperArgs = {
 
 const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapperArgs>(
   ({ onClose, alert, expanded, setExpanded, onInteraction, ...other }: SnackbarContentWrapperArgs, ref) => {
+    const { t } = useTranslation("common");
     const { isViewportVerySmall } = useViewportDimensions();
     const theme = useTheme();
     const Icon = variantIcon[alert.variant];
@@ -118,7 +120,10 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
           {alert.retryFunction && <RetryButton retryFunction={alert.retryFunction} onClose={onClose} />}
           {alert.details.length > 0 && (
             <ExpandButton
-              ariaLabel={`${alert.detailsCount} sub-messages. Toggle to ${expanded ? "hide" : "show"}`}
+              ariaLabel={t("alerts.detailsToggleLabel", {
+                count: alert.detailsCount,
+                expanded: String(expanded),
+              })}
               expanded={expanded}
               setExpanded={(e) => {
                 setExpanded(e);
@@ -164,7 +169,9 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
           {alert.detailsCount > alert.details.length && (
             <Grid size={12}>
               <Alert sx={{ alignItems: "center" }} severity={alert.variant}>
-                <Box sx={{ wordBreak: "break-word" }}>{`And ${alert.detailsCount - alert.details.length} more...`}</Box>
+                <Box sx={{ wordBreak: "break-word" }}>
+                  {t("alerts.moreDetails", { count: alert.detailsCount - alert.details.length })}
+                </Box>
               </Alert>
             </Grid>
           )}

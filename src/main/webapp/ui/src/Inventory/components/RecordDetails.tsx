@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import DOMPurify from "dompurify";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
 import DescriptionList from "../../components/DescriptionList";
 import GlobalId from "../../components/GlobalId";
@@ -22,6 +23,7 @@ type RecordDetailsArgs = {
 };
 
 function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const { uiStore } = useStores();
@@ -59,7 +61,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
               ? []
               : [
                   {
-                    label: "Global ID",
+                    label: t("recordDetails.labels.globalId"),
                     value: record.globalId ? <GlobalId record={record} /> : <TableCellBlank />,
                     reducedPadding: true,
                   },
@@ -68,14 +70,14 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
               ? []
               : [
                   {
-                    label: "Name",
+                    label: t("recordDetails.labels.name"),
                     value: record.name,
                   },
                 ]),
             ...(record.recordDetails.quantity
               ? [
                   {
-                    label: "Quantity",
+                    label: t("recordDetails.labels.quantity"),
                     value: record.recordDetails.quantity,
                   },
                 ]
@@ -83,7 +85,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.readAccessLevel !== "public" && record.recordDetails.sample
               ? [
                   {
-                    label: "Sample",
+                    label: t("recordDetails.labels.sample"),
                     value: <RecordLink record={record.recordDetails.sample} overflow />,
                     reducedPadding: true,
                   },
@@ -92,7 +94,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.version
               ? [
                   {
-                    label: "Version",
+                    label: t("recordDetails.labels.version"),
                     value: record.recordDetails.version,
                   },
                 ]
@@ -100,7 +102,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.description
               ? [
                   {
-                    label: "Description",
+                    label: t("recordDetails.labels.description"),
                     value: (
                       <span
                         dangerouslySetInnerHTML={{
@@ -114,7 +116,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.tags
               ? [
                   {
-                    label: "Tags",
+                    label: t("recordDetails.labels.tags"),
                     value: (
                       <TagListing
                         onClick={(tag) => {
@@ -133,7 +135,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.readAccessLevel === "full" && record.recordDetails.contents
               ? [
                   {
-                    label: "Contents",
+                    label: t("recordDetails.labels.contents"),
                     value: <ContentsChips record={record.recordDetails.contents} />,
                     reducedPadding: true,
                   },
@@ -142,7 +144,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.readAccessLevel !== "public" && record.recordDetails.location
               ? [
                   {
-                    label: "Location",
+                    label: t("recordDetails.labels.location"),
                     value: <Breadcrumbs record={record.recordDetails.location} />,
                     reducedPadding: true,
                   },
@@ -151,14 +153,14 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.readAccessLevel === "full" && record.recordDetails.modified
               ? [
                   {
-                    label: "Modified",
+                    label: t("recordDetails.labels.modified"),
                     value: (
                       <>
                         <TimeAgoCustom
                           time={record.recordDetails.modified[0]}
                           formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
                         />{" "}
-                        by {record.recordDetails.modified[1]}
+                        {t("recordDetails.modifiedBy", { user: record.recordDetails.modified[1] })}
                       </>
                     ),
                   },
@@ -167,7 +169,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.owner
               ? [
                   {
-                    label: "Owner",
+                    label: t("recordDetails.labels.owner"),
                     value: record.recordDetails.owner,
                   },
                 ]
@@ -175,7 +177,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.size
               ? [
                   {
-                    label: "Size",
+                    label: t("recordDetails.labels.size"),
                     value: formatFileSize(record.recordDetails.size),
                   },
                 ]
@@ -183,7 +185,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
             ...(record.recordDetails.galleryFile
               ? [
                   {
-                    label: "Gallery File",
+                    label: t("recordDetails.labels.galleryFile"),
                     value: <GlobalId record={record.recordDetails.galleryFile} />,
                   },
                 ]

@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import ValidatingSubmitButton from "../../components/ValidatingSubmitButton";
 import type { Editable } from "../../stores/definitions/Editable";
 import useStores from "../../stores/use-stores";
@@ -13,6 +14,7 @@ type CommonActionsArgs = {
 
 function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
   const { uiStore } = useStores();
+  const { t } = useTranslation(["inventory", "common"]);
 
   return (
     <Box
@@ -39,7 +41,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
         }}
         disabled={editableObject.loading}
       >
-        Cancel
+        {t("common:actions.cancel")}
       </Button>
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         {editableObject.submittable.orElseGet((errors) =>
@@ -56,7 +58,7 @@ function CommonActions({ editableObject }: CommonActionsArgs): React.ReactNode {
           progress={editableObject.uploadProgress}
           disabled={!editableObject.submittable.isOk}
         >
-          Save
+          {t("common:actions.save")}
         </ValidatingSubmitButton>
       </Box>
     </Box>

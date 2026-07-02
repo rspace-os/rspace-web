@@ -52,7 +52,7 @@ describe("StorageTemperature", () => {
           <StorageTemperature fieldOwner={fieldOwner} onErrorStateChange={() => {}} />
         </ThemeProvider>,
       );
-      await user.click(screen.getByText("Specify"));
+      await user.click(screen.getByText("inventory:sample.fields.storageTemperature.specify"));
       expect(spy).toHaveBeenCalledWith({
         storageTempMin: { numericValue: 15, unitId: CELSIUS },
         storageTempMax: { numericValue: 30, unitId: CELSIUS },

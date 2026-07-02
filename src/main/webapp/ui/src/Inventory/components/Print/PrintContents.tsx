@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { Fragment, forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { GlobalId } from "../../../stores/definitions/BaseRecord";
 import type { Optional } from "../../../util/optional";
 import type { PrintOptions } from "./PrintDialog";
@@ -87,6 +88,7 @@ export const PreviewPrintItem = ({
   imageLinks,
   target,
 }: PreviewPrintItemArgs) => {
+  const { t } = useTranslation("inventory");
   const { printerType, printLayout, printSize } = printOptions;
 
   const now = new Date();
@@ -117,7 +119,7 @@ export const PreviewPrintItem = ({
       ? printLabelContents.globalId.map((globalId) => (
           <Fragment key={globalId}>
             <Typography variant="inherit" component="strong" sx={{ fontSize: "0.8em" }}>
-              RSPACE GLOBAL ID
+              {t("print.contents.globalIdLabel")}
             </Typography>
             <br />
             {globalId}
@@ -126,7 +128,7 @@ export const PreviewPrintItem = ({
       : printLabelContents.identifier.map(({ doi }) => (
           <Fragment key={doi}>
             <Typography variant="inherit" component="strong" sx={{ fontSize: "0.8em" }}>
-              IGSN ID
+              {t("print.contents.igsnLabel")}
             </Typography>
             <br />
             {doi}
@@ -171,8 +173,8 @@ export const PreviewPrintItem = ({
             <Grid>
               <img
                 src={imageLinks[index]}
-                title="Barcode Image"
-                alt="Barcode"
+                title={t("print.contents.barcodeTitle")}
+                alt={t("print.contents.barcodeAlt")}
                 {...(printOptions.printCopies === "1" ? { width: "75%" } : { height: "80%" })}
               />
             </Grid>
@@ -205,14 +207,14 @@ export const PreviewPrintItem = ({
                     ))
                     .orElse(null)}
                   <Grid>
-                    <strong>Item:</strong> {printOptions.printCopies === "1" && <br />}
+                    <strong>{t("print.contents.item")}</strong> {printOptions.printCopies === "1" && <br />}
                     {printLabelContents.itemLabel}
                   </Grid>
                   <Grid>
-                    <strong>Location:</strong> {printLabelContents.locationLabel}
+                    <strong>{t("print.contents.location")}</strong> {printLabelContents.locationLabel}
                   </Grid>
                   <Grid>
-                    <strong>Printed:</strong> {printOptions.printCopies === "1" && <br />}
+                    <strong>{t("print.contents.printed")}</strong> {printOptions.printCopies === "1" && <br />}
                     {now.toLocaleString()}
                   </Grid>
                 </>
@@ -273,7 +275,6 @@ const PrintContents = forwardRef<HTMLDivElement, PrintContentsArgs>(
             )}
           </Fragment>
         ))}
-        ;
       </Grid>
     );
   },

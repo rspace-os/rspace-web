@@ -95,7 +95,7 @@ describe("KetcherTinyMce accessibility", () => {
 
     const { baseElement } = render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "common:ketcher.insertChemicalTitle" })).toBeVisible();
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -135,7 +135,7 @@ describe("KetcherTinyMce accessibility", () => {
 
     render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "common:ketcher.insertChemicalTitle" })).toBeVisible();
     expect(mockAxiosGet).toHaveBeenCalledWith("/chemical/ajax/loadChemElements", {
       params: {
         chemId: "chem-42",

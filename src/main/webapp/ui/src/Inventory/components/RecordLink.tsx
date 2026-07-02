@@ -3,6 +3,7 @@ import { emphasize, type Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import NavigateContext from "../../stores/contexts/Navigate";
@@ -174,6 +175,7 @@ export const RecordLink = observer(
 export const TopLink = observer(({ overflow = false }: OverflowProps) => {
   const { searchStore, trackingStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
+  const { t } = useTranslation("inventory");
   const navigate = useNavigate();
 
   const containersRoot = `/inventory/search?${searchStore.fetcher
@@ -193,7 +195,7 @@ export const TopLink = observer(({ overflow = false }: OverflowProps) => {
         size="small"
         sx={interactiveChipSx({ overflow, withoutIcon: true })}
         component="span"
-        label="Containers"
+        label={t("recordTypes.container.plural")}
         onClick={toTopContainers}
       />
     </Typography>
@@ -215,8 +217,18 @@ export const CurrentRecord = observer(({ record, overflow = false }: RecordChipP
   );
 });
 
-export const InTrash = () => (
-  <Typography variant="body1">
-    <Chip size="small" sx={staticChipSx({ withoutIcon: true })} clickable={false} component="span" label="In Trash" />
-  </Typography>
-);
+export const InTrash = () => {
+  const { t } = useTranslation("inventory");
+
+  return (
+    <Typography variant="body1">
+      <Chip
+        size="small"
+        sx={staticChipSx({ withoutIcon: true })}
+        clickable={false}
+        component="span"
+        label={t("search.controls.status.inTrash")}
+      />
+    </Typography>
+  );
+};

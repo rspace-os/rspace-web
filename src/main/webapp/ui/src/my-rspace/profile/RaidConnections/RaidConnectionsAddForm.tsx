@@ -3,30 +3,38 @@ import { Box, Button, TextField as MuiTextField, Stack } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import * as v from "valibot";
 import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
 import { raidQueryKeys, useGetAvailableRaidIdentifiersAjaxQuery } from "@/modules/raid/queries";
 
 // Schema for a RAiD option
-const RaidOptionSchema = v.object({
-  label: v.string(),
-  raidServerAlias: v.string(),
-  raidIdentifier: v.pipe(
-    v.string(),
-    v.nonEmpty("RAiD identifier is required"),
-    v.minLength(3, "RAiD identifier must be at least 3 characters"),
-  ),
-});
+const createRaidOptionSchema = ({
+  identifierMinLength,
+  identifierRequired,
+}: {
+  identifierMinLength: string;
+  identifierRequired: string;
+}) =>
+  v.object({
+    label: v.string(),
+    raidServerAlias: v.string(),
+    raidIdentifier: v.pipe(v.string(), v.nonEmpty(identifierRequired), v.minLength(3, identifierMinLength)),
+  });
 
-const RaidConnectionsFormSchema = v.object({
-  raidOption: v.pipe(
-    v.nullable(RaidOptionSchema),
-    v.check((val) => val !== null, "RAiD identifier is required"),
-  ),
-});
+const createRaidConnectionsFormSchema = (messages: { identifierMinLength: string; identifierRequired: string }) =>
+  v.object({
+    raidOption: v.pipe(
+      v.nullable(createRaidOptionSchema(messages)),
+      v.check((val) => val !== null, messages.identifierRequired),
+    ),
+  });
 
-type RaidConnectionsAddFormValues = v.InferOutput<typeof RaidConnectionsFormSchema>;
-type RaidOption = v.InferOutput<typeof RaidOptionSchema>;
+type RaidConnectionsAddFormValues = {
+  raidOption: RaidOption | null;
+};
+
+type RaidOption = v.InferOutput<ReturnType<typeof createRaidOptionSchema>>;
 
 interface RaidConnectionsAddFormProps {
   groupId: string;
@@ -38,14 +46,19 @@ const defaultValues: RaidConnectionsAddFormValues = {
 };
 
 const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAddFormProps) => {
+  const { t } = useTranslation("common");
   const { data } = useGetAvailableRaidIdentifiersAjaxQuery();
   const queryClient = useQueryClient();
   const mutation = useAddRaidIdentifierMutation({ groupId });
+  const raidConnectionsFormSchema = createRaidConnectionsFormSchema({
+    identifierMinLength: t("profile.raidConnections.validation.identifierMinLength"),
+    identifierRequired: t("profile.raidConnections.validation.identifierRequired"),
+  });
 
   const form = useForm({
     defaultValues,
     validators: {
-      onChange: RaidConnectionsFormSchema,
+      onChange: raidConnectionsFormSchema,
     },
     onSubmit: async ({ value }) => {
       if (!value.raidOption) {
@@ -66,7 +79,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
   });
 
   if (!data.success) {
-    return <>Error loading RAiD identifier options: {data.errorMsg}</>;
+    return <>{t("profile.raidConnections.loadOptionsError", { error: data.errorMsg })}</>;
   }
 
   const options: Array<RaidOption> = data.data.map((option) => ({
@@ -99,11 +112,11 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
               isOptionEqualToValue={(option, value) =>
                 option.raidIdentifier === value.raidIdentifier && option.raidServerAlias === value.raidServerAlias
               }
-              noOptionsText="No valid available RAiD found, or the RAiD has been used by another project group."
+              noOptionsText={t("profile.raidConnections.noOptions")}
               renderInput={(params) => (
                 <MuiTextField
                   {...params}
-                  label="RAiD Identifier"
+                  label={t("profile.raidConnections.identifier")}
                   required
                   error={field.state.meta.errors.length > 0 || mutation.isError}
                   helperText={field.state.meta.errors.map(String).join(", ") || mutation.error?.message}
@@ -117,7 +130,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
           {([canSubmit, isPristine, isSubmitting]) => (
             <>
               <Button type="submit" variant="outlined" color="primary" size="small" disabled={!canSubmit || isPristine}>
-                {isSubmitting ? "Adding..." : "Add"}
+                {isSubmitting ? t("profile.raidConnections.adding") : t("actions.add")}
               </Button>
               <Button
                 type="button"
@@ -129,7 +142,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
                   handleCloseForm();
                 }}
               >
-                Cancel
+                {t("actions.cancel")}
               </Button>
             </>
           )}

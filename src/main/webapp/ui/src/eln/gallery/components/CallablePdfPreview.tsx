@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Document, Page, pdfjs } from "react-pdf";
 import { incrementForever, take } from "../../../util/iterators";
 import "react-pdf/dist/Page/TextLayer.css";
@@ -57,6 +58,8 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
 
   React.useEffect(() => {
     if (!pdfPreviewOpen) {
@@ -88,7 +91,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
             // z-index to 2000 to ensure it still displays above legacy jQuery dialogs
             zIndex: 2000,
           }}
-          aria-label="PDF Preview"
+          aria-label={t("callablePdfPreview.title")}
         >
           <DialogContent sx={{ overflowY: "auto" }}>
             <Document file={pdfPreviewOpen} onLoadSuccess={onDocumentLoadSuccess}>
@@ -111,7 +114,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale * 1.2);
                 }}
-                aria-label="zoom in"
+                aria-label={tCommon("actions.zoomIn")}
                 size="small"
               >
                 <ZoomInIcon />
@@ -129,7 +132,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                   setScale(1);
                 }}
                 disabled={scale === 1}
-                aria-label="reset zoom"
+                aria-label={tCommon("actions.resetZoom")}
                 size="small"
               >
                 <ResetZoomIcon />
@@ -146,7 +149,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale / 1.2);
                 }}
-                aria-label="zoom out"
+                aria-label={tCommon("actions.zoomOut")}
                 size="small"
               >
                 <ZoomOutIcon />
@@ -158,7 +161,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 setPdfPreviewOpen(null);
               }}
             >
-              Close
+              {tCommon("actions.close")}
             </Button>
           </DialogActions>
         </Dialog>

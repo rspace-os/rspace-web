@@ -9,8 +9,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Cell } from "../../components/EnhancedTableHead";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
+import i18n from "../../modules/common/i18n";
 import materialTheme from "../../theme";
 import { ErrorReason, type ErrorReasonType, Order } from "./Enums";
 import ErrorView from "./ErrorView";
@@ -23,21 +25,25 @@ import {
   getPlateAcquisitions,
   getPlates,
   getWells,
+  OMERO_DATA_TYPE_ALL,
+  OMERO_DATA_TYPE_PROJECTS,
+  OMERO_DATA_TYPE_SCREENS,
 } from "./OmeroClient";
 import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable from "./ResultsTable";
 
-const TABLE_HEADER_CELLS: Array<Cell<string>> = [
-  { id: "path", numeric: false, label: "Path" },
-  { id: "description", numeric: false, label: "Description" },
+const makeTableHeaderCells = (): Array<Cell<string>> => [
+  { id: "path", numeric: false, label: i18n.t("tinyMce.omero.columns.path", { ns: "apps" }) },
+  { id: "description", numeric: false, label: i18n.t("tinyMce.omero.columns.description", { ns: "apps" }) },
 ];
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];
-
-const VISIBLE_HEADER_CELLS = TABLE_HEADER_CELLS;
+// Left empty at module load so makeTableHeaderCells' i18n.t calls don't run
+// before the catalog loads; the component repopulates it on render.
+let VISIBLE_HEADER_CELLS: Array<Cell<string>> = [];
 
 export const getSelectedItems = (): Array<OmeroItem> => SELECTED_ITEMS;
-export const getHeaders = (): typeof TABLE_HEADER_CELLS => VISIBLE_HEADER_CELLS;
+export const getHeaders = (): Array<Cell<string>> => VISIBLE_HEADER_CELLS;
 const ORDER_KEY = "omeroSearchOrder";
 const ORDER_BY_KEY = "omeroSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
@@ -45,6 +51,8 @@ const DEFAULT_ORDERBY = "name";
 export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
+  VISIBLE_HEADER_CELLS = makeTableHeaderCells();
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);
@@ -52,7 +60,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const [selectedItemIds, setSelectedItemIds] = useState<Array<string>>([]);
   const [order, setOrder] = useLocalStorage(ORDER_KEY, DEFAULT_ORDER);
   const [orderBy, setOrderBy] = useLocalStorage<string>(ORDER_BY_KEY, DEFAULT_ORDERBY);
-  const [dataTypeChoice, setDataTypeChoice] = useLocalStorage("omeroDataTypeChoice", "Projects And Screens");
+  const [dataTypeChoice, setDataTypeChoice] = useLocalStorage("omeroDataTypeChoice", OMERO_DATA_TYPE_ALL);
   const [latestGridOfThumbnails, setLatestGridOfThumbnails] = useState<OmeroItem["imageGridDetails"] | null>(null);
   const [latestPlateAcquisition, setLatestPlateAcquisition] = useState<OmeroItem | null>(null);
   const [newItems, setNewItems] = useState<Array<OmeroItem>>([]);
@@ -531,7 +539,14 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     return paths.map((path) => <dt key={path}>{path}</dt>);
   };
   const makeEmptyThumbNail = () => {
-    return <img alt="Unavailable" title={"no image"} style={{ padding: "4px" }} src={"/images/White_square.png"} />;
+    return (
+      <img
+        alt={t("tinyMce.omero.unavailableAlt")}
+        title={t("tinyMce.omero.noImage")}
+        style={{ padding: "4px" }}
+        src={"/images/White_square.png"}
+      />
+    );
   };
   const makeThumbNail = (
     data: OmeroItem,
@@ -634,20 +649,28 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row
-          aria-label="Display All Data, Only Project Data or only Screen Data"
+          aria-label={t("tinyMce.omero.dataTypeChoiceLabel")}
           name="data type choice"
           defaultValue={dataTypeChoice}
           onChange={handleDataTypeChange}
         >
           <FormControlLabel
-            value="Projects And Screens"
+            value={OMERO_DATA_TYPE_ALL}
             control={<Radio color="primary" />}
-            label="Projects And Screens"
+            label={t("tinyMce.omero.dataTypes.all")}
           />
-          <FormControlLabel value="Projects" control={<Radio color="primary" />} label="Projects" />
-          <FormControlLabel value="Screens" control={<Radio color="primary" />} label="Screens" />
+          <FormControlLabel
+            value={OMERO_DATA_TYPE_PROJECTS}
+            control={<Radio color="primary" />}
+            label={t("tinyMce.omero.dataTypes.projects")}
+          />
+          <FormControlLabel
+            value={OMERO_DATA_TYPE_SCREENS}
+            control={<Radio color="primary" />}
+            label={t("tinyMce.omero.dataTypes.screens")}
+          />
         </RadioGroup>
-        <label htmlFor="omeroFilter">Filter results</label>
+        <label htmlFor="omeroFilter">{t("tinyMce.omero.filterResults")}</label>
         <input id="omeroFilterID" type="text" name="omeroFilter" onKeyPress={filterDataAndDeselectHidden} />
         <Grid container spacing={1}>
           <Grid size={12}>
@@ -693,7 +716,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
                     p: 1,
                   }}
                 >
-                  Data is loading...
+                  {t("tinyMce.omero.loadingData")}
                 </Typography>
               </Stack>
             )}

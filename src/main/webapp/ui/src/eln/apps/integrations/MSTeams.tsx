@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
 import docLinks from "../../../assets/DocLinks";
@@ -36,6 +37,7 @@ type MSTeamsArgs = {
  * Teams channel.
  */
 function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const { deleteAppOptions, saveAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = useContext(AlertContext);
   const [newChannelName, setNewChannelName] = useState<string | null>(null);
@@ -50,22 +52,22 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Teams"
+        name={t("integrations.msteams.name")}
         integrationState={integrationState}
-        explanatoryText="Message and video call your colleagues through a workspace platform with file storage."
+        explanatoryText={t("integrations.msteams.description")}
         image={TeamsIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
-        helpLinkText="Microsoft Teams integration docs"
+        usageText={t("integrations.msteams.usage")}
+        helpLinkText={t("integrations.msteams.helpLink")}
         website="teams.microsoft.com"
         docLink="teams"
         setupSection={
           <>
             <Typography variant="body2">
-              The steps to setting up this integration are documented in{" "}
+              {t("integrations.msteams.setup.article")}{" "}
               <Link href={docLinks.teams} target="_blank" rel="noreferrer">
-                the Microsoft Teams Integration article.
+                {t("integrations.msteams.setup.articleLink")}
               </Link>
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
@@ -75,7 +77,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          <TableCell colSpan={2}>Channel Connector Name</TableCell>
+                          <TableCell colSpan={2}>{t("integrations.msteams.tableHeader")}</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -97,7 +99,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                       addAlert(
                                         mkAlert({
                                           variant: "success",
-                                          message: "Successfully removed channel.",
+                                          message: t("integrations.msteams.alerts.removeSuccess"),
                                         }),
                                       );
                                     } catch (e) {
@@ -105,7 +107,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                         addAlert(
                                           mkAlert({
                                             variant: "error",
-                                            title: "Failed to remove channel.",
+                                            title: t("integrations.msteams.alerts.removeError"),
                                             message: e.message,
                                           }),
                                         );
@@ -114,7 +116,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                   })();
                                 }}
                               >
-                                Remove
+                                {t("common:actions.remove")}
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -130,7 +132,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                           setNewWebhook("");
                         }}
                       >
-                        Add
+                        {t("common:actions.add")}
                       </Button>
                     ) : (
                       <Card variant="outlined">
@@ -151,7 +153,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                 addAlert(
                                   mkAlert({
                                     variant: "success",
-                                    message: "Successfully added channel.",
+                                    message: t("integrations.msteams.alerts.addSuccess"),
                                   }),
                                 );
                               } catch (e) {
@@ -159,7 +161,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                                   addAlert(
                                     mkAlert({
                                       variant: "error",
-                                      title: "Failed to add channel.",
+                                      title: t("integrations.msteams.alerts.addError"),
                                       message: e.message,
                                     }),
                                   );
@@ -170,7 +172,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                         >
                           <CardContent>
                             <TextField
-                              label="Channel Connector Name"
+                              label={t("integrations.msteams.fields.channelName")}
                               fullWidth
                               value={newChannelName}
                               onChange={({ target: { value } }) => {
@@ -179,7 +181,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                               sx={{ mt: 1 }}
                             />
                             <TextField
-                              label="Webhook URL"
+                              label={t("integrations.msteams.fields.webhookUrl")}
                               fullWidth
                               value={newWebhook}
                               onChange={({ target: { value } }) => {
@@ -189,7 +191,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                             />
                           </CardContent>
                           <CardActions>
-                            <Button type="submit">Save</Button>
+                            <Button type="submit">{t("common:actions.save")}</Button>
                           </CardActions>
                         </form>
                       </Card>
@@ -197,7 +199,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
                   </Box>
                 </Stack>
               ))
-              .orElse("Error getting configured channels.")}
+              .orElse(t("integrations.msteams.orElse"))}
           </>
         }
       />

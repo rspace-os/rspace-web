@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
 import createAccentedTheme from "../../accentedTheme";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
@@ -17,6 +18,8 @@ import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import { Dialog } from "../DialogBoundary";
 import ErrorBoundary from "../ErrorBoundary";
+
+const SUPPORT_EMAIL = "support@researchspace.com";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -38,6 +41,7 @@ function ApplicationVersion(): React.ReactElement {
 }
 
 export function AboutRSpaceContent(): React.ReactElement {
+  const { t } = useTranslation(["about", "common"]);
   const deploymentDescription = useDeploymentProperty("deployment.description");
   const helpEmail = useDeploymentProperty("deployment.helpEmail");
 
@@ -53,15 +57,15 @@ export function AboutRSpaceContent(): React.ReactElement {
           justifyContent: "center",
         }}
       >
-        <img src={RSpaceLogo} alt="RSpace Logo" />{" "}
+        <img src={RSpaceLogo} alt={t("logo.alt")} />{" "}
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        <ErrorBoundary message="Version unavailable">
+        <ErrorBoundary message={t("version.unavailable")}>
           <React.Suspense
             fallback={
               <Typography variant="h6" gutterBottom color="textSecondary">
-                Loading version...
+                {t("version.loading")}
               </Typography>
             }
           >
@@ -86,7 +90,7 @@ export function AboutRSpaceContent(): React.ReactElement {
       })}
 
       <Typography variant="body2" align="center" color="textSecondary" gutterBottom>
-        For general support, email: <Link href="mailto:support@researchspace.com">support@researchspace.com</Link>
+        {t("support.generalLabel")} <Link href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</Link>
       </Typography>
 
       {FetchingData.match(helpEmail, {
@@ -96,7 +100,7 @@ export function AboutRSpaceContent(): React.ReactElement {
           if (typeof email === "string" && email.trim()) {
             return (
               <Typography variant="body2" align="center" color="textSecondary" gutterBottom>
-                For account and group queries, email: <Link href={`mailto:${email}`}>{email}</Link>
+                {t("support.accountLabel")} <Link href={`mailto:${email}`}>{email}</Link>
               </Typography>
             );
           }
@@ -105,25 +109,23 @@ export function AboutRSpaceContent(): React.ReactElement {
       })}
 
       <Typography variant="body2" align="center" gutterBottom sx={{ mt: 3 }}>
-        RSpace is open-source, and powered by open-source libraries.
-        <br />
-        RSpace is licensed under AGPL.
+        {t("license")}
       </Typography>
       <Typography variant="caption" align="center" color="textSecondary">
-        © 2026 ResearchSpace
+        {t("copyright")}
       </Typography>
 
       <Box sx={{ mt: 2, mb: 3 }}>
         <Typography variant="body2" component="div">
           <Stack spacing={2} direction="row" sx={{ alignItems: "center" }}>
             <Link href="https://researchspace.com" target="_blank" rel="noreferrer">
-              Website
+              {t("links.website")}
             </Link>
             <Link href={docLinks.changelog} target="_blank" rel="noreferrer">
-              Changelog
+              {t("links.changelog")}
             </Link>
             <Link href="https://github.com/rspace-os" target="_blank" rel="noreferrer">
-              Source Code
+              {t("links.sourceCode")}
             </Link>
           </Stack>
         </Typography>
@@ -133,15 +135,16 @@ export function AboutRSpaceContent(): React.ReactElement {
 }
 
 export default function AboutRSpaceDialog({ open, onClose }: AboutRSpaceDialogProps): React.ReactElement {
+  const { t } = useTranslation(["about", "common"]);
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        <DialogTitle>About RSpace</DialogTitle>
+        <DialogTitle>{t("title")}</DialogTitle>
         <DialogContent>
           <AboutRSpaceContent />
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>{t("common:actions.close")}</Button>
         </DialogActions>
       </Dialog>
     </ThemeProvider>

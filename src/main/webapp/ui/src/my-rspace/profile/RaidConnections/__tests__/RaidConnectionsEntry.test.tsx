@@ -59,9 +59,10 @@ vi.mock("../RaidConnectionsAddForm", () => {
     }) {
       return (
         <div data-testid="raid-connections-add-form">
-          Add Form for group {groupId}
+          {"Add Form for group "}
+          {groupId}
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={handleCloseForm}>Close Form</button>
+          <button onClick={handleCloseForm}>{"Close Form"}</button>
         </div>
       );
     },
@@ -81,7 +82,11 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button data-testid="disassociate-button">
-          Disassociate {raidTitle} ({raidIdentifier})
+          {"Disassociate "}
+          {raidTitle}
+          {" ("}
+          {raidIdentifier}
+          {")\n        "}
         </button>
       );
     },
@@ -226,7 +231,7 @@ describe("RaidConnectionsEntry", () => {
     it("Should render 'Not connected' message when no RAiD", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should render add button when not connected", () => {
@@ -264,7 +269,7 @@ describe("RaidConnectionsEntry", () => {
       const addButton = screen.getByRole("button", { name: /add/i });
       await user.click(addButton);
 
-      expect(screen.queryByText("Not connected")).not.toBeInTheDocument();
+      expect(screen.queryByText("common:profile.raidConnections.notConnected")).not.toBeInTheDocument();
     });
 
     it("Should hide add button when in editing mode", async () => {
@@ -304,7 +309,7 @@ describe("RaidConnectionsEntry", () => {
       });
 
       // Should return to initial state
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
     });
 
@@ -329,7 +334,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should handle empty raid identifier", () => {
@@ -342,7 +347,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
     });
 
@@ -406,8 +411,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      // Should show "Not connected" when data is undefined
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should handle undefined group data", () => {
@@ -415,7 +419,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
     });
   });

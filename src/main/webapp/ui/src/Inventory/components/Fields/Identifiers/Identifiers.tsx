@@ -19,7 +19,9 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ComponentType, type ReactNode, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
 import docLinks from "../../../../assets/DocLinks";
@@ -44,6 +46,7 @@ import PublishButton from "./PublishButton";
 
 const IdentifierWrapper = observer(
   ({ activeResult, id, editable }: { activeResult: InventoryRecord; id: Identifier; editable: boolean }): ReactNode => {
+    const { t } = useTranslation(["inventory", "common"]);
     const isRadio = (field: IdentifierField): boolean => Boolean(field.radioOptions);
 
     /* different name to avoid confusion with 'editable' (parent) */
@@ -78,7 +81,7 @@ const IdentifierWrapper = observer(
       <>
         <section>
           <Typography variant="h6" component="h4">
-            Required Identifier Properties
+            {t("fields.identifiers.wrapper.required.title")}
           </Typography>
           {id.requiredFields.map((f) => (
             <Grid
@@ -109,14 +112,14 @@ const IdentifierWrapper = observer(
                       id={`IdentifierField-${f.key}`}
                       disabled={!editable || fixedValue(f)}
                       value={f.value ?? ""}
-                      placeholder={editable ? `Enter value for ${f.key}` : "None"}
+                      placeholder={
+                        editable
+                          ? t("fields.identifiers.wrapper.enterValue", { key: f.key })
+                          : t("fields.identifiers.wrapper.none")
+                      }
                       onChange={({ target: { value } }) => handleUpdate(f, value)}
                       error={editable && isFieldInvalid(f)}
-                      helperText={
-                        editable && isFieldInvalid(f)
-                          ? "In order to publish the identifier, a valid value is required."
-                          : null
-                      }
+                      helperText={editable && isFieldInvalid(f) ? t("fields.identifiers.wrapper.fieldInvalid") : null}
                       slotProps={{
                         inputLabel: { shrink: true },
                       }}
@@ -141,20 +144,20 @@ const IdentifierWrapper = observer(
           >
             <Grid>
               <Typography variant="h6" component="h4">
-                Recommended Identifier Properties
+                {t("fields.identifiers.wrapper.recommended.title")}
               </Typography>
             </Grid>
             <Grid>
               <CustomTooltip
                 title={match<void, string>([
-                  [() => openRecommendedSection, "Hide recommended fields section"],
-                  [() => true, "Show recommended fields section"],
+                  [() => openRecommendedSection, t("fields.identifiers.wrapper.recommended.hide")],
+                  [() => true, t("fields.identifiers.wrapper.recommended.show")],
                 ])()}
               >
                 <IconButton
                   onClick={() => setOpenRecommendedSection(!openRecommendedSection)}
                   disabled={false}
-                  aria-label="Toggle recommended fields section"
+                  aria-label={t("fields.identifiers.wrapper.recommended.label")}
                 >
                   <ExpandCollapseIcon open={openRecommendedSection} />
                 </IconButton>
@@ -180,14 +183,10 @@ const IdentifierWrapper = observer(
         </section>
         <section>
           <Typography variant="h6" component="h4" sx={{ mb: 1 }}>
-            Inventory Fields
+            {t("fields.identifiers.wrapper.inventoryFields.title")}
           </Typography>
           <Alert severity="info">
-            You can include Inventory fields in the item's landing page, to openly share domain-specific metadata
-            outside the IGSN schema.{" "}
-            <strong>
-              Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.
-            </strong>
+            <TransRichText ns="inventory" i18nKey="fields.identifiers.wrapper.inventoryFields.alert" />
           </Alert>
           <FormControlLabel
             control={
@@ -205,16 +204,16 @@ const IdentifierWrapper = observer(
                 }}
               />
             }
-            label="Include Inventory fields on landing page"
+            label={t("fields.identifiers.wrapper.inventoryFields.includeOnPage")}
           />
           {editable && (
             <Typography variant="body2" component="div">
-              The following fields will be included:
+              {t("fields.identifiers.wrapper.inventoryFields.followingFields")}
               <ul>
-                <li>Description</li>
-                <li>Tags</li>
+                <li>{t("fields.identifiers.wrapper.inventoryFields.description")}</li>
+                <li>{t("fields.identifiers.wrapper.inventoryFields.tags")}</li>
                 <li>
-                  Custom Fields
+                  {t("fields.identifiers.wrapper.inventoryFields.customFields")}
                   <ul>
                     {customFields.map((f) => (
                       <li key={f.id}>{f.name}</li>
@@ -222,7 +221,7 @@ const IdentifierWrapper = observer(
                   </ul>
                 </li>
                 <li>
-                  Extra Fields
+                  {t("fields.identifiers.wrapper.inventoryFields.extraFields")}
                   <ul>
                     {activeResult.extraFields.map((f) => (
                       <li key={f.id}>{f.name}</li>
@@ -245,6 +244,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const editable = activeResult.isFieldEditable("identifiers");
   const { addAlert } = useContext(AlertContext);
   const { uiStore } = useStores();
+  const { t } = useTranslation(["inventory", "common"]);
 
   const StateInfo = ({
     identifierState,
@@ -253,27 +253,26 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
     identifierState: IGSNPublishingState;
     identifierUrl: string | null | undefined;
   }): ReactNode => {
-    if (identifierState === "draft")
-      return <>This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.</>;
+    if (identifierState === "draft") return <>{t("fields.identifiers.list.stateInfo.draft")}</>;
     if (identifierState === "findable")
       return (
-        <>
-          This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the{" "}
-          <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
-            RSpace landing page
-          </a>
-          . The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.
-        </>
+        <TransRichText
+          ns="inventory"
+          i18nKey="fields.identifiers.list.stateInfo.findable"
+          components={{
+            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
+          }}
+        />
       );
     if (identifierState === "registered")
       return (
-        <>
-          This IGSN ID is Registered. The metadata is not publicly available through the{" "}
-          <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
-            RSpace landing page
-          </a>
-          , DataCite Commons or the Public API, but is available through the Members API.
-        </>
+        <TransRichText
+          ns="inventory"
+          i18nKey="fields.identifiers.list.stateInfo.registered"
+          components={{
+            a: richTextLink({ href: identifierUrl || "", target: "_blank", rel: "noreferrer" }),
+          }}
+        />
       );
     throw new Error("Invalid state");
   };
@@ -297,7 +296,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
         addAlert(
           mkAlert({
             variant: "error",
-            message: "Could not get RoR data.",
+            message: t("fields.identifiers.list.rorError"),
           }),
         );
       }
@@ -337,16 +336,16 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
       >
         {activeResult.state === "preview" && activeResult.identifiers.length > 0 && (
           <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
-            To update any details, press Edit first.
+            {t("fields.identifiers.list.editFirst")}
           </Alert>
         )}
         {activeResult.identifiers.map((id) => (
           <Grid key={id.doi} sx={{ width: "100%" }}>
             <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}>
-              <Grid size={6}>Identifier</Grid>
-              <Grid size={2}>Type</Grid>
-              <Grid size={2}>State</Grid>
-              <Grid size={2}>{openIdForm ? "Hide" : "Show"}</Grid>
+              <Grid size={6}>{t("fields.identifiers.list.headers.identifier")}</Grid>
+              <Grid size={2}>{t("fields.identifiers.list.headers.type")}</Grid>
+              <Grid size={2}>{t("fields.identifiers.list.headers.state")}</Grid>
+              <Grid size={2}>{openIdForm ? t("fields.identifiers.list.hide") : t("fields.identifiers.list.show")}</Grid>
             </Grid>
             <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
               <Grid sx={{ padding: "6px" }} size={6}>
@@ -369,14 +368,14 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               <Grid size={2}>
                 <CustomTooltip
                   title={match<void, string>([
-                    [() => openIdForm, "Hide identifier's details"],
-                    [() => true, "Show identifier's details"],
+                    [() => openIdForm, t("fields.identifiers.list.toggleId.hide")],
+                    [() => true, t("fields.identifiers.list.toggleId.show")],
                   ])()}
                 >
                   <IconButton
                     onClick={() => setOpenIdForm(!openIdForm)}
                     disabled={false}
-                    aria-label="Toggle identifier details"
+                    aria-label={t("fields.identifiers.list.toggleId.label")}
                   >
                     <ExpandCollapseIcon open={openIdForm} />
                   </IconButton>
@@ -394,7 +393,13 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               }}
             >
               <Grid>
-                <CustomTooltip title={id.isValid ? "Preview Landing Page" : "Some missing data"}>
+                <CustomTooltip
+                  title={
+                    id.isValid
+                      ? t("fields.identifiers.list.tooltips.previewPage")
+                      : t("fields.identifiers.list.tooltips.missingData")
+                  }
+                >
                   <Button
                     color="callToAction"
                     variant="outlined"
@@ -407,7 +412,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       Boolean(activeResult.historicalVersion)
                     }
                   >
-                    Preview
+                    {t("fields.identifiers.list.preview")}
                   </Button>
                 </CustomTooltip>
               </Grid>
@@ -420,7 +425,11 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
               <Grid>
                 <CustomTooltip
                   title={
-                    id.state === "draft" ? "Delete Draft" : id.state === "findable" ? "Retract" : "Not published yet"
+                    id.state === "draft"
+                      ? t("fields.identifiers.list.tooltips.deleteDraft")
+                      : id.state === "findable"
+                        ? t("fields.identifiers.list.tooltips.retract")
+                        : t("fields.identifiers.list.tooltips.notPublished")
                   }
                 >
                   <Button
@@ -434,22 +443,22 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                       Boolean(activeResult.historicalVersion)
                     }
                   >
-                    {id.state === "draft" ? "Delete" : "Retract"}
+                    {id.state === "draft"
+                      ? t("fields.identifiers.list.deleteOrRetract.delete")
+                      : t("fields.identifiers.list.deleteOrRetract.retract")}
                   </Button>
                 </CustomTooltip>
               </Grid>
               {!id.isValid && (
                 <Grid sx={{ mb: 1 }}>
-                  <Alert severity="warning">
-                    Some required details are missing. To enable publishing, please fill them in.
-                  </Alert>
+                  <Alert severity="warning">{t("fields.identifiers.missingDetails")}</Alert>
                 </Grid>
               )}
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
               <a href={docLinks.IGSNIdentifiers} target="_blank" rel="noreferrer">
-                See IGSN Documentation for details
+                {t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>
             <Collapse in={openIdForm}>
@@ -485,6 +494,7 @@ const AssignDialog = observer(
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
     const { trackEvent } = useContext(AnalyticsContext);
+    const { t } = useTranslation(["inventory", "common"]);
 
     return (
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
@@ -498,10 +508,10 @@ const AssignDialog = observer(
           maxWidth="lg"
           fullScreen={fullScreen}
         >
-          <DialogTitle>Link existing IGSN ID</DialogTitle>
+          <DialogTitle>{t("fields.identifiers.assignDialog.title")}</DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
-              <Typography>Select an existing IGSN ID to link to this item.</Typography>
+              <Typography>{t("fields.identifiers.assignDialog.selectExisting")}</Typography>
               <IgsnTable
                 selectedIgsns={selectedIgsns}
                 setSelectedIgsns={setSelectedIgsns}
@@ -512,9 +522,7 @@ const AssignDialog = observer(
                 }}
               />
               <Alert severity="warning">
-                <strong>This action cannot be undone!</strong> Once an IGSN ID has been associated with an item, it
-                cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created
-                instead.
+                <TransRichText ns="inventory" i18nKey="fields.identifiers.assignDialog.undoWarningFormatted" />
               </Alert>
             </Stack>
           </DialogContent>
@@ -526,17 +534,17 @@ const AssignDialog = observer(
               }}
               color="primary"
             >
-              Cancel
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={false}
               validationResult={selectedIgsns.only
                 .map((igsn) =>
                   igsn.associatedGlobalId !== null
-                    ? IsInvalid("The selected IGSN ID is already assigned to another item.")
+                    ? IsInvalid(t("fields.identifiers.assignDialog.alreadyAssigned"))
                     : IsValid(),
                 )
-                .orElse(IsInvalid("No IGSN ID selected."))}
+                .orElse(IsInvalid(t("fields.identifiers.assignDialog.noIgsnSelected")))}
               onClick={() => {
                 void (async () => {
                   await selectedIgsns.only
@@ -549,7 +557,7 @@ const AssignDialog = observer(
                 })();
               }}
             >
-              Link
+              {t("fields.identifiers.assignDialog.link")}
             </ValidatingSubmitButton>
           </DialogActions>
         </Dialog>
@@ -566,14 +574,13 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
+  const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
-  const identifierLabel = isInstrument ? "PIDINST" : "IGSN ID";
+  const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
 
   return (
     <>
-      {activeResult.state === "create" && (
-        <Alert severity="info">This item has not been created yet. Please save the item first.</Alert>
-      )}
+      {activeResult.state === "create" && <Alert severity="info">{t("fields.identifiers.card.notCreatedYet")}</Alert>}
       {activeResult.state !== "create" && identifiers.length === 0 && !activeResult.historicalVersion && (
         <Stack direction="row" spacing={1}>
           <Button
@@ -582,7 +589,7 @@ const IdentifiersCard = observer((): ReactNode => {
             disabled={isInstrument}
             onClick={() => void activeResult.addIdentifier()}
           >
-            {`Create new ${identifierLabel}`}
+            {t("fields.identifiers.card.createNew", { identifierLabel })}
           </Button>
           <Button
             color="primary"
@@ -593,7 +600,7 @@ const IdentifiersCard = observer((): ReactNode => {
               trackEvent("user:open:assign-existing-igsn-dialog");
             }}
           >
-            {`Link existing ${identifierLabel}`}
+            {t("fields.identifiers.card.linkExisting", { identifierLabel })}
           </Button>
           <AssignDialog
             recordToAssignTo={activeResult}
@@ -623,13 +630,13 @@ function Identifiers<
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
-          <>
-            See the Documentation for information on{" "}
-            <a href={docLinks.IGSNIdentifiers} target="_blank" rel="noreferrer">
-              adding and publishing identifiers
-            </a>
-            .
-          </>
+          <TransRichText
+            ns="inventory"
+            i18nKey="fields.identifiers.formField.explanation"
+            components={{
+              a: richTextLink({ href: docLinks.IGSNIdentifiers, target: "_blank", rel: "noreferrer" }),
+            }}
+          />
         ) : null
       }
     >

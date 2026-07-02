@@ -1,5 +1,6 @@
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 
 export type UriFieldArgs = {
@@ -14,8 +15,10 @@ export type UriFieldArgs = {
 };
 
 export default function UriField({ disabled, value, onChange, name, id }: UriFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
+
   return disabled && !value ? (
-    <NoValue label="None" />
+    <NoValue label={t("values.none")} />
   ) : (
     <TextField
       variant={disabled ? "standard" : "outlined"}

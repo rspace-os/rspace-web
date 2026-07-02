@@ -85,7 +85,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
             void tableController?.updateInventoryStock([1]);
           }}
         >
-          Trigger Inventory Save
+          {"Trigger Inventory Save"}
         </button>
       );
     },
@@ -237,7 +237,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+    await user.click(screen.getByRole("button", { name: "common:stoichiometry.dialog.saveChanges" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Save mutation failed");
   });
@@ -295,7 +295,7 @@ describe("EditableStoichiometryDialogSection", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
   });

@@ -3,6 +3,7 @@ import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import type React from "react";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import { preventEventBubbling } from "../../util/Util";
@@ -14,6 +15,7 @@ type AlertsArgs = {
 };
 
 function Alerts({ children }: AlertsArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const { isViewportVerySmall } = useViewportDimensions();
 
   // ordered from the top down
@@ -58,7 +60,7 @@ function Alerts({ children }: AlertsArgs): React.ReactNode {
         data-testid="Toasts"
         component="section"
         aria-roledescription="Alerts"
-        aria-label={`There are currently ${alerts.length} alerts.`}
+        aria-label={t("alerts.countLabel", { count: alerts.length })}
       >
         {alerts.map((alert) => (
           <ToastMessage key={alert.id} alert={alert} />

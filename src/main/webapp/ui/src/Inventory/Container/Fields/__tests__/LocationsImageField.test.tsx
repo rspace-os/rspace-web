@@ -36,7 +36,7 @@ vi.mock("../LocationsImageMarkersDialog", () => ({
     return (
       <div>
         {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-        <button onClick={close}>Close</button>
+        <button onClick={close}>{"Close"}</button>
       </div>
     );
   }),
@@ -89,8 +89,7 @@ describe("LocationImageField", () => {
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
-          warningAlert:
-            "Visual containers require an image to add locations to. Click on 'Add Image' (above) to provide one.",
+          warningAlert: "inventory:container.fields.locationsImage.warningNoImage",
         }),
         undefined,
       );
@@ -106,7 +105,7 @@ describe("LocationImageField", () => {
       );
       expect(
         screen.getByRole("button", {
-          name: /Edit Locations/,
+          name: /container.fields.locationsImage.editLocations/,
         }),
       ).toBeDisabled();
     });
@@ -169,7 +168,9 @@ describe("LocationImageField", () => {
         storeImageFunction({ dataUrl: "", file: new Blob() });
       });
       expect(addScopedToastSpy).toHaveBeenCalled();
-      expect(addAlertMock).toHaveBeenCalledWith(expect.objectContaining({ message: "Set preview image too?" }));
+      expect(addAlertMock).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "inventory:container.fields.locationsImage.setPreviewImage" }),
+      );
       act(() => {
         setPreviewImageFunction();
       });
@@ -214,7 +215,7 @@ describe("LocationImageField", () => {
       );
       expect(
         screen.getByRole("button", {
-          name: /Edit Locations/,
+          name: /container.fields.locationsImage.editLocations/,
         }),
       ).toBeEnabled();
     });
@@ -235,7 +236,7 @@ describe("LocationImageField", () => {
       expect(screen.getByTestId("ImageField")).toBeInTheDocument();
       expect(ImageField).toHaveBeenCalledWith(
         expect.objectContaining({
-          warningAlert: "Click on 'Edit Locations' to add locations and start using the visual container.",
+          warningAlert: "inventory:container.fields.locationsImage.warningNoMarkers",
         }),
         undefined,
       );
@@ -258,7 +259,7 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-      const editLocationsButtons = screen.getByText("Edit Locations");
+      const editLocationsButtons = screen.getByText("inventory:container.fields.locationsImage.editLocations");
       await user.click(editLocationsButtons);
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(
         { open: true, close: expect.any(Function) },
@@ -283,7 +284,7 @@ describe("LocationImageField", () => {
           </storesContext.Provider>
         </ThemeProvider>,
       );
-      const editLocationsButtons = screen.getByText("Edit Locations");
+      const editLocationsButtons = screen.getByText("inventory:container.fields.locationsImage.editLocations");
       await user.click(editLocationsButtons);
       await user.click(screen.getByText("Close"));
       expect(LocationsImageMarkersDialog).toHaveBeenLastCalledWith(

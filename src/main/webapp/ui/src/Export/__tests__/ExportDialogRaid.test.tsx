@@ -86,9 +86,9 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("Error")).toBeInTheDocument();
-    expect(screen.getByText(/An error occurred while determining RAiD export eligibility: Boom/)).toBeInTheDocument();
-    expect(screen.getByText(/Please press Next to continue without reporting to RAiD\./)).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.message")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.error.nextHint")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when groups are missing", () => {
@@ -100,9 +100,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/unable to determine whether you have the rights/i)).toBeInTheDocument();
-    expect(screen.getByText(/101/)).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.missingGroups")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no project groups are available", () => {
@@ -114,8 +113,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/No project groups are associated with all shared items selected/i)).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.noProjectGroups")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when no RAiD association is found", () => {
@@ -130,12 +129,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /None of the project groups \(Project Group 7, Project Group 8\) associated with the shared items have a RAiD association\./,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.noRaidAssociation")).toBeInTheDocument();
   });
 
   it("renders an ineligible message when multiple RAiD associations are found", () => {
@@ -150,12 +145,8 @@ describe("ExportDialogRaid", () => {
 
     renderExportDialogRaid();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Multiple project groups \(Project Group 3, Project Group 4\) associated with the shared items have RAiD associations, which is not supported\./,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.ineligible.multipleRaids")).toBeInTheDocument();
   });
 
   it("renders the RAiD info and toggles exportToRaid when eligible", async () => {
@@ -171,13 +162,12 @@ describe("ExportDialogRaid", () => {
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
-    expect(within(alert).getByText("Report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/Project Group 5/)).toBeInTheDocument();
-    expect(screen.getByText(/Test RAiD/)).toBeInTheDocument();
-    expect(screen.getByText(/raid-5/)).toBeInTheDocument();
+    expect(within(alert).getByText("workspace:export.raid.eligible.title")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.eligible.projectGroupLine")).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.raid.eligible.raidDetails")).toBeInTheDocument();
 
     const user = userEvent.setup();
-    const toggle = screen.getByRole("checkbox", { name: /Report to RAiD/i });
+    const toggle = screen.getByRole("checkbox", { name: /export.raid.eligible.reportLabel/i });
     await user.click(toggle);
 
     expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));

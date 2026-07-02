@@ -20,7 +20,7 @@ describe("AdjustableHeadCell", () => {
           />
         </ThemeProvider>,
       );
-      fireEvent.click(screen.getByRole("button", { name: "Column options" }));
+      fireEvent.click(screen.getByRole("button", { name: "inventory:tables.adjustableHeadCell.columnOptions" }));
       expect(screen.getByRole("menuitem", { name: "foo" })).toHaveAttribute("aria-current", "true");
     });
   });

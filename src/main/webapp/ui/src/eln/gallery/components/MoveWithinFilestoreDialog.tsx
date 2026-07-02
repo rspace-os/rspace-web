@@ -8,6 +8,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
@@ -40,6 +41,8 @@ const MoveWithinFilestoreDialog = observer(
   ({ open, onClose, filestore, sources, refreshListing }: MoveWithinFilestoreDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
+    const { t } = useTranslation("gallery");
+    const { t: tCommon } = useTranslation("common");
 
     const listingOf = React.useMemo(
       () => ({
@@ -68,8 +71,8 @@ const MoveWithinFilestoreDialog = observer(
 
     function computeValidation() {
       const files = selection.asSet();
-      if (files.isEmpty) return Result.Error<null>([new Error("No folder is selected.")]);
-      if (files.size > 1) return Result.Error<null>([new Error("More than one folder is selected.")]);
+      if (files.isEmpty) return Result.Error<null>([new Error(t("moveWithinFilestore.validation.noFolder"))]);
+      if (files.size > 1) return Result.Error<null>([new Error(t("moveWithinFilestore.validation.tooManyFolders"))]);
       return Result.Ok(null);
     }
 
@@ -103,16 +106,14 @@ const MoveWithinFilestoreDialog = observer(
         scroll="paper"
         fullScreen={isViewportVerySmall}
       >
-        <DialogTitle>Move</DialogTitle>
+        <DialogTitle>{t("moveWithinFilestore.title")}</DialogTitle>
         <DialogContent sx={{ overflow: "hidden", flexGrow: 0 }}>
-          <DialogContentText variant="body2">
-            Choose a destination folder in this filestore, or move to its top level.
-          </DialogContentText>
+          <DialogContentText variant="body2">{t("moveWithinFilestore.description")}</DialogContentText>
         </DialogContent>
         <DialogContent sx={{ pt: 0 }}>
           <Box sx={{ overflowY: "auto" }}>
             {FetchingData.match(galleryListing, {
-              loading: () => <PlaceholderLabel>Loading...</PlaceholderLabel>,
+              loading: () => <PlaceholderLabel>{t("moveWithinFilestore.loading")}</PlaceholderLabel>,
               error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
               success: (listing) => (
                 <TreeView
@@ -138,7 +139,7 @@ const MoveWithinFilestoreDialog = observer(
               }}
               disabled={rootLoading}
               loading={rootLoading}
-              label="Move to top level"
+              label={t("moveWithinFilestore.moveToTopLevel")}
             />
             <Box sx={{ flexGrow: 1 }}></Box>
             <Button
@@ -146,7 +147,7 @@ const MoveWithinFilestoreDialog = observer(
                 onClose();
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}
@@ -160,7 +161,7 @@ const MoveWithinFilestoreDialog = observer(
               }}
               validationResult={computeValidation()}
             >
-              Move
+              {t("moveWithinFilestore.move")}
             </ValidatingSubmitButton>
           </Stack>
         </DialogActions>

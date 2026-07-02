@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
 import useStores from "../../../stores/use-stores";
 
@@ -10,6 +11,7 @@ type StepperActionsArgs = {
 };
 
 function StepperActions({ onSubmit }: StepperActionsArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -46,7 +48,7 @@ function StepperActions({ onSubmit }: StepperActionsArgs): React.ReactNode {
           progress={activeResult.uploadProgress}
           disabled={!activeResult.submittable.isOk}
         >
-          Save
+          {t("common:actions.save")}
         </ValidatingSubmitButton>
       </Box>
     </Box>

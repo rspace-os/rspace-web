@@ -1,5 +1,6 @@
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { ColumnFieldMap } from "../../../stores/models/ImportModel";
 
 type FieldNameStringFieldArgs = {
@@ -7,6 +8,7 @@ type FieldNameStringFieldArgs = {
 };
 
 export default function FieldNameStringField({ columnFieldMap }: FieldNameStringFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const error = !columnFieldMap.validFieldName;
   return (
     <TextField
@@ -16,7 +18,7 @@ export default function FieldNameStringField({ columnFieldMap }: FieldNameString
       }}
       variant="standard"
       error={error}
-      helperText={error ? "You either already have a field with that name or that name is not permitted." : ""}
+      helperText={error ? t("import.fields.fieldNameValidation") : ""}
     />
   );
 }

@@ -4,7 +4,9 @@ import Link from "@mui/material/Link";
 import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoResultsSvg from "@/assets/graphics/NoResults.svg";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 
 type NoResultsArgs = {
@@ -12,6 +14,7 @@ type NoResultsArgs = {
 };
 
 function NoResults({ query }: NoResultsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   return (
     <Box
@@ -35,7 +38,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
         }}
       />
       <Typography variant="inherit" component="span" sx={{ color: darken(theme.palette.primary.main, 0.2) }}>
-        No results.
+        {t("search.noResults.title")}
       </Typography>
       <Typography
         sx={{
@@ -46,7 +49,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
           maxWidth: "20em",
         }}
       >
-        Try searching for a different term, or use the advanced search to change search filters.
+        {t("search.noResults.tryDifferentSearch")}
       </Typography>
       {query !== "" && (
         <>
@@ -60,15 +63,13 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               maxWidth: "20em",
             }}
           >
-            For more information on using Lucene queries, see{" "}
-            <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
-              advanced search
-            </Link>{" "}
-            and the related{" "}
-            <Link href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
-              Apache page
-            </Link>
-            .
+            <TransRichText
+              ns="inventory"
+              i18nKey="search.noResults.luceneInfo"
+              components={{
+                luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
+              }}
+            />
           </Typography>
         </>
       )}

@@ -3,6 +3,7 @@ import { formGroupClasses } from "@mui/material/FormGroup";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Factory } from "../../../stores/definitions/Factory";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: initial biome migration
@@ -23,6 +24,7 @@ type SidebarBodyArgs = {
  * InventoryInfoDialog modal so both surfaces share one implementation.
  */
 function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <Stack
       spacing={2}
@@ -38,8 +40,8 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
       }}
     >
       <GlobalId record={record} />
-      <Date label="Created" date={record.created} />
-      <Date label="Last Modified" date={record.lastModified} />
+      <Date label={t("moreInfo.created")} date={record.created} />
+      <Date label={t("moreInfo.lastModified")} date={record.lastModified} />
       <VersionHistory record={record} />
       <LatestTemplateActions record={record} />
       {/* templates cannot appear in a List of Materials, but they are valid

@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/galaxy";
 import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -28,6 +29,7 @@ type GalaxyArgs = {
  * Galaxy uses API-key based authentication, as implemented by the form below.
  */
 function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -46,29 +48,29 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Galaxy"
+        name={t("integrations.galaxy.name")}
         integrationState={integrationState}
-        explanatoryText="Galaxy is a free, open-source system for data analysis, workflows, and more."
+        explanatoryText={t("integrations.galaxy.description")}
         image={GalaxyIcon}
         color={LOGO_COLOR}
-        usageText="You can connect your Galaxy workflows and data to RSpace. This allows you to send data from RSpace to Galaxy and import results back into your notebooks."
-        helpLinkText="Galaxy integration docs"
+        usageText={t("integrations.galaxy.usage")}
+        helpLinkText={t("integrations.galaxy.helpLink")}
         website="galaxyproject.org"
         docLink="galaxy"
         setupSection={
           <>
             <ol>
-              <li>Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.</li>
-              <li>Choose the corresponding server from the add menu below.</li>
-              <li>Enter the access token into the field that appears, and save.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the Galaxy icon in the text editor toolbar.</li>
+              <li>{t("integrations.galaxy.setup.requestToken")}</li>
+              <li>{t("integrations.galaxy.setup.chooseServer")}</li>
+              <li>{t("integrations.galaxy.setup.enterToken")}</li>
+              <li>{t("integrations.galaxy.setup.enable")}</li>
+              <li>{t("integrations.galaxy.setup.toolbar")}</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>
                   {authenticatedServers.length === 0 && (
-                    <Typography variant="body2">No authenticated servers.</Typography>
+                    <Typography variant="body2">{t("integrations.galaxy.noServers")}</Typography>
                   )}
                   {authenticatedServers.map((server) => (
                     <form
@@ -84,7 +86,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                             addAlert(
                               mkAlert({
                                 variant: "success",
-                                message: "Successfully saved API key.",
+                                message: t("integrations.galaxy.alerts.saveSuccess"),
                               }),
                             );
                           })
@@ -93,7 +95,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "error",
-                                  title: "Error saving API key.",
+                                  title: t("integrations.galaxy.alerts.saveError"),
                                   message: e.message,
                                 }),
                               );
@@ -104,7 +106,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                         <TextField
                           fullWidth
                           variant="outlined"
-                          label={`API Key for ${server.alias}`}
+                          label={t("integrations.galaxy.apiKeyLabel", { alias: server.alias })}
                           type="password"
                           size="small"
                           value={server.apiKey}
@@ -114,7 +116,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                             });
                           }}
                         />
-                        <Button type="submit">Save</Button>
+                        <Button type="submit">{t("common:actions.save")}</Button>
                         <Button
                           onClick={() => {
                             void deleteAppOptions("GALAXY", server.optionsId)
@@ -128,7 +130,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                                 addAlert(
                                   mkAlert({
                                     variant: "success",
-                                    message: "Successfully deleted API key.",
+                                    message: t("integrations.galaxy.alerts.deleteSuccess"),
                                   }),
                                 );
                               })
@@ -137,14 +139,14 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                                   addAlert(
                                     mkAlert({
                                       variant: "error",
-                                      title: "Could not delete API key.",
+                                      title: t("integrations.galaxy.alerts.deleteError"),
                                       message: e.message,
                                     }),
                                   );
                               });
                           }}
                         >
-                          Delete
+                          {t("common:actions.delete")}
                         </Button>
                       </Stack>
                     </form>
@@ -158,7 +160,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  Add
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}
@@ -193,7 +195,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "success",
-                                  message: "Successfully added new Galaxy server.",
+                                  message: t("integrations.galaxy.alerts.addSuccess"),
                                 }),
                               );
                             });
@@ -203,7 +205,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "error",
-                                  title: "Error added new Galaxy server.",
+                                  title: t("integrations.galaxy.alerts.addError"),
                                   message: e.message,
                                 }),
                               );

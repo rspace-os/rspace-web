@@ -6,6 +6,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
 import Result from "@/util/result";
@@ -25,12 +26,13 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import { useSearchParamState } from "../../hooks/browser/useSearchParamState";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import { DisableDragAndDropByDefault } from "../../hooks/ui/useFileImportDragAndDrop";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import NavigateContext from "../../stores/contexts/Navigate";
 import * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import RsSet from "../../util/set";
-import { GALLERY_SECTION, type GallerySection, gallerySectionLabel, SELECTED_OR_FOCUS_BLUE } from "./common";
+import { GALLERY_SECTION, type GallerySection, SELECTED_OR_FOCUS_BLUE, translateGallerySectionLabel } from "./common";
 import { CallableAsposePreview } from "./components/CallableAsposePreview";
 import { CallableImagePreview } from "./components/CallableImagePreview";
 import { CallablePdfPreview } from "./components/CallablePdfPreview";
@@ -76,6 +78,7 @@ const WholePage = ({
   autoSelect?: ReadonlyArray<number>;
   title: ({ path, section }: { path: ReadonlyArray<GalleryFile>; section: GallerySection }) => string;
 }) => {
+  const { t } = useTranslation("gallery");
   const [appliedSearchTerm, setAppliedSearchTerm] = React.useState("");
   const [orderBy, setOrderBy] = useUiPreference<"name" | "modificationDate">(PREFERENCES.GALLERY_SORT_BY, {
     defaultValue: "modificationDate",
@@ -134,11 +137,11 @@ const WholePage = ({
   React.useEffect(() => {
     try {
       Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, void>((p, s) => {
-        document.title = `${title({ path: p, section: s })} | RSpace Gallery`;
+        document.title = t("pageTitleWithContext", { pageContext: title({ path: p, section: s }) });
       })(FetchingData.getSuccessValue(path), FetchingData.getSuccessValue(selectedSection));
     } catch (e) {
       console.error("Error setting document title", e);
-      document.title = "RSpace Gallery";
+      document.title = t("pageTitle");
     }
   }, [listingOf, path]);
 
@@ -272,6 +275,7 @@ const WholePage = ({
  * gallery will show the images section.
  */
 function LandingPage() {
+  const { t } = useTranslation("gallery");
   const [searchParams, setSelectedSection] = useSearchParamState<{
     mediaType: (typeof GALLERY_SECTION)[keyof typeof GALLERY_SECTION];
   }>({
@@ -289,7 +293,7 @@ function LandingPage() {
   }, [selectedSection, path]);
   return FetchingData.match(filestoresEnabled, {
     loading: () => null,
-    error: () => <PlaceholderLabel>Error checking if filestores are enabled.</PlaceholderLabel>,
+    error: () => <PlaceholderLabel>{t("landingPage.filestoreEnabledError")}</PlaceholderLabel>,
     success: (fsEnabled) => {
       const validGallerySections = new Set([
         "Images",
@@ -303,14 +307,15 @@ function LandingPage() {
         ...(fsEnabled === true ? ["NetworkFiles"] : []),
         "PdfDocuments",
       ]);
-      if (!validGallerySections.has(selectedSection))
-        return <PlaceholderLabel>Not a valid Gallery section.</PlaceholderLabel>;
+      if (!validGallerySections.has(selectedSection)) {
+        return <PlaceholderLabel>{t("landingPage.invalidSection")}</PlaceholderLabel>;
+      }
       return (
         <WholePage
           listingOf={listingOf}
           setSelectedSection={setSelectedSection}
           setPath={setPath}
-          title={({ path, section }) => path.at(-1)?.name ?? gallerySectionLabel[section]}
+          title={({ path, section }) => path.at(-1)?.name ?? translateGallerySectionLabel(section, t)}
         />
       );
     },
@@ -350,6 +355,7 @@ function GalleryFolder() {
 
 function GalleryFileInFolder() {
   const { fileId: fileIdParam } = useParams();
+  const { t } = useTranslation("gallery");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const [folderId, setFolderId] = React.useState<FetchingData.Fetched<number>>({
@@ -386,8 +392,8 @@ function GalleryFileInFolder() {
   }, []);
 
   return FetchingData.match<number, React.ReactNode>(folderId, {
-    loading: () => "Loading...",
-    error: (error) => `Error: ${error}`,
+    loading: () => t("landingPage.loading"),
+    error: (error) => t("landingPage.error", { error }),
     success: (fId) => (
       <WholePage
         listingOf={{ tag: "folder", folderId: fId }}
@@ -399,7 +405,7 @@ function GalleryFileInFolder() {
           .flatMap(Parsers.parseInteger)
           .map((fileId) => [fileId])
           .orElse([])}
-        title={() => fileName ?? "Loading..."}
+        title={() => fileName ?? t("landingPage.loading")}
       />
     ),
   });
@@ -480,9 +486,11 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <BrowserRouter>
-          <Gallery />
-        </BrowserRouter>
+        <I18nRoot namespaces={["gallery", "common"]}>
+          <BrowserRouter>
+            <Gallery />
+          </BrowserRouter>
+        </I18nRoot>
       </React.StrictMode>,
     );
 

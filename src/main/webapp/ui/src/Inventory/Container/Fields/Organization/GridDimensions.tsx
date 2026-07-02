@@ -11,6 +11,7 @@ import { mapValues } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import NumberField from "../../../../components/Inputs/NumberField";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -19,43 +20,53 @@ import useStores from "../../../../stores/use-stores";
 const minGridSize = 1;
 const maxGridSize = 24;
 
-const errorMessage = `Must be at least ${minGridSize}, and not more than ${maxGridSize}.`;
-
 type CommonSizeIndex = string;
+type CommonSizeNameKey =
+  | "container.fields.gridDimensions.commonSizes.custom"
+  | "container.fields.gridDimensions.commonSizes.freezerBox64"
+  | "container.fields.gridDimensions.commonSizes.freezerBox81"
+  | "container.fields.gridDimensions.commonSizes.freezerBox100"
+  | "container.fields.gridDimensions.commonSizes.freezerBox169"
+  | "container.fields.gridDimensions.commonSizes.freezerBox196"
+  | "container.fields.gridDimensions.commonSizes.wellPlate6"
+  | "container.fields.gridDimensions.commonSizes.wellPlate12"
+  | "container.fields.gridDimensions.commonSizes.wellPlate24"
+  | "container.fields.gridDimensions.commonSizes.wellPlate96";
 type CommonSize = {
   rows: number | null;
   cols: number | null;
-  name: string;
+  nameKey: CommonSizeNameKey;
 };
 
 // Declaration order is the menu display order: the most popular size (96 well
 // plate) first, "Custom" last.
 const commonSizes: Record<CommonSizeIndex, CommonSize> = {
-  "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
-  "24-well-plate": { rows: 4, cols: 6, name: "24 well plate" },
-  "12-well-plate": { rows: 3, cols: 4, name: "12 well plate" },
-  "6-well-plate": { rows: 2, cols: 3, name: "6 well plate" },
+  "96-well-plate": { rows: 8, cols: 12, nameKey: "container.fields.gridDimensions.commonSizes.wellPlate96" },
+  "24-well-plate": { rows: 4, cols: 6, nameKey: "container.fields.gridDimensions.commonSizes.wellPlate24" },
+  "12-well-plate": { rows: 3, cols: 4, nameKey: "container.fields.gridDimensions.commonSizes.wellPlate12" },
+  "6-well-plate": { rows: 2, cols: 3, nameKey: "container.fields.gridDimensions.commonSizes.wellPlate6" },
   "196-place-freezer-box": {
     rows: 14,
     cols: 14,
-    name: "196 place freezer box",
+    nameKey: "container.fields.gridDimensions.commonSizes.freezerBox196",
   },
   "169-place-freezer-box": {
     rows: 13,
     cols: 13,
-    name: "169 place freezer box",
+    nameKey: "container.fields.gridDimensions.commonSizes.freezerBox169",
   },
   "100-place-freezer-box": {
     rows: 10,
     cols: 10,
-    name: "100 place freezer box",
+    nameKey: "container.fields.gridDimensions.commonSizes.freezerBox100",
   },
-  "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
-  "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
-  custom: { rows: null, cols: null, name: "Custom" },
+  "81-place-freezer-box": { rows: 9, cols: 9, nameKey: "container.fields.gridDimensions.commonSizes.freezerBox81" },
+  "64-place-freezer-box": { rows: 8, cols: 8, nameKey: "container.fields.gridDimensions.commonSizes.freezerBox64" },
+  custom: { rows: null, cols: null, nameKey: "container.fields.gridDimensions.commonSizes.custom" },
 };
 
 function GridDimensions(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -67,6 +78,7 @@ function GridDimensions(): React.ReactNode {
   if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const gridLayout = activeResult.gridLayout;
   if (activeResult.cType !== "GRID" || !gridLayout) throw new Error("Container must be a Grid Container");
+  const errorMessage = t("container.fields.gridDimensions.error", { max: maxGridSize, min: minGridSize });
 
   const [columnsNumber, setColumnsNumber] = useState<number>(1);
 
@@ -131,9 +143,9 @@ function GridDimensions(): React.ReactNode {
 
   const editable = activeResult.isFieldEditable("organization");
   return (
-    <InputWrapper label="Grid Dimensions" flexWrap="nowrap">
+    <InputWrapper label={t("container.fields.gridDimensions.label")} flexWrap="nowrap">
       <Box sx={{ mt: 1, mb: 0.5 }}>
-        <Typography variant="body2">Choose a common size</Typography>
+        <Typography variant="body2">{t("container.fields.gridDimensions.chooseCommonSize")}</Typography>
       </Box>
       <Grid
         size={{
@@ -148,7 +160,7 @@ function GridDimensions(): React.ReactNode {
             {Object.values(
               mapValues(commonSizes, (size, value) => (
                 <MenuItem value={value} key={value}>
-                  {size.name}
+                  {t(size.nameKey)}
                 </MenuItem>
               )),
             )}
@@ -156,7 +168,7 @@ function GridDimensions(): React.ReactNode {
         </FormControl>
       </Grid>
       <Box sx={{ mt: 1, mb: 0.5 }}>
-        <Typography variant="body2">Or specify the dimensions</Typography>
+        <Typography variant="body2">{t("container.fields.gridDimensions.specifyDimensions")}</Typography>
       </Box>
       <Grid container spacing={1}>
         <Grid
@@ -178,13 +190,15 @@ function GridDimensions(): React.ReactNode {
             error={!validRows}
             slotProps={{
               htmlInput: {
-                "aria-label": "rows",
+                "aria-label": t("container.fields.gridDimensions.rows"),
                 max: maxGridSize,
                 min: minGridSize,
                 step: 1,
               },
               input: {
-                startAdornment: <InputAdornment position="start">Rows</InputAdornment>,
+                startAdornment: (
+                  <InputAdornment position="start">{t("container.fields.gridDimensions.rows")}</InputAdornment>
+                ),
               },
             }}
           />
@@ -212,13 +226,15 @@ function GridDimensions(): React.ReactNode {
             error={!validColumns}
             slotProps={{
               htmlInput: {
-                "aria-label": "columns",
+                "aria-label": t("container.fields.gridDimensions.columns"),
                 max: maxGridSize,
                 min: minGridSize,
                 step: 1,
               },
               input: {
-                startAdornment: <InputAdornment position="start">Columns</InputAdornment>,
+                startAdornment: (
+                  <InputAdornment position="start">{t("container.fields.gridDimensions.columns")}</InputAdornment>
+                ),
               },
             }}
           />

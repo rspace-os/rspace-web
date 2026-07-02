@@ -81,7 +81,7 @@ describe("LinkField", () => {
     const user = userEvent.setup();
     renderField({ editable: true, onEdit });
 
-    const editButton = screen.getByRole("button", { name: /edit link/i });
+    const editButton = screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" });
     /* eslint-disable testing-library/no-node-access -- asserting Edit sits inline in the link row */
     expect(editButton.closest('[data-test-id="LinkField-row"]')).toBeInTheDocument();
     /* eslint-enable testing-library/no-node-access */
@@ -92,7 +92,7 @@ describe("LinkField", () => {
 
   it("omits the inline Edit button when onEdit is not provided (custom field Link cards are edited via the settings cog)", () => {
     renderField({ editable: true, onEdit: undefined });
-    expect(screen.queryByRole("button", { name: /edit link/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "inventory:fields.link.linkField.editLink" })).not.toBeInTheDocument();
   });
 
   it("renders the Open action as a static link inline with the link chips", () => {
@@ -101,7 +101,7 @@ describe("LinkField", () => {
     // a single consistent, target-qualified Open action ("Open SA42"), never a
     // separate "Open in Inventory" variant. It is a real anchor (role link) for
     // accessibility, not a scripted button.
-    const openLink = screen.getByRole("link", { name: /^open sa42$/i });
+    const openLink = screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i });
     expect(openLink).toHaveAttribute("href", "/globalId/SA42");
     expect(openLink).toHaveAttribute("target", "_blank");
     expect(screen.queryByRole("link", { name: /open in inventory/i })).not.toBeInTheDocument();
@@ -113,7 +113,7 @@ describe("LinkField", () => {
 
   it("renders pinned version label when versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: 4 } });
-    expect(screen.getByText(/v4|pinned to v4/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.editor.pinnedVersion")).toBeInTheDocument();
   });
 
   it("shows the Target deleted pill and blocks Open for a deleted ELN target", () => {
@@ -127,8 +127,10 @@ describe("LinkField", () => {
       readable: true,
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
-    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /^open /i })).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.targetDeleted")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the Target deleted pill but keeps Open for a deleted inventory target", () => {
@@ -142,8 +144,8 @@ describe("LinkField", () => {
       readable: true,
     });
     renderField();
-    expect(screen.getByText(/target deleted/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.targetDeleted")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toBeInTheDocument();
   });
 
   it("shows the No access pill and removes Open for an unreadable ELN target", () => {
@@ -158,13 +160,15 @@ describe("LinkField", () => {
       readable: false,
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
-    expect(screen.getByText(/no access/i)).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /^open /i })).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.linkField.noAccess")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i }),
+    ).not.toBeInTheDocument();
     // an unreadable target has nothing to show, so info and the version-pin
     // clock are greyed out; Edit stays as the repair path (retarget or remove)
-    expect(screen.getByRole("button", { name: /show info for sd5/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /pin version for sd5/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /edit link/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.showInfoLabel/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "inventory:fields.link.linkField.editLink" })).toBeInTheDocument();
   });
 
   it("explains the No access pill with a permission tooltip", async () => {
@@ -178,10 +182,10 @@ describe("LinkField", () => {
     });
     renderField({ link: { ...baseLink, targetGlobalId: "SD5" } });
 
-    await user.hover(screen.getByText(/no access/i));
+    await user.hover(screen.getByText("inventory:fields.link.linkField.noAccess"));
 
     // no "no longer": viewers who never had access see this pill too
-    expect(await screen.findByText(/you do not have permission to view this item/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.linkField.noPermission")).toBeInTheDocument();
   });
 
   it("renders a normal card with Open for an unreadable inventory target", () => {
@@ -195,8 +199,8 @@ describe("LinkField", () => {
       readable: false,
     });
     renderField();
-    expect(screen.queryByText(/no access/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.linkField.noAccess")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toBeInTheDocument();
   });
 
   it("renders no pill and keeps Open while the target state is unknown", () => {
@@ -204,8 +208,8 @@ describe("LinkField", () => {
     // it did before the summary existed rather than flashing a wrong state
     mockUseLinkTargetSummary.mockReturnValue(null);
     renderField();
-    expect(screen.queryByText(/target deleted/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^open /i })).toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.linkField.targetDeleted")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toBeInTheDocument();
   });
 
   it("greys out the clock in view mode: pin changes happen in the link editor", () => {
@@ -214,13 +218,15 @@ describe("LinkField", () => {
     // a disabled affordance only.
     renderField({ editable: true });
 
-    expect(screen.getByRole("button", { name: /pin version for sa42/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i })).toBeDisabled();
   });
 
   it("hides the clock entirely when the record is not editable", () => {
     renderField({ editable: false });
 
-    expect(screen.queryByRole("button", { name: /pin version for sa42/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("links Open to the versioned viewer for a pinned inventory target", () => {
@@ -230,14 +236,17 @@ describe("LinkField", () => {
 
     // pinned inventory links to the read-only versioned viewer (RSDEV-1141 route),
     // not the live record.
-    const openLink = screen.getByRole("link", { name: /^open /i });
+    const openLink = screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i });
     expect(openLink).toHaveAttribute("href", "/inventory/sample/42?version=3");
     expect(openLink).toHaveAttribute("target", "_blank");
   });
 
   it("keeps Open enabled when no versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: null } });
-    expect(screen.getByRole("link", { name: /^open /i })).toHaveAttribute("href", "/globalId/SA42");
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toHaveAttribute(
+      "href",
+      "/globalId/SA42",
+    );
   });
 
   it("shows a clock icon for version-pinning only when editable", () => {
@@ -257,7 +266,7 @@ describe("LinkField", () => {
     renderField();
 
     const infoButton = screen.getByRole("button", {
-      name: /show info for sa42/i,
+      name: /inventory:fields\.link\.linkField\.showInfoLabel/i,
     });
     await user.click(infoButton);
 
@@ -269,7 +278,7 @@ describe("LinkField", () => {
   it("passes the link's versionPin to the inventory record-info dialog", async () => {
     const user = userEvent.setup();
     renderField({ link: { ...baseLink, targetGlobalId: "SA42", versionPin: 3 } });
-    await user.click(screen.getByRole("button", { name: /show info for sa42/i }));
+    await user.click(screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.showInfoLabel/i }));
     expect(screen.getByTestId("inventory-info-dialog")).toHaveAttribute("data-version-pin", "3");
   });
 
@@ -278,7 +287,9 @@ describe("LinkField", () => {
       editable: true,
       link: { ...baseLink, targetGlobalId: "NB5" },
     });
-    expect(screen.queryByRole("button", { name: /pin version for/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides the version-pin clock for gallery (GL) targets even when editable", () => {
@@ -286,7 +297,9 @@ describe("LinkField", () => {
       editable: true,
       link: { ...baseLink, targetGlobalId: "GL9" },
     });
-    expect(screen.queryByRole("button", { name: /pin version for/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows the version-pin clock for document (SD) targets when editable", () => {
@@ -294,25 +307,30 @@ describe("LinkField", () => {
       editable: true,
       link: { ...baseLink, targetGlobalId: "SD3" },
     });
-    expect(screen.getByRole("button", { name: /pin version for sd3/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.pinVersionLabel/i }),
+    ).toBeInTheDocument();
   });
 
   it("labels the open action 'Open <globalId>' for ELN targets too", () => {
     renderField({ link: { ...baseLink, targetGlobalId: "SD3" } });
-    expect(screen.getByRole("link", { name: /^open sd3$/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /open in inventory/i })).not.toBeInTheDocument();
   });
 
   it("links a version-pinned document (SD) target to its versioned globalId route", () => {
     renderField({ link: { ...baseLink, targetGlobalId: "SD3", versionPin: 2 } });
-    expect(screen.getByRole("link", { name: /^open /i })).toHaveAttribute("href", "/globalId/SD3v2");
+    expect(screen.getByRole("link", { name: /inventory:fields\.link\.linkField\.openLabel/i })).toHaveAttribute(
+      "href",
+      "/globalId/SD3v2",
+    );
   });
 
   it("passes the link's versionPin to the ELN record-info dialog", async () => {
     const user = userEvent.setup();
     renderField({ link: { ...baseLink, targetGlobalId: "SD3", versionPin: 2 } });
     const infoButton = screen.getByRole("button", {
-      name: /show info for sd3/i,
+      name: /inventory:fields\.link\.linkField\.showInfoLabel/i,
     });
     await user.click(infoButton);
     const dialog = screen.getByTestId("eln-info-dialog");
@@ -324,7 +342,7 @@ describe("LinkField", () => {
     renderField({ link: { ...baseLink, targetGlobalId: "SD3" } });
 
     const infoButton = screen.getByRole("button", {
-      name: /show info for sd3/i,
+      name: /inventory:fields\.link\.linkField\.showInfoLabel/i,
     });
     await user.click(infoButton);
 
@@ -336,7 +354,9 @@ describe("LinkField", () => {
 
   it("still shows the info button for inventory targets", () => {
     renderField({ link: { ...baseLink, targetGlobalId: "SA42" } });
-    expect(screen.getByRole("button", { name: /show info for sa42/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /inventory:fields\.link\.linkField\.showInfoLabel/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders a type icon inside the target chip for each Inventory prefix", () => {

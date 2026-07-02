@@ -17,6 +17,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
 import docLinks from "../../../assets/DocLinks";
@@ -37,6 +38,8 @@ type MoveCopyDialogArgs = {
 
 function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDialogArgs) {
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const irods = useIrods();
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedDestination, setSelectedDestination] = React.useState<IrodsLocation | null>(null);
@@ -70,17 +73,21 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
 
   function validateState(): Result<null> {
     return Result.all(
-      irods.tag === "loading" ? Result.Error<null>([new Error("Loading available locations")]) : Result.Ok(null),
+      irods.tag === "loading"
+        ? Result.Error<null>([new Error(t("moveToIrods.validation.loadingLocations"))])
+        : Result.Ok(null),
       irods.tag === "error" ? Result.Error([new Error(irods.error)]) : Result.Ok(null),
     )
       .flatMap(() =>
         Result.all(
-          selectedDestination ? Result.Ok(null) : Result.Error<null>([new Error("A destination is required.")]),
+          selectedDestination
+            ? Result.Ok(null)
+            : Result.Error<null>([new Error(t("moveToIrods.validation.destinationRequired"))]),
           showUsernamePasswordForm && username === ""
-            ? Result.Error([new Error("Username for iRODS server is required.")])
+            ? Result.Error([new Error(t("moveToIrods.validation.usernameRequired"))])
             : Result.Ok(null),
           showUsernamePasswordForm && password === ""
-            ? Result.Error([new Error("Password for iRODS server is required.")])
+            ? Result.Error([new Error(t("moveToIrods.validation.passwordRequired"))])
             : Result.Ok(null),
         ),
       )
@@ -156,7 +163,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
         }}
         helpPage={{
           docLink: docLinks.irods,
-          title: "iRODS help",
+          title: t("moveToIrods.helpTitle"),
         }}
       />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
@@ -169,7 +176,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
             flexGrow: 1,
           }}
         >
-          <DialogTitle variant="h3">Move to iRODS</DialogTitle>
+          <DialogTitle variant="h3">{t("moveToIrods.title")}</DialogTitle>
           <DialogContent
             sx={{
               height: "calc(100% - 48px)",
@@ -189,22 +196,19 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                 error: (errorMsg) => (
                   <Alert severity="error">
                     <AlertTitle>{errorMsg}</AlertTitle>
-                    Please check with your System Admin to ensure iRODS is correctly configured.
+                    {t("moveToIrods.errors.misconfigured")}
                   </Alert>
                 ),
                 success: (configuredLocations) =>
                   configuredLocations.length === 0 ? (
                     <Alert severity="error">
-                      <AlertTitle>No iRODS filestore has been configured.</AlertTitle>
-                      Add a new one in the filestore section of the Gallery or speak to your system administrator.
+                      <AlertTitle>{t("moveToIrods.errors.noFilestoreConfigured.title")}</AlertTitle>
+                      {t("moveToIrods.errors.noFilestoreConfigured.body")}
                     </Alert>
                   ) : (
                     <>
                       <Typography variant="body2">
-                        You have selected {selectedIds.length} item
-                        {selectedIds.length > 1 && "s"} to move to iRODS. By default, the items will be added to iRODS
-                        and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents
-                        and include them into any exports through our iRODS integration.
+                        {t("moveToIrods.description", { count: selectedIds.length })}
                       </Typography>
                       <ChoiceField
                         name="keep"
@@ -215,13 +219,13 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                         options={[
                           {
                             value: "keep",
-                            label: "Retain a copy in RSpace",
+                            label: t("moveToIrods.retainCopy"),
                           },
                         ]}
                       />
                       <FormField
-                        label="Destination in iRODS"
-                        explanation="The available folders are configured in the Gallery's filestore section."
+                        label={t("moveToIrods.destination.label")}
+                        explanation={t("moveToIrods.destination.explanation")}
                         value={void 0}
                         renderInput={() => (
                           <Box>
@@ -231,7 +235,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                                 onClick={(e) => setLocationsAnchorEl(e.currentTarget)}
                               >
                                 <ListItemText
-                                  primary={selectedDestination?.name ?? "Select a destination"}
+                                  primary={selectedDestination?.name ?? t("moveToIrods.destination.placeholder")}
                                   secondary={
                                     selectedDestination
                                       ? `${selectedDestination.path} · ${selectedDestination.filesystemName}`
@@ -296,15 +300,18 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                               color: "#3b5958",
                             })}
                           >
-                            iRODS login
+                            {t("moveToIrods.login.legend")}
                           </Box>
                           <Stack spacing={1}>
                             <Typography variant="body2">
-                              Please provide your login credentials for {selectedDestination?.filesystemName}
-                              {selectedDestination?.filesystemUrl ? ` (${selectedDestination.filesystemUrl})` : ""}
+                              {t("moveToIrods.login.prompt", {
+                                serverUrl: `${selectedDestination?.filesystemName ?? ""}${
+                                  selectedDestination?.filesystemUrl ? ` (${selectedDestination.filesystemUrl})` : ""
+                                }`,
+                              })}
                             </Typography>
                             <FormField
-                              label="Username"
+                              label={t("moveToIrods.login.username")}
                               value={username}
                               renderInput={({ id }) => (
                                 <TextField
@@ -318,7 +325,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                               )}
                             />
                             <FormField
-                              label="Password"
+                              label={t("moveToIrods.login.password")}
                               value={password}
                               renderInput={({ id }) => (
                                 <TextField
@@ -342,7 +349,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               validationResult={validateState()}
@@ -351,7 +358,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                 onSubmit();
               }}
             >
-              Move
+              {t("moveToIrods.submit")}
             </ValidatingSubmitButton>
           </DialogActions>
         </Box>

@@ -3,6 +3,7 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
 import type SampleModel from "../../stores/models/SampleModel";
 import { SampleCollection } from "../../stores/models/SampleModel";
@@ -28,6 +29,7 @@ type OverviewSectionArgs = {
 };
 
 function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -36,17 +38,15 @@ function OverviewSection({ collection, recordsCount }: OverviewSectionArgs) {
   return (
     <StepperPanel
       icon="sample"
-      title="Overview"
+      title={t("formSections.overview")}
       formSectionError={formSectionError}
       sectionName="overview"
       recordType="sample"
     >
-      <Image fieldOwner={collection} alt={`What the ${collection.size} samples look like`} />
+      <Image fieldOwner={collection} alt={t("sample.batch.imageAlt", { count: collection.size })} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">
-            Please note, on slower network connections uploading large images may trigger an error.
-          </Alert>
+          <Alert severity="info">{t("sample.batch.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName
@@ -63,6 +63,7 @@ type DetailsSectionArgs = {
 };
 
 function DetailsSection({ collection }: DetailsSectionArgs) {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -71,7 +72,7 @@ function DetailsSection({ collection }: DetailsSectionArgs) {
   return (
     <StepperPanel
       icon="sample"
-      title="Details"
+      title={t("formSections.details")}
       formSectionError={formSectionError}
       sectionName="details"
       recordType="sample"
@@ -99,6 +100,7 @@ type BatchFormArgs = {
 };
 
 function BatchForm({ records }: BatchFormArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
 
   const [collection, setCollection] = useState(new SampleCollection(records));
@@ -109,22 +111,27 @@ function BatchForm({ records }: BatchFormArgs): React.ReactNode {
   return (
     <FormWrapper
       recordType="sample"
-      titleText={`Batch editing ${records.size} samples`}
+      titleText={t("sample.batch.title", { count: records.size })}
       editableObject={searchStore.search.batchEditableInstance}
     >
-      <StepperPanel icon="sample" title="Information" sectionName="information" recordType="sample">
-        <BatchEditingItemsTable records={records} label="Samples being edited" />
+      <StepperPanel icon="sample" title={t("formSections.information")} sectionName="information" recordType="sample">
+        <BatchEditingItemsTable records={records} label={t("formSections.samplesBeingEdited")} />
       </StepperPanel>
       <OverviewSection collection={collection} recordsCount={records.size} />
       <DetailsSection collection={collection} />
-      <StepperPanel title="Barcodes" sectionName="barcodes" recordType="sample" icon="sample">
+      <StepperPanel title={t("formSections.barcodes")} sectionName="barcodes" recordType="sample" icon="sample">
         <BarcodesField fieldOwner={collection} factory={new AlwaysNewFactory()} />
       </StepperPanel>
-      <StepperPanel icon="sample" title="Access Permissions" sectionName="permissions" recordType="sample">
+      <StepperPanel
+        icon="sample"
+        title={t("formSections.accessPermissions")}
+        sectionName="permissions"
+        recordType="sample"
+      >
         <AccessPermissions
           fieldOwner={collection}
           hideOwnersGroups
-          additionalExplanation="Sample permission settings affect all of its subsamples, and cannot be set for individual subsamples."
+          additionalExplanation={t("sample.permissionsExplanation")}
         />
       </StepperPanel>
     </FormWrapper>

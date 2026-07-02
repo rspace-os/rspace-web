@@ -13,6 +13,7 @@ import Typography from "@mui/material/Typography";
 import { Observer, observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
 import Analytics from "../../components/Analytics";
 import Confirm from "../../components/Confirm";
@@ -138,13 +139,15 @@ const MetadataBar = observer(
     canEdit: boolean;
     isSingleColumn: boolean;
   }) => {
+    const { t } = useTranslation("inventory");
+
     return (
       <Box sx={[barWrapperSx, { mb: isSingleColumn ? 2 : 0.5 }]}>
         <Box sx={spacedBetweenRowSx}>
           <TextField
             variant="standard"
             sx={[textFieldSx, !canEdit && disabledBlackInputSx, { flex: 5 }]}
-            label="List Name"
+            label={t("materialsListing.metadata.name")}
             margin="dense"
             value={currentList?.name ?? ""}
             onChange={(e) => currentList?.setName(e.target.value)}
@@ -155,7 +158,7 @@ const MetadataBar = observer(
           <TextField
             variant="standard"
             sx={[textFieldSx, { flex: 1 }]}
-            label="ID"
+            label={t("materialsListing.metadata.id")}
             margin="dense"
             value={currentList?.id ?? "-"}
             disabled
@@ -166,7 +169,7 @@ const MetadataBar = observer(
           sx={[textFieldSx, !canEdit && disabledBlackInputSx]}
           fullWidth
           multiline
-          label="Description"
+          label={t("materialsListing.metadata.description")}
           margin="dense"
           value={currentList?.description ?? ""}
           onChange={(e) => currentList?.setDescription(e.target.value)}
@@ -194,6 +197,7 @@ const ActionsBar = observer(
     canEdit: boolean;
   }) => {
     const { moveStore, materialsStore } = useStores();
+    const { t } = useTranslation("inventory");
     const anyDataInList = (currentList?.materials.length ?? -1) > 0;
     const originalList = materialsStore.originalList;
     const canEditQuantities = currentList?.canEditQuantities;
@@ -210,10 +214,10 @@ const ActionsBar = observer(
           }) ?? false);
 
     const moveAllToBenchValidation = () => {
-      if (currentList?.materials.length === 0) return IsInvalid("Nothing to move.");
+      if (currentList?.materials.length === 0) return IsInvalid(t("materialsListing.actions.move.none"));
       if (originalList && !currentList?.isEqual(originalList))
-        return IsInvalid("Cannot move whilst there are unsaved changes.");
-      if (allOnBench) return IsInvalid("All items are already on your bench.");
+        return IsInvalid(t("materialsListing.actions.move.unsavedChanges"));
+      if (allOnBench) return IsInvalid(t("materialsListing.actions.move.alreadyOnBench"));
       return IsValid();
     };
 
@@ -229,7 +233,7 @@ const ActionsBar = observer(
             })}
             disabled={!canEdit}
           >
-            Add items
+            {t("materialsListing.actions.addItems")}
           </Button>
         </Grid>
         <Grid>
@@ -242,7 +246,9 @@ const ActionsBar = observer(
             })}
             disabled={!canEditQuantities}
           >
-            {editingMode ? "Close Quantity Editor" : "Edit Quantities"}
+            {editingMode
+              ? t("materialsListing.actions.closeQuantityEditor")
+              : t("materialsListing.actions.editQuantities")}
           </Button>
         </Grid>
         <Grid>
@@ -258,12 +264,12 @@ const ActionsBar = observer(
             validationResult={moveAllToBenchValidation()}
             color="primary"
           >
-            Move all to my bench
+            {t("materialsListing.actions.moveAllToBench")}
           </ValidatingSubmitButton>
         </Grid>
         {!standalonePage && currentList?.id !== null && (
           <Grid>
-            <CustomTooltip title="View in new tab">
+            <CustomTooltip title={t("materialsListing.actions.viewInNewTab")}>
               <BigButton icon={<PopoutPrintIcon />} onClick={onOpenStandalone} />
             </CustomTooltip>
           </Grid>
@@ -281,7 +287,7 @@ const ActionsBar = observer(
         {anyDataInList && (
           <Grid>
             <Typography variant="inherit" component="p" sx={{ margin: 0 }}>
-              Tip: to edit an item click its Global ID, then the Edit button in the new browser tab.
+              {t("materialsListing.actions.editTip")}
             </Typography>
           </Grid>
         )}
@@ -298,6 +304,7 @@ type DialogArgs = {
 
 function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
+  const { t } = useTranslation(["inventory", "common"]);
   const isSingleColumn = useIsSingleColumnLayout();
   const fullScreen = isSingleColumn || standalonePage;
 
@@ -406,8 +413,11 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                 }}
               >
                 <DialogTitle sx={{ pb: 0.5 }}>
-                  {currentList?.id === undefined && "New "} List of Materials (Inventory)&nbsp;
-                  <HelpLinkIcon link={docLinks.listOfMaterials} title="Info on using Lists of Materials." />
+                  {currentList?.id === undefined
+                    ? t("materialsListing.dialog.newTitle")
+                    : t("materialsListing.dialog.title")}
+                  {"\u00a0"}
+                  <HelpLinkIcon link={docLinks.listOfMaterials} title={t("materialsListing.dialog.helpTitle")} />
                   {!isSingleColumn && (
                     <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />
                   )}
@@ -440,7 +450,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                       )}
                       {currentList && currentList.materials.length === 0 && (
                         <Typography component="div" variant="body2" color="textPrimary" align="center">
-                          Use &quot;Add items&quot; to add materials to this list.
+                          {t("materialsListing.dialog.emptyList")}
                         </Typography>
                       )}
                     </Grid>
@@ -456,14 +466,14 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                               setOpenPicker(false);
                             }}
                             search={currentList.pickerSearch}
-                            header="Pick Inventory Items"
+                            header={t("materialsListing.dialog.pickInventoryItems")}
                             showActions
                           />
                         )}
                         {openExporter && currentList && (
                           <Exporter
                             elevation={6}
-                            header={"Export Options"}
+                            header={t("materialsListing.dialog.exportOptions")}
                             showActions
                             selectedResults={currentList.materials.map((m) => m.invRec)}
                             setOpenExporter={setOpenExporter}
@@ -495,7 +505,10 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                           if (currentList) {
                             const changed = materialsStore.hasListChanged;
                             if (changed) {
-                              await showToastWhilstPending(`Saving changes...`, currentList.update());
+                              await showToastWhilstPending(
+                                t("materialsListing.dialog.savingChanges"),
+                                currentList.update(),
+                              );
                               materialsStore.setCurrentList(currentList);
                               refetch();
                             }
@@ -505,7 +518,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                       })}
                       disabled={!isListExisting || !isListValid}
                     >
-                      Export
+                      {t("materialsListing.actions.export")}
                     </Button>
                     {isListExisting && (
                       <Button
@@ -514,7 +527,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                         onClick={() => void confirmListDeletion()}
                         disabled={!canEdit}
                       >
-                        Delete List
+                        {t("materialsListing.actions.deleteList")}
                       </Button>
                     )}
                     <div>
@@ -529,18 +542,25 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                               }
                         }
                       >
-                        {isUnchanged ? "Close" : "Cancel"}
+                        {isUnchanged ? t("common:actions.close") : t("common:actions.cancel")}
                       </Button>
                       <ValidatingSubmitButton
                         onClick={() => {
                           void (async () => {
                             if (currentList && isListValid) {
                               if (isListNew) {
-                                await showToastWhilstPending(`Creating list...`, currentList.create());
+                                await showToastWhilstPending(
+                                  t("materialsListing.dialog.creatingList"),
+                                  currentList.create(),
+                                );
                               }
                               if (isListExisting) {
                                 const changed = materialsStore.hasListChanged;
-                                if (changed) await showToastWhilstPending(`Updating list...`, currentList.update());
+                                if (changed)
+                                  await showToastWhilstPending(
+                                    t("materialsListing.dialog.updatingList"),
+                                    currentList.update(),
+                                  );
                               }
                               materialsStore.setCurrentList(currentList);
                               refetch();
@@ -550,7 +570,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                         loading={isListLoading}
                         validationResult={materialsStore.cantSaveCurrentList}
                       >
-                        Save
+                        {t("common:actions.save")}
                       </ValidatingSubmitButton>
                     </div>
                   </Box>

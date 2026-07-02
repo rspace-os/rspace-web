@@ -18,6 +18,8 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import i18n from "../../../modules/common/i18n";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import theme from "../../../theme";
 
@@ -37,7 +39,7 @@ class GroupEditBar extends React.Component<any, any> {
       profile_hiding_enabled: domContainer.getAttribute("data-profile-hiding-enabled") === "true",
       can_hide_profile: domContainer.getAttribute("data-can-hide-group-profile") === "true",
       profile_is_hidden: domContainer.getAttribute("data-group-private-profile") === "true",
-      default_text: "There is no profile information for this group.",
+      default_text: i18n.t("profile.groups.editBar.noProfile"),
       errorMessage: "",
     };
 
@@ -120,7 +122,7 @@ class GroupEditBar extends React.Component<any, any> {
   handleError = (error: any) => {
     this.setState({
       toast: true,
-      errorMessage: `Your request failed: ${error}. Please contact support if this problem persists.`,
+      errorMessage: i18n.t("profile.groups.editBar.errorMessage", { error }),
     });
   };
 
@@ -143,11 +145,11 @@ class GroupEditBar extends React.Component<any, any> {
           <CardWrapper>
             <Card>
               <CardHeader
-                subheader="Profile"
+                subheader={i18n.t("profile.groups.editBar.subheader")}
                 action={
                   !this.state.editing &&
                   this.state.can_edit && (
-                    <Tooltip title="Edit profile settings">
+                    <Tooltip title={i18n.t("profile.groups.editBar.editTooltip")}>
                       <IconButton
                         onClick={this.handleClickEdit}
                         sx={{ fontSize: "18px", width: "auto" }}
@@ -165,15 +167,15 @@ class GroupEditBar extends React.Component<any, any> {
                   disabled={!this.state.editing}
                   value={this.state.profile_text}
                   onChange={this.handleChange}
-                  placeholder="Please enter a short description of this group..."
+                  placeholder={i18n.t("profile.groups.editBar.placeholder")}
                   multiline={true}
                   maxRows={4}
                   fullWidth
-                  label="Profile description"
+                  label={i18n.t("profile.groups.editBar.profileDescription")}
                   margin="dense"
                   data-test-id="profile-description"
                   slotProps={{
-                    htmlInput: { "aria-label": "Profile description" },
+                    htmlInput: { "aria-label": i18n.t("profile.groups.editBar.profileDescription") },
                   }}
                 />
                 {(this.state.pi_can_edit_permission || this.state.pi_can_edit_value) && (
@@ -193,7 +195,7 @@ class GroupEditBar extends React.Component<any, any> {
                           } as any)}
                         />
                       }
-                      label="PI can edit all work in this lab group."
+                      label={i18n.t("profile.groups.editBar.piCanEdit")}
                     />
                   </Box>
                 )}
@@ -214,7 +216,7 @@ class GroupEditBar extends React.Component<any, any> {
                           } as any)}
                         />
                       }
-                      label="Hide the group from public listings"
+                      label={i18n.t("profile.groups.editBar.hideGroup")}
                     />
                   </Box>
                 )}
@@ -222,10 +224,10 @@ class GroupEditBar extends React.Component<any, any> {
               {this.state.editing && (
                 <CardActions sx={{ display: "flex", justifyContent: "flex-end" }}>
                   <Button onClick={this.handleClickClose} data-test-id="button-cancel-edit">
-                    Cancel
+                    {i18n.t("actions.cancel")}
                   </Button>
                   <Button onClick={this.submitForm} variant="contained" color="primary" data-test-id="button-save-edit">
-                    Save
+                    {i18n.t("actions.save")}
                   </Button>
                 </CardActions>
               )}
@@ -256,4 +258,8 @@ class GroupEditBar extends React.Component<any, any> {
 
 const domContainer = document.getElementById("groupEditBar") as HTMLElement;
 const root = createRoot(domContainer);
-root.render(<GroupEditBar />);
+root.render(
+  <I18nRoot namespaces={["common"]}>
+    <GroupEditBar />
+  </I18nRoot>,
+);

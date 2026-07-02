@@ -1,6 +1,7 @@
 import Snackbar, { type SnackbarCloseReason } from "@mui/material/Snackbar";
 import { observer } from "mobx-react-lite";
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import useViewportDimensions from "../../hooks/browser/useViewportDimensions";
 import AlertContext, { type Alert } from "../../stores/contexts/Alert";
 import ErrorBoundary from "../ErrorBoundary";
@@ -11,6 +12,7 @@ type ToastMessageArgs = {
 };
 
 function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [expanded, setExpanded] = React.useState(false);
   const [timeoutId, setTimeoutId] = React.useState<NodeJS.Timeout | null>(null);
   const { isViewportVerySmall } = useViewportDimensions();
@@ -52,7 +54,7 @@ function ToastMessage({ alert }: ToastMessageArgs): React.ReactNode {
           left: 0,
         }}
         role="group"
-        aria-label={`${alert.variant} alert`}
+        aria-label={t("alerts.toastLabel", { variant: alert.variant })}
       >
         <SnackbarContentWrapper
           onClose={handleClose}

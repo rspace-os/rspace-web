@@ -9,6 +9,7 @@ import Box, { type BoxProps } from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -26,6 +27,7 @@ type ToolbarSocialProps = {
 };
 
 export default function ToolbarSocial(props: ToolbarSocialProps) {
+  const { t } = useTranslation("common");
   const [notificationCount, setNotificationCount] = React.useState(0);
   const [messageCount, setMessageCount] = React.useState(0);
 
@@ -50,65 +52,70 @@ export default function ToolbarSocial(props: ToolbarSocialProps) {
 
   return (
     <Box sx={{ display: "flex", ...props.sx }}>
-      <Tooltip title="Notifications" enterDelay={300}>
+      <Tooltip title={t("toolbar.notifications")} enterDelay={300}>
         <IconButton
           id="openNotificationDlgLink"
           color="inherit"
           data-test-id="toolbar-notifications"
-          aria-label="Notifications"
+          aria-label={t("toolbar.notifications")}
         >
           <Badge badgeContent={notificationCount} color="secondary">
             <FontAwesomeIcon icon={faBell} />
           </Badge>
         </IconButton>
       </Tooltip>
-      <Tooltip title="Received messages" enterDelay={300}>
+      <Tooltip title={t("toolbar.receivedMessages")} enterDelay={300}>
         <IconButton
           id="openMessageDlgLink"
           color="inherit"
           data-test-id="toolbar-messages"
-          aria-label="Received messages"
+          aria-label={t("toolbar.receivedMessages")}
         >
           <Badge badgeContent={messageCount} color="secondary">
             <FontAwesomeIcon icon={faEnvelope} />
           </Badge>
         </IconButton>
       </Tooltip>
-      <Tooltip title="Send a message" enterDelay={300}>
+      <Tooltip title={t("toolbar.sendMessage")} enterDelay={300}>
         <IconButton
           id="createRequest"
           color="inherit"
           data-test-id="toolbar-send-message"
-          aria-label="Send a message"
+          aria-label={t("toolbar.sendMessage")}
           onClick={props.onCreateRequest ?? (() => {})}
         >
           <FontAwesomeIcon icon={faPaperPlane} />
         </IconButton>
       </Tooltip>
       {Object.hasOwn(window, "SLACK") && SLACK && props.showExternal && (
-        <Tooltip title="Send message on Slack" enterDelay={300}>
+        <Tooltip title={t("toolbar.sendMessageOnSlack")} enterDelay={300}>
           <IconButton
             color="inherit"
             data-test-id="toolbar-send-message-slack"
             sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="SLACK"
-            aria-label="Send a message on Slack"
+            aria-label={t("toolbar.sendMessageOnSlack")}
           >
-            <Box component="img" src="/images/icons/slack.png" alt="Slack" sx={{ width: "24px" }} />
+            <Box component="img" src="/images/icons/slack.png" alt={t("toolbar.slack")} sx={{ width: "24px" }} />
           </IconButton>
         </Tooltip>
       )}
       {Object.hasOwn(window, "MSTEAMS") && MSTEAMS && props.showExternal && (
-        <Tooltip title="Send message on MicrosoftTeams" enterDelay={300}>
+        <Tooltip title={t("toolbar.sendMessageOnMicrosoftTeams")} enterDelay={300}>
           <IconButton
             data-test-id="toolbar-send-message-teams"
             sx={{ backgroundColor: "white" }}
             className="createExtMessage"
             data-app="MSTEAMS"
-            aria-label="Send message on MicrosoftTeams"
+            aria-label={t("toolbar.sendMessageOnMicrosoftTeams")}
           >
-            <Box component="img" src="/images/icons/microsoftteams.png" alt="Microsoft Teams" sx={{ width: "24px" }} />
+            <Box
+              component="img"
+              src="/images/icons/microsoftteams.png"
+              alt={t("toolbar.microsoftTeams")}
+              sx={{ width: "24px" }}
+            />
           </IconButton>
         </Tooltip>
       )}

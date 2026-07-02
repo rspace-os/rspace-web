@@ -7,7 +7,7 @@ vi.mock("../ChemCard", () => ({
     <section aria-label={`Chemical ${item.id}`}>
       <span>{item.id}</span>
       <button onClick={() => onClose(item.id)} type="button">
-        Close
+        {"Close"}
       </button>
     </section>
   ),

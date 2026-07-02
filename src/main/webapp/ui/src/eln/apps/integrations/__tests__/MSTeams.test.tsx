@@ -35,7 +35,7 @@ describe("MSTeams", () => {
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(table).findTableCell({
-          columnHeading: "Channel Connector Name",
+          columnHeading: "apps:integrations.msteams.tableHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("foo");
@@ -74,7 +74,7 @@ describe("MSTeams", () => {
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
-      expect(await screen.findByRole("alert", { name: /Successfully/ })).toBeVisible();
+      expect(await screen.findByRole("alert", { name: /integrations\.msteams\.alerts\.removeSuccess/ })).toBeVisible();
 
       const table = screen.getByRole("table");
       await waitFor(() => {
@@ -114,15 +114,15 @@ describe("MSTeams", () => {
       await waitFor(() => {
         expect(screen.queryByRole("button", { name: /add/i })).not.toBeInTheDocument();
       });
-      fireEvent.change(screen.getByRole("textbox", { name: /channel connector name/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: /channelName/i }), {
         target: { value: "new name" },
       });
-      fireEvent.change(screen.getByRole("textbox", { name: /webhook url/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: /webhookUrl/i }), {
         target: { value: "example.com" },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
-      expect(await screen.findByRole("alert", { name: /Successfully/ })).toBeVisible();
+      expect(await screen.findByRole("alert", { name: /integrations\.msteams\.alerts\.addSuccess/ })).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({

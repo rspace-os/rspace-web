@@ -45,6 +45,7 @@ import Typography from "@mui/material/Typography";
 import { chunk } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Link as ReactRouterLink } from "react-router";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import AccentMenuItem from "../../../components/AccentMenuItem";
@@ -65,9 +66,9 @@ import {
   GALLERY_SECTION,
   type GallerySection,
   gallerySectionIcon,
-  gallerySectionLabel,
   SELECTED_OR_FOCUS_BLUE,
   SELECTED_OR_FOCUS_BORDER,
+  translateGallerySectionLabel,
 } from "../common";
 import usePrimaryAction from "../primaryActionHooks";
 import { type Destination, folderDestination, rootDestination, useGalleryActions } from "../useGalleryActions";
@@ -128,6 +129,7 @@ const DragOverlayContents = observer(() => {
   );
 });
 const DragCancelFab = () => {
+  const { t } = useTranslation("gallery");
   const dndContext = useDndContext();
   const dndInProgress = Boolean(dndContext.active);
   const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -164,7 +166,7 @@ const DragCancelFab = () => {
             }}
             sx={dropStyle}
           >
-            Cancel
+            {t("mainPanel.cancelDrag")}
           </Fab>
         </Box>
       )}
@@ -196,8 +198,9 @@ const BreadcrumbLink = React.forwardRef<
   const dndInProgress = Boolean(dndContext.active);
   const { openFolder } = useFolderOpen();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("gallery");
   const icon = folder ? undefined : getByKey(section, gallerySectionIcon).orElse(undefined);
-  const label = folder?.name ?? getByKey(section, gallerySectionLabel).orElse("UNKNOWN");
+  const label = folder?.name ?? translateGallerySectionLabel(section, t);
   return (
     <Box
       ref={(node: HTMLDivElement | null) => {
@@ -265,6 +268,7 @@ const Path = observer(
     path: ReadonlyArray<GalleryFile>;
     setSelectedSection: (newSection: GallerySection) => void;
   }) => {
+    const { t } = useTranslation("gallery");
     const {
       eventHandlers: { onFocus, onBlur, onKeyDown },
       getTabIndex,
@@ -281,7 +285,7 @@ const Path = observer(
           onFocus={onFocus}
           onBlur={onBlur}
           onKeyDown={onKeyDown}
-          aria-label="Breadcrumbs"
+          aria-label={t("mainPanel.breadcrumbsLabel")}
           sx={{
             [`& .${breadcrumbsClasses.ol}`]: {
               flexWrap: "nowrap",
@@ -318,7 +322,7 @@ const Path = observer(
             ))}
         </Breadcrumbs>
         <IconButtonWithTooltip
-          title="Copy to clipboard"
+          title={t("mainPanel.copyToClipboard")}
           onClick={() => {
             void (async () => {
               try {
@@ -335,7 +339,7 @@ const Path = observer(
                 );
                 addAlert(
                   mkAlert({
-                    message: "Link copied to clipboard successfully!",
+                    message: t("mainPanel.linkCopied"),
                     variant: "success",
                   }),
                 );
@@ -343,7 +347,7 @@ const Path = observer(
                 console.error(e);
                 addAlert(
                   mkAlert({
-                    message: "Failed to copy link to clipboard. Please try again.",
+                    message: t("mainPanel.linkCopyFailed"),
                     variant: "error",
                   }),
                 );
@@ -402,6 +406,7 @@ const FileCard = observer(
       },
       ref: React.ForwardedRef<HTMLElement>,
     ) => {
+      const { t } = useTranslation("gallery");
       const NAME_STYLES = {
         LINE_HEIGHT: 1.5,
         FONT_SIZE: "0.8125rem",
@@ -739,7 +744,7 @@ const FileCard = observer(
               </Grid>
               {typeof file.version === "number" && file.version > 1 && (
                 <Box
-                  aria-label={`version ${file.version}`}
+                  aria-label={t("mainPanel.versionLabel", { version: file.version })}
                   sx={(theme) => ({
                     position: "absolute",
                     top: "0",
@@ -760,7 +765,7 @@ const FileCard = observer(
                       : {}),
                   })}
                 >
-                  v{file.version}
+                  {`v${file.version}`}
                 </Box>
               )}
             </CardActionArea>
@@ -790,6 +795,7 @@ const GridView = observer(
         };
   }) => {
     const theme = useTheme();
+    const { t } = useTranslation("gallery");
     const dndContext = useDndContext();
     const selection = useGallerySelection();
     const { openImagePreview } = useImagePreview();
@@ -864,7 +870,7 @@ const GridView = observer(
           <Fade in={true} timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300}>
             <div>
               <PlaceholderLabel>
-                {listing.refreshing ? "Refreshing..." : (listing.reason ?? "There are no folders.")}
+                {listing.refreshing ? t("mainPanel.refreshing") : (listing.reason ?? t("mainPanel.noFolders"))}
               </PlaceholderLabel>
             </div>
           </Fade>
@@ -874,7 +880,7 @@ const GridView = observer(
       <>
         <Box
           role="grid"
-          aria-label="grid view of files"
+          aria-label={t("mainPanel.gridViewLabel")}
           aria-multiselectable="true"
           sx={{
             display: "grid",
@@ -1125,6 +1131,7 @@ const PathAndSearch = observer(
     path: ReadonlyArray<GalleryFile> | null;
     setSelectedSection: (section: GallerySection) => void;
   }) => {
+    const { t } = useTranslation("gallery");
     const { isViewportVerySmall } = useViewportDimensions();
 
     /*
@@ -1173,7 +1180,7 @@ const PathAndSearch = observer(
               }, 0);
             }}
             icon={<SearchIcon />}
-            title="Search this folder"
+            title={t("mainPanel.searchThisFolder")}
             disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
           />
         )}
@@ -1188,7 +1195,7 @@ const PathAndSearch = observer(
               >
                 <TextField
                   disabled={selectedSection === GALLERY_SECTION.NETWORKFILES}
-                  placeholder="Search"
+                  placeholder={t("mainPanel.searchPlaceholder")}
                   value={searchTerm}
                   onChange={({ currentTarget: { value } }) => setSearchTerm(value)}
                   sx={{
@@ -1202,7 +1209,7 @@ const PathAndSearch = observer(
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
-                          <IconButton aria-label="Search" size="small" edge="start">
+                          <IconButton aria-label={t("mainPanel.searchPlaceholder")} size="small" edge="start">
                             <SearchIcon />
                           </IconButton>
                         </InputAdornment>
@@ -1210,7 +1217,7 @@ const PathAndSearch = observer(
                       endAdornment:
                         searchTerm !== "" || searchOpen ? (
                           <IconButtonWithTooltip
-                            title="Clear"
+                            title={t("mainPanel.clearSearch")}
                             icon={
                               <CloseIcon
                                 sx={{
@@ -1230,7 +1237,7 @@ const PathAndSearch = observer(
                         ) : null,
                     },
                     htmlInput: {
-                      "aria-label": "Search current folder",
+                      "aria-label": t("mainPanel.searchCurrentFolderLabel"),
                       ref: searchTextfield,
                     },
                   }}
@@ -1287,6 +1294,7 @@ function GalleryMainPanel({
   const mainContentRef = useLandmark("Files Listing");
   const viewportDimensions = useViewportDimensions();
   const { uploadFiles } = useGalleryActions();
+  const { t } = useTranslation("gallery");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
   const { onDragEnter, onDragOver, onDragLeave, onDrop, over } = useFileImportDropZone({
@@ -1296,7 +1304,7 @@ function GalleryMainPanel({
           addAlert(
             mkAlert({
               variant: "error",
-              message: "Cannot drop files to upload here.",
+              message: t("mainPanel.cannotDropFiles"),
             }),
           );
           throw new Error("Unknown folder id");
@@ -1424,7 +1432,7 @@ function GalleryMainPanel({
                 alignItems: "center",
               }}
               role="region"
-              aria-label="files listing controls"
+              aria-label={t("mainPanel.filesListingControlsLabel")}
             >
               <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} />
               <Box
@@ -1442,7 +1450,7 @@ function GalleryMainPanel({
                 aria-haspopup="menu"
                 aria-expanded={viewMenuAnchorEl ? "true" : "false"}
               >
-                Views
+                {t("mainPanel.views")}
               </Button>
               <StyledMenu
                 open={Boolean(viewMenuAnchorEl)}
@@ -1451,13 +1459,13 @@ function GalleryMainPanel({
                 slotProps={{
                   list: {
                     disablePadding: true,
-                    "aria-label": "view options",
+                    "aria-label": t("mainPanel.viewOptionsLabel"),
                   },
                 }}
               >
                 <AccentMenuItem
-                  title="Grid"
-                  subheader="Browse by thumbnail previews."
+                  title={t("mainPanel.gridView")}
+                  subheader={t("mainPanel.gridViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<GridIcon />}
@@ -1468,8 +1476,8 @@ function GalleryMainPanel({
                   current={viewMode === "grid"}
                 />
                 <AccentMenuItem
-                  title="Tree"
-                  subheader="View and manage folder hierarchy."
+                  title={t("mainPanel.treeView")}
+                  subheader={t("mainPanel.treeViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<TreeIcon />}
@@ -1480,8 +1488,8 @@ function GalleryMainPanel({
                   current={viewMode === "tree"}
                 />
                 <AccentMenuItem
-                  title="Carousel"
-                  subheader="Flick through all files to find one."
+                  title={t("mainPanel.carouselView")}
+                  subheader={t("mainPanel.carouselViewDesc")}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
                   avatar={<ViewCarouselIcon />}
@@ -1507,7 +1515,7 @@ function GalleryMainPanel({
                 aria-expanded={sortMenuAnchorEl ? "true" : "false"}
                 disabled={selectedSection === "NetworkFiles"}
               >
-                Sort
+                {t("mainPanel.sort")}
               </Button>
               <StyledMenu
                 open={Boolean(sortMenuAnchorEl)}
@@ -1516,28 +1524,30 @@ function GalleryMainPanel({
                 slotProps={{
                   list: {
                     disablePadding: true,
-                    "aria-label": "sort listing",
+                    "aria-label": t("mainPanel.sortListingLabel"),
                   },
                 }}
               >
                 <AccentMenuItem
                   title={
                     <>
-                      Name
+                      {t("mainPanel.sortOptions.name")}
                       {orderBy === "name" && (
                         <>
                           {" "}
                           <Box component="span" sx={{ whiteSpace: "nowrap" }}>
-                            {sortOrder === "ASC" ? "(Sorted from A to Z)" : "(Sorted from Z to A)"}
+                            {sortOrder === "ASC"
+                              ? t("mainPanel.sortStatus.nameAsc")
+                              : t("mainPanel.sortStatus.nameDesc")}
                           </Box>
                         </>
                       )}
                     </>
                   }
                   subheader={match<void, string>([
-                    [() => orderBy !== "name", "Tap to sort from A to Z"],
-                    [() => sortOrder === "ASC", "Tap to sort from Z to A"],
-                    [() => sortOrder === "DESC", "Tap to sort from A to Z"],
+                    [() => orderBy !== "name", t("mainPanel.sortActions.nameAsc")],
+                    [() => sortOrder === "ASC", t("mainPanel.sortActions.nameDesc")],
+                    [() => sortOrder === "DESC", t("mainPanel.sortActions.nameAsc")],
                   ])()}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
@@ -1562,21 +1572,23 @@ function GalleryMainPanel({
                 <AccentMenuItem
                   title={
                     <>
-                      Modification Date
+                      {t("mainPanel.sortOptions.modificationDate")}
                       {orderBy === "modificationDate" && (
                         <>
                           {" "}
                           <Box component="span" sx={{ whiteSpace: "nowrap" }}>
-                            {sortOrder === "ASC" ? "(Sorted oldest first)" : "(Sorted newest first)"}
+                            {sortOrder === "ASC"
+                              ? t("mainPanel.sortStatus.modificationDateAsc")
+                              : t("mainPanel.sortStatus.modificationDateDesc")}
                           </Box>
                         </>
                       )}
                     </>
                   }
                   subheader={match<void, string>([
-                    [() => orderBy !== "modificationDate", "Tap to sort oldest first"],
-                    [() => sortOrder === "ASC", "Tap to sort newest first"],
-                    [() => sortOrder === "DESC", "Tap to sort oldest first"],
+                    [() => orderBy !== "modificationDate", t("mainPanel.sortActions.modificationDateAsc")],
+                    [() => sortOrder === "ASC", t("mainPanel.sortActions.modificationDateDesc")],
+                    [() => sortOrder === "DESC", t("mainPanel.sortActions.modificationDateAsc")],
                   ])()}
                   backgroundColor={ACCENT_COLOR.background}
                   foregroundColor={ACCENT_COLOR.contrastText}
@@ -1641,7 +1653,7 @@ function GalleryMainPanel({
                 mt: 1,
               }}
               role="region"
-              aria-label="files listing"
+              aria-label={t("mainPanel.filesListingLabel")}
               size={{
                 md: 7,
                 lg: 8,
@@ -1712,7 +1724,7 @@ function GalleryMainPanel({
                 mt: 0.75,
               }}
               role="region"
-              aria-label="info panel"
+              aria-label={t("mainPanel.infoPanelLabel")}
               size={{
                 md: 5,
                 lg: 4,

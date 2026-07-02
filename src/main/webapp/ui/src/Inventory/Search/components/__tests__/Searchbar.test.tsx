@@ -28,13 +28,13 @@ describe("Searchbar", () => {
         </SearchContext.Provider>
       </ThemeProvider>,
     );
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "inventory:search.controls.searchbar.search" }), {
       target: { value: "this is a really long piece of text" },
     });
-    expect(screen.getByRole("button", { name: "Expand field" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "common:searchDialog.expandField" })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "Expand field" }));
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Search" }));
+    fireEvent.click(screen.getByRole("button", { name: "common:searchDialog.expandField" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "common:actions.search" }));
     expect(handleSearch).toHaveBeenCalled();
   });
   test("When the query search parameter changes, the new value should be shown.", () => {

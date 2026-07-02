@@ -17,6 +17,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/DialogBoundary";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
@@ -60,6 +61,7 @@ export default function StoichiometryInventoryUpdateDialog({
   onClose,
 }: StoichiometryInventoryUpdateDialogProps): React.ReactNode {
   const titleId = React.useId();
+  const { t } = useTranslation("common");
   const wasOpenRef = React.useRef(false);
   const [selectedMoleculeIds, setSelectedMoleculeIds] = React.useState<number[]>([]);
   const saveMutation = useMutation({
@@ -74,13 +76,11 @@ export default function StoichiometryInventoryUpdateDialog({
   });
   const failedResults = saveMutation.data?.results.filter(({ success }) => !success) ?? [];
   const saveFeedback =
-    saveMutation.isSuccess && failedResults.length > 0
-      ? "Current stock amounts were refreshed. Re-select any remaining molecules to retry."
-      : null;
+    saveMutation.isSuccess && failedResults.length > 0 ? t("stoichiometry.inventoryUpdate.saveFeedback") : null;
   const saveError = (() => {
     if (saveMutation.isError) {
       const message = saveMutation.error.message;
-      return `${message} Current stock amounts were refreshed where possible.`;
+      return t("stoichiometry.inventoryUpdate.saveError", { message });
     }
     if (failedResults.length === 0) {
       return null;
@@ -104,7 +104,7 @@ export default function StoichiometryInventoryUpdateDialog({
       getInventoryUpdateEligibility(selectedMolecule, linkedInventoryQuantityInfoByGlobalId).disabledReason !== null
     );
   });
-  const selectionError = hasInvalidSelectedRows ? "Re-select any invalid molecules before saving." : null;
+  const selectionError = hasInvalidSelectedRows ? t("stoichiometry.inventoryUpdate.selectionError") : null;
   const resetDialogState = React.useCallback(() => {
     setSelectedMoleculeIds(getDefaultValues(molecules, linkedInventoryQuantityInfoByGlobalId));
     saveMutation.reset();
@@ -171,17 +171,17 @@ export default function StoichiometryInventoryUpdateDialog({
           void handleSubmit();
         }}
       >
-        <DialogTitle id={titleId}>Update Inventory Stock</DialogTitle>
+        <DialogTitle id={titleId}>{t("stoichiometry.inventoryUpdate.dialogTitle")}</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2" color="text.secondary">
-              Select the molecules from this stoichiometry table whose linked inventory stock should be updated.
+              {t("stoichiometry.inventoryUpdate.selectMolecules")}
             </Typography>
             <Alert
               severity="warning"
               icon={
                 <WarningAmberIcon
-                  aria-label="Action irreversible warning"
+                  aria-label={t("stoichiometry.inventoryUpdate.irreversibleWarningLabel")}
                   fontSize="small"
                   sx={{
                     color: "warning.main",
@@ -189,18 +189,15 @@ export default function StoichiometryInventoryUpdateDialog({
                 />
               }
             >
-              <AlertTitle>WARNING: This action is irreversible</AlertTitle>
+              <AlertTitle>{t("stoichiometry.inventoryUpdate.irreversibleTitle")}</AlertTitle>
 
               <Typography variant="body2" gutterBottom>
-                <strong>This will permanently reduce inventory quantities.</strong>
+                <strong>{t("stoichiometry.inventoryUpdate.permanentlyReduceWarning")}</strong>
               </Typography>
               <Typography variant="body2" gutterBottom>
-                Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry
-                table, delete the document, or unlink samples.
+                {t("stoichiometry.inventoryUpdate.cannotReplenish")}
               </Typography>
-              <Typography variant="body2">
-                Only proceed if you have actually used these materials in your experiment.
-              </Typography>
+              <Typography variant="body2">{t("stoichiometry.inventoryUpdate.proceedIfUsed")}</Typography>
             </Alert>
             {selectionError && <Alert severity="warning">{selectionError}</Alert>}
             {saveFeedback && <Alert severity="info">{saveFeedback}</Alert>}
@@ -219,21 +216,21 @@ export default function StoichiometryInventoryUpdateDialog({
                   <TableRow>
                     <TableCell
                       padding="checkbox"
-                      aria-label="Select molecule"
+                      aria-label={t("stoichiometry.inventoryUpdate.selectMoleculeLabel")}
                       width={52}
                       sx={{
                         px: 0.5,
                       }}
                     />
-                    <TableCell width="55%">Molecule</TableCell>
+                    <TableCell width="55%">{t("stoichiometry.inventoryUpdate.molecule")}</TableCell>
                     <TableCell align="right" width="15%">
-                      In Stock
+                      {t("stoichiometry.inventoryUpdate.inStock")}
                     </TableCell>
                     <TableCell align="right" width="15%">
-                      Will Use
+                      {t("stoichiometry.inventoryUpdate.willUse")}
                     </TableCell>
                     <TableCell align="right" width="15%">
-                      Remaining
+                      {t("stoichiometry.inventoryUpdate.remaining")}
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -270,7 +267,7 @@ export default function StoichiometryInventoryUpdateDialog({
         </DialogContent>
         <DialogActions>
           <Button type="button" onClick={handleClose}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button
             type="submit"
@@ -278,7 +275,7 @@ export default function StoichiometryInventoryUpdateDialog({
             color="callToAction"
             disabled={selectedMoleculeIds.length === 0 || hasInvalidSelectedRows || saveMutation.isPending}
           >
-            {saveMutation.isPending ? "Saving..." : "Save"}
+            {saveMutation.isPending ? t("stoichiometry.inventoryUpdate.saving") : t("actions.save")}
           </Button>
         </DialogActions>
       </Box>

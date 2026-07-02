@@ -11,6 +11,7 @@ import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/slack";
 import SlackIcon from "../../../assets/branding/slack/logo.svg";
@@ -55,6 +56,7 @@ const DialogContent = observer(
     linkedChannels: UnwrapArray<IntegrationStates["SLACK"]["credentials"]>;
     integrationState: IntegrationStates["SLACK"];
   }) => {
+    const { t } = useTranslation(["apps", "common"]);
     const [loadingNewChannel, setLoadingNewChannel] = useState(false);
     const [newChannel, setNewChannel] = useState<Channel | null>(null);
     const { addAlert } = useContext(AlertContext);
@@ -68,7 +70,7 @@ const DialogContent = observer(
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to Slack",
+            title: t("integrations.slack.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -127,7 +129,7 @@ const DialogContent = observer(
             addAlert(
               mkAlert({
                 variant: "error",
-                title: "Could not get details of new Slack channel.",
+                title: t("integrations.slack.alerts.channelDetailsError"),
                 message: e.message,
               }),
             );
@@ -148,7 +150,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not get details of new Slack channel.",
+              title: t("integrations.slack.alerts.channelDetailsError"),
               message: e.message,
             }),
           );
@@ -183,7 +185,7 @@ const DialogContent = observer(
                       addAlert(
                         mkAlert({
                           variant: "success",
-                          message: "Successfully changed label.",
+                          message: t("integrations.slack.alerts.labelSuccess"),
                         }),
                       );
                     } catch (e) {
@@ -191,7 +193,7 @@ const DialogContent = observer(
                         addAlert(
                           mkAlert({
                             variant: "error",
-                            title: "Failed to change label.",
+                            title: t("integrations.slack.alerts.labelError"),
                             message: e.message,
                           }),
                         );
@@ -204,11 +206,11 @@ const DialogContent = observer(
                     <DescriptionList
                       content={[
                         {
-                          label: "Workspace",
+                          label: t("integrations.slack.fields.workspace"),
                           value: channel.SLACK_TEAM_NAME,
                         },
                         {
-                          label: "Channel name",
+                          label: t("integrations.slack.fields.channelName"),
                           value: channel.SLACK_CHANNEL_NAME,
                         },
                       ]}
@@ -221,12 +223,12 @@ const DialogContent = observer(
                           channel.SLACK_CHANNEL_LABEL = value;
                         });
                       }}
-                      label="RSpace Label"
+                      label={t("integrations.slack.fields.rspaceLabel")}
                     />
                   </Stack>
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                   <Button
                     onClick={() => {
                       void (async () => {
@@ -240,7 +242,7 @@ const DialogContent = observer(
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Successfully deleted channel.",
+                              message: t("integrations.slack.alerts.deleteSuccess"),
                             }),
                           );
                         } catch (e) {
@@ -248,7 +250,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "error",
-                                title: "Could not delete channel.",
+                                title: t("integrations.slack.alerts.deleteError"),
                                 message: e.message,
                               }),
                             );
@@ -256,7 +258,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    Remove
+                    {t("common:actions.remove")}
                   </Button>
                 </CardActions>
               </form>
@@ -289,7 +291,7 @@ const DialogContent = observer(
                       addAlert(
                         mkAlert({
                           variant: "success",
-                          message: "Successfully added channel.",
+                          message: t("integrations.slack.alerts.addSuccess"),
                         }),
                       );
                     } catch (e) {
@@ -297,7 +299,7 @@ const DialogContent = observer(
                         addAlert(
                           mkAlert({
                             variant: "error",
-                            title: "Failed to add channel.",
+                            title: t("integrations.slack.alerts.addError"),
                             message: e.message,
                           }),
                         );
@@ -309,11 +311,11 @@ const DialogContent = observer(
                   <DescriptionList
                     content={[
                       {
-                        label: "Workspace",
+                        label: t("integrations.slack.fields.workspace"),
                         value: newChannel.SLACK_TEAM_NAME,
                       },
                       {
-                        label: "Channel name",
+                        label: t("integrations.slack.fields.channelName"),
                         value: newChannel.SLACK_CHANNEL_NAME,
                       },
                     ]}
@@ -326,7 +328,7 @@ const DialogContent = observer(
                         newChannel.SLACK_CHANNEL_LABEL = value;
                       });
                     }}
-                    label="RSpace Label"
+                    label={t("integrations.slack.fields.rspaceLabel")}
                   />
                 </CardContent>
                 <CardActions>
@@ -335,15 +337,15 @@ const DialogContent = observer(
                       setNewChannel(null);
                     }}
                   >
-                    Cancel
+                    {t("common:actions.cancel")}
                   </Button>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>
           ) : (
             <Button disabled={loadingNewChannel} onClick={() => void addHandler()}>
-              {loadingNewChannel ? "Loading a new channel" : "Add"}
+              {loadingNewChannel ? t("integrations.slack.loadingChannel") : t("common:actions.add")}
             </Button>
           )}
         </Box>
@@ -365,6 +367,7 @@ type SlackArgs = {
  * been deprecated.
  */
 function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -374,29 +377,29 @@ function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Slack"
+        name={t("integrations.slack.name")}
         integrationState={integrationState}
-        explanatoryText="Message and collaborate with your team with a cloud-based communication tool."
+        explanatoryText={t("integrations.slack.description")}
         image={SlackIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can send messages or forward notifications to your chosen Slack channels. You can also post links to RSpace documents directly into Slack channels or private messages."
-        helpLinkText="Slack integration docs"
+        usageText={t("integrations.slack.usage")}
+        helpLinkText={t("integrations.slack.helpLink")}
         website="slack.com"
         docLink="slack"
         setupSection={
           <>
             <Typography variant="body2">
-              The steps to setting up this integration are documented in{" "}
+              {t("integrations.slack.setup.article")}{" "}
               <Link href={docLinks.slack} target="_blank" rel="noreferrer">
-                the Slack Integration article.
+                {t("integrations.slack.setup.articleLink")}
               </Link>
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedChannels) => (
                 <DialogContent key={null} linkedChannels={linkedChannels} integrationState={integrationState} />
               ))
-              .orElse("Error getting configured repositories")}
+              .orElse(t("integrations.slack.orElse"))}
           </>
         }
       />

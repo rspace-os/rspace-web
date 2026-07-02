@@ -11,9 +11,9 @@ export function SimpleIgsnTable() {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        <h1>IGSN Table</h1>
+        <h1>{"IGSN Table"}</h1>
         <IgsnTable selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} />
-        <h2>Selected IGSNs</h2>
+        <h2>{"Selected IGSNs"}</h2>
         <ul aria-label="selected IGSNs">
           {[...selectedIgsns].map((igsn) => (
             <li key={igsn.id}>{igsn.doi}</li>
@@ -29,9 +29,9 @@ export function SingularSelectionIgsnTable() {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        <h1>IGSN Table</h1>
+        <h1>{"IGSN Table"}</h1>
         <IgsnTable selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} disableMultipleRowSelection />
-        <h2>Selected IGSNs</h2>
+        <h2>{"Selected IGSNs"}</h2>
         <ul aria-label="selected IGSNs">
           {[...selectedIgsns].map((igsn) => (
             <li key={igsn.id}>{igsn.doi}</li>
@@ -47,7 +47,7 @@ export function IgsnTableWithControlDefaults() {
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
-        <h1>IGSN Table with Control Defaults</h1>
+        <h1>{"IGSN Table with Control Defaults"}</h1>
         <IgsnTable
           selectedIgsns={selectedIgsns}
           setSelectedIgsns={setSelectedIgsns}
@@ -57,7 +57,7 @@ export function IgsnTableWithControlDefaults() {
             searchTerm: "test",
           }}
         />
-        <h2>Selected IGSNs</h2>
+        <h2>{"Selected IGSNs"}</h2>
         <ul aria-label="selected IGSNs">
           {[...selectedIgsns].map((igsn) => (
             <li key={igsn.id}>{igsn.doi}</li>

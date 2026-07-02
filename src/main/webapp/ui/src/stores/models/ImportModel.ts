@@ -1,5 +1,6 @@
 import { isNotNil, pick, pickBy, zipWith } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
@@ -739,7 +740,7 @@ export default class Import {
       this.state.transitionTo("parsingFailed", () => ({
         fileErrorMessage: Parsers.objectPath(["response", "data", "message"], error)
           .flatMap(Parsers.isString)
-          .orElse("Unknown reason."),
+          .orElse(i18n.t("inventory:errors.unknownReason")),
       }));
       this.resetAllMappings();
     }
@@ -898,7 +899,7 @@ export default class Import {
         // renaming status property to prevent duplication.
         data: { status: importStatus, sampleResults, containerResults, subSampleResults },
       } = await showToastWhilstPending(
-        `Importing Records...`,
+        i18n.t("inventory:import.records.importing"),
         ApiService.post<{
           status: string;
           sampleResults: ImportResults;
@@ -919,14 +920,14 @@ export default class Import {
           if (type === "SAMPLE") results.concat(templateResult);
           uiStore.addAlert(
             mkAlert({
-              message: `Could not import invalid ${labelByResultsType} data.`,
+              message: i18n.t("inventory:import.records.invalidData", { type: labelByResultsType }),
               variant: "error",
               details: results
                 .map(({ error }, i) => [error, i] as [{ errors: ReadonlyArray<string> }, number])
                 .filter(([error]) => error)
                 .flatMap(([error, i]) =>
                   error.errors.map((e) => ({
-                    title: `Row ${i + 1}`,
+                    title: i18n.t("inventory:import.records.row", { row: i + 1 }),
                     help: e,
                     variant: "error" as const,
                   })),
@@ -940,7 +941,7 @@ export default class Import {
           const factory = new MemoisedFactory();
           uiStore.addAlert(
             mkAlert({
-              message: `${labelByResultsType} successfully imported.`,
+              message: i18n.t("inventory:import.records.success", { type: labelByResultsType }),
               variant: "success",
               isInfinite: true,
               details: results
@@ -950,7 +951,7 @@ export default class Import {
                   return newRecord;
                 })
                 .map((record) => ({
-                  title: `Imported "${record.name}".`,
+                  title: i18n.t("inventory:import.records.importedRecord", { name: record.name }),
                   variant: "success",
                   record,
                 })),
@@ -972,9 +973,9 @@ export default class Import {
       uiStore.addAlert(
         mkAlert({
           title: gatewayTimeout
-            ? "Something went wrong but the import may have completed."
-            : "Something went wrong and some records were not imported.",
-          message: getErrorMessage(error, "Unknown reason."),
+            ? i18n.t("inventory:import.submit.mayHaveCompleted")
+            : i18n.t("inventory:import.submit.recordsNotImported"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: gatewayTimeout ? "warning" : "error",
         }),
       );

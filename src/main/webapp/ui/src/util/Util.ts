@@ -49,11 +49,6 @@ export function match<T, U>(pairs: Array<[(t: T) => boolean, U]>): (t: T) => U {
   };
 }
 
-/**
- * For formatting boolean values as Yes/No strings
- */
-export const toYesNo = (b: boolean): string => (b ? "Yes" : "No");
-
 type IsoToLocalOptions = {
   locale?: string | undefined | null;
   dateOnly?: boolean | undefined | null;

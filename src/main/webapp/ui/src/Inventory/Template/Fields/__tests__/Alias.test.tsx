@@ -24,7 +24,7 @@ describe("Alias", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByText("Custom"));
+    fireEvent.click(screen.getByText("inventory:fields.templateFields.alias.custom"));
     const pluralInput = within(screen.getByTestId("aliasField_pluralBox")).getByRole("textbox");
 
     fireEvent.input(pluralInput, { target: { value: "x" } });

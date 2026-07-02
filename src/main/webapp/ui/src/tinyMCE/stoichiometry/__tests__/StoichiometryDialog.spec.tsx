@@ -4,6 +4,7 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import i18n from "@/modules/common/i18n";
 import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
 import {
   chemistryIntegrationHandler,
@@ -50,7 +51,9 @@ const dialogStoichiometryHandlers = () => {
 
 const dialog = new StoichiometryDialogPage();
 
-beforeEach(() => {
+beforeEach(async () => {
+  i18n.options.appendNamespaceToCIMode = true;
+  await i18n.changeLanguage("cimode");
   networkRequests.length = 0;
   worker.use(oauthTokenHandler(), chemistryIntegrationHandler(), ...dialogStoichiometryHandlers());
   worker.events.on("request:start", ({ request }) => {

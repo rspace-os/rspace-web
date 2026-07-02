@@ -62,7 +62,7 @@ describe("VersionHistory", () => {
     render(<VersionHistory record={subsample} />);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("subSamples/1/revisions");
   });
@@ -79,7 +79,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     const rows = screen.getAllByRole("row");
@@ -93,7 +93,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: /version 1/i });
@@ -104,7 +104,7 @@ describe("VersionHistory", () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("An error");
   });
@@ -116,7 +116,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/could not load version history/i);
   });
@@ -135,7 +135,7 @@ describe("VersionHistory", () => {
     render(<VersionHistory record={template} />);
 
     expect(screen.getByText("2")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
     expect(await screen.findByRole("table")).toBeVisible();
     expect(spy).toHaveBeenCalledWith("sampleTemplates/1/revisions");
   });
@@ -146,7 +146,7 @@ describe("VersionHistory", () => {
     );
     const template = makeMockTemplate({ version: 2 });
     render(<VersionHistory record={template} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: /version 1/i });
@@ -157,9 +157,9 @@ describe("VersionHistory", () => {
     vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.resolve(revisionsResponse([])));
     const subsample = makeMockSubSample({ version: 1 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/no version history/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent("inventory:moreInfo.versionHistory.none");
   });
 
   test("the current version row is marked as such", async () => {
@@ -173,11 +173,11 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     const currentRow = screen.getAllByRole("row").find((row) => /version 2/i.test(row.textContent ?? ""));
-    expect(currentRow).toHaveTextContent("(current)");
+    expect(currentRow).toHaveTextContent("inventory:moreInfo.versionHistory.current");
   });
 
   test("a historical view marks its pinned version as viewing, not current", async () => {
@@ -194,12 +194,12 @@ describe("VersionHistory", () => {
       historicalVersion: true,
     });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     const viewedRow = screen.getAllByRole("row").find((row) => /version 1/i.test(row.textContent ?? ""));
-    expect(viewedRow).toHaveTextContent("(viewing)");
-    expect(screen.queryByText(/\(current\)/)).not.toBeInTheDocument();
+    expect(viewedRow).toHaveTextContent("inventory:moreInfo.versionHistory.viewing");
+    expect(screen.queryByText(/moreInfo.versionHistory.current/)).not.toBeInTheDocument();
   });
 
   test("the newest revision of a version wins regardless of response order", async () => {
@@ -225,7 +225,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
     expect(screen.getByText("Newest Editor")).toBeVisible();
@@ -242,14 +242,14 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
     resolvers[0](revisionsResponse([{ revisionId: 100, version: 1 }]));
     await screen.findByRole("table");
 
-    fireEvent.click(screen.getByRole("button", { name: /^close$/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.close" }));
     // wait out the dialog exit transition, then reopen
     const reopen = await screen.findByRole("button", {
-      name: /view version history/i,
+      name: "inventory:moreInfo.versionHistory.view",
     });
     fireEvent.click(reopen);
 
@@ -267,7 +267,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     const { rerender } = render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     // the active record changes while the first fetch is still in flight
     const sample = makeMockSample({ version: 3 });
@@ -289,7 +289,7 @@ describe("VersionHistory", () => {
     );
     const subsample = makeMockSubSample({ version: 2 });
     const { baseElement } = render(<VersionHistory record={subsample} />);
-    fireEvent.click(screen.getByRole("button", { name: /view version history/i }));
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
     await screen.findByRole("table");
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest

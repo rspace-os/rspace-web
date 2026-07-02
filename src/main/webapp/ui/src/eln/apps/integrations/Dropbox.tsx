@@ -1,5 +1,6 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/dropbox";
 import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -21,6 +22,7 @@ type DropboxArgs = {
  * document editor.
  */
 function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -30,20 +32,20 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Dropbox"
+        name={t("integrations.dropbox.name")}
         integrationState={integrationState}
-        explanatoryText="Store, access, and share your files across devices with others through online cloud storage."
+        explanatoryText={t("integrations.dropbox.description")}
         image={DropboxIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
-        usageText="You can include files from Dropbox in your RSpace documents. Files are embedded as links to the Dropbox location of that file."
-        helpLinkText="Cloud Storage integrations docs"
+        usageText={t("integrations.dropbox.usage")}
+        helpLinkText={t("integrations.dropbox.helpLink")}
         website="dropbox.com"
         docLink="cloudstorage"
         setupSection={
           <ol>
-            <li>Enable the integration.</li>
-            <li>When editing a document, click on the Dropbox icon in the text editor toolbar.</li>
+            <li>{t("integrations.dropbox.setup.enable")}</li>
+            <li>{t("integrations.dropbox.setup.toolbar")}</li>
           </ol>
         }
       />

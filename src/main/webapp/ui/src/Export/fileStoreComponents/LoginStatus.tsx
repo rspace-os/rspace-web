@@ -11,6 +11,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { FileSystem } from "../common";
 import FileStoreLogin from "../FileStoreLogin";
 
@@ -34,22 +35,18 @@ type LoginStatusArgs = {
  * logged in or otherwise provides them with a mechanism for logging in.
  */
 export default function LoginStatus({ fileSystems, fileStoreCheck }: LoginStatusArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = useState(false);
   const loggedOutCount = fileSystems.filter((fs) => fs.loggedAs === null).length;
 
   return (
     <Card sx={{ p: 1 }}>
-      <h2>File Systems that require login</h2>
-      {loggedOutCount === 0 && <p>You are logged into all File Systems referenced by filestore links.</p>}
-      {loggedOutCount > 0 && (
-        <p>
-          You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems
-          or some linked files may be omitted during the export.
-        </p>
-      )}
+      <h2>{t("export.fileStore.login.heading")}</h2>
+      {loggedOutCount === 0 && <p>{t("export.fileStore.login.allLoggedIn")}</p>}
+      {loggedOutCount > 0 && <p>{t("export.fileStore.login.notAllLoggedIn")}</p>}
       {loggedOutCount > 0 ? (
         <Button variant="contained" color="primary" onClick={() => setOpen(true)} data-test-id="button-login" fullWidth>
-          Login to remaining File Systems
+          {t("export.fileStore.login.loginButton")}
         </Button>
       ) : (
         <Button
@@ -59,20 +56,20 @@ export default function LoginStatus({ fileSystems, fileStoreCheck }: LoginStatus
           data-test-id="button-login-details"
           fullWidth
         >
-          Check File Systems login details
+          {t("export.fileStore.login.checkButton")}
         </Button>
       )}
 
       <Dialog onClose={() => setOpen(false)} open={open}>
-        <DialogTitle>File Systems login status</DialogTitle>
+        <DialogTitle>{t("export.fileStore.login.dialogTitle")}</DialogTitle>
         <DialogContent>
           {fileSystems.map((fileStore) => (
             <div key={`filestoreLogin${fileStore.id}`}>
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>File System Name</TableCell>
-                    <TableCell align="right">Logged in as</TableCell>
+                    <TableCell>{t("export.fileStore.login.columns.name")}</TableCell>
+                    <TableCell align="right">{t("export.fileStore.login.columns.loggedInAs")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -91,7 +88,7 @@ export default function LoginStatus({ fileSystems, fileStoreCheck }: LoginStatus
                           : { background: "none" }
                       }
                     >
-                      {fileStore.loggedAs === null ? "Not logged in" : fileStore.loggedAs}
+                      {fileStore.loggedAs === null ? t("export.fileStore.login.notLoggedIn") : fileStore.loggedAs}
                     </TableCell>
                   </TableRow>
                 </TableBody>
@@ -104,7 +101,7 @@ export default function LoginStatus({ fileSystems, fileStoreCheck }: LoginStatus
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-ok-login">
-            OK
+            {t("common:actions.ok")}
           </Button>
         </DialogActions>
       </Dialog>

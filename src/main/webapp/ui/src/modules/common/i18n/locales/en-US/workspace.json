@@ -1,0 +1,409 @@
+{
+  "export": {
+    "dialog": {
+      "defaultExportName": {
+        "exportData": "Export Data",
+        "groupAllWork": "{groupName} - all work",
+        "userAllWork": "{username} - all work"
+      },
+      "panes": {
+        "export": "Export",
+        "filestoreExportConfiguration": "Filestore Links Export Configuration",
+        "raid": "RAiD",
+        "setupRepository": "Setup Repository"
+      }
+    },
+    "fileStore": {
+      "filters": {
+        "changeButton": "Change file filtering options",
+        "dialogTitle": "Filtering options for filestore files",
+        "excludeLabel": "File types to exclude (comma-separated list)",
+        "heading": "File filters",
+        "sizeLimitLabel": "Individual file size limit (MB)",
+        "summary": "Filestore files larger than <strong>{sizeMB} MB</strong> will not be included in the export. All types of filestore files will be included.",
+        "summaryWithExclusions": "Filestore files larger than <strong>{sizeMB} MB</strong> will not be included in the export. All types of filestore files will be included, apart from the following: <strong>{extensions}</strong>."
+      },
+      "foundLinks": {
+        "columns": {
+          "linkType": "Link type",
+          "notes": "Notes",
+          "path": "Full path on the File System"
+        },
+        "heading": "Filestore links found in exported content",
+        "showButton": "Show found filestore links",
+        "summary": "Exported content contains {filesCount} filestore link from {fileSystemsCount} File System."
+      },
+      "login": {
+        "allLoggedIn": "You are logged into all File Systems referenced by filestore links.",
+        "authProblem": "Authentication problem, check your username and password or contact your System Admin",
+        "checkButton": "Check File Systems login details",
+        "columns": {
+          "loggedInAs": "Logged in as",
+          "name": "File System Name"
+        },
+        "dialogTitle": "File Systems login status",
+        "heading": "File Systems that require login",
+        "loggedInToast": "Logged in as {userName}",
+        "loginButton": "Login to remaining File Systems",
+        "notAllLoggedIn": "You are not logged into all File Systems referenced by filestore links. Please login to remaining File Systems or some linked files may be omitted during the export.",
+        "notLoggedIn": "Not logged in",
+        "password": "Password",
+        "passwordBlank": "Password cannot be blank",
+        "username": "Username",
+        "usernameBlank": "Username cannot be blank"
+      },
+      "noLinks": {
+        "checkSelection": "If that's unexpected, you should check your export selection.",
+        "heading": "No filestore links found in exported content.",
+        "proceed": "Otherwise you can proceed with the export."
+      },
+      "scan": {
+        "checkResults": "Please check the scan results for details.",
+        "columns": {
+          "path": "Full path on the File System",
+          "reason": "Reason",
+          "size": "Size",
+          "type": "Type"
+        },
+        "dialogTitle": "Availability scan results",
+        "filesIncluded": "Export will include <strong>{count} filestore file(s)</strong> of total size <strong>{size}</strong>.",
+        "filesSkipped": "<strong>{count} file(s) or folder(s) will be skipped</strong>.",
+        "heading": "Link availability scan",
+        "includedHeading": "Included files from {name}",
+        "noFilesIncluded": "Export <strong>will not include any filestore files</strong>.",
+        "runHint": "Before continuing please run the filestore links availability scan, which will report on any unaccessible or filtered links.",
+        "scanButton": "Scan filestore links",
+        "showLastButton": "Show last scan results",
+        "skippedHeading": "Skipped files from {name}"
+      },
+      "validation": {
+        "exceedsDiskSpace": "The size of filestore files to be included in export ({size}) exceeds disk space currently available on RSpace server. Use file filters to exclude some files, or contact your System Admin.",
+        "exceedsGlobalLimit": "The size of filestore files to be included in export ({size}) exceeds the global limit set for size of RSpace archive file. Use file filters to exclude some files, or ask your System Admin to raise the limit on archive size.",
+        "loggedOut": "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
+        "proceedButton": "Yes, proceed",
+        "scanNotPerformed": "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?"
+      }
+    },
+    "format": {
+      "chooser": {
+        "additionalDestinations": "Choose additional destinations",
+        "exportToRepository": "Export to a repository",
+        "filestoresSection": "Filestores",
+        "formats": {
+          "docAvailable": "MS Word version of your RSpace documents will be placed in the 'Exports' area of the Gallery.",
+          "docHeading": ".DOC file",
+          "elnExplanation": "An XML bundle with an RO-Crate metadata file, zipped into a .eln archive.",
+          "elnHeading": "RO-Crate",
+          "htmlExplanation": "Exported data, notebooks and attached files can be accessed offline with a browser.",
+          "htmlHeading": ".ZIP bundle containing .HTML files",
+          "pdfAvailable": "A read-only version of your RSpace documents will be placed in the 'Exports' area of the Gallery",
+          "pdfHeading": "PDF file",
+          "pdfUnavailable": "All selected items are attachments — there are no RSpace documents to export.",
+          "xmlExplanation": "Exported data is machine readable. Good for archiving, or transferring data from one RSpace server or user to another.",
+          "xmlHeading": ".ZIP bundle containing .XML files"
+        },
+        "heading": "Choose an appropriate format for your export",
+        "includeAllVersions": "Check to include all previous versions of your documents, or leave unchecked for only current version",
+        "includeFilestoreLinks": "Include filestore links",
+        "loading": "Loading",
+        "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
+        "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
+        "revisionsSection": "Revisions",
+        "selectLabel": "Select Export",
+        "wordErrors": {
+          "allMedia": "All selected items are attachments — there are no RSpace documents to export.",
+          "folder": "Word export is only available for a single document, and you've selected a folder.",
+          "multiple": "Word export is only available for a single document, and you have selected more than one.",
+          "notebook": "Word export is only available for a single document or notebook entry, and you've selected a Notebook."
+        }
+      },
+      "htmlXml": {
+        "depthInfinity": "Include linked documents to depth infinity",
+        "depthLevel": "Include linked documents to depth {level}",
+        "depthNone": "Don't include linked documents",
+        "description": "Export Description (optional)",
+        "foldersNote": "Linked folders and notebooks are never included",
+        "includeLinksLabel": "Should linked RSpace documents be included in export?"
+      },
+      "pdf": {
+        "checkboxes": {
+          "annotations": "Include image annotations",
+          "comments": "Include comments",
+          "footerEndOnly": "Insert date footer at file end only",
+          "lastModified": "Include last modified dates for fields",
+          "provenance": "Include provenance information",
+          "restartPageNumbers": "Restart page numbering for each document"
+        },
+        "dateFooterLabel": "Date on page footer",
+        "dateType": {
+          "created": "Created",
+          "exported": "Exported",
+          "lastModified": "Last modified date"
+        },
+        "name": "File name",
+        "nameHelper": "Name your file",
+        "pageFormatLabel": "Page format: ",
+        "pageSize": {
+          "a4": "A4",
+          "letter": "Letter"
+        },
+        "setDefault": "Set {pageSize} as default"
+      },
+      "word": {
+        "name": "Name your file",
+        "pageFormatLabel": "Page format: ",
+        "pageSize": {
+          "a4": "A4",
+          "letter": "Letter"
+        },
+        "setDefault": "Set {pageSize} as default."
+      }
+    },
+    "raid": {
+      "eligible": {
+        "instructions": "By enabling reporting to RAID below, the DOI of your repository export will be automatically added to your RAiD record. Otherwise, click Next to continue without reporting to RAiD.",
+        "projectGroupLine": "The content you're about to export is part of the project group <strong>{name}</strong> which is associated with the following RAiD identifier:",
+        "raidDetails": "<strong>{title}</strong> ({identifier}).",
+        "reportLabel": "Report to RAiD",
+        "title": "Report to RAiD"
+      },
+      "error": {
+        "message": "An error occurred while determining RAiD export eligibility: {message}",
+        "nextHint": "Please press Next to continue without reporting to RAiD.",
+        "title": "Error"
+      },
+      "ineligible": {
+        "missingGroups": "You do not have access to the following groups, therefore RSpace is unable to determine whether you have the rights to export the items to RAiD: {groupIds}. For more information, please contact the owner of the item, or press Next to continue without reporting to RAiD.",
+        "multipleRaids": "Multiple project groups ({groups}) associated with the shared items have RAiD associations, which is not supported. Please narrow your selection, or press Next to continue without reporting to RAiD.",
+        "noProjectGroups": "No project groups are associated with all shared items selected. Please press Next to continue without reporting to RAiD.",
+        "noRaidAssociation": "None of the project groups ({groups}) associated with the shared items have a RAiD association. Please press Next to continue without reporting to RAiD.",
+        "title": "Cannot report to RAiD",
+        "unknown": "An unknown error occurred while determining RAiD export eligibility. Please press Next to continue without reporting to RAiD."
+      }
+    },
+    "repositories": {
+      "choiceLabel": "Please choose one of your configured repositories to submit your export to:",
+      "common": {
+        "description": "Description",
+        "title": "Title"
+      },
+      "dataverse": {
+        "descriptionHelper": "Please add a relevant description for your export",
+        "license": "License",
+        "licenseHelper": "Please select your license",
+        "metadataLanguageHelper": "Please select your metadata language (only if target Dataverse supports it)",
+        "metadataLanguageLabel": "Metadata language",
+        "subject": "Subject",
+        "subjectHelper": "Please select your subject",
+        "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "dmp": {
+        "associateLabel": "Associate export with a Data Management Plans (DMPs)",
+        "zenodoLimit": "Only one DMP can be associated with an export to Zenodo."
+      },
+      "dryad": {
+        "abstract": "Add an abstract",
+        "abstractHelper": "Please add a relevant abstract for your export",
+        "grantingOrg": "Granting Organization",
+        "grantingOrgHelper": "Enter 3 of more characters to filter list",
+        "license": "License",
+        "licenseHelper": "Please select your license",
+        "researchDomain": "Research Domain",
+        "researchDomainHelper": "Please select your research domain",
+        "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "figshare": {
+        "descriptionHelper": "Please add a relevant description for your export",
+        "draft": "Draft",
+        "license": "License",
+        "licenseHelper": "Please select your license",
+        "publish": "Publish",
+        "publishingStatus": "Publishing status",
+        "subject": "Subject",
+        "subjectHelper": "Please select your subject",
+        "titleHelper": "Please choose a title, >3 symbols"
+      },
+      "labels": {
+        "choice": "Repository choice"
+      },
+      "tags": {
+        "clearButton": "Clear Tags",
+        "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a>Tagging Documents and using Controlled Vocabularies</a>.",
+        "label": "Tags and Controlled Vocabulary Terms"
+      },
+      "user": {
+        "addDialogTitle": "Add new person",
+        "addTooltip": "Add author/contact",
+        "author": "Author",
+        "contact": "Contact",
+        "email": "Email",
+        "name": "Name",
+        "peopleHelper": "Add author(s) AND contact(s) to your repository export.",
+        "peopleLabel": "People",
+        "type": "Type"
+      }
+    }
+  },
+  "toolbar": {
+    "advancedSearch": {
+      "addCondition": "Add new condition",
+      "cardSubheader": "Advanced search",
+      "dateFrom": "From",
+      "datePlaceholderFrom": "the beginning",
+      "datePlaceholderTo": "now",
+      "dateTo": "To",
+      "recordsConditionInfo": "At least one of the 'Within records' conditions will always be satisfied.",
+      "removeCondition": "Remove condition",
+      "reset": "Reset",
+      "satisfyAll": "Satisfy all conditions",
+      "satisfyOne": "Satisfy at least one condition",
+      "searchTypes": {
+        "attachment": "Attachment",
+        "created": "Creation date",
+        "form": "Form",
+        "fullText": "Text",
+        "lastModified": "Last modified",
+        "name": "Name",
+        "owner": "Owner(s)",
+        "records": "Within records",
+        "tag": "Tag(s)",
+        "template": "Template"
+      },
+      "validation": {
+        "includeAtLeastOne": "Include at least one {filter}",
+        "termTooShort": "The term should be at least 2 symbols"
+      }
+    },
+    "chemicalSearch": {
+      "back": "Back",
+      "chemicalPreviewAlt": "Chemical Preview",
+      "close": "Close",
+      "columnHeaders": {
+        "lastModified": "Last Modified",
+        "name": "Name",
+        "owner": "Owner",
+        "preview": "Preview"
+      },
+      "dialogTitle": "Chemical Search",
+      "drawInstruction": "Draw a single molecule below to search",
+      "errorFetching": "Error fetching search results: {message}",
+      "ketcherTitle": "Chemistry Search",
+      "loading": "Loading...",
+      "noResults": "No Search Results",
+      "searchType": "Search Type",
+      "searchTypeExact": "Exact",
+      "searchTypeSubstructure": "Substructure",
+      "validationMultipleMolecules": "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
+      "validationNoMolecule": "Please draw, paste, or open a molecule to start your search"
+    },
+    "compareDialog": {
+      "columnHeaders": {
+        "createdDate": "Created Date",
+        "globalId": "Global ID",
+        "modifiedDate": "Modified Date",
+        "name": "Name",
+        "owner": "Owner",
+        "signed": "Signed",
+        "tags": "Tags",
+        "unsigned": "Unsigned"
+      },
+      "description": "Select the documents you want to combine into a single CSV file. Documents with identical structures will be automatically aligned, including form data and content. If documents have different structures, additional columns will be created to accommodate all information.",
+      "exportRows": "Export {selection, select, selected {selected} other {all}} rows to CSV",
+      "labels": {
+        "documentsTable": "Documents"
+      },
+      "loadingDocuments": "Reading documents…",
+      "readError": "Could not read all of the documents",
+      "title": "Export Documents to CSV",
+      "unknownError": "Unknown reason"
+    },
+    "filePicker": {
+      "clickToSelect": "Click on the folder icon to select records.",
+      "dialogTitle": "{count, plural, one {# record selected} other {# records selected}}",
+      "openPicker": "Pick files"
+    },
+    "newFolder": {
+      "creating": "Creating a new folder...",
+      "nameLabel": "Folder name",
+      "navigateAfterCreate": "Navigate to the created folder",
+      "placeholder": "Enter a name, /or/a/path to create multiple folders",
+      "title": "Create a folder",
+      "validation": {
+        "nameRequired": "Please enter a name"
+      }
+    },
+    "newNotebook": {
+      "name": "New notebook name",
+      "title": "Create a notebook",
+      "validation": {
+        "nameRequired": "Please enter a name - excluding '/' characters."
+      }
+    },
+    "rename": {
+      "emptyName": "Empty name is not permitted.",
+      "error": "An error occurred while renaming the document.",
+      "name": "Name",
+      "prompt": "Please give a new name for <strong>{currentName}</strong>",
+      "success": "Successfully renamed document.",
+      "title": "Rename"
+    },
+    "searchbox": {
+      "placeholder": "Search term"
+    },
+    "simpleSearch": {
+      "advancedSearch": "Advanced search",
+      "filters": "Filters",
+      "filterTypes": {
+        "attachment": "Attachment",
+        "chemical": "Chemical",
+        "created": "Creation date",
+        "form": "Form",
+        "fullText": "Text",
+        "global": "All",
+        "lastModified": "Last modified",
+        "name": "Name",
+        "owner": "Owner(s)",
+        "tag": "Tag(s)",
+        "template": "Template"
+      },
+      "scopeDialog": {
+        "instructions": "Click \"Within selected\" if you wish to search within the specified records, or \"Search everywhere\" otherwise.",
+        "searchEverywhere": "Search everywhere",
+        "selectedRecords": "You have selected the records listed below.",
+        "title": "Scope search within records",
+        "withinSelected": "Within selected"
+      },
+      "searchPlaceholder": "Search"
+    },
+    "tags": {
+      "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a>Read more about creating, importing, and using Tags here.</a>",
+      "getTagsError": "Could not get tags.",
+      "invalidTags": "Some tags are invalid",
+      "multipleErrors": "There are multiple errors.",
+      "ontologyError": "Could not determine if ontologies are enforced or not.",
+      "saveError": "Could not save tags.",
+      "saveSuccess": "Successfully saved tags.",
+      "title": "Tagging {count, plural, one {# item} other {# items}}",
+      "unknownError": "An unknown error occurred."
+    },
+    "tagSelect": {
+      "placeholder": "Select tag(s)"
+    },
+    "userSelect": {
+      "placeholder": "Select owner(s)"
+    },
+    "workspaceToolbar": {
+      "calendarEntry": "Create a calendar entry",
+      "favorites": "Favorites",
+      "folderView": "Folder view",
+      "labgroupRecords": "Labgroup records",
+      "listView": "List view",
+      "ontologyFiles": "Ontology files",
+      "sharedWithMe": "Shared with me",
+      "templates": "Templates",
+      "treeView": "Tree view",
+      "viewAll": "View all",
+      "viewMode": "View mode"
+    }
+  }
+}

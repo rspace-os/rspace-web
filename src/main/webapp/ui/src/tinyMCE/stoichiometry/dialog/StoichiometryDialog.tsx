@@ -7,6 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/DialogBoundary";
 import { useIntegrationIsAllowedAndEnabled } from "@/hooks/api/integrationHelpers";
 import useOauthToken from "@/hooks/auth/useOauthToken";
@@ -48,6 +49,7 @@ export default function StoichiometryDialog({
   onDelete,
 }: StandaloneDialogInnerProps): React.ReactNode {
   const titleId = React.useId();
+  const { t } = useTranslation("common");
   const { getToken } = useOauthToken();
   const {
     mutate: mutateCalculateStoichiometry,
@@ -103,8 +105,8 @@ export default function StoichiometryDialog({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error Checking Chemistry Integration",
-            message: `Unable to verify chemistry integration status: ${error}. Please try again later.`,
+            title: t("stoichiometry.dialog.chemistryStatusErrorTitle"),
+            message: t("previewInfo.chemistryStatus.error", { ns: "apps", error }),
           }),
         );
       },
@@ -116,8 +118,8 @@ export default function StoichiometryDialog({
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Chemistry Integration Disabled",
-              message: "The chemistry integration is not enabled. Please contact your administrator to enable it.",
+              title: t("stoichiometry.dialog.chemistryDisabledTitle"),
+              message: t("previewInfo.chemistryStatus.disabled", { ns: "apps" }),
             }),
           );
         }
@@ -192,13 +194,13 @@ export default function StoichiometryDialog({
     >
       <AppBar
         variant="dialog"
-        currentPage="Chemistry"
+        currentPage={t("integrations.chemistry.name", { ns: "apps" })}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
       />
       <DialogTitle id={titleId} component="h3">
-        Reaction Table
+        {t("stoichiometry.dialog.reactionTable")}
       </DialogTitle>
       {actuallyOpen && currentStoichiometry === null && (
         <>
@@ -213,10 +215,10 @@ export default function StoichiometryDialog({
               }}
             >
               <Typography variant="body1" align="center">
-                Click the button below to calculate the stoichiometry data for this chemical compound.
+                {t("stoichiometry.dialog.calculatePrompt")}
               </Typography>
               <Button variant="contained" color="primary" onClick={handleCalculate} disabled={isRequestInFlight}>
-                {isRequestInFlight ? "Calculating..." : "Calculate Stoichiometry"}
+                {isRequestInFlight ? t("stoichiometry.dialog.calculating") : t("stoichiometry.dialog.calculate")}
               </Button>
               {hasCalculateError && calculateStoichiometryError && (
                 <Alert severity="error" sx={{ width: "100%", maxWidth: 480 }}>
@@ -231,7 +233,7 @@ export default function StoichiometryDialog({
               sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
               onClick={handleCloseWithoutTable}
             >
-              Close
+              {t("actions.close")}
             </Button>
           </DialogActions>
         </>
@@ -252,18 +254,18 @@ export default function StoichiometryDialog({
                     gap: 1,
                   }}
                 >
-                  <CircularProgress size={24} aria-label="Loading stoichiometry table" />
+                  <CircularProgress size={24} aria-label={t("stoichiometry.dialog.loadingTable")} />
                   <Typography variant="body2" color="textSecondary">
-                    Loading stoichiometry table...
+                    {t("stoichiometry.dialog.loadingTable")}
                   </Typography>
                 </Box>
               </DialogContent>
               <DialogActions>
                 <Button disabled={isRequestInFlight} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
-                  Delete
+                  {t("actions.delete")}
                 </Button>
                 <Button disabled={isRequestInFlight} sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}>
-                  Close
+                  {t("actions.close")}
                 </Button>
               </DialogActions>
             </>

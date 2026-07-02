@@ -12,7 +12,9 @@ import { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import materialTheme from "../../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -30,6 +32,7 @@ function DisableAutoshareDialog({
   switchDisabledReason,
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -58,8 +61,8 @@ function DisableAutoshareDialog({
 
         const async = response.data.data.async;
         const msg = async
-          ? `Reverting autoshare for ${group.groupDisplayName} started successfully. You will receive a notification once it is complete.`
-          : `Autoshare for ${group.groupDisplayName} was disabled successfully.`;
+          ? t("profile.groups.autosharing.disableStarted", { group: group.groupDisplayName })
+          : t("profile.groups.autosharing.disableSuccess", { group: group.groupDisplayName });
 
         setDone(true);
         callback();
@@ -67,11 +70,7 @@ function DisableAutoshareDialog({
       })
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
-        RS.confirm(
-          error.response.data || "Something went wrong. Please, contact support if the issue persists.",
-          "warning",
-          "infinite",
-        );
+        RS.confirm(error.response.data || t("profile.groups.autosharing.genericError"), "warning", "infinite");
       })
       .then(() => {
         setWaiting(false);
@@ -82,7 +81,7 @@ function DisableAutoshareDialog({
     <>
       {!isSwitch && (
         <Button variant="outlined" size="small" onClick={handleClickOpen}>
-          Disable autosharing
+          {t("profile.groups.autosharing.disable")}
         </Button>
       )}
       {isSwitch && (
@@ -93,7 +92,7 @@ function DisableAutoshareDialog({
               checked={true}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              slotProps={{ input: { "aria-label": "Disable autosharing" } }}
+              slotProps={{ input: { "aria-label": t("profile.groups.autosharing.disable") } }}
               sx={{
                 [`& .${switchClasses.switchBase}`]: {
                   color: blue[200],
@@ -110,22 +109,22 @@ function DisableAutoshareDialog({
         </Tooltip>
       )}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle id="form-dialog-title">Disable autosharing</DialogTitle>
+        <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.disable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Disabling autosharing will unshare all work for user <strong>{username}</strong> from group{" "}
-            <strong>{group.groupDisplayName}</strong>.<br />
-            <br />
-            Individual documents and notebooks can still be shared as usual.
-            <br />
+            <TransRichText
+              i18nKey="profile.groups.autosharing.disableUserText"
+              ns="common"
+              values={{ username, group: group.groupDisplayName }}
+            />
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} sx={{ color: "grey" }}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button onClick={handleSubmit} color="primary" disabled={waiting || done}>
-            Confirm
+            {t("actions.confirm")}
             {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
           </Button>
         </DialogActions>

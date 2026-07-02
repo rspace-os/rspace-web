@@ -48,12 +48,14 @@ function WrapperComponent() {
       }
       return (
         <div>
-          There are {listing.list.length} results.
+          {"There are "}
+          {listing.list.length}
+          {" results.\n          "}
           {listing.loadMore
             .map((loadMore) => (
               // biome-ignore lint/a11y/useButtonType: initial biome migration
               <button key={null} onClick={() => void loadMore()}>
-                Load more
+                {"Load more"}
               </button>
             ))
             .orElse(null)}
@@ -63,7 +65,7 @@ function WrapperComponent() {
               void refreshListing();
             }}
           >
-            Refresh
+            {"Refresh"}
           </button>
         </div>
       );
@@ -188,7 +190,7 @@ describe("useGalleryListing", () => {
       expect(screen.getByTestId("owner-id")).toHaveTextContent("null");
     });
 
-    expect(screen.getByTestId("owner-name")).toHaveTextContent("Unknown owner");
+    expect(screen.getByTestId("owner-name")).toHaveTextContent("gallery:unknownOwner");
     expect(screen.getByTestId("owner-username")).toHaveTextContent("null");
     expect(screen.getByTestId("is-shared-folder")).toHaveTextContent("false");
   });

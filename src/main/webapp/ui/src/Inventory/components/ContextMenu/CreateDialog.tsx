@@ -26,6 +26,8 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
@@ -99,7 +101,8 @@ const Fields = observer(
       }>;
     };
   }): React.ReactNode => {
-    if (state.copyFieldContent.length === 0) return <NoValue label="No fields." />;
+    const { t } = useTranslation("inventory");
+    if (state.copyFieldContent.length === 0) return <NoValue label={t("contextMenu.createDialog.noFields")} />;
     return (
       <TableContainer>
         <Table size="small">
@@ -121,8 +124,8 @@ const Fields = observer(
                   }}
                 />
               </TableCell>
-              <TableCell width="70%">Field</TableCell>
-              <TableCell width="30%">Default Value</TableCell>
+              <TableCell width="70%">{t("contextMenu.createDialog.columns.field")}</TableCell>
+              <TableCell width="30%">{t("contextMenu.createDialog.columns.defaultValue")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -157,6 +160,7 @@ const Fields = observer(
 );
 
 const SplitCount = observer(({ id, state }: { id: string; state: { copies: number } }): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   const MIN = 2;
   const MAX = 100;
 
@@ -177,7 +181,9 @@ const SplitCount = observer(({ id, state }: { id: string; state: { copies: numbe
           size="small"
           slotProps={{
             input: {
-              startAdornment: <InputAdornment position="start">Copies</InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start">{t("contextMenu.createDialog.fields.copies")}</InputAdornment>
+              ),
             },
             htmlInput: {
               min: MIN,
@@ -251,6 +257,7 @@ const LocationPicker = observer(({ id: _id, state }: { id: string; state: { cont
 });
 
 const NewSubsampleCount = observer(({ id, state }: { id: string; state: { count: number } }): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   return (
     <Box>
       <FormControl>
@@ -268,7 +275,9 @@ const NewSubsampleCount = observer(({ id, state }: { id: string; state: { count:
           size="small"
           slotProps={{
             input: {
-              startAdornment: <InputAdornment position="start">Count</InputAdornment>,
+              startAdornment: (
+                <InputAdornment position="start">{t("contextMenu.createDialog.fields.count")}</InputAdornment>
+              ),
             },
             htmlInput: {
               min: 1,
@@ -339,6 +348,7 @@ const ParameterField = observer(
     setActiveStep: (step: number) => void;
     showNextButton: boolean;
   }) => {
+    const { t } = useTranslation(["inventory", "common"]);
     const fieldId = React.useId();
     return (
       <>
@@ -390,7 +400,7 @@ const ParameterField = observer(
                       }}
                       disabled={!validState()}
                     >
-                      Next
+                      {t("common:actions.next")}
                     </Button>
                   )}
                   <Button
@@ -399,7 +409,7 @@ const ParameterField = observer(
                       setActiveStep(activeStep - 1);
                     }}
                   >
-                    Back
+                    {t("common:actions.back")}
                   </Button>
                 </Stack>
               </Stack>
@@ -412,6 +422,7 @@ const ParameterField = observer(
 );
 
 function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const [selectedCreateOptionIndex, setSelectedCreateOptionIndex] = React.useState<null | number>(null);
   const [activeStep, setActiveStep] = React.useState<number>(0);
   const [submitting, setSubmitting] = React.useState(false);
@@ -434,9 +445,9 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
         .catch((error) => {
           addAlert(
             mkAlert({
-              message: `Failed to load additional information: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
+              message: t("contextMenu.createDialog.loadAdditionalInfoFailed", {
+                message: error instanceof Error ? error.message : String(error),
+              }),
               variant: "error",
             }),
           );
@@ -475,13 +486,17 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
         }}
       >
         <DialogTitle>
-          Create new items from <strong>{existingRecord.name}</strong>
-          <HelpLinkIcon link={docLinks.createDialog} title="Info on creating new items." />
+          <TransRichText
+            ns="inventory"
+            i18nKey="contextMenu.createDialog.title"
+            values={{ name: existingRecord.name }}
+          />
+          <HelpLinkIcon link={docLinks.createDialog} title={t("contextMenu.createDialog.helpTitle")} />
         </DialogTitle>
         <DialogContent>
           {loading ? (
             <Box sx={{ textAlign: "center", p: 2 }}>
-              <Typography variant="body1">Loading...</Typography>
+              <Typography variant="body1">{t("contextMenu.createDialog.loading")}</Typography>
             </Box>
           ) : (
             <Stepper activeStep={activeStep} orientation="vertical">
@@ -497,13 +512,13 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
                           setActiveStep(0);
                         }}
                       >
-                        Change
+                        {t("contextMenu.createDialog.change")}
                       </Button>
                     )
                   }
                 >
                   <label htmlFor={firstStepId} style={{ fontSize: "1.1em", letterSpacing: "0.04em" }}>
-                    Type of item to create
+                    {t("contextMenu.createDialog.itemType")}
                     {selectedCreateOptionIndex !== null && (
                       <Typography variant="body2">
                         {existingRecord.createOptions[selectedCreateOptionIndex].label}
@@ -538,7 +553,9 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
                         setActiveStep(1);
                       }}
                     >
-                      {existingRecord.createOptions.length === 0 && <NoValue label="No options available." />}
+                      {existingRecord.createOptions.length === 0 && (
+                        <NoValue label={t("contextMenu.createDialog.noOptions")} />
+                      )}
                       {existingRecord.createOptions.map(({ label, explanation, disabled }, index) => (
                         <FormControlLabel
                           key={index}
@@ -593,9 +610,9 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleClose}>{t("common:actions.cancel")}</Button>
           <SubmitSpinner
-            label="Create"
+            label={t("common:actions.create")}
             onClick={handleSubmit}
             disabled={
               submitting ||

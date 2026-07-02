@@ -14,13 +14,23 @@ import useS3Filestores from "../components/useS3Filestores";
 
 function FilestoreList() {
   const result = useS3Filestores();
-  if (result.tag === "loading") return <div data-testid="state">loading</div>;
-  if (result.tag === "error") return <div data-testid="state">error:{result.error}</div>;
+  if (result.tag === "loading") return <div data-testid="state">{"loading"}</div>;
+  if (result.tag === "error")
+    return (
+      <div data-testid="state">
+        {"error:"}
+        {result.error}
+      </div>
+    );
   return (
     <ul data-testid="filestores">
       {result.value.map((fs) => (
         <li key={fs.id} data-testid={`fs-${fs.id}`}>
-          {fs.name}|canRead={String(fs.canRead)}|canWrite={String(fs.canWrite)}
+          {fs.name}
+          {"|canRead="}
+          {String(fs.canRead)}
+          {"|canWrite="}
+          {String(fs.canWrite)}
         </li>
       ))}
     </ul>

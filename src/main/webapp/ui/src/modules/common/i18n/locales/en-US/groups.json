@@ -1,0 +1,80 @@
+{
+  "createGroup": {
+    "errors": {
+      "requestFailed": "Your request failed due to: {message}. If this problem persists, please contact RSpace Support."
+    },
+    "nav": {
+      "back": "Back",
+      "create": "Create {groupType}",
+      "next": "Next"
+    },
+    "openButton": "Create Group",
+    "step1": {
+      "heading": "Group Name",
+      "hint": "Enter a name to identify the new group"
+    },
+    "step2": {
+      "createOption": "Select {userInput}",
+      "heading": "Select PI",
+      "nominateHint": "Enter a single email address of a new or existing user to be asked to be group PI.",
+      "nominateOtherPi": "Nominate a PI, make me Lab Admin, and supply users for pending invitations.",
+      "piInvitationNote": "Note: group wont be created until PI accepts invitation",
+      "roleLabel": "Pi Role",
+      "searchPlaceholder": "Start typing...",
+      "selfPi": "Make me the group PI and invite users"
+    },
+    "step3": {
+      "emailPlaceholder": "Enter email address",
+      "inviteExistingHeading": "Invite RSpace users",
+      "inviteNewHeading": "Invite new users",
+      "typeHint": "type at least 3 characters"
+    },
+    "step4": {
+      "groupNameLabel": "Group name:",
+      "groupNameRequired": "You require a group name",
+      "groupOwnerLabel": "Group Owner:",
+      "heading": "Summary",
+      "invitedMembersLabel": "Invited members:",
+      "invitedNonMembersLabel": "Invited non-members:",
+      "piLabel": "PI:",
+      "piRequired": "You must select a PI"
+    },
+    "title": "Create group",
+    "toast": {
+      "created": "{groupName} group created successfully!",
+      "requestSent": "Group creation request for {groupName} sent successfully"
+    },
+    "validation": {
+      "invalidEmail": "Please enter a valid email address"
+    }
+  },
+  "errors": {
+    "selectGroupOwner": "Please select at least one group owner",
+    "selectPi": "Please, select a PI"
+  },
+  "fields": {
+    "groupName": "Group's identifying name",
+    "optional": "(optional)",
+    "selectGroupOwners": "Select group owners",
+    "selectGroupType": "Select a group type",
+    "selectMembers": "Select group members",
+    "selectPi": "Select one LabGroup PI"
+  },
+  "groupType": {
+    "lab": "Lab Group",
+    "project": "Project Group"
+  },
+  "raidHint": "If RAiD has been set up, you can associate a RAiD identifier with the project group after it has been created.",
+  "userBox": {
+    "availablePis": "Available PIs",
+    "availableUsers": "Available users",
+    "groupMembers": "Group members",
+    "groupOwners": "Group owners",
+    "groupPis": "Group PIs",
+    "noUsersFound": "No users found",
+    "one": "one",
+    "pi": "PI",
+    "search": "Search...",
+    "selectOnlyPrefix": "Please, select only"
+  }
+}

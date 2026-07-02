@@ -158,7 +158,7 @@ function createTableOnlyNode(
 }
 
 // This helper is needed as TinyMCE iframes are cross-realm
-function expectToHaveTextContent(node: Node | null, text: string) {
+function expectToHaveTextContent(node: Node | null, text: string | RegExp) {
   expect(node).not.toBeNull();
   expect(document.importNode(node as Node, true)).toHaveTextContent(text);
 }
@@ -323,7 +323,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     );
     expect(window.insertActions?.get("stoichiometryMenuItem")).toEqual(
       expect.objectContaining({
-        text: "Stoichiometry Table",
+        text: expect.stringMatching(/stoichiometry\.plugin\.insertActionText|Stoichiometry Table/),
         icon: "stoichiometry",
         aliases: ["Stoichiometry"],
       }),
@@ -351,7 +351,10 @@ describe("TinyMCE stoichiometry plugin", () => {
     );
     const insertedTableOnly = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
     expect(insertedTableOnly).not.toBeNull();
-    expectToHaveTextContent(insertedTableOnly, "Empty Stoichiometry Table");
+    expectToHaveTextContent(
+      insertedTableOnly,
+      /stoichiometry\.plugin\.emptyTablePlaceholder|Empty Stoichiometry Table/,
+    );
     expect(insertedTableOnly?.getAttribute("data-mce-contenteditable")).toBe("false");
     expect(insertedTableOnly?.getAttribute("contenteditable")).toBe("false");
     expect(insertedTableOnly?.classList.contains("mceNonEditable")).toBe(true);
@@ -392,7 +395,7 @@ describe("TinyMCE stoichiometry plugin", () => {
 
     const insertedTableOnly = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
     expect(insertedTableOnly?.getAttribute("data-stoichiometry-table")).toBe(JSON.stringify({ id: 9, revision: 2 }));
-    expectToHaveTextContent(insertedTableOnly, "Stoichiometry Table (no preview)");
+    expectToHaveTextContent(insertedTableOnly, /stoichiometry\.plugin\.noPreview|Stoichiometry Table \(no preview\)/);
 
     view = getLastRenderedDialogProps();
     expect(view).not.toBeNull();
@@ -491,7 +494,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     await instantiateStoichiometryPlugin();
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
-    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
+    expectToHaveTextContent(tableOnlyNode, /stoichiometry\.plugin\.noPreview|Stoichiometry Table \(no preview\)/);
     selectionState.current = tableOnlyNode;
     commands.get("cmdStoichiometry")?.();
 
@@ -591,8 +594,10 @@ describe("TinyMCE stoichiometry plugin", () => {
     const StoichiometryPlugin = getRegisteredStoichiometryPlugin(registeredPlugins);
     new StoichiometryPlugin(editor);
 
-    expect(document.importNode(tableOnlyNode, true)).toHaveTextContent("Empty Stoichiometry Table");
-    expectToHaveTextContent(tableOnlyNode, "Empty Stoichiometry Table");
+    expect(document.importNode(tableOnlyNode, true)).toHaveTextContent(
+      /stoichiometry\.plugin\.emptyTablePlaceholder|Empty Stoichiometry Table/,
+    );
+    expectToHaveTextContent(tableOnlyNode, /stoichiometry\.plugin\.emptyTablePlaceholder|Empty Stoichiometry Table/);
   });
 
   it("renders stoichiometry table text when data is added through plugin callbacks", async () => {
@@ -624,7 +629,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     view?.onTableCreated?.(15, 6);
 
     const tableOnlyNode = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
-    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
+    expectToHaveTextContent(tableOnlyNode, /stoichiometry\.plugin\.noPreview|Stoichiometry Table \(no preview\)/);
     expect(tableOnlyNode?.children.length).toBe(0);
   });
 
@@ -662,7 +667,7 @@ describe("TinyMCE stoichiometry plugin", () => {
 
     const tableOnlyNode = editorDocument.querySelector('[data-stoichiometry-table-only="true"]');
     expect(tableOnlyNode?.getAttribute("data-stoichiometry-table")).toBe(JSON.stringify({ id: 15, revision: 7 }));
-    expectToHaveTextContent(tableOnlyNode, "Stoichiometry Table (no preview)");
+    expectToHaveTextContent(tableOnlyNode, /stoichiometry\.plugin\.noPreview|Stoichiometry Table \(no preview\)/);
   });
 
   it("does not crash when the editor document is unavailable", async () => {

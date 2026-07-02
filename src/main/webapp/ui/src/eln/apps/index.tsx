@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import materialTheme, { COLORS } from "../../theme";
 import { hslToHex } from "../../util/colors";
 import App from "./App";
@@ -60,9 +61,11 @@ window.addEventListener("load", () => {
             <QueryClientProvider client={queryClient}>
               <Analytics>
                 <ErrorBoundary>
-                  <Alerts>
-                    <App />
-                  </Alerts>
+                  <I18nRoot namespaces={["apps", "common"]}>
+                    <Alerts>
+                      <App />
+                    </Alerts>
+                  </I18nRoot>
                 </ErrorBoundary>
               </Analytics>
             </QueryClientProvider>

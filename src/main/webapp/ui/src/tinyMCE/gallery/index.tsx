@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
@@ -82,12 +84,14 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
       };
 
       root.render(
-        <GalleryEntrypoint
-          open={newProps.open}
-          onClose={newProps.onClose}
-          onSubmit={handleSubmit}
-          validateSelection={handleValidateSelection}
-        />,
+        <I18nRoot namespaces={["common"]}>
+          <GalleryEntrypoint
+            open={newProps.open}
+            onClose={newProps.onClose}
+            onSubmit={handleSubmit}
+            validateSelection={handleValidateSelection}
+          />
+        </I18nRoot>,
       );
     }
   }
@@ -112,7 +116,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   // Add a button to the toolbar
   editor.ui.registry.addButton("btnMediaGallery", {
-    tooltip: "Insert from RSpace Gallery",
+    tooltip: i18n.t("gallery:tinyMce.insertFromGallery"),
     icon: "image",
     //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
@@ -120,7 +124,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   // Adds a menu item to the insert menu
   editor.ui.registry.addMenuItem("optMediaGallery", {
-    text: "From RSpace Gallery",
+    text: i18n.t("gallery:tinyMce.fromGallery"),
     icon: "image",
     //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
@@ -129,7 +133,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
   // Adds an option to the slash-menu
   if (!window.insertActions) window.insertActions = new Map();
   window.insertActions.set("optMediaGallery", {
-    text: "From RSpace Gallery",
+    text: i18n.t("gallery:tinyMce.fromGallery"),
     icon: "image",
     action: openGalleryAction,
   });
@@ -138,7 +142,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   return {
     getMetadata: () => ({
-      name: "RSpace Gallery Plugin",
+      name: i18n.t("gallery:tinyMce.pluginName"),
       url: "https://www.researchspace.com/",
     }),
   };

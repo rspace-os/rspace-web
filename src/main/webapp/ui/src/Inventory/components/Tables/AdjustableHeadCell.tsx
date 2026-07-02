@@ -6,11 +6,13 @@ import TableCell from "@mui/material/TableCell";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import StyledMenu from "@/components/StyledMenu";
 import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
 import type RsSet from "../../../util/set";
+import { translateAdjustableTableLabel } from "./adjustableTableLabels";
 import SortableProperty, { type SortProperty } from "./SortableProperty";
 
 type AdjustableHeadCellArgs<T extends AdjustableTableRowLabel> = {
@@ -26,6 +28,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
   current,
   sortableProperties,
 }: AdjustableHeadCellArgs<T>): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const { order } = search.fetcher;
 
@@ -34,7 +37,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
   const currentAdjustableProperty: SortProperty | null = sortableProperties?.find((p) => p.label === current) ?? null;
 
   const content = () => {
-    if (!currentAdjustableProperty) return <span>{current}</span>;
+    if (!currentAdjustableProperty) return <span>{translateAdjustableTableLabel(current, t)}</span>;
     const cAP: SortProperty = currentAdjustableProperty;
     return <SortableProperty property={cAP} />;
   };
@@ -51,7 +54,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
           <Grid>{content()}</Grid>
           <Grid>
             <IconButtonWithTooltip
-              title="Column options"
+              title={t("tables.adjustableHeadCell.columnOptions")}
               sx={{ p: 0.5 }}
               onClick={({ currentTarget }) => setAdjustableColumnMenu(currentTarget)}
               icon={<SettingsOutlinedIcon sx={{ fontSize: "1.1em" }} />}
@@ -78,7 +81,7 @@ function AdjustableHeadCell<T extends AdjustableTableRowLabel>({
             selected={option === current}
             aria-current={option === current}
           >
-            <ListItemText primary={option} />
+            <ListItemText primary={translateAdjustableTableLabel(option, t)} />
           </MenuItem>
         ))}
       </StyledMenu>

@@ -80,7 +80,8 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "preview-host");
 
-    const renderedNode = rootRenderCalls[0]?.node as React.ReactElement<{
+    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+      .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
     expect(renderedNode.type).toBe(PreviewInfoModule.default);
@@ -111,7 +112,8 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "table-only-preview");
 
-    const renderedNode = rootRenderCalls[0]?.node as React.ReactElement<{
+    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+      .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
     expect(renderedNode.props.item).toMatchObject({
@@ -160,7 +162,8 @@ describe("PreviewInfo event handlers", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "updated-preview-host");
 
-    const renderedNode = rootRenderCalls[0]?.node as React.ReactElement<{
+    const renderedNode = (rootRenderCalls[0]?.node as React.ReactElement<{ children: unknown }>).props
+      .children as React.ReactElement<{
       item: Record<string, string | undefined>;
     }>;
     expect(renderedNode.props.item).toMatchObject({

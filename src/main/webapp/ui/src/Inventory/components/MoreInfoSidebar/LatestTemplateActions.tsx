@@ -4,6 +4,7 @@ import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import TemplateModel from "../../../stores/models/TemplateModel";
 
@@ -12,6 +13,7 @@ type LatestTemplateActionsArgs = {
 };
 
 function LatestTemplateActions({ record }: LatestTemplateActionsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   // Only offer the update when the template actually has samples to update:
   // samples created from an older version of it (samplesToUpdateCount). Merely
   // being a link target (e.g. a sample links to this template) is not something
@@ -20,7 +22,7 @@ function LatestTemplateActions({ record }: LatestTemplateActionsArgs): React.Rea
 
   return (
     <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
-      <FormLabel component="legend">Update Samples</FormLabel>
+      <FormLabel component="legend">{t("moreInfo.updateSamples")}</FormLabel>
       {/* width is unified across the sidebar's action buttons in SidebarBody */}
       <FormGroup>
         <Button
@@ -30,7 +32,7 @@ function LatestTemplateActions({ record }: LatestTemplateActionsArgs): React.Rea
             void record.updateSamplesToLatest();
           }}
         >
-          Update Samples
+          {t("moreInfo.updateSamples")}
         </Button>
       </FormGroup>
     </FormControl>

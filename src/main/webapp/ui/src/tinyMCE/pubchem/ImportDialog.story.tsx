@@ -17,9 +17,9 @@ export function ImportDialogStory(): React.ReactNode {
       <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
         <ErrorBoundary>
           <Alerts>
-            <h1>PubChem import example</h1>
+            <h1>{"PubChem import example"}</h1>
             {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-            <button onClick={() => setOpen(true)}>Open</button>
+            <button onClick={() => setOpen(true)}>{"Open"}</button>
             <ImportDialog
               open={open}
               onClose={() => {

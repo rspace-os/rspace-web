@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../common/InvApiService";
@@ -117,7 +118,7 @@ export default class PersonModel implements Person {
       );
 
       const { data } = await showToastWhilstPending(
-        "Exporting User Data...",
+        i18n.t("inventory:person.pending.exportData"),
         ApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
@@ -132,8 +133,8 @@ export default class PersonModel implements Person {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Data export failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:person.alerts.exportFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );

@@ -5,6 +5,8 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/fieldmark";
 import FieldmarktIcon from "../../../assets/branding/fieldmark/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -22,6 +24,7 @@ type FieldmarkArgs = {
  * below..
  */
 function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [apiKey, setApiKey] = React.useState(integrationState.credentials.FIELDMARK_USER_TOKEN.orElse(""));
 
   return (
@@ -33,27 +36,23 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
       }}
     >
       <IntegrationCard
-        name="Fieldmark"
+        name={t("integrations.fieldmark.name")}
         integrationState={integrationState}
-        explanatoryText="Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory."
+        explanatoryText={t("integrations.fieldmark.description")}
         image={FieldmarktIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        helpLinkText="Fieldmark integration docs"
+        helpLinkText={t("integrations.fieldmark.helpLink")}
         website="fieldnote.au/fieldmark"
         docLink="fieldmark"
-        usageText={
-          <>
-            You can import your <strong>Fieldmark</strong> notebooks into Inventory
-          </>
-        }
+        usageText={<TransRichText ns="apps" i18nKey="integrations.fieldmark.usage" />}
         setupSection={
           <>
             <ol>
-              <li>Obtain an API Token from Fieldmark.</li>
-              <li>Copy the API Token into the field below, and Save.</li>
-              <li>Enable the integration.</li>
-              <li>Use the import button in Inventory, and select Fieldmark to browse notebooks for import.</li>
+              <li>{t("integrations.fieldmark.setup.obtainToken")}</li>
+              <li>{t("integrations.fieldmark.setup.copyToken")}</li>
+              <li>{t("integrations.fieldmark.setup.enable")}</li>
+              <li>{t("integrations.fieldmark.setup.importButton")}</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
@@ -71,7 +70,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
                   <TextField
                     fullWidth
                     variant="outlined"
-                    label="API Key"
+                    label={t("integrations.fieldmark.fields.apiKey")}
                     type="password"
                     size="small"
                     value={apiKey}
@@ -81,7 +80,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

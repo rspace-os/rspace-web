@@ -46,7 +46,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          click me
+          {"click me"}
         </button>
       );
     }
@@ -132,7 +132,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          click me
+          {"click me"}
         </button>
       );
     }
@@ -220,7 +220,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          click me
+          {"click me"}
         </button>
       );
     }
@@ -313,7 +313,7 @@ describe("useGalleryActions", () => {
             });
           }}
         >
-          click me
+          {"click me"}
         </button>
       );
     }
@@ -333,7 +333,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("Successfully updated description.");
+      expect(toast).toHaveTextContent("gallery:actions.description.updateSuccess");
     });
     test("exceptionMessage error response format should result in error toast", async () => {
       const user = userEvent.setup();
@@ -353,7 +353,7 @@ describe("useGalleryActions", () => {
       await user.click(screen.getByRole("button", { name: /click me/i }));
 
       const toast = await screen.findByRole("alert");
-      expect(toast).toHaveTextContent("Failed to update description.");
+      expect(toast).toHaveTextContent("gallery:actions.description.updateFailed");
       expect(toast).toHaveTextContent("Something went wrong: description too long, should be max 250 chars");
     });
   });

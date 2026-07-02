@@ -4,8 +4,10 @@ import { ThemeProvider } from "@mui/material/styles";
 import type { Ketcher } from "ketcher-core";
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { IsInvalid, IsValid, type ValidationResult } from "@/components/ValidatingSubmitButton";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { blobToBase64 } from "@/util/files";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
@@ -126,7 +128,9 @@ function renderKetcherDialog(): void {
     <ThemeProvider theme={theme}>
       <Analytics>
         <Alerts>
-          <KetcherTinyMce onUnmount={unmount} />
+          <I18nRoot namespaces={["common"]}>
+            <KetcherTinyMce onUnmount={unmount} />
+          </I18nRoot>
         </Alerts>
       </Analytics>
     </ThemeProvider>,
@@ -143,6 +147,7 @@ function registerKetcherDialogListener(): void {
 }
 
 export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.ReactNode => {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [existingChemical, setExistingChemical] = useState("");
   const [isValid, setIsValid] = useState<ValidationResult>(IsValid());
@@ -182,7 +187,7 @@ export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.
         }
       } catch {
         if (isCurrent) {
-          showErrorAlert("Loading chemical elements failed.");
+          showErrorAlert(t("apiErrors.chemicals.loadElementsFailed"));
         }
       }
     })();
@@ -338,10 +343,10 @@ export const KetcherTinyMce = ({ onUnmount }: { onUnmount: () => void }): React.
       <KetcherDialog
         isOpen={true}
         handleInsert={handleInsert}
-        title={"Ketcher Insert Chemical"}
+        title={t("ketcher.insertChemicalTitle")}
         existingChem={existingChemical}
         handleClose={handleClose}
-        actionBtnText={"Insert"}
+        actionBtnText={t("actions.insert")}
         validationResult={isValid}
         onChange={() => {
           validate(window.ketcher);

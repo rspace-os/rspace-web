@@ -1,0 +1,1019 @@
+{
+  "actions": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "refresh": "Refresh",
+    "test": "Test"
+  },
+  "disconnect": {
+    "error": "Could not disconnect from {appName}.",
+    "success": "Successfully disconnected from {appName}."
+  },
+  "dmpIntegrations": {
+    "argos": "Argos",
+    "dialog": {
+      "argosDocsLink": "See <a href=\"https://argos.openaire.eu\">argos.openaire.eu</a> and our <helpLink>Argos integration docs</helpLink> for more.",
+      "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
+      "columns": {
+        "contactAffiliation": "Contact Affiliation",
+        "contactName": "Contact Name",
+        "created": "Created",
+        "createdAt": "Created At",
+        "description": "Description",
+        "grant": "Grant",
+        "id": "Id",
+        "label": "Label",
+        "modified": "Modified",
+        "modifiedAt": "Modified At",
+        "name": "Name",
+        "select": "Select",
+        "title": "Title",
+        "updatedAt": "Updated At"
+      },
+      "dmpassistantDocsLink": "See <a href=\"https://dmp-pgd.ca\">dmp-pgd.ca</a> and our <helpLink>DMP Assistant integration docs</helpLink> for more.",
+      "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
+      "dmponlineDocsLink": "See <a href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</a> and our <helpLink>DMPonline integration docs</helpLink> for more.",
+      "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
+      "dmptoolDocsLink": "See <a href=\"https://dmptool.org\">dmptool.org</a> and our <helpLink>DMPTool integration docs</helpLink> for more.",
+      "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
+      "dswDocsLink": "See <a href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</a> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
+      "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
+      "error": {
+        "couldNotGet": "Could not get DMPs: {message}",
+        "couldNotImport": "Could not import DMP",
+        "fetchFailed": "Fetch failed.",
+        "importFailed": "Import failed.",
+        "loadFailed": "Failed to load listing of DMPs. Please try refreshing.",
+        "unableToLoad": "Unable to load DMPs.",
+        "unableToLoadProjects": "Unable to load projects."
+      },
+      "forMoreInfo": "For more information <a>visit our docs</a>.",
+      "importButtonCount": "Import ({count})",
+      "importDmpIntoGallery": "Import a DMP into the Gallery",
+      "importDmpsIntoGallery": "Import DMPs into the Gallery",
+      "importSuccess": "Success.",
+      "importSuccessMessage": "DMP {planId} was successfully imported.",
+      "loadingDmps": "Loading listing of DMPs.",
+      "noDmpIsSelected": "No DMP is selected.",
+      "noDmps": "No DMPs",
+      "noDmpSelected": "No DMP selected.",
+      "noProjects": "No projects found",
+      "notSpecified": "Not Specified",
+      "search": {
+        "collaborators": "Collaborators",
+        "filters": "Search filters",
+        "funder": "Funder"
+      },
+      "selectAllLabel": "Select all DMPs on this page",
+      "selectColumn": "Select",
+      "selectDmpLabel": "Select {title}",
+      "selectPlanLabel": "Select plan: {label}"
+    },
+    "dmpAssistant": "DMP Assistant",
+    "dmponline": "DMPonline",
+    "dmptool": "DMPTool",
+    "dsw": "DSW / FAIR Wizard",
+    "endpoint": {
+      "importFailed": "{count, plural, one {Failed to import DMP.} other {Failed to import DMPs.}}",
+      "importSuccess": "{count, plural, one {Successfully imported DMP.} other {Successfully imported {count} DMPs.}}",
+      "listFailed": "Failed to get available DMPs."
+    },
+    "scope": {
+      "both": "Both",
+      "instructions": {
+        "selectPlan": "Select a plan and click \"Import\" to add it to the Gallery.",
+        "selectScope": "Select a scope to get the latest plans."
+      },
+      "mine": "Mine",
+      "name": "DMP Scope Options",
+      "public": "Public"
+    }
+  },
+  "externalWorkflows": {
+    "columns": {
+      "container": "Container/Galaxy History",
+      "created": "Invocation Created",
+      "dataUploaded": "Data Uploaded",
+      "invocation": "Invocation",
+      "status": "Invocation Status"
+    },
+    "dataUploadedDesc": "Data uploaded and Workflow Invocations using that data",
+    "dialogTitle": "Galaxy WorkFlow Data",
+    "error": {
+      "notFound": "Unable to retrieve any relevant results. Error message was: {errorMessage}",
+      "seeError": "See Galaxy error",
+      "timeout": "Request timed out.",
+      "title": "Error",
+      "unauthorized": "Invalid Galaxy API Key Please re-enter your API Key on the Apps page.",
+      "unknown": "Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was: {errorMessage}"
+    },
+    "loadingLabel": "Please wait, loading computational workflows associated with this field",
+    "noRows": "No Data is attached to this document",
+    "queryingLabel": "Please wait, querying galaxy is in progress",
+    "queryingTitle": "Galaxy Query In Progress",
+    "showWorkflowsLabel": "Show computational workflows associated with this field"
+  },
+  "integrationCard": {
+    "disable": "DISABLE",
+    "enable": "ENABLE",
+    "moreInfo": {
+      "docsOnlyPrefix": "See our",
+      "suffix": "for more.",
+      "websiteMiddle": "and our",
+      "websitePrefix": "See"
+    },
+    "setup": "Setup"
+  },
+  "integrations": {
+    "apiDirect": {
+      "curlExample": "cURL example:",
+      "description": "Directly interact with the RSpace API using scripts and custom applications.",
+      "helpLink": "API documentation",
+      "name": "API Direct Access",
+      "pythonSdk": "Python SDK:",
+      "setup": {
+        "generateKey": "In My RSpace → My Profile, generate an API key.",
+        "useKey": "Use the API key in your scripts with the following example patterns:"
+      },
+      "usage": "Access RSpace programmatically using Python, R, or any language with HTTP capabilities to automate tasks and integrate with your own tools."
+    },
+    "argos": {
+      "description": "Create, manage and exchange Data Management Plans on an extensible open platform.",
+      "helpLink": "ARGOS integration docs",
+      "name": "ARGOS",
+      "setup": {
+        "enable": "integrations.argos.setup.enable",
+        "imported": "ARGOS DMPs can now be imported through the RSpace Gallery."
+      },
+      "usage": "You can import Data Management Plans (DMPs) from ARGOS into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
+    },
+    "box": {
+      "description": "Collaborate with anyone from anywhere with a content management and workflow cloud.",
+      "helpLink": "integrations.box.helpLink",
+      "linkType": {
+        "ask": "Decide between live and versioned links when inserting a link.",
+        "askDescription": "This allows some links to be to live files and some to be to older versions.",
+        "live": "Live",
+        "liveDescription": "Only live links (that always point to the latest version of the file) are inserted.",
+        "versioned": "Versioned",
+        "versionedDescription": "If the file is updated in Box after you made the link, you'll still be able to download the original version. This feature only works for premium Box accounts."
+      },
+      "name": "Box",
+      "setup": {
+        "checkLinkType": "Check that the link type option below is correct.",
+        "enable": "integrations.box.setup.enable",
+        "toolbar": "When editing a document, click on the Box icon in the text editor toolbar."
+      },
+      "sysadminNote": "To enable the disabled options, please contact your sysadmin.",
+      "usage": "You can include files from Box in your RSpace documents. Files are embedded as links to the Box location of that file."
+    },
+    "calira": {
+      "alerts": {
+        "connectError": "Could not connect to Calira",
+        "connectSuccess": "Successfully connected to Calira."
+      },
+      "description": "Manage schedules of lab equipment, maintenance, and personnel through a web-based platform.",
+      "helpLink": "Calira integration docs",
+      "name": "Calira",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Calira account.",
+        "enable": "integrations.calira.setup.enable",
+        "register": "Register for a Calira account.",
+        "toolbar": "When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data."
+      },
+      "usage": "You can view and insert your equipment bookings from Calira into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Calira."
+    },
+    "chemistry": {
+      "description": "Draw and modify standard and advanced chemical structures with a web-based chemical editor.",
+      "helpLink": "Chemistry integration docs",
+      "name": "Chemistry",
+      "setup": {
+        "dragDrop": "You can also drag and drop existing chemical structure files into a document text field, and edit them.",
+        "enable": "integrations.chemistry.setup.enable",
+        "toolbar": "When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher."
+      },
+      "usage": "You can draw chemical structures and reactions in documents, search for chemical structures across your Workspace, and import or export to standard formats such as ChemDraw, mol, SMILES, and others."
+    },
+    "dataverse": {
+      "alerts": {
+        "deleteConfigError": "Could not delete configuration.",
+        "deleteConfigSuccess": "Successfully deleted configuration.",
+        "saveExistingError": "Error saving Dataverse configuration.",
+        "saveExistingSuccess": "Successfully saved Dataverse details.",
+        "saveNewError": "Could not save Dataverse details",
+        "saveNewSuccess": "Successfully saved Dataverse details",
+        "testInvalid": "Connection details are not valid.",
+        "testValid": "Connection details are valid."
+      },
+      "configuredLabel": "Configured Dataverse with name {name}",
+      "description": "Explore, analyse, and share data through an open-source research data repository software.",
+      "errorGettingConfigs": "There was an error getting the configured Dataverses.",
+      "fields": {
+        "alias": "Dataverse Name",
+        "aliasRequired": "Name is required.",
+        "apiKey": "API key",
+        "apiKeyRequired": "API key is required.",
+        "serverUrl": "Server URL",
+        "urlRequired": "URL is required."
+      },
+      "helpLink": "Dataverse integration docs",
+      "multipleConfig": "You can configure multiple Dataverses to connect to.",
+      "name": "Dataverse",
+      "setup": {
+        "enable": "integrations.dataverse.setup.enable",
+        "enterCredentials": "Enter the required credentials and Save.",
+        "exportDialog": "Dataverse will now be available as an option in the export dialog.",
+        "test": "Click on Test to ensure your credentials are correct."
+      },
+      "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
+    },
+    "digitalCommonsData": {
+      "alerts": {
+        "connectError": "Could not connect to Digital Commons Data",
+        "connectSuccess": "Successfully connected to Digital Commons Data."
+      },
+      "description": "Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation.",
+      "helpLink": "Digital Commons Data / Mendeley Data integration docs",
+      "name": "Digital Commons Data / Mendeley Data",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.",
+        "enable": "integrations.digitalCommonsData.setup.enable",
+        "exportDialog": "Digital Commons Data / Mendeley Data will now be available as an option in the export dialog."
+      },
+      "usage": "You can export your files and data directly from RSpace to Digital Commons Data or Mendeley Data."
+    },
+    "dmpAssistant": {
+      "alerts": {
+        "connectError": "Could not connect to DMP Assistant",
+        "connectSuccess": "Successfully connected to DMP Assistant."
+      },
+      "description": "Portage Network's DMP Assistant — create and manage Data Management Plans in DMPRoadmap.",
+      "helpLink": "DMP Assistant integration docs",
+      "name": "DMP Assistant",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMP Assistant account.",
+        "enable": "integrations.dmpAssistant.setup.enable",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog."
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMP Assistant into RSpace, reference them in RSpace documents, and attach them to data deposits when exporting to repositories."
+    },
+    "dmponline": {
+      "alerts": {
+        "connectError": "Could not connect to DMPOnline",
+        "connectSuccess": "Successfully connected to DMPOnline."
+      },
+      "description": "Create Data Management Plans for your research.",
+      "helpLink": "DMPonline integration docs",
+      "name": "DMPonline",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMPonline account.",
+        "enable": "integrations.dmponline.setup.enable",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog."
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMPonline into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
+    },
+    "dmptool": {
+      "alerts": {
+        "connectError": "Could not connect to DMPTool",
+        "connectSuccess": "Successfully connected to DMPTool."
+      },
+      "description": "Create Data Management Plans for your research through a guided web-based tool with templates.",
+      "helpLink": "DMPTool integration docs",
+      "name": "DMPTool",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMPTool account.",
+        "enable": "integrations.dmptool.setup.enable",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog."
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMPTool into RSpace, and associate DMPs with repository exports. Exporting from RSpace automatically updates the DMP in DMPTool with a DOI of the repository deposit."
+    },
+    "dropbox": {
+      "description": "Store, access, and share your files across devices with others through online cloud storage.",
+      "helpLink": "integrations.dropbox.helpLink",
+      "name": "Dropbox",
+      "setup": {
+        "enable": "integrations.dropbox.setup.enable",
+        "toolbar": "When editing a document, click on the Dropbox icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Dropbox in your RSpace documents. Files are embedded as links to the Dropbox location of that file."
+    },
+    "dryad": {
+      "alerts": {
+        "connectError": "Could not connect to Dryad",
+        "connectSuccess": "Successfully connected to Dryad."
+      },
+      "description": "Deposit, discover, and cite research data through a curated open-access repository.",
+      "helpLink": "Dryad integration docs",
+      "name": "Dryad",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Dryad account.",
+        "exportDialog": "Dryad will now be available as an option in the export dialog.",
+        "orcid": "Dryad uses ORCID iD for authentication; if you don't have an ORCID iD, you can create one at",
+        "orcidLink": "orcid.org/register"
+      },
+      "usage": "You can export your files and data directly from RSpace to Dryad, and provide metadata for the deposit."
+    },
+    "dsw": {
+      "alerts": {
+        "deleteConfigError": "Could not delete configuration.",
+        "deleteConfigSuccess": "Successfully deleted configuration.",
+        "saveExistingError": "Error saving DSW configuration.",
+        "saveExistingSuccess": "Successfully saved DSW details.",
+        "saveNewError": "Could not save DSW details",
+        "saveNewSuccess": "Successfully saved DSW details",
+        "testInvalid": "Connection details are not valid.",
+        "testValid": "Connection details are valid."
+      },
+      "configuredLabel": "Configured DSW with label {label}",
+      "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
+      "errorGettingConfigs": "There was an error getting the configured DSW instances.",
+      "fields": {
+        "apiKey": "API key",
+        "apiKeyRequired": "API key is required.",
+        "label": "Label",
+        "labelRequired": "Label is required.",
+        "serverUrl": "Server URL",
+        "urlRequired": "URL is required."
+      },
+      "helpLink": "DSW integration docs",
+      "multipleConfig": "You can configure multiple DSW or FAIR Wizard instances to connect to.",
+      "name": "DSW / FAIR Wizard",
+      "setup": {
+        "enable": "integrations.dsw.setup.enable",
+        "enterCredentials": "Enter the required credentials and Save.",
+        "gallery": "You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.",
+        "test": "Click on Test to ensure your credentials are correct."
+      },
+      "usage": "You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
+    },
+    "egnyte": {
+      "description": "Collaborate, sync and share your files with a security-focused enterprise solution.",
+      "fields": {
+        "domainUrl": "Egnyte Domain URL"
+      },
+      "helpLink": "integrations.egnyte.helpLink",
+      "name": "Egnyte",
+      "setup": {
+        "enable": "integrations.egnyte.setup.enable",
+        "provideDomain": "Provide your Egnyte domain URL and Save.",
+        "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
+    },
+    "evernote": {
+      "description": "Take notes, manage tasks, and organise your notes into notebooks with embedded media.",
+      "helpLink": "Evernote integration docs",
+      "name": "Evernote",
+      "setup": {
+        "enable": "integrations.evernote.setup.enable",
+        "import": "In the Workspace, select Create → Import from Evernote."
+      },
+      "usage": "You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
+    },
+    "fieldmark": {
+      "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
+      "fields": {
+        "apiKey": "API Key"
+      },
+      "helpLink": "Fieldmark integration docs",
+      "name": "Fieldmark",
+      "setup": {
+        "copyToken": "Copy the API Token into the field below, and Save.",
+        "enable": "integrations.fieldmark.setup.enable",
+        "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
+        "obtainToken": "Obtain an API Token from Fieldmark."
+      },
+      "usage": "You can import your <strong>Fieldmark</strong> notebooks into Inventory"
+    },
+    "figshare": {
+      "alerts": {
+        "connectError": "Could not connect to Figshare",
+        "connectSuccess": "Successfully connected to Figshare."
+      },
+      "description": "Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner.",
+      "helpLink": "Figshare integration docs",
+      "name": "Figshare",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Figshare account.",
+        "enable": "integrations.figshare.setup.enable",
+        "exportDialog": "Figshare will now be available as an option in the export dialog."
+      },
+      "usage": "You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
+    },
+    "galaxy": {
+      "alerts": {
+        "addError": "Error added new Galaxy server.",
+        "addSuccess": "Successfully added new Galaxy server.",
+        "deleteError": "Could not delete API key.",
+        "deleteSuccess": "Successfully deleted API key.",
+        "saveError": "Error saving API key.",
+        "saveSuccess": "Successfully saved API key."
+      },
+      "apiKeyLabel": "API Key for {alias}",
+      "description": "Galaxy is a free, open-source system for data analysis, workflows, and more.",
+      "helpLink": "Galaxy integration docs",
+      "name": "Galaxy",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "chooseServer": "Choose the corresponding server from the add menu below.",
+        "enable": "integrations.galaxy.setup.enable",
+        "enterToken": "Enter the access token into the field that appears, and save.",
+        "requestToken": "Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.",
+        "toolbar": "When editing a document, click on the Galaxy icon in the text editor toolbar."
+      },
+      "usage": "You can connect your Galaxy workflows and data to RSpace. This allows you to send data from RSpace to Galaxy and import results back into your notebooks."
+    },
+    "github": {
+      "alerts": {
+        "addError": "Failed to add repository.",
+        "addSuccess": "Successfully added repository.",
+        "connectError": "Could not connect to GitHub",
+        "fetchError": "Could not fetch listing of repositories",
+        "removeError": "Failed to remove repository.",
+        "removeSuccess": "Successfully removed repository."
+      },
+      "description": "Store and manage your code through a software development and Git version control platform.",
+      "helpLink": "GitHub integration docs",
+      "name": "GitHub",
+      "orElse": "Error getting configured repositories",
+      "repositories": {
+        "additionalHeading": "Link Additional Repositories",
+        "invalidState": "Repository is in an invalid state. Please remove and re-add.",
+        "linkedHeading": "Linked Repositories",
+        "loading": "Loading available repositories",
+        "nameHeader": "Repository Name",
+        "noAvailable": "There are no available repositories.",
+        "noLinked": "There are no linked repositories."
+      },
+      "setup": {
+        "authorise": "Click on Connect to authorise RSpace to access your GitHub account.",
+        "enable": "integrations.github.setup.enable",
+        "select": "Select repositories you want to give RSpace access to.",
+        "toolbar": "When editing a document, click on the GitHub icon in the text editor toolbar."
+      },
+      "usage": "You can link to projects, folders, or files stored in GitHub repositories directly from RSpace."
+    },
+    "googleDrive": {
+      "description": "Create, organise, and share on your files through a collaborative cloud-based service.",
+      "helpLink": "integrations.googleDrive.helpLink",
+      "name": "Google Drive",
+      "setup": {
+        "enable": "integrations.googleDrive.setup.enable",
+        "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
+    },
+    "jove": {
+      "description": "Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal).",
+      "helpLink": "Video integration docs",
+      "name": "JoVE",
+      "setup": {
+        "insertButton": "Insert",
+        "note": "Note:",
+        "noteText": "Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
+        "openVideo": "Open a document in the Documents Editor and click the",
+        "pasteUrl": "Paste a full JoVE URL from a supported",
+        "pasteUrlOr": "or",
+        "pasteUrlSuffix": "page, for example",
+        "selectInsert": "Select",
+        "toolbarButton": "Video",
+        "toolbarSuffix": "button in the editor toolbar, the insert menu, or the slash menu.",
+        "toPlace": "to place the JoVE video embed at the current cursor position."
+      },
+      "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
+    },
+    "jupyter": {
+      "description": "Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace.",
+      "helpLink": "RSpace Jupyter Notebook documentation",
+      "name": "Jupyter Notebook Synchronisation",
+      "setup": {
+        "configureJupyter": "Configure Jupyter instance for all notebooks:",
+        "configureJupyterDesc": "Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:",
+        "configureNotebook": "Configure notebook:",
+        "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
+        "doOncePerNotebook": "Do this step once per notebook:",
+        "enableApi": "Enable API access:",
+        "enableApiDesc": "Generate your API key in My RSpace → My Profile.",
+        "installStep": "One time install step:",
+        "lastCell": "the last cell in the notebook:",
+        "pasteCode": "Paste this code into",
+        "refreshTab": "refresh the browser",
+        "restartKernel": "restart the kernel and",
+        "runCellAgain": "without a kernel restart. Save the Notebook.",
+        "runCellFirst": "Run the cell then",
+        "runCellSecond": "Run the cell,",
+        "runCode": "Run the code:",
+        "tab": "tab running Jupyter.",
+        "thenRunAgain": "and then run the cell one more time"
+      },
+      "usage": "Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
+    },
+    "msteams": {
+      "alerts": {
+        "addError": "Failed to add channel.",
+        "addSuccess": "Successfully added channel.",
+        "removeError": "Failed to remove channel.",
+        "removeSuccess": "Successfully removed channel."
+      },
+      "description": "Message and video call your colleagues through a workspace platform with file storage.",
+      "fields": {
+        "channelName": "Channel Connector Name",
+        "webhookUrl": "Webhook URL"
+      },
+      "helpLink": "Microsoft Teams integration docs",
+      "name": "Teams",
+      "orElse": "Error getting configured channels.",
+      "setup": {
+        "article": "The steps to setting up this integration are documented in",
+        "articleLink": "the Microsoft Teams Integration article."
+      },
+      "tableHeader": "Channel Connector Name",
+      "usage": "You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
+    },
+    "nextCloud": {
+      "alerts": {
+        "connectError": "Could not connect to NextCloud",
+        "connectSuccess": "Successfully connected to NextCloud."
+      },
+      "description": "Create, organise, and share your files through an open-source file hosting system.",
+      "helpLink": "NextCloud integration docs",
+      "name": "Nextcloud",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Nextcloud account.",
+        "enable": "integrations.nextCloud.setup.enable",
+        "toolbar": "When editing a document, click on the Nextcloud icon in the text editor toolbar."
+      },
+      "usage": "You can make links to Nextcloud documents directly from RSpace."
+    },
+    "omero": {
+      "alerts": {
+        "connectError": "Could not connect to OMERO",
+        "connectSuccess": "Successfully connected to OMERO."
+      },
+      "credentialsFormLabel": "OMERO credentials",
+      "description": "View, manage, and share your microscopy image data with an extensible central repository.",
+      "fields": {
+        "password": "Password",
+        "username": "Username"
+      },
+      "helpLink": "Omero integration docs",
+      "name": "OMERO",
+      "setup": {
+        "credentials": "Provide your OMERO credentials and click on Connect.",
+        "enable": "integrations.omero.setup.enable",
+        "toolbar": "When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data."
+      },
+      "usage": "You can import OMERO image thumbnails and metadata into RSpace documents."
+    },
+    "oneDrive": {
+      "description": "Store, share, and sync your files with a file hosting service integrated with Microsoft 365.",
+      "helpLink": "integrations.oneDrive.helpLink",
+      "name": "OneDrive",
+      "setup": {
+        "enable": "integrations.oneDrive.setup.enable",
+        "toolbar": "When editing a document, click on the OneDrive icon in the text editor toolbar."
+      },
+      "usage": "You can include files from OneDrive in your RSpace documents. Files are embedded as links to the OneDrive location of that file."
+    },
+    "ownCloud": {
+      "alerts": {
+        "connectError": "Could not connect to OwnCloud",
+        "connectSuccess": "Successfully connected to OwnCloud."
+      },
+      "description": "Create, manage, and share your files through an open-source file hosting system.",
+      "helpLink": "OwnCloud integration docs",
+      "name": "ownCloud",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your ownCloud account.",
+        "enable": "integrations.ownCloud.setup.enable",
+        "toolbar": "When editing a document, click on the ownCloud icon in the text editor toolbar."
+      },
+      "usage": "You can make links to ownCloud documents directly from RSpace."
+    },
+    "protocolsIo": {
+      "alerts": {
+        "connectError": "Could not connect to Protocols IO",
+        "connectSuccess": "Successfully connected to Protocols IO."
+      },
+      "description": "Develop, organise, and share reproducible experimental protocols through a secure repository.",
+      "helpLink": "protocols.io integration docs",
+      "name": "protocols.io",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your protocols.io account.",
+        "enable": "integrations.protocolsIo.setup.enable",
+        "import": "You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.",
+        "register": "Register for a protocols.io account."
+      },
+      "usage": "You can browse private and public protocols, and import them into RSpace."
+    },
+    "pyrat": {
+      "alerts": {
+        "addError": "Error added new PyRAT server.",
+        "addSuccess": "Successfully added new PyRAT server.",
+        "deleteError": "Could not delete API key.",
+        "deleteSuccess": "Successfully deleted API key.",
+        "saveError": "Error saving API key.",
+        "saveSuccess": "Successfully saved API key."
+      },
+      "apiKeyLabel": "API Key for {alias}",
+      "description": "Increase efficiency, access, and ensure compliance through a lab animal colony management software.",
+      "helpLink": "PyRAT integration docs",
+      "name": "PyRAT",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "chooseServer": "Choose the corresponding server from the add menu below.",
+        "enable": "integrations.pyrat.setup.enable",
+        "enterToken": "Enter the access token into the field that appears, and save.",
+        "requestToken": "Request a user access token by going to Administration → API → Request access in PyRAT.",
+        "toolbar": "When editing a document, click on the PyRAT icon in the text editor toolbar."
+      },
+      "usage": "You can browse and link to animals in a PyRAT database directly from RSpace."
+    },
+    "raid": {
+      "alerts": {
+        "addError": "Could not add {alias} as a new RAiD connection.",
+        "addSuccess": "Successfully added new RAiD server.",
+        "connectAliasError": "Could not connect to {alias} RAiD server",
+        "connectError": "Could not connect to RAiD server",
+        "connectSuccess": "Successfully connected to {alias} RAiD server.",
+        "deleteError": "Could not disconnect {alias} RAiD connection.",
+        "deleteSuccess": "Successfully deleted connection.",
+        "disconnectError": "Could not disconnect {alias} RAiD connection",
+        "disconnectSuccess": "Successfully disconnected.",
+        "serverStatus": "Server responded with status {status}: {statusText}"
+      },
+      "description": "Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records.",
+      "helpLink": "documentation",
+      "multipleConfig": "Multiple service points can be added to support different RAiD registries. Each project group owner can authenticate and manage their own RAiD associations.",
+      "name": "RAiD",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "addButton": "Add",
+        "addServer": "Click the",
+        "addServerSuffix": "button below and select the RAiD server you would like to connect to.",
+        "configure": "Configure your RAiD service point to enable authentication and project association:",
+        "connectButton": "Connect",
+        "connectStep": "Once the server shows up in the server list, click on the",
+        "connectStepSuffix": "button and log in with your RAiD credentials.",
+        "docLink": "our documentation for system administrators",
+        "forMoreInfo": "for more information.",
+        "seeAdminDocs": "Ask your system administrator to set up RAiD server connections. See",
+        "startAssociating": "Start associating RAiDs with your project groups."
+      },
+      "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
+    },
+    "shared": {
+      "cloudStorageHelpLink": "Cloud Storage integrations docs",
+      "enable": "Enable the integration."
+    },
+    "slack": {
+      "alerts": {
+        "addError": "Failed to add channel.",
+        "addSuccess": "Successfully added channel.",
+        "channelDetailsError": "Could not get details of new Slack channel.",
+        "connectError": "Could not connect to Slack",
+        "deleteError": "Could not delete channel.",
+        "deleteSuccess": "Successfully deleted channel.",
+        "labelError": "Failed to change label.",
+        "labelSuccess": "Successfully changed label."
+      },
+      "description": "Message and collaborate with your team with a cloud-based communication tool.",
+      "fields": {
+        "channelName": "Channel name",
+        "rspaceLabel": "RSpace Label",
+        "workspace": "Workspace"
+      },
+      "helpLink": "Slack integration docs",
+      "loadingChannel": "Loading a new channel",
+      "name": "Slack",
+      "orElse": "Error getting configured repositories",
+      "setup": {
+        "article": "The steps to setting up this integration are documented in",
+        "articleLink": "the Slack Integration article."
+      },
+      "usage": "You can send messages or forward notifications to your chosen Slack channels. You can also post links to RSpace documents directly into Slack channels or private messages."
+    },
+    "zenodo": {
+      "description": "Deposit research papers and datasets into a general-purpose open repository with PIDs.",
+      "fields": {
+        "apiKey": "API Key"
+      },
+      "helpLink": "Zenodo integration docs",
+      "name": "Zenodo",
+      "setup": {
+        "copyToken": "Copy the API Token into the field below, and Save.",
+        "exportDialog": "Zenodo will now be available as an option in the export dialog.",
+        "getToken": "Obtain an API Token from Zenodo by going into Settings → Applications, and name the token \"RSpace\"."
+      },
+      "usage": "You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
+    }
+  },
+  "integrationsEndpoint": {
+    "unknownError": "Unknown error",
+    "unknownReason": "Unknown reason",
+    "updateFailed": "Update failed.",
+    "updateSuccess": "Update successful."
+  },
+  "page": {
+    "introLink": "See Apps Introduction to learn more.",
+    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
+    "nothingHere": "Nothing here!",
+    "sections": {
+      "disabled": {
+        "description": "The following Apps are not currently enabled on this account. Click on an App card for setup instructions on how to enable the integration.",
+        "title": "Disabled"
+      },
+      "enabled": {
+        "description": "The following Apps are enabled on this account. Click on an App card to modify or disable the integration.",
+        "title": "Enabled"
+      },
+      "external": {
+        "description": "These RSpace applications have been built by partners or other external software developers. Note, ResearchSpace does not provide direct support for these integrations.",
+        "title": "Third-party RSpace Integrations"
+      },
+      "unavailable": {
+        "description": "The following Apps need to be enabled by your System Administrator before they can be used; please get in touch with them directly to set this up.",
+        "title": "Unavailable"
+      }
+    },
+    "title": "Apps"
+  },
+  "previewInfo": {
+    "chemistryStatus": {
+      "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
+      "error": "Error checking chemistry integration: {error}",
+      "loading": "Checking chemistry integration status..."
+    }
+  },
+  "pyrat": {
+    "columnVisibility": {
+      "hideSettings": "Hide column visibility settings",
+      "label": "Column Visibility",
+      "selectVisibleColumns": "Select visible columns",
+      "showSettings": "Show column visibility settings"
+    },
+    "error": {
+      "apiVersion": "Only version 2 of the PyRAT API is supported.",
+      "badRequest": "Bad Request.",
+      "network": "Network Error. Please check your connections.",
+      "timeout": "Request timed out.",
+      "title": "Error",
+      "unauthorized": "Invalid PyRAT user or client token.",
+      "unknown": "Unknown error"
+    },
+    "filter": {
+      "hideOptions": "Hide filtering options",
+      "integerValidation": "Should be an integer",
+      "label": "Filter",
+      "showOptions": "Show filtering options"
+    },
+    "insertButton": "Insert"
+  },
+  "tinyMce": {
+    "chemCard": {
+      "atoms": "Atoms",
+      "bonds": "Bonds",
+      "charge": "Charge",
+      "formula": "Formula",
+      "mass": "Mass",
+      "monoisotopicMassSubscript": "mi",
+      "name": "Name",
+      "structureAlt": "Chemical structure"
+    },
+    "clustermarket": {
+      "bookingTypes": {
+        "all": "Booked and Completed",
+        "booked": "Booked",
+        "equipment": "Booked Equipment"
+      },
+      "columns": {
+        "bookedBy": "Booked by",
+        "bookingId": "Booking ID",
+        "bookingType": "Booking Type",
+        "durationMins": "Duration (mins)",
+        "equipmentId": "Equipment ID",
+        "equipmentName": "Equipment Name",
+        "lastUse": "Last use",
+        "maintenanceNotes": "Maintenance notes",
+        "manufacturer": "Manufacturer",
+        "model": "Model",
+        "notes": "Notes",
+        "onDate": "On date",
+        "startTime": "Start Time",
+        "status": "Status"
+      },
+      "maintenanceLabel": "maintenance",
+      "maintenanceOnly": "maintenance only",
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "booking search results"
+    },
+    "galaxy": {
+      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+      "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
+      "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+      "chooseDataTitle": "Choose Data",
+      "chooseGalaxyServer": "Choose a Galaxy Server",
+      "columns": {
+        "file": "File"
+      },
+      "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
+      "historyViewedHere": "Your new history can be viewed here:",
+      "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
+      "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+      "uploadInProgressLabel": "Please wait, uploading data to Galaxy is in progress",
+      "uploadInProgressTitle": "Galaxy Upload In Progress",
+      "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+      "viewWorkflowTitle": "View Workflow in Galaxy",
+      "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
+    },
+    "internalLink": {
+      "alwaysLatest": "Always automatically update link to latest version",
+      "chooseVersion": "Or choose a version that the link should always point at:",
+      "columns": {
+        "modified": "Modified",
+        "modifiedBy": "Modified by",
+        "name": "Name",
+        "version": "Version"
+      },
+      "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
+      "dialogTitle": "Internal link version options",
+      "selectRevision": "Select revision",
+      "updateRevisionLink": "Update revision link",
+      "versionTableLabel": "internal link revision table"
+    },
+    "omero": {
+      "columns": {
+        "description": "Description",
+        "notes": "Notes",
+        "path": "Path"
+      },
+      "dataTypeChoiceLabel": "Display all data, only project data, or only screen data",
+      "dataTypes": {
+        "all": "Projects And Screens",
+        "projects": "Projects",
+        "screens": "Screens"
+      },
+      "detailsFetched": "details fetched",
+      "fetchDetails": "fetch details",
+      "filterResults": "Filter results",
+      "getLargeThumbnailLabel": "get large thumbnail",
+      "hideImageGrid": "hide image grid",
+      "itemSearchResultsLabel": "item search results",
+      "largeThumbnail": "large thumbnail",
+      "loadingData": "Data is loading...",
+      "noImage": "no image",
+      "redrawImage": "re-draw image",
+      "seeInOmero": "see in omero",
+      "selectedCount": "Selected: {count}",
+      "showGridOfWellsForField": "show grid of wells for field {field}",
+      "showImageGrid": "show image grid",
+      "unavailableAlt": "Unavailable"
+    },
+    "pubchem": {
+      "casNumber": "CAS Number",
+      "dialog": {
+        "chemicalStructureAlt": "Chemical structure of {name}",
+        "emptyState": {
+          "initial": "Enter a search term and click Search to find chemical compounds.",
+          "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
+        },
+        "intro": {
+          "docsLink": "PubChem integration docs",
+          "moreInfoMiddle": "and our",
+          "moreInfoPrefix": "See",
+          "moreInfoSuffix": "for more.",
+          "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
+        },
+        "searchPlaceholders": {
+          "nameCas": "Enter a compound name or CAS number",
+          "smiles": "Enter a SMILES string"
+        },
+        "searchResults": "Search Results",
+        "searchTypeLabel": "Search type",
+        "searchTypes": {
+          "nameCas": "Name/CAS",
+          "smiles": "SMILES"
+        },
+        "selectCompoundLabel": "Select compound",
+        "submitButton": "Select Compounds",
+        "title": "Search PubChem",
+        "validation": {
+          "selectCompound": "Please select at least one compound."
+        }
+      },
+      "formula": "Formula",
+      "pubchemId": "PubChem ID",
+      "viewOnPubChem": "View on PubChem"
+    },
+    "pyrat": {
+      "chooseServer": "Pick one of your authenticated servers",
+      "columns": {
+        "ageDays": "Age (Days)",
+        "building": "Building",
+        "classification": "Classification",
+        "dob": "DOB",
+        "id": "ID",
+        "labId": "Lab ID",
+        "license": "License",
+        "mutations": "Mutations",
+        "project": "Project",
+        "responsible": "Responsible",
+        "sacrificedOn": "Sacrificed On",
+        "sex": "Sex",
+        "strain": "Strain"
+      },
+      "dialogTitle": "Insert from PyRAT",
+      "filters": {
+        "ageDaysFrom": "Age days from",
+        "ageDaysTo": "Age days to",
+        "animalState": "Animal State",
+        "animalType": "Animal Type",
+        "birthDateFrom": "Birth date from",
+        "birthDateTo": "Birth date to",
+        "sacrificedFrom": "Sacrificed from",
+        "sacrificedTo": "Sacrificed to"
+      },
+      "fromPyrat": "From PyRAT",
+      "helpTitle": "PyRAT help",
+      "linkTooltip": "Link to PyRAT",
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "animal search results"
+    },
+    "shortcuts": {
+      "instructions": {
+        "actions": {
+          "clickInput": "Click on the input field next to the command you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that command."
+        },
+        "symbols": {
+          "clickInput": "Click on the input field next to the symbol you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "clickSymbol": "Click on the symbol to configure its shortcut.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that symbol.",
+          "sectionsHint": "All configurable symbols are divided into sections. Click on a section to find the desired symbol. For example, Greek characters are in the 'Extended Latin' section."
+        }
+      },
+      "instructionsTitle": "Instructions",
+      "reservedShortcutsNote": "Here's <a href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\" target=\"_blank\" rel=\"noreferrer\">a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "tabActions": "Actions",
+      "tabSymbols": "Symbols",
+      "toggleInstructions": "Toggle instructions"
+    },
+    "sidebarInfo": {
+      "closeAll": "Close All"
+    },
+    "snapGene": {
+      "applySettings": "Apply Settings",
+      "circular": "Circular",
+      "columns": {
+        "bottomCutPosition": "Bottom cut position",
+        "enzyme": "Enzyme",
+        "fullRangeBegin": "Full Range Begin",
+        "fullRangeEnd": "Full Range End",
+        "molecularWeight": "Molecular Weight",
+        "readingFrame": "Reading Frame",
+        "topCutPosition": "Top cut position",
+        "translation": "Translation"
+      },
+      "copyFailed": "Couldn't copy to clipboard. Try again manually.",
+      "copySuccess": "Copied to clipboard",
+      "copyToClipboard": "Copy to Clipboard",
+      "couldNotLoadDnaPreviewImage": "Could not load DNA preview image.",
+      "dialogTitle": "SnapGene",
+      "dnaPreviewAlt": "DNA preview",
+      "dnaPreviewError": "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
+      "enzymeSetOptions": {
+        "commercialNonredundant": "Commercial nonredundant",
+        "sixPlus": "Six plus",
+        "unique": "Unique",
+        "uniqueAndDual": "Unique and dual",
+        "uniqueSixPlus": "Unique six plus"
+      },
+      "enzymeSets": "Enzyme Sets",
+      "enzymeSites": "Enzyme sites",
+      "enzymeTableLabel": "Enzyme table",
+      "enzymeTypeLabel": "Enzyme type",
+      "imageType": "Image type",
+      "linear": "Linear",
+      "linearChoiceLabel": "Linear choice",
+      "openReadingFrames": "Open Reading Frames",
+      "orfTable": "ORF table",
+      "readingFrames": {
+        "all": "All",
+        "firstForward": "First forward",
+        "firstReverse": "First reverse",
+        "forward": "Forward",
+        "label": "Reading frame",
+        "reverse": "Reverse"
+      },
+      "reset": "Reset",
+      "showEnzymes": "Show enzymes",
+      "showORFs": "Show ORFs",
+      "showRestrictionSites": "Show restriction sites",
+      "tabDnaPreview": "DNA preview",
+      "viewAsFasta": "View as FASTA",
+      "zoomControlsLabel": "Zoom controls"
+    }
+  }
+}

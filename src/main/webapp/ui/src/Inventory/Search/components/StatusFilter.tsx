@@ -2,6 +2,7 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { DeletedItems } from "../../../stores/definitions/Search";
@@ -13,6 +14,7 @@ type StatusFilterArgs = {
 };
 
 export default function StatusFilter({ anchorEl, onClose, current }: StatusFilterArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   return (
     <div data-test-id="statusDropdown">
@@ -32,7 +34,7 @@ export default function StatusFilter({ anchorEl, onClose, current }: StatusFilte
           }}
           data-test-id="currentStatus"
         >
-          <ListItemText primary="Current" />
+          <ListItemText primary={t("search.controls.status.current")} />
         </MenuItem>
         <MenuItem
           disabled={!search.allowedStatusFilters.has("DELETED_ONLY")}
@@ -43,7 +45,7 @@ export default function StatusFilter({ anchorEl, onClose, current }: StatusFilte
           }}
           data-test-id="deletedStatus"
         >
-          <ListItemText primary="In Trash" />
+          <ListItemText primary={t("search.controls.status.inTrash")} />
         </MenuItem>
         <MenuItem
           disabled={!search.allowedStatusFilters.has("INCLUDE")}
@@ -54,7 +56,7 @@ export default function StatusFilter({ anchorEl, onClose, current }: StatusFilte
           }}
           data-test-id="allStatus"
         >
-          <ListItemText primary="Current & In Trash" />
+          <ListItemText primary={t("search.controls.status.currentAndInTrash")} />
         </MenuItem>
       </StyledMenu>
     </div>

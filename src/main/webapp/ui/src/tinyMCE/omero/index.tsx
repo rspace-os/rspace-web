@@ -1,4 +1,6 @@
 import { createRoot } from "react-dom/client";
+import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 // eslint-disable-next-line no-duplicate-imports
 import Omero, { getHeaders, getOrder, getOrderBy, getSelectedItems } from "./Omero";
 import { omeroSort } from "./ResultsTable";
@@ -7,8 +9,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-omero");
   // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
-  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-  root.render(<Omero omero_web_url={(parent.tinymce.activeEditor as any)?.settings.omero_web_url} />);
+  root.render(
+    <I18nRoot namespaces={["apps", "common"]}>
+      {/* biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+      <Omero omero_web_url={(parent.tinymce.activeEditor as any)?.settings.omero_web_url} />
+    </I18nRoot>,
+  );
 });
 
 function createTinyMceTable() {
@@ -19,7 +25,10 @@ function createTinyMceTable() {
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
-    .concat([{ id: "notes", numeric: false, label: "Notes" }], headers.slice(4));
+    .concat(
+      [{ id: "notes", numeric: false, label: i18n.t("tinyMce.omero.columns.notes", { ns: "apps" }) }],
+      headers.slice(4),
+    );
   headersWithNotes.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;

@@ -11,6 +11,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
 import docLinks from "../../assets/DocLinks";
@@ -50,6 +52,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 }
 
 const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+  const { t } = useTranslation(["apps", "common"]);
   const [selectedDmpIds, setSelectedDmpIds] = React.useState<Set<string>>(new Set());
   const [importing, setImporting] = React.useState(false);
   const { addAlert } = React.useContext(AlertContext);
@@ -129,7 +132,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
   const columns = [
     {
       field: "__select__",
-      headerName: "Select",
+      headerName: t("dmpIntegrations.dialog.selectColumn"),
       width: 70,
       flex: 0,
       sortable: false,
@@ -142,7 +145,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           onChange={toggleSelectAllOnPage}
           disabled={pageIds.length === 0}
           slotProps={{
-            input: { "aria-label": "Select all DMPs on this page" },
+            input: { "aria-label": t("dmpIntegrations.dialog.selectAllLabel") },
           }}
         />
       ),
@@ -152,30 +155,33 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           checked={selectedDmpIds.has(String(params.id))}
           onChange={() => toggleDmpSelection(String(params.id))}
           onClick={(e) => e.stopPropagation()}
-          slotProps={{ input: { "aria-label": `Select ${params.row.title}` } }}
+          slotProps={{
+            input: { "aria-label": t("dmpIntegrations.dialog.selectPlanLabel", { label: params.row.title }) },
+          }}
         />
       ),
     },
     DataGridColumn.newColumnWithFieldName<"title", DmpSummary>("title", {
-      headerName: "Title",
+      headerName: t("dmpIntegrations.dialog.columns.title"),
       hideable: false,
     }),
     {
       field: "contact name",
-      headerName: "Contact Name",
-      renderCell: (params: { row: DmpSummary }) => params.row.contactName.orElse(<NoValue label="Not Specified" />),
+      headerName: t("dmpIntegrations.dialog.columns.contactName"),
+      renderCell: (params: { row: DmpSummary }) =>
+        params.row.contactName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     {
       field: "contact affiliation",
-      headerName: "Contact Affiliation",
+      headerName: t("dmpIntegrations.dialog.columns.contactAffiliation"),
       renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactAffiliationName.orElse(<NoValue label="Not Specified" />),
+        params.row.contactAffiliationName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {
-      headerName: "Created",
+      headerName: t("dmpIntegrations.dialog.columns.created"),
     }),
     DataGridColumn.newColumnWithFieldName<"modified", DmpSummary>("modified", {
-      headerName: "Modified",
+      headerName: t("dmpIntegrations.dialog.columns.modified"),
     }),
   ].map((colDefinition) => ({
     sortable: false,
@@ -187,16 +193,16 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
     <>
       <AppBar
         variant="dialog"
-        currentPage="DMP Assistant"
+        currentPage={t("dmpIntegrations.dmpAssistant")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
           docLink: docLinks.dmpassistant,
-          title: "DMP Assistant help",
+          title: `${t("dmpIntegrations.dmpAssistant")} help`,
         }}
       />
-      <DialogTitle variant="h3">Import DMPs into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpsIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           spacing={2}
@@ -207,17 +213,21 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within
-              RSpace. Select one or more and click Import.
+              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.dmpassistantImportDesc" />
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://dmp-pgd.ca">dmp-pgd.ca</Link> and our{" "}
-              <Link href={docLinks.dmpassistant}>DMP Assistant integration docs</Link> for more.
+              <TransRichText
+                ns="apps"
+                i18nKey="dmpIntegrations.dialog.dmpassistantDocsLink"
+                components={{
+                  helpLink: <Link href={docLinks.dmpassistant} />,
+                }}
+              />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
-              loading: () => <Typography variant="body2">Loading listing of DMPs.</Typography>,
+              loading: () => <Typography variant="body2">{t("dmpIntegrations.dialog.loadingDmps")}</Typography>,
               // The dialog is closed by the effect above when listing fails, so
               // we render nothing here — the upstream message (which may contain
               // HTML) is never displayed.
@@ -300,13 +310,17 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Close</Button>
+        <Button onClick={() => setOpen(false)}>{t("common:actions.close")}</Button>
         <ValidatingSubmitButton
-          validationResult={selectedDmps.length > 0 ? IsValid() : IsInvalid("No DMP is selected.")}
+          validationResult={
+            selectedDmps.length > 0 ? IsValid() : IsInvalid(t("dmpIntegrations.dialog.noDmpIsSelected"))
+          }
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          {selectedDmps.length > 1 ? `Import (${selectedDmps.length})` : "Import"}
+          {selectedDmps.length > 1
+            ? `${t("common:actions.import")} (${selectedDmps.length})`
+            : t("common:actions.import")}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

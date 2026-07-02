@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 
@@ -8,6 +9,7 @@ export function useDryadEndpoint(): {
   disconnect: () => Promise<void>;
 } {
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("apps");
   const api = axios.create({
     baseURL: "/apps/dryad",
     timeout: ONE_MINUTE_IN_MS,
@@ -16,18 +18,20 @@ export function useDryadEndpoint(): {
   const disconnect = async (): Promise<void> => {
     try {
       await api.delete<void>("/connect");
+      const appName = t("integrations.dryad.name", { ns: "apps" });
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully disconnected from Dryad.",
+          message: t("disconnect.success", { ns: "apps", appName }),
         }),
       );
     } catch (e) {
       console.error(e);
+      const appName = t("integrations.dryad.name", { ns: "apps" });
       addAlert(
         mkAlert({
           variant: "error",
-          message: "Could not disconnect from Dryad.",
+          message: t("disconnect.error", { ns: "apps", appName }),
         }),
       );
     }

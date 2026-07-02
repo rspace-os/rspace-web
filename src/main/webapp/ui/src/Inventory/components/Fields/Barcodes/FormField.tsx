@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../../assets/DocLinks";
 import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import type { HasEditableFields } from "../../../../stores/definitions/Editable";
@@ -32,13 +33,13 @@ function BarcodesFromField<
       label=""
       explanation={
         fieldOwner.isFieldEditable("barcodes") ? (
-          <>
-            See the documentation for information on{" "}
-            <a href={docLinks.barcodes} target="_blank" rel="noreferrer">
-              adding barcodes
-            </a>
-            .
-          </>
+          <TransRichText
+            ns="inventory"
+            i18nKey="fields.barcodes.formField.addingBarcodes"
+            components={{
+              a: richTextLink({ href: docLinks.barcodes, target: "_blank", rel: "noreferrer" }),
+            }}
+          />
         ) : null
       }
       canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}

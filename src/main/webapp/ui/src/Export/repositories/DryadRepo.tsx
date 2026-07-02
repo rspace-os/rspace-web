@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import Users from "../ExportRepoUser";
 import type { Person, Repo, StandardValidations } from "./common";
 
@@ -51,17 +52,19 @@ export default function DryadRepo({
   contacts,
   authors,
 }: DryadRepoArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label="Title *"
+          label={t("export.repositories.common.title")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please choose a title, >3 symbols"
+          helperText={t("export.repositories.dryad.titleHelper")}
           fullWidth
         />
       </Grid>
@@ -69,13 +72,14 @@ export default function DryadRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label="Add an abstract *"
+          label={t("export.repositories.dryad.abstract")}
+          required
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please add a relevant abstract for your export"
+          helperText={t("export.repositories.dryad.abstractHelper")}
           fullWidth
         />
       </Grid>
@@ -85,10 +89,11 @@ export default function DryadRepo({
           name="subject"
           select
           defaultValue={""}
-          label="Research Domain *"
+          label={t("export.repositories.dryad.researchDomain")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your research domain"
+          helperText={t("export.repositories.dryad.researchDomainHelper")}
           margin="normal"
           fullWidth
         >
@@ -103,11 +108,12 @@ export default function DryadRepo({
         <TextField
           name="license"
           select
-          label="License *"
+          label={t("export.repositories.dryad.license")}
+          required
           defaultValue={repo.license.licenses.length ? "0" : ""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your license"
+          helperText={t("export.repositories.dryad.licenseHelper")}
           margin="normal"
           fullWidth
         >
@@ -122,7 +128,7 @@ export default function DryadRepo({
         {/* Granting Org */}
         <Autocomplete
           id="dryad-crossref-funders-autocomplete"
-          label="Granting Organization *"
+          label={t("export.repositories.dryad.grantingOrg")}
           options={crossrefFunders}
           getOptionLabel={(option) => option.name}
           isOptionEqualToValue={(option, value) => option.name === value.name}
@@ -133,9 +139,10 @@ export default function DryadRepo({
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Granting Organization *"
+              label={t("export.repositories.dryad.grantingOrg")}
+              required
               error={submitAttempt && !inputValidations.crossrefFunder}
-              helperText="Enter 3 of more characters to filter list"
+              helperText={t("export.repositories.dryad.grantingOrgHelper")}
             />
           )}
         />

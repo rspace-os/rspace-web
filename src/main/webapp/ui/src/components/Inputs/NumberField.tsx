@@ -1,5 +1,6 @@
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 
 export type NumberFieldArgs = {
@@ -49,8 +50,9 @@ export default function NumberField({
   slotProps,
   ...props
 }: NumberFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   return disabled && value === "" ? (
-    <NoValue label={noValueLabel ?? "None"} />
+    <NoValue label={noValueLabel ?? t("values.none")} />
   ) : (
     <TextField
       data-test-id={dataTestId}

@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import { observer } from "mobx-react-lite";
 import React, { lazy, Suspense } from "react";
+import i18n from "@/modules/common/i18n";
 
 const LoadedImageEditorDialog = lazy(() => import("../ImageEditingDialog"));
 
@@ -16,11 +17,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 
   render(): React.ReactNode {
     if (this.state.hasError) {
-      return (
-        <Alert severity="error">
-          Could not load the image editor at this time. Please check your network connection and refresh.
-        </Alert>
-      );
+      return <Alert severity="error">{i18n.t("common:inputs.dynamicallyLoadedImageEditor.loadError")}</Alert>;
     }
     return this.props.children;
   }

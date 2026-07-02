@@ -15,6 +15,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import DescriptionList from "../../../components/DescriptionList";
@@ -113,6 +114,8 @@ const ActionButton = ({
 const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [name, setName] = React.useState(file.name);
   const textField = React.useRef<HTMLInputElement | null>(null);
   function handleSubmit() {
@@ -137,7 +140,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
       >
         <TextField
           value={name}
-          placeholder="No Name"
+          placeholder={t("infoPanel.noNamePlaceholder")}
           /*
            * We use multiline so that long names wrap, but prevent the user
            * from typing in a return character by using string replacement.
@@ -204,7 +207,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
           }}
           slotProps={{
             htmlInput: {
-              "aria-label": "Name",
+              "aria-label": t("infoPanel.nameLabel"),
               ref: textField,
             },
           }}
@@ -229,7 +232,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -240,7 +243,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              Save
+              {tCommon("actions.save")}
             </Button>
           </Stack>
         </Collapse>
@@ -288,13 +291,15 @@ const DescriptionField = observer(
     minimalStyling?: boolean;
   }) => {
     const { changeDescription } = useGalleryActions();
+    const { t } = useTranslation("gallery");
+    const { t: tCommon } = useTranslation("common");
     const [description, setDescription] = React.useState<string>(initialDescription);
     const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
     return (
       <Stack>
         <TextField
           value={description}
-          placeholder="No description"
+          placeholder={t("infoPanel.noDescriptionPlaceholder")}
           fullWidth
           size="small"
           sx={(theme) => ({
@@ -376,7 +381,7 @@ const DescriptionField = observer(
                 setDescription(initialDescription);
               }}
             >
-              Cancel
+              {tCommon("actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -386,7 +391,7 @@ const DescriptionField = observer(
                 void changeDescription(file, Description.Present(description));
               }}
             >
-              Save
+              {tCommon("actions.save")}
             </Button>
           </Stack>
         </Collapse>
@@ -394,18 +399,28 @@ const DescriptionField = observer(
     );
   },
 );
-const formatDmpSource = (source: string): string => {
+const formatDmpSource = (
+  source: string,
+  t: (
+    key:
+      | "infoPanel.sources.unknown"
+      | "infoPanel.sources.dmpTool"
+      | "infoPanel.sources.dmpOnline"
+      | "infoPanel.sources.argos"
+      | "infoPanel.sources.dsw",
+  ) => string,
+): string => {
   switch (source) {
     case "UNKNOWN":
-      return "Unknown";
+      return t("infoPanel.sources.unknown");
     case "DMP_TOOL":
-      return "DMP Tool";
+      return t("infoPanel.sources.dmpTool");
     case "DMP_ONLINE":
-      return "DMP Online";
+      return t("infoPanel.sources.dmpOnline");
     case "ARGOS":
-      return "ARGOS";
+      return t("infoPanel.sources.argos");
     case "DSW":
-      return "DSW / FAIR Wizard";
+      return t("infoPanel.sources.dsw");
     default:
       return source;
   }
@@ -462,6 +477,7 @@ function useS3Provenance(file: GalleryFile): { createdBy: string | null; created
 
 const InfoPanelContent = observer(
   ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
+    const { t } = useTranslation("gallery");
     const s3Provenance = useS3Provenance(file);
     return (
       <Stack
@@ -474,7 +490,7 @@ const InfoPanelContent = observer(
             ...(typeof file.globalId === "string"
               ? [
                   {
-                    label: "Global ID",
+                    label: t("infoPanel.labels.globalId"),
                     value: file.globalId,
                   },
                 ]
@@ -482,7 +498,7 @@ const InfoPanelContent = observer(
             ...(typeof file.ownerName === "string"
               ? [
                   {
-                    label: "Owner",
+                    label: t("infoPanel.labels.owner"),
                     value: file.ownerName,
                   },
                 ]
@@ -491,7 +507,7 @@ const InfoPanelContent = observer(
               .toString()
               .map((desc) => [
                 {
-                  label: "Description",
+                  label: t("infoPanel.labels.description"),
                   value: <DescriptionField file={file} description={desc} minimalStyling={!smallViewport} />,
                   below: true,
                 },
@@ -521,14 +537,14 @@ const InfoPanelContent = observer(
             }}
           >
             <Typography variant="h4" component="h4">
-              DMP Details
+              {t("infoPanel.dmpDetails")}
             </Typography>
             <DescriptionList
               content={[
                 ...(file.metadata.dmpLink
                   ? [
                       {
-                        label: "Link",
+                        label: t("infoPanel.labels.link"),
                         value: (
                           <Link href={file.metadata.dmpLink} target="_blank" rel="noopener noreferrer">
                             {file.metadata.dmpLink}
@@ -540,9 +556,9 @@ const InfoPanelContent = observer(
                 ...(file.metadata.dmpSource
                   ? [
                       {
-                        label: "Source",
+                        label: t("infoPanel.labels.source"),
                         value: (
-                          <Chip label={formatDmpSource(file.metadata.dmpSource)} size="small" variant="outlined" />
+                          <Chip label={formatDmpSource(file.metadata.dmpSource, t)} size="small" variant="outlined" />
                         ),
                       },
                     ]
@@ -550,7 +566,7 @@ const InfoPanelContent = observer(
                 ...(file.metadata.doiLink
                   ? [
                       {
-                        label: "DOI Link",
+                        label: t("infoPanel.labels.doiLink"),
                         value: (
                           <Link href={file.metadata.doiLink} target="_blank" rel="noopener noreferrer">
                             {file.metadata.doiLink}
@@ -577,26 +593,26 @@ const InfoPanelContent = observer(
           }}
         >
           <Typography variant="h4" component="h4">
-            Details
+            {t("infoPanel.details")}
           </Typography>
           <DescriptionList
             content={[
               ...(typeof file.type === "string"
                 ? [
                     {
-                      label: "Type",
+                      label: t("infoPanel.labels.type"),
                       value: file.type,
                     },
                   ]
                 : []),
               {
-                label: "Size",
+                label: t("infoPanel.labels.size"),
                 value: formatFileSize(file.size),
               },
               ...(file.creationDate
                 ? [
                     {
-                      label: "Created",
+                      label: t("infoPanel.labels.created"),
                       value: file.creationDate.toLocaleString(),
                     },
                   ]
@@ -604,7 +620,7 @@ const InfoPanelContent = observer(
               ...(file.modificationDate
                 ? [
                     {
-                      label: "Modified",
+                      label: t("infoPanel.labels.modified"),
                       value: file.modificationDate.toLocaleString(),
                     },
                   ]
@@ -612,7 +628,7 @@ const InfoPanelContent = observer(
               ...(typeof file.version === "number"
                 ? [
                     {
-                      label: "Version",
+                      label: t("infoPanel.labels.version"),
                       value: file.version,
                     },
                   ]
@@ -620,7 +636,7 @@ const InfoPanelContent = observer(
               ...(typeof file.originalImageId === "string"
                 ? [
                     {
-                      label: "Original Image ID",
+                      label: t("infoPanel.labels.originalImageId"),
                       value: file.originalImageId,
                     },
                   ]
@@ -629,7 +645,7 @@ const InfoPanelContent = observer(
               ...(s3Provenance.createdBy
                 ? [
                     {
-                      label: "Added to S3 by",
+                      label: t("infoPanel.labels.addedToS3By"),
                       value: s3Provenance.createdBy,
                     },
                   ]
@@ -637,7 +653,7 @@ const InfoPanelContent = observer(
               ...(s3Provenance.createdAt
                 ? [
                     {
-                      label: "Added to S3 on",
+                      label: t("infoPanel.labels.addedToS3On"),
                       value: s3Provenance.createdAt.toLocaleString(),
                     },
                   ]
@@ -658,6 +674,7 @@ const InfoPanelContent = observer(
 );
 const InfoPanelMultipleContent = (): React.ReactNode => {
   const selection = useGallerySelection();
+  const { t } = useTranslation("gallery");
   const sortedByCreated = selection
     .asSet()
     .mapOptional((file) => (!file.creationDate ? Optional.empty<Date>() : Optional.present(file.creationDate)))
@@ -670,7 +687,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
     <DescriptionList
       content={[
         {
-          label: "Total size",
+          label: t("infoPanel.labels.totalSize"),
           value: formatFileSize(selection.asSet().reduce((sum, file) => sum + file.size, 0)),
         },
         ...Result.lift2<
@@ -682,12 +699,8 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
           }>
         >((oldestDate, newestDate) => [
           {
-            label: "Created",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
-              </>
-            ),
+            label: t("infoPanel.labels.created"),
+            value: <>{`${oldestDate.toLocaleDateString()} – ${newestDate.toLocaleDateString()}`}</>,
           },
         ])(
           Result.fromNullable(sortedByCreated.at(0), new Error("No creation dates available.")),
@@ -702,12 +715,8 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
           }>
         >((oldestDate, newestDate) => [
           {
-            label: "Modified",
-            value: (
-              <>
-                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
-              </>
-            ),
+            label: t("infoPanel.labels.modified"),
+            value: <>{`${oldestDate.toLocaleDateString()} – ${newestDate.toLocaleDateString()}`}</>,
           },
         ])(
           Result.fromNullable(sortedByModified.at(0), new Error("No modification dates available.")),
@@ -724,6 +733,8 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
  * documents that link to the file.
  */
 export function InfoPanelForLargeViewports() {
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
@@ -774,7 +785,7 @@ export function InfoPanelForLargeViewports() {
                   fontWeight: 400,
                 }}
               >
-                {selection.size === 0 && "Nothing selected."}
+                {selection.size === 0 && t("infoPanel.nothingSelected")}
                 {selection
                   .asSet()
                   .only.map((f) => f.name)
@@ -795,7 +806,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           openFolder(file);
                         }}
-                        label="Open"
+                        label={tCommon("actions.open")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -814,7 +825,7 @@ export function InfoPanelForLargeViewports() {
                             });
                           });
                         }}
-                        label="View"
+                        label={t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -836,7 +847,7 @@ export function InfoPanelForLargeViewports() {
                           window.open(action.url);
                           trackEvent("user:opens:document:collabora");
                         }}
-                        label="Edit"
+                        label={tCommon("actions.edit")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -858,7 +869,7 @@ export function InfoPanelForLargeViewports() {
                           window.open(action.url);
                           trackEvent("user:opens:document:officeonline");
                         }}
-                        label="Edit"
+                        label={tCommon("actions.edit")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -881,7 +892,7 @@ export function InfoPanelForLargeViewports() {
                             openPdfPreview(href);
                           });
                         }}
-                        label="View"
+                        label={t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -897,7 +908,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           void openAsposePreview(file);
                         }}
-                        label={asposeLoading ? "Loading" : "View"}
+                        label={asposeLoading ? t("infoPanel.loading") : t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -918,7 +929,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           void openSnapGenePreview(file);
                         }}
-                        label="View"
+                        label={t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -939,7 +950,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           void openSnippetPreview(file);
                         }}
-                        label="View"
+                        label={t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -963,7 +974,7 @@ export function InfoPanelForLargeViewports() {
                         // do nothing
                       }}
                       disabled
-                      label="View"
+                      label={t("actionsMenu.view")}
                       sx={{
                         height: "100%",
                         marginTop: "8px",
@@ -1015,6 +1026,8 @@ export function InfoPanelForLargeViewports() {
 export const InfoPanelForSmallViewports: React.ComponentType<{
   file: GalleryFile;
 }> = ({ file }) => {
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(null);
@@ -1091,7 +1104,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
             height: "100%",
           }}
           role="region"
-          aria-label="info panel"
+          aria-label={t("mainPanel.infoPanelLabel")}
           id={mobileInfoPanelId}
         >
           {/*
@@ -1152,7 +1165,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
                 .map(() => (
                   <Grid key={null}>
                     <ActionButton
-                      label="Open"
+                      label={tCommon("actions.open")}
                       sx={{
                         borderRadius: 3,
                         px: 2.5,
@@ -1176,7 +1189,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
                           setPreviewImageUrl(url);
                         });
                     }}
-                    label="View"
+                    label={t("actionsMenu.view")}
                     sx={{
                       borderRadius: 3,
                       px: 2.5,

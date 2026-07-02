@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -89,6 +90,7 @@ export default function useFolders(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   const getFolderTree = React.useCallback(
     async ({
@@ -135,8 +137,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching folder tree",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: t("apiErrors.folders.fetchTreeFailed"),
+            message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch folder tree", {
@@ -144,7 +146,7 @@ export default function useFolders(): {
         });
       }
     },
-    [getToken, addAlert],
+    [getToken, addAlert, t],
   );
 
   const getFolder = React.useCallback(
@@ -164,8 +166,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching folder",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: t("apiErrors.folders.fetchFailed"),
+            message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch folder", {
@@ -173,7 +175,7 @@ export default function useFolders(): {
         });
       }
     },
-    [getToken, addAlert],
+    [getToken, addAlert, t],
   );
 
   const createFolder = React.useCallback(
@@ -206,8 +208,8 @@ export default function useFolders(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error creating folder",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: t("apiErrors.folders.createFailed"),
+            message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
         throw new Error("Could not create folder", {
@@ -215,7 +217,7 @@ export default function useFolders(): {
         });
       }
     },
-    [getToken, addAlert],
+    [getToken, addAlert, t],
   );
 
   return { getFolderTree, getFolder, createFolder };

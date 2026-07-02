@@ -1,6 +1,7 @@
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import DoubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
 import SingleEditIcon from "../../../assets/graphics/SingleEditIcon";
 import { mkAlert } from "../../../stores/contexts/Alert";
@@ -22,6 +23,8 @@ type EditActionArgs = {
 
 const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: EditActionArgs, ref) => {
+    const { t } = useTranslation("inventory");
+    const { t: tCommon } = useTranslation("common");
     const { searchStore, uiStore } = useStores();
 
     const displayErrorIfAllLocksCouldNotBeAcquired = (error: Error): boolean => {
@@ -46,15 +49,19 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       if (lockedRecords.length > 0) {
         uiStore.addAlert(
           mkAlert({
-            title: isBatchEdit ? "Cannot edit some of the selected items." : "Cannot edit this item.",
-            message: `Someone else is currently editing ${isBatchEdit ? "them" : "it"}.`,
+            title: isBatchEdit ? t("contextMenu.edit.cannotEditSome") : t("contextMenu.edit.cannotEditThis"),
+            message: isBatchEdit ? t("contextMenu.edit.someoneEditingThem") : t("contextMenu.edit.someoneEditingIt"),
             variant: "error",
             isInfinite: true,
             details: lockedRecords.map(({ record, lockOwner }) => ({
               title: record.name,
               record,
               variant: "error",
-              help: `Being edited by ${lockOwner.firstName} ${lockOwner.lastName} (${lockOwner.username}).`,
+              help: t("contextMenu.edit.beingEditedBy", {
+                firstName: lockOwner.firstName,
+                lastName: lockOwner.lastName,
+                username: lockOwner.username,
+              }),
             })),
           }),
         );
@@ -80,12 +87,8 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       if (responses.includes("WAS_ALREADY_LOCKED")) {
         uiStore.addAlert(
           mkAlert({
-            title: "Unsaved changes?",
-            message:
-              "It appears that you already started editing some of " +
-              "these records in another browser tab or on another " +
-              "device. We advise you cancel or save those changes first " +
-              "otherwise editing here could result in an error.",
+            title: t("contextMenu.edit.unsavedChanges.title"),
+            message: t("contextMenu.edit.unsavedChanges.message"),
             variant: "warning",
             isInfinite: true,
           }),
@@ -106,7 +109,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
 
       try {
         if (isBatchEdit) {
-          if (!(await uiStore.confirmDiscardAnyChanges())) throw new Error("Unsaved changes.");
+          if (!(await uiStore.confirmDiscardAnyChanges())) throw new Error(t("contextMenu.edit.unsavedChanges.error"));
           searchStore.search.setEditLoading("batch");
           await removeAllExistingLocks();
           const { fulfilled, rejected } = await acquireLocksForSelectedRecords();
@@ -135,16 +138,16 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
         if (!displayedError) {
           uiStore.addAlert(
             mkAlert({
-              title: "Could not load edit mode.",
+              title: t("contextMenu.edit.loadFailed"),
               message: !(e instanceof AggregateError)
-                ? getErrorMessage(e, "Unknown reason.")
-                : "Expand for more details.",
+                ? getErrorMessage(e, t("errors.unknownReason"))
+                : t("errors.expandForMoreDetails"),
               variant: "error",
               details:
                 e instanceof AggregateError
                   ? e.errors.map((error: unknown) => ({
                       variant: "error",
-                      title: getErrorMessage(error, "Unknown reason."),
+                      title: getErrorMessage(error, t("errors.unknownReason")),
                     }))
                   : [],
             }),
@@ -160,14 +163,16 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       [() => disabled !== "", disabled],
       [
         () => selectedResults.length > 1 && selectedResults.some((r) => !r.supportsBatchEditing),
-        `Some of the selected items do not support batch editing: ${selectedResults
-          .filter((r) => !r.supportsBatchEditing)
-          .map((r) => r.globalId)
-          .join(", ")}. Please edit individually.`,
+        t("contextMenu.edit.batchUnsupported", {
+          globalIds: selectedResults
+            .filter((r) => !r.supportsBatchEditing)
+            .map((r) => r.globalId)
+            .join(", "),
+        }),
       ],
-      [() => selectedResults.length === 0, "Nothing is selected."],
-      [() => !selectedResults.every((r) => r.canEdit), `You do not have permission to edit this item.`],
-      [() => searchStore.search.editLoading !== "no", "Loading"],
+      [() => selectedResults.length === 0, t("contextMenu.edit.nothingSelected")],
+      [() => !selectedResults.every((r) => r.canEdit), t("contextMenu.edit.noPermission")],
+      [() => searchStore.search.editLoading !== "no", tCommon("loading")],
       [() => true, ""],
     ]);
 
@@ -177,7 +182,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
           <ContextMenuAction
             onClick={() => void doEdit()}
             icon={selectedResults.length > 1 ? <DoubleEditIcon /> : <SingleEditIcon />}
-            label={`${selectedResults.length > 1 ? "Batch " : ""}Edit`}
+            label={selectedResults.length > 1 ? t("contextMenu.edit.batchEdit") : tCommon("actions.edit")}
             disabledHelp={disabledHelp()}
             as={as}
             ref={ref}

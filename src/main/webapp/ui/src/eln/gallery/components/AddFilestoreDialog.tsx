@@ -15,6 +15,7 @@ import Typography from "@mui/material/Typography";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem } from "@mui/x-tree-view/TreeItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { Dialog } from "../../../components/DialogBoundary";
 import EventBoundary from "../../../components/EventBoundary";
@@ -57,6 +58,7 @@ function FilesystemSelectionStep(props: {
   }>;
 }) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
+  const { t } = useTranslation("gallery");
   const [chosenFilesystem, setChosenFilesysem] = React.useState<{
     id: number;
     name: string;
@@ -123,14 +125,8 @@ function FilesystemSelectionStep(props: {
 
   return (
     <Step key="filesystemSelection" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">
-            Your sysadmin needs to configure a file system before it appears here.
-          </Typography>
-        }
-      >
-        Select a File system
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.filesystemHelp")}</Typography>}>
+        {t("addFilestoreDialog.filesystemStepLabel")}
       </StepLabel>
       <StepContent>
         <RadioGroup
@@ -157,7 +153,7 @@ function FilesystemSelectionStep(props: {
                   <>
                     {fs.name}
                     <Typography component="span" variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
-                      (no read access; contact your sysadmin)
+                      {t("addFilestoreDialog.noReadAccess")}
                     </Typography>
                   </>
                 )
@@ -175,7 +171,7 @@ function FilesystemSelectionStep(props: {
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Choose Filesystem
+            {t("addFilestoreDialog.chooseFilesystem")}
           </Button>
         </Box>
       </StepContent>
@@ -203,6 +199,7 @@ function TreeListing({
   /** Root S3 listing only: prepend the "(bucket top level)" option once the folders have loaded. */
   showBucketTopLevel?: boolean;
 }): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const api = React.useRef(
@@ -251,7 +248,7 @@ function TreeListing({
                   addAlert(
                     mkAlert({
                       variant: "error",
-                      title: "Failed to browse filestore",
+                      title: t("addFilestoreDialog.browseFailed"),
                       message: Parsers.objectPath(["data", "message"], response)
                         .flatMap(Parsers.isString)
                         .orElse(e.message),
@@ -270,11 +267,11 @@ function TreeListing({
   // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
   // every option appears at once rather than top-level looking like the only choice.
   if (showBucketTopLevel && loading) {
-    return <TreeItem itemId="__loading__" label="Loading..." disabled />;
+    return <TreeItem itemId="__loading__" label={t("addFilestoreDialog.loading")} disabled />;
   }
   return (
     <>
-      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" />}
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label={t("addFilestoreDialog.bucketTopLevel")} />}
       {listing.map(
         ({ folder, name }) =>
           folder && (
@@ -302,6 +299,8 @@ function FolderSelectionStep(props: {
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
   // null = nothing chosen yet; "" = the bucket top level (S3); otherwise a subfolder path.
   const [selectedFolderPath, setSelectedFolderPath] = React.useState<string | null>(null);
@@ -310,15 +309,8 @@ function FolderSelectionStep(props: {
 
   return (
     <Step key="folderSelection" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">
-            You can configure multiple Filestores from the same File system with different top-level folders, to
-            facilitate accessing deeply-nested content.
-          </Typography>
-        }
-      >
-        Select the top-level Folder for the Filestore
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.folderHelp")}</Typography>}>
+        {t("addFilestoreDialog.folderStepLabel")}
       </StepLabel>
       <StepContent>
         <SimpleTreeView
@@ -357,10 +349,10 @@ function FolderSelectionStep(props: {
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Choose Folder
+            {t("addFilestoreDialog.chooseFolder")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            Back
+            {tCommon("actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -370,15 +362,13 @@ function FolderSelectionStep(props: {
 
 function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => void }) {
   const { onConfirm, onCancel, ...rest } = props;
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [name, setName] = React.useState("");
   return (
     <Step key="name" component="div" {...rest}>
-      <StepLabel
-        optional={
-          <Typography variant="body2">This name is used in RSpace to help you identify the Filestore.</Typography>
-        }
-      >
-        Name the Filestore
+      <StepLabel optional={<Typography variant="body2">{t("addFilestoreDialog.nameHelp")}</Typography>}>
+        {t("addFilestoreDialog.nameStepLabel")}
       </StepLabel>
       <StepContent>
         <TextField
@@ -388,7 +378,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
           }}
           slotProps={{
             htmlInput: {
-              "aria-label": "Filestore name",
+              "aria-label": t("addFilestoreDialog.nameLabel"),
             },
           }}
         />
@@ -402,10 +392,10 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
             }}
             sx={{ mt: 1, mr: 1 }}
           >
-            Add Filestore
+            {t("addFilestoreDialog.addFilestore")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            Back
+            {tCommon("actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -421,6 +411,8 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
  * appears in the filesystems section.
  */
 export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialogArgs): React.ReactNode {
+  const { t } = useTranslation("gallery");
+  const { t: tCommon } = useTranslation("common");
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
@@ -472,7 +464,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully added new filestore",
+          message: t("addFilestoreDialog.addSuccess"),
         }),
       );
       onClose(true);
@@ -485,7 +477,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Failed to add new filestore",
+            title: t("addFilestoreDialog.addFailed"),
             message,
           }),
         );
@@ -496,7 +488,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
   return (
     <EventBoundary>
       <Dialog fullWidth maxWidth="sm" open={open} onClose={() => onClose(false)}>
-        <DialogTitle>Add a Filestore</DialogTitle>
+        <DialogTitle>{t("addFilestoreDialog.addFilestore")}</DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} component="div" orientation="vertical">
             <FilesystemSelectionStep
@@ -532,7 +524,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
               onClose(false);
             }}
           >
-            Cancel
+            {tCommon("actions.cancel")}
           </Button>
         </DialogActions>
       </Dialog>

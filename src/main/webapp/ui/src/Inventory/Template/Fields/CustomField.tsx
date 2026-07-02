@@ -6,28 +6,22 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../components/RemoveButton";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
-import { match, toYesNo } from "../../../util/Util";
+import { match } from "../../../util/Util";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
 import NameField from "./CustomFieldNameField";
 import DefaultValueField from "./DefaultValueField";
 import FieldTypeMenu from "./FieldTypeMenu";
 import MoveButtons from "./MoveButtons";
 
-const deleteOptions: Array<DeleteOption> = [
-  { value: false, label: "Keep field in existing samples" },
-  {
-    value: true,
-    label: "Remove field from existing samples",
-  },
-];
-
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
+  const { t } = useTranslation("inventory");
   return (
-    <InputWrapper label="Type">
+    <InputWrapper label={t("fields.templateFields.customField.type")}>
       <FieldTypeMenu
         fieldType={field.fieldType}
         onChange={(fieldType) => {
@@ -47,8 +41,10 @@ const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
 });
 
 const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: boolean }) => {
+  const { t } = useTranslation(["inventory", "common"]);
+  const mandatoryLabel = field.mandatory ? t("common:actions.yes") : t("common:actions.no");
   return (
-    <InputWrapper label="Mandatory">
+    <InputWrapper label={t("fields.templateFields.customField.mandatory")}>
       {editing ? (
         <Switch
           checked={field.mandatory}
@@ -60,7 +56,7 @@ const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: bo
           edge="start"
         />
       ) : (
-        toYesNo(field.mandatory)
+        mandatoryLabel
       )}
     </InputWrapper>
   );
@@ -85,7 +81,15 @@ function CustomField({
   forceColumnLayout,
   onMove,
 }: CustomFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const nameFieldId = useId();
+  const deleteOptions: Array<DeleteOption> = [
+    { value: false, label: t("fields.templateFields.customField.deleteOptions.keep") },
+    {
+      value: true,
+      label: t("fields.templateFields.customField.deleteOptions.remove"),
+    },
+  ];
 
   return (
     <Grid role="region" aria-labelledby={nameFieldId}>
@@ -94,13 +98,14 @@ function CustomField({
           {field.deleteFieldRequest ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1">
-                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will be deleted from this template.
+                <strong>{field.name}</strong>{" "}
+                {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
               </Typography>
               <p>
-                New samples will not include this field.{" "}
+                {t("template.fields.customField.newSamplesExclusion")}{" "}
                 {field.deleteFieldOnSampleUpdate
-                  ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
-                  : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
+                  ? t("template.fields.customField.deleteFieldOnUpdate")
+                  : t("template.fields.customField.deleteFieldOnUpdateNot")}
               </p>
             </Box>
           ) : (
@@ -132,12 +137,15 @@ function CustomField({
                   {editable && (
                     <Box sx={{ ml: 0.75, mb: 0.75 }}>
                       {field.initial ? (
-                        <RemoveButton onClick={() => onRemove()} title="Delete new field" />
+                        <RemoveButton
+                          onClick={() => onRemove()}
+                          title={t("fields.templateFields.customField.deleteNewField")}
+                        />
                       ) : (
                         <RemoveMenu
                           deleteOptions={deleteOptions}
                           onClick={(b) => onRemove(b)}
-                          tooltipTitle="Delete field"
+                          tooltipTitle={t("fields.templateFields.customField.deleteField")}
                         />
                       )}
                     </Box>

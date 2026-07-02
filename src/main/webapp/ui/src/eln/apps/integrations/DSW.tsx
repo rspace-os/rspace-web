@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
 import DSWIcon from "../../../assets/branding/dsw/logo.svg";
@@ -60,6 +61,7 @@ type NewConfig = {
 
 const DialogContent = observer(
   ({ configs, integrationState }: { configs: Configurations; integrationState: IntegrationStates["DSW"] }) => {
+    const { t } = useTranslation(["apps", "common"]);
     const { addAlert } = useContext(AlertContext);
     const { test } = useDSWTestEndpoint();
     const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
@@ -110,7 +112,7 @@ const DialogContent = observer(
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully saved DSW details.",
+            message: t("integrations.dsw.alerts.saveExistingSuccess"),
           }),
         );
       } catch (e) {
@@ -118,7 +120,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Error saving DSW configuration.",
+              title: t("integrations.dsw.alerts.saveExistingError"),
               message: e.message,
             }),
           );
@@ -150,7 +152,7 @@ const DialogContent = observer(
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully saved DSW details",
+            message: t("integrations.dsw.alerts.saveNewSuccess"),
           }),
         );
       } catch (e) {
@@ -158,7 +160,7 @@ const DialogContent = observer(
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not save DSW details",
+              title: t("integrations.dsw.alerts.saveNewError"),
               message: e.message,
             }),
           );
@@ -175,7 +177,7 @@ const DialogContent = observer(
                   event.preventDefault();
                   void saveExistingConfig(config, i);
                 }}
-                aria-label={`Configured DSW with label ${config.DSW_ALIAS}`}
+                aria-label={t("integrations.dsw.configuredLabel", { label: config.DSW_ALIAS })}
               >
                 <CardContent>
                   <Stack spacing={2}>
@@ -188,9 +190,9 @@ const DialogContent = observer(
                           config.dirty = true;
                         });
                       }}
-                      label="Label"
+                      label={t("integrations.dsw.fields.label")}
                       error={config.DSW_ALIAS === ""}
-                      helperText={config.DSW_ALIAS === "" && "Label is required."}
+                      helperText={config.DSW_ALIAS === "" && t("integrations.dsw.fields.labelRequired")}
                     />
                     <TextField
                       fullWidth
@@ -201,9 +203,9 @@ const DialogContent = observer(
                           config.dirty = true;
                         });
                       }}
-                      label="Server URL"
+                      label={t("integrations.dsw.fields.serverUrl")}
                       error={config.DSW_URL === ""}
-                      helperText={config.DSW_URL === "" && "URL is required."}
+                      helperText={config.DSW_URL === "" && t("integrations.dsw.fields.urlRequired")}
                     />
                     <TextField
                       fullWidth
@@ -215,9 +217,9 @@ const DialogContent = observer(
                         });
                       }}
                       type="password"
-                      label="API key"
+                      label={t("integrations.dsw.fields.apiKey")}
                       error={config.DSW_APIKEY === ""}
-                      helperText={config.DSW_APIKEY === "" && "API key is required."}
+                      helperText={config.DSW_APIKEY === "" && t("integrations.dsw.fields.apiKeyRequired")}
                     />
                   </Stack>
                 </CardContent>
@@ -236,7 +238,7 @@ const DialogContent = observer(
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Successfully deleted configuration.",
+                              message: t("integrations.dsw.alerts.deleteConfigSuccess"),
                             }),
                           );
                         } catch (e) {
@@ -244,7 +246,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "error",
-                                title: "Could not delete configuration.",
+                                title: t("integrations.dsw.alerts.deleteConfigError"),
                                 message: e.message,
                               }),
                             );
@@ -252,7 +254,7 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    Delete
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     disabled={config.dirty}
@@ -263,7 +265,7 @@ const DialogContent = observer(
                           addAlert(
                             mkAlert({
                               variant: "success",
-                              message: "Connection details are valid.",
+                              message: t("integrations.dsw.alerts.testValid"),
                             }),
                           );
                         } catch (e) {
@@ -271,7 +273,7 @@ const DialogContent = observer(
                             addAlert(
                               mkAlert({
                                 variant: "error",
-                                title: "Connection details are not valid.",
+                                title: t("integrations.dsw.alerts.testInvalid"),
                                 message: e.message,
                               }),
                             );
@@ -279,13 +281,13 @@ const DialogContent = observer(
                       })();
                     }}
                   >
-                    Test
+                    {t("actions.test")}
                   </Button>
                   <Button
                     type="submit"
                     disabled={config.DSW_ALIAS === "" || config.DSW_URL === "" || config.DSW_APIKEY === ""}
                   >
-                    Save
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -310,9 +312,9 @@ const DialogContent = observer(
                           newConfig.DSW_ALIAS = value;
                         });
                       }}
-                      label="Label"
+                      label={t("integrations.dsw.fields.label")}
                       error={newConfig.DSW_ALIAS === ""}
-                      helperText={newConfig.DSW_ALIAS === "" && "Label is required."}
+                      helperText={newConfig.DSW_ALIAS === "" && t("integrations.dsw.fields.labelRequired")}
                     />
                     <TextField
                       fullWidth
@@ -322,9 +324,9 @@ const DialogContent = observer(
                           newConfig.DSW_URL = value;
                         });
                       }}
-                      label="Server URL"
+                      label={t("integrations.dsw.fields.serverUrl")}
                       error={newConfig.DSW_URL === ""}
-                      helperText={newConfig.DSW_URL === "" && "URL is required."}
+                      helperText={newConfig.DSW_URL === "" && t("integrations.dsw.fields.urlRequired")}
                     />
                     <TextField
                       fullWidth
@@ -335,9 +337,9 @@ const DialogContent = observer(
                         });
                       }}
                       type="password"
-                      label="API key"
+                      label={t("integrations.dsw.fields.apiKey")}
                       error={newConfig.DSW_APIKEY === ""}
-                      helperText={newConfig.DSW_APIKEY === "" && "API key is required."}
+                      helperText={newConfig.DSW_APIKEY === "" && t("integrations.dsw.fields.apiKeyRequired")}
                     />
                   </Stack>
                 </CardContent>
@@ -348,7 +350,7 @@ const DialogContent = observer(
                       setNewConfig(null);
                     }}
                   >
-                    Delete
+                    {t("common:actions.delete")}
                   </Button>
                   <Button
                     variant="outlined"
@@ -356,14 +358,14 @@ const DialogContent = observer(
                     disabled
                     onClick={() => {}}
                   >
-                    Test
+                    {t("actions.test")}
                   </Button>
                   <Button
                     variant="outlined"
                     type="submit"
                     disabled={newConfig.DSW_ALIAS === "" || newConfig.DSW_URL === "" || newConfig.DSW_APIKEY === ""}
                   >
-                    Save
+                    {t("common:actions.save")}
                   </Button>
                 </CardActions>
               </form>
@@ -382,7 +384,7 @@ const DialogContent = observer(
             );
           }}
         >
-          Add
+          {t("common:actions.add")}
         </Button>
       </Stack>
     );
@@ -405,6 +407,7 @@ type DSWArgs = {
 };
 
 function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -414,33 +417,28 @@ function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="DSW / FAIR Wizard"
+        name={t("integrations.dsw.name")}
         integrationState={integrationState}
-        explanatoryText="Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard."
+        explanatoryText={t("integrations.dsw.description")}
         image={DSWIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        helpLinkText="DSW integration docs"
+        helpLinkText={t("integrations.dsw.helpLink")}
         website="guide.ds-wizard.org/en/latest/"
         docLink="dsw"
-        usageText="You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
+        usageText={t("integrations.dsw.usage")}
         setupSection={
           <>
-            <Typography variant="body2">
-              You can configure multiple DSW or FAIR Wizard instances to connect to.
-            </Typography>
+            <Typography variant="body2">{t("integrations.dsw.multipleConfig")}</Typography>
             <ol>
-              <li>Enter the required credentials and Save.</li>
-              <li>Click on Test to ensure your credentials are correct.</li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP
-                with data when in the export dialog.
-              </li>
+              <li>{t("integrations.dsw.setup.enterCredentials")}</li>
+              <li>{t("integrations.dsw.setup.test")}</li>
+              <li>{t("integrations.dsw.setup.enable")}</li>
+              <li>{t("integrations.dsw.setup.gallery")}</li>
             </ol>
             {ArrayUtils.all(integrationState.credentials)
               .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
-              .orElse(<>There was an error getting the configured DSW instances.</>)}
+              .orElse(t("integrations.dsw.errorGettingConfigs"))}
           </>
         }
       />

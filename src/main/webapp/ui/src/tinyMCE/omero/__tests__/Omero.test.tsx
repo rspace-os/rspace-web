@@ -4,6 +4,7 @@ import type React from "react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import axios from "@/common/axios";
 import Omero, { getOrder, getOrderBy } from "../../omero/Omero";
+import { OMERO_DATA_TYPE_PROJECTS, OMERO_DATA_TYPE_SCREENS } from "../../omero/OmeroClient";
 import { Order } from "../Enums";
 import AcquisitionsForPlate422 from "./json/acquisitionForPlate422.json";
 import AcquisitionsForPlate2551 from "./json/acquisitionsForPlate2551.json";
@@ -42,12 +43,18 @@ vi.mock("../../omero/OmeroClient", async () => {
   const PlatesForScreen102 = unwrap(await import("./json/platesForScreen102.json"));
   const AcquisitionsForPlate2551 = unwrap(await import("./json/acquisitionsForPlate2551.json"));
   const AcquisitionsForPlate422 = unwrap(await import("./json/acquisitionForPlate422.json"));
+  const OMERO_DATA_TYPE_ALL = "ALL";
+  const OMERO_DATA_TYPE_PROJECTS = "PROJECTS";
+  const OMERO_DATA_TYPE_SCREENS = "SCREENS";
   return {
+    OMERO_DATA_TYPE_ALL,
+    OMERO_DATA_TYPE_PROJECTS,
+    OMERO_DATA_TYPE_SCREENS,
     getOmeroData: async (dataTypeChoice: string) => {
-      if (dataTypeChoice === "Projects") {
+      if (dataTypeChoice === OMERO_DATA_TYPE_PROJECTS) {
         return ProjectsList.data;
       }
-      if (dataTypeChoice === "Screens") {
+      if (dataTypeChoice === OMERO_DATA_TYPE_SCREENS) {
         return ScreensList.data;
       }
       return ProjectsAndScreensList.data;
@@ -159,7 +166,7 @@ const findFirstByText = async (
 const waitForLoadingToFinish = async () => {
   await waitFor(
     () => {
-      expect(screen.queryByText("Data is loading...")).not.toBeInTheDocument();
+      expect(screen.queryByText("apps:tinyMce.omero.loadingData")).not.toBeInTheDocument();
     },
     { timeout: 5500 },
   );
@@ -168,7 +175,7 @@ const waitForLoadingToFinish = async () => {
 const getFirstByTestId = (testid: string): HTMLElement => screen.getAllByTestId(testid)[0];
 const setUpProjectsAsData = async () => {
   localStorageMock.getItem = vi.fn().mockImplementation((key: string) => {
-    if (key === "omeroDataTypeChoice") return '"Projects"';
+    if (key === "omeroDataTypeChoice") return `"${OMERO_DATA_TYPE_PROJECTS}"`;
     return null;
   });
   await setUpComponent();
@@ -193,7 +200,7 @@ const setUpProjectAndScreensInDescendingOrder = async () => {
 
 const setUpScreensAsData = async () => {
   localStorageMock.getItem = vi.fn().mockImplementation((key: string) => {
-    if (key === "omeroDataTypeChoice") return '"Screens"';
+    if (key === "omeroDataTypeChoice") return `"${OMERO_DATA_TYPE_SCREENS}"`;
     return null;
   });
   await setUpComponent();
@@ -450,28 +457,28 @@ const setUpComponent = async () => {
 describe("Renders page with results data", () => {
   test("displays two results table headers", async () => {
     await setUpComponent();
-    await findFirstByText("Path", undefined, {
+    await findFirstByText("apps:tinyMce.omero.columns.path", undefined, {
       timeout: 5500,
     });
-    await findFirstByText("Description", undefined, {
+    await findFirstByText("apps:tinyMce.omero.columns.description", undefined, {
       timeout: 5500,
     });
   }, 9999);
 
   test("displays data choice radio", async () => {
     await setUpComponent();
-    await findFirstByText("Projects And Screens", undefined, {
+    await findFirstByText("apps:tinyMce.omero.dataTypes.all", undefined, {
       timeout: 5500,
     });
-    await findFirstByText("Projects", undefined, {
+    await findFirstByText("apps:tinyMce.omero.dataTypes.projects", undefined, {
       timeout: 5500,
     });
-    await findFirstByText("Screens", undefined, {
+    await findFirstByText("apps:tinyMce.omero.dataTypes.screens", undefined, {
       timeout: 5500,
     });
   }, 9999);
 
-  test("displays Projects And Screens By Default ordered by name", async () => {
+  test("displays all data by default ordered by name", async () => {
     await setUpComponent();
     await findFirstByText("idr0018-neff-histopathology/experimentA", undefined, {
       timeout: 5500,
@@ -491,7 +498,7 @@ describe("Renders page with results data", () => {
     await findFirstByText("idr0018-neff-histopathology/experimentA", undefined, {
       timeout: 5500,
     });
-    expect(screen.getByRole("radio", { name: "Projects" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "apps:tinyMce.omero.dataTypes.projects" })).toBeInTheDocument();
   }, 9999);
 
   test("displays Screens Only", async () => {
@@ -499,20 +506,20 @@ describe("Renders page with results data", () => {
     await findFirstByText("idr0094-ellinger-sarscov2/screenB", undefined, {
       timeout: 5500,
     });
-    expect(screen.getByRole("radio", { name: "Screens" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "apps:tinyMce.omero.dataTypes.screens" })).toBeInTheDocument();
   }, 9999);
 
   test("screens can be sorted by name", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled("idr0001-graml-sysgro/screenA", 192);
-    fireEvent.click(screen.getByText("Path"));
+    fireEvent.click(screen.getByText("apps:tinyMce.omero.columns.path"));
     await assertThatFirstRowOfDataIsScreenCalled("idr0145-ho-replicationstress/screenB", 7);
   }, 9999);
 
   test("screens can be sorted by description", async () => {
     await setUpScreensAsData();
     await assertThatFirstRowOfDataIsScreenCalled("idr0001-graml-sysgro/screenA", 192);
-    fireEvent.click(screen.getByText("Description"));
+    fireEvent.click(screen.getByText("apps:tinyMce.omero.columns.description"));
     await assertThatFirstRowOfDataIsScreenCalled("idr0006-fong-nuclearbodies/screenA", 169);
   }, 9999);
 
@@ -525,7 +532,7 @@ describe("Renders page with results data", () => {
   test("projects can be sorted by name", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled("idr0018-neff-histopathology/experimentA", 248);
-    fireEvent.click(screen.getByText("Path"));
+    fireEvent.click(screen.getByText("apps:tinyMce.omero.columns.path"));
     await assertThatFirstRowOfDataIsProjectCalled("idr0148-schumacher-kidneytem/experimentA", 10);
   }, 9999);
 
@@ -538,7 +545,7 @@ describe("Renders page with results data", () => {
   test("projects can be sorted by description", async () => {
     await setUpProjectsAsData();
     await assertThatFirstRowOfDataIsProjectCalled("idr0018-neff-histopathology/experimentA", 248);
-    fireEvent.click(screen.getByText("Description"));
+    fireEvent.click(screen.getByText("apps:tinyMce.omero.columns.description"));
     await assertThatFirstRowOfDataIsProjectCalled("idr0117-croce-marimba/experimentA", 9);
   }, 9999);
 

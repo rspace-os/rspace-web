@@ -3,6 +3,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import NumberField from "../../../../components/Inputs/NumberField";
 import TextField from "../../../../components/Inputs/TextField";
@@ -19,6 +20,7 @@ type ExtraFieldsArgs = {
 };
 
 function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const EachField = observer(({ editable }: { editable: boolean }): React.ReactNode => {
     const extraFieldsDisabled = !editable;
     return result.visibleExtraFields.map((ef, i) => (
@@ -41,13 +43,13 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
                 }}
               >
                 <IconButtonWithTooltip
-                  title="Field settings"
+                  title={t("fields.extraFields.fieldSettings")}
                   size="small"
                   onClick={() => ef.setEditing(true)}
                   icon={<SettingsIcon fontSize="small" />}
                 />
                 <IconButtonWithTooltip
-                  title="Delete field"
+                  title={t("fields.extraFields.deleteField")}
                   size="small"
                   onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
                   icon={<CloseIcon fontSize="small" />}
@@ -59,7 +61,7 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
             ) : (
               // a Link row can exist before its link payload does; the
               // settings affordance above still lets the user set one
-              <NoValue label="No link set" />
+              <NoValue label={t("fields.extraFields.noLinkSet")} />
             )}
           </Box>
         ) : ef.type === "Number" ? (
@@ -78,13 +80,13 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
                     }}
                   >
                     <IconButtonWithTooltip
-                      title="Field settings"
+                      title={t("fields.extraFields.fieldSettings")}
                       size="small"
                       onClick={() => ef.setEditing(true)}
                       icon={<SettingsIcon fontSize="small" />}
                     />
                     <IconButtonWithTooltip
-                      title="Delete field"
+                      title={t("fields.extraFields.deleteField")}
                       size="small"
                       onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
                       icon={<CloseIcon fontSize="small" />}
@@ -109,7 +111,7 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
               </>
             )}
             error={ef.invalidInput}
-            helperText="Must be a valid number."
+            helperText={t("fields.extraFields.validNumber")}
           />
         ) : (
           <FormField
@@ -129,13 +131,13 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
                     }}
                   >
                     <IconButtonWithTooltip
-                      title="Field settings"
+                      title={t("fields.extraFields.fieldSettings")}
                       size="small"
                       onClick={() => ef.setEditing(true)}
                       icon={<SettingsIcon fontSize="small" />}
                     />
                     <IconButtonWithTooltip
-                      title="Delete field"
+                      title={t("fields.extraFields.deleteField")}
                       size="small"
                       onClick={() => result.removeExtraField(ef.id, result.extraFields.indexOf(ef))}
                       icon={<CloseIcon fontSize="small" />}
@@ -155,7 +157,7 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
             )}
             maxLength={250}
             error={ef.content.length > 250 || ef.invalidInput}
-            helperText="Must be no more than 250 characters."
+            helperText={t("fields.extraFields.maxCharacters", { max: 250 })}
           />
         )}
       </div>
@@ -170,7 +172,7 @@ function ExtraFields({ onErrorStateChange, result }: ExtraFieldsArgs): React.Rea
         <EachField editable={editable} />
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
-          <NoValue label="No more fields" />
+          <NoValue label={t("fields.extraFields.noMoreFields")} />
         </Box>
       )}
       {editable && <NewField record={result} />}

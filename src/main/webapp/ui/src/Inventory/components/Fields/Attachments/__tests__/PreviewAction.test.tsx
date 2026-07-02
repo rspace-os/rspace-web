@@ -30,7 +30,7 @@ describe("PreviewAction", () => {
         <PreviewAction attachment={attachment} />
       </storesContext.Provider>,
     );
-    await user.click(screen.getByRole("button", { name: "Preview file as image" }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.attachments.tooltips.previewImage" }));
     await waitFor(() => {
       expect(addAlertMock).toHaveBeenCalledWith(expect.objectContaining({ message: "foo", variant: "error" }));
     });

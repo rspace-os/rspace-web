@@ -8,6 +8,7 @@ import ListItemSecondaryAction from "@mui/material/ListItemSecondaryAction";
 import ListItemText from "@mui/material/ListItemText";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../components/GlobalId";
 import NoValue from "../../components/NoValue";
 import type TemplateModel from "../../stores/models/TemplateModel";
@@ -38,6 +39,8 @@ type SummaryInfoArgs = {
  * Shows basic information about a template, for placing inline within a form.
  */
 function SummaryInfo({ template, loading, paddingless }: SummaryInfoArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
+
   if (template) {
     return (
       <OneItemList
@@ -49,14 +52,16 @@ function SummaryInfo({ template, loading, paddingless }: SummaryInfoArgs): React
     );
   }
   if (loading) {
-    return <OneItemList avatar={<FontAwesomeIcon icon={faSpinner} spin size="lg" />} text="Loading" />;
+    return (
+      <OneItemList avatar={<FontAwesomeIcon icon={faSpinner} spin size="lg" />} text={t("template.summary.loading")} />
+    );
   }
   if (paddingless) {
-    return <NoValue label="No Template" />;
+    return <NoValue label={t("template.summary.noTemplate")} />;
   }
   return (
     <Box sx={{ my: 1.5 }}>
-      <NoValue label="No Template" />
+      <NoValue label={t("template.summary.noTemplate")} />
     </Box>
   );
 }

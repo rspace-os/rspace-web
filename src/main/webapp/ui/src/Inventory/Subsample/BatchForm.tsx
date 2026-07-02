@@ -2,6 +2,7 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AlwaysNewFactory from "../../stores/models/Factory/AlwaysNewFactory";
 import type SubSampleModel from "../../stores/models/SubSampleModel";
 import { SubSampleCollection } from "../../stores/models/SubSampleModel";
@@ -24,6 +25,7 @@ type OverviewSectionArgs = {
 };
 
 function OverviewSection({ setOfSubSamples, recordsCount }: OverviewSectionArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -32,17 +34,15 @@ function OverviewSection({ setOfSubSamples, recordsCount }: OverviewSectionArgs)
   return (
     <StepperPanel
       icon="subsample"
-      title="Overview"
+      title={t("formSections.overview")}
       formSectionError={formSectionError}
       sectionName="overview"
       recordType="subSample"
     >
-      <Image fieldOwner={setOfSubSamples} alt={`What the ${setOfSubSamples.size} subsamples look like`} />
+      <Image fieldOwner={setOfSubSamples} alt={t("subsample.batch.imageAlt", { count: setOfSubSamples.size })} />
       {setOfSubSamples.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">
-            Please note, on slower network connections uploading large images may trigger an error.
-          </Alert>
+          <Alert severity="info">{t("subsample.batch.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName
@@ -59,6 +59,7 @@ type DetailsSectionArgs = {
 };
 
 function DetailsSection({ setOfSubSamples }: DetailsSectionArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: true,
     globalId: null,
@@ -67,7 +68,7 @@ function DetailsSection({ setOfSubSamples }: DetailsSectionArgs): ReactNode {
   return (
     <StepperPanel
       icon="subsample"
-      title="Details"
+      title={t("formSections.details")}
       formSectionError={formSectionError}
       sectionName="details"
       recordType="subSample"
@@ -79,7 +80,7 @@ function DetailsSection({ setOfSubSamples }: DetailsSectionArgs): ReactNode {
           onErrorStateChange={(value) => setFormSectionError(formSectionError, "quantity", value)}
         />
       ) : (
-        <Alert severity="warning">Quantity cannot be edited as the subsamples use a variety of different units.</Alert>
+        <Alert severity="warning">{t("subsample.batch.quantityMixedUnitsWarning")}</Alert>
       )}
       <Description
         fieldOwner={setOfSubSamples}
@@ -95,6 +96,7 @@ type BatchFormArgs = {
 };
 
 function BatchForm({ records }: BatchFormArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
 
   const [setOfSubSamples, setSetOfSubSamples] = useState(new SubSampleCollection(records));
@@ -105,15 +107,20 @@ function BatchForm({ records }: BatchFormArgs): ReactNode {
   return (
     <FormWrapper
       recordType="subSample"
-      titleText={`Batch editing ${records.size} subsamples`}
+      titleText={t("subsample.batch.title", { count: records.size })}
       editableObject={searchStore.search.batchEditableInstance}
     >
-      <StepperPanel icon="subsample" title="Information" sectionName="information" recordType="subSample">
-        <BatchEditingItemsTable records={records} label="Subsamples being edited" />
+      <StepperPanel
+        icon="subsample"
+        title={t("formSections.information")}
+        sectionName="information"
+        recordType="subSample"
+      >
+        <BatchEditingItemsTable records={records} label={t("subsample.batch.itemsTableLabel")} />
       </StepperPanel>
       <OverviewSection setOfSubSamples={setOfSubSamples} recordsCount={records.size} />
       <DetailsSection setOfSubSamples={setOfSubSamples} />
-      <StepperPanel icon="subsample" title="Barcodes" sectionName="barcodes" recordType="subSample">
+      <StepperPanel icon="subsample" title={t("formSections.barcodes")} sectionName="barcodes" recordType="subSample">
         <BarcodesField fieldOwner={setOfSubSamples} factory={new AlwaysNewFactory()} />
       </StepperPanel>
     </FormWrapper>

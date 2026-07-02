@@ -26,10 +26,10 @@ describe("AddTag", () => {
 
     render(<AddTag enforceOntologies={false} onSelection={() => {}} value={[]} />);
 
-    fireEvent.click(screen.getByText("Add Tag"));
+    fireEvent.click(screen.getByText("common:tags.addTag"));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Filter suggested tags")).toBeVisible();
+      expect(screen.getByLabelText("common:tags.filterSuggestedTags")).toBeVisible();
     });
 
     // give effects a tick to flush

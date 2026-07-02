@@ -81,7 +81,7 @@ describe("GallerySections", () => {
 
   it("links Download to the Streamfile endpoint for the media id", () => {
     renderGallery();
-    const download = screen.getByRole("link", { name: /download/i });
+    const download = screen.getByRole("link", { name: /fields\.link\.download/i });
     expect(download).toHaveAttribute("href", "/Streamfile/21");
   });
 
@@ -93,7 +93,7 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(getLinkedDocuments).toHaveBeenCalledWith(21);
     expect(await screen.findByRole("link", { name: /SD7/ })).toHaveAttribute("href", "/globalId/SD7");
@@ -101,7 +101,7 @@ describe("GallerySections", () => {
 
   it("hides the related inventory items until 'Show linked docs' is clicked", () => {
     renderGallery();
-    expect(screen.queryByText("Related inventory items")).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.relatedInventoryItems.title")).not.toBeInTheDocument();
   });
 
   it("shows the Inventory items that link to this file on 'Show linked docs'", async () => {
@@ -124,10 +124,10 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
     expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
-    expect(await screen.findByText("Related inventory items")).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.title")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /SA42/ })).toHaveAttribute("href", "/globalId/SA42");
     expect(screen.getByText(/\(References\)/)).toBeInTheDocument();
   });
@@ -136,19 +136,23 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
 
-    expect(await screen.findByText(/no inventory items link to this file/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.none")).toBeInTheDocument();
   });
 
   it("shows the upload-new-version control when the file is editable (VIEW_MODE)", () => {
     renderGallery();
-    expect(screen.getByRole("button", { name: /upload new version/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+    ).toBeInTheDocument();
   });
 
   it("hides the upload-new-version control for a revision (historical) view", () => {
     renderGallery({ info: { ...imageInfo, revision: 5 } });
-    expect(screen.queryByRole("button", { name: /upload new version/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("uploads the picked file and notifies the parent on success", async () => {

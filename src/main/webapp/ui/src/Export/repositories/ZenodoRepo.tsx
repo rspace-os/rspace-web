@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person, StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
 
@@ -54,6 +55,7 @@ export default function ZenodoRepo({
   onTagsChange,
   fetchingTags,
 }: ZenodoRepoArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   /*
    * Zenodo doesn't require all of the same information as all of the other
    * repositories, but the RSpace backend is set up to require author,
@@ -88,7 +90,8 @@ export default function ZenodoRepo({
         <TextField
           name="title"
           error={submitAttempt && !inputValidations.title}
-          label="Title *"
+          label={t("export.repositories.common.title")}
+          required
           onChange={({ target: { value } }) => handleChange({ target: { name: "title", value } })}
           margin="normal"
           fullWidth
@@ -98,7 +101,8 @@ export default function ZenodoRepo({
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.description}
-          label="Description *"
+          label={t("export.repositories.common.description")}
+          required
           name="description"
           multiline
           maxRows="4"

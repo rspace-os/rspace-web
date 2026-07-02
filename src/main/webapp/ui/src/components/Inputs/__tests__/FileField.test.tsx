@@ -43,8 +43,8 @@ describe("FileField", () => {
           accept="foo"
           slotProps={{
             input: {
-              startAdornment: <div>before</div>,
-              endAdornment: <div>after</div>,
+              startAdornment: <div>{"before"}</div>,
+              endAdornment: <div>{"after"}</div>,
             },
           }}
         />

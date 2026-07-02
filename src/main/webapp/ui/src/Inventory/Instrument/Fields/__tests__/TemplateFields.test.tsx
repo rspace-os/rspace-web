@@ -69,8 +69,10 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknown field type/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /apply link/i })).toBeInTheDocument();
+    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }),
+    ).toBeInTheDocument();
   });
 
   it("renders 'None' placeholder, not 'Unknown field type', when view-only with no link set", () => {
@@ -79,8 +81,8 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknown field type/i)).not.toBeInTheDocument();
-    expect(screen.getByText("None")).toBeInTheDocument();
+    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
+    expect(screen.getByText("inventory:sample.fields.linkFieldValue.none")).toBeInTheDocument();
   });
 
   it("renders the committed link card, not 'Unknown field type', when view-only with a committed link", () => {
@@ -96,7 +98,7 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknown field type/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
     expect(screen.getByText("References")).toBeInTheDocument();
     expect(screen.getByText("SA20")).toBeInTheDocument();

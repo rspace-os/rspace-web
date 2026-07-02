@@ -6,7 +6,7 @@ import { type Locator, page } from "vitest/browser";
  */
 export class PreviewImagePage {
   get image(): Locator {
-    return page.getByRole("img", { name: "Container preview" });
+    return page.getByRole("img", { name: "Preview of A visual container" });
   }
 
   /** The marker for the nth (1-based) location, located by its displayed number. */

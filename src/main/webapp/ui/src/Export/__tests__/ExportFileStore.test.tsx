@@ -41,7 +41,7 @@ describe("ExportFileStore", () => {
           />,
         ),
     );
-    expect(screen.getByText("No filestore links found in exported content.")).toBeVisible();
+    expect(screen.getByText("workspace:export.fileStore.noLinks.heading")).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();
@@ -79,11 +79,11 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: "Show found filestore links",
+          name: "workspace:export.fileStore.foundLinks.showButton",
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: "Show found filestore links" }));
+    await user.click(screen.getByRole("button", { name: "workspace:export.fileStore.foundLinks.showButton" }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "/test.txt" }),
     ).toBeVisible();
@@ -130,11 +130,11 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: /Check file systems login details/i,
+          name: /export.fileStore.login.checkButton/i,
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: /Check file systems login details/i }));
+    await user.click(screen.getByRole("button", { name: /export.fileStore.login.checkButton/i }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "samba-folder" }),
     ).toBeVisible();

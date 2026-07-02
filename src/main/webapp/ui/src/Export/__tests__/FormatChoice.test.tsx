@@ -35,7 +35,7 @@ describe("FormatChoice", () => {
       );
       expect(
         await screen.findByRole("checkbox", {
-          name: "You have not setup a repository, to do so please activate them within Apps",
+          name: "workspace:export.format.chooser.noRepoSetup",
         }),
       ).toBeDisabled();
     });
@@ -89,7 +89,9 @@ describe("FormatChoice", () => {
           validator={mkValidator()}
         />,
       );
-      expect(await screen.findByRole("checkbox", { name: "Export to a repository" })).toBeEnabled();
+      expect(
+        await screen.findByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }),
+      ).toBeEnabled();
     });
   });
   describe("Export as Word .doc is dependent on the document conversion lib aspose.", () => {
@@ -117,7 +119,7 @@ describe("FormatChoice", () => {
           </DeploymentPropertyContext.Provider>,
         ),
       );
-      const wordElement = screen.getByText(".DOC file");
+      const wordElement = screen.getByText("workspace:export.format.chooser.formats.docHeading");
       expect(wordElement).toBeInTheDocument();
     });
     test("When aspose is disabled, .doc export option isn't present", async () => {
@@ -144,7 +146,7 @@ describe("FormatChoice", () => {
           </DeploymentPropertyContext.Provider>,
         ),
       );
-      const wordElement = screen.queryAllByText(".DOC file");
+      const wordElement = screen.queryAllByText("workspace:export.format.chooser.formats.docHeading");
       expect(wordElement.length).toBe(0);
     });
   });
@@ -180,7 +182,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: ".DOC file Word export is only available for a single document, and you have selected more than one.",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.multiple",
         }),
       ).toBeDisabled();
     });
@@ -210,7 +212,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: ".DOC file Word export is only available for a single document, and you've selected a folder.",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.folder",
         }),
       ).toBeDisabled();
     });
@@ -240,7 +242,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getByRole("radio", {
-          name: ".DOC file Word export is only available for a single document or notebook entry, and you've selected a Notebook.",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.notebook",
         }),
       ).toBeDisabled();
     });
@@ -270,7 +272,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getAllByRole("radio", {
-          name: ".DOC file All selected items are attachments — there are no RSpace documents to export.",
+          name: "workspace:export.format.chooser.formats.docHeading workspace:export.format.chooser.wordErrors.allMedia",
         })[0],
       ).toBeDisabled();
     });
@@ -299,7 +301,7 @@ describe("FormatChoice", () => {
       );
       expect(
         screen.getAllByRole("radio", {
-          name: "PDF file All selected items are attachments — there are no RSpace documents to export.",
+          name: "workspace:export.format.chooser.formats.pdfHeading workspace:export.format.chooser.formats.pdfUnavailable",
           // selecting first such radio because second will be for .doc export
         })[0],
       ).toBeDisabled();

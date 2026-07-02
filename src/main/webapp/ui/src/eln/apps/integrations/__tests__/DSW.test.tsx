@@ -82,17 +82,17 @@ describe("DSW", () => {
       fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getByRole("textbox", { name: /server url/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: /serverUrl/i }), {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
       await screen.findByRole("alert", {
-        name: /Successfully saved DSW details/,
+        name: /integrations\.dsw\.alerts\.saveNew/,
       });
       expect(integrationState.credentials.length).toBe(1);
     });
@@ -154,11 +154,11 @@ describe("DSW", () => {
       fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getByRole("textbox", { name: /Server URL/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: /serverUrl/i }), {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
@@ -228,7 +228,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
+      await screen.findByRole("alert", { name: /integrations\.dsw\.alerts\.saveExisting/ });
       expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue("unsaved new name");
     });
     test("Saving one config should not discard changes to a new config.", async () => {
@@ -279,7 +279,7 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
+      await screen.findByRole("alert", { name: /integrations\.dsw\.alerts\.saveExisting/ });
       expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue("unsaved new name");
     });
     test("Saving a new config should not discard changes to an existing one.", async () => {
@@ -327,17 +327,17 @@ describe("DSW", () => {
       fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /Server URL/i })[1], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: /serverUrl/i })[1], {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("API key")[1], {
+      fireEvent.input(screen.getAllByLabelText("apps:integrations.dsw.fields.apiKey")[1], {
         target: { value: "new api key" },
       });
 
       fireEvent.click(screen.getAllByRole("button", { name: /save/i })[1]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
+      await screen.findByRole("alert", { name: /integrations\.dsw\.alerts\.saveNew/ });
       expect(screen.getAllByRole("textbox", { name: /label/i })[0]).toHaveValue("unsaved new name");
     });
   });
@@ -418,7 +418,7 @@ describe("DSW", () => {
       fireEvent.click(screen.getByRole("button", { name: /test/i }));
       expect(
         await screen.findByRole("alert", {
-          name: /Connection details are valid/,
+          name: /integrations\.dsw\.alerts\.testValid/,
         }),
       ).toBeVisible();
       expect(mockAxios.history.get.length).toBe(1);

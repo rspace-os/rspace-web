@@ -8,6 +8,7 @@ import TableCell, { tableCellClasses } from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "@/components/GlobalId";
 import LinkableRecordFromGlobalId from "@/stores/models/LinkableRecordFromGlobalId";
 import StockMetricCell, {
@@ -78,6 +79,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   stockDisplay,
   onToggle,
 }: StoichiometryInventoryUpdateMoleculeSelectionCardProps): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   const nameId = React.useId();
   const helperTextId = React.useId();
@@ -91,7 +93,7 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
   const remainingMetricColors = getMetricColors(theme, {
     status: stockDisplay.remainingStatus,
   });
-  const moleculeName = molecule.name ?? "Unnamed molecule";
+  const moleculeName = molecule.name ?? t("stoichiometry.inventoryUpdate.unnamedMolecule");
   const mainRowHasSubRow = Boolean(helperText);
   const rowBackgroundColor = selected ? alpha(theme.palette.primary.main, 0.06) : theme.palette.background.paper;
   const sharedRowCellSx = {
@@ -157,7 +159,12 @@ export default function StoichiometryInventoryUpdateMoleculeRow({
                   onClick={() => {}}
                 />
                 {molecule.inventoryLink.stockDeducted && (
-                  <Chip size="small" variant="outlined" color="warning" label="Stock Deducted" />
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    label={t("stoichiometry.inventoryLink.stockDeducted")}
+                  />
                 )}
               </Stack>
             )}

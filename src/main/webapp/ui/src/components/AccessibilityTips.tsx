@@ -1,11 +1,12 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import Link from "@mui/material/Link";
 import { paperClasses } from "@mui/material/Paper";
 import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AccentMenuItem from "./AccentMenuItem";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 
@@ -59,8 +60,11 @@ function AccessibilityTipsPopup({
   };
   elementType: "dialog" | "page";
 }) {
+  const { t } = useTranslation("common");
   const highContrastModeIsEnabled = window.matchMedia("(prefers-contrast: more)").matches;
   const reducedMotionModeIsEnabled = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const elementTypeLabel =
+    elementType === "dialog" ? t("accessibilityTips.elementTypes.dialog") : t("accessibilityTips.elementTypes.page");
   return (
     <Popover
       open={Boolean(anchorEl)}
@@ -87,59 +91,57 @@ function AccessibilityTipsPopup({
     >
       <Stack spacing={0.25}>
         {supportsHighContrastMode && (
-          <Alert severity={highContrastModeIsEnabled ? "success" : "info"} elevation={0} aria-label="Tip">
+          <Alert
+            severity={highContrastModeIsEnabled ? "success" : "info"}
+            elevation={0}
+            aria-label={t("accessibilityTips.tip")}
+          >
             <AlertTitle>
               {highContrastModeIsEnabled
-                ? "High contrast mode is enabled."
-                : `This ${elementType} supports a high contrast mode.`}
+                ? t("accessibilityTips.highContrast.enabled")
+                : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            To {highContrastModeIsEnabled ? "disable" : "enable"}, turn {highContrastModeIsEnabled ? "off" : "on"} your
-            device&apos;s high contrast setting:
-            <br />
-            <Link href="https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696">
-              Windows
-            </Link>
-            , <Link href="https://support.apple.com/en-gb/guide/mac-help/unac089/mac">macOS</Link>,{" "}
-            <Link href="https://support.apple.com/en-us/111773">iOS</Link>,{" "}
-            <Link href="https://support.google.com/accessibility/android/answer/11183305">Android</Link>
+            <TransRichText
+              ns="common"
+              i18nKey={
+                highContrastModeIsEnabled
+                  ? "accessibilityTips.highContrast.body.disable"
+                  : "accessibilityTips.highContrast.body.enable"
+              }
+            />
           </Alert>
         )}
         {supportsReducedMotion && (
-          <Alert severity={reducedMotionModeIsEnabled ? "success" : "info"} elevation={0} aria-label="Tip">
+          <Alert
+            severity={reducedMotionModeIsEnabled ? "success" : "info"}
+            elevation={0}
+            aria-label={t("accessibilityTips.tip")}
+          >
             <AlertTitle>
               {reducedMotionModeIsEnabled
-                ? "Reduced motion mode is enabled."
-                : `This ${elementType} supports a reduced motion mode.`}
+                ? t("accessibilityTips.reducedMotion.enabled")
+                : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
-            To {reducedMotionModeIsEnabled ? "disable" : "enable"}, turn {reducedMotionModeIsEnabled ? "off" : "on"}{" "}
-            your device&apos;s reduced motion setting:
-            <br />
-            <Link href="https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0">macOS</Link>,{" "}
-            <Link href="https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios">iOS</Link>,{" "}
-            <Link href="https://support.google.com/accessibility/android/answer/11183305">Android</Link>
+            <TransRichText
+              ns="common"
+              i18nKey={
+                reducedMotionModeIsEnabled
+                  ? "accessibilityTips.reducedMotion.body.disable"
+                  : "accessibilityTips.reducedMotion.body.enable"
+              }
+            />
           </Alert>
         )}
         {supports2xZoom && (
-          <Alert severity="info" elevation={0} aria-label="Tip">
-            <AlertTitle>This {elementType} supports up to 200% zoom magnification.</AlertTitle>
-            To enable, adjust your browser&apos;s settings:
-            <br />
-            <Link href="https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop">Chrome</Link>,{" "}
-            <Link href="https://support.apple.com/en-gb/guide/safari/ibrw1068/mac">Safari</Link>,{" "}
-            <Link href="https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a">
-              Edge
-            </Link>
-            ,{" "}
-            <Link href="https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages">
-              Firefox
-            </Link>
+          <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
+            <AlertTitle>{t("accessibilityTips.zoom.supported", { elementType: elementTypeLabel })}</AlertTitle>
+            <TransRichText ns="common" i18nKey="accessibilityTips.zoom.body" />
           </Alert>
         )}
         {supportsSkipToContent && (
-          <Alert severity="info" elevation={0} aria-label="Tip">
-            <AlertTitle>This {elementType} supports a skip-to-content menu for easier navigation.</AlertTitle>
-            Press the "Tab" key to access skip links that allow you to jump directly to main page sections like
-            navigation, content, and other landmarks.
+          <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
+            <AlertTitle>{t("accessibilityTips.skipToContent.supported", { elementType: elementTypeLabel })}</AlertTitle>
+            {t("accessibilityTips.skipToContent.instructions")}
           </Alert>
         )}
       </Stack>
@@ -184,12 +186,13 @@ export function AccessibilityTipsIconButton({
   supports2xZoom,
   supportsSkipToContent,
 }: AccessibilityTipsComponentArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom && !supportsSkipToContent) return null;
   return (
     <>
       <IconButtonWithTooltip
-        title="Accessibility tips"
+        title={t("accessibilityTips.buttonLabel")}
         icon={<AccessibilityIcon />}
         size="small"
         onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
@@ -233,12 +236,13 @@ export function AccessibilityTipsMenuItem({
 }: {
   onClose: () => void;
 } & AccessibilityTipsComponentArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   if (!supportsHighContrastMode && !supportsReducedMotion && !supports2xZoom && !supportsSkipToContent) return null;
   return (
     <>
       <AccentMenuItem
-        title="Accessibility Tips"
+        title={t("accessibilityTips.menuLabel")}
         avatar={<AccessibilityIcon />}
         onClick={(e) => {
           setAnchorEl(e.currentTarget);

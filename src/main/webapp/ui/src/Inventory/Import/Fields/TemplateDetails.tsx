@@ -8,6 +8,7 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import useStores from "../../../stores/use-stores";
 import * as Parsers from "../../../util/parsers";
 import TemplatePicker from "../../components/Picker/TemplatePicker";
@@ -15,6 +16,7 @@ import SummaryInfo from "../../Template/SummaryInfo";
 import TemplateName from "./TemplateName";
 
 function TemplateDetails(): ReactNode {
+  const { t } = useTranslation("inventory");
   const { importStore } = useStores();
 
   return (
@@ -31,7 +33,11 @@ function TemplateDetails(): ReactNode {
         }
       }}
     >
-      <FormControlLabel value="true" control={<Radio color="primary" />} label="Create new template." />
+      <FormControlLabel
+        value="true"
+        control={<Radio color="primary" />}
+        label={t("import.templateDetails.createNewTemplate")}
+      />
       <Box sx={{ ml: 4, mb: 4, mt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormGroup sx={{ maxWidth: 660 }}>
@@ -39,7 +45,11 @@ function TemplateDetails(): ReactNode {
           </FormGroup>
         </FormControl>
       </Box>
-      <FormControlLabel value="false" control={<Radio color="primary" />} label="Choose existing template." />
+      <FormControlLabel
+        value="false"
+        control={<Radio color="primary" />}
+        label={t("import.templateDetails.chooseExistingTemplate")}
+      />
       <Box sx={{ ml: 4 }}>
         <SummaryInfo template={importStore.importData?.template ?? null} />
         <Box sx={{ mb: 1 }}>
@@ -53,7 +63,7 @@ function TemplateDetails(): ReactNode {
           }}
         />
         {!importStore.importData?.createNewTemplate && !importStore.importData?.template ? (
-          <Alert severity="info">{"Select a template from which these imported samples will be created."}</Alert>
+          <Alert severity="info">{t("import.templateDetails.selectTemplate")}</Alert>
         ) : null}
       </Box>
     </RadioGroup>

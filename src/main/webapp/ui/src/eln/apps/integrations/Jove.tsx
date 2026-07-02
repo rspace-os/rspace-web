@@ -2,11 +2,16 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/jove";
 import JoveIcon from "../../../assets/branding/jove/logo.svg";
 import IntegrationCard from "../IntegrationCard";
 
 function Jove(): React.ReactNode {
+  const { t } = useTranslation("apps");
+  const exampleDomain = "jove.com";
+  const exampleUrl = "https://www.jove.com/v/60908/...";
+  const appExampleUrl = "https://app.jove.com/v/60908/...";
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -16,37 +21,39 @@ function Jove(): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="JoVE"
+        name={t("integrations.jove.name")}
         integrationState={{
           mode: "EXTERNAL",
           credentials: null,
         }}
-        explanatoryText="Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal)."
+        explanatoryText={t("integrations.jove.description")}
         image={JoveIcon}
         color={LOGO_COLOR}
         update={() => {}}
-        usageText="Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
-        helpLinkText="Video integration docs"
+        usageText={t("integrations.jove.usage")}
+        helpLinkText={t("integrations.jove.helpLink")}
         website="jove.com"
         docLink="videoIntegration"
         setupSection={
           <Stack direction="column" sx={{ gap: 2 }}>
             <ol>
               <li>
-                Open a document in the Documents Editor and click the <strong>Video</strong>
-                button in the editor toolbar, the insert menu, or the slash menu.
+                {t("integrations.jove.setup.openVideo")} <strong>{t("integrations.jove.setup.toolbarButton")}</strong>{" "}
+                {t("integrations.jove.setup.toolbarSuffix")}
               </li>
               <li>
-                Paste a full JoVE URL from a supported <code>jove.com</code> page, for example{" "}
-                <code>https://www.jove.com/v/60908/...</code> or <code>https://app.jove.com/v/60908/...</code>.
+                {t("integrations.jove.setup.pasteUrl")} <code>{exampleDomain}</code>{" "}
+                {t("integrations.jove.setup.pasteUrlSuffix")} <code>{exampleUrl}</code>{" "}
+                {t("integrations.jove.setup.pasteUrlOr")} <code>{appExampleUrl}</code>
+                {"."}
               </li>
               <li>
-                Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position.
+                {t("integrations.jove.setup.selectInsert")} <strong>{t("integrations.jove.setup.insertButton")}</strong>{" "}
+                {t("integrations.jove.setup.toPlace")}
               </li>
             </ol>
             <Typography variant="body2">
-              <strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video
-              editor action when you want an embed.
+              <strong>{t("integrations.jove.setup.note")}</strong> {t("integrations.jove.setup.noteText")}
             </Typography>
           </Stack>
         }

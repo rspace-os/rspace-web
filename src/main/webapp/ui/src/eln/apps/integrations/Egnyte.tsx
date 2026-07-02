@@ -5,6 +5,7 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -20,6 +21,7 @@ type EgnyteArgs = {
  * Egnyte has a domain URL that is configured by the this text field.
  */
 function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [url, setUrl] = useState(integrationState.credentials.EGNYTE_DOMAIN);
 
   return (
@@ -31,9 +33,9 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Egnyte"
+        name={t("integrations.egnyte.name")}
         integrationState={integrationState}
-        explanatoryText="Collaborate, sync and share your files with a security-focused enterprise solution."
+        explanatoryText={t("integrations.egnyte.description")}
         image={EgnyteIcon}
         color={LOGO_COLOR}
         update={(newMode) => {
@@ -42,16 +44,16 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
             credentials: integrationState.credentials,
           });
         }}
-        usageText="You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
-        helpLinkText="Cloud Storage integrations docs"
+        usageText={t("integrations.egnyte.usage")}
+        helpLinkText={t("integrations.egnyte.helpLink")}
         website="egnyte.com"
         docLink="cloudstorage"
         setupSection={
           <>
             <ol>
-              <li>Provide your Egnyte domain URL and Save.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li>
+              <li>{t("integrations.egnyte.setup.provideDomain")}</li>
+              <li>{t("integrations.egnyte.setup.enable")}</li>
+              <li>{t("integrations.egnyte.setup.toolbar")}</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
@@ -69,7 +71,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    label="Egnyte Domain URL"
+                    label={t("integrations.egnyte.fields.domainUrl")}
                     size="small"
                     value={url.orElse("")}
                     onChange={({ target: { value } }) => {
@@ -78,7 +80,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

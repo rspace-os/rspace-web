@@ -77,9 +77,9 @@ describe("DocumentSections (structured document)", () => {
     // version
     expect(screen.getByText("4")).toBeInTheDocument();
     // status maps to a friendly label
-    expect(screen.getByText(/viewable & editable/i)).toBeInTheDocument();
+    expect(screen.getByText(/fields\.link\.documentSections\.statusLabels\.viewMode/i)).toBeInTheDocument();
     // signature status maps to a friendly label
-    expect(screen.getByText(/^unsigned$/i)).toBeInTheDocument();
+    expect(screen.getByText(/fields\.link\.documentSections\.signatureLabels\.unsigned/i)).toBeInTheDocument();
     // tags are comma-spaced
     expect(screen.getByText(/alpha, beta/i)).toBeInTheDocument();
   });
@@ -106,12 +106,12 @@ describe("DocumentSections (structured document)", () => {
     const user = userEvent.setup();
     renderDoc();
 
-    expect(screen.getByText(/linked by 2 docs/i)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /show linked docs/i }));
+    expect(screen.getByText(/fields\.link\.documentSections\.linkedBy\.linkedByCount/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /fields\.link\.documentSections\.linkedBy\.showLinked/i }));
 
     expect(getLinkedByRecords).toHaveBeenCalledWith(123);
     expect(await screen.findByRole("link", { name: /SD11/ })).toHaveAttribute("href", "/globalId/SD11");
-    expect(screen.getByText(/2 private docs belonging to grace hopper/i)).toBeInTheDocument();
+    expect(screen.getByText(/fields\.link\.documentSections\.linkedBy\.privateDocs/i)).toBeInTheDocument();
   });
 
   it("renders related inventory items from the referencing-items hook", () => {
@@ -144,14 +144,16 @@ describe("DocumentSections (structured document)", () => {
         sharedGroupsAndAccess: { "Lab Group": "READ" },
       },
     });
-    expect(screen.getByText(/lab group/i)).toBeInTheDocument();
+    expect(screen.getByText(/fields\.link\.documentSections\.sharing\.withGroup/i)).toBeInTheDocument();
   });
 
   it("shows the public link when the document is published", async () => {
     getPublicLink.mockResolvedValue("abc-123");
     renderDoc();
     expect(getPublicLink).toHaveBeenCalledWith("SD123");
-    const publicLink = await screen.findByRole("link", { name: /public link/i });
+    const publicLink = await screen.findByRole("link", {
+      name: /fields\.link\.documentSections\.sharing\.publicLink/i,
+    });
     expect(publicLink).toHaveAttribute("href", expect.stringContaining("/public/publishedView/document/abc-123"));
   });
 
@@ -161,8 +163,10 @@ describe("DocumentSections (structured document)", () => {
     // the ELN routes these to /notebook/, not /document/ (recordInfoPanel.js).
     getPublicLink.mockResolvedValue("parent-link?initialRecordToDisplay=123");
     renderDoc();
-    expect(await screen.findByText(/in a published notebook/i)).toBeInTheDocument();
-    const publicLink = screen.getByRole("link", { name: /public link/i });
+    expect(
+      await screen.findByText(/fields\.link\.documentSections\.sharing\.inPublishedNotebook/i),
+    ).toBeInTheDocument();
+    const publicLink = screen.getByRole("link", { name: /fields\.link\.documentSections\.sharing\.publicLink/i });
     expect(publicLink).toHaveAttribute(
       "href",
       expect.stringContaining("/public/publishedView/notebook/parent-link?initialRecordToDisplay=123"),
@@ -185,7 +189,7 @@ describe("DocumentSections (version-pinned SD)", () => {
   it("shows the 'may not be the latest version' header with the doc id as plain text (no link) when pinned", () => {
     renderPinned();
     const note = screen.getByRole("note");
-    expect(note).toHaveTextContent(/describes version 3 of a document SD599, which may not be the latest version/i);
+    expect(note).toHaveTextContent(/fields\.link\.documentSections\.versionNote/i);
     // The document id in the warning is plain text, not a link to the latest version.
     expect(within(note).queryByRole("link")).not.toBeInTheDocument();
   });
@@ -226,6 +230,6 @@ describe("DocumentSections (notebook)", () => {
   it("uses notebook wording in the sharing/publication section", async () => {
     getPublicLink.mockResolvedValue(null);
     renderNotebook();
-    expect(await screen.findByText(/this notebook is not published/i)).toBeInTheDocument();
+    expect(await screen.findByText(/fields\.link\.documentSections\.sharing\.notPublished/i)).toBeInTheDocument();
   });
 });

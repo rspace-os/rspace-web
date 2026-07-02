@@ -70,14 +70,12 @@ describe("Grant User PI Role", () => {
       const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(screen.getByRole("button", { name: /usersPage\.actionsLabel/ }));
+      await user.click(await screen.findByRole("menuitem", { name: /system:usersPage\.piRoleDialog\.grantMenuItem/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(
-        within(screen.getByRole("dialog")).getByText(
-          "Please set your verification password in My RSpace before performing this action.",
-        ),
+        within(screen.getByRole("dialog")).getByText("system:usersPage.piRoleDialog.setVerificationPassword"),
       ).toBeVisible();
     },
     40 * 1000,
@@ -114,14 +112,14 @@ describe("Grant User PI Role", () => {
       const checkbox = within(await screen.findByRole("row", { name: /user8h/ })).getByRole("checkbox");
 
       await user.click(checkbox);
-      await user.click(screen.getByRole("button", { name: /Actions/ }));
-      await user.click(await screen.findByRole("menuitem", { name: /Grant PI role/ }));
+      await user.click(screen.getByRole("button", { name: /usersPage\.actionsLabel/ }));
+      await user.click(await screen.findByRole("menuitem", { name: /system:usersPage\.piRoleDialog\.grantMenuItem/ }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
       await waitFor(() => {
         expect(
           screen.getByText((content) => {
-            return content === "To grant the PI role to please re-enter your password.";
+            return content === "system:usersPage.piRoleDialog.grantPrompt";
           }),
         ).toBeVisible();
       });

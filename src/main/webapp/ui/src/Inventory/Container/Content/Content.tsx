@@ -2,6 +2,8 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
+import { useTranslation } from "react-i18next";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import docLinks from "../../../assets/DocLinks";
 import SearchContext from "../../../stores/contexts/Search";
 import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
@@ -16,6 +18,7 @@ import SearchViewComponent from "../../Search/SearchView";
 import ContentContextMenu from "./ContentContextMenu";
 
 function ImageContainerZoomHelpText() {
+  const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -26,24 +29,24 @@ function ImageContainerZoomHelpText() {
    */
   if (uiStore.isTouchDevice && isSingleColumnLayout) return null;
 
-  let zoomText: string = "Tip: Use Ctrl and the - key";
+  let zoomText: string = t("container.content.zoom.ctrlTip");
   try {
     // isMac relies on a deprecated browser API so the call may fail
-    if (isMac()) zoomText = "Tip: Use Command and the - key";
+    if (isMac()) zoomText = t("container.content.zoom.macTip");
   } catch (_) {
     return null;
   }
-  zoomText = `${zoomText} to zoom the page out to view more of the image.`;
 
   const helpText = isSingleColumnLayout ? (
     zoomText
   ) : (
     <>
-      {zoomText} The{" "}
-      <a href={docLinks.panelAdjuster} rel="noreferrer" target="_blank">
-        Panel Adjuster
-      </a>{" "}
-      can also be used to provide more room to fully display the image.
+      {zoomText}{" "}
+      <TransRichText
+        ns="inventory"
+        i18nKey="container.content.zoom.panelAdjuster"
+        components={{ a: richTextLink({ href: docLinks.panelAdjuster, rel: "noreferrer", target: "_blank" }) }}
+      />
     </>
   );
 
@@ -51,6 +54,7 @@ function ImageContainerZoomHelpText() {
 }
 
 function _Content() {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
   const activeResult = searchStore.activeResult;
   if (!(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
@@ -70,16 +74,13 @@ function _Content() {
     void search.fetcher.performInitialSearch(params);
   };
 
-  const locationsAlert =
-    "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.";
-
   return (
     <>
       {activeResult.cType === "IMAGE" &&
         !activeResult.loading &&
         (!activeResult.locationsImage || !activeResult.locationsCount) && (
           <Alert severity="warning" sx={{ mb: 1 }}>
-            {locationsAlert}
+            {t("container.content.locationsAlert")}
           </Alert>
         )}
       <SearchContext.Provider

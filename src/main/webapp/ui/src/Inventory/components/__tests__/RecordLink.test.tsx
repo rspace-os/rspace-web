@@ -57,7 +57,7 @@ describe("RecordLink", () => {
     const bench = makeMockBench({});
     const { setVisiblePanelSpy } = renderRecordLink(bench);
 
-    await user.click(screen.getByRole("link", { name: /User User's Bench/ }));
+    await user.click(screen.getByRole("link", { name: /inventory:moveToTarget.ownerBench/ }));
 
     expect(setVisiblePanelSpy).toHaveBeenCalledWith("left");
   });

@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import i18n from "@/modules/common/i18n";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GlobalId, Id } from "../definitions/BaseRecord";
 import type { ExtraField, ExtraFieldAttrs, ExtraFieldType, ExtraInventoryLink } from "../definitions/ExtraField";
@@ -92,37 +93,36 @@ export default class ExtraFieldModel implements ExtraField {
     if (this.editing && !this.deleteFieldRequest) {
       return IsInvalid(
         this.initial
-          ? "A new field is being added. Apply or discard it before saving."
-          : `The field "${this.name}" is being edited. Update or cancel the edit before saving.`,
+          ? i18n.t("inventory:fields.extraFields.validation.newFieldBeingAdded")
+          : i18n.t("inventory:fields.extraFields.validation.fieldBeingEdited", { name: this.name }),
       );
     }
-    if (!this.name) return IsInvalid("Names of extra fields cannot be empty.");
-    if (this.name.length > 255) return IsInvalid("Names of extra fields cannot exceed 255 characters.");
+    if (!this.name) return IsInvalid(i18n.t("inventory:fields.extraFields.validation.emptyName"));
+    if (this.name.length > 255) return IsInvalid(i18n.t("inventory:fields.extraFields.validation.nameTooLong"));
     if (this.type === "Text") {
-      if (typeof this.content !== "string") return IsInvalid("The content of textual extra fields must be a string.");
+      if (typeof this.content !== "string")
+        return IsInvalid(i18n.t("inventory:fields.extraFields.validation.textContentMustBeString"));
       if (this.content.length > 250)
-        return IsInvalid("The content of textual extra fields cannot exceed 250 characters.");
+        return IsInvalid(i18n.t("inventory:fields.extraFields.maxCharacters", { max: 250 }));
       return IsValid();
     }
     if (this.type === "Number") {
-      if (this.invalidInput) return IsInvalid("The content of numerical extra fields must be a valid number.");
+      if (this.invalidInput) return IsInvalid(i18n.t("inventory:fields.extraFields.validNumber"));
       return IsValid();
     }
     if (this.type === "Link") {
       if (this.invalidInput)
-        return IsInvalid(
-          `The link field "${this.name}" needs its Target Global ID set. Set a target or cancel the edit.`,
-        );
+        return IsInvalid(i18n.t("inventory:fields.extraFields.validation.linkTargetRequired", { name: this.name }));
       // an absent payload is the legitimate "No link set" empty state (the
       // backend allows payload-less Link extra-fields), so it must not block
       // record-level Save; only a half-set payload is invalid
       if (!this.link) return IsValid();
       if (!this.link.relationType || !this.link.targetGlobalId) {
-        return IsInvalid("Link fields require a relation type and target.");
+        return IsInvalid(i18n.t("inventory:fields.extraFields.validation.linkRelationAndTargetRequired"));
       }
       return IsValid();
     }
-    return IsInvalid("Invalid field type");
+    return IsInvalid(i18n.t("inventory:fields.extraFields.validation.invalidFieldType"));
   }
 
   get hasContent(): boolean {

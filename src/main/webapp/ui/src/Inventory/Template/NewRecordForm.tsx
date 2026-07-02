@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
 import TemplateModel from "../../stores/models/TemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -21,6 +21,7 @@ import Fields from "./Fields/CustomFields";
 import QuantityUnits from "./Fields/QuantityUnits";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -35,7 +36,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
 
   return (
     <StepperPanel
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="sampleTemplate"
@@ -45,22 +46,25 @@ const OverviewSection = observer(({ activeResult }: { activeResult: TemplateMode
         record={activeResult}
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
-      <ImageField
-        fieldOwner={activeResult}
-        alt="A visual representation of the samples that will be created from this new template"
-      />
+      <ImageField fieldOwner={activeResult} alt={t("template.newImageAlt")} />
     </StepperPanel>
   );
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
 
   return (
-    <StepperPanel title="Details" sectionName="details" formSectionError={formSectionError} recordType="sampleTemplate">
+    <StepperPanel
+      title={t("formSections.details")}
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="sampleTemplate"
+    >
       <Expiry
         fieldOwner={activeResult}
         onErrorStateChange={(value) => setFormSectionError(formSectionError, "expiry", value)}
@@ -85,6 +89,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: TemplateModel
 });
 
 const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -92,7 +97,7 @@ const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel 
 
   return (
     <StepperPanel
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="sampleTemplate"
@@ -103,6 +108,7 @@ const FieldsSection = observer(({ activeResult }: { activeResult: TemplateModel 
 });
 
 export default function NewRecordForm(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -113,20 +119,17 @@ export default function NewRecordForm(): React.ReactNode {
       <Stepper
         helpLink={{
           link: docLinks.createTemplate,
-          title: "Info on creating new templates.",
+          title: t("createNew.helpTitles.template"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.sampleTemplate}`}
+        titleText={t("createNew.newTemplate")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>
           <OverviewSection activeResult={activeResult} />
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
-        <StepperPanel title="Access Permissions" sectionName="permissions" recordType="sampleTemplate">
-          <AccessPermissions
-            fieldOwner={activeResult}
-            additionalExplanation="This template will also be accessible to anyone who has access to a sample that has been created from it."
-          />
+        <StepperPanel title={t("formSections.accessPermissions")} sectionName="permissions" recordType="sampleTemplate">
+          <AccessPermissions fieldOwner={activeResult} additionalExplanation={t("template.permissionsExplanation")} />
         </StepperPanel>
         <FieldsSection activeResult={activeResult} />
       </Stepper>

@@ -41,9 +41,7 @@ describe("ExportRepo", () => {
     await waitFor(() => {
       expect(props.fetchTags).toHaveBeenCalled();
     });
-    expect(
-      screen.getByText("Please choose one of your configured repositories to submit your export to:"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("workspace:export.repositories.choiceLabel")).toBeInTheDocument();
   });
   test("Should display repository list with two repositories", async () => {
     render(<ExportRepo {...props} />);
@@ -106,7 +104,7 @@ describe("ExportRepo", () => {
                 expect(props.fetchTags).toHaveBeenCalled();
               });
               const repoChoice = await screen.findByRole("radiogroup", {
-                name: "Repository choice",
+                name: "workspace:export.repositories.labels.choice",
               });
               expect(
                 await within(repoChoice).findByRole("radio", {
@@ -115,20 +113,20 @@ describe("ExportRepo", () => {
               ).toBeChecked();
               fireEvent.click(
                 await screen.findByRole("checkbox", {
-                  name: "Associate export with a Data Management Plans (DMPs)",
+                  name: "workspace:export.repositories.dmp.associateLabel",
                 }),
               );
 
               const dmpTable = await screen.findByRole("table");
               (
                 await within(dmpTable).findAllByRole("checkbox", {
-                  name: "Plan selection",
+                  name: "apps:dmpIntegrations.dialog.selectPlanLabel",
                 })
               ).forEach((c, i) => {
                 if (indexes.has(i)) fireEvent.click(c);
               });
               expect(await screen.findByRole("alert")).toHaveTextContent(
-                "Only one DMP can be associated with an export to Zenodo.",
+                "workspace:export.repositories.dmp.zenodoLimit",
               );
             },
           )

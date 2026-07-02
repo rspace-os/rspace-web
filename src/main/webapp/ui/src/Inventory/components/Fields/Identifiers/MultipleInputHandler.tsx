@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import AddButton from "../../../../components/AddButton";
 import DateField from "../../../../components/Inputs/DateField";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -34,6 +35,7 @@ type MultipleInputArgs = {
  * If field has options, an additional dropdown is rendered.
  */
 const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputArgs): ReactNode => {
+  const { t } = useTranslation("inventory");
   const itemLabel: string = field.key.slice(0, field.key.length - 1);
 
   const isDuplicate = (v: string): boolean =>
@@ -126,16 +128,16 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   id={`IdentifierRecommendedField-${field.key}-${i}`}
                   disabled={false}
                   value={v.value ?? ""}
-                  placeholder={`Enter value for new ${itemLabel}`}
+                  placeholder={t("fields.identifiers.multipleInput.enterNewValue", { itemLabel })}
                   onChange={({ target: { value } }) => {
                     handleUpdateValue(i, "value", value);
                   }}
                   error={(editable && isDuplicate(String(v.value))) || isEmpty(String(v.value))}
                   helperText={
                     editable && isEmpty(String(v.value))
-                      ? "Enter a value (or remove entry)"
+                      ? t("fields.identifiers.multipleInput.enterValueOrRemove")
                       : editable && isDuplicate(String(v.value))
-                        ? "This value is a duplicate. Please enter a unique one."
+                        ? t("fields.identifiers.multipleInput.duplicateValue")
                         : null
                   }
                   slotProps={{
@@ -170,16 +172,19 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                             id={`IdentifierRecommendedSubField-${subField.key}-${i}`}
                             disabled={false}
                             value={subField.value ?? ""}
-                            placeholder={`Enter value for ${
-                              RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS]
-                            }`}
+                            placeholder={t("fields.identifiers.multipleInput.enterValueFor", {
+                              fieldLabel:
+                                RECOMMENDED_FIELDS_LABELS[subField.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
+                            })}
                             onChange={({ target: { value } }) => {
                               handleUpdateValue(i, subField.key, value);
                             }}
                             /* value is optional for most subFields, not all */
                             error={isEmpty(String(subField.value)) && isRequired(subField.key)}
                             helperText={
-                              isEmpty(String(subField.value)) && isRequired(subField.key) ? "A value is required" : null
+                              isEmpty(String(subField.value)) && isRequired(subField.key)
+                                ? t("fields.identifiers.multipleInput.valueRequired")
+                                : null
                             }
                             slotProps={{
                               inputLabel: { shrink: true },
@@ -201,14 +206,15 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   subFields(field.value[i]).map((sf) => (
                     <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
                       <Grid sx={{ minWidth: "150px" }}>
-                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}:
+                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
+                        {":"}
                       </Grid>
                       <Grid>
                         {sf.value ? (
                           String(sf.value)
                         ) : (
                           <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
-                            None
+                            {t("fields.identifiers.wrapper.none")}
                           </Typography>
                         )}
                       </Grid>
@@ -229,7 +235,7 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   value={field.value[i].type}
                   onChange={({ target: { value } }) => handleUpdateValue(i, "type", value as string)}
                   inputProps={{
-                    "aria-label": field.selectAriaLabel ?? "",
+                    "aria-label": field.selectLabelLabel ?? "",
                   }}
                 >
                   {field.options.map((option) => (
@@ -255,7 +261,11 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
       actions={
         <AddButton
           disabled={!editable}
-          title={editable ? `Add a new ${itemLabel}` : `To add a ${itemLabel}, press Edit first`}
+          title={
+            editable
+              ? t("fields.identifiers.multipleInput.addNew", { itemLabel })
+              : t("fields.identifiers.multipleInput.addEditFirst", { itemLabel })
+          }
           onClick={handleAdd}
         />
       }
@@ -291,7 +301,11 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
             <Grid sx={{ marginRight: "6px" }}>
               <RemoveButton
                 disabled={!editable}
-                title={editable ? `Remove this ${itemLabel}` : `To remove any ${itemLabel}, press Edit first`}
+                title={
+                  editable
+                    ? t("fields.identifiers.multipleInput.removeThis", { itemLabel })
+                    : t("fields.identifiers.multipleInput.removeEditFirst", { itemLabel })
+                }
                 onClick={() => handleRemove(i)}
               />
             </Grid>

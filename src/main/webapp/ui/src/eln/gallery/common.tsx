@@ -77,21 +77,25 @@ export const parseGallerySectionFromUrlSearchParams = (searchParams: URLSearchPa
     parseGallerySection,
   );
 
-/**
- * Mapping of gallery sections to a label that can be shown in the UI.
- */
-export const gallerySectionLabel = {
-  Images: "Images",
-  Audios: "Audio",
-  Videos: "Videos",
-  Documents: "Documents",
-  Chemistry: "Chemistry",
-  DMPs: "DMPs",
-  NetworkFiles: "Filestores",
-  Snippets: "Snippets",
-  Miscellaneous: "Miscellaneous",
-  PdfDocuments: "Exports",
-};
+const gallerySectionLabelKeys = {
+  Images: "sections.images",
+  Audios: "sections.audios",
+  Videos: "sections.videos",
+  Documents: "sections.documents",
+  Chemistry: "sections.chemistry",
+  DMPs: "sections.dmps",
+  NetworkFiles: "sections.networkFiles",
+  Snippets: "sections.snippets",
+  Miscellaneous: "sections.miscellaneous",
+  PdfDocuments: "sections.pdfDocuments",
+} as const satisfies Record<GallerySection, string>;
+
+type GallerySectionLabelKey = (typeof gallerySectionLabelKeys)[GallerySection];
+
+export const translateGallerySectionLabel = (
+  section: GallerySection,
+  t: (key: GallerySectionLabelKey) => string,
+): string => t(gallerySectionLabelKeys[section]);
 
 /**
  * Mapping of gallery sections to icons that can be shown in the UI.

@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -60,6 +61,7 @@ export default function useGroups(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   const getGroups = React.useCallback(async (): Promise<ReadonlyArray<Group>> => {
     try {
@@ -73,15 +75,15 @@ export default function useGroups(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error fetching groups",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("apiErrors.groups.fetchManyFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not fetch groups", {
         cause: e,
       });
     }
-  }, [getToken, addAlert]);
+  }, [getToken, addAlert, t]);
 
   const getGroup = React.useCallback(
     async (groupId: number): Promise<GroupDetail> => {
@@ -96,8 +98,8 @@ export default function useGroups(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching group",
-            message: getErrorMessage(e, "An unknown error occurred."),
+            title: t("apiErrors.groups.fetchOneFailed"),
+            message: getErrorMessage(e, t("apiErrors.unknown")),
           }),
         );
         throw new Error("Could not fetch group", {
@@ -105,7 +107,7 @@ export default function useGroups(): {
         });
       }
     },
-    [getToken, addAlert],
+    [getToken, addAlert, t],
   );
 
   return { getGroups, getGroup };

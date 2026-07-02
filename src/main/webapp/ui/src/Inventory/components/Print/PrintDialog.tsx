@@ -13,7 +13,9 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
+import TransRichText, { richTextLink } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { Optional } from "@/util/optional";
@@ -69,13 +71,14 @@ type OptionsWrapperArgs = {
 };
 
 export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOptions }: OptionsWrapperArgs): ReactNode => {
+  const { t } = useTranslation("inventory");
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
     <FormControl component="fieldset" sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}>
       <Stack spacing={3}>
         <FormControl>
-          <FormLabel id="identifiers-type-radiogroup-label">Identifier Type</FormLabel>
+          <FormLabel id="identifiers-type-radiogroup-label">{t("print.options.identifierType")}</FormLabel>
           <RadioGroup
             aria-labelledby="identifiers-type-radiogroup-label"
             value={printOptions.printIdentifierType}
@@ -88,16 +91,16 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
             }}
             row
           >
-            <FormControlLabel value="GLOBAL ID" control={<Radio size="small" />} label="Global ID" />
-            <FormControlLabel value="IGSN" control={<Radio size="small" />} label="IGSN ID" />
+            <FormControlLabel value="GLOBAL ID" control={<Radio size="small" />} label={t("print.options.globalId")} />
+            <FormControlLabel value="IGSN" control={<Radio size="small" />} label={t("print.options.igsnId")} />
           </RadioGroup>
           {printOptions.printIdentifierType === "IGSN" &&
             itemsToPrint.some((record) => record.identifiers.length === 0) && (
-              <Alert severity="error">Some of the selected records do not have an IGSN ID.</Alert>
+              <Alert severity="error">{t("print.options.igsnMissing")}</Alert>
             )}
         </FormControl>
         <FormControl>
-          <FormLabel id="printer-type-radiogroup-label">Printer Type</FormLabel>
+          <FormLabel id="printer-type-radiogroup-label">{t("print.options.printerType")}</FormLabel>
           <RadioGroup
             aria-labelledby="printer-type-radiogroup-label"
             value={printOptions.printerType}
@@ -110,17 +113,21 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
             }}
             row
           >
-            <FormControlLabel value="GENERIC" control={<Radio size="small" />} label="Standard Printer" />
-            <FormControlLabel value="LABEL" control={<Radio size="small" />} label="Label Printer" />
+            <FormControlLabel
+              value="GENERIC"
+              control={<Radio size="small" />}
+              label={t("print.options.standardPrinter")}
+            />
+            <FormControlLabel value="LABEL" control={<Radio size="small" />} label={t("print.options.labelPrinter")} />
           </RadioGroup>
           {printOptions.printerType === "GENERIC" ? (
-            <Alert severity="info">Print multiple labels per sheet (e.g. A4 / A3 / Letter).</Alert>
+            <Alert severity="info">{t("print.options.standardPrinterHint")}</Alert>
           ) : (
-            <Alert severity="info">Print one label per sticker (Zebra printer).</Alert>
+            <Alert severity="info">{t("print.options.labelPrinterHint")}</Alert>
           )}
         </FormControl>
         <FormControl>
-          <FormLabel id="print-layout-radiogroup-label">Print Layout</FormLabel>
+          <FormLabel id="print-layout-radiogroup-label">{t("print.options.printLayout")}</FormLabel>
           <RadioGroup
             aria-labelledby="print-layout-radiogroup-label"
             value={printOptions.printLayout}
@@ -133,22 +140,23 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
             }}
             row
           >
-            <FormControlLabel value="FULL" control={<Radio size="small" />} label="Full" />
-            <FormControlLabel value="BASIC" control={<Radio size="small" />} label="Basic" />
+            <FormControlLabel value="FULL" control={<Radio size="small" />} label={t("print.options.full")} />
+            <FormControlLabel value="BASIC" control={<Radio size="small" />} label={t("print.options.basic")} />
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              The label shape should match the selected layout. Also, you might have problems when using Safari. Please
-              check barcodes{" "}
-              <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer">
-                documentation
-              </a>
-              .
+              <TransRichText
+                ns="inventory"
+                i18nKey="print.options.labelShapeHint"
+                components={{
+                  a: richTextLink({ href: docLinks.barcodesPrinting, target: "_blank", rel: "noreferrer" }),
+                }}
+              />
             </Alert>
           )}
         </FormControl>
         <FormControl>
-          <FormLabel id="print-copties-radiogroup-label">Print Copies</FormLabel>
+          <FormLabel id="print-copties-radiogroup-label">{t("print.options.printCopies")}</FormLabel>
           <RadioGroup
             aria-labelledby="print-copties-radiogroup-label"
             value={printOptions.printCopies}
@@ -160,12 +168,12 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
                 });
             }}
           >
-            <FormControlLabel value="1" control={<Radio size="small" />} label="Each barcode once" />
-            <FormControlLabel value="2" control={<Radio size="small" />} label="Each barcode twice (raffle book)" />
+            <FormControlLabel value="1" control={<Radio size="small" />} label={t("print.options.eachBarcodeOnce")} />
+            <FormControlLabel value="2" control={<Radio size="small" />} label={t("print.options.eachBarcodeTwice")} />
           </RadioGroup>
         </FormControl>
         <FormControl>
-          <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
+          <FormLabel id="print-size-radiogroup-label">{t("print.options.printSize")}</FormLabel>
           {printOptions.printerType === "GENERIC" && printOptions.printCopies === "1" && (
             <RadioGroup
               aria-labelledby="print-size-radiogroup-label"
@@ -179,18 +187,18 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
               }}
               row
             >
-              <FormControlLabel value="LARGE" control={<Radio size="small" />} label="Large" />
-              <FormControlLabel value="SMALL" control={<Radio size="small" />} label="Small" />
+              <FormControlLabel value="LARGE" control={<Radio size="small" />} label={t("print.options.large")} />
+              <FormControlLabel value="SMALL" control={<Radio size="small" />} label={t("print.options.small")} />
             </RadioGroup>
           )}
           <Alert severity="info">
             {printOptions.printerType === "LABEL"
-              ? "For label printers size is set automatically (to match a range of label sizes)."
+              ? t("print.options.labelPrinterAutoSize")
               : printOptions.printCopies === "2"
-                ? "Applying a horizontal layout."
+                ? t("print.options.horizontalLayout")
                 : printOptions.printSize === "LARGE"
-                  ? "Full width (4cm)."
-                  : "Half width (2cm)."}
+                  ? t("print.options.fullWidth")
+                  : t("print.options.halfWidth")}
           </Alert>
         </FormControl>
       </Stack>
@@ -206,6 +214,7 @@ function PrintDialog({
   printSize,
   closeMenu,
 }: PrintDialogArgs): ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const { uiStore, trackingStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const componentToPrint = useRef<HTMLDivElement>(null);
@@ -239,7 +248,7 @@ function PrintDialog({
     onPrintError: (_errorLocation, error) => {
       uiStore.addAlert(
         mkAlert({
-          title: "Print error.",
+          title: t("print.dialog.printError"),
           message: typeof error === "string" ? error : error.message || "",
           variant: "error",
           isInfinite: true,
@@ -251,7 +260,7 @@ function PrintDialog({
   const HelperText = () => (
     <>
       <Typography variant="body2" sx={{ textAlign: "center", mb: 1 }}>
-        <strong>Preview Barcode Label Layout</strong>
+        <strong>{t("print.dialog.previewLabelLayout")}</strong>
       </Typography>
     </>
   );
@@ -294,7 +303,7 @@ function PrintDialog({
       .catch((e) => {
         uiStore.addAlert(
           mkAlert({
-            title: "Unable to retrieve barcode images.",
+            title: t("print.dialog.unableToRetrieveBarcodeImages"),
             message: e instanceof Error ? e.message : "",
             variant: "error",
             isInfinite: true,
@@ -305,7 +314,7 @@ function PrintDialog({
 
   return (
     <ContextDialog open={showPrintDialog} onClose={handleClose} fullWidth maxWidth="lg">
-      <DialogTitle>Print Options</DialogTitle>
+      <DialogTitle>{t("print.dialog.title")}</DialogTitle>
       <DialogContent>
         <Box
           sx={{
@@ -336,7 +345,7 @@ function PrintDialog({
                 {/* we preview only one item, resulting from choice of print options */}
                 {printOptions.printIdentifierType === "IGSN" &&
                 itemsToPrint.some((record) => record.identifiers.length === 0)
-                  ? "Please resolve error."
+                  ? t("print.dialog.resolveError")
                   : Optional.fromNullable(itemsToPrint.at(0))
                       .map((inventoryRecord) => (
                         <PreviewPrintItem
@@ -385,14 +394,14 @@ function PrintDialog({
                 </Box>
               </>
             ) : (
-              <Typography variant="body2">Loading...</Typography>
+              <Typography variant="body2">{t("print.dialog.loading")}</Typography>
             )}
           </Box>
         </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={false}>
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
         <Button
           onClick={handlePrint}
@@ -404,7 +413,7 @@ function PrintDialog({
             itemsToPrint.some((record) => record.identifiers.length === 0)
           }
         >
-          {`Print selected (${itemsToPrint.length})`}
+          {t("print.dialog.printSelected", { count: itemsToPrint.length })}
         </Button>
       </DialogActions>
     </ContextDialog>

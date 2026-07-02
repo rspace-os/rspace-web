@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { isMobile } from "react-device-detect";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 import ImagePreview from "../ImagePreview";
 import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
@@ -45,6 +46,7 @@ function ImageField({
   noValueLabel,
   alt,
 }: ImageFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [editorFile, setEditorFile] = useState<Blob | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [link, setLink] = useState<string | null>(null);
@@ -101,7 +103,7 @@ function ImageField({
   }, [imageAsObjectURL]);
   return (
     <>
-      {disabled && !imageAsObjectURL && <NoValue label={noValueLabel ?? "None"} />}
+      {disabled && !imageAsObjectURL && <NoValue label={noValueLabel ?? t("values.none")} />}
       {showPreview && imageAsObjectURL && (
         <Grid
           container
@@ -125,7 +127,7 @@ function ImageField({
         <>
           <FileField
             accept=".png, .jpg, .jpeg, .gif"
-            buttonLabel={imageAsObjectURL ? "Replace Image" : "Add Image"}
+            buttonLabel={imageAsObjectURL ? t("inputs.imageField.replaceImage") : t("inputs.imageField.addImage")}
             data-test-id={imageAsObjectURL ? "ReplaceImageButton" : "AddImageButton"}
             id={id}
             onChange={imageSelection}
@@ -151,7 +153,7 @@ function ImageField({
                         startIcon={<CropIcon />}
                         data-test-id="EditImageButton"
                       >
-                        Edit Image
+                        {t("imageEditingDialog.title")}
                       </Button>
                     </Grid>
                     {endAdornment}

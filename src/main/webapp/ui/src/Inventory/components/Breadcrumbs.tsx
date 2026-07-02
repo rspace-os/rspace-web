@@ -1,6 +1,7 @@
 import MuiBreadcrumbs from "@mui/material/Breadcrumbs";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { hasLocation } from "../../stores/models/HasLocation";
 import { CurrentRecord, InTrash, RecordLink, TopLink } from "./RecordLink";
@@ -11,6 +12,7 @@ type BreadcrumbsArgs = {
 };
 
 const _Breadcrumbs = ({ record, showCurrent = false }: BreadcrumbsArgs): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   const showTopLink = record.showTopLinkInBreadcrumbs();
 
   const parents = hasLocation(record)
@@ -18,7 +20,7 @@ const _Breadcrumbs = ({ record, showCurrent = false }: BreadcrumbsArgs): React.R
     .orElse([]);
 
   return (
-    <MuiBreadcrumbs aria-label="breadcrumb">
+    <MuiBreadcrumbs aria-label={t("breadcrumbs.label")}>
       {showTopLink && <TopLink />}
       {parents.map((parent) => (
         <RecordLink key={parent.id} record={parent} overflow />

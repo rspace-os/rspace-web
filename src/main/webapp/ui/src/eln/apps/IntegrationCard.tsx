@@ -17,9 +17,10 @@ import { svgIconClasses } from "@mui/material/SvgIcon";
 import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useContext, useState } from "react";
+import React, { forwardRef, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
+import type { DocLinkName } from "../../assets/DocLinks";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -73,7 +74,7 @@ type IntegrationCardArgs<Credentials> = {
   // The name of a link in ../../assets/DocLinks to our user-facing
   // documentation. We cannot infer this from `name` because some very similar
   // integrations share a single page of documentation.
-  docLink: string;
+  docLink: DocLinkName;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in
@@ -93,18 +94,38 @@ type IntegrationCardArgs<Credentials> = {
   // it is enabled or disable.
   update: (newState: IntegrationState<Credentials>["mode"]) => void;
 };
-function CustomGrow({ ref, ...props }: React.ComponentProps<typeof Grow>): React.ReactNode {
-  return (
-    <Grow
-      {...props}
-      ref={ref}
-      timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
-      style={{
-        transformOrigin: "center 70%",
-      }}
-    />
-  );
-}
+const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((props, ref) => (
+  <Grow
+    {...props}
+    ref={ref}
+    timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+    style={{
+      transformOrigin: "center 70%",
+    }}
+  />
+));
+CustomGrow.displayName = "CustomGrow";
+type NoopTransitionProps = {
+  in?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+};
+const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
+  ({ in: inProp, children, className, style }, ref) => {
+    if (!inProp) return null;
+    if (React.isValidElement(children)) {
+      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
+        ref,
+        className,
+        style,
+        tabIndex: -1,
+      });
+    }
+    return children ?? null;
+  },
+);
+NoopTransition.displayName = "NoopTransition";
 function IntegrationCard<Credentials>({
   name,
   explanatoryText,
@@ -118,6 +139,7 @@ function IntegrationCard<Credentials>({
   website,
   setupSection,
 }: IntegrationCardArgs<Credentials>): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = useState(false);
   const mode = integrationState.mode;
   const theme = useTheme();
@@ -453,20 +475,22 @@ function IntegrationCard<Credentials>({
               <Typography variant="body2">{usageText}</Typography>
               {typeof website === "string" ? (
                 <Typography variant="body2">
-                  See <Link href={website.startsWith("/") ? website : `https://${website}`}>{website}</Link>
-                  {" and our "}
-                  <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                  {t("integrationCard.moreInfo.websitePrefix")}{" "}
+                  <Link href={website.startsWith("/") ? website : `https://${website}`}>{website}</Link>{" "}
+                  {t("integrationCard.moreInfo.websiteMiddle")} <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
+                  {t("integrationCard.moreInfo.suffix")}
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                  {t("integrationCard.moreInfo.docsOnlyPrefix")} <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
+                  {t("integrationCard.moreInfo.suffix")}
                 </Typography>
               )}
             </section>
             <Divider orientation="horizontal" sx={{ gap: 0 }} />
             <section>
               <Typography variant="subtitle1" component="h4">
-                Setup
+                {t("integrationCard.setup")}
               </Typography>
               {setupSection}
             </section>
@@ -478,7 +502,7 @@ function IntegrationCard<Credentials>({
               setOpen(false);
             }}
           >
-            Close
+            {t("common:actions.close")}
           </Button>
           {integrationState.mode !== "EXTERNAL" && (
             <Button
@@ -490,7 +514,7 @@ function IntegrationCard<Credentials>({
                 }
               }}
             >
-              {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
+              {mode === "ENABLED" ? t("integrationCard.disable") : t("integrationCard.enable")}
             </Button>
           )}
         </DialogActions>
