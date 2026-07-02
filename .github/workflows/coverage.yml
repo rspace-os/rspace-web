@@ -38,7 +38,7 @@ jobs:
         java-version: [17]
     services:
       db:
-        image: mariadb:lts-jammy
+        image: mariadb:lts
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
@@ -140,7 +140,7 @@ jobs:
         java-version: [17]
     services:
       db:
-        image: mariadb:lts-jammy
+        image: mariadb:lts
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
