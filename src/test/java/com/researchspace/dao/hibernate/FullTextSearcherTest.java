@@ -24,7 +24,7 @@ import com.researchspace.model.IFieldLinkableElement;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.search.impl.LuceneSearchTermListFactory;
 import com.researchspace.search.impl.LuceneSrchCfg;
@@ -299,7 +299,7 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
     logoutAndLoginAs(u);
 
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(u);
-    Sample dbSample = sampleApiMgr.getSampleById(apiSample.getId(), u);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(apiSample.getId(), u);
 
     InventorySearchConfig searchConfig = new InventorySearchConfig(u);
     searchConfig.setOptions(new String[] {SearchConstants.INVENTORY_SEARCH_OPTION});
