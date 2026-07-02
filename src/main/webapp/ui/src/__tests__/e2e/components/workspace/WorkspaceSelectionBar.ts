@@ -2,14 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 
 /**
  * Selection action bar. Appears below the toolbar once ≥1 row checkbox is
- * checked; detaches when all are deselected. Legacy jQuery `<ul><li>` with no
- * `data-test-id` and no explicit ARIA roles (browsers still expose the
- * implicit list/listitem semantics of `<ul>`/`<li>`).
- *
- * `Add to Favorites`/`Remove from Favorites` is a single toggling item, not
- * two. `Publish` only renders for publishable record types. Scope by the
- * "Duplicate" item — it's the one item present whenever the bar is shown —
- * to avoid the page's other `<ul>`s (pagination, nav links).
+ * checked; detaches when all are deselected.
  */
 export class WorkspaceSelectionBar {
   readonly root: Locator;

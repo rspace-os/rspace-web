@@ -3,12 +3,13 @@ import { test as base, expect, request } from "@playwright/test";
 import { DocumentsClient } from "./api/clients/DocumentsClient";
 import { storageStatePath } from "./authState";
 import { env } from "./env";
-import { DocumentEditorPage } from "./pageObjects/DocumentEditorPage";
-import { DocumentPage } from "./pageObjects/DocumentPage";
-import { InventoryPage } from "./pageObjects/InventoryPage";
-import { LoginPage } from "./pageObjects/LoginPage";
-import { SystemConfigPage } from "./pageObjects/SystemConfigPage";
-import { WorkspacePage } from "./pageObjects/WorkspacePage";
+import { LoginPage } from "./pageObjects/auth/LoginPage";
+import { DocumentEditorPage } from "./pageObjects/document/DocumentEditorPage";
+import { DocumentPage } from "./pageObjects/document/DocumentPage";
+import { InventoryPage } from "./pageObjects/inventory/InventoryPage";
+import { NotebookPage } from "./pageObjects/notebook/NotebookPage";
+import { SystemConfigPage } from "./pageObjects/system/SystemConfigPage";
+import { WorkspacePage } from "./pageObjects/workspace/WorkspacePage";
 import { type AppUser, SYSADMIN, USERS } from "./users";
 
 export type { AppUser };
@@ -41,6 +42,7 @@ const uiTest = base.extend<
     pageDocument: DocumentPage;
     pageDocumentEditor: DocumentEditorPage;
     pageInventory: InventoryPage;
+    pageNotebook: NotebookPage;
     flowLogin: WorkspacePage;
   }
 >({
@@ -70,6 +72,9 @@ const uiTest = base.extend<
   },
   pageInventory: async ({ page }, use) => {
     await use(new InventoryPage(page));
+  },
+  pageNotebook: async ({ page }, use) => {
+    await use(new NotebookPage(page));
   },
   /**
    * Delivers a loaded Workspace for an already-authenticated session. The

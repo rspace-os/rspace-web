@@ -2,11 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 
 /**
  * Record table — tree view. Legacy jQuery (Fancytree — nodes carry
- * `fancytree-*` classes and `data-id`/`data-globalid`/`data-name` attributes),
- * not React, but it renders correct `tree`/`treeitem`/`group` ARIA roles, so
- * role-based locators work the same as anywhere else. No Record Info link,
- * icon, or `data-test-id` exists on a treeitem — that action is list-view
- * only (see `WorkspacePage.openInfoFor`).
+ * `fancytree-*`
  *
  */
 export class WorkspaceTree {

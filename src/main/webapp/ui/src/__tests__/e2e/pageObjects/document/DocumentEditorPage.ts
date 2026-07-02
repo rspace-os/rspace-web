@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
+import { DocumentToolbar } from "@/__tests__/e2e/components/document/DocumentToolbar";
+import { TinyMceEditor } from "@/__tests__/e2e/components/document/TinyMceEditor";
 import { PubchemDialogComponent } from "@/modules/pubchem/__tests__/pageObjects/PubchemDialogComponent";
-import { DocumentToolbar } from "../components/DocumentToolbar";
-import { TinyMceEditor } from "../components/TinyMceEditor";
 import { DocumentPage } from "./DocumentPage";
 
 /**
@@ -38,20 +38,21 @@ export class DocumentEditorPage extends DocumentPage {
    * initialised when a document opens in edit mode.
    *
    * For a basic document the single field is named "New List of Materials".
+   *
    */
-  async getField(fieldName: string): Promise<TinyMceEditor> {
-    const fieldTd = this.page.locator("td.field-name").filter({ hasText: fieldName });
+  async getField(fieldName: string, index = 0): Promise<TinyMceEditor> {
+    const fieldTd = this.page.locator("td.field-name").filter({ hasText: fieldName }).nth(index);
     const tdId = await fieldTd.getAttribute("id");
     if (!tdId) {
       throw new Error(
-        `getField('${fieldName}'): no td.field-name element with an id attribute found. ` +
+        `getField('${fieldName}', ${index}): no td.field-name element with an id attribute found. ` +
           "Verify the field name is spelled exactly as rendered and the document is in edit mode.",
       );
     }
     const fieldId = tdId.replace("field-name-", "");
     if (!fieldId) {
       throw new Error(
-        `getField('${fieldName}'): id attribute '${tdId}' yielded an empty field id after ` +
+        `getField('${fieldName}', ${index}): id attribute '${tdId}' yielded an empty field id after ` +
           "stripping the 'field-name-' prefix.",
       );
     }

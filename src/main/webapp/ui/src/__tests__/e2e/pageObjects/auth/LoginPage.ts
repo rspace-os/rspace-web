@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
-import { PublicNavComponent } from "../components/navigation/PublicNavComponent";
-import { BasePage } from "./BasePage";
+import { PublicNavComponent } from "@/__tests__/e2e/components/navigation/PublicNavComponent";
+import { BasePage } from "../BasePage";
 
 export class LoginPage extends BasePage {
   readonly path = "/login";

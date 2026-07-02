@@ -1,8 +1,8 @@
 import { storageStatePath } from "@/__tests__/e2e/authState";
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "@/__tests__/e2e/integrationMode";
-import { AppsPage } from "@/__tests__/e2e/pageObjects/AppsPage";
-import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/DocumentEditorPage";
+import { AppsPage } from "@/__tests__/e2e/pageObjects/apps/AppsPage";
+import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/document/DocumentEditorPage";
 import type { PubchemDialogComponent } from "./pageObjects/PubchemDialogComponent";
 
 /**

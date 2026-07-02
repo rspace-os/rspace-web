@@ -7,8 +7,13 @@ API tests (HTTP against `/api/v1/`). `CLAUDE.md` in this directory is a copy.
 
 Shared infrastructure lives here:
 - `specs/` — test files for cross-cutting concerns (auth, smoke). Check here before writing a new one.
-- `pageObjects/` — shared page objects used across multiple features (LoginPage, WorkspacePage, InventoryPage, etc.).
-- `components/` — shared UI fragments composed into shared page objects.
+- `pageObjects/` — page objects grouped by feature subfolder (`document/`,
+  `notebook/`, `workspace/`, `inventory/`, `auth/`, `system/`, `apps/`);
+  `BasePage.ts` stays at the root — it's the abstract base, not feature-specific.
+- `components/` — UI fragments composed into page objects, grouped the same
+  way (`document/`, `notebook/`, `workspace/`, `navigation/`), plus
+  `shared/` for pieces used across features (`AppHeader`, `ToolbarCreateMenu`,
+  `ToolbarCommonActions`).
 - `api/clients/` — one class per API resource (e.g. `DocumentsClient.ts`).
 - `api/models/` — TypeScript types for request/response bodies.
 - `fixtures.ts` — the only thing specs should import from. Exports `test`, `expect`, and re-exports `tags`.
@@ -72,6 +77,28 @@ File suffix drives `testMatch` in the config — wrong suffix = silently never r
 
 Use `flowLogin` when login is a precondition. Use `pageLogin`/`pageWorkspace`
 directly when login is the behaviour under test.
+
+## Must: import style — relative within a folder, `@/` across feature folders
+
+`pageObjects/` and `components/` are grouped by feature subfolder. Use a
+relative import (`./Sibling`, `../BasePage`) within the same folder or one
+level up. Use the `@/__tests__/e2e/...` absolute alias for anything that
+crosses feature folders — e.g. `pageObjects/notebook/NotebookPage.ts`
+importing `components/document/DocumentHeader.ts`:
+
+```ts
+// Bad — breaks/needs renumbering every time either file moves a level
+import { DocumentHeader } from "../../components/document/DocumentHeader";
+
+// Good
+import { DocumentHeader } from "@/__tests__/e2e/components/document/DocumentHeader";
+```
+
+Never write `../../` (or deeper) — if an import needs two or more `../`, it
+should be the alias instead. The alias needs no extra config: `@/` → `src/`
+is already defined in `tsconfig.json` and Playwright's test runner already
+resolves it (proven in use by specs outside this tree, e.g.
+`modules/pubchem/__tests__/pubchem.e2e.ts`).
 
 ## Must: use fixtures, never instantiate page objects directly in tests
 
@@ -170,3 +197,22 @@ class and compose it as a field. No inheritance between page objects.
   devtools).
 - API: verify endpoint, method, and fields against the actual Spring controller
   in `src/main/java/com/researchspace/api/v1/` before writing a client method.
+- Cross-component sharing: matching (or non-matching) `data-test-id` strings
+  across two page objects/components do not tell you whether a locator is
+  safe to share. Examples from the toolbar components
+  (`components/shared/`): the same `structured-document-back` id renders
+  with `aria-label="Close"` on the document view and `aria-label="Back"` on
+  the notebook view — sharing it by role+name would silently break one of
+  them. Conversely, `structured-delete` and `notebooktoolbar-delete` are
+  different ids that both resolve uniquely via
+  `getByRole("button", { name: "Delete" })` — fully shareable, no test-id
+  needed. And a name that matches on both pages ("Sign") can still hide an
+  independent ambiguity bug on either page (a hidden legacy duplicate with
+  the same name) that only surfaces once you try `getByRole(...).click()`.
+  Before extracting a shared locator, or deciding two things must stay
+  separate: check whether it's literally the same React component in source
+  (strong evidence) vs. a matching string hand-written twice (merely
+  suggestive), and live-verify the accessible name resolves to exactly one
+  *visible* match in each context. See `components/shared/ToolbarCreateMenu.ts`
+  (same component) and `components/shared/ToolbarCommonActions.ts` (matching
+  strings, each verified individually) for worked examples.

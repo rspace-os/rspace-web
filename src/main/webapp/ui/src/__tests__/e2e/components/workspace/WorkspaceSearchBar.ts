@@ -157,8 +157,6 @@ export class WorkspaceSearchBar {
 
   /**
    * For rows set to `Creation date` or `Last modified` — dates as `YYYY-MM-DD`.
-   * Unverified live: unlike the plain-text case above, not yet confirmed
-   * whether these test IDs land on the `DateField`'s wrapper or its `<input>`.
    */
   async setRowDateRange(idx: number, from?: string, to?: string): Promise<void> {
     if (from !== undefined) await this.page.getByTestId(`a-search-input-${idx}-from`).fill(from);

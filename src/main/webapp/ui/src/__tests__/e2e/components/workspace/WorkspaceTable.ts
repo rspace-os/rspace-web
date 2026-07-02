@@ -2,8 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 import { WorkspaceRecordInfoDialog } from "./WorkspaceRecordInfoDialog";
 
 /**
- * Record table — list view. Server-rendered `<table>` (Spring MVC + legacy
- * jQuery), no `data-test-id`s on rows/cells.
+ * Record table — list view. Server-rendered `<table>`
  *
  * Scoping a row by `getByRole("row", { name })` alone is ambiguous: the row's
  * accessible name includes every column's text, so a record named "Data"

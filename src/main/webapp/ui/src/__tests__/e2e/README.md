@@ -85,8 +85,11 @@ extra config needed — the Docker stack listens on 8080 by default.
 ```
 src/__tests__/e2e/
   specs/               # Test files (*.e2e.ts, *.api.spec.ts)
-  pageObjects/         # One class per screen
-  components/          # Reusable UI fragments composed into page objects
+  pageObjects/         # One class per screen, grouped by feature
+    BasePage.ts        # Abstract base — not feature-specific, stays at the root
+    document/ notebook/ workspace/ inventory/ auth/ system/ apps/
+  components/          # Reusable UI fragments composed into page objects, same grouping
+    document/ notebook/ workspace/ navigation/ shared/
   api/
     clients/           # One class per API resource
     models/            # TypeScript types for request/response bodies
@@ -97,13 +100,22 @@ src/__tests__/e2e/
   integrationMode.ts   # mock | real switch (used by @apps specs)
 ```
 
+Cross-feature-folder imports (e.g. `pageObjects/notebook/` importing from
+`components/document/`) use the `@/__tests__/e2e/...` absolute alias, not
+`../../` — see `AGENTS.md`.
+
 ## Locator priority (semantic first)
 
 1. `getByRole('button', { name: 'Save' })` — ARIA role + accessible name
 2. `getByLabel('Username')` — form label
 3. `getByText('Some copy')` — stable visible text
 4. `getByTestId('create-btn')` — `data-test-id` attribute (RSpace convention)
-5. `locator('#id')` / `.css-class` — **banned**
+5. `locator('#id')` — allowed only for verified legacy JSP/jQuery-rendered IDs
+   (e.g. `#recordNameInHeader`, `#nextEntryButton`). Never for React components.
+6. `locator('.css-class')` — last resort for legacy pages with no stable ID
+   and no ARIA role. Document why at the call site.
+
+See `AGENTS.md` for the full "Pitfall: don't guess selectors" rationale.
 
 RSpace uses `data-test-id` (not `data-testid`). The config sets
 `testIdAttribute: "data-test-id"` so `getByTestId()` maps correctly.

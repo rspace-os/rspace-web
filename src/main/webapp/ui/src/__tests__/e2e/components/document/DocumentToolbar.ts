@@ -1,20 +1,21 @@
 import type { Locator, Page } from "@playwright/test";
+import { ToolbarCommonActions } from "@/__tests__/e2e/components/shared/ToolbarCommonActions";
 
 /**
- * Edit-mode toolbar. Save, Cancel, Export, and Close live here.
- * View-mode actions (Delete, Sign, Save as Template) are in DocumentViewToolbar.
+ * Edit-mode toolbar. Save, Cancel, and (via `actions`) Export/Print/Close
+ * live here. View-mode-only actions (Sign, Save as Template) are in
+ * `DocumentViewToolbar`.
+ *
  */
 export class DocumentToolbar {
   readonly saveMenuButton: Locator;
   readonly cancelButton: Locator;
-  readonly exportButton: Locator;
-  readonly closeLink: Locator;
+  readonly actions: ToolbarCommonActions;
 
   constructor(private readonly page: Page) {
     this.saveMenuButton = page.getByTestId("notebook-save-btn");
     this.cancelButton = page.getByTestId("notebooktoolbar-cancel");
-    this.exportButton = page.getByTestId("notebooktoolbar-export");
-    this.closeLink = page.getByTestId("structured-document-back");
+    this.actions = new ToolbarCommonActions(page);
   }
 
   async save(): Promise<void> {

@@ -1,5 +1,5 @@
 import type { Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { BasePage } from "../BasePage";
 
 export type SystemPropertyValue = "ALLOWED" | "DENIED_BY_DEFAULT" | "DENIED";
 
