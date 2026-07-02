@@ -189,4 +189,14 @@ class InventoryIdentifiersApiControllerTest {
 
     assertThrows(NotFoundException.class, () -> controller.publishIdentifier(404L, user));
   }
+
+  @Test
+  void bulkAllocateRejectsCountAboveMaximum() {
+    int tooMany = InventoryIdentifiersApiController.MAX_BULK_IGSN_ALLOCATION + 1;
+
+    assertThrows(
+        IllegalArgumentException.class, () -> controller.bulkAllocateIdentifiers(tooMany, user));
+
+    verify(mockIdentifierMgr, never()).registerBulkIdentifiers(any(), any());
+  }
 }
