@@ -218,40 +218,6 @@ export default defineConfig(async ({ mode }) => {
           entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: "assets/[name]-[hash][extname]",
-          // Required by the codeSplitting workaround below.
-          strictExecutionOrder: true,
-          codeSplitting: {
-            groups: [
-              /*
-               * Workaround for the Ketcher circular-chunk crash that
-               * rolldown 1.0.1 (pinned in pnpm-workspace.yaml) produces:
-               * without this group, rolldown splits Ketcher into two chunks
-               * that import each other circularly, each calling the other's
-               * __commonJS factory (lodash / regenerator-runtime) before that
-               * chunk has evaluated, crashing as "TypeError: undefined is not
-               * a function" the moment Ketcher is opened in production.
-               * (https://github.com/rolldown/rolldown/issues/9502 tracks the
-               * root cause in rolldown 1.0.2+; 1.0.1 has the same splitting
-               * bug from a different code path.)
-               *
-               * This group forces Ketcher and its CJS-only dependencies into
-               * one chunk family, removing the circular edge. entriesAware is
-               * required: without it rolldown's recursive dependency capture
-               * pulls React and emotion into the group, producing a 25 MB
-               * chunk eagerly loaded by every page. includeDependenciesRecursively:false
-               * was tried as an alternative but only relocated the crash.
-               *
-               * Remove this group (and the rolldown override in
-               * pnpm-workspace.yaml) once rolldown ships a release that fixes
-               * the init_* missing-import bug (rolldown#9502 / vite#22499).
-               */
-              {
-                name: "ketcher",
-                test: /node_modules[\\/](ketcher-(core|react|standalone)|miew|lodash|regenerator-runtime)[\\/]/,
-                entriesAware: true,
-              },
-            ],
-          },
         },
       },
       target: esbuildTargets as NonNullable<UserConfig["build"]>["target"],
