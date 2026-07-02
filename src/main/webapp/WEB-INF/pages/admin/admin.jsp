@@ -1,6 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 
+<fmt:bundle basename="bundles.admin.admin">
 <head>
+    <title><fmt:message key="admin.title"/></title>
     <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.css'/>" />
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
     <script src="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.min.js'/>"></script>
@@ -8,7 +10,6 @@
     <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 </head>
 
-<fmt:bundle basename="bundles.admin.admin">
 <div class="separator"></div>
 <div id="menuScrollContainer">
   <div class="menuScrollButton leftScroller bootstrap-custom-flat">
