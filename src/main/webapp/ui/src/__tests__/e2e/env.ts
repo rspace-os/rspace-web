@@ -1,11 +1,3 @@
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required env var ${name}. See src/__tests__/e2e/README.md for setup.`);
-  }
-  return value;
-}
-
 function optional(name: string, fallback: string): string {
   return process.env[name] ?? fallback;
 }
@@ -19,17 +11,9 @@ export const env = {
     return optional("RSPACE_SYSADMIN_USERNAME", "sysadmin1");
   },
   get sysadminPassword(): string {
-    return required("RSPACE_SYSADMIN_PASSWORD");
+    return optional("RSPACE_SYSADMIN_PASSWORD", "sysWisc23!");
   },
-  // UI tests use `appUser` from the USERS map (known seed credentials) — these
-  // are only needed when explicitly targeting a non-seed user or for API auth.
-  get testUsername(): string {
-    return optional("RSPACE_TEST_USERNAME", "user1a");
-  },
-  get testPassword(): string {
-    return optional("RSPACE_TEST_PASSWORD", "user1234");
-  },
-  get testApiKey(): string {
-    return required("RSPACE_TEST_API_KEY");
+  get sysadminApiKey(): string {
+    return optional("RSPACE_SYSADMIN_API_KEY", "abcdefghijklmnop12");
   },
 };

@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { defineConfig, devices, type ReporterDescription } from "@playwright/test";
+import { storageStatePath } from "./src/__tests__/e2e/authState";
 import type { E2EOptions } from "./src/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "./src/__tests__/e2e/integrationMode";
 import { USERS } from "./src/__tests__/e2e/users";
@@ -80,30 +81,69 @@ export default defineConfig<E2EOptions>({
     testIdAttribute: "data-test-id",
   },
   projects: [
+    // Auth setup: authenticates each browser project's seed user (plus
+    // sysadmin) once and saves storageState under playwright/.auth/. Browser
+    // projects below depend on it and start every test already authenticated
+    // — see auth.setup.ts for why (avoids racing Hibernate's optimistic lock
+    // on concurrent logins as the same seed user).
+    {
+      name: "setup",
+      testMatch: "**/auth.setup.ts",
+      use: { headless: HEADLESS },
+    },
     // API tests: Node HTTP only, no browser. Each test gets its own
-    // APIRequestContext via the `apiContext` fixture.
+    // APIRequestContext via the `apiContext` fixture. user2b is dedicated to
+    // API tests to avoid workspace state collisions with browser projects.
+    // Uses the apiKey header directly, so it doesn't need `setup` — user2b is
+    // chosen (over an unused-but-uninitialized seed user) because its
+    // workspace root folder already exists; an account that has never
+    // completed a UI login has no root folder yet (lazily created on first
+    // login) and 500s on first write, e.g. POST /api/v1/documents.
     {
       name: "api",
       testMatch: "**/*.api.spec.ts",
+      use: { appUser: USERS.user2b },
     },
-    // Each browser uses a distinct seed user to avoid shared-state collisions
-    // when browser shards run in parallel against the same backend.
+    // Each browser uses a distinct PI+USER seed account to avoid shared-state
+    // collisions when browser shards run in parallel against the same backend.
     {
       name: "chromium",
       testMatch: "**/*.e2e.ts",
-      use: { ...devices["Desktop Chrome"], headless: HEADLESS, appUser: USERS.user1a },
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        headless: HEADLESS,
+        appUser: USERS.user1a,
+        storageState: storageStatePath(USERS.user1a.username),
+      },
     },
     {
       name: "firefox",
       testMatch: "**/*.e2e.ts",
-      use: { ...devices["Desktop Firefox"], headless: HEADLESS, appUser: USERS.user2b },
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Firefox"],
+        headless: HEADLESS,
+        appUser: USERS.user3c,
+        storageState: storageStatePath(USERS.user3c.username),
+      },
     },
     {
       name: "webkit",
       testMatch: "**/*.e2e.ts",
+      dependencies: ["setup"],
       // WebKit bundled in Playwright uses an older TLS stack that rejects some
       // server cipher suites with "internal error". ignoreHTTPSErrors bypasses it.
-      use: { ...devices["Desktop Safari"], headless: HEADLESS, appUser: USERS.user3c, ignoreHTTPSErrors: true },
+      use: {
+        ...devices["Desktop Safari"],
+        headless: HEADLESS,
+        appUser: USERS.user4d,
+        storageState: storageStatePath(USERS.user4d.username),
+        ignoreHTTPSErrors: true,
+      },
     },
-  ].filter(({ name }) => !E2E_BROWSER || name === E2E_BROWSER),
+    // `setup` has no tests of its own to filter by E2E_BROWSER, so keep it
+    // whenever a browser project survives the filter below (they depend on
+    // it); only E2E_BROWSER=api drops it.
+  ].filter(({ name }) => !E2E_BROWSER || name === E2E_BROWSER || (name === "setup" && E2E_BROWSER !== "api")),
 });
