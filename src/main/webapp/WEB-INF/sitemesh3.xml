@@ -23,6 +23,12 @@
     <include-error-pages>true</include-error-pages>
 
     <!-- Paths that must never be decorated (evaluated before the decorator mappings below). -->
+    <!-- 500/405 error-page target: keep undecorated, matching main (whose error.jsp has no
+         page:applyDecorator). On prod Tomcat this exclude fires because the ERROR dispatch has no
+         forward attributes, so SiteMesh matches /error.jsp; on local dev Jetty the ERROR dispatch
+         carries the original URL, so the exclude is bypassed and the 500 page appears decorated in
+         dev only. 403.jsp/404.jsp are intentionally NOT excluded so they get decorated. -->
+    <mapping path="/error.jsp" exclude="true"/>
     <mapping path="*/ajax/*" exclude="true"/>
     <mapping path="/scripts/**" exclude="true"/>
     <mapping path="/ui/dist/**" exclude="true"/>
