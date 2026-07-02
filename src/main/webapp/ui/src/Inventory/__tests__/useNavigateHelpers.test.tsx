@@ -49,7 +49,7 @@ describe("useNavigateHelpers", () => {
               void navigateToRecord(mockContainer);
             }}
           >
-            {"\n            Click me.\n          "}
+            {"Click me."}
           </button>
         );
       };
@@ -81,7 +81,7 @@ describe("useNavigateHelpers", () => {
               navigateToSearch(mockSearchParams);
             }}
           >
-            {"\n            Click me.\n          "}
+            {"Click me."}
           </button>
         );
       };

@@ -954,7 +954,7 @@
         }
       },
       "instructionsTitle": "Instructions",
-      "reservedShortcutsNote": "Here's <a>a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "reservedShortcutsNote": "Here's <a href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\" target=\"_blank\" rel=\"noreferrer\">a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
       "tabActions": "Actions",
       "tabSymbols": "Symbols",
       "toggleInstructions": "Toggle instructions"

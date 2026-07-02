@@ -69,7 +69,7 @@ export const SimpleTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          {"\n          Simple Tree Selection\n        "}
+          {"Simple Tree Selection"}
         </Typography>
         <Tree getId={(item) => item.id} selectedItems={selectedItem} onSelectedItemsChange={handleSelectionChange}>
           {renderTreeItems(sampleData)}
@@ -106,7 +106,7 @@ export const MultiSelectTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          {"\n          Multi-Select Tree\n        "}
+          {"Multi-Select Tree"}
         </Typography>
         <Box sx={{ mb: 2 }}>
           <Button onClick={clearSelection}>{"Clear Selection"}</Button>
@@ -121,7 +121,7 @@ export const MultiSelectTreeExample = ({
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            {"\n            Selected: "}
+            {"Selected: "}
             {selectedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
@@ -166,7 +166,7 @@ export const ExpandableTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          {"\n          Expandable Tree\n        "}
+          {"Expandable Tree"}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button onClick={expandAll}>{"Expand All"}</Button>
@@ -177,7 +177,7 @@ export const ExpandableTreeExample = ({
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            {"\n            Expanded: "}
+            {"Expanded: "}
             {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
@@ -235,7 +235,7 @@ export const ControlledTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          {"\n          Controlled Tree (Selection + Expansion)\n        "}
+          {"Controlled Tree (Selection + Expansion)"}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button onClick={expandAll}>{"Expand All"}</Button>
@@ -257,7 +257,7 @@ export const ControlledTreeExample = ({
             {selectedItem?.name || "None"}
           </Typography>
           <Typography variant="body2">
-            {"\n            Expanded: "}
+            {"Expanded: "}
             {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>

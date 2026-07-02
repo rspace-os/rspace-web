@@ -632,7 +632,7 @@
     "apachePage": "Apache page",
     "expandField": "Expand field",
     "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
-    "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
+    "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
     "query": "Search query"
   },
   "sections": {

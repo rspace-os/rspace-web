@@ -21,7 +21,7 @@ const NavigateTo = ({ url }: NavigateToProps) => {
         navigate(url);
       }}
     >
-      {"\n      Click me\n    "}
+      {"Click me"}
     </button>
   );
 };

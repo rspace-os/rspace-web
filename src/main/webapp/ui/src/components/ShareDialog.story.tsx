@@ -113,10 +113,10 @@ export function SharedWithAControlledOpenState() {
       <Portal>
         <Alerts>
           <button type="button" onClick={() => setOpen(true)}>
-            {"\n            Open share dialog\n          "}
+            {"Open share dialog"}
           </button>
           <button type="button" onClick={() => setOpen(false)}>
-            {"\n            Close share dialog\n          "}
+            {"Close share dialog"}
           </button>
           <DialogBoundary>
             <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />

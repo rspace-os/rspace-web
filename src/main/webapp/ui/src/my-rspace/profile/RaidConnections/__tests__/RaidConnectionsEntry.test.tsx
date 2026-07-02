@@ -59,7 +59,7 @@ vi.mock("../RaidConnectionsAddForm", () => {
     }) {
       return (
         <div data-testid="raid-connections-add-form">
-          {"\n          Add Form for group "}
+          {"Add Form for group "}
           {groupId}
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
           <button onClick={handleCloseForm}>{"Close Form"}</button>
@@ -82,7 +82,7 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button data-testid="disassociate-button">
-          {"\n          Disassociate "}
+          {"Disassociate "}
           {raidTitle}
           {" ("}
           {raidIdentifier}

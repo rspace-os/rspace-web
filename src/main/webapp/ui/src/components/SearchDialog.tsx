@@ -70,13 +70,6 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
                   i18nKey="searchDialog.moreInfo"
                   components={{
                     luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-                    apacheLink: (
-                      <Link
-                        href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                        rel="noreferrer"
-                        target="_blank"
-                      />
-                    ),
                   }}
                 />
               </DialogContentText>

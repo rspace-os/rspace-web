@@ -34,7 +34,7 @@ export const SimpleExample = ({ onClick = () => {} }: { onClick: () => void }) =
           </button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
-          {"\n          Submit\n        "}
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>
@@ -85,7 +85,7 @@ export const ProgressExample = ({ onClick = () => {} }: { onClick: () => void })
           progress={progress}
           onClick={handleClick}
         >
-          {"\n          Submit\n        "}
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>
@@ -117,7 +117,7 @@ export const HighContrastExample = ({ onClick = () => {} }: { onClick: () => voi
           </button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
-          {"\n          Submit\n        "}
+          {"Submit"}
         </ValidatingSubmitButton>
       </Box>
     </ThemeProvider>

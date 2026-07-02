@@ -48,7 +48,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
           onAddition([{ id: 999, globalId: "SS999" }]);
         }}
       >
-        {"\n        Select inventory item\n      "}
+        {"Select inventory item"}
       </button>
       <button
         type="button"
@@ -56,7 +56,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
           onAddition([{ id: 123, globalId: "SS123" }]);
         }}
       >
-        {"\n        Select existing inventory item\n      "}
+        {"Select existing inventory item"}
       </button>
     </>
   ),

@@ -68,13 +68,6 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               i18nKey="search.noResults.luceneInfo"
               components={{
                 luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-                apacheLink: (
-                  <Link
-                    href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html"
-                    rel="noreferrer"
-                    target="_blank"
-                  />
-                ),
               }}
             />
           </Typography>

@@ -19,7 +19,7 @@ function UserTagsHarness({ onSelection }: { onSelection: (tag: string) => void }
   return (
     <>
       <button type="button" onClick={(e) => setAnchorEl(e.currentTarget)}>
-        {"\n        Open user tags\n      "}
+        {"Open user tags"}
       </button>
       <TagsCombobox
         anchorEl={anchorEl}

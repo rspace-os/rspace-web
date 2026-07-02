@@ -46,7 +46,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          {"\n          click me\n        "}
+          {"click me"}
         </button>
       );
     }
@@ -132,7 +132,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          {"\n          click me\n        "}
+          {"click me"}
         </button>
       );
     }
@@ -220,7 +220,7 @@ describe("useGalleryActions", () => {
             );
           }}
         >
-          {"\n          click me\n        "}
+          {"click me"}
         </button>
       );
     }
@@ -313,7 +313,7 @@ describe("useGalleryActions", () => {
             });
           }}
         >
-          {"\n          click me\n        "}
+          {"click me"}
         </button>
       );
     }

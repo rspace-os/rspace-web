@@ -81,7 +81,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog", async () => {
     default: () =>
       useWrapperStubs.current ? (
         <div role="dialog" aria-label="common:stoichiometry.dialog.loadingMoleculeInformation">
-          {"\n          common:stoichiometry.dialog.loadingMoleculeInformation\n        "}
+          {"common:stoichiometry.dialog.loadingMoleculeInformation"}
         </div>
       ) : (
         <actual.default />

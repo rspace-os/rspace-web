@@ -40,7 +40,7 @@ vi.mock("../../Link/VersionLockDialog", () => ({
         data-current-pin={currentVersionPin == null ? "" : String(currentVersionPin)}
       >
         <button type="button" data-testid="version-lock-dialog-confirm-7" onClick={() => onConfirm(7)}>
-          {"\n          confirm 7\n        "}
+          {"confirm 7"}
         </button>
       </div>
     ) : null,

@@ -378,8 +378,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                   ns="inventory"
                   i18nKey="fieldmarkImport.descriptionLinks"
                   components={{
-                    a1: <Link href="https://docs.fieldmark.au" />,
-                    a2: <Link href={docLinks.fieldmark} />,
+                    docLink: <Link href={docLinks.fieldmark} />,
                   }}
                 />
               </Typography>

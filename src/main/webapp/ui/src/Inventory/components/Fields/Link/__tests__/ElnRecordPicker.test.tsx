@@ -24,10 +24,10 @@ vi.mock("../ElnFolderBrowser", () => ({
           })
         }
       >
-        {"\n        select doc\n      "}
+        {"select doc"}
       </button>
       <button type="button" onClick={() => onSelectionChange(null)}>
-        {"\n        select folder\n      "}
+        {"select folder"}
       </button>
     </div>
   ),

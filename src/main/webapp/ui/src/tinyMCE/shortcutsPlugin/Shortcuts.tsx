@@ -7,7 +7,6 @@ import { Alert, AlertTitle } from "@mui/material";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Tooltip from "@mui/material/Tooltip";
@@ -375,19 +374,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             )}
             {this.state.instructions && (
               <p>
-                <TransRichText
-                  ns="apps"
-                  i18nKey="tinyMce.shortcuts.reservedShortcutsNote"
-                  components={{
-                    a: (
-                      <Link
-                        target="_blank"
-                        href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
-                        rel="noreferrer"
-                      />
-                    ),
-                  }}
-                />
+                <TransRichText ns="apps" i18nKey="tinyMce.shortcuts.reservedShortcutsNote" />
               </p>
             )}
           </Alert>

@@ -297,7 +297,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
               setQuantityMap(makeQuantityMap([["SS124", 2]]));
             }}
           >
-            {"\n            Invalidate selection\n          "}
+            {"Invalidate selection"}
           </button>
           <StoichiometryInventoryUpdateDialog
             open

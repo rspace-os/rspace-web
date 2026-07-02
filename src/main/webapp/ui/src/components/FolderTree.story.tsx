@@ -38,7 +38,7 @@ export function SimpleFolderTreeExample() {
     <ThemeProvider theme={materialTheme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h4" gutterBottom>
-          {"\n          Folder Tree\n        "}
+          {"Folder Tree"}
         </Typography>
         <Stack direction="row" spacing={2}>
           <Box sx={{ width: 300, border: 1, borderColor: "grey.300", p: 1 }}>

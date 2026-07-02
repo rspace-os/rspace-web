@@ -980,7 +980,7 @@ export default interface Resources {
           }
         },
         "instructionsTitle": "Instructions",
-        "reservedShortcutsNote": "Here's <a>a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+        "reservedShortcutsNote": "Here's <a href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\" target=\"_blank\" rel=\"noreferrer\">a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
         "tabActions": "Actions",
         "tabSymbols": "Symbols",
         "toggleInstructions": "Toggle instructions"
@@ -1676,7 +1676,7 @@ export default interface Resources {
       "apachePage": "Apache page",
       "expandField": "Expand field",
       "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
-      "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
+      "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
       "query": "Search query"
     },
     "sections": {
@@ -2922,7 +2922,7 @@ export default interface Resources {
         "status": "Status"
       },
       "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-      "descriptionLinks": "See <a1>docs.fieldmark.au</a1> and our <a2>Fieldmark integration docs</a2> for more.",
+      "descriptionLinks": "See <a href=\"https://docs.fieldmark.au\">docs.fieldmark.au</a> and our <docLink>Fieldmark integration docs</docLink> for more.",
       "fetchError": "Could not get notebooks from Fieldmark",
       "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
       "helpTitle": "Fieldmark help",
@@ -4459,7 +4459,7 @@ export default interface Resources {
         "title": "Welcome to RSpace Inventory!"
       },
       "noResults": {
-        "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
+        "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
         "title": "No results.",
         "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
       },

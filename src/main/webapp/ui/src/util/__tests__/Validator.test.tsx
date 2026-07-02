@@ -46,7 +46,7 @@ function ParentComponent() {
           })();
         }}
       >
-        {"\n        Next\n      "}
+        {"Next"}
       </Button>
     </>
   );

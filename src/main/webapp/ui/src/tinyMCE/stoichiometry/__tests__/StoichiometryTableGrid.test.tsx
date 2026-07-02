@@ -21,7 +21,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
             });
           }}
         >
-          {"\n          Export CSV\n        "}
+          {"Export CSV"}
         </button>
       </div>
     );

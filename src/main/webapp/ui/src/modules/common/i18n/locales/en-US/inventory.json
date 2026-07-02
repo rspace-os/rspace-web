@@ -436,7 +436,7 @@
       "status": "Status"
     },
     "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-    "descriptionLinks": "See <a1>docs.fieldmark.au</a1> and our <a2>Fieldmark integration docs</a2> for more.",
+    "descriptionLinks": "See <a href=\"https://docs.fieldmark.au\">docs.fieldmark.au</a> and our <docLink>Fieldmark integration docs</docLink> for more.",
     "fetchError": "Could not get notebooks from Fieldmark",
     "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
     "helpTitle": "Fieldmark help",
@@ -1973,7 +1973,7 @@
       "title": "Welcome to RSpace Inventory!"
     },
     "noResults": {
-      "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <apacheLink>Apache page</apacheLink>.",
+      "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },
