@@ -54,6 +54,7 @@ xsxx2.pdf
 shell.nix
 .envrc
 .direnv-aliases
+src/main/webapp/ui/.env
 .mysql
 .nix-mvn-settings.xml
 .nix-mvn-toolchains.xml
@@ -82,3 +83,4 @@ src/main/webapp/ui/junit.xml
 # Playwright outputs (repo root; written by the component-test runner)
 /test-results/
 /playwright-report/
+.playwright-mcp
