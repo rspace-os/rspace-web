@@ -1,7 +1,3 @@
-import React, { FormEventHandler, useId } from "react";
-import { ThemeProvider } from "@mui/material/styles";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme from "../theme";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -9,9 +5,13 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
+import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import React, { type FormEventHandler, type JSX, useId } from "react";
 import { createRoot } from "react-dom/client";
+import materialTheme from "../theme";
 
 declare global {
   interface RSGlobal {
@@ -30,6 +30,7 @@ export interface ConfirmActionPayload {
   confirmText?: string;
   variant: string;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+  // biome-ignore lint/complexity/noBannedTypes: initial biome migration
   callback: Function;
 }
 
@@ -40,10 +41,10 @@ export function ConfirmationDialog({
   confirmText,
   callback,
   handleCloseDialog,
-  open = true
+  open = true,
 }: ConfirmActionPayload & {
   handleCloseDialog: () => void;
-  open?: boolean
+  open?: boolean;
 }) {
   const [input, setInput] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -74,22 +75,11 @@ export function ConfirmationDialog({
   return (
     <dialog>
       <form onSubmit={handleSubmit}>
-        <Dialog
-          open={open}
-          onClose={handleCloseDialog}
-          fullWidth
-          aria-labelledby={formTitle}
-        >
-          <DialogTitle id={formTitle}>
-            <>{title}</>
-          </DialogTitle>
+        <Dialog open={open} onClose={handleCloseDialog} fullWidth aria-labelledby={formTitle}>
+          <DialogTitle id={formTitle}>{title}</DialogTitle>
           <DialogContent sx={{ overscrollBehavior: "contain" }}>
             {typeof consequences === "string" ? (
-              <Typography
-                variant="subtitle1"
-                gutterBottom
-                dangerouslySetInnerHTML={{ __html: consequences }}
-              />
+              <Typography variant="subtitle1" gutterBottom dangerouslySetInnerHTML={{ __html: consequences }} />
             ) : (
               consequences
             )}
@@ -111,12 +101,10 @@ export function ConfirmationDialog({
                   }}
                   variant="standard"
                   slotProps={{
-                    htmlInput: { "aria-label": confirmTextLabel }
+                    htmlInput: { "aria-label": confirmTextLabel },
                   }}
                 />
-                <FormHelperText id="component-error-text">
-                  {error}
-                </FormHelperText>
+                <FormHelperText id="component-error-text">{error}</FormHelperText>
               </FormControl>
             )}
           </DialogContent>
@@ -149,10 +137,7 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
   root.render(
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <ConfirmationDialog
-          {...payload}
-          handleCloseDialog={handleCloseDialog}
-        />
+        <ConfirmationDialog {...payload} handleCloseDialog={handleCloseDialog} />
       </ThemeProvider>
     </StyledEngineProvider>,
   );
@@ -160,4 +145,4 @@ export function createConfirmationDialog(payload: ConfirmActionPayload) {
 
 window.addEventListener("load", () => {
   window.RS.createConfirmationDialog = createConfirmationDialog;
-})
+});

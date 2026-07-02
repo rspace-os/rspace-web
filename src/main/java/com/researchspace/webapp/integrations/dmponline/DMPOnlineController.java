@@ -20,6 +20,7 @@ import com.researchspace.service.MediaManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.annotation.PostConstruct;
@@ -97,6 +98,10 @@ public class DMPOnlineController extends BaseOAuth2Controller {
   private static String URL_TOKEN_END_POINT;
   private static String URL_CALLBACK;
   private static final String TEMP_TOKEN = "TEMP";
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DMPOnline";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.dmponline.connection";
+  private static final String CONNECTION_TYPE = "DMPONLINE_CONNECTED";
 
   @Setter(value = AccessLevel.PROTECTED) // test purposes
   private RestTemplate restTemplate;
@@ -135,13 +140,16 @@ public class DMPOnlineController extends BaseOAuth2Controller {
 
       createUserConnection(principal, accessToken);
       log.info("Connected DMPonline for user {}", principal.getName());
-      redirectResult = "connect/dmponline/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+      redirectResult = CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMPonline", ex);
       error.errorMsg("Error during token creation");
-      error.errorMsg(ex.getMessage());
-      model.addAttribute("error", error.build());
-      redirectResult = "connect/authorizationError";
+      error.errorDetails(ex.getMessage());
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
+      redirectResult = CONNECTED_VIEW;
     }
     return redirectResult;
   }
@@ -208,14 +216,17 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       userConnection.setDisplayName("DMPonline refreshed access token");
       userConnectionManager.save(userConnection);
       log.info("Token refreshed for DMPonline for user {}", principal.getName());
-      redirectResult = "connect/dmponline/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
+      redirectResult = CONNECTED_VIEW;
 
     } catch (Exception e) {
       log.error("Error while refreshing token on DMPonline: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
-      model.addAttribute("error", error.build());
-      redirectResult = "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
+      redirectResult = CONNECTED_VIEW;
     }
 
     return redirectResult;

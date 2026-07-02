@@ -18,7 +18,7 @@ import com.researchspace.model.events.InventoryMoveEvent;
 import com.researchspace.model.events.InventoryRestoreEvent;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventorySeriesNamingHelper;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.record.IActiveUserStrategy;
 import com.researchspace.model.units.QuantityInfo;
@@ -205,7 +205,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
       Long sampleId, Integer newSubSamplesCount, ApiQuantityInfo subSampleQuantity, User user) {
 
     List<ApiSubSample> result = new ArrayList<>();
-    Sample dbSample = sampleApiMgr.getSampleById(sampleId, user);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(sampleId, user);
     invPermissions.assertUserCanEditInventoryRecord(dbSample, user);
 
     int initSubSampleCount = dbSample.getSubSamples().size();
@@ -225,7 +225,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
   public ApiSubSample addNewApiSubSampleToSample(
       ApiSubSample incomingSubSample, Long sampleId, User user) {
 
-    Sample dbSample = sampleApiMgr.getSampleById(sampleId, user);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(sampleId, user);
     invPermissions.assertUserCanEditInventoryRecord(dbSample, user);
 
     SubSample newSubSample;
@@ -403,7 +403,7 @@ public class SubSampleApiManagerImpl extends InventoryApiManagerImpl<SubSample>
     boolean temporaryLock = lockItemForEdit(dbSubSample, user);
     try {
       dbSubSample = getIfExists(dbSubSample.getId());
-      Sample parentSample = dbSubSample.getSample();
+      SampleEntity parentSample = dbSubSample.getSample();
       if (dbSubSample.isDeleted()) {
         if (!parentSample.isTemplate()) {
           Container workbench = containerDao.getWorkbenchForUser(user);

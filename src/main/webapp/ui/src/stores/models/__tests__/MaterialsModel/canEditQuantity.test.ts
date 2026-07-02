@@ -1,45 +1,38 @@
-import { describe, expect, test, vi } from 'vitest';
+import fc, { type Arbitrary } from "fast-check";
+import { describe, expect, test, vi } from "vitest";
 import { Material, type Quantity } from "../../MaterialsModel";
 import { makeMockContainer } from "../ContainerModel/mocking";
 import { makeMockSample } from "../SampleModel/mocking";
 import { makeMockSubSample } from "../SubSampleModel/mocking";
-import fc, { type Arbitrary } from "fast-check";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 const arbitraryQuantity: Arbitrary<Quantity> = fc.record({
   unitId: fc.nat(),
   numericValue: fc.float(),
-
 });
 describe("canEditQuantity", () => {
   test("Should return false if invRec is a deleted SubSample", () => {
     fc.assert(
-      fc.property(
-        fc.option(arbitraryQuantity, { nil: null }),
-        (usedQuantity) => {
-          const material = new Material({
-            invRec: makeMockSubSample({ deleted: true }),
-            usedQuantity,
-
-          });
-          expect(material.canEditQuantity).toBe(false);
-        }
-      )
+      fc.property(fc.option(arbitraryQuantity, { nil: null }), (usedQuantity) => {
+        const material = new Material({
+          invRec: makeMockSubSample({ deleted: true }),
+          usedQuantity,
+        });
+        expect(material.canEditQuantity).toBe(false);
+      }),
     );
   });
   test("Should return false if invRec is a Sample", () => {
     const material = new Material({
       invRec: makeMockSample(),
       usedQuantity: null,
-
     });
     expect(material.canEditQuantity).toBe(false);
   });
@@ -47,9 +40,7 @@ describe("canEditQuantity", () => {
     const material = new Material({
       invRec: makeMockContainer(),
       usedQuantity: null,
-
     });
     expect(material.canEditQuantity).toBe(false);
   });
 });
-

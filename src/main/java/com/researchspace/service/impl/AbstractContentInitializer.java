@@ -3,13 +3,13 @@ package com.researchspace.service.impl;
 import com.researchspace.dao.FolderDao;
 import com.researchspace.dao.FormDao;
 import com.researchspace.dao.RecordDao;
-import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatImage;
 import com.researchspace.model.User;
 import com.researchspace.model.core.UniquelyIdentifiable;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
@@ -64,7 +64,7 @@ public abstract class AbstractContentInitializer
   protected @Autowired FormDao formDao;
 
   protected @Autowired SampleApiManager sampleApiMgr;
-  protected @Autowired SampleDao sampleDao;
+  protected @Autowired SampleTemplateDao sampleTemplateDao;
   protected @Autowired ContainerApiManager containerApiMgr;
   protected @Autowired IRecordFactory recordFactory;
   protected @Autowired MediaManager mediaMgr;
@@ -147,7 +147,7 @@ public abstract class AbstractContentInitializer
   @Override
   public int createSampleTemplates(User user) {
 
-    Long sampleTemplatesCount = sampleDao.getTemplateCount();
+    Long sampleTemplatesCount = sampleTemplateDao.getTemplateCount();
     if (sampleTemplatesCount > 0) {
       log.info(
           "There are already {} templates - skipping creation of system sample templates",
@@ -157,7 +157,7 @@ public abstract class AbstractContentInitializer
     log.info("There are no sample templates - creating them.");
     addStandardSampleTemplates(user);
     addCustomSampleTemplates(user);
-    int created = sampleDao.getTemplateCount().intValue();
+    int created = sampleTemplateDao.getTemplateCount().intValue();
     log.info("{} templates created", created);
     return created;
   }
@@ -184,10 +184,10 @@ public abstract class AbstractContentInitializer
   }
 
   private void addStandardSampleTemplates(User u) {
-    // create new empty Sample with no fields.
-    Sample basicSample = recordFactory.createSample(DEFAULT_SAMPLE_TEMPLATE_NAME, u);
-    basicSample.setTemplate(true);
-    sampleDao.persistSampleTemplate(basicSample);
+    // create new empty SampleTemplate with no fields.
+    SampleTemplate basicSample =
+        recordFactory.createSampleTemplate(DEFAULT_SAMPLE_TEMPLATE_NAME, u);
+    sampleTemplateDao.persistSampleTemplate(basicSample);
   }
 
   /**
@@ -271,12 +271,12 @@ public abstract class AbstractContentInitializer
     return ice;
   }
 
-  protected IconEntity createAndSaveIconEntity(String fileName, Sample template)
+  protected IconEntity createAndSaveIconEntity(String fileName, SampleTemplate template)
       throws IOException {
     IconEntity ice = saveIconEntity(fileName, template);
     log.info("saved icon " + ice.getId() + " for template " + template.getName());
     template.setIconId(ice.getId());
-    sampleDao.save(template);
+    sampleTemplateDao.save(template);
     return ice;
   }
 
@@ -296,7 +296,7 @@ public abstract class AbstractContentInitializer
     return ice;
   }
 
-  protected void createAndSavePreviewImage(String fileName, User user, Sample template)
+  protected void createAndSavePreviewImage(String fileName, User user, SampleTemplate template)
       throws IOException {
     Resource resource = appContext.getResource("classpath:formIcons/" + fileName);
     InputStream is = resource.getInputStream();
@@ -305,7 +305,7 @@ public abstract class AbstractContentInitializer
         "data:image/png;base64," + new String(Base64.encodeBase64(bytes), StandardCharsets.UTF_8);
 
     sampleApiMgr.createImagesForRecord(template, base64image, user);
-    sampleDao.save(template);
+    sampleTemplateDao.save(template);
   }
 
   /**
@@ -331,8 +331,8 @@ public abstract class AbstractContentInitializer
   }
 
   @Override
-  public void saveSampleTemplate(Sample template) {
-    sampleDao.persistSampleTemplate(template);
+  public void saveSampleTemplate(SampleTemplate template) {
+    sampleTemplateDao.persistSampleTemplate(template);
   }
 
   @Override
@@ -402,8 +402,8 @@ public abstract class AbstractContentInitializer
     this.userContentCreator = userContentCreator;
   }
 
-  void setSampleDao(SampleDao sampleDao) {
-    this.sampleDao = sampleDao;
+  void setSampleTemplateDao(SampleTemplateDao sampleTemplateDao) {
+    this.sampleTemplateDao = sampleTemplateDao;
   }
 
   void setSampleApiMgr(SampleApiManager sampleApiMgr) {

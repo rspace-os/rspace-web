@@ -1,10 +1,4 @@
-import {
-  fromCommonUnit,
-  massIds,
-  toCommonUnit,
-  volumeIds,
-  unitlessIds,
-} from "@/stores/definitions/Units";
+import { fromCommonUnit, massIds, toCommonUnit, unitlessIds, volumeIds } from "@/stores/definitions/Units";
 
 const QUANTITY_UNIT_SYMBOLS: Record<number, string> = {
   [unitlessIds.items]: "items",
@@ -33,31 +27,18 @@ export function isMassUnit(unitId: number): boolean {
   return Object.values(massIds).includes(unitId);
 }
 
-export function convertToGrams(
-  value: number,
-  unitId: number,
-): number | null {
+export function convertToGrams(value: number, unitId: number): number | null {
   if (!isMassUnit(unitId)) {
     return null;
   }
 
-  return fromCommonUnit(
-    toCommonUnit(value, unitId),
-    massIds.grams,
-  );
+  return fromCommonUnit(toCommonUnit(value, unitId), massIds.grams);
 }
 
-export function convertFromGrams(
-  valueInGrams: number,
-  targetUnitId: number,
-): number | null {
+export function convertFromGrams(valueInGrams: number, targetUnitId: number): number | null {
   if (!isMassUnit(targetUnitId)) {
     return null;
   }
 
-  return fromCommonUnit(
-    toCommonUnit(valueInGrams, massIds.grams),
-    targetUnitId,
-  );
+  return fromCommonUnit(toCommonUnit(valueInGrams, massIds.grams), targetUnitId);
 }
-

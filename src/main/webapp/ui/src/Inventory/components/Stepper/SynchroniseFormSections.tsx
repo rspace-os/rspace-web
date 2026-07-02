@@ -1,8 +1,6 @@
 import React from "react";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
 import FormSectionsContext from "../../../stores/contexts/FormSections";
-import useUiPreference, {
-  PREFERENCES,
-} from "../../../hooks/api/useUiPreference";
 
 type ContainerSections = {
   information: boolean;
@@ -55,12 +53,33 @@ type MixedSections = {
   barcodes: boolean;
 };
 
+type InstrumentSections = {
+  overview: boolean;
+  details: boolean;
+  barcodes: boolean;
+  identifiers: boolean;
+  attachments: boolean;
+  customFields: boolean;
+};
+
+type InstrumentTemplateSections = {
+  overview: boolean;
+  details: boolean;
+  barcodes: boolean;
+  attachments: boolean;
+  permissions: boolean;
+  customFields: boolean;
+  instruments: boolean;
+};
+
 type FormSectionsState = {
   container: ContainerSections;
   sample: SampleSections;
   subSample: SubSampleSections;
   sampleTemplate: SampleTemplateSections;
   mixed: MixedSections;
+  instrument: InstrumentSections;
+  instrumentTemplate: InstrumentTemplateSections;
 };
 
 type RecordType = keyof FormSectionsState;
@@ -108,6 +127,23 @@ const defaultFormSectionExpandedState = (): FormSectionsState =>
       customFields: false,
       samples: true,
     },
+    instrument: {
+      overview: true,
+      details: false,
+      barcodes: false,
+      identifiers: false,
+      attachments: false,
+      customFields: false,
+    },
+    instrumentTemplate: {
+      overview: true,
+      details: false,
+      barcodes: false,
+      attachments: false,
+      permissions: false,
+      customFields: false,
+      instruments: true,
+    },
     mixed: {
       information: false,
       overview: true,
@@ -135,43 +171,45 @@ function setAllSectionValues<T extends RecordType>(
   return result;
 }
 
-export default function SynchroniseFormSections({
-  children,
-}: SynchroniseFormSectionsArgs): React.ReactNode {
-  const [formSectionExpandedState, setFormSectionExpandedState] =
-    useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
-      defaultValue: defaultFormSectionExpandedState(),
-    });
+type PartialFormSectionsState = Partial<{
+  [K in RecordType]: Partial<FormSectionsState[K]>;
+}>;
+
+function mergeWithDefaults(stored: PartialFormSectionsState): FormSectionsState {
+  const defaults = defaultFormSectionExpandedState();
+  const result = {} as FormSectionsState;
+  for (const recordType of Object.keys(defaults) as Array<RecordType>) {
+    (result as Record<string, unknown>)[recordType] = {
+      ...defaults[recordType],
+      ...(stored[recordType] ?? {}),
+    };
+  }
+  return result;
+}
+
+export default function SynchroniseFormSections({ children }: SynchroniseFormSectionsArgs): React.ReactNode {
+  // Temporary solution.  See https://researchspace.atlassian.net/browse/RSDEV-1221 for a preferred implementation.
+  const [storedState, setFormSectionExpandedState] = useUiPreference(PREFERENCES.INVENTORY_FORM_SECTIONS_EXPANDED, {
+    defaultValue: defaultFormSectionExpandedState(),
+  });
+  const formSectionExpandedState = React.useMemo(
+    () => mergeWithDefaults(storedState as PartialFormSectionsState),
+    [storedState],
+  );
   return (
     <FormSectionsContext.Provider
       value={{
-        isExpanded: <T extends RecordType>(
-          recordType: T,
-          sectionName: SectionName<T>,
-        ) => {
+        isExpanded: <T extends RecordType>(recordType: T, sectionName: SectionName<T>) => {
           return formSectionExpandedState[recordType][sectionName];
         },
-        setExpanded: <T extends RecordType>(
-          recordType: T,
-          sectionName: SectionName<T>,
-          value: boolean,
-        ) => {
+        setExpanded: <T extends RecordType>(recordType: T, sectionName: SectionName<T>, value: boolean) => {
           const formSectionExpandedStateCopy = { ...formSectionExpandedState };
-          (formSectionExpandedStateCopy[recordType] as Record<string, boolean>)[
-            sectionName as string
-          ] = value;
+          (formSectionExpandedStateCopy[recordType] as Record<string, boolean>)[sectionName as string] = value;
           setFormSectionExpandedState(formSectionExpandedStateCopy);
         },
-        setAllExpanded: <T extends RecordType>(
-          recordType: T,
-          value: boolean,
-        ) => {
+        setAllExpanded: <T extends RecordType>(recordType: T, value: boolean) => {
           const formSectionExpandedStateCopy = { ...formSectionExpandedState };
-          formSectionExpandedStateCopy[recordType] = setAllSectionValues(
-            recordType,
-            value,
-            formSectionExpandedState,
-          );
+          formSectionExpandedStateCopy[recordType] = setAllSectionValues(recordType, value, formSectionExpandedState);
           setFormSectionExpandedState(formSectionExpandedStateCopy);
         },
       }}
@@ -188,41 +226,22 @@ export default function SynchroniseFormSections({
  * the required name field in the overview section. The user can always toggle
  * the state of the section, but that state change is not persisted.
  */
-export function UnsynchroniseFormSections({
-  children,
-}: SynchroniseFormSectionsArgs): React.ReactNode {
-  const [formSectionExpandedState, setFormSectionExpandedState] =
-    React.useState(defaultFormSectionExpandedState());
+export function UnsynchroniseFormSections({ children }: SynchroniseFormSectionsArgs): React.ReactNode {
+  const [formSectionExpandedState, setFormSectionExpandedState] = React.useState(defaultFormSectionExpandedState());
   return (
     <FormSectionsContext.Provider
       value={{
-        isExpanded: <T extends RecordType>(
-          recordType: T,
-          sectionName: SectionName<T>,
-        ) => {
+        isExpanded: <T extends RecordType>(recordType: T, sectionName: SectionName<T>) => {
           return formSectionExpandedState[recordType][sectionName];
         },
-        setExpanded: <T extends RecordType>(
-          recordType: T,
-          sectionName: SectionName<T>,
-          value: boolean,
-        ) => {
+        setExpanded: <T extends RecordType>(recordType: T, sectionName: SectionName<T>, value: boolean) => {
           const formSectionExpandedStateCopy = { ...formSectionExpandedState };
-          (formSectionExpandedStateCopy[recordType] as Record<string, boolean>)[
-            sectionName as string
-          ] = value;
+          (formSectionExpandedStateCopy[recordType] as Record<string, boolean>)[sectionName as string] = value;
           setFormSectionExpandedState(formSectionExpandedStateCopy);
         },
-        setAllExpanded: <T extends RecordType>(
-          recordType: T,
-          value: boolean,
-        ) => {
+        setAllExpanded: <T extends RecordType>(recordType: T, value: boolean) => {
           const formSectionExpandedStateCopy = { ...formSectionExpandedState };
-          formSectionExpandedStateCopy[recordType] = setAllSectionValues(
-            recordType,
-            value,
-            formSectionExpandedState,
-          );
+          formSectionExpandedStateCopy[recordType] = setAllSectionValues(recordType, value, formSectionExpandedState);
           setFormSectionExpandedState(formSectionExpandedStateCopy);
         },
       }}

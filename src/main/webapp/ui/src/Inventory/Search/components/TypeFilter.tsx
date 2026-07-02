@@ -1,15 +1,17 @@
-import React, { useContext } from "react";
-import SearchContext from "../../../stores/contexts/Search";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import StyledMenu from "../../../components/StyledMenu";
-import MenuItem from "@mui/material/MenuItem";
-import { type ResultType } from "../../../stores/definitions/Search";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle } from "@fortawesome/free-regular-svg-icons/faCircle";
-import { match } from "../../../util/Util";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
+import MenuItem from "@mui/material/MenuItem";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
+import { useContext } from "react";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import StyledMenu from "../../../components/StyledMenu";
+import SearchContext from "../../../stores/contexts/Search";
+import type { ResultType } from "../../../stores/definitions/Search";
+import { match } from "../../../util/Util";
 
 type TypeFilterArgs = {
   anchorEl: HTMLElement | null;
@@ -17,11 +19,7 @@ type TypeFilterArgs = {
   onClose: (newTypeFilter: ResultType) => void;
 };
 
-export default function TypeFilter({
-  anchorEl,
-  onClose,
-  current,
-}: TypeFilterArgs): React.ReactNode {
+export default function TypeFilter({ anchorEl, onClose, current }: TypeFilterArgs): React.ReactNode {
   const { search } = useContext(SearchContext);
   const theme = useTheme();
 
@@ -48,11 +46,7 @@ export default function TypeFilter({
           </ListItemIcon>
           <ListItemText
             primary="All"
-            secondary={
-              search.fetcher.allTypesAllowed
-                ? null
-                : "Enter a search query first."
-            }
+            secondary={search.fetcher.allTypesAllowed ? null : "Enter a search query first."}
           />
         </MenuItem>
         <MenuItem
@@ -97,10 +91,7 @@ export default function TypeFilter({
             primary="Samples"
             secondary={match<void, string>([
               [() => search.benchSearch, "Samples cannot be found on benches."],
-              [
-                () => search.fetcher.parentIsContainer,
-                "Samples cannot be found in containers.",
-              ],
+              [() => search.fetcher.parentIsContainer, "Samples cannot be found in containers."],
               [() => true, ""],
             ])()}
           />
@@ -126,12 +117,26 @@ export default function TypeFilter({
           <ListItemText primary="Subsamples" />
         </MenuItem>
         <MenuItem
-          selected={current === "TEMPLATE"}
-          aria-current={current === "TEMPLATE"}
+          selected={current === "INSTRUMENT"}
+          aria-current={current === "INSTRUMENT"}
           onClick={() => {
-            onClose("TEMPLATE");
+            onClose("INSTRUMENT");
           }}
-          disabled={!search.allowedTypeFilters.has("TEMPLATE")}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT")}
+          data-test-id="instrumentType"
+        >
+          <ListItemIcon>
+            <FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} style={{ fontSize: "1em" }} />
+          </ListItemIcon>
+          <ListItemText primary="Instruments" />
+        </MenuItem>
+        <MenuItem
+          selected={current === "SAMPLE_TEMPLATE"}
+          aria-current={current === "SAMPLE_TEMPLATE"}
+          onClick={() => {
+            onClose("SAMPLE_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("SAMPLE_TEMPLATE")}
           data-test-id="templateType"
         >
           <ListItemIcon>
@@ -148,16 +153,41 @@ export default function TypeFilter({
             />
           </ListItemIcon>
           <ListItemText
-            primary="Templates"
+            primary="Sample Templates"
             secondary={match<void, string>([
-              [
-                () => search.benchSearch,
-                "Templates cannot be found on benches.",
-              ],
-              [
-                () => search.fetcher.parentIsContainer,
-                "Templates cannot be found in containers.",
-              ],
+              [() => search.benchSearch, "Sample Templates cannot be found on benches."],
+              [() => search.fetcher.parentIsContainer, "Sample Templates cannot be found in containers."],
+              [() => true, ""],
+            ])()}
+          />
+        </MenuItem>
+        <MenuItem
+          selected={current === "INSTRUMENT_TEMPLATE"}
+          aria-current={current === "INSTRUMENT_TEMPLATE"}
+          onClick={() => {
+            onClose("INSTRUMENT_TEMPLATE");
+          }}
+          disabled={!search.allowedTypeFilters.has("INSTRUMENT_TEMPLATE")}
+          data-test-id="instrumentTemplateType"
+        >
+          <ListItemIcon>
+            <RecordTypeIcon
+              record={{
+                recordTypeLabel: "Instrument Template",
+                iconName: "instrumentTemplate",
+              }}
+              color={theme.palette.standardIcon.main}
+              style={{
+                height: 18,
+                width: 18,
+              }}
+            />
+          </ListItemIcon>
+          <ListItemText
+            primary="Instrument Templates"
+            secondary={match<void, string>([
+              [() => search.benchSearch, "Instrument Templates cannot be found on benches."],
+              [() => search.fetcher.parentIsContainer, "Instrument Templates cannot be found in containers."],
               [() => true, ""],
             ])()}
           />

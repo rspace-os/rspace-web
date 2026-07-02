@@ -1,50 +1,44 @@
-import React, { useState, useEffect, type ReactNode } from "react";
-import { type HasEditableFields } from "../../../../stores/definitions/Editable";
-import { observer } from "mobx-react-lite";
-import AddButton from "../../../../components/AddButton";
-import CustomTooltip from "../../../../components/CustomTooltip";
-import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
-import { match, doNotAwait } from "../../../../util/Util";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
+import PrintIcon from "@mui/icons-material/Print";
+import PrintDisabledIcon from "@mui/icons-material/PrintDisabled";
+import PreviewIcon from "@mui/icons-material/Visibility";
+import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import Badge from "@mui/material/Badge";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import Collapse from "@mui/material/Collapse";
+import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import Popover from "@mui/material/Popover";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import Box from "@mui/material/Box";
-import DeleteButton from "../../DeleteButton";
-import { type BarcodeRecord } from "../../../../stores/definitions/Barcode";
-import { type Factory } from "../../../../stores/definitions/Factory";
-import Popover from "@mui/material/Popover";
-import BarcodeScanner from "../../BarcodeScanner/BarcodeScanner";
-import StringField from "../../../../components/Inputs/StringField";
-import NoValue from "../../../../components/NoValue";
-import useStores from "../../../../stores/use-stores";
-import { mkAlert } from "../../../../stores/contexts/Alert";
+import { observer } from "mobx-react-lite";
+import { type ReactNode, useEffect, useState } from "react";
+import AddButton from "../../../../components/AddButton";
+import CustomTooltip from "../../../../components/CustomTooltip";
+import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import ImagePreview from "../../../../components/ImagePreview";
-import PreviewIcon from "@mui/icons-material/Visibility";
-import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
-import PrintDialog from "./PrintDialog";
-import PrintIcon from "@mui/icons-material/Print";
-import PrintDisabledIcon from "@mui/icons-material/PrintDisabled";
-import Grid from "@mui/material/Grid";
-import { barcodeFormatAsString } from "../../../../util/barcode";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
-function DescriptionWrapper({
-  children,
-  isDeleted,
-}: {
-  children: ReactNode;
-  isDeleted: boolean;
-}): ReactNode {
+import StringField from "../../../../components/Inputs/StringField";
+import NoValue from "../../../../components/NoValue";
+import { mkAlert } from "../../../../stores/contexts/Alert";
+import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Factory } from "../../../../stores/definitions/Factory";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import useStores from "../../../../stores/use-stores";
+import { barcodeFormatAsString } from "../../../../util/barcode";
+import { match } from "../../../../util/Util";
+import BarcodeScanner from "../../BarcodeScanner/BarcodeScanner";
+import DeleteButton from "../../DeleteButton";
+import PrintDialog from "./PrintDialog";
+
+function DescriptionWrapper({ children, isDeleted }: { children: ReactNode; isDeleted: boolean }): ReactNode {
   return (
     <Box
       component="span"
@@ -74,18 +68,17 @@ const CollapseContents = observer(
   }): ReactNode => {
     const { uiStore } = useStores();
     const barcodes = fieldOwner.fieldValues.barcodes;
-    const imgUrlsAvailable =
-      Boolean(connectedItem) && barcodes.every((b) => b.imageUrl);
+    const imgUrlsAvailable = Boolean(connectedItem) && barcodes.every((b) => b.imageUrl);
     const remove = (b: BarcodeRecord) => {
       const index = barcodes.indexOf(b);
       const deleted = b.deletedCopy();
       if (!deleted) {
-        const newBarcodes = ArrayUtils.splice(barcodes, index, 1);
+        const newBarcodes = barcodes.toSpliced(index, 1);
         fieldOwner.setFieldsDirty({
           barcodes: newBarcodes,
         });
       } else {
-        const newBarcodes = ArrayUtils.splice(barcodes, index, 1, deleted);
+        const newBarcodes = barcodes.toSpliced(index, 1, deleted);
         fieldOwner.setFieldsDirty({
           barcodes: newBarcodes,
         });
@@ -100,9 +93,7 @@ const CollapseContents = observer(
       height: number;
     } | null>(null);
     const [showPreview, setShowPreview] = useState(false);
-    const [itemsToPrint, setItemsToPrint] = useState<
-      Array<[BarcodeRecord, InventoryRecord]>
-    >([]);
+    const [itemsToPrint, setItemsToPrint] = useState<Array<[BarcodeRecord, InventoryRecord]>>([]);
     const [previewImages, setPreviewImages] = useState<Array<string>>([]);
     const [showPrintDialog, setShowPrintDialog] = useState(false);
     const handlePrintOne = async (barcode: BarcodeRecord): Promise<void> => {
@@ -113,7 +104,7 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           if (image) setPreviewImages([URL.createObjectURL(image)]);
         }
-      } catch (e: Error | unknown) {
+      } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode image.",
@@ -135,7 +126,7 @@ const CollapseContents = observer(
           const imageUrls = images.map((img) => URL.createObjectURL(img));
           setPreviewImages(imageUrls);
         }
-      } catch (e: Error | unknown) {
+      } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
             title: "Unable to retrieve barcode images.",
@@ -154,7 +145,7 @@ const CollapseContents = observer(
           const image = await barcode.fetchImage();
           setPreviewImages([URL.createObjectURL(image)]);
           setShowPreview(true);
-        } catch (e: Error | unknown) {
+        } catch (e: unknown) {
           uiStore.addAlert(
             mkAlert({
               title: "Unable to retrieve barcode image.",
@@ -195,18 +186,14 @@ const CollapseContents = observer(
                             <StringField
                               error={(b.description ?? "").length > 255}
                               value={b.description ?? ""}
-                              onChange={({ target: { value } }) =>
-                                changeDescription(b, value)
-                              }
+                              onChange={({ target: { value } }) => changeDescription(b, value)}
                               variant="standard"
                               disabled={b.isDeleted}
                               noValueLabel="No description"
                             />
                           </InputWrapper>
                         ) : (
-                          b.renderedDescription || (
-                            <NoValue label="No description" />
-                          )
+                          b.renderedDescription || <NoValue label="No description" />
                         )}
                       </DescriptionWrapper>
                     </TableCell>
@@ -221,31 +208,19 @@ const CollapseContents = observer(
                                 ? "Print QR code"
                                 : "Barcode print is not supported or you do not have permission."
                             }
-                            icon={
-                              b.imageUrl ? <PrintIcon /> : <PrintDisabledIcon />
-                            }
-                            disabled={
-                              !connectedItem ||
-                              !connectedItem.canRead ||
-                              !b.imageUrl
-                            }
-                            onClick={doNotAwait(() => handlePrintOne(b))}
+                            icon={b.imageUrl ? <PrintIcon /> : <PrintDisabledIcon />}
+                            disabled={!connectedItem?.canRead || !b.imageUrl}
+                            onClick={() => void handlePrintOne(b)}
                           />
                         </Grid>
                         <Grid>
                           <IconButtonWithTooltip
                             size="small"
                             color="primary"
-                            title={
-                              b.imageUrl
-                                ? "Preview as QR code"
-                                : "QR code preview is not supported."
-                            }
-                            icon={
-                              b.imageUrl ? <PreviewIcon /> : <NoPreviewIcon />
-                            }
+                            title={b.imageUrl ? "Preview as QR code" : "QR code preview is not supported."}
+                            icon={b.imageUrl ? <PreviewIcon /> : <NoPreviewIcon />}
                             disabled={!b.imageUrl}
-                            onClick={doNotAwait(() => handlePreview(b))}
+                            onClick={() => void handlePreview(b)}
                           />
                         </Grid>
                         <Grid>
@@ -277,15 +252,9 @@ const CollapseContents = observer(
                             ? "Print all barcodes"
                             : "Barcode print is not supported or you do not have permission."
                         }
-                        icon={
-                          imgUrlsAvailable ? (
-                            <PrintIcon />
-                          ) : (
-                            <PrintDisabledIcon />
-                          )
-                        }
+                        icon={imgUrlsAvailable ? <PrintIcon /> : <PrintDisabledIcon />}
                         disabled={!imgUrlsAvailable}
-                        onClick={doNotAwait(() => handlePrintAll())}
+                        onClick={() => void handlePrintAll()}
                       />
                       <Box
                         component="span"
@@ -315,21 +284,20 @@ const CollapseContents = observer(
             setSize={setSize}
           />
         )}
-        {previewImages.length > 0 &&
-          showPrintDialog &&
-          Boolean(connectedItem) && (
-            <PrintDialog
-              showPrintDialog={showPrintDialog}
-              onClose={() => {
-                if (previewImages.length > 0) {
-                  previewImages.forEach((pi) => URL.revokeObjectURL(pi));
-                  setShowPrintDialog(false);
-                }
-              }}
-              imageLinks={previewImages}
-              itemsToPrint={itemsToPrint}
-            />
-          )}
+        {previewImages.length > 0 && showPrintDialog && Boolean(connectedItem) && (
+          <PrintDialog
+            showPrintDialog={showPrintDialog}
+            onClose={() => {
+              if (previewImages.length > 0) {
+                // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
+                previewImages.forEach((pi) => URL.revokeObjectURL(pi));
+                setShowPrintDialog(false);
+              }
+            }}
+            imageLinks={previewImages}
+            itemsToPrint={itemsToPrint}
+          />
+        )}
       </>
     );
   },
@@ -373,11 +341,7 @@ function FieldCard<
               <AddButton
                 disabled={!editable}
                 onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
-                title={
-                  editable
-                    ? "Scan a barcode to associate."
-                    : "Press Edit to scan a barcode."
-                }
+                title={editable ? "Scan a barcode to associate." : "Press Edit to scan a barcode."}
               />
               <Popover
                 open={Boolean(anchorEl)}
@@ -436,10 +400,7 @@ function FieldCard<
                   [() => true, "Show barcodes listing"],
                 ])()}
               >
-                <IconButton
-                  onClick={() => setOpen(!open)}
-                  disabled={barcodes.length === 0}
-                >
+                <IconButton onClick={() => setOpen(!open)} disabled={barcodes.length === 0}>
                   <Badge color="primary" badgeContent={barcodes.length}>
                     <ExpandCollapseIcon open={open} />
                   </Badge>
@@ -450,11 +411,7 @@ function FieldCard<
         />
       )}
       <Collapse in={open}>
-        <CollapseContents
-          editable={editable}
-          fieldOwner={fieldOwner}
-          connectedItem={connectedItem}
-        />
+        <CollapseContents editable={editable} fieldOwner={fieldOwner} connectedItem={connectedItem} />
       </Collapse>
     </Card>
   );

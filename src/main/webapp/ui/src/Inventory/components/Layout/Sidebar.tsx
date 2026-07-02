@@ -1,29 +1,29 @@
-import React, { useState } from "react";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import CreateNew from "../CreateNew";
-import Drawer from "@mui/material/Drawer";
-import { drawerClasses } from "@mui/material/Drawer";
-import List from "@mui/material/List";
-import { useTheme } from "@mui/material/styles";
-import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
-import ExportDialog from "../Export/ExportDialog";
-import SettingsDialog from "../Settings/SettingsDialog";
-import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import useNavigateHelpers from "../../useNavigateHelpers";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
-import NavigateContext from "../../../stores/contexts/Navigate";
-import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
-import { useLandmark } from "../../../components/LandmarksContext";
-import Box from "@mui/material/Box";
-import Divider from "@mui/material/Divider";
-import DrawerTab from "../../../components/DrawerTab";
-import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
-import { mapNullable } from "@/util/Util";
-import { InvalidState } from "@/util/error";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFileExport } from "@fortawesome/free-solid-svg-icons/faFileExport";
 import { faGear } from "@fortawesome/free-solid-svg-icons/faGear";
+import { faMicroscope } from "@fortawesome/free-solid-svg-icons/faMicroscope";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import Drawer, { drawerClasses } from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
+import { InvalidState } from "@/util/error";
+import { mapNullable } from "@/util/Util";
+import IgsnIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/IgsnIcon";
+import MyBenchIcon from "../../../assets/graphics/RecordTypeGraphics/Icons/MyBench";
+import DrawerTab from "../../../components/DrawerTab";
+import { useLandmark } from "../../../components/LandmarksContext";
+import RecordTypeIcon from "../../../components/RecordTypeIcon";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import NavigateContext from "../../../stores/contexts/Navigate";
+import useStores from "../../../stores/use-stores";
+import useNavigateHelpers from "../../useNavigateHelpers";
+import CreateNew from "../CreateNew";
+import ExportDialog from "../Export/ExportDialog";
+import SettingsDialog from "../Settings/SettingsDialog";
 
 function isSearchListing() {
   return /inventory\/search/.test(window.location.pathname);
@@ -31,25 +31,49 @@ function isSearchListing() {
 
 const drawerWidth = 200;
 
-const CustomDrawer = observer(
-  ({ children, id }: { children: React.ReactNode; id: string }) => {
-    const { uiStore } = useStores();
-    const alwaysVisible = uiStore.alwaysVisibleSidebar;
-    const isOpen = uiStore.sidebarOpen;
-    return (
-      <Drawer
-        open={alwaysVisible || isOpen}
-        variant={alwaysVisible ? "persistent" : "temporary"}
-        onClose={() => uiStore.toggleSidebar(false)}
-        id={id}
-        sx={(theme) => ({
-          width: drawerWidth,
-          flexShrink: 0,
-          whiteSpace: "nowrap",
-          zIndex: 1100,
+const CustomDrawer = observer(({ children, id }: { children: React.ReactNode; id: string }) => {
+  const { uiStore } = useStores();
+  const alwaysVisible = uiStore.alwaysVisibleSidebar;
+  const isOpen = uiStore.sidebarOpen;
+  return (
+    <Drawer
+      open={alwaysVisible || isOpen}
+      variant={alwaysVisible ? "persistent" : "temporary"}
+      onClose={() => uiStore.toggleSidebar(false)}
+      id={id}
+      sx={(theme) => ({
+        width: drawerWidth,
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+        zIndex: 1100,
+        ...(alwaysVisible &&
+          isOpen && {
+            overflow: "visible",
+            transition: theme.transitions.create("width", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.enteringScreen,
+            }),
+          }),
+        ...(alwaysVisible &&
+          !isOpen && {
+            overflowX: "hidden",
+            overflow: "visible",
+            width: theme.spacing(5),
+            transition: theme.transitions.create("width", {
+              easing: theme.transitions.easing.sharp,
+              duration: theme.transitions.duration.leavingScreen,
+            }),
+            [theme.breakpoints.up("sm")]: {
+              width: theme.spacing(8),
+            },
+          }),
+        [`& .${drawerClasses.paper}`]: {
+          position: "relative",
+          ...(!alwaysVisible && { width: drawerWidth }),
           ...(alwaysVisible &&
             isOpen && {
               overflow: "visible",
+              width: drawerWidth,
               transition: theme.transitions.create("width", {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.enteringScreen,
@@ -65,42 +89,16 @@ const CustomDrawer = observer(
                 duration: theme.transitions.duration.leavingScreen,
               }),
               [theme.breakpoints.up("sm")]: {
-                width: theme.spacing(8),
+                width: theme.spacing(7.75),
               },
             }),
-          [`& .${drawerClasses.paper}`]: {
-            position: "relative",
-            ...(!alwaysVisible && { width: drawerWidth }),
-            ...(alwaysVisible &&
-              isOpen && {
-                overflow: "visible",
-                width: drawerWidth,
-                transition: theme.transitions.create("width", {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.enteringScreen,
-                }),
-              }),
-            ...(alwaysVisible &&
-              !isOpen && {
-                overflowX: "hidden",
-                overflow: "visible",
-                width: theme.spacing(5),
-                transition: theme.transitions.create("width", {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.leavingScreen,
-                }),
-                [theme.breakpoints.up("sm")]: {
-                  width: theme.spacing(7.75),
-                },
-              }),
-          },
-        })}
-      >
-        {children}
-      </Drawer>
-    );
-  }
-);
+        },
+      })}
+    >
+      {children}
+    </Drawer>
+  );
+});
 
 const largestFittingCount = 999;
 
@@ -112,7 +110,7 @@ const MyBenchNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { peopleStore, searchStore, uiStore } = useStores();
     const { navigateToSearch } = useNavigateHelpers();
@@ -130,12 +128,7 @@ const MyBenchNavItem = observer(
     return (
       <DrawerTab
         label="My Bench"
-        selected={
-          (isSearchListing() &&
-            currentUser &&
-            searchStore.search.onUsersBench(currentUser)) ??
-          false
-        }
+        selected={(isSearchListing() && currentUser && searchStore.search.onUsersBench(currentUser)) ?? false}
         icon={<MyBenchIcon />}
         index={index}
         tabIndex={tabIndex}
@@ -143,11 +136,7 @@ const MyBenchNavItem = observer(
         drawerOpen={uiStore.sidebarOpen}
         badge={Math.min(benchContentCount ?? 0, largestFittingCount)}
         onClick={() => {
-          navigateToSearch(
-            currentUser
-              ? { parentGlobalId: `BE${currentUser.workbenchId}` }
-              : {},
-          );
+          navigateToSearch(currentUser ? { parentGlobalId: `BE${currentUser.workbenchId}` } : {});
         }}
       />
     );
@@ -162,7 +151,7 @@ const ContainersNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -172,11 +161,7 @@ const ContainersNavItem = observer(
     return (
       <DrawerTab
         label="Containers"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("CONTAINER")
-        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("CONTAINER")}
         icon={
           <RecordTypeIcon
             record={{
@@ -209,7 +194,7 @@ const SampleNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -219,11 +204,7 @@ const SampleNavItem = observer(
     return (
       <DrawerTab
         label="Samples"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("SAMPLE")
-        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE")}
         icon={
           <RecordTypeIcon
             record={{
@@ -247,7 +228,7 @@ const SampleNavItem = observer(
   },
 );
 
-const TemplateNavItem = observer(
+const InstrumentNavItem = observer(
   ({
     index,
     tabIndex,
@@ -255,7 +236,7 @@ const TemplateNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -264,12 +245,48 @@ const TemplateNavItem = observer(
 
     return (
       <DrawerTab
-        label="Templates"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("TEMPLATE")
+        label="Instruments"
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT")}
+        icon={<FontAwesomeIcon icon={faMicroscope} color={theme.palette.standardIcon.main} />}
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const TemplateNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label={
+          <>
+            Sample
+            <br />
+            Templates
+          </>
         }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SAMPLE_TEMPLATE")}
         icon={
           <RecordTypeIcon
             record={{
@@ -286,7 +303,56 @@ const TemplateNavItem = observer(
         drawerOpen={uiStore.sidebarOpen}
         onClick={() => {
           navigateToSearch({
-            resultType: "TEMPLATE",
+            resultType: "SAMPLE_TEMPLATE",
+          });
+        }}
+      />
+    );
+  },
+);
+
+const InstrumentTemplateNavItem = observer(
+  ({
+    index,
+    tabIndex,
+    getRef,
+  }: {
+    index: number;
+    tabIndex: number;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
+  }) => {
+    const { searchStore, uiStore } = useStores();
+    const theme = useTheme();
+    const benchSearch = searchStore.search.benchSearch;
+    const { navigateToSearch } = useNavigateHelpers();
+
+    return (
+      <DrawerTab
+        label={
+          <>
+            Instrument
+            <br />
+            Templates
+          </>
+        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("INSTRUMENT_TEMPLATE")}
+        icon={
+          <RecordTypeIcon
+            record={{
+              iconName: "instrumentTemplate",
+              recordTypeLabel: "",
+            }}
+            style={{ width: "16px", height: "16px" }}
+            color={theme.palette.standardIcon.main}
+          />
+        }
+        index={index}
+        tabIndex={tabIndex}
+        ref={getRef(index)}
+        drawerOpen={uiStore.sidebarOpen}
+        onClick={() => {
+          navigateToSearch({
+            resultType: "INSTRUMENT_TEMPLATE",
           });
         }}
       />
@@ -302,7 +368,7 @@ const IgsnNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { uiStore } = useStores();
     const { useNavigate } = React.useContext(NavigateContext);
@@ -336,7 +402,7 @@ const SubsampleNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { searchStore, uiStore } = useStores();
     const theme = useTheme();
@@ -346,11 +412,7 @@ const SubsampleNavItem = observer(
     return (
       <DrawerTab
         label="Subsamples"
-        selected={
-          !benchSearch &&
-          isSearchListing() &&
-          searchStore.isTypeSelected("SUBSAMPLE")
-        }
+        selected={!benchSearch && isSearchListing() && searchStore.isTypeSelected("SUBSAMPLE")}
         icon={
           <RecordTypeIcon
             record={{
@@ -382,7 +444,7 @@ const ExportNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const {
       peopleStore: { currentUser },
@@ -411,9 +473,7 @@ const ExportNavItem = observer(
           <ExportDialog
             openExportDialog={openExportDialog}
             setOpenExportDialog={setOpenExportDialog}
-            onExport={(exportOptions) =>
-              currentUser?.exportData(exportOptions, currentUser.username)
-            }
+            onExport={(exportOptions) => currentUser?.exportData(exportOptions, currentUser.username)}
             exportType="userData"
           />
         )}
@@ -430,7 +490,7 @@ const SettingsNavItem = observer(
   }: {
     index: number;
     tabIndex: number;
-    getRef: (index: number) => React.RefObject<HTMLDivElement> | null;
+    getRef: (index: number) => React.RefObject<HTMLDivElement | null> | null;
   }) => {
     const { uiStore } = useStores();
     const [openSettingsDialog, setOpenSettingsDialog] = useState(false);
@@ -448,12 +508,7 @@ const SettingsNavItem = observer(
           ref={getRef(index)}
           drawerOpen={uiStore.sidebarOpen}
         />
-        {openSettingsDialog && (
-          <SettingsDialog
-            open={openSettingsDialog}
-            setOpen={setOpenSettingsDialog}
-          />
-        )}
+        {openSettingsDialog && <SettingsDialog open={openSettingsDialog} setOpen={setOpenSettingsDialog} />}
       </>
     );
   },
@@ -468,10 +523,9 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
   const isSysAdmin: boolean = Boolean(peopleStore.currentUser?.hasSysAdminRole);
   const sidebarRef = useLandmark("Navigation");
 
-  const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex<HTMLDivElement>({
-      max: isSysAdmin ? 7 : 6,
-    });
+  const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
+    max: isSysAdmin ? 9 : 8,
+  });
 
   const afterClick = () => {
     if (!uiStore.alwaysVisibleSidebar) uiStore.toggleSidebar(false);
@@ -491,52 +545,20 @@ function Sidebar({ id }: SidebarArgs): React.ReactNode {
             position: "relative",
           }}
         >
-          <List
-            component="ul"
-            onClick={afterClick}
-            aria-label="List existing Inventory items"
-          >
-            <MyBenchNavItem
-              index={0}
-              tabIndex={getTabIndex(0)}
-              getRef={getRef}
-            />
-            <ContainersNavItem
-              index={1}
-              tabIndex={getTabIndex(1)}
-              getRef={getRef}
-            />
-            <SampleNavItem
-              index={2}
-              tabIndex={getTabIndex(2)}
-              getRef={getRef}
-            />
-            <SubsampleNavItem
-              index={3}
-              tabIndex={getTabIndex(3)}
-              getRef={getRef}
-            />
-            <TemplateNavItem
-              index={4}
-              tabIndex={getTabIndex(4)}
-              getRef={getRef}
-            />
-            <IgsnNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+          <List component="ul" onClick={afterClick} aria-label="List existing Inventory items">
+            <MyBenchNavItem index={0} tabIndex={getTabIndex(0)} getRef={getRef} />
+            <ContainersNavItem index={1} tabIndex={getTabIndex(1)} getRef={getRef} />
+            <SampleNavItem index={2} tabIndex={getTabIndex(2)} getRef={getRef} />
+            <SubsampleNavItem index={3} tabIndex={getTabIndex(3)} getRef={getRef} />
+            <InstrumentNavItem index={4} tabIndex={getTabIndex(4)} getRef={getRef} />
+            <TemplateNavItem index={5} tabIndex={getTabIndex(5)} getRef={getRef} />
+            <InstrumentTemplateNavItem index={6} tabIndex={getTabIndex(6)} getRef={getRef} />
+            <IgsnNavItem index={7} tabIndex={getTabIndex(7)} getRef={getRef} />
           </List>
           <Divider />
           <List component="ul" aria-label="Other places and action">
-            <ExportNavItem
-              index={6}
-              tabIndex={getTabIndex(6)}
-              getRef={getRef}
-            />
-            {isSysAdmin && (
-              <SettingsNavItem
-                index={7}
-                tabIndex={getTabIndex(7)}
-                getRef={getRef}
-              />
-            )}
+            <ExportNavItem index={8} tabIndex={getTabIndex(8)} getRef={getRef} />
+            {isSysAdmin && <SettingsNavItem index={9} tabIndex={getTabIndex(9)} getRef={getRef} />}
           </List>
         </Box>
       </Box>

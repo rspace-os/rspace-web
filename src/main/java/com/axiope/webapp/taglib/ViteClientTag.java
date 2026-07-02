@@ -10,8 +10,8 @@ import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Emits the Vite HMR runtime ({@code @vite/client}) into the page head when {@code reactDevMode} is
- * enabled, together with the React Fast Refresh preamble required by
- * {@code @vitejs/plugin-react-swc}. In production the tag is a no-op.
+ * enabled, together with the React Fast Refresh preamble required by {@code @vitejs/plugin-react}.
+ * In production the tag is a no-op.
  *
  * <p>Intended for placement inside the {@code <head>} of layout decorators so that every decorated
  * page participates in HMR — including pages that load bundles dynamically (e.g. TinyMCE plugin

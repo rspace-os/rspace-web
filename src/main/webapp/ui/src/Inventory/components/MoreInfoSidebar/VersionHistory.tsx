@@ -1,26 +1,27 @@
-import React, { useState, useEffect, useContext } from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormGroup from "@mui/material/FormGroup";
 import FormLabel from "@mui/material/FormLabel";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Table from "@mui/material/Table";
-import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableBody from "@mui/material/TableBody";
-import Alert from "@mui/material/Alert";
 import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect, useState } from "react";
 import ApiService from "../../../common/InvApiService";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import { getErrorMessage } from "../../../util/error";
 import { isoToLocale } from "../../../util/Util";
-import { type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 
 type RevisionsListResponse = {
   revisions: Array<{
@@ -57,9 +58,7 @@ type State =
  */
 function groupByVersion(response: RevisionsListResponse): Array<VersionRow> {
   const byVersion = new Map<number, VersionRow>();
-  const oldestFirst = [...response.revisions].sort(
-    (a, b) => a.revisionId - b.revisionId,
-  );
+  const oldestFirst = response.revisions.toSorted((a, b) => a.revisionId - b.revisionId);
   for (const revision of oldestFirst) {
     const version = revision.record.version;
     if (version === null || typeof version === "undefined") continue;
@@ -85,17 +84,11 @@ function DialogContents({
   versionUrl: (version: number) => string;
   onNavigate: (url: string) => void;
 }): React.ReactNode {
-  if (state.state === "loading")
-    return <Skeleton variant="rectangular" width="100%" height={118} />;
-  if (state.state === "fail")
-    return <Alert severity="error">{state.error.message}</Alert>;
+  if (state.state === "loading") return <Skeleton variant="rectangular" width="100%" height={118} />;
+  if (state.state === "fail") return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {
     if (state.versions.length === 0)
-      return (
-        <Alert severity="info">
-          No version history is available for this item yet.
-        </Alert>
-      );
+      return <Alert severity="info">No version history is available for this item yet.</Alert>;
     return (
       <Table size="small">
         <TableHead>
@@ -119,12 +112,9 @@ function DialogContents({
                   Version {row.version}
                 </Link>
                 {/* on a historical view, record.version is the pinned version, not the live one */}
-                {row.version === currentVersion &&
-                  (historical ? " (viewing)" : " (current)")}
+                {row.version === currentVersion && (historical ? " (viewing)" : " (current)")}
               </TableCell>
-              <TableCell>
-                {row.lastModified ? isoToLocale(row.lastModified) : "—"}
-              </TableCell>
+              <TableCell>{row.lastModified ? isoToLocale(row.lastModified) : "—"}</TableCell>
               <TableCell>{row.modifiedByFullName ?? "—"}</TableCell>
             </TableRow>
           ))}
@@ -150,9 +140,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   const [state, setState] = useState<State>({ state: "init" });
 
   const supported =
-    ["sample", "subSample", "container", "sampleTemplate"].includes(
-      record.recordType,
-    ) && record.id !== null;
+    ["sample", "subSample", "container", "sampleTemplate"].includes(record.recordType) && record.id !== null;
 
   useEffect(() => {
     if (open && supported) {
@@ -161,18 +149,13 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
       setState({ state: "loading" });
       void (async () => {
         try {
-          const { data } = await ApiService.get<RevisionsListResponse>(
-            `${record.recordType}s/${record.id}/revisions`,
-          );
-          if (!cancelled)
-            setState({ state: "success", versions: groupByVersion(data) });
+          const { data } = await ApiService.get<RevisionsListResponse>(`${record.recordType}s/${record.id}/revisions`);
+          if (!cancelled) setState({ state: "success", versions: groupByVersion(data) });
         } catch (e) {
           if (!cancelled)
             setState({
               state: "fail",
-              error: new Error(
-                getErrorMessage(e, "Could not load version history."),
-              ),
+              error: new Error(getErrorMessage(e, "Could not load version history.")),
             });
         }
       })();

@@ -16,15 +16,17 @@ public class OrcidConnector {
 
   private String clientId;
   private String clientSecret;
+  private String tokenUrl;
 
-  public OrcidConnector(String clientId, String clientSecret) {
+  public OrcidConnector(String clientId, String clientSecret, String tokenUrl) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+    this.tokenUrl = tokenUrl;
   }
 
   public ResponseEntity<Map> getOrcidIdForAuthorizationCode(String code) {
 
-    String uri = "https://orcid.org/oauth/token";
+    String uri = tokenUrl;
     String data =
         "client_id="
             + clientId

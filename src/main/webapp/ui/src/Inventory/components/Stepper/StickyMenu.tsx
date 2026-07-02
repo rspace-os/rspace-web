@@ -1,13 +1,14 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
-import { useTheme } from "@mui/material/styles";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import type Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import useStores from "../../../stores/use-stores";
+import type theme from "../../../theme";
+import type { RecordPalette } from "../../../theme";
 import ExtendedContextMenu from "../ContextMenu/ExtendedContextMenu";
-import Alert from "@mui/material/Alert";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
-import theme, { RecordPalette } from "../../../theme";
 
 function MenuWrapper({
   children,
@@ -22,9 +23,7 @@ function MenuWrapper({
   return (
     <Box
       sx={{
-        backgroundColor: (
-          muiTheme.palette.record[recordType] as RecordPalette
-        ).bg,
+        backgroundColor: (muiTheme.palette.record[recordType] as RecordPalette).bg,
         borderBottomLeftRadius: isSingleColumnLayout ? 0 : muiTheme.spacing(1),
         borderBottomRightRadius: 0,
         borderBottom: muiTheme.borders.section,
@@ -49,9 +48,7 @@ function RoundedWhiteContainer({
       sx={{
         borderTopLeftRadius: muiTheme.spacing(1),
         borderTopRightRadius: isSingleColumnLayout ? muiTheme.spacing(1) : 0,
-        borderBottomLeftRadius: isSingleColumnLayout
-          ? 0
-          : muiTheme.spacing(0.75),
+        borderBottomLeftRadius: isSingleColumnLayout ? 0 : muiTheme.spacing(0.75),
         backgroundColor: muiTheme.palette.background.alt,
       }}
     >
@@ -87,19 +84,14 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
   ];
   return (
     !["create", "edit"].includes(activeResult.state) && (
-      <MenuWrapper
-        recordType={activeResult.recordType}
-        isSingleColumnLayout={isSingleColumnLayout}
-      >
+      <MenuWrapper recordType={activeResult.recordType} isSingleColumnLayout={isSingleColumnLayout}>
         <RoundedWhiteContainer isSingleColumnLayout={isSingleColumnLayout}>
           <Box sx={{ ml: 0.5, pt: 0.5 }}>
             <ExtendedContextMenu
               menuID="stepper"
               prefixActions={prefixActions}
               selectedResults={[activeResult].filter(Boolean)}
-              forceDisabled={
-                search.processingContextActions ? "Action in Progress" : ""
-              }
+              forceDisabled={search.processingContextActions ? "Action in Progress" : ""}
               basketSearch={search.fetcher.basketSearch}
             />
           </Box>

@@ -1,18 +1,15 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import React from "react";
+import { chipClasses } from "@mui/material/Chip";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render } from "@/__tests__/customQueries";
+import axios from "@/common/axios";
 import UserDetails from "../UserDetails";
-import { chipClasses } from "@mui/material/Chip";
 
 vi.mock("@/common/axios", async () => {
   const actual = await vi.importActual<typeof import("axios")>("axios");
-  const instance = actual.default?.create
-    ? actual.default.create()
-    : actual.default;
+  const instance = actual.default?.create ? actual.default.create() : actual.default;
   return { ...actual, default: instance };
 });
 
@@ -25,13 +22,9 @@ describe("UserDetails", () => {
 
     const createRequestDialog = document.createElement("div");
     createRequestDialog.id = "createRequestDlg";
-    createRequestDialog.addEventListener(
-      "OPEN_CREATE_REQUEST_DIALOG",
-      (event) => {
-        dialogRecipient = (event as CustomEvent<{ recipient: string }>).detail
-          .recipient;
-      },
-    );
+    createRequestDialog.addEventListener("OPEN_CREATE_REQUEST_DIALOG", (event) => {
+      dialogRecipient = (event as CustomEvent<{ recipient: string }>).detail.recipient;
+    });
     document.body.appendChild(createRequestDialog);
 
     const messageDialogTrigger = document.createElement("div");
@@ -90,5 +83,3 @@ describe("UserDetails", () => {
     expect(dialogRecipient).toBe("ada<Ada Lovelace>,");
   });
 });
-
-

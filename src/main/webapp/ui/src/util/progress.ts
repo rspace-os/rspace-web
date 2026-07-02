@@ -13,20 +13,10 @@ export type Progress = number;
 /**
  * Calcuate the progress. Constructor function for Progress.
  */
-export function calculateProgress({
-  progressMade,
-  total,
-}: {
-  progressMade: number;
-  total: number;
-}): Progress {
-  if (progressMade < 0)
-    throw new TypeError(
-      "progressMade must either be zero or a positive number."
-    );
+export function calculateProgress({ progressMade, total }: { progressMade: number; total: number }): Progress {
+  if (progressMade < 0) throw new TypeError("progressMade must either be zero or a positive number.");
   if (total <= 0) throw new TypeError("total must be a positive number.");
-  if (total < progressMade)
-    throw new TypeError("total must be greater than or equal to progressMade.");
+  if (total < progressMade) throw new TypeError("total must be greater than or equal to progressMade.");
   return Math.floor((progressMade / total) * 10) * 10;
 }
 

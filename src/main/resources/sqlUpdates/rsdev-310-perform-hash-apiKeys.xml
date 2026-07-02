@@ -4,14 +4,14 @@
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
 
     <!-- Update apiKeys that have not been SHA256 hashed -->
-    <changeSet id="2024-09-25a" context="dev-test,run" author="nico">
+    <changeSet id="2024-09-25a" context="run" author="nico">
         <comment>Update ApiKeys that have not been SHA256 hashed in the Database</comment>
         <customChange
                 class="com.researchspace.dao.customliquibaseupdates.CryptingApiKeysAndUpdateDatabase_RSDEV310">
         </customChange>
     </changeSet>
 
-    <changeSet  id="2024-09-25b" context="dev-test,run" author="nico">
+    <changeSet  id="2024-09-25b" context="run" author="nico">
         <preConditions onFail="WARN">
             <sqlCheck expectedResult="0">select count(*) from UserApiKey where length(apiKey) = 32;</sqlCheck>
         </preConditions>

@@ -1,12 +1,9 @@
-import React from "react";
-import BaseFormField, {
-  type FormFieldArgs as BaseFormFieldArgs,
-} from "./FormField";
-import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
 import FormControl from "@mui/material/FormControl";
+import React from "react";
+import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
 import FieldLabel from "../../../components/Inputs/FieldLabel";
 import NoValue from "../../../components/NoValue";
-import { INVENTORY_FORM_FIELD_SX } from "./FormField";
+import BaseFormField, { type FormFieldArgs as BaseFormFieldArgs, INVENTORY_FORM_FIELD_SX } from "./FormField";
 
 /**
  * This component renders form fields specifically used by the main Inventory
@@ -78,17 +75,8 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T> & {
  */
 
 export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
-  const {
-    disabled,
-    renderInput,
-    value,
-    label,
-    noValueLabel,
-    canChooseWhichToEdit,
-    setDisabled,
-    asFieldset,
-    ...rest
-  } = props;
+  const { disabled, renderInput, value, label, noValueLabel, canChooseWhichToEdit, setDisabled, asFieldset, ...rest } =
+    props;
 
   /*
    * This ID links together the ChooseToEdit checkbox, used when batching

@@ -1,39 +1,36 @@
+import { useTheme } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type { ReactNode } from "react";
+import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
+import RecordTypeIcon from "../../components/RecordTypeIcon";
+import type { Person } from "../../stores/definitions/Person";
+import SubSampleModel from "../../stores/models/SubSampleModel";
 import useStores from "../../stores/use-stores";
 import AttachmentsField from "../components/Fields/Attachments/Attachments";
-import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
+import BarcodesField from "../components/Fields/Barcodes/FormField";
 import DescriptionField from "../components/Fields/Description";
 import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
+import IdentifiersField from "../components/Fields/Identifiers/Identifiers";
 import ImageField from "../components/Fields/Image";
+import LocationField from "../components/Fields/Location";
 import NameField from "../components/Fields/Name";
-import TagsField from "../components/Fields/Tags";
-import Stepper from "../components/Stepper/Stepper";
-import StepperPanel from "../components/Stepper/StepperPanel";
-import Notes from "./Fields/Notes/Notes";
-import Quantity from "./Fields/Quantity";
-import { observer } from "mobx-react-lite";
-import React, { type ReactNode } from "react";
-import SubSampleModel from "../../stores/models/SubSampleModel";
-import BarcodesField from "../components/Fields/Barcodes/FormField";
 import OwnerField from "../components/Fields/Owner";
 import SampleField from "../components/Fields/Sample";
-import LocationField from "../components/Fields/Location";
-import {
-  useFormSectionError,
-  setFormSectionError,
-} from "../components/Stepper/StepperPanelHeader";
-import LimitedAccessAlert from "../components/LimitedAccessAlert";
+import TagsField from "../components/Fields/Tags";
 import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
-import Typography from "@mui/material/Typography";
+import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import { RecordLink } from "../components/RecordLink";
-import Source from "../Sample/Fields/Source";
-import StorageTemperature from "../Sample/Fields/StorageTemperature";
+import Stepper from "../components/Stepper/Stepper";
+import StepperPanel from "../components/Stepper/StepperPanel";
+import { setFormSectionError, useFormSectionError } from "../components/Stepper/StepperPanelHeader";
 import Expiry from "../Sample/Fields/Expiry";
 import TotalQuantity from "../Sample/Fields/Quantity";
-import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
+import Source from "../Sample/Fields/Source";
+import StorageTemperature from "../Sample/Fields/StorageTemperature";
 import Fields from "../Sample/Fields/TemplateFields/Fields";
-import { useTheme } from "@mui/material/styles";
-import RecordTypeIcon from "../../components/RecordTypeIcon";
-import { type Person } from "../../stores/definitions/Person";
+import Notes from "./Fields/Notes/Notes";
+import Quantity from "./Fields/Quantity";
 
 type OverviewSectionArgs = {
   activeResult: SubSampleModel;
@@ -65,10 +62,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
         <>
           <SampleField fieldOwner={activeResult} />
           <LocationField fieldOwner={activeResult} />
-          <ImageField
-            fieldOwner={activeResult}
-            alt="What the subsample looks like"
-          />
+          <ImageField fieldOwner={activeResult} alt="What the subsample looks like" />
         </>
       )}
     </StepperPanel>
@@ -96,16 +90,12 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
       <Quantity
         fieldOwner={activeResult}
         quantityCategory={activeResult.quantityCategory}
-        onErrorStateChange={(value) =>
-          setFormSectionError(formSectionError, "quantity", value)
-        }
+        onErrorStateChange={(value) => setFormSectionError(formSectionError, "quantity", value)}
         parentSample={activeResult.sample}
       />
       <DescriptionField
         fieldOwner={activeResult}
-        onErrorStateChange={(e) =>
-          setFormSectionError(formSectionError, "description", e)
-        }
+        onErrorStateChange={(e) => setFormSectionError(formSectionError, "description", e)}
       />
       <TagsField fieldOwner={activeResult} />
     </StepperPanel>
@@ -123,116 +113,98 @@ type SampleFieldsSectionArgs = {
  * virtue of the fact that the operation that puts the subsample
  * (`activeResult`) into edit mode has no effect on its `sample` property.
  */
-const SampleFieldsSection = observer(
-  ({ activeResult }: SampleFieldsSectionArgs) => {
-    const theme = useTheme();
-    return (
-      <StepperPanel
-        icon="sample"
-        thickBorder
-        title="Sample Fields"
-        sectionName="sampleFields"
-        /*
-         * `formSectionError` is not necessary because these fields will always
-         * be read-only, hence also why all of the `onErrorStateChange` props do
-         * nothing
-         */
-        recordType="subSample"
+const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs) => {
+  const theme = useTheme();
+  return (
+    <StepperPanel
+      icon="sample"
+      thickBorder
+      title="Sample Fields"
+      sectionName="sampleFields"
+      /*
+       * `formSectionError` is not necessary because these fields will always
+       * be read-only, hence also why all of the `onErrorStateChange` props do
+       * nothing
+       */
+      recordType="subSample"
+    >
+      <Heading
+        variant="h6"
+        sx={{
+          borderBottom: theme.borders.card,
+          lineHeight: 1.4,
+          pl: 0.5,
+        }}
       >
-        <Heading
-          variant="h6"
-          sx={{
-            borderBottom: theme.borders.card,
-            lineHeight: 1.4,
-            pl: 0.5,
+        <RecordTypeIcon
+          record={{
+            recordTypeLabel: "SAMPLE",
+            iconName: "sample",
           }}
-        >
-          <RecordTypeIcon
-            record={{
-              recordTypeLabel: "SAMPLE",
-              iconName: "sample",
-            }}
-            style={{
-              transform: "scale(0.8)",
-            }}
-          />{" "}
-          Parent Sample
-        </Heading>
-        <Typography variant="body2">
-          These fields belong to <RecordLink record={activeResult.sample} />,
-          the parent sample of this {activeResult.alias.alias}. To edit these
-          fields, please edit the sample directly.
-        </Typography>
-        <Heading
-          variant="h6"
-          sx={{
-            borderBottom: theme.borders.card,
-            lineHeight: 1.4,
-            pl: 0.5,
+          style={{
+            transform: "scale(0.8)",
           }}
-        >
-          <RecordTypeIcon
-            record={{
-              recordTypeLabel: "SAMPLE",
-              iconName: "sample",
-            }}
-            style={{
-              transform: "scale(0.8)",
-            }}
-          />{" "}
-          Details
-        </Heading>
-        <HeadingContext>
-          <TotalQuantity
-            sample={activeResult.sample}
-            onErrorStateChange={() => {}}
-          />
-          <Expiry
-            fieldOwner={activeResult.sample}
-            onErrorStateChange={() => {}}
-          />
-          <Source fieldOwner={activeResult.sample} />
-          <StorageTemperature
-            fieldOwner={activeResult.sample}
-            onErrorStateChange={() => {}}
-          />
-          <DescriptionField
-            fieldOwner={activeResult.sample}
-            onErrorStateChange={() => {}}
-          />
-          <TagsField fieldOwner={activeResult.sample} />
-        </HeadingContext>
+        />{" "}
+        Parent Sample
+      </Heading>
+      <Typography variant="body2">
+        These fields belong to <RecordLink record={activeResult.sample} />, the parent sample of this{" "}
+        {activeResult.alias.alias}. To edit these fields, please edit the sample directly.
+      </Typography>
+      <Heading
+        variant="h6"
+        sx={{
+          borderBottom: theme.borders.card,
+          lineHeight: 1.4,
+          pl: 0.5,
+        }}
+      >
+        <RecordTypeIcon
+          record={{
+            recordTypeLabel: "SAMPLE",
+            iconName: "sample",
+          }}
+          style={{
+            transform: "scale(0.8)",
+          }}
+        />{" "}
+        Details
+      </Heading>
+      <HeadingContext>
+        <TotalQuantity sample={activeResult.sample} onErrorStateChange={() => {}} />
+        <Expiry fieldOwner={activeResult.sample} onErrorStateChange={() => {}} />
+        <Source fieldOwner={activeResult.sample} />
+        <StorageTemperature fieldOwner={activeResult.sample} onErrorStateChange={() => {}} />
+        <DescriptionField fieldOwner={activeResult.sample} onErrorStateChange={() => {}} />
+        <TagsField fieldOwner={activeResult.sample} />
+      </HeadingContext>
 
-        <Heading
-          variant="h6"
-          sx={{
-            borderBottom: theme.borders.card,
-            lineHeight: 1.4,
-            pl: 0.5,
+      <Heading
+        variant="h6"
+        sx={{
+          borderBottom: theme.borders.card,
+          lineHeight: 1.4,
+          pl: 0.5,
+        }}
+      >
+        <RecordTypeIcon
+          record={{
+            recordTypeLabel: "SAMPLE",
+            iconName: "sample",
           }}
-        >
-          <RecordTypeIcon
-            record={{
-              recordTypeLabel: "SAMPLE",
-              iconName: "sample",
-            }}
-            style={{
-              transform: "scale(0.8)",
-            }}
-          />{" "}
-          Custom Fields
-        </Heading>
-        <HeadingContext>
-          <Fields sample={activeResult.sample} onErrorStateChange={() => {}} />
-          <ExtraFields
-            onErrorStateChange={() => {}}
-            result={activeResult.sample}
-          />
-        </HeadingContext>
-      </StepperPanel>
-    );
-  },
-);
+          style={{
+            transform: "scale(0.8)",
+          }}
+        />{" "}
+        Custom Fields
+      </Heading>
+      <HeadingContext>
+        <Fields sample={activeResult.sample} onErrorStateChange={() => {}} />
+        <ExtraFields onErrorStateChange={() => {}} result={activeResult.sample} />
+      </HeadingContext>
+    </StepperPanel>
+  );
+});
 
 type ExtaFieldSectionArgs = {
   activeResult: SubSampleModel;
@@ -253,9 +225,7 @@ const ExtaFieldSection = observer(({ activeResult }: ExtaFieldSectionArgs) => {
       recordType="subSample"
     >
       <ExtraFields
-        onErrorStateChange={(field, value) =>
-          setFormSectionError(formSectionError, field, value)
-        }
+        onErrorStateChange={(field, value) => setFormSectionError(formSectionError, field, value)}
         result={activeResult}
       />
     </StepperPanel>
@@ -282,9 +252,7 @@ const NotesSection = observer(({ activeResult }: NotesSectionArgs) => {
     >
       <Notes
         record={activeResult}
-        onErrorStateChange={(value) =>
-          setFormSectionError(formSectionError, "notes", value)
-        }
+        onErrorStateChange={(value) => setFormSectionError(formSectionError, "notes", value)}
         hideLabel
       />
     </StepperPanel>
@@ -295,18 +263,13 @@ function SubSampleForm(): ReactNode {
   const {
     searchStore: { activeResult },
   } = useStores();
-  if (!activeResult || !(activeResult instanceof SubSampleModel))
-    throw new Error("ActiveResult must be a SubSample");
+  if (!activeResult || !(activeResult instanceof SubSampleModel)) throw new Error("ActiveResult must be a SubSample");
   if (!activeResult.owner) throw new Error("Subsample does not have an owner");
   const owner: Person = activeResult.owner;
 
   return (
     <Stepper
-      stickyAlert={
-        activeResult.historicalVersion ? (
-          <HistoricalVersionAlert record={activeResult} />
-        ) : null
-      }
+      stickyAlert={activeResult.historicalVersion ? <HistoricalVersionAlert record={activeResult} /> : null}
       titleText={activeResult.name}
       resetScrollPosition={activeResult}
       factory={activeResult.factory}
@@ -316,43 +279,22 @@ function SubSampleForm(): ReactNode {
         whatLabel="subsample, or its parent sample"
         owner={owner}
       />
-      {activeResult.readAccessLevel === "full" && (
-        <SampleFieldsSection activeResult={activeResult} />
-      )}
+      {activeResult.readAccessLevel === "full" && <SampleFieldsSection activeResult={activeResult} />}
       <OverviewSection activeResult={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
-          <StepperPanel
-            icon="subsample"
-            title="Barcodes"
-            sectionName="barcodes"
-            recordType="subSample"
-          >
-            <BarcodesField
-              fieldOwner={activeResult}
-              factory={activeResult.factory}
-              connectedItem={activeResult}
-            />
+          <StepperPanel icon="subsample" title="Barcodes" sectionName="barcodes" recordType="subSample">
+            <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
           </StepperPanel>
         </>
       )}
       {activeResult.readAccessLevel === "full" && (
         <>
-          <StepperPanel
-            icon="subsample"
-            title="Identifiers"
-            sectionName="identifiers"
-            recordType="subSample"
-          >
+          <StepperPanel icon="subsample" title="Identifiers" sectionName="identifiers" recordType="subSample">
             <IdentifiersField fieldOwner={activeResult} />
           </StepperPanel>
-          <StepperPanel
-            icon="subsample"
-            title="Attachments"
-            sectionName="attachments"
-            recordType="subSample"
-          >
+          <StepperPanel icon="subsample" title="Attachments" sectionName="attachments" recordType="subSample">
             <AttachmentsField fieldOwner={activeResult} />
           </StepperPanel>
           <ExtaFieldSection activeResult={activeResult} />

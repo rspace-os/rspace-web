@@ -1,12 +1,8 @@
-import React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Radio from "@mui/material/Radio";
-import {
-  DataGrid,
-  type GridCellParams,
-  type GridColDef,
-} from "@mui/x-data-grid";
+import { DataGrid, type GridCellParams, type GridColDef } from "@mui/x-data-grid";
+import React from "react";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import StoichiometryTableInventoryLinkCell from "@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell";
 import StoichiometryTableRoleChip from "@/tinyMCE/stoichiometry/StoichiometryTableRoleChip";
@@ -16,14 +12,13 @@ import { STOICHIOMETRY_TABLE_CLASS } from "@/tinyMCE/stoichiometry/theme";
 import type { EditableMolecule } from "../types";
 import { calculateMoles, getInventoryUpdateEligibility } from "../utils";
 import type { StoichiometryTableGridProps } from "./types";
+
 const STOICHIOMETRY_TABLE_SLOTS = {
   toolbar: StoichiometryTableToolbar,
 };
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
 const getInventoryLinkExportValue = (row: EditableMolecule): string =>
-  row.inventoryLink?.inventoryItemGlobalId ??
-  row.deletedInventoryLink?.inventoryItemGlobalId ??
-  "";
+  row.inventoryLink?.inventoryItemGlobalId ?? row.deletedInventoryLink?.inventoryItemGlobalId ?? "";
 const getRoleExportValue = (role: string | null | undefined): string => {
   if (!role) {
     return "";
@@ -40,10 +35,7 @@ export default function StoichiometryTableGrid({
   allMolecules,
   hasChanges = false,
   activeChemId = null,
-  linkedInventoryQuantityInfoByGlobalId = new Map<
-    string,
-    InventoryQuantityQueryResult
-  >(),
+  linkedInventoryQuantityInfoByGlobalId = new Map<string, InventoryQuantityQueryResult>(),
   onAddReagent,
   onUpdateInventoryStock,
   onDeleteReagent,
@@ -55,15 +47,13 @@ export default function StoichiometryTableGrid({
 }: StoichiometryTableGridProps): React.ReactNode {
   const roleColumnEditable = editable && activeChemId === null;
   const limitingReagent = allMolecules.find(
-    (molecule) =>
-      molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
+    (molecule) => molecule.limitingReagent && molecule.role.toLowerCase() === "reactant",
   );
   const limitingReagentId = limitingReagent?.id;
   const linkedIds = allMolecules
     .map(
       (molecule) =>
-        molecule.inventoryLink?.inventoryItemGlobalId ??
-        molecule.deletedInventoryLink?.inventoryItemGlobalId,
+        molecule.inventoryLink?.inventoryItemGlobalId ?? molecule.deletedInventoryLink?.inventoryItemGlobalId,
     )
     .filter((id): id is string => Boolean(id));
   const linkedInventoryItemGlobalIdsByMoleculeId = new Map(
@@ -72,8 +62,7 @@ export default function StoichiometryTableGrid({
       linkedIds.filter(
         (inventoryItemGlobalId) =>
           inventoryItemGlobalId !==
-          (molecule.inventoryLink?.inventoryItemGlobalId ??
-            molecule.deletedInventoryLink?.inventoryItemGlobalId),
+          (molecule.inventoryLink?.inventoryItemGlobalId ?? molecule.deletedInventoryLink?.inventoryItemGlobalId),
       ),
     ]),
   );
@@ -123,14 +112,9 @@ export default function StoichiometryTableGrid({
             moleculeName={row.name}
             editable={editable}
             showInsufficientStockWarning={
-              getInventoryUpdateEligibility(
-                row,
-                linkedInventoryQuantityInfoByGlobalId,
-              ).showInsufficientStockWarning
+              getInventoryUpdateEligibility(row, linkedInventoryQuantityInfoByGlobalId).showInsufficientStockWarning
             }
-            linkedInventoryItemGlobalIds={
-              linkedInventoryItemGlobalIdsByMoleculeId.get(row.id) ?? []
-            }
+            linkedInventoryItemGlobalIds={linkedInventoryItemGlobalIdsByMoleculeId.get(row.id) ?? []}
             onPickInventoryItem={(id, inventoryItemGlobalId) =>
               onPickInventoryItem?.(row.id, id, inventoryItemGlobalId)
             }
@@ -148,8 +132,7 @@ export default function StoichiometryTableGrid({
         headerName: "Type",
         sortable: false,
         minWidth: 160,
-        valueFormatter: (value) =>
-          getRoleExportValue(value),
+        valueFormatter: (value) => getRoleExportValue(value),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;
@@ -206,10 +189,7 @@ export default function StoichiometryTableGrid({
         editable,
         headerAlign: "left",
         cellClassName: (params) => {
-          if (
-            limitingReagentId !== undefined &&
-            params.id === limitingReagentId
-          ) {
+          if (limitingReagentId !== undefined && params.id === limitingReagentId) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -223,11 +203,7 @@ export default function StoichiometryTableGrid({
         type: "number",
         headerAlign: "left",
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&#8212;</>
-          ),
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : <>&#8212;</>,
       },
       {
         field: "mass",
@@ -238,16 +214,9 @@ export default function StoichiometryTableGrid({
         type: "number",
         editable,
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&#8212;</>
-          ),
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : <>&#8212;</>,
         cellClassName: (params) => {
-          if (
-            limitingReagentId !== undefined &&
-            params.id !== limitingReagentId
-          ) {
+          if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -255,8 +224,7 @@ export default function StoichiometryTableGrid({
       },
       {
         field: "moles",
-        valueGetter: (_value, row) =>
-          calculateMoles(row.mass, row.molecularWeight),
+        valueGetter: (_value, row) => calculateMoles(row.mass, row.molecularWeight),
         headerName: "Moles (mol)",
         sortable: false,
         headerAlign: "left",
@@ -264,16 +232,9 @@ export default function StoichiometryTableGrid({
         minWidth: 120,
         editable,
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&#8212;</>
-          ),
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : <>&#8212;</>,
         cellClassName: (params) => {
-          if (
-            limitingReagentId !== undefined &&
-            params.id !== limitingReagentId
-          ) {
+          if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
             return "stoichiometry-disabled-cell";
           }
           return "";
@@ -288,16 +249,11 @@ export default function StoichiometryTableGrid({
         editable,
         type: "number",
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&mdash;</>
-          ),
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : <>&mdash;</>,
       },
       {
         field: "actualMoles",
-        valueGetter: (_value, row) =>
-          calculateMoles(row.actualAmount, row.molecularWeight),
+        valueGetter: (_value, row) => calculateMoles(row.actualAmount, row.molecularWeight),
         headerName: "Actual Moles (mol)",
         sortable: false,
         headerAlign: "left",
@@ -305,11 +261,7 @@ export default function StoichiometryTableGrid({
         minWidth: 180,
         type: "number",
         renderCell: (params) => {
-          return params.value !== null ? (
-            Number(params.value).toFixed(3)
-          ) : (
-            <>&mdash;</>
-          );
+          return params.value !== null ? Number(params.value).toFixed(3) : <>&mdash;</>;
         },
       },
       {
@@ -321,10 +273,7 @@ export default function StoichiometryTableGrid({
         type: "number",
         editable: false,
         renderCell: (params) => {
-          if (
-            limitingReagentId !== undefined &&
-            params.id === limitingReagentId
-          ) {
+          if (limitingReagentId !== undefined && params.id === limitingReagentId) {
             return <>&#8212;</>;
           }
           const value = params.value as number | null | undefined;
@@ -367,10 +316,7 @@ export default function StoichiometryTableGrid({
       return false;
     }
     const { field, row } = params;
-    if (
-      limitingReagentId !== undefined &&
-      (field === "mass" || field === "moles")
-    ) {
+    if (limitingReagentId !== undefined && (field === "mass" || field === "moles")) {
       return row.id === limitingReagentId;
     }
     return true;
@@ -386,14 +332,7 @@ export default function StoichiometryTableGrid({
         linkedInventoryQuantityInfoByGlobalId,
       },
     }),
-    [
-      allMolecules,
-      editable,
-      hasChanges,
-      linkedInventoryQuantityInfoByGlobalId,
-      onAddReagent,
-      onUpdateInventoryStock,
-    ],
+    [allMolecules, editable, hasChanges, linkedInventoryQuantityInfoByGlobalId, onAddReagent, onUpdateInventoryStock],
   );
   return (
     <Box

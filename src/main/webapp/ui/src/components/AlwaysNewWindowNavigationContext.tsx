@@ -1,6 +1,6 @@
-import React from "react";
+import type React from "react";
+import type { Location } from "react-router";
 import NavigateContext from "../stores/contexts/Navigate";
-import type { Location } from "react-router-dom";
 
 type AlwaysNewWindowNavigationContextArgs = {
   children: React.ReactNode;
@@ -17,31 +17,26 @@ type AlwaysNewWindowNavigationContextArgs = {
 export default function AlwaysNewWindowNavigationContext({
   children,
 }: AlwaysNewWindowNavigationContextArgs): React.ReactNode {
-  const useNavigate =
-    () =>
-    (
-      url: string,
-      _opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }
-    ) => {
-      /**
-       * This navigation context is designed to be a root context and thus
-       * ignores the skipToParentContext argument
-       */
-      window.open(location.origin + url);
-    };
+  const useNavigate = () => (url: string, _opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }) => {
+    /**
+     * This navigation context is designed to be a root context and thus
+     * ignores the skipToParentContext argument
+     */
+    window.open(location.origin + url);
+  };
 
   return (
     <NavigateContext.Provider
       value={{
         useNavigate,
         useLocation: () =>
-          (({
+          ({
             hash: "",
             pathname: "",
             search: "",
             state: {},
-            key: ""
-          }) as Location),
+            key: "",
+          }) as Location,
       }}
     >
       {children}

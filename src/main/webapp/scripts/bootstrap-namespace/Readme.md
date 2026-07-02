@@ -5,8 +5,8 @@ Idea taken from http://stackoverflow.com/a/19796985/639863.
 
 ## Steps to (re)generate bootstrap-namespace.min.css
 1.  open command line, navigate to directory containing this Readme file 
-2.  make sure you have LESS css preprocessor installed (or install with `npm install -g less`)
-3.  make sure you have clean-css plugin for LESS installed (or install with `npm install -g less-plugin-clean-css`)
+2.  make sure you have LESS css preprocessor installed (or install with `pnpm add -g less`)
+3.  make sure you have clean-css plugin for LESS installed (or install with `pnpm add -g less-plugin-clean-css`)
 4.  run: `lessc bootstrap-namespace.less bootstrap-namespace.css`
 That should generate css file, compare to orignal bootstrap to ensure it's fine
 5.  run: `lessc --clean-css bootstrap-namespace.css bootstrap-namespace.min.css`

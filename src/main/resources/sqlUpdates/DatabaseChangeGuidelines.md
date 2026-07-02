@@ -1,8 +1,7 @@
 Guidelines for database changes
 -------------------------------
 
-Checklist before adding a changeset. If you're not  sure about what is the right thing to do,
-please ask rather than 'commit-and-hope'.
+Checklist before adding a changeset. If you're not sure about what is the right thing to do, please ask rather than 'commit-and-hope'.
 
 This document is written in Markdown format.
 
@@ -11,11 +10,11 @@ This document is written in Markdown format.
 - Add the entity on `HibernateTest.recordClasses()` method
 - Update `DatabaseCleaner cleanup ()` to clean up the table during test runs. 
 - Explicitly set charset and collation:  `character set utf8mb4 collate  utf8mb4_unicode_ci`.
-  (As an example, see src/main/resources/sqlUpdates/changeLog-1.76.xml : ```<sql>alter table ClustermarketEquipment engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>```)
+  (As an example, see src/main/resources/sqlUpdates/changeLog-1.100.xml : ```<sql>alter table ExternalStorageLocation engine=InnoDB, CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;</sql>```)
   This is to overcome variations in collation between different OS/MariaDB countries.
 - Does it need an accompanying _AUD table to record revision history? 
 - If it has FK references to any BaseRecord or User/Group table, we need to update `UserDeletionManagerImpl` to support the 'Delete User' use case.
-- If you've written some JUnit tests that extend from RealTRansactionSpringTestBase (i.e. test  cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method
+- If you've written some JUnit tests that extend from RealTransactionSpringTestBase (i.e. test cases that run real transactions) then remember to add to the 'DatabaseCleaner.cleanUp' method
   the table name in the list of tables to delete after a test run -  this keeps the database clean between test runs. The order in which rows are removed is important, to avoid FK constraint errors.
 - Is this a table that is defined as a Hibernate entity? Sometimes a 3rd party library (e.g. liquibase, spring-social, chemistry tables) requires its own table that is not created or managed by Hibernate. In this case you may need to edit scripts in the *maven* folder.
 - Ensure your Java @Entity-annotated class implements Serializable. 
@@ -38,20 +37,32 @@ Hibernate ID mapping is set to `@GeneratedValue(strategy=GenerationType.AUTO)` s
 ID generation in code and in the DB are compatible.
 
 ### Are you adding reference data for a new integration (App)?
-There are various naming conventions, please [IntegrationAndAppNotes](integrationAndAppNotes.md).
+There are various naming conventions, please see [IntegrationAndAppNotes](integrationAndAppNotes.md).
 
 ### Have  you added a human-readable comment to each changeset?
-- If altering a table structure ( add /remove change columns) is there an audit (_AUD) table
+- If altering a table structure (add /remove change columns) is there an audit (_AUD) table
  that also needs to be changed in the same way?
 - when adding/modifying audit table columns, remember that they don't generally have not-null constraints (apart from id/REV columns).
 - If you are adding such constraint make sure you know the consequences, and double check if constraint is actually applied on your local database when testing.
 
-### Have you set a context? Values are:
-- no value. Will run on all databases in all environments. E.g. static  reference data
-- Suitable for adding lookup static data to all test/dev/production databases. E.g., permissions.
-  - `run` for general schema changes - adding/removing columns/ tables /keys
-  - `dev-test` change should only be applied on local dev environment, or during unit test runs - e.g., loading up test data.
-  - `cloud` change should only be applied for Community version.
+### Have you set a context?
+
+Every RSpace deployment uses one of three `liquibase.context` strings:
+
+| Deployment              | `liquibase.context` | Where set                                                       |
+|-------------------------|---------------------|-----------------------------------------------------------------|
+| Production / Enterprise | `run`               | `src/main/resources/deployments/defaultDeployment.properties`   |
+| Local dev & test runs   | `run,dev-test`      | `src/main/resources/deployments/dev/deployment.properties`      |
+| Community / cloud       | `run,cloud`         | the cloud deployment's external properties                      |
+
+A changeset runs when its `context` matches the launch string (OR-ed; blank always matches):
+
+- **`run`** — runs everywhere; the default, use it for schema changes (columns, tables, keys).
+- **`dev-test`** — only under `run,dev-test`; test/sample data that must never reach production.
+- **`cloud`** — only under `run,cloud`; the Community/cloud build.
+
+Always tag new changesets `run` / `dev-test` / `cloud` — don't leave the context blank. (Some
+older seed/reference changesets have no context; that behaves like `run` across these strings.)
 
 ###  Should the new data be included in RSpace exports?
 
@@ -74,7 +85,7 @@ If the customer tries to update directly from N-1 -> N+1, this will fail when pe
 The customer can remedy this by performing sequential updates, i.e. update to N before updating to N + 1. This must be mentioned in the release notes.
 
 When deploying RSpace liquibase changes there are 3 scenarios to consider:
-1. A new deployment on-prem where we run all changesets from 0.15 onwards on a database created from the baseline.sql (this is the case with pangolin8086 as well)
+1. A new deployment on-prem where we run all post-1.98.1 changesets on a database created from the baseline.sql (this is the case with pangolin8086 as well)
 - to remedy java update problem the update could have a precondition stopping it from running on a new database. Java updates are meant to fix pre-existing production data, they are generally not necessary for newly created data.
 2. A new deployment onto an AMI that has been cumulatively updated over time and might have some content on it, but only in sysadmin account. This covers both FB versions and also AWS customer deployments
 - to remedy java update problem the AMI used for FB/AWS should be updated to start on version N, rather than N-1. 
@@ -85,7 +96,7 @@ When deploying RSpace liquibase changes there are 3 scenarios to consider:
 If the Java update is making changes to data, e.g. altering or processing field data, this can take a long time
  if the database is big, e.g. community.r.c. So
  
- * log progress if iterating in a loop, so that the person updating can see that the update is proceeeding OK and not hanging.
+ * log progress if iterating in a loop, so that the person updating can see that the update is proceeding OK and not hanging.
  * Consider using batch updates
  * Consider writing a specific database query to load only the necessary columns, rather than use Hibernate entities which
    load many other related tables and data.
@@ -103,7 +114,7 @@ the database already exists, the new changesets will be applied on top of it.
 When adding a new liquibase changeset:
 
 * Add a comment describing what the change is.
-* For schema changes, add `context=run` attribute - this enables the change to be applied only at runtime.
+* For schema changes, add the `context="run"` attribute (see "Have you set a context?" above for what the contexts mean and why `run` is the default).
 * If you're creating a table make sure you applied steps described at the beginning of this doc (set engine to InnoDB / update RealTransactionSpringTestBase / review need for AUD table)
 * (for Windows users only) double check that names are properly capitalized, as MySQL is case-sensitive on Unix-based systems 
 
@@ -117,7 +128,7 @@ E.g.,
             </column>
         </createTable>
         <sql>alter table UserPasswordChange engine=InnoDB;</sql>
-    </changeset>
+    </changeSet>
 
 Then append them into the current version's changeset file in *src/main/resources/sqlUpdates/changeLog-xxxx.xml*
 
@@ -136,9 +147,20 @@ create a separate database called `rspace_hib`, you can do that with the followi
         CREATE DATABASE rspace_hib collate 'utf8mb4_unicode_ci';
         GRANT ALL ON rspace_hib.* TO 'rspacedbuser'@'localhost';
 
-Then you should start the RSpace with `-Denvironment=drop-recreate-hibernate-db` param (rather than
-standard `-Denvironment=drop-recreate-db`), which will generate the schema out of the annotations,
-then start the webapp but with all data coming from `rspace_hib` database.
+Then populate `rspace_hib` with the schema generated from the Hibernate/JPA annotations:
+
+    mvn process-classes -Denvironment=drop-recreate-hibernate-db
+
+The `-Denvironment=drop-recreate-hibernate-db` activates the `mysql-clean-hibernate` profile, which
+drops/recreates `rspace_hib` (in the `initialize` phase) and then runs the `hibernate4-maven-plugin`
+`export` goal (bound to `process-classes`) to write the annotation-derived schema into it. Running up
+to `process-classes` is enough; do not pass `-Dmaven.test.skip=true` (the drop/recreate step is gated
+on it).
+
+This is a DDL-only comparison, so `rspace_hib` should contain *only* the Hibernate-generated schema.
+Do not boot the webapp against `rspace_hib`, and do not run the Liquibase seed/changesets on it: the
+seed targets tables that are not Hibernate entities (e.g. the Spring Batch `BATCH_*` tables) and would
+fail or add noise to the diff.
 
 Next, you can compare a regular database schema created from baseline script and  liquibase updates 
 (i.e. one in your regular `rspace` database), to the schema auto-generated from Hibernate/JPA 
@@ -154,12 +176,6 @@ project home (the command expects the folder to exist, so create it before runni
 This changeset file describes the changes that should be applied to convert the `rspace` 
 database schema to be the same as `rspace_hib`. There will likely be some existing differences 
 relating to constraints, field types etc., so search for the ones related to your recent changes.
-
-Note for Windows OS users: look into pom.xml generateDiff task, and remove timestamp,
-otherwise nothing is generated.
-
-When using auto-generated changesets you may want to merge some of the changesets together,  
-the ones generated by the plugin are very fine-grained.
 
 ## If there is a problem...
 
@@ -179,14 +195,14 @@ If you get a liquibase error that you need to fix, it might be faster to use the
  
  E.g. download liquibase ( the same version as is declared in pom.xml) and run e.g.
  
-    ./liquibase --changeLogFile=/path/to/rspace/src/main/resources/sqlUpdates/changeLog-0.25.xml --username=rspacedbuser --password=rspacedbpwd --url=jdbc:mysql://localhost:3306/rspace  --contexts=dev-test update
+    ./liquibase --changeLogFile=/path/to/rspace/src/main/resources/sqlUpdates/liquibase-master.xml --username=rspacedbuser --password=rspacedbpwd --url=jdbc:mysql://localhost:3306/rspace --contexts=dev-test update
  
 You'll need to add the jdbc connector.jar into the lib/ folder of the liquibase install folder to make this work.
 Some links in your changesets may need to be temporarily altered to absolute paths to make this work.
 
 ### After you've committed....
 
-5. Jenkins will apply Liquibase changes each evening into its own 'testLiquibaseUpdate' database.
-6. If the database update run passes on Jenkins, it will build for the staging server.
+1. Jenkins will apply Liquibase changes each evening into its own 'testLiquibaseUpdate' database.
+2. If the database update run passes on Jenkins, it will build for the staging server.
 
 In this way, the staging application at $STAGING will only update if database changes have been integrated successfully.

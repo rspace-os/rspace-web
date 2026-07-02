@@ -21,7 +21,6 @@ import com.researchspace.model.inventory.SampleSource;
 import com.researchspace.model.units.RSUnitDef;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MvcResult;
 
 /**
@@ -29,8 +28,6 @@ import org.springframework.test.web.servlet.MvcResult;
  * /{samples|subSamples|containers}/{id}/versions/{version} and the container revisions endpoints,
  * exercising real Envers auditing.
  */
-// instrument endpoints are gated behind this feature flag, off by default
-@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
 
   @Before

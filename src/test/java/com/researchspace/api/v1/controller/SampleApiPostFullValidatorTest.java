@@ -7,7 +7,7 @@ import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleTemplate;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.units.RSUnitDef;
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,8 +40,7 @@ public class SampleApiPostFullValidatorTest extends InventoryRecordValidationTes
   public void validateQuantityUnit() {
 
     // template defining grams as a default unit
-    Sample baseTemplate = new Sample();
-    baseTemplate.setTemplate(true);
+    SampleTemplate baseTemplate = new SampleTemplate();
     baseTemplate.setDefaultUnitId(RSUnitDef.GRAM.getId());
 
     // incoming sample with millilitre quantity

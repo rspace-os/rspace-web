@@ -1,41 +1,40 @@
-import React from "react";
-import Portal from "@mui/material/Portal";
-import Alerts from "../../components/Alerts/Alerts";
-import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import axios from "@/common/axios";
-import useOauthToken from "../../hooks/auth/useOauthToken";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
+import CrossIcon from "@mui/icons-material/Clear";
+import TickIcon from "@mui/icons-material/Done";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import CircularProgress from "@mui/material/CircularProgress";
 import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import MenuItem from "@mui/material/MenuItem";
+import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import {
+  ColumnsPanelTrigger,
   DataGrid,
   Toolbar as DataGridToolbar,
-  GridToolbarExportContainer,
-  ColumnsPanelTrigger,
   type GridRenderCellParams,
+  type GridRowSelectionModel,
+  GridToolbarExportContainer,
   useGridApiContext,
-  GridRowSelectionModel,
 } from "@mui/x-data-grid";
-import { DataGridColumn } from "../../util/table";
+import React from "react";
+import axios from "@/common/axios";
+import type { GlobalId } from "@/stores/definitions/BaseRecord";
 import createAccentedTheme from "../../accentedTheme";
-import { ThemeProvider } from "@mui/material/styles";
-import MenuItem from "@mui/material/MenuItem";
-import { doNotAwait } from "../../util/Util";
-import { getByKey } from "../../util/optional";
-import Box from "@mui/material/Box";
-import UserDetails from "../../components/UserDetails";
-import CircularProgress from "@mui/material/CircularProgress";
-import * as Parsers from "../../util/parsers";
-import TickIcon from "@mui/icons-material/Done";
-import CrossIcon from "@mui/icons-material/Clear";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import Button from "@mui/material/Button";
+import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
+import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import UserDetails from "../../components/UserDetails";
+import useOauthToken from "../../hooks/auth/useOauthToken";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import AnalyticsContext from "../../stores/contexts/Analytics";
-import { GlobalId } from "@/stores/definitions/BaseRecord";
+import { getByKey } from "../../util/optional";
+import * as Parsers from "../../util/parsers";
+import { DataGridColumn } from "../../util/table";
 
 /**
  * This module provides a  dialog allows the user to compare the contents of
@@ -86,23 +85,13 @@ function CircularProgressWithLabel(props: { value: number }) {
           justifyContent: "center",
         }}
       >
-        <Typography
-          variant="caption"
-          component="div"
-          color="text.primary"
-        >{`${Math.round(props.value)}%`}</Typography>
+        <Typography variant="caption" component="div" color="text.primary">{`${Math.round(props.value)}%`}</Typography>
       </Box>
     </Box>
   );
 }
 
-function CustomLoadingOverlay({
-  loadedCount,
-  documentCount,
-}: {
-  loadedCount: number;
-  documentCount: number;
-}) {
+function CustomLoadingOverlay({ loadedCount, documentCount }: { loadedCount: number; documentCount: number }) {
   return (
     <Box
       sx={(theme) => ({
@@ -133,21 +122,21 @@ const ExportMenuItem = ({
   hideMenu?: () => void;
 }) => (
   <MenuItem
-    onClick={doNotAwait(async () => {
-      await onClick();
-      /*
-       * `hideMenu` is injected by MUI into the children of
-       * `GridToolbarExportContainer`. See
-       * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
-       * However, if we add `hideMenu` to the type of the `ExportMenuItem`
-       * props then Flow will complain we're not passing it in at the call site
-       */
-      getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do(
-        (hideMenu) => {
+    onClick={() => {
+      void (async () => {
+        await onClick();
+        /*
+         * `hideMenu` is injected by MUI into the children of
+         * `GridToolbarExportContainer`. See
+         * https://github.com/mui/mui-x/blob/2414dcfe87b8bd4507361a80ab43c8d284ddc4de/packages/x-data-grid/src/components/toolbar/GridToolbarExportContainer.tsx#L99
+         * However, if we add `hideMenu` to the type of the `ExportMenuItem`
+         * props then Flow will complain we're not passing it in at the call site
+         */
+        getByKey<{ hideMenu?: () => void }, "hideMenu">("hideMenu", rest).do((hideMenu) => {
           hideMenu();
-        },
-      );
-    })}
+        });
+      })();
+    }}
   >
     {children}
   </MenuItem>
@@ -199,8 +188,7 @@ const CompareToolbar = ({
             return Promise.resolve();
           }}
         >
-          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to
-          CSV
+          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to CSV
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </DataGridToolbar>
@@ -216,33 +204,21 @@ function CompareDialog(): React.ReactNode {
     page: 0,
     pageSize: 100,
   });
-  const [rowSelectionModel, setRowSelectionModel] =
-    React.useState<GridRowSelectionModel>({
-      type: "include",
-      ids: new Set([]),
-    });
+  const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
+    type: "include",
+    ids: new Set([]),
+  });
   const [documentCount, setDocumentCount] = React.useState(0);
   const [loadedCount, setLoadedCount] = React.useState(0);
-  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const ToolbarSlot = React.useCallback(
-    () => (
-      <CompareToolbar
-        rowSelectionModel={rowSelectionModel}
-        setColumnsMenuAnchorEl={setColumnsMenuAnchorEl}
-      />
-    ),
+    () => <CompareToolbar rowSelectionModel={rowSelectionModel} setColumnsMenuAnchorEl={setColumnsMenuAnchorEl} />,
     [rowSelectionModel, setColumnsMenuAnchorEl],
   );
 
   const LoadingOverlaySlot = React.useCallback(
-    () => (
-      <CustomLoadingOverlay
-        loadedCount={loadedCount}
-        documentCount={documentCount}
-      />
-    ),
+    () => <CustomLoadingOverlay loadedCount={loadedCount} documentCount={documentCount} />,
     [loadedCount, documentCount],
   );
 
@@ -252,8 +228,7 @@ function CompareDialog(): React.ReactNode {
       for (const field of doc.fields) {
         if (
           cols.findIndex(
-            ([formId, fieldName]: [number, string]) =>
-              formId === doc.form.id && fieldName === field.name,
+            ([formId, fieldName]: [number, string]) => formId === doc.form.id && fieldName === field.name,
           ) === -1
         ) {
           cols.push([doc.form.id, field.name]);
@@ -264,60 +239,63 @@ function CompareDialog(): React.ReactNode {
   }, [documents]);
 
   React.useEffect(() => {
-    const handler = doNotAwait(async (event: Event) => {
-      // @ts-expect-error the event will have this detail
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const ids = event.detail.ids as Array<string>;
-      analytics.trackEvent("Dialog comparing ELN documents opened", {
-        numberOfDocuments: ids.length,
-      });
-      setDocumentCount(ids.length);
-      setLoadedCount(0);
-      try {
-        const token = await getToken();
-        /*
-         * Making one network call per document may not be the most performant
-         * approach but this work was only possible by not requiring any
-         * backend developer capacity. If we find that users are downloading
-         * the CSV of many documents and this is causing a performance
-         * bottleneck then we should look to parallelise this with a custom API
-         * endpoint.
-         */
-        const docs = await Promise.all(
-          ids.map(async (id) => {
-            const { data } = await axios.get<
-              Document | { errors: ReadonlyArray<string> }
-            >(`/api/v1/documents/${id}`, {
-              headers: {
-                Authorization: "Bearer " + token,
-              },
-            });
-            Parsers.getValueWithKey("errors")(data)
-              .flatMap(Parsers.isArray)
-              .do((errors) => {
-                throw errors[0];
-              });
-            setLoadedCount((x) => x + 1);
-            return data as Document;
-          }),
-        );
-        setDocuments(docs);
-      } catch (e) {
-        setDocumentCount(0);
+    const handler = (event: Event) => {
+      void (async () => {
+        // @ts-expect-error the event will have this detail
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        const ids = event.detail.ids as Array<string>;
+        analytics.trackEvent("Dialog comparing ELN documents opened", {
+          numberOfDocuments: ids.length,
+        });
+        setDocumentCount(ids.length);
         setLoadedCount(0);
-        const message = Parsers.objectPath(["response", "data", "message"], e)
-          .orElseTry(() => Parsers.objectPath(["message"], e))
-          .flatMap(Parsers.isString)
-          .orElse("Unknown reason");
-        addAlert(
-          mkAlert({
-            variant: "error",
-            title: "Could not read all of the documents",
-            message,
-          }),
-        );
-      }
-    });
+        try {
+          const token = await getToken();
+          /*
+           * Making one network call per document may not be the most performant
+           * approach but this work was only possible by not requiring any
+           * backend developer capacity. If we find that users are downloading
+           * the CSV of many documents and this is causing a performance
+           * bottleneck then we should look to parallelise this with a custom API
+           * endpoint.
+           */
+          const docs = await Promise.all(
+            ids.map(async (id) => {
+              const { data } = await axios.get<Document | { errors: ReadonlyArray<string> }>(
+                `/api/v1/documents/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                },
+              );
+              Parsers.getValueWithKey("errors")(data)
+                .flatMap(Parsers.isArray)
+                .do((errors) => {
+                  throw errors[0];
+                });
+              setLoadedCount((x) => x + 1);
+              return data as Document;
+            }),
+          );
+          setDocuments(docs);
+        } catch (e) {
+          setDocumentCount(0);
+          setLoadedCount(0);
+          const message = Parsers.objectPath(["response", "data", "message"], e)
+            .orElseTry(() => Parsers.objectPath(["message"], e))
+            .flatMap(Parsers.isString)
+            .orElse("Unknown reason");
+          addAlert(
+            mkAlert({
+              variant: "error",
+              title: "Could not read all of the documents",
+              message,
+            }),
+          );
+        }
+      })();
+    };
     window.addEventListener("OPEN_COMPARE_DIALOG", handler);
     return () => {
       window.removeEventListener("OPEN_COMPARE_DIALOG", handler);
@@ -361,17 +339,14 @@ function CompareDialog(): React.ReactNode {
           .map((l) => l.toLocaleString())
           .orElse("—"),
     }),
-    DataGridColumn.newColumnWithFieldName<"lastModified", Document>(
-      "lastModified",
-      {
-        headerName: "Modified Date",
-        flex: 1,
-        valueFormatter: (value: string) =>
-          Parsers.parseDate(value)
-            .map((l) => l.toLocaleString())
-            .orElse("—"),
-      },
-    ),
+    DataGridColumn.newColumnWithFieldName<"lastModified", Document>("lastModified", {
+      headerName: "Modified Date",
+      flex: 1,
+      valueFormatter: (value: string) =>
+        Parsers.parseDate(value)
+          .map((l) => l.toLocaleString())
+          .orElse("—"),
+    }),
     DataGridColumn.newColumnWithFieldName<"signed", Document>("signed", {
       headerName: "Signed",
       flex: 1,
@@ -393,11 +368,7 @@ function CompareDialog(): React.ReactNode {
   ];
   for (const [formId, fieldName] of fieldColumns) {
     columns.push(
-      DataGridColumn.newColumnWithValueGetter<
-        `${typeof formId}:${typeof fieldName}`,
-        Document,
-        string
-      >(
+      DataGridColumn.newColumnWithValueGetter<`${typeof formId}:${typeof fieldName}`, Document, string>(
         `${formId}:${fieldName}`,
         (doc: Document) => {
           if (doc.form.id !== formId) return "";
@@ -426,11 +397,9 @@ function CompareDialog(): React.ReactNode {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
-            Select the documents you want to combine into a single CSV file.
-            Documents with identical structures will be automatically aligned,
-            including form data and content. If documents have different
-            structures, additional columns will be created to accommodate all
-            information.
+            Select the documents you want to combine into a single CSV file. Documents with identical structures will be
+            automatically aligned, including form data and content. If documents have different structures, additional
+            columns will be created to accommodate all information.
           </Typography>
           <Box sx={{ width: "100%" }}>
             <DataGrid
@@ -459,9 +428,7 @@ function CompareDialog(): React.ReactNode {
                 setPaginationModel(newPaginationModel);
               }}
               rowSelectionModel={rowSelectionModel}
-              onRowSelectionModelChange={(
-                newRowSelectionModel: GridRowSelectionModel,
-              ) => {
+              onRowSelectionModelChange={(newRowSelectionModel: GridRowSelectionModel) => {
                 setRowSelectionModel(newRowSelectionModel);
               }}
               loading={loadedCount < documentCount}

@@ -1,5 +1,5 @@
-import React from "react";
 import { render } from "@testing-library/react";
+import type React from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const rootRenderCalls: Array<{
@@ -109,10 +109,7 @@ describe("PreviewInfo event handlers", () => {
     document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
 
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
-    expect(rootRenderCalls[0]?.container).toHaveAttribute(
-      "id",
-      "table-only-preview",
-    );
+    expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "table-only-preview");
 
     const renderedNode = rootRenderCalls[0]?.node as React.ReactElement<{
       item: Record<string, string | undefined>;
@@ -122,6 +119,25 @@ describe("PreviewInfo event handlers", () => {
       "data-stoichiometry-table-only": "true",
       "data-stoichiometry-table": '{"id":3,"revision":4}',
     });
+  });
+
+  it("reuses the same React root when table-only stoichiometry nodes are rendered again", () => {
+    document.body.innerHTML = `
+      <div id="div_7">
+        <div
+          id="table-only-preview"
+          data-stoichiometry-table-only="true"
+          data-stoichiometry-table='{"id":3,"revision":4}'
+        ></div>
+      </div>
+    `;
+
+    document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
+    document.dispatchEvent(new CustomEvent("document-placed", { detail: 7 }));
+
+    expect(mockCreateRoot).toHaveBeenCalledTimes(1);
+    expect(rootRenderCalls).toHaveLength(2);
+    expect(rootRenderCalls[0]?.container).toBe(rootRenderCalls[1]?.container);
   });
 
   it("renders preview info into the closest span for chem-updated images", () => {
@@ -142,10 +158,7 @@ describe("PreviewInfo event handlers", () => {
     document.dispatchEvent(new CustomEvent("chem-updated", { detail: 9 }));
 
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
-    expect(rootRenderCalls[0]?.container).toHaveAttribute(
-      "id",
-      "updated-preview-host",
-    );
+    expect(rootRenderCalls[0]?.container).toHaveAttribute("id", "updated-preview-host");
 
     const renderedNode = rootRenderCalls[0]?.node as React.ReactElement<{
       item: Record<string, string | undefined>;
@@ -200,5 +213,3 @@ describe("PreviewInfo mount events", () => {
     document.removeEventListener("images-replaced", imagesReplacedSpy);
   });
 });
-
-

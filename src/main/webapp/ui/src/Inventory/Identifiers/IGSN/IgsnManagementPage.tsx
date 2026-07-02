@@ -1,33 +1,31 @@
-import React from "react";
-import Stack from "@mui/material/Stack";
-import TitledBox from "../../../components/TitledBox";
-import Typography from "@mui/material/Typography";
-import Link from "@mui/material/Link";
-import docLinks from "../../../assets/DocLinks";
-import Button from "@mui/material/Button";
 import ChecklistIcon from "@mui/icons-material/Checklist";
-import Box from "@mui/material/Box";
-import Main from "../../Main";
-import { useIdentifiers, useIdentifiersRefresh } from "../../useIdentifiers";
-import { type Identifier } from "../../useIdentifiers";
-import { doNotAwait } from "../../../util/Util";
-import Menu from "@mui/material/Menu";
-import AccentMenuItem from "../../../components/AccentMenuItem";
-import { useTheme, lighten, darken } from "@mui/material/styles";
-import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import TextField from "@mui/material/TextField";
-import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import PrintDialog from "./PrintDialog";
 import PrintIcon from "@mui/icons-material/Print";
-import IgsnTable from "./IgsnTable";
-import RsSet from "../../../util/set";
-import { useLandmark } from "../../../components/LandmarksContext";
-import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import Link from "@mui/material/Link";
+import Menu from "@mui/material/Menu";
+import Stack from "@mui/material/Stack";
+import { darken, lighten, useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import React from "react";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
+import docLinks from "../../../assets/DocLinks";
+import AccentMenuItem from "../../../components/AccentMenuItem";
+import { useLandmark } from "../../../components/LandmarksContext";
+import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
+import TitledBox from "../../../components/TitledBox";
+import RsSet from "../../../util/set";
+import Main from "../../Main";
+import { type Identifier, useIdentifiers, useIdentifiersRefresh } from "../../useIdentifiers";
+import IgsnTable from "./IgsnTable";
+import PrintDialog from "./PrintDialog";
 
 /**
  * The IGSN Management page allows users to view, bulk register, print, and
@@ -43,13 +41,10 @@ export default function IgsnManagementPage({
   const { refreshListing } = useIdentifiersRefresh();
   const { bulkRegister, deleteIdentifiers } = useIdentifiers();
   const mainContentRef = useLandmark("IGSN management main content");
-  const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] =
-    React.useState(false);
+  const [bulkRegisterDialogOpen, setBulkRegisterDialogOpen] = React.useState(false);
   const [numberOfNewIdentifiers, setNumberOfNewIdentifiers] = React.useState(1);
-  const [registeringInProgress, setRegisteringInProgress] =
-    React.useState(false);
-  const [actionsAnchorEl, setActionsAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [registeringInProgress, setRegisteringInProgress] = React.useState(false);
+  const [actionsAnchorEl, setActionsAnchorEl] = React.useState<HTMLElement | null>(null);
   const theme = useTheme();
   const [printDialogOpen, setPrintDialogOpen] = React.useState(false);
   return (
@@ -62,22 +57,15 @@ export default function IgsnManagementPage({
       role="main"
       aria-label="IGSN management main content"
     >
-      <VisuallyHiddenHeading variant="h2">
-        IGSN Management Page
-      </VisuallyHiddenHeading>
+      <VisuallyHiddenHeading variant="h2">IGSN Management Page</VisuallyHiddenHeading>
       <HeadingContext level={3}>
         <Stack spacing={2}>
           <TitledBox title="IGSN IDs" border>
             <Typography>
-              The RSpace IGSN ID integration enables researchers to create,
-              publish and update IGSN ID metadata all within Inventory. IGSN IDs
-              describe material samples and features-of-interest, and are
-              provided through the DataCite DOI infrastructure. To learn more,{" "}
-              <Link
-                target="_blank"
-                rel="noreferrer"
-                href={docLinks.IGSNIdentifiers}
-              >
+              The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all
+              within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through
+              the DataCite DOI infrastructure. To learn more,{" "}
+              <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers}>
                 see the IGSN ID documentation
               </Link>
               .
@@ -91,16 +79,14 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                You can register and associate an IGSN ID with an existing item
-                in Inventory by selecting{" "}
+                You can register and associate an IGSN ID with an existing item in Inventory by selecting{" "}
                 <Typography variant="button" component="kbd">
                   Create new IGSN ID
                 </Typography>{" "}
                 under its <cite>Identifiers</cite> heading.
               </Typography>
               <Typography>
-                You can also bulk-register IGSN IDs to be used at a later date,
-                such as a field collection trip:
+                You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:
               </Typography>
               <Button
                 variant="contained"
@@ -110,31 +96,21 @@ export default function IgsnManagementPage({
               >
                 Bulk Register
               </Button>
-              <Dialog
-                open={bulkRegisterDialogOpen}
-                onClose={() => setBulkRegisterDialogOpen(false)}
-              >
+              <Dialog open={bulkRegisterDialogOpen} onClose={() => setBulkRegisterDialogOpen(false)}>
                 <DialogTitle>Bulk Register IGSN IDs</DialogTitle>
                 <DialogContent>
                   <Stack spacing={3}>
-                    <Typography>
-                      IGSN IDs in Draft state will be created.
-                    </Typography>
+                    <Typography>IGSN IDs in Draft state will be created.</Typography>
                     <TextField
                       label="Number of new IGSN IDs"
                       type="number"
                       value={numberOfNewIdentifiers}
-                      onChange={(e) =>
-                        setNumberOfNewIdentifiers(Number(e.target.value))
-                      }
+                      onChange={(e) => setNumberOfNewIdentifiers(Number(e.target.value))}
                       fullWidth
                       sx={{
                         mt: 1,
                       }}
-                      error={
-                        numberOfNewIdentifiers < 1 ||
-                        numberOfNewIdentifiers > 100
-                      }
+                      error={numberOfNewIdentifiers < 1 || numberOfNewIdentifiers > 100}
                       slotProps={{
                         htmlInput: {
                           min: 1,
@@ -145,22 +121,22 @@ export default function IgsnManagementPage({
                   </Stack>
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>
-                    Cancel
-                  </Button>
+                  <Button onClick={() => setBulkRegisterDialogOpen(false)}>Cancel</Button>
                   <SubmitSpinnerButton
-                    onClick={doNotAwait(async () => {
-                      setRegisteringInProgress(true);
-                      try {
-                        await bulkRegister({
-                          count: numberOfNewIdentifiers,
-                        });
-                        if (refreshListing) void refreshListing();
-                        setBulkRegisterDialogOpen(false);
-                      } finally {
-                        setRegisteringInProgress(false);
-                      }
-                    })}
+                    onClick={() => {
+                      void (async () => {
+                        setRegisteringInProgress(true);
+                        try {
+                          await bulkRegister({
+                            count: numberOfNewIdentifiers,
+                          });
+                          if (refreshListing) void refreshListing();
+                          setBulkRegisterDialogOpen(false);
+                        } finally {
+                          setRegisteringInProgress(false);
+                        }
+                      })();
+                    }}
                     disabled={registeringInProgress}
                     loading={registeringInProgress}
                     label="Register"
@@ -177,9 +153,8 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                To access actions such as editing metadata and publishing,
-                please use the <cite>Identifiers</cite> section of the{" "}
-                <strong>Linked Item</strong>.
+                To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite>{" "}
+                section of the <strong>Linked Item</strong>.
               </Typography>
               <Box
                 sx={{
@@ -250,10 +225,7 @@ export default function IgsnManagementPage({
                 </Menu>
               </Stack>
               <Box sx={{ width: "100%" }}>
-                <IgsnTable
-                  selectedIgsns={selectedIgsns}
-                  setSelectedIgsns={setSelectedIgsns}
-                />
+                <IgsnTable selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} />
               </Box>
             </Stack>
           </TitledBox>

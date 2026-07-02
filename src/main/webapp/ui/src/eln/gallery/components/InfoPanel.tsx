@@ -1,40 +1,41 @@
-import React from "react";
-import Typography from "@mui/material/Typography";
-import Grid from "@mui/material/Grid";
-import { type GalleryFile, Description } from "../useGalleryListing";
-import { useGallerySelection } from "../useGallerySelection";
-import Button from "@mui/material/Button";
-import Stack from "@mui/material/Stack";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
-import { type SxProps, type Theme } from "@mui/material/styles";
-import TextField from "@mui/material/TextField";
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import Button from "@mui/material/Button";
 import CardContent from "@mui/material/CardContent";
+import Chip from "@mui/material/Chip";
 import Collapse from "@mui/material/Collapse";
 import { grey } from "@mui/material/colors";
-import DescriptionList from "../../../components/DescriptionList";
-import { formatFileSize, filenameExceptExtension } from "../../../util/files";
-import Result from "../../../util/result";
-import { observer } from "mobx-react-lite";
-import { useGalleryActions } from "../useGalleryActions";
-import ImagePreview, {
-  type PreviewSize,
-} from "../../../components/ImagePreview";
+import Grid from "@mui/material/Grid";
+import Link from "@mui/material/Link";
 import { outlinedInputClasses } from "@mui/material/OutlinedInput";
 import { paperClasses } from "@mui/material/Paper";
+import Stack from "@mui/material/Stack";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
+import type { SxProps, Theme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import axios from "@/common/axios";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import DescriptionList from "../../../components/DescriptionList";
+import ImagePreview, { type PreviewSize } from "../../../components/ImagePreview";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import { filenameExceptExtension, formatFileSize } from "../../../util/files";
+import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
 import usePrimaryAction from "../primaryActionHooks";
+import { useGalleryActions } from "../useGalleryActions";
+import { Description, Filestore, type GalleryFile, idToString, RemoteFile } from "../useGalleryListing";
+import { useGallerySelection } from "../useGallerySelection";
+import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
-import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
-import { Optional } from "../../../util/optional";
 import { useFolderOpen } from "./OpenFolderProvider";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
-import Link from "@mui/material/Link";
-import Chip from "@mui/material/Chip";
+import { ReferencingInventoryItemsPanel } from "./ReferencingInventoryItemsPanel";
 
 /**
  * The height, in pixels, of the region that responds to touch/pointer events
@@ -110,151 +111,143 @@ const ActionButton = ({
  * @param className Ignore; it is provided by the `styled` HOC.
  */
 const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) => {
-    const { trackEvent } = React.useContext(AnalyticsContext);
-    const { rename } = useGalleryActions();
-    const [name, setName] = React.useState(file.name);
-    const textField = React.useRef<HTMLInputElement | null>(null);
-    function handleSubmit() {
-      void rename(file, name).then(() => {
-        textField.current?.blur();
-        setName(file.transformFilename(() => name));
-        trackEvent("user:renames:file:gallery");
-      });
-    }
-    return (
-      <Stack
-        sx={{
-          pr: 0.25,
-          pl: 0.75,
+  const { trackEvent } = React.useContext(AnalyticsContext);
+  const { rename } = useGalleryActions();
+  const [name, setName] = React.useState(file.name);
+  const textField = React.useRef<HTMLInputElement | null>(null);
+  function handleSubmit() {
+    void rename(file, name).then(() => {
+      textField.current?.blur();
+      setName(file.transformFilename(() => name));
+      trackEvent("user:renames:file:gallery");
+    });
+  }
+  return (
+    <Stack
+      sx={{
+        pr: 0.25,
+        pl: 0.75,
+      }}
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleSubmit();
         }}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSubmit();
-          }}
-        >
-          <TextField
-            value={name}
-            placeholder="No Name"
-            /*
-             * We use multiline so that long names wrap, but prevent the user
-             * from typing in a return character by using string replacement.
-             */
-            multiline
-            onChange={({ target: { value } }) =>
-              setName(value.replace(/\n/g, ""))
-            }
-            fullWidth
-            size="small"
-            sx={(theme) => ({
-              ...(name !== file.name
-                ? {
-                    [`& .${outlinedInputClasses.root}`]: {
-                      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-                      [`& .${outlinedInputClasses.notchedOutline}`]: {
-                        border: "none",
-                      },
-                    },
-                  }
-                : {
+        <TextField
+          value={name}
+          placeholder="No Name"
+          /*
+           * We use multiline so that long names wrap, but prevent the user
+           * from typing in a return character by using string replacement.
+           */
+          multiline
+          onChange={({ target: { value } }) => setName(value.replace(/\n/g, ""))}
+          fullWidth
+          size="small"
+          sx={(theme) => ({
+            ...(name !== file.name
+              ? {
+                  [`& .${outlinedInputClasses.root}`]: {
+                    backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
                     [`& .${outlinedInputClasses.notchedOutline}`]: {
                       border: "none",
                     },
-                  }),
-              [`& .${outlinedInputClasses.root}`]: {
-                border: "none",
-                borderRadius: "4px",
-                fontSize: "1.4rem",
-                marginTop: theme.spacing(0.5),
-                marginBottom: theme.spacing(0.5),
-                transition: "all .3s ease-in-out",
-                "&:hover, &:focus-within": {
-                  backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-                  [`& .${outlinedInputClasses.notchedOutline}`]: {
-                    border: "none !important",
                   },
+                }
+              : {
+                  [`& .${outlinedInputClasses.notchedOutline}`]: {
+                    border: "none",
+                  },
+                }),
+            [`& .${outlinedInputClasses.root}`]: {
+              border: "none",
+              borderRadius: "4px",
+              fontSize: "1.4rem",
+              marginTop: theme.spacing(0.5),
+              marginBottom: theme.spacing(0.5),
+              transition: "all .3s ease-in-out",
+              "&:hover, &:focus-within": {
+                backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                [`& .${outlinedInputClasses.notchedOutline}`]: {
+                  border: "none !important",
                 },
               },
-              [`& .${outlinedInputClasses.multiline}`]: {
-                paddingTop: theme.spacing(0.25),
-                paddingBottom: theme.spacing(0.25),
-                paddingLeft: theme.spacing(0.25),
-              },
-            })}
-            onFocus={() => {
-              if (name === file.name)
-                setName(filenameExceptExtension(file.name));
-            }}
-            onBlur={() => {
-              if (name === filenameExceptExtension(file.name))
-                setName(file.name);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setName(file.name);
-                textField.current?.blur();
-              }
-              /*
-               * We have to explicitly handle enter key and can't rely on the
-               * form's onSubmit being automaticaly called because we're using
-               * a multiline textfield and so the enter key will naturally
-               * enter a newline
-               */
-              if (e.key === "Enter") {
-                handleSubmit();
-              }
-            }}
-            slotProps={{
-              htmlInput: {
-                "aria-label": "Name",
-                ref: textField,
-              },
-            }}
-          />
-          <Collapse
-            in={name !== file.name}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 200
+            },
+            [`& .${outlinedInputClasses.multiline}`]: {
+              paddingTop: theme.spacing(0.25),
+              paddingBottom: theme.spacing(0.25),
+              paddingLeft: theme.spacing(0.25),
+            },
+          })}
+          onFocus={() => {
+            if (name === file.name) setName(filenameExceptExtension(file.name));
+          }}
+          onBlur={() => {
+            if (name === filenameExceptExtension(file.name)) setName(file.name);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setName(file.name);
+              textField.current?.blur();
             }
+            /*
+             * We have to explicitly handle enter key and can't rely on the
+             * form's onSubmit being automaticaly called because we're using
+             * a multiline textfield and so the enter key will naturally
+             * enter a newline
+             */
+            if (e.key === "Enter") {
+              handleSubmit();
+            }
+          }}
+          slotProps={{
+            htmlInput: {
+              "aria-label": "Name",
+              ref: textField,
+            },
+          }}
+        />
+        <Collapse
+          in={name !== file.name}
+          timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+        >
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{
+              justifyContent: "flex-end",
+            }}
           >
-            <Stack
-              direction="row"
-              spacing={0.5}
+            <Button
+              size="small"
+              onClick={() => {
+                setName(file.name);
+              }}
               sx={{
-                justifyContent: "flex-end",
+                px: 0.75,
               }}
             >
-              <Button
-                size="small"
-                onClick={() => {
-                  setName(file.name);
-                }}
-                sx={{
-                  px: 0.75,
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="callToAction"
-                type="submit"
-                sx={{
-                  px: 0.75,
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
-          </Collapse>
-        </form>
-      </Stack>
-    );
-  });
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              color="callToAction"
+              type="submit"
+              sx={{
+                px: 0.75,
+              }}
+            >
+              Save
+            </Button>
+          </Stack>
+        </Collapse>
+      </form>
+    </Stack>
+  );
+});
 
 /*
  * With this component, the user can edit the description of the passed file.
@@ -294,123 +287,113 @@ const DescriptionField = observer(
     description: string;
     minimalStyling?: boolean;
   }) => {
-      const { changeDescription } = useGalleryActions();
-      const [description, setDescription] =
-        React.useState<string>(initialDescription);
-      const prefersMoreContrast = window.matchMedia(
-        "(prefers-contrast: more)",
-      ).matches;
-      return (
-        <Stack>
-          <TextField
-            value={description}
-            placeholder="No description"
-            fullWidth
-            size="small"
-            sx={(theme) => ({
-              width: '100%',
-              [`& .${outlinedInputClasses.root}`]: {
-                borderRadius: "4px",
-                fontSize: "0.9rem",
-                marginTop: theme.spacing(0.5),
-                marginBottom: theme.spacing(0.5),
-                backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-              },
-              [`& .${outlinedInputClasses.input}`]: {
-                paddingLeft: theme.spacing(1),
-              },
-              ...(minimalStyling && !prefersMoreContrast
-                ? {
-                    ...(description !== initialDescription
-                      ? {
-                          [`& .${outlinedInputClasses.root}`]: {
-                            backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-                            [`& .${outlinedInputClasses.notchedOutline}`]: {
-                              border: "none",
-                            },
+    const { changeDescription } = useGalleryActions();
+    const [description, setDescription] = React.useState<string>(initialDescription);
+    const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
+    return (
+      <Stack>
+        <TextField
+          value={description}
+          placeholder="No description"
+          fullWidth
+          size="small"
+          sx={(theme) => ({
+            width: "100%",
+            [`& .${outlinedInputClasses.root}`]: {
+              borderRadius: "4px",
+              fontSize: "0.9rem",
+              marginTop: theme.spacing(0.5),
+              marginBottom: theme.spacing(0.5),
+              backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+            },
+            [`& .${outlinedInputClasses.input}`]: {
+              paddingLeft: theme.spacing(1),
+            },
+            ...(minimalStyling && !prefersMoreContrast
+              ? {
+                  ...(description !== initialDescription
+                    ? {
+                        [`& .${outlinedInputClasses.root}`]: {
+                          backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                          [`& .${outlinedInputClasses.notchedOutline}`]: {
+                            border: "none",
                           },
-                        }
-                      : {
-                          [`& .${outlinedInputClasses.root}`]: {
-                            backgroundColor: "unset",
-                            [`& .${outlinedInputClasses.notchedOutline}`]: {
-                              border: "none",
-                            },
-                          },
-                        }),
-                    [`& .${outlinedInputClasses.root}`]: {
-                      border: "none",
-                      borderRadius: "4px",
-                      marginTop: theme.spacing(0.5),
-                      marginBottom: theme.spacing(0.5),
-                      transition: "all .3s ease-in-out",
-                      "&:hover, &:focus-within": {
-                        backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
-                        [`& .${outlinedInputClasses.notchedOutline}`]: {
-                          border: "none !important",
                         },
+                      }
+                    : {
+                        [`& .${outlinedInputClasses.root}`]: {
+                          backgroundColor: "unset",
+                          [`& .${outlinedInputClasses.notchedOutline}`]: {
+                            border: "none",
+                          },
+                        },
+                      }),
+                  [`& .${outlinedInputClasses.root}`]: {
+                    border: "none",
+                    borderRadius: "4px",
+                    marginTop: theme.spacing(0.5),
+                    marginBottom: theme.spacing(0.5),
+                    transition: "all .3s ease-in-out",
+                    "&:hover, &:focus-within": {
+                      backgroundColor: `hsl(${ACCENT_COLOR.main.hue}deg, ${ACCENT_COLOR.main.saturation}%, 90%)`,
+                      [`& .${outlinedInputClasses.notchedOutline}`]: {
+                        border: "none !important",
                       },
                     },
-                    [`& .${outlinedInputClasses.multiline}`]: {
-                      paddingTop: theme.spacing(0.25),
-                      paddingBottom: theme.spacing(0.25),
-                      paddingLeft: theme.spacing(0.25),
-                    },
-                  }
-                : {}),
-            })}
-            onChange={({ target: { value } }) => setDescription(value)}
-            multiline
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && e.shiftKey) {
-                e.stopPropagation();
-                e.preventDefault();
-                void changeDescription(file, Description.Present(description));
-              }
-            }}
-          />
-          <Collapse
-            in={description !== initialDescription}
-            timeout={
-              window.matchMedia("(prefers-reduced-motion: reduce)").matches
-                ? 0
-                : 200
+                  },
+                  [`& .${outlinedInputClasses.multiline}`]: {
+                    paddingTop: theme.spacing(0.25),
+                    paddingBottom: theme.spacing(0.25),
+                    paddingLeft: theme.spacing(0.25),
+                  },
+                }
+              : {}),
+          })}
+          onChange={({ target: { value } }) => setDescription(value)}
+          multiline
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && e.shiftKey) {
+              e.stopPropagation();
+              e.preventDefault();
+              void changeDescription(file, Description.Present(description));
             }
+          }}
+        />
+        <Collapse
+          in={description !== initialDescription}
+          timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+        >
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{
+              justifyContent: "flex-end",
+            }}
           >
-            <Stack
-              direction="row"
-              spacing={0.5}
-              sx={{
-                justifyContent: "flex-end",
+            <Button
+              size="small"
+              onClick={() => {
+                setDescription(initialDescription);
               }}
             >
-              <Button
-                size="small"
-                onClick={() => {
-                  setDescription(initialDescription);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="callToAction"
-                onClick={() => {
-                  void changeDescription(
-                    file,
-                    Description.Present(description),
-                  );
-                }}
-              >
-                Save
-              </Button>
-            </Stack>
-          </Collapse>
-        </Stack>
-      );
-    },
-  );
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              color="callToAction"
+              onClick={() => {
+                void changeDescription(file, Description.Present(description));
+              }}
+            >
+              Save
+            </Button>
+          </Stack>
+        </Collapse>
+      </Stack>
+    );
+  },
+);
 const formatDmpSource = (source: string): string => {
   switch (source) {
     case "UNKNOWN":
@@ -427,14 +410,59 @@ const formatDmpSource = (source: string): string => {
       return source;
   }
 };
+/**
+ * Fetches an S3 filestore item's write-provenance (created-by / created-at) on demand when it is
+ * selected, rather than HeadObject-ing every item during a folder listing. Returns nulls for
+ * non-RemoteFiles, backends without provenance, or while the request is in flight.
+ */
+function useS3Provenance(file: GalleryFile): { createdBy: string | null; createdAt: Date | null } {
+  const { getToken } = useOauthToken();
+  const [audit, setAudit] = React.useState<{ createdBy: string | null; createdAt: Date | null }>({
+    createdBy: null,
+    createdAt: null,
+  });
+  const filestore = file.path[0];
+  const remotePath = file instanceof RemoteFile ? file.remotePath : null;
+  // S3-only; other backends have no provenance to fetch.
+  const filestoreId =
+    file instanceof RemoteFile && filestore instanceof Filestore && filestore.filesystemType === "S3"
+      ? filestore.id
+      : null;
+  React.useEffect(() => {
+    setAudit({ createdBy: null, createdAt: null });
+    if (remotePath === null || filestoreId === null) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const api = axios.create({
+          baseURL: "/api/v1/gallery",
+          headers: { Authorization: `Bearer ${await getToken()}` },
+        });
+        const { data } = await api.get<unknown>(
+          `filestores/${idToString(filestoreId).elseThrow()}/metadata?remotePath=${encodeURIComponent(remotePath)}`,
+        );
+        if (cancelled) return;
+        setAudit({
+          createdBy: Parsers.objectPath(["createdBy"], data).flatMap(Parsers.isString).orElse(null),
+          createdAt: Parsers.objectPath(["createdAt"], data)
+            .flatMap(Parsers.isString)
+            .flatMap(Parsers.parseDate)
+            .orElse(null),
+        });
+      } catch {
+        // provenance is supplementary; ignore failures
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [remotePath, filestoreId, getToken]);
+  return audit;
+}
+
 const InfoPanelContent = observer(
-  ({
-    file,
-    smallViewport = false,
-  }: {
-    file: GalleryFile;
-    smallViewport?: boolean;
-  }): React.ReactNode => {
+  ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
+    const s3Provenance = useS3Provenance(file);
     return (
       <Stack
         sx={{
@@ -464,13 +492,7 @@ const InfoPanelContent = observer(
               .map((desc) => [
                 {
                   label: "Description",
-                  value: (
-                    <DescriptionField
-                      file={file}
-                      description={desc}
-                      minimalStyling={!smallViewport}
-                    />
-                  ),
+                  value: <DescriptionField file={file} description={desc} minimalStyling={!smallViewport} />,
                   below: true,
                 },
               ])
@@ -491,9 +513,7 @@ const InfoPanelContent = observer(
             },
           }}
         />
-        {(file.metadata.doiLink ||
-          file.metadata.dmpLink ||
-          file.metadata.dmpSource) && (
+        {(file.metadata.doiLink || file.metadata.dmpLink || file.metadata.dmpSource) && (
           <Box
             component="section"
             sx={{
@@ -510,11 +530,7 @@ const InfoPanelContent = observer(
                       {
                         label: "Link",
                         value: (
-                          <Link
-                            href={file.metadata.dmpLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                          <Link href={file.metadata.dmpLink} target="_blank" rel="noopener noreferrer">
                             {file.metadata.dmpLink}
                           </Link>
                         ),
@@ -526,11 +542,7 @@ const InfoPanelContent = observer(
                       {
                         label: "Source",
                         value: (
-                          <Chip
-                            label={formatDmpSource(file.metadata.dmpSource)}
-                            size="small"
-                            variant="outlined"
-                          />
+                          <Chip label={formatDmpSource(file.metadata.dmpSource)} size="small" variant="outlined" />
                         ),
                       },
                     ]
@@ -540,11 +552,7 @@ const InfoPanelContent = observer(
                       {
                         label: "DOI Link",
                         value: (
-                          <Link
-                            href={file.metadata.doiLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
+                          <Link href={file.metadata.doiLink} target="_blank" rel="noopener noreferrer">
                             {file.metadata.doiLink}
                           </Link>
                         ),
@@ -617,6 +625,23 @@ const InfoPanelContent = observer(
                     },
                   ]
                 : []),
+              // RSpace-stamped write provenance, kept distinct from the object's real Owner/Created.
+              ...(s3Provenance.createdBy
+                ? [
+                    {
+                      label: "Added to S3 by",
+                      value: s3Provenance.createdBy,
+                    },
+                  ]
+                : []),
+              ...(s3Provenance.createdAt
+                ? [
+                    {
+                      label: "Added to S3 on",
+                      value: s3Provenance.createdAt.toLocaleString(),
+                    },
+                  ]
+                : []),
             ]}
             sx={{
               pl: 2,
@@ -624,6 +649,9 @@ const InfoPanelContent = observer(
           />
         </Box>
         {file.linkedDocuments}
+        {/* Inventory items can only link to gallery media files (GL...); folders (GF),
+            snippets (ST) etc. 404 and would show a spurious error. See PRT-1091. */}
+        {file.globalId?.startsWith("GL") && <ReferencingInventoryItemsPanel file={file} />}
       </Stack>
     );
   },
@@ -632,28 +660,18 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
   const selection = useGallerySelection();
   const sortedByCreated = selection
     .asSet()
-    .mapOptional((file) =>
-      !file.creationDate
-        ? Optional.empty<Date>()
-        : Optional.present(file.creationDate),
-    )
+    .mapOptional((file) => (!file.creationDate ? Optional.empty<Date>() : Optional.present(file.creationDate)))
     .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   const sortedByModified = selection
     .asSet()
-    .mapOptional((file) =>
-      !file.modificationDate
-        ? Optional.empty<Date>()
-        : Optional.present(file.modificationDate),
-    )
+    .mapOptional((file) => (!file.modificationDate ? Optional.empty<Date>() : Optional.present(file.modificationDate)))
     .toArray((dateA, dateB) => dateA.getTime() - dateB.getTime());
   return (
     <DescriptionList
       content={[
         {
           label: "Total size",
-          value: formatFileSize(
-            selection.asSet().reduce((sum, file) => sum + file.size, 0),
-          ),
+          value: formatFileSize(selection.asSet().reduce((sum, file) => sum + file.size, 0)),
         },
         ...Result.lift2<
           Date,
@@ -667,14 +685,13 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
             label: "Created",
             value: (
               <>
-                {oldestDate.toLocaleDateString()} &ndash;{" "}
-                {newestDate.toLocaleDateString()}
+                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
               </>
             ),
           },
         ])(
-          ArrayUtils.head(sortedByCreated),
-          ArrayUtils.last(sortedByCreated),
+          Result.fromNullable(sortedByCreated.at(0), new Error("No creation dates available.")),
+          Result.fromNullable(sortedByCreated.at(-1), new Error("No creation dates available.")),
         ).orElse([]),
         ...Result.lift2<
           Date,
@@ -688,14 +705,13 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
             label: "Modified",
             value: (
               <>
-                {oldestDate.toLocaleDateString()} &ndash;{" "}
-                {newestDate.toLocaleDateString()}
+                {oldestDate.toLocaleDateString()} &ndash; {newestDate.toLocaleDateString()}
               </>
             ),
           },
         ])(
-          ArrayUtils.head(sortedByModified),
-          ArrayUtils.last(sortedByModified),
+          Result.fromNullable(sortedByModified.at(0), new Error("No modification dates available.")),
+          Result.fromNullable(sortedByModified.at(-1), new Error("No modification dates available.")),
         ).orElse([]),
       ]}
     />
@@ -774,9 +790,7 @@ export function InfoPanelForLargeViewports() {
               .map((action) => {
                 if (action.tag === "open")
                   return (
-                    <Grid
-                      key={null}
-                    >
+                    <Grid key={null}>
                       <ActionButton
                         onClick={() => {
                           openFolder(file);
@@ -791,9 +805,7 @@ export function InfoPanelForLargeViewports() {
                   );
                 if (action.tag === "image")
                   return (
-                    <Grid
-                      key={null}
-                    >
+                    <Grid key={null}>
                       <ActionButton
                         onClick={() => {
                           void action.downloadHref().then((url) => {
@@ -804,8 +816,8 @@ export function InfoPanelForLargeViewports() {
                         }}
                         label="View"
                         sx={{
-                          height: '100%',
-                          marginTop: '8px'
+                          height: "100%",
+                          marginTop: "8px",
                         }}
                       />
                     </Grid>
@@ -1004,12 +1016,8 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
   file: GalleryFile;
 }> = ({ file }) => {
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
-  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(
-    null,
-  );
-  const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(
-    null,
-  );
+  const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
+  const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(null);
   const selection = useGallerySelection();
   const mobileInfoPanelId = React.useId();
   const { openFolder } = useFolderOpen();
@@ -1020,7 +1028,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
       anchor="bottom"
       open={mobileInfoPanelOpen}
       sx={{
-        zIndex: 1400,
+        // z-index stays at the default drawer level; the picker raises it via theme.
         [`& .${paperClasses.root}`]: {
           height: `calc(90% - ${CLOSED_MOBILE_INFO_PANEL_HEIGHT}px)`,
           overflow: "visible",
@@ -1087,10 +1095,10 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
           id={mobileInfoPanelId}
         >
           {/*
-            * Drawer "puller": on touch devices a visual indicator that the
-            * panel can be swiped open/closed, on non-touch small viewports a
-            * tap target that toggles the floating panel.
-            */}
+           * Drawer "puller": on touch devices a visual indicator that the
+           * panel can be swiped open/closed, on non-touch small viewports a
+           * tap target that toggles the floating panel.
+           */}
           <Box
             component="button"
             onClick={() => setMobileInfoPanelOpen(!mobileInfoPanelOpen)}
@@ -1190,9 +1198,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
             </Grid>
             {selection
               .asSet()
-              .only.map((f) => (
-                <InfoPanelContent key={null} file={f} smallViewport />
-              ))
+              .only.map((f) => <InfoPanelContent key={null} file={f} smallViewport />)
               .orElse(null)}
           </CardContent>
         </Stack>

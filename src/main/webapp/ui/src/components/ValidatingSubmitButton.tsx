@@ -1,13 +1,13 @@
+import Alert from "@mui/material/Alert";
+import Fade from "@mui/material/Fade";
+import { paperClasses } from "@mui/material/Paper";
+import Popover from "@mui/material/Popover";
+import Stack from "@mui/material/Stack";
+import type { SxProps, Theme } from "@mui/material/styles";
+import React from "react";
+import type { Progress } from "@/util/progress";
 import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
-import React from "react";
-import Popover from "@mui/material/Popover";
-import { paperClasses } from "@mui/material/Paper";
-import Alert from "@mui/material/Alert";
-import Stack from "@mui/material/Stack";
-import { type SxProps, type Theme } from "@mui/material/styles";
-import type { Progress } from "@/util/progress";
-import Fade from "@mui/material/Fade";
 export type ValidationResult = Result<null>;
 
 /*
@@ -19,11 +19,8 @@ export type ValidationResult = Result<null>;
  * warnings that they must first resolve.
  */
 export const IsValid = (): ValidationResult => Result.Ok(null);
-export const IsInvalid = (reason: string): ValidationResult =>
-  Result.Error([new Error(reason)]);
-export const allAreValid = (
-  v: ReadonlyArray<ValidationResult>,
-): ValidationResult => Result.all(...v).map(() => null);
+export const IsInvalid = (reason: string): ValidationResult => Result.Error([new Error(reason)]);
+export const allAreValid = (v: ReadonlyArray<ValidationResult>): ValidationResult => Result.all(...v).map(() => null);
 type ValidatingSubmitButtonArgs = {
   children: React.ReactNode;
   loading: boolean;
@@ -32,6 +29,7 @@ type ValidatingSubmitButtonArgs = {
   progress?: Progress;
   color?: "primary" | "callToAction";
   sx?: SxProps<Theme>;
+  disabled?: boolean;
 };
 export default function ValidatingSubmitButton({
   children,
@@ -41,6 +39,7 @@ export default function ValidatingSubmitButton({
   progress,
   color = "callToAction",
   sx,
+  disabled = false,
 }: ValidatingSubmitButtonArgs): React.ReactNode {
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
@@ -48,7 +47,7 @@ export default function ValidatingSubmitButton({
     <>
       <SubmitSpinnerButton
         label={children}
-        disabled={loading}
+        disabled={loading || disabled}
         loading={loading}
         /*
          * By using type="submit", any <form> element that wraps this button
@@ -96,8 +95,7 @@ export default function ValidatingSubmitButton({
               transform: "translateX(0)",
             },
           },
-          ...(playAnimation &&
-          !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ...(playAnimation && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
             ? {
                 animation: "wiggle 1s linear 1",
               }

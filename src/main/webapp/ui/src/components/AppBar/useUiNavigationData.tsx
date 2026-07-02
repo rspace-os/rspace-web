@@ -1,7 +1,7 @@
 import React from "react";
-import * as FetchingData from "../../util/fetchingData";
 import axios from "@/common/axios";
 import useOauthToken from "../../hooks/auth/useOauthToken";
+import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
@@ -114,82 +114,42 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
     setErrorMessage(null);
     try {
       const token = await getToken();
-      const { data } = await axios.get<unknown>(
-        "/api/v1/userDetails/uiNavigationData",
-        {
-          headers: {
-            Authorization: "Bearer " + token,
-          },
+      const { data } = await axios.get<unknown>("/api/v1/userDetails/uiNavigationData", {
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
         .flatMap((obj) => {
           try {
-            const email = Parsers.objectPath(["userDetails", "email"], obj)
-              .flatMap(Parsers.isString)
-              .elseThrow();
+            const email = Parsers.objectPath(["userDetails", "email"], obj).flatMap(Parsers.isString).elseThrow();
             const orcidId = Parsers.objectPath(["userDetails", "orcidId"], obj)
-              .flatMap((o) =>
-                Parsers.isString(o).orElseTry(() => Parsers.isNull(o)),
-              )
+              .flatMap((o) => Parsers.isString(o).orElseTry(() => Parsers.isNull(o)))
               .elseThrow();
-            const orcidAvailable = Parsers.objectPath(
-              ["userDetails", "orcidAvailable"],
-              obj,
-            )
+            const orcidAvailable = Parsers.objectPath(["userDetails", "orcidAvailable"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
-            const fullName = Parsers.objectPath(
-              ["userDetails", "fullName"],
-              obj,
-            )
-              .flatMap(Parsers.isString)
+            const fullName = Parsers.objectPath(["userDetails", "fullName"], obj).flatMap(Parsers.isString).elseThrow();
+            const username = Parsers.objectPath(["userDetails", "username"], obj).flatMap(Parsers.isString).elseThrow();
+            const profileImgSrc = Parsers.objectPath(["userDetails", "profileImgSrc"], obj)
+              .flatMap((o) => Parsers.isString(o).orElseTry(() => Parsers.isNull(o)))
               .elseThrow();
-            const username = Parsers.objectPath(
-              ["userDetails", "username"],
-              obj,
-            )
-              .flatMap(Parsers.isString)
-              .elseThrow();
-            const profileImgSrc = Parsers.objectPath(
-              ["userDetails", "profileImgSrc"],
-              obj,
-            )
-              .flatMap((o) =>
-                Parsers.isString(o).orElseTry(() => Parsers.isNull(o)),
-              )
-              .elseThrow();
-            const published = Parsers.objectPath(
-              ["visibleTabs", "published"],
-              obj,
-            )
+            const published = Parsers.objectPath(["visibleTabs", "published"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
-            const inventory = Parsers.objectPath(
-              ["visibleTabs", "inventory"],
-              obj,
-            )
+            const inventory = Parsers.objectPath(["visibleTabs", "inventory"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
-            const system = Parsers.objectPath(["visibleTabs", "system"], obj)
+            const system = Parsers.objectPath(["visibleTabs", "system"], obj).flatMap(Parsers.isBoolean).elseThrow();
+            const myLabGroups = Parsers.objectPath(["visibleTabs", "myLabGroups"], obj)
               .flatMap(Parsers.isBoolean)
               .elseThrow();
-            const myLabGroups = Parsers.objectPath(
-              ["visibleTabs", "myLabGroups"],
-              obj,
-            )
-              .flatMap(Parsers.isBoolean)
-              .elseThrow();
-            const bannerImgSrc = Parsers.objectPath(["bannerImgSrc"], obj)
-              .flatMap(Parsers.isString)
-              .elseThrow();
-            const extraHelpLinks: UiNavigationData['extraHelpLinks'] = Parsers.objectPath(['extraHelpLinks'], obj)
+            const bannerImgSrc = Parsers.objectPath(["bannerImgSrc"], obj).flatMap(Parsers.isString).elseThrow();
+            const extraHelpLinks: UiNavigationData["extraHelpLinks"] = Parsers.objectPath(["extraHelpLinks"], obj)
               .flatMap(Parsers.isArray)
-              .orElse([]) as UiNavigationData['extraHelpLinks'];
-            const operatedAs = Parsers.objectPath(["operatedAs"], obj)
-              .flatMap(Parsers.isBoolean)
-              .elseThrow();
+              .orElse([]) as UiNavigationData["extraHelpLinks"];
+            const operatedAs = Parsers.objectPath(["operatedAs"], obj).flatMap(Parsers.isBoolean).elseThrow();
             const nextMaintenance = Parsers.objectPath(["nextMaintenance"], obj)
               .flatMap((o) =>
                 Parsers.isObject(o)

@@ -428,20 +428,20 @@ there's a bunch of tools that we have in our stack. They're listed here in
 order from easiest to use to the requiring the most work.
 
 
-### Eslint
+### Biome (a11y rules)
 
-The [jsx-a11y eslint plugin][eslint-plugin-jsx-a11y] can catch a variety of
-issues with HTML written using JSX notation.
+Biome's built-in `a11y` rule group catches a variety of issues with HTML written
+using JSX notation, including missing alt attributes and invalid aria- attributes.
 
 #### Pros
 
-* It requires no work to use, it just runs as part of our existing eslint
-  workflow.
+* It requires no work to use, it just runs as part of our existing Biome
+  workflow (`pnpm run lint`).
 * It can catch issues like missing alt attributes and invalid aria- attributes
 
 #### Cons
 
-* The build does not fail on issues, so error could be introduced without us
+* The build does not fail on issues, so errors could be introduced without us
   noticing.
 * Static analysis of code can never catch all issues, as some can arise when
   the code is executed.
@@ -470,7 +470,6 @@ describe("some tests", () => {
       <ComponentUnderTest />
     );
 
-    // $FlowExpectedError[incompatible-call] See expect.extend above
     expect(await axe(container)).toHaveNoViolations();
   });
 });

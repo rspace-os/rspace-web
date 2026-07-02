@@ -1,27 +1,26 @@
-import React from "react";
+import AddIcon from "@mui/icons-material/Add";
+import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import MuiTextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
-import FieldModel from "../../../stores/models/FieldModel";
+import React from "react";
+import InputWrapper from "../../../components/Inputs/InputWrapper";
+import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
+import type { Option } from "../../../stores/definitions/Field";
+import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
+import type FieldModel from "../../../stores/models/FieldModel";
 import { hasOptions } from "../../../stores/models/FieldTypes";
 import { match } from "../../../util/Util";
-import * as ArrayUtils from "../../../util/ArrayUtils";
+import { DATACITE_RELATION_TYPES } from "../../components/Fields/Link/dataciteRelationTypes";
 import CustomField from "../../components/Inputs/CustomField";
-import InputWrapper from "../../../components/Inputs/InputWrapper";
-import Button from "@mui/material/Button";
-import AddIcon from "@mui/icons-material/Add";
-import Box from "@mui/material/Box";
-import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
-import { type Option } from "../../../stores/definitions/Field";
-import { type GalleryFile } from "../../../eln/gallery/useGalleryListing";
 
 type DefaultValueFieldArgs = {
   field: FieldModel;
   editing: boolean;
 };
 
-function DefaultValueField({
-  field,
-  editing,
-}: DefaultValueFieldArgs): React.ReactNode {
+function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.ReactNode {
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "attachment";
 
@@ -37,6 +36,48 @@ function DefaultValueField({
    */
   const key = React.useMemo(() => field.id ?? crypto.randomUUID(), [field.id]);
 
+  /*
+   * Link template fields don't store a "default value" in the usual sense; instead the template
+   * defines which DataCite relationship types samples may use. An empty whitelist means all
+   * relationship types are allowed.
+   */
+  if (field.type === "link") {
+    return (
+      <InputWrapper
+        label="Allowed relationship types"
+        explanation="The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types."
+      >
+        <Autocomplete
+          multiple
+          disabled={!editing}
+          options={[...DATACITE_RELATION_TYPES]}
+          value={field.allowedRelationTypes}
+          // already-chosen types are greyed out rather than toggled off; they
+          // are removed via their chip's delete icon instead
+          getOptionDisabled={(option) => field.allowedRelationTypes.includes(option)}
+          onChange={(_event, value) => field.setAttributesDirty({ allowedRelationTypes: value })}
+          renderInput={(params) => {
+            const { slotProps, ...textFieldProps } = params;
+            return (
+              <MuiTextField
+                {...textFieldProps}
+                variant="standard"
+                placeholder={field.allowedRelationTypes.length === 0 ? "All relationship types" : ""}
+                slotProps={{
+                  ...slotProps,
+                  htmlInput: {
+                    ...slotProps.htmlInput,
+                    "aria-label": "Allowed relationship types",
+                  },
+                }}
+              />
+            );
+          }}
+        />
+      </InputWrapper>
+    );
+  }
+
   const errorState = match<void, string | null>([
     [() => !_hasOptions, null],
     [() => field.options.length === 0, "One or more values are required."],
@@ -48,8 +89,7 @@ function DefaultValueField({
    * Have to use a variable here to make the suppression work. No idea why; may
    * well be a bug in Flow.
    */
-  const fieldType = (field.type.charAt(0).toUpperCase() +
-    field.type.slice(1)) as
+  const fieldType = (field.type.charAt(0).toUpperCase() + field.type.slice(1)) as
     | "Attachment"
     | "Choice"
     | "Date"
@@ -63,10 +103,7 @@ function DefaultValueField({
     | "Uri";
 
   const fieldValue = match<void, () => unknown>([
-    [
-      () => field.type === "radio",
-      () => ArrayUtils.head(field.selectedOptions ?? []).orElse(null),
-    ],
+    [() => field.type === "radio", () => field.selectedOptions?.at(0) ?? null],
     [() => field.type === "choice", () => field.selectedOptions ?? []],
     [() => true, () => field.content],
   ])()();
@@ -112,31 +149,20 @@ function DefaultValueField({
   };
 
   // Common onChange handler
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { value: unknown };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { value: unknown } }) => {
     field.setAttributesDirty(
       match<void, object>([
-        [
-          () => field.type === "radio",
-          { selectedOptions: value ? [value] : [] },
-        ],
+        [() => field.type === "radio", { selectedOptions: value ? [value] : [] }],
         [() => field.type === "choice", { selectedOptions: value }],
         [
           () => field.type === "date",
           {
             content:
-              typeof value === "string" && value
-                ? truncateIsoTimestamp(value, "date").orElse(
-                  "NaN-NaN-NaN"
-                )
-                : null,
+              typeof value === "string" && value ? truncateIsoTimestamp(value, "date").orElse("NaN-NaN-NaN") : null,
           },
         ],
         [() => true, { content: value }],
-      ])()
+      ])(),
     );
   };
 
@@ -152,12 +178,12 @@ function DefaultValueField({
     props.hideWhenDisabled = false;
     props.onOptionChange = (index: number, changedOption: Option) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1, changedOption),
+        options: field.options.toSpliced(index, 1, changedOption),
       });
     };
     props.onOptionRemove = (index: number) => {
       field.setAttributesDirty({
-        options: ArrayUtils.splice(field.options, index, 1),
+        options: field.options.toSpliced(index, 1),
       });
     };
   }
@@ -170,57 +196,45 @@ function DefaultValueField({
   // Add attachment-specific props
   if (field.type === "attachment") {
     props.attachment = field.attachment;
-    props.onAttachmentChange = (file: File | GalleryFile) =>
-      field.setAttachment(file);
+    props.onAttachmentChange = (file: File | GalleryFile) => field.setAttachment(file);
     props.disableFileUpload = true;
   }
 
-  const custom = React.createElement(
-    CustomField,
-    props as React.ComponentProps<typeof CustomField>
-  );
+  const custom = React.createElement(CustomField, props as React.ComponentProps<typeof CustomField>);
 
   return (
     <InputWrapper
-      label={
-        _hasOptions
-          ? "Values"
-          : isAttachment
-          ? "Default Description"
-          : "Default Value"
-      }
+      label={_hasOptions ? "Values" : isAttachment ? "Default Description" : "Default Value"}
       explanation={
         _hasOptions
           ? "The set of available options. Any selected values will be the default when creating samples."
           : null
       }
     >
-      <>
-        {custom}
-        {hasOptions(field.fieldType) && editing && (
-          <Box sx={{ display: "inline", mt: 1 }}>
-            <Button
-              color="primary"
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => {
-                field.setAttributesDirty({
-                  options: [
-                    ...field.options,
-                    {
-                      value: "",
-                      label: "",
-                      editing: true,
-                    },
-                  ],
-                });
-              }}
-            >
-              Add Value
-            </Button>
-          </Box>
-        )}
-      </>
+      {custom}
+      {hasOptions(field.fieldType) && editing && (
+        <Box sx={{ display: "inline", mt: 1 }}>
+          <Button
+            color="primary"
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => {
+              field.setAttributesDirty({
+                options: [
+                  ...field.options,
+                  {
+                    value: "",
+                    label: "",
+                    editing: true,
+                  },
+                ],
+              });
+            }}
+          >
+            Add Value
+          </Button>
+        </Box>
+      )}
     </InputWrapper>
   );
 }

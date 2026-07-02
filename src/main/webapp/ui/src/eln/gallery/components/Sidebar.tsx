@@ -1,55 +1,48 @@
-import React from "react";
-import { useLandmark } from "../../../components/LandmarksContext";
-import Box from "@mui/material/Box";
-import { Drawer, Menu } from "../../../components/DialogBoundary";
-import {
-  gallerySectionLabel,
-  gallerySectionIcon,
-  type GallerySection,
-} from "../common";
-import DrawerTab from "../../../components/DrawerTab";
-import List from "@mui/material/List";
-import Divider from "@mui/material/Divider";
-import Button from "@mui/material/Button";
-import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
 import AddIcon from "@mui/icons-material/Add";
+import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import DnsIcon from "@mui/icons-material/Dns";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import Alert from "@mui/material/Alert";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import List from "@mui/material/List";
+import { paperClasses } from "@mui/material/Paper";
+import TextField from "@mui/material/TextField";
+import { autorun } from "mobx";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import axios from "@/common/axios";
+import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
+import AccentMenuItem from "../../../components/AccentMenuItem";
+import { Drawer, Menu } from "../../../components/DialogBoundary";
+import DrawerTab from "../../../components/DrawerTab";
+import EventBoundary from "../../../components/EventBoundary";
+import { useLandmark } from "../../../components/LandmarksContext";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../../components/ValidatingSubmitButton";
 import ArgosAccentMenuItem from "../../../eln-dmp-integration/Argos/ArgosAccentMenuItem";
 import DMPAssistantAccentMenuItem from "../../../eln-dmp-integration/DMPAssistant/DMPAssistantAccentMenuItem";
 import DMPOnlineAccentMenuItem from "../../../eln-dmp-integration/DMPOnline/DMPOnlineAccentMenuItem";
 import DMPToolAccentMenuItem from "../../../eln-dmp-integration/DMPTool/DMPToolAccentMenuItem";
-import AccentMenuItem from "../../../components/AccentMenuItem";
-import { type Id } from "../useGalleryListing";
-import { useGalleryActions } from "../useGalleryActions";
-import * as FetchingData from "../../../util/fetchingData";
-import Dialog from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
-import TextField from "@mui/material/TextField";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogActions from "@mui/material/DialogActions";
 import { useIntegrationIsAllowedAndEnabled } from "../../../hooks/api/integrationHelpers";
-import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
-import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import { observer } from "mobx-react-lite";
-import { autorun } from "mobx";
-import EventBoundary from "../../../components/EventBoundary";
-import ValidatingSubmitButton, {
-  IsValid,
-  IsInvalid,
-} from "../../../components/ValidatingSubmitButton";
-import Result from "../../../util/result";
-import DnsIcon from "@mui/icons-material/Dns";
-import axios from "@/common/axios";
-import useOauthToken from "../../../hooks/auth/useOauthToken";
-import * as Parsers from "../../../util/parsers";
 import { useDeploymentProperty } from "../../../hooks/api/useDeploymentProperty";
-import AddFilestoreDialog from "./AddFilestoreDialog";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
+import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import useOneDimensionalRovingTabIndex from "../../../hooks/ui/useOneDimensionalRovingTabIndex";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
-import DSWAccentMenuItem from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import { Integration, FetchedState } from "../../apps/useIntegrationsEndpoint";
+import * as FetchingData from "../../../util/fetchingData";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
+import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
+import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
+import { useGalleryActions } from "../useGalleryActions";
+import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
+import AddFilestoreDialog from "./AddFilestoreDialog";
 
 const UploadMenuItem = ({
   folderId,
@@ -122,11 +115,14 @@ const UploadMenuItem = ({
 };
 const NewFolderMenuItem = ({
   folderId,
+  path,
   onDialogClose,
   autoFocus,
   tabIndex,
 }: {
   folderId: Result<Id>;
+  /** The current breadcrumb path; path[0] is the filestore when browsing one. */
+  path: ReadonlyArray<GalleryFile> | null;
   onDialogClose: (success: boolean) => void;
 
   /*
@@ -137,7 +133,17 @@ const NewFolderMenuItem = ({
 }) => {
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
-  const { createFolder } = useGalleryActions();
+  const { createFolder, createRemoteFolder } = useGalleryActions();
+
+  // Inside an S3 filestore, folders are created via the filestore API (path-based), not the local endpoint.
+  const s3Target = React.useMemo((): { filestoreId: number; parentPath: string } | null => {
+    if (!path || path.length === 0) return null;
+    const filestore = asWritableS3Filestore(path[0]);
+    if (!filestore || filestore.id === null) return null;
+    const openFolder = path[path.length - 1];
+    const parentPath = openFolder instanceof RemoteFile ? openFolder.remotePath : "";
+    return { filestoreId: filestore.id, parentPath };
+  }, [path]);
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
@@ -157,8 +163,15 @@ const NewFolderMenuItem = ({
           }}
         >
           <form /* onSubmit is handled by ValidatingSubmitButton */>
-            <DialogTitle>New Folder</DialogTitle>
+            <DialogTitle>{s3Target ? "New Filestore Folder" : "New Folder"}</DialogTitle>
             <DialogContent>
+              {s3Target && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object,
+                  and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of
+                  files will be easier to manage than a folder structure.
+                </Alert>
+              )}
               <DialogContentText
                 variant="body2"
                 sx={{
@@ -169,6 +182,7 @@ const NewFolderMenuItem = ({
               </DialogContentText>
               <TextField
                 size="small"
+                fullWidth
                 label="Name"
                 onChange={({ target: { value } }) => setName(value)}
                 slotProps={{
@@ -190,13 +204,13 @@ const NewFolderMenuItem = ({
               </Button>
               <ValidatingSubmitButton
                 loading={submitting}
-                validationResult={
-                  name.length > 0 ? IsValid() : IsInvalid("A name is required.")
-                }
+                validationResult={name.trim().length > 0 ? IsValid() : IsInvalid("A name is required.")}
                 onClick={() => {
                   setSubmitting(true);
-                  const fId = folderId.elseThrow();
-                  void createFolder(fId, name)
+                  const create = s3Target
+                    ? createRemoteFolder(s3Target.filestoreId, s3Target.parentPath, name)
+                    : createFolder(folderId.elseThrow(), name);
+                  void create
                     .then(() => {
                       onDialogClose(true);
                       trackEvent("user:create:folder:gallery");
@@ -222,7 +236,7 @@ const NewFolderMenuItem = ({
         tabIndex={tabIndex}
         aria-haspopup="dialog"
         compact
-        disabled={folderId.isError}
+        disabled={folderId.isError && !s3Target}
       />
     </>
   );
@@ -252,7 +266,7 @@ const AddFilestoreMenuItem = ({
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -268,15 +282,9 @@ const AddFilestoreMenuItem = ({
                 .flatMap(Parsers.isNotNull)
                 .flatMap((obj) => {
                   try {
-                    const id = Parsers.getValueWithKey("id")(obj)
-                      .flatMap(Parsers.isNumber)
-                      .elseThrow();
-                    const name = Parsers.getValueWithKey("name")(obj)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
-                    const url = Parsers.getValueWithKey("url")(obj)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
+                    const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
+                    const url = Parsers.getValueWithKey("url")(obj).flatMap(Parsers.isString).elseThrow();
                     return Result.Ok({
                       id,
                       name,
@@ -313,9 +321,7 @@ const AddFilestoreMenuItem = ({
             key={null}
             title="Add a Filestore"
             subheader={
-              (filesystems ?? []).length === 0
-                ? "System Admin has not configured any external filestores."
-                : null
+              (filesystems ?? []).length === 0 ? "System Admin has not configured any external filestores." : null
             }
             avatar={<DnsIcon />}
             onClick={() => {
@@ -336,28 +342,15 @@ type DmpMenuSectionArgs = {
   onDialogClose: () => void;
   showDmpPanel: () => void;
 };
-const DmpMenuSection = ({
-  onDialogClose,
-  showDmpPanel,
-}: DmpMenuSectionArgs) => {
-  const [dswConnections, setDswConnections] = React.useState<
-    null | DswConfig[]
-  >(null);
-  const showArgos = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("ARGOS"),
-  ).orElse(false);
-  const showDmpAssistant = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DMPASSISTANT"),
-  ).orElse(false);
-  const showDmponline = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DMPONLINE"),
-  ).orElse(false);
-  const showDmptool = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DMPTOOL"),
-  ).orElse(false);
-  const showDsw = FetchingData.getSuccessValue(
-    useIntegrationIsAllowedAndEnabled("DSW"),
-  ).orElse(false);
+const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => {
+  const [dswConnections, setDswConnections] = React.useState<null | DswConfig[]>(null);
+  const showArgos = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("ARGOS")).orElse(false);
+  const showDmpAssistant = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPASSISTANT")).orElse(
+    false,
+  );
+  const showDmponline = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPONLINE")).orElse(false);
+  const showDmptool = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DMPTOOL")).orElse(false);
+  const showDsw = FetchingData.getSuccessValue(useIntegrationIsAllowedAndEnabled("DSW")).orElse(false);
   React.useEffect(() => {
     /*
      * This is to maintain backwards compatibility with the old Gallery. It
@@ -390,11 +383,9 @@ const DmpMenuSection = ({
         >("allIntegrations");
         if (states.data.success) {
           const data = states.data.data;
-          const configs = Object.entries(data.DSW.options).map(
-            ([optionsId, config]) => {
-              return config as DswConfig;
-            },
-          );
+          const configs = Object.entries(data.DSW.options).map(([_optionsId, config]) => {
+            return config as DswConfig;
+          });
           setDswConnections(configs);
         }
       } catch (e) {
@@ -404,36 +395,19 @@ const DmpMenuSection = ({
     })();
   }, []);
 
-  if (
-    !showArgos &&
-    !showDmpAssistant &&
-    !showDmponline &&
-    !showDmptool &&
-    !showDsw
-  )
-    return null;
+  if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
       <Divider textAlign="left" aria-label="DMPs">
         DMP Import
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
-      {showDmpAssistant && (
-        <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />
-      )}
-      {showDmponline && (
-        <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />
-      )}
+      {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
+      {showDmponline && <DMPOnlineAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmptool && <DMPToolAccentMenuItem onDialogClose={onDialogClose} />}
       {showDsw &&
-        dswConnections &&
-        dswConnections.map((connection, index) => {
-          return (
-            <DSWAccentMenuItem
-              onDialogClose={onDialogClose}
-              connection={connection}
-            />
-          );
+        dswConnections?.map((connection, _index) => {
+          return <DSWAccentMenuItem onDialogClose={onDialogClose} connection={connection} />;
         })}
     </>
   );
@@ -444,6 +418,7 @@ type SidebarArgs = {
   drawerOpen: boolean;
   setDrawerOpen: (open: boolean) => void;
   folderId: FetchingData.Fetched<Id>;
+  path: ReadonlyArray<GalleryFile> | null;
   refreshListing: () => Promise<void>;
   id: string;
 };
@@ -453,12 +428,12 @@ const Sidebar = ({
   drawerOpen,
   setDrawerOpen,
   folderId,
+  path,
   refreshListing,
   id,
 }: SidebarArgs): React.ReactNode => {
   const sidebarRef = useLandmark("Navigation");
-  const [newMenuAnchorEl, setNewMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
   React.useEffect(() => {
@@ -470,10 +445,9 @@ const Sidebar = ({
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
     .orElse(false);
-  const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex<HTMLDivElement>({
-      max: showFilestores ? 9 : 8,
-    });
+  const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
+    max: showFilestores ? 9 : 8,
+  });
   return (
     <Drawer
       open={drawerOpen}
@@ -555,6 +529,7 @@ const Sidebar = ({
           <NewFolderMenuItem
             key={"newFolder"}
             folderId={FetchingData.getSuccessValue(folderId)}
+            path={path}
             onDialogClose={(success) => {
               if (success) void refreshListing();
               setNewMenuAnchorEl(null);
@@ -592,6 +567,7 @@ const Sidebar = ({
           position: "relative",
         }}
       >
+        {/** biome-ignore lint/a11y/useSemanticElements: initial biome migration */}
         <div role="navigation">
           <List
             sx={{

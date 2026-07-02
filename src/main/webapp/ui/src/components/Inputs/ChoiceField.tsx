@@ -1,12 +1,12 @@
-import React from "react";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import RemoveButton from "../../components/RemoveButton";
-import NoValue from "../../components/NoValue";
-import Grid from "@mui/material/Grid";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import FormGroup from "@mui/material/FormGroup";
+import Grid from "@mui/material/Grid";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import type React from "react";
+import NoValue from "../../components/NoValue";
+import RemoveButton from "../../components/RemoveButton";
 
 export type ChoiceOption<OptionValue extends string> = {
   value: OptionValue;
@@ -23,14 +23,9 @@ export type ChoiceFieldArgs<OptionValue extends string> = {
   // optional
   name: string;
   disabled?: boolean;
-  onChange?: (event: {
-    target: { name: string; value: ReadonlyArray<OptionValue> };
-  }) => void;
+  onChange?: (event: { target: { name: string; value: ReadonlyArray<OptionValue> } }) => void;
   allowOptionDeletion?: boolean;
-  onOptionChange?: (
-    index: number,
-    option: { label: string; value: OptionValue; editing: true },
-  ) => void;
+  onOptionChange?: (index: number, option: { label: string; value: OptionValue; editing: true }) => void;
   onOptionRemove?: (index: number) => void;
   hideWhenDisabled?: boolean;
 };
@@ -50,9 +45,7 @@ export default function ChoiceField<OptionValue extends string>({
     onChange?.({ target: { name, value: newValues } });
   };
 
-  const handleToggleCheckbox = (e: {
-    target: { value: OptionValue; checked: boolean };
-  }) => {
+  const handleToggleCheckbox = (e: { target: { value: OptionValue; checked: boolean } }) => {
     let newValues: typeof value = [];
     if (value.includes(e.target.value) && !e.target.checked) {
       newValues = value.filter((v) => v !== e.target.value);
@@ -62,13 +55,8 @@ export default function ChoiceField<OptionValue extends string>({
     updateSelected(newValues);
   };
 
-  const handleUpdateValue = (
-    optionValue: OptionValue,
-    targetValue: OptionValue,
-  ) => {
-    const newValues = value
-      .filter((v) => v !== optionValue)
-      .concat(targetValue);
+  const handleUpdateValue = (optionValue: OptionValue, targetValue: OptionValue) => {
+    const newValues = value.filter((v) => v !== optionValue).concat(targetValue);
     updateSelected(newValues);
   };
 
@@ -78,9 +66,7 @@ export default function ChoiceField<OptionValue extends string>({
   };
 
   const filteredOptions = (): ReadonlyArray<ChoiceOption<OptionValue>> => {
-    return disabled && hideWhenDisabled
-      ? options.filter((o) => value.includes(o.value))
-      : options;
+    return disabled && hideWhenDisabled ? options.filter((o) => value.includes(o.value)) : options;
   };
 
   return disabled && value.length === 0 && hideWhenDisabled ? (
@@ -125,8 +111,7 @@ export default function ChoiceField<OptionValue extends string>({
             <RemoveButton
               title={`Delete Option: ${option.value}`}
               onClick={() => {
-                if (value.includes(option.value))
-                  handleRemoveOption(option.value);
+                if (value.includes(option.value)) handleRemoveOption(option.value);
                 onOptionRemove(i);
               }}
             />
@@ -139,10 +124,7 @@ export default function ChoiceField<OptionValue extends string>({
               value={option.value}
               onChange={(e) => {
                 if (value.includes(option.value)) {
-                  handleUpdateValue(
-                    option.value,
-                    e.target.value as OptionValue,
-                  );
+                  handleUpdateValue(option.value, e.target.value as OptionValue);
                 }
                 onOptionChange(i, {
                   value: e.target.value as OptionValue,
@@ -152,11 +134,7 @@ export default function ChoiceField<OptionValue extends string>({
               }}
               placeholder={`Option ${i + 1}`}
               error={option.value === ""}
-              helperText={
-                option.value.length === 0
-                  ? "Option value cannot be empty"
-                  : null
-              }
+              helperText={option.value.length === 0 ? "Option value cannot be empty" : null}
               slotProps={{
                 input: {
                   endAdornment: (
@@ -164,8 +142,7 @@ export default function ChoiceField<OptionValue extends string>({
                       <RemoveButton
                         title="Delete New Option"
                         onClick={() => {
-                          if (value.includes(option.value))
-                            handleRemoveOption(option.value);
+                          if (value.includes(option.value)) handleRemoveOption(option.value);
                           onOptionRemove(i);
                         }}
                       />

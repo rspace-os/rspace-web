@@ -37,9 +37,7 @@ export default function useOfficeOnline(): {
    * button will not be shown. As such, we don't need to expose the complexity
    * of promises and FetchingData to the caller.
    */
-  const [supportedExts, setSupportedExts] = React.useState<Set<string>>(
-    new Set()
-  );
+  const [supportedExts, setSupportedExts] = React.useState<Set<string>>(new Set());
   const context = React.useContext(OfficeOnlineContext);
 
   React.useEffect(() => {
@@ -58,7 +56,6 @@ export default function useOfficeOnline(): {
     });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
-
   }, []);
 
   return { supportedExts };

@@ -1,19 +1,17 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Alert from "@mui/material/Alert";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
-import {
-  todaysDate,
-  truncateIsoTimestamp,
-} from "../../../stores/definitions/Units";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import DateField from "../../../components/Inputs/DateField";
+// biome-ignore lint/style/useImportType: initial biome migration
+import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import { todaysDate, truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
 
 function ExpiryDate<
   Fields extends {
     expiryDate: string | null;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({
   fieldOwner,
   onErrorStateChange,
@@ -21,18 +19,13 @@ function ExpiryDate<
   fieldOwner: FieldOwner;
   onErrorStateChange: (value: boolean) => void;
 }): React.ReactNode {
-  const handleChange = ({
-    target: { value },
-  }: {
-    target: { value: Date | null };
-  }) => {
+  const handleChange = ({ target: { value } }: { target: { value: Date | null } }) => {
+    // biome-ignore lint/suspicious/noGlobalIsNan: initial biome migration
     onErrorStateChange(value ? isNaN(value.getTime()) : false);
     fieldOwner.setFieldsDirty({
       // Yes, other code is dependent on "NaN-NaN-NaN".
       // Any falsey value, including the empty string, is acceptable as the expiry date is optional data.
-      expiryDate: value
-        ? truncateIsoTimestamp(value, "date").orElse("NaN-NaN-NaN")
-        : null,
+      expiryDate: value ? truncateIsoTimestamp(value, "date").orElse("NaN-NaN-NaN") : null,
     });
   };
 
@@ -51,6 +44,7 @@ function ExpiryDate<
           onChange={handleChange}
           data-test-id="SetExpiryDateButton"
           alert={
+            // biome-ignore lint/complexity/noUselessFragments: initial biome migration
             <>
               {expiryDate && new Date(expiryDate) < todaysDate() && (
                 <Alert severity="warning">This sample has expired.</Alert>

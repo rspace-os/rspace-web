@@ -1,6 +1,5 @@
 package com.researchspace.integrations.omero.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
 import java.math.BigDecimal;
@@ -20,7 +19,6 @@ public class ImageRSpaceView implements OmeroRSpaceView {
   private static final String TYPE = "image";
   private final Long id;
 
-  @SuppressFBWarnings("SS_SHOULD_BE_STATIC")
   private final int childCounts = 0;
 
   private final String name;

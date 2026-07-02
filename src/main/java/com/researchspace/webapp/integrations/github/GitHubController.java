@@ -8,6 +8,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.annotation.Nullable;
@@ -31,6 +32,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,11 +51,14 @@ public class GitHubController {
 
   protected static final String GITHUB_VIEW_NAME = "connect/github/gitHubTreeView";
 
-  private static final String GITHUB_ACCESS_TOKEN_URL =
-      "https://github.com/login/oauth/access_token";
-  private static final String GITHUB_API_URL = "https://api.github.com";
-  private static final String GITHUB_API_USER_REPOS =
-      String.format("%s/user/repos", GITHUB_API_URL);
+  @Value("${github.oauth.access.token.url}")
+  private String githubAccessTokenUrl;
+
+  @Value("${github.api.base.url}")
+  private String githubApiUrl;
+
+  @Value("${github.oauth.authorize.url}")
+  private String githubAuthorizeUrl;
 
   @Value("${github.client.id}")
   private String clientId;
@@ -147,7 +152,7 @@ public class GitHubController {
 
     ResponseEntity<AccessToken> accessToken =
         restTemplate.exchange(
-            GITHUB_ACCESS_TOKEN_URL, HttpMethod.POST, accessTokenRequestEntity, AccessToken.class);
+            githubAccessTokenUrl, HttpMethod.POST, accessTokenRequestEntity, AccessToken.class);
 
     // Check if error is not set
     if (accessToken.hasBody() && accessToken.getBody().getError() != null) {
@@ -185,7 +190,7 @@ public class GitHubController {
   private List<Repository> getUserRepositories(String accessToken) throws RestClientException {
     return restTemplate
         .exchange(
-            GITHUB_API_USER_REPOS,
+            String.format("%s/user/repos", githubApiUrl),
             HttpMethod.GET,
             new HttpEntity<>(getApiHeaders(accessToken)),
             new ParameterizedTypeReference<List<Repository>>() {})
@@ -195,7 +200,7 @@ public class GitHubController {
   @GetMapping("/oauthUrl")
   @ResponseBody
   public AjaxReturnObject<String> oauthUrl() {
-    var url = "https://github.com/login/oauth/authorize?scope=repo,user&client_id=" + this.clientId;
+    var url = githubAuthorizeUrl + "?scope=repo,user&client_id=" + this.clientId;
     return new AjaxReturnObject<>(url, null);
   }
 
@@ -222,11 +227,12 @@ public class GitHubController {
       log.error("GitHub access denied", e);
       OauthAuthorizationError error =
           getAuthorizationBuilder()
-              .errorMsg("Github access denied")
+              .errorMsg("GitHub access denied")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     } catch (Exception e) {
       log.error("Exception during GitHub token exchange", e);
       OauthAuthorizationError error =
@@ -234,13 +240,13 @@ public class GitHubController {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
-    List<Repository> repositories;
     try {
-      repositories = getUserRepositories(accessToken);
+      getUserRepositories(accessToken);
     } catch (Exception e) {
       log.error("Getting GitHub repositories list failed", e);
       OauthAuthorizationError error =
@@ -248,19 +254,21 @@ public class GitHubController {
               .errorMsg("Getting repositories list failed")
               .errorDetails(e.getMessage())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED", error);
+      return ConnectionResultPage.VIEW;
     }
 
     log.info(String.format("User %s successfully authenticated with GitHub", principal.getName()));
-    model.addAttribute("gitHubAccessToken", accessToken);
-    model.addAttribute("gitHubRepositories", repositories);
+    ConnectionResultPage.addConnectionAttributes(
+        model, "GitHub", "rspace.apps.github.connection", "GITHUB_CONNECTED");
+    model.addAttribute("connectionToken", accessToken);
 
-    return "connect/github/connected";
+    return ConnectionResultPage.VIEW;
   }
 
   private OauthAuthorizationErrorBuilder getAuthorizationBuilder() {
-    return OauthAuthorizationError.builder().appName("Github");
+    return OauthAuthorizationError.builder().appName("GitHub");
   }
 
   // Map is from repository name to access code
@@ -324,7 +332,7 @@ public class GitHubController {
 
   private String getDefaultBranchFromGitHubApi(String repositoryName, String accessToken) {
 
-    String url = String.format("%s/repos/%s", GITHUB_API_URL, repositoryName);
+    String url = String.format("%s/repos/%s", githubApiUrl, repositoryName);
     String result = "unknown";
     try {
       JsonNode repoDetailsResponse =
@@ -345,7 +353,7 @@ public class GitHubController {
   private List<TreeNode> getNodesFromGitHubApi(
       String fullRepoName, String fullPath, String sha, String accessToken)
       throws RestClientException {
-    String url = String.format("%s/repos/%s/git/trees/%s", GITHUB_API_URL, fullRepoName, sha);
+    String url = String.format("%s/repos/%s/git/trees/%s", githubApiUrl, fullRepoName, sha);
     TreeApiResponse treeApiResponse =
         restTemplate
             .exchange(

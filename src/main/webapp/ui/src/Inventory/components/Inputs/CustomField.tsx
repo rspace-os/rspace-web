@@ -1,42 +1,18 @@
-import React from "react";
+import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
-import { dropProperty } from "../../../util/Util";
-import InputWrapper, {
-  type InputWrapperArgs,
-} from "../../../components/Inputs/InputWrapper";
-import AttachmentField, {
-  type AttachmentFieldArgs,
-} from "../Fields/Attachments/AttachmentField";
-import ChoiceField, {
-  type ChoiceFieldArgs,
-} from "../../../components/Inputs/ChoiceField";
-import DateField, {
-  type DateFieldArgs,
-} from "../../../components/Inputs/DateField";
-import FileField, {
-  type FileFieldArgs,
-} from "../../../components/Inputs/FileField";
-import NumberField, {
-  type NumberFieldArgs,
-} from "../../../components/Inputs/NumberField";
-import RadioField, {
-  type RadioFieldArgs,
-} from "../../../components/Inputs/RadioField";
-import ReferenceField, {
-  type ReferenceFieldArgs,
-} from "../../../components/Inputs/ReferenceField";
-import StringField, {
-  type StringFieldArgs,
-} from "../../../components/Inputs/StringField";
-import TextField, {
-  type TextFieldArgs,
-} from "../../../components/Inputs/TextField";
-import TimeField, {
-  type TimeFieldArgs,
-} from "../../../components/Inputs/TimeField";
-import UriField, {
-  type UriFieldArgs,
-} from "../../../components/Inputs/UriField";
+import type React from "react";
+import ChoiceField, { type ChoiceFieldArgs } from "../../../components/Inputs/ChoiceField";
+import DateField, { type DateFieldArgs } from "../../../components/Inputs/DateField";
+import FileField, { type FileFieldArgs } from "../../../components/Inputs/FileField";
+import InputWrapper, { type InputWrapperArgs } from "../../../components/Inputs/InputWrapper";
+import NumberField, { type NumberFieldArgs } from "../../../components/Inputs/NumberField";
+import RadioField, { type RadioFieldArgs } from "../../../components/Inputs/RadioField";
+import ReferenceField, { type ReferenceFieldArgs } from "../../../components/Inputs/ReferenceField";
+import StringField, { type StringFieldArgs } from "../../../components/Inputs/StringField";
+import TextField, { type TextFieldArgs } from "../../../components/Inputs/TextField";
+import TimeField, { type TimeFieldArgs } from "../../../components/Inputs/TimeField";
+import UriField, { type UriFieldArgs } from "../../../components/Inputs/UriField";
+import AttachmentField, { type AttachmentFieldArgs } from "../Fields/Attachments/AttachmentField";
 
 /**
  * These type aliases must be inexact objects so that all of the props
@@ -49,6 +25,7 @@ import UriField, {
  * passed to this component such as typos and unused props.
  */
 type FieldArgs<T extends string> =
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   | ({ type: "Attachment" } & AttachmentFieldArgs<any>)
   | ({ type: "Choice" } & ChoiceFieldArgs<T>)
   | ({ type: "Date" } & DateFieldArgs)
@@ -75,6 +52,7 @@ type CustomFieldArgs<T extends string> = {
     | "Time"
     | "Uri";
   label?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   value?: any;
   error?: boolean;
   helperText?: string | null;
@@ -90,9 +68,7 @@ type CustomFieldArgs<T extends string> = {
  * Component that can render any of the field types, based on the value of the
  * `type` prop, wrapped in an InputWrapper.
  */
-function CustomField<T extends string>(
-  props: CustomFieldArgs<T>,
-): React.ReactNode {
+function CustomField<T extends string>(props: CustomFieldArgs<T>): React.ReactNode {
   const wrapperProps: Omit<InputWrapperArgs, "children"> = {
     label: props.label,
     value: props.value,
@@ -106,7 +82,7 @@ function CustomField<T extends string>(
     required: props.required,
   };
 
-  const fieldProps: Record<string, unknown> = dropProperty(props, "type");
+  const fieldProps: Record<string, unknown> = omit(props, ["type"]);
   delete fieldProps.label;
   delete fieldProps.helperText;
   delete fieldProps.required;
@@ -131,8 +107,10 @@ function CustomField<T extends string>(
     delete fieldProps.allowRadioUnselection;
   }
 
+  // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
   let field;
   if (props.type === "Attachment") {
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     field = <AttachmentField {...(fieldProps as AttachmentFieldArgs<any>)} />;
   } else if (props.type === "Choice") {
     field = <ChoiceField {...(fieldProps as ChoiceFieldArgs<T>)} />;

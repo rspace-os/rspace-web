@@ -11,6 +11,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -25,9 +26,11 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.core.testutil.Invokable;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.document.importer.ExternalFileImporter;
+import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatComment;
 import com.researchspace.model.EcatCommentItem;
 import com.researchspace.model.User;
+import com.researchspace.model.audit.AuditedRecord;
 import com.researchspace.model.audittrail.AuditTrailService;
 import com.researchspace.model.audittrail.RenameAuditEvent;
 import com.researchspace.model.dtos.IControllerInputValidator;
@@ -80,6 +83,8 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.orm.ObjectRetrievalFailureException;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.multipart.MultipartFile;
 
 public class StructuredDocumentControllerTest {
@@ -102,6 +107,7 @@ public class StructuredDocumentControllerTest {
   @Mock ExternalFileImporter fileimporter;
   @Mock FolderManager fMgr;
   @Mock IControllerInputValidator validator;
+  @Mock private RichTextUpdater updater;
   private StructuredDocumentController strucDocCtrller;
 
   private Principal mockPrincipal;
@@ -199,6 +205,64 @@ public class StructuredDocumentControllerTest {
     // indicates success
     assertNotNull(rc.getErrorMsg());
     verifyNoInteractions(auditTrail);
+  }
+
+  @Test
+  public void getDocumentVersionResolvesRevisionForDeletedTargetRatherThanNull() {
+    // RSDEV-1131: a link pinned to a version of a now-deleted ELN document. Clicking its
+    // versioned global id (e.g. SD297v3) must redirect to the audit view with the real audit
+    // revision for that version. The deleted branch previously used restoredDeletedForView,
+    // whose AuditedRecord carries a null revision, yielding "...&revision=null" which then
+    // failed to bind to the Integer 'revision' param on the target endpoint. Envers retains the
+    // version history of soft-deleted documents, so the version->revision lookup works
+    // regardless of the current deletion state.
+    StructuredDocument deleted = TestFactory.createAnySD();
+    deleted.setId(297L);
+    deleted.setRecordDeleted(true);
+    when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
+    when(recordMgr.get(297L)).thenReturn(deleted);
+    when(permissionUtils.isPermitted(eq(deleted), eq(PermissionType.READ), eq(user)))
+        .thenReturn(true);
+    when(auditMgr.getRevisionNumberForDocumentVersion(297L, 3L)).thenReturn(3);
+
+    String redirect = strucDocCtrller.getDocumentVersion("SD297v3", mockPrincipal);
+
+    assertEquals(
+        "redirect:/workspace/editor/structuredDocument/audit/view?recordId=297&revision=3",
+        redirect);
+    // the null-revision restored-deleted view must not be used to build the redirect
+    verify(auditMgr, never()).restoredDeletedForView(anyLong());
+  }
+
+  @Test
+  public void getDocumentRevisionLoadsRequestedRevisionContentForDeletedDocument() {
+    // RSDEV-1131: viewing a pinned version of a now-deleted ELN document must render THAT
+    // version's audited content. The deleted branch previously used restoredDeletedForView, which
+    // returns the live deletion-point row and ignores the requested revision, so every pinned
+    // version of a deleted document rendered the same (latest) content. Envers retains each
+    // revision's content regardless of deletion state, so resolve it the same way as for a live
+    // document.
+    StructuredDocument deleted = TestFactory.createAnySD();
+    deleted.setId(297L);
+    deleted.setRecordDeleted(true);
+    StructuredDocument contentAtRevision3 = TestFactory.createAnySD();
+    contentAtRevision3.setId(297L);
+    // updater is @Autowired with no setter; inject a no-op mock so link rewriting does not NPE
+    ReflectionTestUtils.setField(strucDocCtrller, "updater", updater);
+    when(userMgr.getUserByUsername(eq(user.getUsername()))).thenReturn(user);
+    when(recordMgr.get(297L)).thenReturn(deleted);
+    when(permissionUtils.isPermitted(eq(deleted), eq(PermissionType.READ), eq(user)))
+        .thenReturn(true);
+    when(auditMgr.getDocumentRevisionOrVersion(deleted, 3, null))
+        .thenReturn(new AuditedRecord(contentAtRevision3, 3));
+
+    ExtendedModelMap model = new ExtendedModelMap();
+    strucDocCtrller.getDocumentRevision(297L, 3, null, model, mockPrincipal, session);
+
+    // the model carries the requested revision's audited content, not the live deletion-point row
+    assertSame(contentAtRevision3, model.get("structuredDocument"));
+    verify(auditMgr).getDocumentRevisionOrVersion(deleted, 3, null);
+    verify(auditMgr, never()).restoredDeletedForView(anyLong());
   }
 
   @NotNull

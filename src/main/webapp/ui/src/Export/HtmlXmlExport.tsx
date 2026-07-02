@@ -1,10 +1,10 @@
-import React from "react";
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import type React from "react";
 
 export type HtmlXmlExportDetails = {
   maxLinkLevel: number;
@@ -37,15 +37,11 @@ export default function HtmlXmlExport({
   return (
     <Stack spacing={1}>
       <Box>
-        <InputLabel htmlFor="maxLinkLevel">
-          Should linked RSpace documents be included in export?
-        </InputLabel>
+        <InputLabel htmlFor="maxLinkLevel">Should linked RSpace documents be included in export?</InputLabel>
         <Select
           variant="standard"
           value={maxLinkLevel}
-          onChange={({ target: { value } }) =>
-            updateExportDetails("maxLinkLevel", value)
-          }
+          onChange={({ target: { value } }) => updateExportDetails("maxLinkLevel", value)}
           inputProps={{ id: "maxLinkLevel" }}
           data-test-id="include-links"
         >
@@ -74,9 +70,7 @@ export default function HtmlXmlExport({
         multiline
         maxRows="4"
         value={description}
-        onChange={({ target: { value } }) =>
-          updateExportDetails("description", value)
-        }
+        onChange={({ target: { value } }) => updateExportDetails("description", value)}
         margin="normal"
         data-test-id="html-xml-description"
         slotProps={{

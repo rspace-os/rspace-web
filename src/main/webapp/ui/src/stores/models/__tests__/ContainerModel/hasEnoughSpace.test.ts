@@ -1,19 +1,18 @@
-import { test, describe, expect, vi } from 'vitest';
-import { makeMockContainer, containerAttrs } from "./mocking";
+import { describe, expect, test, vi } from "vitest";
 import LocationModel from "../../LocationModel";
+import { containerAttrs, makeMockContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../stores/RootStore", () => ({
+vi.mock("../../../stores/getRootStore", () => ({
   default: () => ({
-  moveStore: {
-    selectedResults: [
-      {
-        globalId: "IC2",
-      },
-    ],
-  },
-})
-
+    moveStore: {
+      selectedResults: [
+        {
+          globalId: "IC2",
+        },
+      ],
+    },
+  }),
 }));
 describe("computed: hasEnoughSpace", () => {
   /*
@@ -59,7 +58,6 @@ describe("computed: hasEnoughSpace", () => {
       }),
     ];
     expect(container.hasEnoughSpace).toBe(true);
-
   });
   test("There is enough space when adding an item to a container with a free slot.", () => {
     const container = makeMockContainer({
@@ -94,7 +92,6 @@ describe("computed: hasEnoughSpace", () => {
       }),
     ];
     expect(container.hasEnoughSpace).toBe(true);
-
   });
   test("There is not enough space when adding an item to a full container.", () => {
     const container = makeMockContainer({
@@ -136,4 +133,3 @@ describe("computed: hasEnoughSpace", () => {
     expect(container.hasEnoughSpace).toBe(false);
   });
 });
-

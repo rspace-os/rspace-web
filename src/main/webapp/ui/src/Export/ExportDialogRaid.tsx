@@ -1,21 +1,18 @@
-import type { RepoDetails } from "@/Export/repositories/common";
-import {
-  useCommonGroupsShareListingQuery,
-} from "@/modules/share/queries";
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import { getRaidExportEligibility } from "@/modules/raid/services/export";
-import Alert from "@mui/material/Alert";
-import Switch from "@mui/material/Switch";
-import type { SwitchProps } from "@mui/material/Switch";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import React from "react";
-import { DEFAULT_STATE } from "@/Export/constants";
-import AlertTitle from "@mui/material/AlertTitle";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
-import { observer } from "mobx-react";
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Stack from "@mui/material/Stack";
+import type { SwitchProps } from "@mui/material/Switch";
+import Switch from "@mui/material/Switch";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react";
+import type { DEFAULT_STATE } from "@/Export/constants";
+import type { RepoDetails } from "@/Export/repositories/common";
+import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { getRaidExportEligibility } from "@/modules/raid/services/export";
+import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 
 interface ExportDialogRaidProps {
   state: typeof DEFAULT_STATE;
@@ -39,12 +36,9 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
       <Alert severity="error">
         <AlertTitle>Error</AlertTitle>
         <Typography variant="body1">
-          An error occurred while determining RAiD export eligibility:{" "}
-          {error.message}
+          An error occurred while determining RAiD export eligibility: {error.message}
         </Typography>
-        <Typography variant="body1">
-          Please press Next to continue without reporting to RAiD.
-        </Typography>
+        <Typography variant="body1">Please press Next to continue without reporting to RAiD.</Typography>
       </Alert>
     );
   }
@@ -65,16 +59,14 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
       default:
         return "An unknown error occurred while determining RAiD export eligibility. Please press Next to continue without reporting to RAiD.";
     }
-  }
+  };
 
   const handleSwitchChange: SwitchProps["onChange"] = ({ target: { checked } }) => {
     const newRepoConfig: (typeof DEFAULT_STATE)["repositoryConfig"] = {
       ...state.repositoryConfig,
       exportToRaid: checked,
     };
-    updateRepoConfig(
-      newRepoConfig
-    );
+    updateRepoConfig(newRepoConfig);
   };
 
   return (
@@ -91,15 +83,15 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
             <Stack direction="column" spacing={2}>
               <Typography variant="body1">
                 The content you're about to export is part of the project group{" "}
-                <strong>{raidExportStatus.projectGroup.name}</strong> which is
-                associated with the following RAiD identifier:
+                <strong>{raidExportStatus.projectGroup.name}</strong> which is associated with the following RAiD
+                identifier:
               </Typography>
               <Typography variant="body1">
                 <strong>{raidExportStatus.raid.raidTitle}</strong> ({raidExportStatus.raid.raidIdentifier}).
               </Typography>
               <Typography variant="body1">
-                By enabling reporting to RAID below, the DOI of your repository
-                export will be automatically added to your RAiD record. Otherwise, click Next to continue without reporting to RAiD.
+                By enabling reporting to RAID below, the DOI of your repository export will be automatically added to
+                your RAiD record. Otherwise, click Next to continue without reporting to RAiD.
               </Typography>
             </Stack>
           </Alert>

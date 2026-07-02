@@ -2,9 +2,7 @@ import { produce } from "immer";
 import type { StoichiometryResponse } from "@/modules/stoichiometry/schema";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 
-export function toEditableMolecules(
-  stoichiometry: StoichiometryResponse,
-): ReadonlyArray<EditableMolecule> {
+export function toEditableMolecules(stoichiometry: StoichiometryResponse): ReadonlyArray<EditableMolecule> {
   const molecules = stoichiometry.molecules.map((molecule) => ({
     ...molecule,
     /*
@@ -17,28 +15,21 @@ export function toEditableMolecules(
     savedInventoryLink: molecule.inventoryLink ?? null,
     deletedInventoryLink: null,
   }));
-  const hasLimitingReagent = molecules.some(
-    (m) => m.limitingReagent && m.role.toLowerCase() === "reactant",
-  );
+  const hasLimitingReagent = molecules.some((m) => m.limitingReagent && m.role.toLowerCase() === "reactant");
 
   if (hasLimitingReagent) {
     return molecules;
   }
 
-  const firstReactant = molecules.find(
-    (m) => m.role.toLowerCase() === "reactant",
-  );
+  const firstReactant = molecules.find((m) => m.role.toLowerCase() === "reactant");
   if (!firstReactant) {
     return molecules;
   }
 
   return produce(molecules, (draftMolecules) => {
-    const firstReactantDraft = draftMolecules.find(
-      (m) => m.id === firstReactant.id,
-    );
+    const firstReactantDraft = draftMolecules.find((m) => m.id === firstReactant.id);
     if (firstReactantDraft) {
       firstReactantDraft.limitingReagent = true;
     }
   });
 }
-

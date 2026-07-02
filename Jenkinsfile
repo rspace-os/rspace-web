@@ -25,8 +25,6 @@ pipeline {
         booleanParam(name: 'ONLY_BUILD_WAR', defaultValue: false, description: 'It only build the WAR file without deploying in AWS')
         booleanParam(name: 'AWS_DEPLOY', defaultValue: false, description: 'Deploy branch build to AWS')
         booleanParam(name: 'AWS_DEPLOY_PROD_RELEASE', defaultValue: false, description: 'Deploy main branch build created in prodRelease mode to AWS')
-        booleanParam(name: 'FRONTEND_TESTS', defaultValue: false, description: 'Run TypeScript/Vitest tests (runs after changes to frontend files by default)')
-        booleanParam(name: 'FRONTEND_TESTS_TYPESCRIPT_CHECK', defaultValue: false, description: 'Run TypeScript check as a part of front-end tests')
         booleanParam(name: 'FULL_JAVA_TESTS', defaultValue: false, description: 'Run all Java tests')
         booleanParam(name: 'LIQUIBASE', defaultValue: false, description: 'Run tests on persistent liquibaseTest database')
     }
@@ -44,7 +42,7 @@ pipeline {
         SAFE_BRANCH_NAME = branchToSafeName("${BRANCH_NAME}")
         RS_FILE_BASE = "/var/lib/jenkins/userContent/${SAFE_BRANCH_NAME}-filestore"
         SANITIZED_DBNAME = branchToDbName("${BRANCH_NAME}")
-        AWS_TOMCAT_AMI = 'ami-0ccb4189a68a02c7d'
+        AWS_TOMCAT_AMI = 'ami-02730c7e79b450752'
         APP_VERSION = readMavenPom().getVersion()
 
         NODE_OPTIONS="--max-old-space-size=5120 --conditions=require"
@@ -98,175 +96,11 @@ pipeline {
                 }
             }
         }
-        stage('NPM Install') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Installing npm packages'
-                    sh 'node -v'
-                    sh 'npx -y npm@11.14.1 -v'
-                    sh 'npx -y npm@11.14.1 ci'
-                }
-            }
-        }
-        stage('TypeScript Check') {
-            when {
-                expression { return params.FRONTEND_TESTS }
-                expression { return params.FRONTEND_TESTS_TYPESCRIPT_CHECK }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running TypeScript check'
-                    sh 'npx tsc --version'
-                    sh 'npm run tsc --noEmit'
-                }
-            }
-        }
-        stage('Dependency Cruiser') {
-            when {
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                dir('src/main/webapp/ui') {
-                    echo 'Running dependency cruiser'
-                    sh 'npm run depcruise | sed \'s/\\x1b\\[[0-9;]*[a-zA-Z]//g\''
-                }
-            }
-        }
-        stage('Vitest Tests (feature branch)') {
-            when {
-                not {
-                    branch 'main'
-                }
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                echo 'Running Vitest tests'
-                sh 'git fetch origin main:main || true'
-                dir('src/main/webapp/ui') {
-                    // In Jenkins we limit this to 2 to not overwhelm the CI machine
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers 2 --changed main'
-                }
-            }
-            post {
-                failure {
-                    notify currentBuild.result
-                    notifySlack('FAILURE', "Vitest tests failed: ${currentBuild.result}")
-                }
-                fixed {
-                    notify currentBuild.result
-                }
-                success {
-                    junit checksName: 'Vitest Tests', testResults: '**/ui/junit.xml', allowEmptyResults: true
-                }
-            }
-        }
-        stage('Vitest Tests (main branch)') {
-            when {
-                branch 'main'
-                anyOf {
-                    expression { return params.FRONTEND_TESTS }
-                    changeset '**/*.js'
-                    changeset '**/*.ts'
-                    changeset '**/*.tsx'
-                    changeset '**/*.jsp'
-                    changeset '**/*.css'
-                    changeset '**/*.json'
-                }
-            }
-            steps {
-                echo 'Running Vitest tests'
-                dir('src/main/webapp/ui') {
-                    sh 'env COLORS=false FORCE_COLOR=false npm run test -- --maxWorkers=2'
-                }
-            }
-            post {
-                failure {
-                    notify currentBuild.result
-                    notifySlack('FAILURE', "Vitest tests failed: ${currentBuild.result}")
-                }
-                fixed {
-                    notify currentBuild.result
-                }
-                success {
-                    junit checksName: 'Vitest Tests', testResults: '**/ui/junit.xml'
-                }
-            }
-        }
-        stage('Playwright Component Tests (feature branch)') {
-        		when {
-                not {
-                    branch 'main'
-                }
-            		anyOf {
-                		expression { return params.FRONTEND_TESTS }
-                		changeset '**/*.ts'
-                		changeset '**/*.tsx'
-                		changeset '**/*.css'
-                		changeset '**/*.json'
-            		}
-            }
-            steps {
-                echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct -- --only-changed=main'
-                }
-            }
-        }
-        stage('Playwright Component Tests (main branch)') {
-        		when {
-                branch 'main'
-            		anyOf {
-                		expression { return params.FRONTEND_TESTS }
-                		changeset '**/*.ts'
-                		changeset '**/*.tsx'
-                		changeset '**/*.css'
-                		changeset '**/*.json'
-            		}
-            }
-            steps {
-                echo 'Running Playwright tests'
-                dir('src/main/webapp/ui') {
-                    sh 'npx playwright install'
-                    sh 'rm -rf playwright/.cache'
-                    sh 'npm run test-ct'
-                }
-            }
-        }
         stage('Build feature branch') {
             when {
                 anyOf {
                     expression { return params.AWS_DEPLOY }
                     expression { return params.ONLY_BUILD_WAR }
-                    expression { return params.FRONTEND_TESTS }
                     changeset '**/*.js'
                     changeset '**/*.ts'
                     changeset '**/*.tsx'
@@ -288,7 +122,7 @@ pipeline {
                 ./mvnw clean package -DgenerateReactDist -DskipTests=true \
                 -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
                 -Djava-version=${MAVEN_TOOLCHAIN_JAVA_VERSION} -Djava-vendor=${MAVEN_TOOLCHAIN_JAVA_VENDOR} \
-                -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
+                -DpropertyFileDirPlaceholder=\\$\\{propertyFileDir\\}
                 '''
             }
 

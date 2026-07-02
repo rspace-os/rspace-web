@@ -1,6 +1,6 @@
 import React, { type Context } from "react";
-import { type URL } from "../../util/types";
-import { type Location } from "react-router-dom";
+import type { Location } from "react-router";
+import type { URL } from "../../util/types";
 
 export type UseLocation = Location;
 
@@ -49,10 +49,7 @@ type NavigateContextType = {
    *    remain or become visible as it is the main focus of the user's
    *    attention.
    */
-  useNavigate: () => (
-    url: URL,
-    opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }
-  ) => void;
+  useNavigate: () => (url: URL, opts?: { skipToParentContext?: boolean; modifyVisiblePanel?: boolean }) => void;
 
   /*
    *  A function that returns an object that represents the current search
@@ -68,17 +65,16 @@ type NavigateContextType = {
  */
 const DEFAULT_NAVIGATION_CONTEXT: NavigateContextType = {
   useNavigate: () => () => {},
-  useLocation: () => ({
-    hash: "",
-    pathname: "",
-    search: "",
-    state: {},
-    key: "",
-  } as Location),
+  useLocation: () =>
+    ({
+      hash: "",
+      pathname: "",
+      search: "",
+      state: {},
+      key: "",
+    }) as Location,
 };
 
-const NavigateContext: Context<NavigateContextType> = React.createContext(
-  DEFAULT_NAVIGATION_CONTEXT
-);
+const NavigateContext: Context<NavigateContextType> = React.createContext(DEFAULT_NAVIGATION_CONTEXT);
 
 export default NavigateContext;

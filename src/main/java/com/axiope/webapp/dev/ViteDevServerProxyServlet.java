@@ -96,14 +96,14 @@ public class ViteDevServerProxyServlet extends HttpServlet {
       upstreamResponse = client.send(builder.build(), HttpResponse.BodyHandlers.ofInputStream());
     } catch (ConnectException e) {
       log.warn(
-          "Cannot reach Vite dev server at {} — is `npm run serve` running? ({})",
+          "Cannot reach Vite dev server at {} — is `pnpm run serve` running? ({})",
           upstreamOrigin,
           e.getMessage());
       resp.sendError(
           HttpServletResponse.SC_BAD_GATEWAY,
           "Vite dev server is not reachable at "
               + upstreamOrigin
-              + ". Start it with `npm run serve` in src/main/webapp/ui.");
+              + ". Start it with `pnpm run serve` from the repository root.");
       return;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

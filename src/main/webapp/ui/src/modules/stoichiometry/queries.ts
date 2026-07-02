@@ -1,17 +1,8 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import {
-  StoichiometryResponse,
-  StoichiometryResponseSchema,
-} from "@/modules/stoichiometry/schema";
-import {
-  STOICHIOMETRY_API_BASE_URL,
-  toStoichiometryError,
-} from "@/modules/stoichiometry/utils";
-import {
-  resolveToken,
-  TokenParams,
-} from "@/modules/common/utils/auth";
+import { resolveToken, type TokenParams } from "@/modules/common/utils/auth";
+import { type StoichiometryResponse, StoichiometryResponseSchema } from "@/modules/stoichiometry/schema";
+import { STOICHIOMETRY_API_BASE_URL, toStoichiometryError } from "@/modules/stoichiometry/utils";
 
 export type GetStoichiometryParams = {
   stoichiometryId: number;
@@ -23,21 +14,13 @@ type UseGetStoichiometryQueryTokenParams =
   | { token: string; getToken?: never }
   | { token?: never; getToken: NonNullable<TokenParams["getToken"]> };
 
-export type UseGetStoichiometryQueryParams = Omit<
-  GetStoichiometryParams,
-  "token"
-> &
+export type UseGetStoichiometryQueryParams = Omit<GetStoichiometryParams, "token"> &
   UseGetStoichiometryQueryTokenParams;
 
 export const stoichiometryQueryKeys = {
   all: ["rspace.api.stoichiometry"] as const,
   byId: (stoichiometryId: number, revision?: number) =>
-    [
-      ...stoichiometryQueryKeys.all,
-      "byId",
-      stoichiometryId,
-      revision ?? "latest",
-    ] as const,
+    [...stoichiometryQueryKeys.all, "byId", stoichiometryId, revision ?? "latest"] as const,
 };
 
 export async function getStoichiometry({
@@ -51,24 +34,18 @@ export async function getStoichiometry({
     searchParams.set("revision", String(revision));
   }
 
-  const response = await fetch(
-    `${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`,
-    {
-      method: "GET",
-      headers: {
-        "X-Requested-With": "XMLHttpRequest",
-        Authorization: `Bearer ${token}`,
-      },
+  const response = await fetch(`${STOICHIOMETRY_API_BASE_URL}/stoichiometry?${searchParams.toString()}`, {
+    method: "GET",
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+      Authorization: `Bearer ${token}`,
     },
-  );
+  });
 
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw toStoichiometryError(
-      data,
-      `Failed to fetch stoichiometry: ${response.statusText}`,
-    );
+    throw toStoichiometryError(data, `Failed to fetch stoichiometry: ${response.statusText}`);
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);

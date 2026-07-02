@@ -1,7 +1,7 @@
-import { type UseState } from "../../util/types";
+import { mapValues } from "es-toolkit";
 import React from "react";
 import axios from "@/common/axios";
-import { mapObject } from "../../util/Util";
+import type { UseState } from "../../util/types";
 
 /**
  * This constant ensures that we don't end up with clashing keys
@@ -12,34 +12,28 @@ export const PREFERENCES: { [pref: string]: symbol } = {
   GALLERY_SORT_ORDER: Symbol.for("GALLERY_SORT_ORDER"),
   GALLERY_PICKER_INITIAL_SECTION: Symbol.for("GALLERY_PICKER_INITIAL_SECTION"),
   GALLERY_SIDEBAR_OPEN: Symbol.for("GALLERY_SIDEBAR_OPEN"),
-  INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for(
-    "INVENTORY_FORM_SECTIONS_EXPANDED",
-  ),
+  INVENTORY_FORM_SECTIONS_EXPANDED: Symbol.for("INVENTORY_FORM_SECTIONS_EXPANDED"),
   INVENTORY_HIDDEN_RIGHT_PANEL: Symbol.for("INVENTORY_HIDDEN_RIGHT_PANEL"),
   SYSADMIN_USERS_TABLE_COLUMNS: Symbol.for("SYSADMIN_USERS_TABLE_COLUMNS"),
 };
 
 type UiPreferencesContextType = {
   uiPreferences: { [key in keyof typeof PREFERENCES]: unknown };
-  setUiPreferences: React.Dispatch<
-    React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>
-  >;
+  setUiPreferences: React.Dispatch<React.SetStateAction<{ [key in keyof typeof PREFERENCES]: unknown } | null>>;
 };
 
 const DEFAULT_UI_PREFERENCES_CONTEXT: UiPreferencesContextType = {
-  uiPreferences: mapObject(() => null, PREFERENCES),
+  uiPreferences: mapValues(PREFERENCES, () => null),
   setUiPreferences: () => {},
 };
 
 const UiPreferencesContext: React.Context<UiPreferencesContextType> =
   React.createContext(DEFAULT_UI_PREFERENCES_CONTEXT);
 
-async function fetchPreferences(): Promise<
-  UiPreferencesContextType["uiPreferences"] | ""
-> {
-  const { data } = await axios.get<
-    UiPreferencesContextType["uiPreferences"] | ""
-  >("/userform/ajax/preference?preference=UI_JSON_SETTINGS");
+async function fetchPreferences(): Promise<UiPreferencesContextType["uiPreferences"] | ""> {
+  const { data } = await axios.get<UiPreferencesContextType["uiPreferences"] | "">(
+    "/userform/ajax/preference?preference=UI_JSON_SETTINGS",
+  );
   return data;
 }
 
@@ -52,28 +46,20 @@ async function fetchPreferences(): Promise<
  * If the network call fails, the UI Preferences default to an empty object
  * and all calls to useUiPreference will use the passed default value.
  */
-export function UiPreferences({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
-  const [uiPreferences, setUiPreferences] = React.useState<
-    UiPreferencesContextType["uiPreferences"] | null
-  >(null);
+export function UiPreferences({ children }: { children: React.ReactNode }): React.ReactNode {
+  const [uiPreferences, setUiPreferences] = React.useState<UiPreferencesContextType["uiPreferences"] | null>(null);
 
   React.useEffect(() => {
     void fetchPreferences()
       .then((data) => {
         if (data === "") {
-          setUiPreferences(
-            mapObject<string, unknown, unknown>(() => null, PREFERENCES),
-          );
+          setUiPreferences(mapValues(PREFERENCES, () => null) as { [key in keyof typeof PREFERENCES]: unknown });
           return;
         }
         setUiPreferences(data);
       })
       .catch(() => {
-        setUiPreferences(mapObject(() => null, PREFERENCES));
+        setUiPreferences(mapValues(PREFERENCES, () => null));
       });
   }, []);
 
@@ -108,8 +94,7 @@ export default function useUiPreference<T>(
     defaultValue: T;
   },
 ): UseState<T> {
-  const { uiPreferences, setUiPreferences } =
-    React.useContext(UiPreferencesContext);
+  const { uiPreferences, setUiPreferences } = React.useContext(UiPreferencesContext);
   const key = Symbol.keyFor(preference);
   let v = opts.defaultValue;
   if (key && typeof uiPreferences[key] !== "undefined") {
@@ -121,19 +106,17 @@ export default function useUiPreference<T>(
     value,
     (newValue) => {
       setValue(newValue);
-      setUiPreferences(
-        (old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
-          if (old === null) return old;
-          if (!key) return old;
-          return {
-            ...old,
-            [key]: {
-              value: newValue,
-              time: new Date().getTime(),
-            },
-          };
-        },
-      );
+      setUiPreferences((old: { [k in keyof typeof PREFERENCES]: unknown } | null) => {
+        if (old === null) return old;
+        if (!key) return old;
+        return {
+          ...old,
+          [key]: {
+            value: newValue,
+            time: Date.now(),
+          },
+        };
+      });
 
       if (!key) return;
       void (async () => {
@@ -148,7 +131,7 @@ export default function useUiPreference<T>(
               value: newValue,
               // we save the time so that we have the option of implementing an
               // eviction polciy in the future
-              time: new Date().getTime(),
+              time: Date.now(),
             },
           }),
         );

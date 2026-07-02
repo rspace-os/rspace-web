@@ -83,4 +83,66 @@ public class InstrumentTemplatePutValidatorTest extends InventoryRecordValidatio
 
     assertEquals(0, e.getErrorCount());
   }
+
+  @Test
+  public void rejectsLinkFieldWithInvalidRelationType() {
+    // RSDEV-1200: instrument templates support link fields, so an invalid allowed-relation-type
+    // must be rejected here just as it is for sample templates.
+    ApiInstrumentTemplate put = new ApiInstrumentTemplate();
+    ApiInventoryEntityField link = new ApiInventoryEntityField();
+    link.setId(123L);
+    link.setType(ApiFieldType.LINK);
+    link.setAllowedRelationTypes(java.util.List.of("NotADataCiteRelationType"));
+    put.setFields(java.util.List.of(link));
+
+    Errors e = new BeanPropertyBindingResult(put, "templatePut");
+    putValidator.validate(put, e);
+
+    // the field error is registered under a nested path (e.g. fields[0].allowedRelationTypes),
+    // so match by error code rather than by top-level field name.
+    assertTrue(
+        e.getFieldErrors().stream()
+            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+        "expected an invalid-relation-type error, got: " + e.getAllErrors());
+  }
+
+  @Test
+  public void acceptsLinkFieldWithValidRelationTypes() {
+    ApiInstrumentTemplate put = new ApiInstrumentTemplate();
+    ApiInventoryEntityField link = new ApiInventoryEntityField();
+    link.setId(123L);
+    link.setType(ApiFieldType.LINK);
+    link.setAllowedRelationTypes(java.util.List.of("References", "IsCitedBy"));
+    put.setFields(java.util.List.of(link));
+
+    Errors e = new BeanPropertyBindingResult(put, "templatePut");
+    putValidator.validate(put, e);
+
+    assertTrue(
+        e.getFieldErrors().stream()
+            .noneMatch(
+                fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+        "unexpected invalid-relation-type error, got: " + e.getAllErrors());
+  }
+
+  @Test
+  public void rejectsInvalidRelationTypeOnExistingFieldPutWithoutType() {
+    // RSDEV-1200: an existing-field PUT may omit `type`, but the whitelist is still persisted by
+    // the
+    // DB field type, so it must be validated whenever present - not only when the DTO says
+    // type==LINK. Otherwise an invalid whitelist bypasses validation and is stored anyway.
+    ApiInstrumentTemplate put = new ApiInstrumentTemplate();
+    ApiInventoryEntityField existingLink = new ApiInventoryEntityField();
+    existingLink.setId(123L); // existing field, no type provided
+    existingLink.setAllowedRelationTypes(java.util.List.of("NotADataCiteRelationType"));
+    put.setFields(java.util.List.of(existingLink));
+
+    Errors e = new BeanPropertyBindingResult(put, "templatePut");
+    putValidator.validate(put, e);
+
+    assertTrue(
+        e.getFieldErrors().stream()
+            .anyMatch(fe -> "errors.inventory.template.invalid.relation.type".equals(fe.getCode())),
+        "expected an invalid-relation-type error, got: " + e.getAllErrors());
+  }
 }

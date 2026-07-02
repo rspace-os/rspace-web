@@ -1,37 +1,31 @@
-import React, {
-  useState,
-  useRef,
-  type ReactNode,
-  useCallback,
-} from "react";
-import { observer } from "mobx-react-lite";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import ContextDialog from "../ContextMenu/ContextDialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import FormLabel from "@mui/material/FormLabel";
 import Radio from "@mui/material/Radio";
-import Typography from "@mui/material/Typography";
-import useStores from "../../../stores/use-stores";
-import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
-import Alert from "@mui/material/Alert";
-import PrintContents, { PreviewPrintItem } from "./PrintContents";
-import { useReactToPrint } from "react-to-print";
-import docLinks from "../../../assets/DocLinks";
-import { mkAlert } from "@/stores/contexts/Alert";
-import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
-import * as ArrayUtils from "../../../util/ArrayUtils";
-import ApiService from "../../../common/InvApiService";
+import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode, useCallback, useRef, useState } from "react";
+import { useReactToPrint } from "react-to-print";
+import { mkAlert } from "@/stores/contexts/Alert";
+import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
+import { Optional } from "@/util/optional";
 import { toTitleCase } from "@/util/Util";
+import docLinks from "../../../assets/DocLinks";
+import ApiService from "../../../common/InvApiService";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
-import { Optional } from "@/util/optional";
+import useStores from "../../../stores/use-stores";
+import ContextDialog from "../ContextMenu/ContextDialog";
+import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import PrintContents, { PreviewPrintItem } from "./PrintContents";
 
 export type PrinterType = "GENERIC" | "LABEL";
 export type PrintLayout = "BASIC" | "FULL";
@@ -74,23 +68,14 @@ type OptionsWrapperArgs = {
   setPrintOptions: (options: PrintOptions) => void;
 };
 
-export const PrintOptionsWrapper = ({
-  itemsToPrint,
-  printOptions,
-  setPrintOptions,
-}: OptionsWrapperArgs): ReactNode => {
+export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOptions }: OptionsWrapperArgs): ReactNode => {
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
   return (
-    <FormControl
-      component="fieldset"
-      sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}
-    >
+    <FormControl component="fieldset" sx={{ width: isSingleColumnLayout ? "100%" : "50%" }}>
       <Stack spacing={3}>
         <FormControl>
-          <FormLabel id="identifiers-type-radiogroup-label">
-            Identifier Type
-          </FormLabel>
+          <FormLabel id="identifiers-type-radiogroup-label">Identifier Type</FormLabel>
           <RadioGroup
             aria-labelledby="identifiers-type-radiogroup-label"
             value={printOptions.printIdentifierType}
@@ -103,22 +88,12 @@ export const PrintOptionsWrapper = ({
             }}
             row
           >
-            <FormControlLabel
-              value="GLOBAL ID"
-              control={<Radio size="small" />}
-              label="Global ID"
-            />
-            <FormControlLabel
-              value="IGSN"
-              control={<Radio size="small" />}
-              label="IGSN ID"
-            />
+            <FormControlLabel value="GLOBAL ID" control={<Radio size="small" />} label="Global ID" />
+            <FormControlLabel value="IGSN" control={<Radio size="small" />} label="IGSN ID" />
           </RadioGroup>
           {printOptions.printIdentifierType === "IGSN" &&
             itemsToPrint.some((record) => record.identifiers.length === 0) && (
-              <Alert severity="error">
-                Some of the selected records do not have an IGSN ID.
-              </Alert>
+              <Alert severity="error">Some of the selected records do not have an IGSN ID.</Alert>
             )}
         </FormControl>
         <FormControl>
@@ -135,25 +110,13 @@ export const PrintOptionsWrapper = ({
             }}
             row
           >
-            <FormControlLabel
-              value="GENERIC"
-              control={<Radio size="small" />}
-              label="Standard Printer"
-            />
-            <FormControlLabel
-              value="LABEL"
-              control={<Radio size="small" />}
-              label="Label Printer"
-            />
+            <FormControlLabel value="GENERIC" control={<Radio size="small" />} label="Standard Printer" />
+            <FormControlLabel value="LABEL" control={<Radio size="small" />} label="Label Printer" />
           </RadioGroup>
           {printOptions.printerType === "GENERIC" ? (
-            <Alert severity="info">
-              Print multiple labels per sheet (e.g. A4 / A3 / Letter).
-            </Alert>
+            <Alert severity="info">Print multiple labels per sheet (e.g. A4 / A3 / Letter).</Alert>
           ) : (
-            <Alert severity="info">
-              Print one label per sticker (Zebra printer).
-            </Alert>
+            <Alert severity="info">Print one label per sticker (Zebra printer).</Alert>
           )}
         </FormControl>
         <FormControl>
@@ -170,26 +133,14 @@ export const PrintOptionsWrapper = ({
             }}
             row
           >
-            <FormControlLabel
-              value="FULL"
-              control={<Radio size="small" />}
-              label="Full"
-            />
-            <FormControlLabel
-              value="BASIC"
-              control={<Radio size="small" />}
-              label="Basic"
-            />
+            <FormControlLabel value="FULL" control={<Radio size="small" />} label="Full" />
+            <FormControlLabel value="BASIC" control={<Radio size="small" />} label="Basic" />
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              The label shape should match the selected layout. Also, you might
-              have problems when using Safari. Please check barcodes{" "}
-              <a
-                href={docLinks.barcodesPrinting}
-                target="_blank"
-                rel="noreferrer"
-              >
+              The label shape should match the selected layout. Also, you might have problems when using Safari. Please
+              check barcodes{" "}
+              <a href={docLinks.barcodesPrinting} target="_blank" rel="noreferrer">
                 documentation
               </a>
               .
@@ -197,9 +148,7 @@ export const PrintOptionsWrapper = ({
           )}
         </FormControl>
         <FormControl>
-          <FormLabel id="print-copties-radiogroup-label">
-            Print Copies
-          </FormLabel>
+          <FormLabel id="print-copties-radiogroup-label">Print Copies</FormLabel>
           <RadioGroup
             aria-labelledby="print-copties-radiogroup-label"
             value={printOptions.printCopies}
@@ -211,46 +160,29 @@ export const PrintOptionsWrapper = ({
                 });
             }}
           >
-            <FormControlLabel
-              value="1"
-              control={<Radio size="small" />}
-              label="Each barcode once"
-            />
-            <FormControlLabel
-              value="2"
-              control={<Radio size="small" />}
-              label="Each barcode twice (raffle book)"
-            />
+            <FormControlLabel value="1" control={<Radio size="small" />} label="Each barcode once" />
+            <FormControlLabel value="2" control={<Radio size="small" />} label="Each barcode twice (raffle book)" />
           </RadioGroup>
         </FormControl>
         <FormControl>
           <FormLabel id="print-size-radiogroup-label">Print Size</FormLabel>
-          {printOptions.printerType === "GENERIC" &&
-            printOptions.printCopies === "1" && (
-              <RadioGroup
-                aria-labelledby="print-size-radiogroup-label"
-                value={printOptions.printSize}
-                onChange={({ target }) => {
-                  if (target.value)
-                    setPrintOptions({
-                      ...printOptions,
-                      printSize: target.value as PrintSize,
-                    });
-                }}
-                row
-              >
-                <FormControlLabel
-                  value="LARGE"
-                  control={<Radio size="small" />}
-                  label="Large"
-                />
-                <FormControlLabel
-                  value="SMALL"
-                  control={<Radio size="small" />}
-                  label="Small"
-                />
-              </RadioGroup>
-            )}
+          {printOptions.printerType === "GENERIC" && printOptions.printCopies === "1" && (
+            <RadioGroup
+              aria-labelledby="print-size-radiogroup-label"
+              value={printOptions.printSize}
+              onChange={({ target }) => {
+                if (target.value)
+                  setPrintOptions({
+                    ...printOptions,
+                    printSize: target.value as PrintSize,
+                  });
+              }}
+              row
+            >
+              <FormControlLabel value="LARGE" control={<Radio size="small" />} label="Large" />
+              <FormControlLabel value="SMALL" control={<Radio size="small" />} label="Small" />
+            </RadioGroup>
+          )}
           <Alert severity="info">
             {printOptions.printerType === "LABEL"
               ? "For label printers size is set automatically (to match a range of label sizes)."
@@ -304,7 +236,7 @@ function PrintDialog({
         printCopies: printOptions.printCopies,
       });
     },
-    onPrintError: (errorLocation, error) => {
+    onPrintError: (_errorLocation, error) => {
       uiStore.addAlert(
         mkAlert({
           title: "Print error.",
@@ -326,10 +258,7 @@ function PrintDialog({
 
   const [imageLinks, setImageLinks] = React.useState<ReadonlyArray<string>>([]);
   React.useEffect(() => {
-    if (
-      printOptions.printIdentifierType === "IGSN" &&
-      itemsToPrint.some((record) => record.identifiers.length === 0)
-    ) {
+    if (printOptions.printIdentifierType === "IGSN" && itemsToPrint.some((record) => record.identifiers.length === 0)) {
       return;
     }
     if (
@@ -339,6 +268,7 @@ function PrintDialog({
       return;
     }
 
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     imageLinks.forEach((img) => URL.revokeObjectURL(img));
 
     const getImageUrl = async (record: InventoryRecord) => {
@@ -374,12 +304,7 @@ function PrintDialog({
   }, [itemsToPrint, printOptions, uiStore]);
 
   return (
-    <ContextDialog
-      open={showPrintDialog}
-      onClose={handleClose}
-      fullWidth
-      maxWidth="lg"
-    >
+    <ContextDialog open={showPrintDialog} onClose={handleClose} fullWidth maxWidth="lg">
       <DialogTitle>Print Options</DialogTitle>
       <DialogContent>
         <Box
@@ -412,64 +337,50 @@ function PrintDialog({
                 {printOptions.printIdentifierType === "IGSN" &&
                 itemsToPrint.some((record) => record.identifiers.length === 0)
                   ? "Please resolve error."
-                  : ArrayUtils.head(itemsToPrint)
+                  : Optional.fromNullable(itemsToPrint.at(0))
                       .map((inventoryRecord) => (
                         <PreviewPrintItem
                           key={inventoryRecord.globalId}
                           index={0}
                           printOptions={printOptions}
                           printLabelContents={{
-                            itemLabel: `${toTitleCase(
-                              inventoryRecord.type,
-                            )} - ${inventoryRecord.name}`,
+                            itemLabel: `${toTitleCase(inventoryRecord.type)} - ${inventoryRecord.name}`,
                             locationLabel:
-                              inventoryRecord instanceof ContainerModel ||
-                              inventoryRecord instanceof SubSampleModel
-                                ? (inventoryRecord.immediateParentContainer
-                                    ?.globalId ?? "-")
+                              inventoryRecord instanceof ContainerModel || inventoryRecord instanceof SubSampleModel
+                                ? (inventoryRecord.immediateParentContainer?.globalId ?? "-")
                                 : "-",
-                            identifier: ArrayUtils.getAt(
-                              0,
-                              inventoryRecord.identifiers,
-                            ).map((identifier) => ({ doi: identifier.doi })),
-                            globalId: Optional.fromNullable(
-                              inventoryRecord.globalId,
-                            ),
+                            identifier: Optional.fromNullable(inventoryRecord.identifiers.at(0)).map((identifier) => ({
+                              doi: identifier.doi,
+                            })),
+                            globalId: Optional.fromNullable(inventoryRecord.globalId),
                             barcodeUrl: imageLinks[0],
                           }}
                           imageLinks={imageLinks}
                           target="screen"
                         />
                       ))
-                      .elseThrow()}
+                      .orElseGet(() => {
+                        throw new Error("Array is empty");
+                      })}
                 {/* we need the whole component for ReactToPrint, but not visible here */}
                 <Box sx={{ display: "none" }}>
                   <PrintContents
                     ref={componentToPrint}
                     printOptions={printOptions}
-                    itemsToPrint={ArrayUtils.zipWith(
-                      itemsToPrint,
-                      imageLinks,
-                      (record, barcodeUrl) => ({
-                        itemLabel: `${toTitleCase(record.type)} - ${record.name}`,
-                        locationLabel:
-                          record instanceof ContainerModel ||
-                          record instanceof SubSampleModel
-                            ? (record.immediateParentContainer?.globalId ?? "-")
-                            : "-",
-                        identifier: ArrayUtils.getAt(0, record.identifiers).map(
-                          (identifier) => ({ doi: identifier.doi }),
-                        ),
-                        globalId: Optional.fromNullable(record.globalId),
-                        barcodeUrl,
-                      }),
-                    )}
+                    itemsToPrint={itemsToPrint.map((record, index) => ({
+                      itemLabel: `${toTitleCase(record.type)} - ${record.name}`,
+                      locationLabel:
+                        record instanceof ContainerModel || record instanceof SubSampleModel
+                          ? (record.immediateParentContainer?.globalId ?? "-")
+                          : "-",
+                      identifier: Optional.fromNullable(record.identifiers.at(0)).map((identifier) => ({
+                        doi: identifier.doi,
+                      })),
+                      globalId: Optional.fromNullable(record.globalId),
+                      barcodeUrl: imageLinks[index],
+                    }))}
                     imageLinks={imageLinks}
-                    target={
-                      printOptions.printerType === "GENERIC"
-                        ? "multiplePrint"
-                        : "singlePrint"
-                    }
+                    target={printOptions.printerType === "GENERIC" ? "multiplePrint" : "singlePrint"}
                   />
                 </Box>
               </>

@@ -1,89 +1,57 @@
-import React, {
-  useState,
-  type ReactNode,
-  type ComponentType,
-  useContext,
-} from "react";
-import { observer } from "mobx-react-lite";
-import { runInAction } from "mobx";
-import useStores from "../../../../stores/use-stores";
-import {
-  match,
-  capitaliseJustFirstChar,
-  doNotAwait,
-} from "../../../../util/Util";
-import docLinks from "../../../../assets/DocLinks";
-import InputWrapper from "../../../../components/Inputs/InputWrapper";
-import CustomTooltip from "../../../../components/CustomTooltip";
-import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
-import Collapse from "@mui/material/Collapse";
-import IconButton from "@mui/material/IconButton";
-import Grid from "@mui/material/Grid";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
-import type { HasEditableFields } from "../../../../stores/definitions/Editable";
-import {
-  type Identifier,
-  type IdentifierField,
-  type IGSNPublishingState,
-} from "../../../../stores/definitions/Identifier";
-import FormControl from "@mui/material/FormControl";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import RadioField from "../../../../components/Inputs/RadioField";
-import PublicPreviewDialog from "./PublicPreviewDialog";
-import MultipleInputHandler from "./MultipleInputHandler";
-import axios from "@/common/axios";
-import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
-import PublishButton from "./PublishButton";
-import FormControlLabel from "@mui/material/FormControlLabel";
 import Checkbox from "@mui/material/Checkbox";
-import Stack from "@mui/material/Stack";
+import Collapse from "@mui/material/Collapse";
 import Dialog from "@mui/material/Dialog";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
-import { ThemeProvider } from "@mui/material/styles";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Grid from "@mui/material/Grid";
+import IconButton from "@mui/material/IconButton";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider, useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { runInAction } from "mobx";
+import { observer } from "mobx-react-lite";
+import React, { type ComponentType, type ReactNode, useContext, useState } from "react";
+import axios from "@/common/axios";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
-import ValidatingSubmitButton, {
-  IsValid,
-  IsInvalid,
-} from "../../../../components/ValidatingSubmitButton";
-import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
-import RsSet from "../../../../util/set";
-import {
-  type Identifier as IdentifierInTable,
-  useIdentifiers,
-} from "../../../useIdentifiers";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import docLinks from "../../../../assets/DocLinks";
+import CustomTooltip from "../../../../components/CustomTooltip";
+import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
+import InputWrapper from "../../../../components/Inputs/InputWrapper";
+import RadioField from "../../../../components/Inputs/RadioField";
+import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../../../components/ValidatingSubmitButton";
+import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
 import AnalyticsContext from "../../../../stores/contexts/Analytics";
+import type { HasEditableFields } from "../../../../stores/definitions/Editable";
+import type { Identifier, IdentifierField, IGSNPublishingState } from "../../../../stores/definitions/Identifier";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import useStores from "../../../../stores/use-stores";
+import RsSet from "../../../../util/set";
+import { capitaliseJustFirstChar, match } from "../../../../util/Util";
+import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
+import { type Identifier as IdentifierInTable, useIdentifiers } from "../../../useIdentifiers";
+import MultipleInputHandler from "./MultipleInputHandler";
+import PublicPreviewDialog from "./PublicPreviewDialog";
+import PublishButton from "./PublishButton";
 
 const IdentifierWrapper = observer(
-  ({
-    activeResult,
-    id,
-    editable,
-  }: {
-    activeResult: InventoryRecord;
-    id: Identifier;
-    editable: boolean;
-  }): ReactNode => {
-    const isRadio = (field: IdentifierField): boolean =>
-      Boolean(field.radioOptions);
+  ({ activeResult, id, editable }: { activeResult: InventoryRecord; id: Identifier; editable: boolean }): ReactNode => {
+    const isRadio = (field: IdentifierField): boolean => Boolean(field.radioOptions);
 
     /* different name to avoid confusion with 'editable' (parent) */
     const fixedValue = (field: IdentifierField) => Boolean(!field.handler);
 
     const [openRecommendedSection, setOpenRecommendedSection] = useState(true);
 
-    const handleUpdate = (
-      f: IdentifierField,
-      value: string | number,
-    ) => {
+    const handleUpdate = (f: IdentifierField, value: string | number) => {
       if (f.handler) f.handler(value);
       /* setAttributesDirty on item */
       activeResult.updateIdentifiers();
@@ -94,9 +62,7 @@ const IdentifierWrapper = observer(
       return field.isValid ? !field.isValid(field.value) : false;
     };
 
-    const isCustomField = (
-      field: unknown,
-    ): field is { id: string | number; name: string } =>
+    const isCustomField = (field: unknown): field is { id: string | number; name: string } =>
       typeof field === "object" &&
       field !== null &&
       "id" in field &&
@@ -105,9 +71,7 @@ const IdentifierWrapper = observer(
       typeof field.name === "string";
 
     const rawCustomFields: Array<unknown> =
-      "fields" in activeResult && Array.isArray(activeResult.fields)
-        ? activeResult.fields
-        : [];
+      "fields" in activeResult && Array.isArray(activeResult.fields) ? activeResult.fields : [];
     const customFields = rawCustomFields.filter(isCustomField);
 
     return (
@@ -131,39 +95,32 @@ const IdentifierWrapper = observer(
                     <RadioField
                       name={`field-${f.key}`}
                       value={f.value as string}
+                      // biome-ignore lint/style/noNonNullAssertion: initial biome migration
                       options={f.radioOptions!}
                       onChange={({ target: { value } }) => {
                         if (value) handleUpdate(f, value);
                       }}
                     />
                   ) : (
-                    <>
-                      <TextField
-                        size="small"
-                        variant="standard"
-                        fullWidth
-                        id={`IdentifierField-${f.key}`}
-                        disabled={!editable || fixedValue(f)}
-                        value={f.value ?? ""}
-                        placeholder={
-                          editable ? `Enter value for ${f.key}` : "None"
-                        }
-                        onChange={({ target: { value } }) =>
-                          handleUpdate(f, value)
-                        }
-                        error={
-                          editable && isFieldInvalid(f)
-                        }
-                        helperText={
-                          editable && isFieldInvalid(f)
-                            ? "In order to publish the identifier, a valid value is required."
-                            : null
-                        }
-                        slotProps={{
-                          inputLabel: { shrink: true },
-                        }}
-                      />
-                    </>
+                    <TextField
+                      size="small"
+                      variant="standard"
+                      fullWidth
+                      id={`IdentifierField-${f.key}`}
+                      disabled={!editable || fixedValue(f)}
+                      value={f.value ?? ""}
+                      placeholder={editable ? `Enter value for ${f.key}` : "None"}
+                      onChange={({ target: { value } }) => handleUpdate(f, value)}
+                      error={editable && isFieldInvalid(f)}
+                      helperText={
+                        editable && isFieldInvalid(f)
+                          ? "In order to publish the identifier, a valid value is required."
+                          : null
+                      }
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
+                    />
                   )}
                 </InputWrapper>
               </FormControl>
@@ -190,17 +147,12 @@ const IdentifierWrapper = observer(
             <Grid>
               <CustomTooltip
                 title={match<void, string>([
-                  [
-                    () => openRecommendedSection,
-                    "Hide recommended fields section",
-                  ],
+                  [() => openRecommendedSection, "Hide recommended fields section"],
                   [() => true, "Show recommended fields section"],
                 ])()}
               >
                 <IconButton
-                  onClick={() =>
-                    setOpenRecommendedSection(!openRecommendedSection)
-                  }
+                  onClick={() => setOpenRecommendedSection(!openRecommendedSection)}
                   disabled={false}
                   aria-label="Toggle recommended fields section"
                 >
@@ -220,11 +172,7 @@ const IdentifierWrapper = observer(
                 }}
               >
                 <FormControl component="fieldset" fullWidth>
-                  <MultipleInputHandler
-                    field={f}
-                    activeResult={activeResult}
-                    editable={editable}
-                  />
+                  <MultipleInputHandler field={f} activeResult={activeResult} editable={editable} />
                 </FormControl>
               </Grid>
             ))}
@@ -235,11 +183,10 @@ const IdentifierWrapper = observer(
             Inventory Fields
           </Typography>
           <Alert severity="info">
-            You can include Inventory fields in the item's landing page, to
-            openly share domain-specific metadata outside the IGSN schema.{" "}
+            You can include Inventory fields in the item's landing page, to openly share domain-specific metadata
+            outside the IGSN schema.{" "}
             <strong>
-              Before publishing the IGSN ID, please ensure the fields do not
-              contain sensitive information.
+              Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.
             </strong>
           </Alert>
           <FormControlLabel
@@ -261,7 +208,7 @@ const IdentifierWrapper = observer(
             label="Include Inventory fields on landing page"
           />
           {editable && (
-            <Typography variant="body2">
+            <Typography variant="body2" component="div">
               The following fields will be included:
               <ul>
                 <li>Description</li>
@@ -293,301 +240,235 @@ const IdentifierWrapper = observer(
 
 type IdentifiersListArgs = { activeResult: InventoryRecord };
 
-export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(
-  ({ activeResult }: IdentifiersListArgs) => {
-    const theme = useTheme();
-    const editable = activeResult.isFieldEditable("identifiers");
-    const { addAlert } = useContext(AlertContext);
-    const { uiStore } = useStores();
+export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ activeResult }: IdentifiersListArgs) => {
+  const theme = useTheme();
+  const editable = activeResult.isFieldEditable("identifiers");
+  const { addAlert } = useContext(AlertContext);
+  const { uiStore } = useStores();
 
-    const StateInfo = ({
-      identifierState,
-      identifierUrl,
-    }: {
-      identifierState: IGSNPublishingState;
-      identifierUrl: string | null | undefined;
-    }): ReactNode => {
-      if (identifierState === "draft")
-        return (
-          <>
-            This IGSN ID is a Draft. Metadata can be specified, but no
-            information is publicly available.
-          </>
-        );
-      if (identifierState === "findable")
-        return (
-          <>
-            This IGSN ID is Findable. The IGSN ID is a citable URL that
-            redirects to the{" "}
-            <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
-              RSpace landing page
-            </a>
-            . The metadata is publicly available through the landing page,
-            DataCite Commons and the DataCite APIs.
-          </>
-        );
-      if (identifierState === "registered")
-        return (
-          <>
-            This IGSN ID is Registered. The metadata is not publicly available
-            through the{" "}
-            <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
-              RSpace landing page
-            </a>
-            , DataCite Commons or the Public API, but is available through the
-            Members API.
-          </>
-        );
-      throw new Error("Invalid state");
-    };
+  const StateInfo = ({
+    identifierState,
+    identifierUrl,
+  }: {
+    identifierState: IGSNPublishingState;
+    identifierUrl: string | null | undefined;
+  }): ReactNode => {
+    if (identifierState === "draft")
+      return <>This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.</>;
+    if (identifierState === "findable")
+      return (
+        <>
+          This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the{" "}
+          <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
+            RSpace landing page
+          </a>
+          . The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.
+        </>
+      );
+    if (identifierState === "registered")
+      return (
+        <>
+          This IGSN ID is Registered. The metadata is not publicly available through the{" "}
+          <a href={identifierUrl || ""} target="_blank" rel="noreferrer">
+            RSpace landing page
+          </a>
+          , DataCite Commons or the Public API, but is available through the Members API.
+        </>
+      );
+    throw new Error("Invalid state");
+  };
 
-    const [selectedIdentifier, setSelectedIdentifier] = useState<
-      Identifier | undefined
-    >();
-    const [openPreviewDialog, setOpenPreviewDialog] = useState(false);
+  const [selectedIdentifier, setSelectedIdentifier] = useState<Identifier | undefined>();
+  const [openPreviewDialog, setOpenPreviewDialog] = useState(false);
 
-    /*
-     *Published IGSNs will have any RoR data set by back end code.
-     *IGSNs in other states have no RoR data set by back end code.
-     */
-    const fetchAndSetRoRData = async (id: Identifier): Promise<void> => {
-      if (id.state !== "findable") {
-        try {
-          const idResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRID",
-          );
-          const nameResponse: { data: string } = await axios.get(
-            "/global/ror/existingGlobalRoRName",
-          );
-          id.creatorAffiliationIdentifier = idResponse.data;
-          id.creatorAffiliation = nameResponse.data;
-        } catch (e) {
-          console.error(e);
-          addAlert(
-            mkAlert({
-              variant: "error",
-              message: "Could not get RoR data.",
-            }),
-          );
-        }
-      } else {
-        return Promise.resolve();
+  /*
+   *Published IGSNs will have any RoR data set by back end code.
+   *IGSNs in other states have no RoR data set by back end code.
+   */
+  const fetchAndSetRoRData = async (id: Identifier): Promise<void> => {
+    if (id.state !== "findable") {
+      try {
+        const idResponse: { data: string } = await axios.get("/global/ror/existingGlobalRoRID");
+        const nameResponse: { data: string } = await axios.get("/global/ror/existingGlobalRoRName");
+        id.creatorAffiliationIdentifier = idResponse.data;
+        id.creatorAffiliation = nameResponse.data;
+      } catch (e) {
+        console.error(e);
+        addAlert(
+          mkAlert({
+            variant: "error",
+            message: "Could not get RoR data.",
+          }),
+        );
       }
-    };
+    } else {
+      return Promise.resolve();
+    }
+  };
 
-    const handlePreview = async (id: Identifier) => {
-      await fetchAndSetRoRData(id);
-      setSelectedIdentifier(id);
-      setOpenPreviewDialog(true);
-    };
+  const handlePreview = async (id: Identifier) => {
+    await fetchAndSetRoRData(id);
+    setSelectedIdentifier(id);
+    setOpenPreviewDialog(true);
+  };
 
-    const handleRetract = (id: Identifier) => {
-      void id.retract({
-        confirm: (...args) => uiStore.confirm(...args),
-        addAlert: (...args) => addAlert(...args),
-      });
-    };
+  const handleRetract = (id: Identifier) => {
+    void id.retract({
+      confirm: (...args) => uiStore.confirm(...args),
+      addAlert: (...args) => addAlert(...args),
+    });
+  };
 
-    const handleDelete = (id: Identifier) => {
-      void activeResult.removeIdentifier(id.id);
-    };
+  const handleDelete = (id: Identifier) => {
+    void activeResult.removeIdentifier(id.id);
+  };
 
-    const [openIdForm, setOpenIdForm] = useState(true);
-    return (
-      <Grid sx={{ mt: 1, padding: "0px 12px" }}>
-        <Grid
-          container
-          sx={{
-            alignItems: "center",
-            flexDirection: "column",
-            width: "100%",
-            fontSize: "14px",
-          }}
-        >
-          {activeResult.state === "preview" &&
-            activeResult.identifiers.length > 0 && (
-              <Alert
-                severity="info"
-                sx={{ width: "100%", mb: 1 }}
-              >
-                To update any details, press Edit first.
-              </Alert>
-            )}
-          {activeResult.identifiers.map((id) => (
-            <Grid key={id.doi} sx={{ width: "100%" }}>
-              <Grid
-                container
-                direction="row"
-                spacing={1}
-                sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}
-              >
-                <Grid size={6}>Identifier</Grid>
-                <Grid size={2}>Type</Grid>
-                <Grid size={2}>State</Grid>
-                <Grid size={2}>{openIdForm ? "Hide" : "Show"}</Grid>
-              </Grid>
-              <Grid
-                container
-                direction="row"
-                spacing={1}
-                sx={{ width: "100%", marginBottom: "8px" }}
-              >
-                <Grid sx={{ padding: "6px" }} size={6}>
-                  {id.state === "draft" ? (
-                    id.doi
-                  ) : (
-                    <a
-                      href={id.publicUrl || ""}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {id.publicUrl}
-                    </a>
-                  )}
-                </Grid>
-                <Grid size={2}>{id.doiTypeLabel}</Grid>
-                <Grid
-                  sx={
-                    id.state === "findable"
-                      ? { color: theme.palette.modifiedHighlight }
-                      : undefined
-                  }
-                  data-testid="identifier-state"
-                  size={2}
-                >
-                  {capitaliseJustFirstChar(id.state)}
-                </Grid>
-                <Grid size={2}>
-                  <CustomTooltip
-                    title={match<void, string>([
-                      [() => openIdForm, "Hide identifier's details"],
-                      [() => true, "Show identifier's details"],
-                    ])()}
-                  >
-                    <IconButton
-                      onClick={() => setOpenIdForm(!openIdForm)}
-                      disabled={false}
-                      aria-label="Toggle identifier details"
-                    >
-                      <ExpandCollapseIcon open={openIdForm} />
-                    </IconButton>
-                  </CustomTooltip>
-                </Grid>
-              </Grid>
-              <Grid
-                container
-                direction="row"
-                spacing={2}
-                sx={{
-                  justifyContent: "flex-start",
-                  width: "100%",
-                  marginBottom: "12px",
-                }}
-              >
-                <Grid>
-                  <CustomTooltip
-                    title={
-                      id.isValid ? "Preview Landing Page" : "Some missing data"
-                    }
-                  >
-                    <Button
-                      color="callToAction"
-                      variant="outlined"
-                      size="small"
-                      onClick={() => void handlePreview(id)}
-                      disabled={
-                        activeResult.state === "edit" ||
-                        !id.isValid ||
-                        // the preview dialog contains a publish action
-                        Boolean(activeResult.historicalVersion)
-                      }
-                    >
-                      Preview
-                    </Button>
-                  </CustomTooltip>
-                </Grid>
-                <Grid>
-                  <PublishButton
-                    identifier={id}
-                    disabled={
-                      activeResult.state === "edit" ||
-                      Boolean(activeResult.historicalVersion)
-                    }
-                  />
-                </Grid>
-                <Grid>
-                  <CustomTooltip
-                    title={
-                      id.state === "draft"
-                        ? "Delete Draft"
-                        : id.state === "findable"
-                          ? "Retract"
-                          : "Not published yet"
-                    }
-                  >
-                    <Button
-                      color="secondary"
-                      variant="outlined"
-                      size="small"
-                      onClick={
-                        id.state === "draft"
-                          ? () => handleDelete(id)
-                          : () => handleRetract(id)
-                      }
-                      disabled={
-                        activeResult.state === "edit" ||
-                        id.state === "registered" ||
-                        Boolean(activeResult.historicalVersion)
-                      }
-                    >
-                      {id.state === "draft" ? "Delete" : "Retract"}
-                    </Button>
-                  </CustomTooltip>
-                </Grid>
-                {!id.isValid && (
-                  <Grid sx={{ mb: 1 }}>
-                    <Alert severity="warning">
-                      Some required details are missing. To enable publishing,
-                      please fill them in.
-                    </Alert>
-                  </Grid>
+  const [openIdForm, setOpenIdForm] = useState(true);
+  return (
+    <Grid sx={{ mt: 1, padding: "0px 12px" }}>
+      <Grid
+        container
+        sx={{
+          alignItems: "center",
+          flexDirection: "column",
+          width: "100%",
+          fontSize: "14px",
+        }}
+      >
+        {activeResult.state === "preview" && activeResult.identifiers.length > 0 && (
+          <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
+            To update any details, press Edit first.
+          </Alert>
+        )}
+        {activeResult.identifiers.map((id) => (
+          <Grid key={id.doi} sx={{ width: "100%" }}>
+            <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px", fontWeight: "bold" }}>
+              <Grid size={6}>Identifier</Grid>
+              <Grid size={2}>Type</Grid>
+              <Grid size={2}>State</Grid>
+              <Grid size={2}>{openIdForm ? "Hide" : "Show"}</Grid>
+            </Grid>
+            <Grid container direction="row" spacing={1} sx={{ width: "100%", marginBottom: "8px" }}>
+              <Grid sx={{ padding: "6px" }} size={6}>
+                {id.state === "draft" ? (
+                  id.doi
+                ) : (
+                  <a href={id.publicUrl || ""} target="_blank" rel="noreferrer">
+                    {id.publicUrl}
+                  </a>
                 )}
               </Grid>
-              <Alert
-                severity="info"
-                sx={{ width: "100%", mb: 1 }}
+              <Grid size={2}>{id.doiTypeLabel}</Grid>
+              <Grid
+                sx={id.state === "findable" ? { color: theme.palette.modifiedHighlight } : undefined}
+                data-testid="identifier-state"
+                size={2}
               >
-                <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-                <a
-                  href={docLinks.IGSNIdentifiers}
-                  target="_blank"
-                  rel="noreferrer"
+                {capitaliseJustFirstChar(id.state)}
+              </Grid>
+              <Grid size={2}>
+                <CustomTooltip
+                  title={match<void, string>([
+                    [() => openIdForm, "Hide identifier's details"],
+                    [() => true, "Show identifier's details"],
+                  ])()}
                 >
-                  See IGSN Documentation for details
-                </a>
-              </Alert>
-              <Collapse in={openIdForm}>
-                <IdentifierWrapper
-                  activeResult={activeResult}
-                  id={id}
-                  editable={editable}
-                />
-              </Collapse>
+                  <IconButton
+                    onClick={() => setOpenIdForm(!openIdForm)}
+                    disabled={false}
+                    aria-label="Toggle identifier details"
+                  >
+                    <ExpandCollapseIcon open={openIdForm} />
+                  </IconButton>
+                </CustomTooltip>
+              </Grid>
             </Grid>
-          ))}
-        </Grid>
-        {selectedIdentifier && (
-          <PublicPreviewDialog
-            record={activeResult}
-            open={openPreviewDialog}
-            onClose={() => setOpenPreviewDialog(false)}
-            id={selectedIdentifier}
-          />
-        )}
+            <Grid
+              container
+              direction="row"
+              spacing={2}
+              sx={{
+                justifyContent: "flex-start",
+                width: "100%",
+                marginBottom: "12px",
+              }}
+            >
+              <Grid>
+                <CustomTooltip title={id.isValid ? "Preview Landing Page" : "Some missing data"}>
+                  <Button
+                    color="callToAction"
+                    variant="outlined"
+                    size="small"
+                    onClick={() => void handlePreview(id)}
+                    disabled={
+                      activeResult.state === "edit" ||
+                      !id.isValid ||
+                      // the preview dialog contains a publish action
+                      Boolean(activeResult.historicalVersion)
+                    }
+                  >
+                    Preview
+                  </Button>
+                </CustomTooltip>
+              </Grid>
+              <Grid>
+                <PublishButton
+                  identifier={id}
+                  disabled={activeResult.state === "edit" || Boolean(activeResult.historicalVersion)}
+                />
+              </Grid>
+              <Grid>
+                <CustomTooltip
+                  title={
+                    id.state === "draft" ? "Delete Draft" : id.state === "findable" ? "Retract" : "Not published yet"
+                  }
+                >
+                  <Button
+                    color="secondary"
+                    variant="outlined"
+                    size="small"
+                    onClick={id.state === "draft" ? () => handleDelete(id) : () => handleRetract(id)}
+                    disabled={
+                      activeResult.state === "edit" ||
+                      id.state === "registered" ||
+                      Boolean(activeResult.historicalVersion)
+                    }
+                  >
+                    {id.state === "draft" ? "Delete" : "Retract"}
+                  </Button>
+                </CustomTooltip>
+              </Grid>
+              {!id.isValid && (
+                <Grid sx={{ mb: 1 }}>
+                  <Alert severity="warning">
+                    Some required details are missing. To enable publishing, please fill them in.
+                  </Alert>
+                </Grid>
+              )}
+            </Grid>
+            <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
+              <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
+              <a href={docLinks.IGSNIdentifiers} target="_blank" rel="noreferrer">
+                See IGSN Documentation for details
+              </a>
+            </Alert>
+            <Collapse in={openIdForm}>
+              <IdentifierWrapper activeResult={activeResult} id={id} editable={editable} />
+            </Collapse>
+          </Grid>
+        ))}
       </Grid>
-    );
-  },
-);
+      {selectedIdentifier && (
+        <PublicPreviewDialog
+          record={activeResult}
+          open={openPreviewDialog}
+          onClose={() => setOpenPreviewDialog(false)}
+          id={selectedIdentifier}
+        />
+      )}
+    </Grid>
+  );
+});
 
 const AssignDialog = observer(
   ({
@@ -600,9 +481,7 @@ const AssignDialog = observer(
     recordToAssignTo: InventoryRecord;
   }): ReactNode => {
     const { assignIdentifier } = useIdentifiers();
-    const [selectedIgsns, setSelectedIgsns] = React.useState<
-      RsSet<IdentifierInTable>
-    >(new RsSet([]));
+    const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<IdentifierInTable>>(new RsSet([]));
     const theme = useTheme();
     const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
     const { trackEvent } = useContext(AnalyticsContext);
@@ -622,9 +501,7 @@ const AssignDialog = observer(
           <DialogTitle>Link existing IGSN ID</DialogTitle>
           <DialogContent>
             <Stack spacing={2}>
-              <Typography>
-                Select an existing IGSN ID to link to this item.
-              </Typography>
+              <Typography>Select an existing IGSN ID to link to this item.</Typography>
               <IgsnTable
                 selectedIgsns={selectedIgsns}
                 setSelectedIgsns={setSelectedIgsns}
@@ -635,10 +512,9 @@ const AssignDialog = observer(
                 }}
               />
               <Alert severity="warning">
-                <strong>This action cannot be undone!</strong> Once an IGSN ID
-                has been associated with an item, it cannot be later
-                re-associated with a different Inventory item; a new IGSN ID
-                will have to be created instead.
+                <strong>This action cannot be undone!</strong> Once an IGSN ID has been associated with an item, it
+                cannot be later re-associated with a different Inventory item; a new IGSN ID will have to be created
+                instead.
               </Alert>
             </Stack>
           </DialogContent>
@@ -657,26 +533,21 @@ const AssignDialog = observer(
               validationResult={selectedIgsns.only
                 .map((igsn) =>
                   igsn.associatedGlobalId !== null
-                    ? IsInvalid(
-                        "The selected IGSN ID is already assigned to another item.",
-                      )
+                    ? IsInvalid("The selected IGSN ID is already assigned to another item.")
                     : IsValid(),
                 )
                 .orElse(IsInvalid("No IGSN ID selected."))}
-              onClick={doNotAwait(async () => {
-                await selectedIgsns.only
-                  .toResult(
-                    () =>
-                      new Error(
-                        "Invalid state: zero or many identifiers are selected",
-                      ),
-                  )
-                  .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
-                await recordToAssignTo.fetchAdditionalInfo();
-                setSelectedIgsns(new RsSet([]));
-                onClose();
-                trackEvent("user:assign-existing-igsn");
-              })}
+              onClick={() => {
+                void (async () => {
+                  await selectedIgsns.only
+                    .toResult(() => new Error("Invalid state: zero or many identifiers are selected"))
+                    .doAsync((igsn) => assignIdentifier(igsn, recordToAssignTo));
+                  await recordToAssignTo.fetchAdditionalInfo();
+                  setSelectedIgsns(new RsSet([]));
+                  onClose();
+                  trackEvent("user:assign-existing-igsn");
+                })();
+              }}
             >
               Link
             </ValidatingSubmitButton>
@@ -695,42 +566,42 @@ const IdentifiersCard = observer((): ReactNode => {
   const identifiers = activeResult.identifiers ?? [];
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const { trackEvent } = useContext(AnalyticsContext);
+  const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
+  const identifierLabel = isInstrument ? "PIDINST" : "IGSN ID";
 
   return (
     <>
       {activeResult.state === "create" && (
-        <Alert severity="info">
-          This item has not been created yet. Please save the item first.
-        </Alert>
+        <Alert severity="info">This item has not been created yet. Please save the item first.</Alert>
       )}
-      {activeResult.state !== "create" &&
-        identifiers.length === 0 &&
-        !activeResult.historicalVersion && (
-          <Stack direction="row" spacing={1}>
-            <Button
-              color="primary"
-              variant="outlined"
-              onClick={doNotAwait(() => activeResult.addIdentifier())}
-            >
-              Create new IGSN ID
-            </Button>
-            <Button
-              color="primary"
-              variant="outlined"
-              onClick={() => {
-                setAssignDialogOpen(true);
-                trackEvent("user:open:assign-existing-igsn-dialog");
-              }}
-            >
-              Link existing IGSN ID
-            </Button>
-            <AssignDialog
-              recordToAssignTo={activeResult}
-              open={assignDialogOpen}
-              onClose={() => setAssignDialogOpen(false)}
-            />
-          </Stack>
-        )}
+      {activeResult.state !== "create" && identifiers.length === 0 && !activeResult.historicalVersion && (
+        <Stack direction="row" spacing={1}>
+          <Button
+            color="primary"
+            variant="outlined"
+            disabled={isInstrument}
+            onClick={() => void activeResult.addIdentifier()}
+          >
+            {`Create new ${identifierLabel}`}
+          </Button>
+          <Button
+            color="primary"
+            variant="outlined"
+            disabled={isInstrument}
+            onClick={() => {
+              setAssignDialogOpen(true);
+              trackEvent("user:open:assign-existing-igsn-dialog");
+            }}
+          >
+            {`Link existing ${identifierLabel}`}
+          </Button>
+          <AssignDialog
+            recordToAssignTo={activeResult}
+            open={assignDialogOpen}
+            onClose={() => setAssignDialogOpen(false)}
+          />
+        </Stack>
+      )}
       {identifiers.length > 0 && (
         <Card variant="outlined">
           <IdentifiersList activeResult={activeResult} />

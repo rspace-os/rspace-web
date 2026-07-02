@@ -1,25 +1,44 @@
 import React from "react";
 import axios from "@/common/axios";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import * as Parsers from "../../util/parsers";
-import RsSet from "../../util/set";
-import Result from "../../util/result";
-import {
-  type GalleryFile,
-  LocalGalleryFile,
-  Filestore,
-  type Description,
-  idToString,
-  type Id,
-} from "./useGalleryListing";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
-import useOauthToken from "../../hooks/auth/useOauthToken";
-import { partitionAllSettled } from "../../util/Util";
-import { type GallerySection } from "./common";
-import AnalyticsContext from "../../stores/contexts/Analytics";
 import { getErrorMessage } from "@/util/error";
+import useOauthToken from "../../hooks/auth/useOauthToken";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import AnalyticsContext from "../../stores/contexts/Analytics";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
+import type RsSet from "../../util/set";
+import { partitionAllSettled } from "../../util/Util";
+import type { GallerySection } from "./common";
+import {
+  type Description,
+  Filestore,
+  type GalleryFile,
+  type Id,
+  idToString,
+  LocalGalleryFile,
+  RemoteFile,
+} from "./useGalleryListing";
 
-const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+const ONE_MINUTE_IN_MS = 60 * 1000;
+// Uploads need longer than the gallery clients' 1-minute default.
+const UPLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+
+const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
+  Result.fromNullable(items.at(0), new Error("Array is empty"));
+
+/**
+ * Best error message from a failed filestore API call: the first non-blank entry of the
+ * BindException `errors` array, else `data.message`/`exceptionMessage` via getErrorMessage. A 403
+ * gate denial returns its reason in `message` with a blank `errors: [""]`, so blanks must not win.
+ */
+function firstErrorMessage(e: unknown): string {
+  return Parsers.objectPath(["response", "data", "errors"], e)
+    .flatMap(Parsers.isArray)
+    .flatMap(firstResult)
+    .flatMap(Parsers.isString)
+    .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
+    .orElse(getErrorMessage(e, "Unknown error"));
+}
 
 /**
  * The destination of a move operation.
@@ -61,11 +80,7 @@ export function useGalleryActions(): {
    *               instead.
    * @arg files    The File objects being uploaded.
    */
-  uploadFiles: (
-    parentId: Id,
-    files: ReadonlyArray<File>,
-    options?: { originalImageId: Id },
-  ) => Promise<void>;
+  uploadFiles: (parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) => Promise<void>;
 
   /**
    * For creating new folders.
@@ -75,6 +90,12 @@ export function useGalleryActions(): {
    * @arg name     The name of the new folder.
    */
   createFolder: (parentId: Id, name: string) => Promise<void>;
+
+  /** Create a folder inside an S3 filestore, under `path` ("" for the filestore root). */
+  createRemoteFolder: (filestoreId: number, path: string, name: string) => Promise<void>;
+
+  /** Move items to another folder within the same S3 filestore (destPath "" for the root). */
+  moveRemoteFiles: (sources: ReadonlyArray<RemoteFile>, destPath: string) => Promise<void>;
 
   /**
    * Move files to a different folder.
@@ -87,11 +108,7 @@ export function useGalleryActions(): {
    *                  particular folder.
    * @arg files       The files being moved.
    */
-  moveFiles: (
-    section: GallerySection,
-    destination: Destination,
-    files: RsSet<GalleryFile>,
-  ) => Promise<void>;
+  moveFiles: (section: GallerySection, destination: Destination, files: RsSet<GalleryFile>) => Promise<void>;
 
   /**
    * Delete the specified files. If the files are Filestores then they are disconnected.
@@ -121,11 +138,7 @@ export function useGalleryActions(): {
    * @arg file     The file whose contents are being updated.
    * @arg newFile  The contents that *file* is being updated to.
    */
-  uploadNewVersion: (
-    folderId: Id,
-    file: GalleryFile,
-    newFile: File,
-  ) => Promise<void>;
+  uploadNewVersion: (folderId: Id, file: GalleryFile, newFile: File) => Promise<void>;
 
   /**
    * Modify the description of a specified file.
@@ -133,10 +146,7 @@ export function useGalleryActions(): {
    * @arg file           The file whose description is being modified.
    * @arg newDescription The new description.
    */
-  changeDescription: (
-    file: GalleryFile,
-    newDescription: Description,
-  ) => Promise<void>;
+  changeDescription: (file: GalleryFile, newDescription: Description) => Promise<void>;
 
   /**
    * Download the specified files.
@@ -162,11 +172,14 @@ export function useGalleryActions(): {
     timeout: ONE_MINUTE_IN_MS,
   });
 
-  async function uploadFiles(
-    parentId: Id,
-    files: ReadonlyArray<File>,
-    options?: { originalImageId: Id },
-  ) {
+  /** Authenticated client for the REST gallery API (/api/v1/gallery). */
+  const remoteGalleryApi = async () =>
+    axios.create({
+      baseURL: "/api/v1/gallery",
+      headers: { Authorization: `Bearer ${await getToken()}` },
+    });
+
+  async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {
     const uploadingAlert = mkAlert({
       message: "Uploading...",
       variant: "notice",
@@ -177,7 +190,7 @@ export function useGalleryActions(): {
     const api = axios.create({
       baseURL: "/api/v1/files",
       headers: {
-        Authorization: "Bearer " + (await getToken()),
+        Authorization: `Bearer ${await getToken()}`,
       },
     });
 
@@ -188,10 +201,7 @@ export function useGalleryActions(): {
           formData.append("file", file);
           formData.append("folderId", idToString(parentId).elseThrow());
           if (options?.originalImageId)
-            formData.append(
-              "originalImageId",
-              idToString(options.originalImageId).elseThrow(),
-            );
+            formData.append("originalImageId", idToString(options.originalImageId).elseThrow());
           return api.post<unknown>("/", formData, {
             headers: {
               "Content-Type": "multipart/form-data",
@@ -201,13 +211,7 @@ export function useGalleryActions(): {
       );
 
       addAlert(
-        Result.any(
-          ...data.map((d) =>
-            Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(
-              Parsers.isString,
-            ),
-          ),
-        )
+        Result.any(...data.map((d) => Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(Parsers.isString)))
           .map((exceptionMessages) =>
             mkAlert({
               message: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
@@ -220,9 +224,7 @@ export function useGalleryActions(): {
           )
           .orElse(
             mkAlert({
-              message: `Successfully uploaded file${
-                files.length === 1 ? "" : "s"
-              }.`,
+              message: `Successfully uploaded file${files.length === 1 ? "" : "s"}.`,
               variant: "success",
             }),
           ),
@@ -291,6 +293,28 @@ export function useGalleryActions(): {
     }
   }
 
+  async function createRemoteFolder(filestoreId: number, path: string, name: string) {
+    const api = await remoteGalleryApi();
+    try {
+      await api.post<unknown>(`filestores/${filestoreId}/folder`, { path, name });
+      addAlert(
+        mkAlert({
+          message: "Successfully created new folder.",
+          variant: "success",
+        }),
+      );
+    } catch (e) {
+      addAlert(
+        mkAlert({
+          variant: "error",
+          title: "Failed to create new folder.",
+          message: firstErrorMessage(e),
+        }),
+      );
+      throw e;
+    }
+  }
+
   async function moveFiles(
     section: GallerySection,
     destination: Destination,
@@ -311,8 +335,7 @@ export function useGalleryActions(): {
         mkAlert({
           variant: "error",
           title: "Cannot move files into SNIPPETS folders.",
-          message:
-            "Share them and they will automatically appear in these folders.",
+          message: "Share them and they will automatically appear in these folders.",
         }),
       );
       return;
@@ -325,31 +348,19 @@ export function useGalleryActions(): {
     try {
       addAlert(movingAlert);
       const formData = new FormData();
-      formData.append(
-        "target",
-        destination.key === "root"
-          ? "0"
-          : idToString(destination.folder.id).elseThrow(),
-      );
-      for (const file of files)
-        formData.append("filesId[]", idToString(file.id).elseThrow());
+      formData.append("target", destination.key === "root" ? "0" : idToString(destination.folder.id).elseThrow());
+      for (const file of files) formData.append("filesId[]", idToString(file.id).elseThrow());
       // mediaType is required, but only actually used if target is 0
       formData.append("mediaType", section);
-      const data = await galleryApi.post<unknown>(
-        "moveGalleriesElements",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+      const data = await galleryApi.post<unknown>("moveGalleriesElements", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
         },
-      );
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -390,23 +401,16 @@ export function useGalleryActions(): {
     try {
       addAlert(deletingAlert);
       const formData = new FormData();
-      for (const file of files)
-        formData.append("idsToDelete[]", idToString(file.id).elseThrow());
-      const data = await galleryApi.post<unknown>(
-        "deleteElementFromGallery",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      for (const file of files) formData.append("idsToDelete[]", idToString(file.id).elseThrow());
+      const data = await galleryApi.post<unknown>("deleteElementFromGallery", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -428,17 +432,92 @@ export function useGalleryActions(): {
     }
   }
 
-  async function deleteFilestore(filestore: Filestore) {
-    const api = axios.create({
-      baseURL: "/api/v1/gallery",
-      headers: {
-        Authorization: "Bearer " + (await getToken()),
-      },
+  /**
+   * Run a per-item S3 filestore write op. Each item is a separate API call gated server-side, so
+   * failures are collected and reported together rather than aborting the batch. Callers supply
+   * complete user-facing phrases (not assembled from fragments) so each is translatable as a unit.
+   */
+  async function runPerItemFilestoreOp(
+    items: ReadonlyArray<RemoteFile>,
+    messages: {
+      inProgress: string;
+      success: (count: number) => string;
+      failure: (count: number) => string;
+    },
+    request: (api: ReturnType<typeof axios.create>, file: RemoteFile) => Promise<unknown>,
+  ) {
+    const progressAlert = mkAlert({
+      message: messages.inProgress,
+      variant: "notice",
+      isInfinite: true,
     });
     try {
-      await api.delete<unknown>(
-        `filestores/${idToString(filestore.id).elseThrow()}`,
-      );
+      addAlert(progressAlert);
+      const api = await remoteGalleryApi();
+      const failures: Array<string> = [];
+      for (const file of items) {
+        try {
+          await request(api, file);
+        } catch (e) {
+          failures.push(`${file.name}: ${firstErrorMessage(e)}`);
+        }
+      }
+      if (failures.length === 0) {
+        addAlert(
+          mkAlert({
+            message: messages.success(items.length),
+            variant: "success",
+          }),
+        );
+      } else {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: messages.failure(failures.length),
+            message: failures.join("; "),
+          }),
+        );
+      }
+    } finally {
+      removeAlert(progressAlert);
+    }
+  }
+
+  /** Delete files/folders inside an S3 filestore (POST /filestores/{id}/delete per item). */
+  async function deleteRemoteFiles(files: RsSet<RemoteFile>) {
+    await runPerItemFilestoreOp(
+      files.toArray(),
+      {
+        inProgress: "Deleting...",
+        success: (count) => (count === 1 ? "Successfully deleted 1 item." : `Successfully deleted ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to delete 1 item." : `Failed to delete ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
+    );
+  }
+
+  /** Move items to another folder within the same S3 filestore (POST /filestores/{id}/move per item). */
+  async function moveRemoteFiles(sources: ReadonlyArray<RemoteFile>, destPath: string) {
+    await runPerItemFilestoreOp(
+      sources,
+      {
+        inProgress: "Moving...",
+        success: (count) => (count === 1 ? "Successfully moved 1 item." : `Successfully moved ${count} items.`),
+        failure: (count) => (count === 1 ? "Failed to move 1 item." : `Failed to move ${count} items.`),
+      },
+      (api, file) =>
+        api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
+          sourcePath: file.remotePath,
+          destPath,
+        }),
+    );
+  }
+
+  async function deleteFilestore(filestore: Filestore) {
+    const api = await remoteGalleryApi();
+    try {
+      await api.delete<unknown>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
         mkAlert({
           message: "Successfully deleted filestore.",
@@ -473,9 +552,12 @@ export function useGalleryActions(): {
       await Promise.all(files.filterClass(Filestore).map(deleteFilestore));
       return;
     }
+    if (files.every((f) => f instanceof RemoteFile)) {
+      await deleteRemoteFiles(files.filterClass(RemoteFile));
+      return;
+    }
     try {
-      if (files.some((f) => !(f instanceof LocalGalleryFile)))
-        throw new Error("Can only delete local files");
+      if (files.some((f) => !(f instanceof LocalGalleryFile))) throw new Error("Can only delete local files");
       await deleteLocalFiles(files.filterClass(LocalGalleryFile));
     } catch (e) {
       if (!(e instanceof Error)) throw new Error("Unexpected error occurred");
@@ -506,7 +588,7 @@ export function useGalleryActions(): {
       formData.append("idToCopy[]", idToString(file.id).elseThrow());
       formData.append(
         "newName[]",
-        file.transformFilename((name) => name + "_copy"),
+        file.transformFilename((name) => `${name}_copy`),
       );
     }
     const duplicatingAlert = mkAlert({
@@ -524,9 +606,7 @@ export function useGalleryActions(): {
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .orElseTry(() =>
-            Parsers.objectPath(["data", "error", "errorMessages"], data)
-              .flatMap(Parsers.isArray)
-              .flatMap(ArrayUtils.head),
+            Parsers.objectPath(["data", "error", "errorMessages"], data).flatMap(Parsers.isArray).flatMap(firstResult),
           )
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
@@ -538,9 +618,7 @@ export function useGalleryActions(): {
           )
           .orElse(
             mkAlert({
-              message: `Successfully duplicated item${
-                files.size > 0 ? "s" : ""
-              }.`,
+              message: `Successfully duplicated item${files.size > 0 ? "s" : ""}.`,
               variant: "success",
             }),
           ),
@@ -584,18 +662,13 @@ export function useGalleryActions(): {
     );
     try {
       addAlert(renamingAlert);
-      if (typeof file.setName === "undefined")
-        throw new Error("This file cannot be renamed");
+      if (typeof file.setName === "undefined") throw new Error("This file cannot be renamed");
       const setName = file.setName;
-      const data = await structuredDocumentApi.post<unknown>(
-        "rename",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      const data = await structuredDocumentApi.post<unknown>("rename", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
         .flatMap(Parsers.isString)
@@ -626,11 +699,7 @@ export function useGalleryActions(): {
     }
   }
 
-  async function uploadNewVersion(
-    folderId: Id,
-    file: GalleryFile,
-    newFile: File,
-  ) {
+  async function uploadNewVersion(folderId: Id, file: GalleryFile, newFile: File) {
     if (file.canUploadNewVersion.isError) {
       addAlert(
         mkAlert({
@@ -656,15 +725,12 @@ export function useGalleryActions(): {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        timeout: UPLOAD_TIMEOUT_MS,
       });
       addAlert(
         Parsers.objectPath(["data", "exceptionMessage"], data)
           .flatMap(Parsers.isString)
-          .orElseTry(() =>
-            Parsers.objectPath(["exceptionMessage"], data).flatMap(
-              Parsers.isString,
-            ),
-          )
+          .orElseTry(() => Parsers.objectPath(["exceptionMessage"], data).flatMap(Parsers.isString))
           .map((exceptionMessage) =>
             mkAlert({
               title: `Failed to upload new version.`,
@@ -694,10 +760,7 @@ export function useGalleryActions(): {
     }
   }
 
-  async function changeDescription(
-    file: GalleryFile,
-    newDescription: Description,
-  ) {
+  async function changeDescription(file: GalleryFile, newDescription: Description) {
     if (
       !file.description.match({
         missing: () => false,
@@ -727,18 +790,13 @@ export function useGalleryActions(): {
       }),
     );
     try {
-      if (typeof file.setDescription === "undefined")
-        throw new Error("Cannot edit description");
+      if (typeof file.setDescription === "undefined") throw new Error("Cannot edit description");
       const setDescription = file.setDescription;
-      const data = await structuredDocumentApi.post<unknown>(
-        "description",
-        formData,
-        {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+      const data = await structuredDocumentApi.post<unknown>("description", formData, {
+        headers: {
+          "content-type": "multipart/form-data",
         },
-      );
+      });
 
       Parsers.objectPath(["data", "exceptionMessage"], data)
         .flatMap(Parsers.isString)
@@ -775,8 +833,7 @@ export function useGalleryActions(): {
         await Promise.allSettled(
           [...files].map(async (file) => {
             const link = document.createElement("a");
-            if (!file.downloadHref)
-              throw new Error(`Cannot download ${file.name}`);
+            if (!file.downloadHref) throw new Error(`Cannot download ${file.name}`);
             link.href = await file.downloadHref();
             link.download = file.name;
             link.click();
@@ -788,9 +845,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "success",
-            message: `Successfully downloaded ${
-              rejected.length > 0 ? "some of " : ""
-            }the files.`,
+            message: `Successfully downloaded ${rejected.length > 0 ? "some of " : ""}the files.`,
             ...(rejected.length > 0
               ? {
                   details: fulfilled.map((f) => ({
@@ -806,16 +861,10 @@ export function useGalleryActions(): {
         const rejectedResponses = await Promise.all(
           rejected.map(async (response) => {
             try {
-              const data = Parsers.objectPath(
-                ["response", "data"],
-                response,
-              ).elseThrow();
-              if (!(data instanceof Blob))
-                throw new Error("Response is not a blob");
+              const data = Parsers.objectPath(["response", "data"], response).elseThrow();
+              if (!(data instanceof Blob)) throw new Error("Response is not a blob");
               const json = JSON.parse(await data.text()) as unknown;
-              return Parsers.objectPath(["message"], json)
-                .flatMap(Parsers.isString)
-                .elseThrow();
+              return Parsers.objectPath(["message"], json).flatMap(Parsers.isString).elseThrow();
             } catch (e) {
               if (e instanceof Error) {
                 return Promise.resolve(e.message);
@@ -827,9 +876,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "error",
-            message: `Failed to download ${
-              fulfilled.length > 0 ? "some of " : ""
-            }the files.`,
+            message: `Failed to download ${fulfilled.length > 0 ? "some of " : ""}the files.`,
             details: rejectedResponses.map((errorMsg) => ({
               variant: "error",
               title: errorMsg,
@@ -852,6 +899,8 @@ export function useGalleryActions(): {
   return {
     uploadFiles,
     createFolder,
+    createRemoteFolder,
+    moveRemoteFiles,
     moveFiles,
     deleteFiles,
     duplicateFiles,

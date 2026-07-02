@@ -1,0 +1,198 @@
+package com.researchspace.webapp.integrations.b2inst;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import com.researchspace.b2inst.model.metadata.B2instInstrumentMetadata;
+import com.researchspace.b2inst.model.request.B2instDoi;
+import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.model.system.SystemProperty;
+import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.SystemPropertyManager;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+
+@ExtendWith(MockitoExtension.class)
+class B2instConnectorImplTest {
+
+  @Mock private SystemPropertyManager mockSysPropMgr;
+  @InjectMocks private B2instConnectorImpl connector;
+
+  private Map<String, SystemPropertyValue> props;
+
+  @BeforeEach
+  void setUp() {
+    props = new HashMap<>();
+    addProperty("pidinst.b2inst.enabled", "true");
+    addProperty("pidinst.b2inst.server.url", "https://b2inst-test.gwdg.de");
+    addProperty("pidinst.b2inst.community.id", "2cd7e6c2-comm");
+    addProperty("pidinst.b2inst.token", "TOK123");
+    when(mockSysPropMgr.getAllSysadminPropertiesAsMap()).thenReturn(props);
+  }
+
+  private void addProperty(String name, String value) {
+    props.put(name, new SystemPropertyValue(new SystemProperty(null), value));
+  }
+
+  private B2instDoi draftWithName(String name) {
+    B2instInstrumentMetadata md = new B2instInstrumentMetadata();
+    md.setName(name);
+    B2instDoi doi = new B2instDoi();
+    doi.setMetadata(md);
+    return doi;
+  }
+
+  @Test
+  void isConfiguredAndEnabledTrueWhenEnabledAndServerAndTokenPresent() {
+    connector.reloadClient();
+    assertTrue(connector.isConfiguredAndEnabled());
+  }
+
+  @Test
+  void isConfiguredAndEnabledFalseWhenDisabled() {
+    addProperty("pidinst.b2inst.enabled", "false");
+    connector.reloadClient();
+    assertFalse(connector.isConfiguredAndEnabled());
+  }
+
+  @Test
+  void isConfiguredAndEnabledFalseWhenTokenMissing() {
+    addProperty("pidinst.b2inst.token", "");
+    connector.reloadClient();
+    assertFalse(connector.isConfiguredAndEnabled());
+  }
+
+  @Test
+  void registerDoiPostsCreateRecordWithBearerTokenAndReturnsRid() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andExpect(jsonPath("$.metadata.Name").value("Microscope X"))
+        .andRespond(
+            withSuccess(
+                "{\"id\":\"k2j9p-7yh21\",\"status\":\"draft\",\"is_draft\":true}",
+                MediaType.APPLICATION_JSON));
+
+    B2instDraftRecord created = connector.registerDoi(draftWithName("Microscope X"));
+
+    assertEquals("k2j9p-7yh21", created.getId());
+    server.verify();
+  }
+
+  @Test
+  void registerDoiWrapsTransportErrorInB2instConnectionException() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
+        .andRespond(withServerError());
+
+    assertThrows(B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+  }
+
+  @Test
+  void testConnectionTrueOn2xx() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/communities"))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess("{}", MediaType.APPLICATION_JSON));
+
+    assertTrue(connector.testConnection());
+  }
+
+  @Test
+  void testConnectionFalseOnError() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/communities"))
+        .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
+
+    assertFalse(connector.testConnection());
+  }
+
+  @Test
+  void deleteDoiDeletesTheDraftByRid() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft"))
+        .andExpect(method(HttpMethod.DELETE))
+        .andExpect(header("Authorization", "Bearer TOK123"))
+        .andRespond(withStatus(HttpStatus.NO_CONTENT));
+
+    assertTrue(connector.deleteDoi("k2j9p-7yh21"));
+    server.verify();
+  }
+
+  @Test
+  void publishDoiCreatesReviewThenPostsSubmitAction() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String submitUrl = "https://b2inst-test.gwdg.de/api/requests/REQ-1/actions/submit";
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andExpect(method(HttpMethod.PUT))
+        .andExpect(jsonPath("$.receiver.community").value("2cd7e6c2-comm"))
+        .andExpect(jsonPath("$.type").value("community-submission"))
+        .andRespond(
+            withSuccess(
+                "{\"status\":\"created\",\"links\":{\"actions\":{\"submit\":\""
+                    + submitUrl
+                    + "\"}}}",
+                MediaType.APPLICATION_JSON));
+    server
+        .expect(requestTo(submitUrl))
+        .andExpect(method(HttpMethod.POST))
+        .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
+
+    assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
+    server.verify();
+  }
+
+  @Test
+  void publishDoiThrowsWhenNoCommunityConfigured() {
+    addProperty("pidinst.b2inst.community.id", "");
+    connector.reloadClient();
+
+    assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+  }
+
+  @Test
+  void retractDoiIsUnsupported() {
+    connector.reloadClient();
+
+    assertThrows(UnsupportedOperationException.class, () -> connector.retractDoi("k2j9p-7yh21"));
+  }
+}

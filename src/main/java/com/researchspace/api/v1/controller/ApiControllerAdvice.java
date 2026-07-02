@@ -10,6 +10,7 @@ import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.apiutils.RestControllerAdvice;
 import com.researchspace.core.util.throttling.TooManyRequestsException;
 import com.researchspace.service.DocumentAlreadyEditedException;
+import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.chemistry.ChemistryClientException;
@@ -87,6 +88,17 @@ public class ApiControllerAdvice extends RestControllerAdvice {
             ApiErrorCodes.CONFIGURED_UNAVAILABLE.getCode(),
             ex.getLocalizedMessage(),
             "");
+    return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
+  }
+
+  // 403
+  @ExceptionHandler({FilestoreOperationForbiddenException.class})
+  public ResponseEntity<Object> handleFilestoreOperationForbidden(
+      final FilestoreOperationForbiddenException ex, final WebRequest request) {
+    log.warn("filestore operation forbidden: {}", ex.getMessage());
+    final ApiError apiError =
+        new ApiError(
+            HttpStatus.FORBIDDEN, ApiErrorCodes.AUTH.getCode(), ex.getLocalizedMessage(), "");
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 

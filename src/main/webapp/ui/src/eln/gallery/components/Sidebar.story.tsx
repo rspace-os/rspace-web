@@ -1,23 +1,19 @@
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import React from "react";
-import Sidebar from "./Sidebar";
-import { Optional } from "@/util/optional";
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@mui/material";
+import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
-import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/hooks/api/useUiPreference";
-import { BrowserRouter } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import { dummyId } from "../useGalleryListing";
 import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
+import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import { dummyId, Filestore, type GalleryFile, type Id } from "../useGalleryListing";
+import Sidebar from "./Sidebar";
 
-export function DefaultSidebar(): React.ReactNode {
+function SidebarStory({ folderId, path }: { folderId: Id; path: ReadonlyArray<GalleryFile> | null }): React.ReactNode {
   return (
     <React.StrictMode>
       <ErrorBoundary>
@@ -35,7 +31,8 @@ export function DefaultSidebar(): React.ReactNode {
                           setSelectedSection={() => {}}
                           drawerOpen={true}
                           setDrawerOpen={() => {}}
-                          folderId={{ tag: "success", value: dummyId() }}
+                          folderId={{ tag: "success", value: folderId }}
+                          path={path}
                           refreshListing={() => Promise.resolve()}
                           id="1"
                         />
@@ -50,4 +47,22 @@ export function DefaultSidebar(): React.ReactNode {
       </ErrorBoundary>
     </React.StrictMode>
   );
+}
+
+export function DefaultSidebar(): React.ReactNode {
+  return <SidebarStory folderId={dummyId()} path={null} />;
+}
+
+/** Sidebar while browsing inside an S3 filestore root. */
+export const S3_FILESTORE_ID = 42;
+export function S3FilestoreSidebar(): React.ReactNode {
+  const filestore = new Filestore({
+    id: S3_FILESTORE_ID,
+    name: "my-bucket",
+    filesystemId: 1,
+    filesystemName: "s3",
+    filesystemType: "S3",
+    canWrite: true,
+  });
+  return <SidebarStory folderId={null} path={[filestore]} />;
 }

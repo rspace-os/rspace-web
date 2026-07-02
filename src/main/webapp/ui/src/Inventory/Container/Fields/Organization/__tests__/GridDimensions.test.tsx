@@ -1,25 +1,18 @@
-import { describe, expect, test, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  within,
-  fireEvent,
-} from "@testing-library/react";
-import fc from "fast-check";
-import { storesContext } from "../../../../../stores/stores-context";
-import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
-import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../../../theme";
-import GridDimensions from "../GridDimensions";
-import { parseInteger } from "../../../../../util/parsers";
-import { type StoreContainer } from "../../../../../stores/stores/RootStore";
-import ContainerModel from "../../../../../stores/models/ContainerModel";
-import * as ArrayUtils from "../../../../../util/ArrayUtils";
-
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import fc from "fast-check";
+import { describe, expect, test, vi } from "vitest";
+import { makeMockContainer } from "../../../../../stores/models/__tests__/ContainerModel/mocking";
+import type ContainerModel from "../../../../../stores/models/ContainerModel";
+import { makeMockRootStore } from "../../../../../stores/stores/__tests__/RootStore/mocking";
+import type { StoreContainer } from "../../../../../stores/stores/RootStore";
+import { storesContext } from "../../../../../stores/stores-context";
+import materialTheme from "../../../../../theme";
+import * as ArrayUtils from "../../../../../util/ArrayUtils";
+import { parseInteger } from "../../../../../util/parsers";
+import GridDimensions from "../GridDimensions";
+
 function makeRootStoreWithGridContainer(): {
   rootStore: StoreContainer;
   gridContainer: ContainerModel;
@@ -40,7 +33,6 @@ function makeRootStoreWithGridContainer(): {
     },
   });
   return { rootStore, gridContainer: activeResult };
-
 }
 describe("GridDimensions", () => {
   test("Each of the standard dimension menu options sets the rows and columns to a valid number.", async () => {
@@ -52,7 +44,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     // get list of all menu options by opening and closing menu
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -63,7 +54,6 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
-
     );
     // for each menu option, assert it sets the rows and cols to valid values
     for (const option of menuOptions) {
@@ -90,7 +80,6 @@ describe("GridDimensions", () => {
       expect(columns).toBeGreaterThanOrEqual(2);
       expect(columns).toBeLessThanOrEqual(24);
     }
-
   });
   test("Choosing custom should not change the dimensions.", async () => {
     const user = userEvent.setup();
@@ -101,7 +90,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     // get the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -113,6 +101,7 @@ describe("GridDimensions", () => {
         .filter((o) => o !== "Custom"),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const menuOption = menuOptionValue!;
     // tap that menu option, setting the rows and columns
     await user.click(
@@ -138,7 +127,6 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
-
     );
     // assert that the values have not changed
     const rowsAfterEl: HTMLInputElement = screen.getByRole("spinbutton", {
@@ -154,7 +142,6 @@ describe("GridDimensions", () => {
     expect(columnsAfter).not.toBeNull();
     expect(rowsAfter).toEqual(rowsBefore);
     expect(columnsBefore).toEqual(columnsAfter);
-
   });
   test("Changing rows sets menu to Custom", async () => {
     const user = userEvent.setup();
@@ -165,7 +152,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     // set the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -176,6 +162,7 @@ describe("GridDimensions", () => {
         .filter((o) => o !== "Custom"),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const menuOption = menuOptionValue!;
     expect(menuOption).not.toBeNull();
     await user.click(
@@ -190,14 +177,13 @@ describe("GridDimensions", () => {
     // change the rows
     const rowsBefore = parseInteger(rowsBeforeEl.value).orElse(null);
     expect(rowsBefore).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newRows = (rowsBefore! + 1) % 24;
     fireEvent.input(screen.getByRole("spinbutton", { name: "rows" }), {
       target: { value: newRows },
-
     });
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
-
   });
   test("Changing columns sets menu to Custom", async () => {
     const user = userEvent.setup();
@@ -208,7 +194,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     // set the first menu option that is not "Custom"
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -219,13 +204,13 @@ describe("GridDimensions", () => {
         .filter((o) => o !== "Custom"),
     ).orElse(null);
     expect(menuOptionValue).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const menuOption = menuOptionValue!;
     expect(menuOption).not.toBeNull();
     await user.click(
       within(screen.getByRole("listbox")).getByRole("option", {
         name: menuOption,
       }),
-
     );
     // change the columns
     const columnsBeforeEl: HTMLInputElement = screen.getByRole("spinbutton", {
@@ -233,14 +218,13 @@ describe("GridDimensions", () => {
     });
     const columnsBefore = parseInteger(columnsBeforeEl.value).orElse(null);
     expect(columnsBefore).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     const newColumns = (columnsBefore! + 1) % 24;
     fireEvent.input(screen.getByRole("spinbutton", { name: "columns" }), {
       target: { value: newColumns },
-
     });
     // assert that the menu is custom
     expect(screen.getByRole("combobox")).toBeVisible();
-
   });
   test("The multiplication of the rows and columns should equal the size quoted in the menu item.", async () => {
     const user = userEvent.setup();
@@ -251,7 +235,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     // get list of all menu options by opening and closing menu
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -263,7 +246,6 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "Custom",
       }),
-
     );
     // for each menu option, assert that the rows and colunmns, when multiplied, are the number quoted by the option
     for (const option of menuOptions) {
@@ -286,9 +268,15 @@ describe("GridDimensions", () => {
 
       expect(rows).not.toBeNull();
       expect(columns).not.toBeNull();
-      expect(option).toMatch(new RegExp(`${rows! * columns!}`));
+      expect(option).toMatch(
+        new RegExp(
+          `${
+            // biome-ignore lint/style/noNonNullAssertion: initial biome migration
+            rows! * columns!
+          }`,
+        ),
+      );
     }
-
   });
   test("The first option, the most popular, should be 96-well plate.", () => {
     const { rootStore } = makeRootStoreWithGridContainer();
@@ -298,7 +286,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
     fireEvent.mouseDown(screen.getByRole("combobox"));
     const menuOption = ArrayUtils.head(
@@ -307,8 +294,8 @@ describe("GridDimensions", () => {
         .map((o) => o.textContent || ""),
     ).orElse(null);
     expect(menuOption).not.toBeNull();
+    // biome-ignore lint/style/noNonNullAssertion: initial biome migration
     expect(menuOption!).toMatch(/96 well plate/);
-
   });
   test("Selecting 96-well should save cols: 12 and rows: 8.", async () => {
     const user = userEvent.setup();
@@ -320,7 +307,6 @@ describe("GridDimensions", () => {
           <GridDimensions />
         </storesContext.Provider>
       </ThemeProvider>,
-
     );
 
     fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -328,12 +314,10 @@ describe("GridDimensions", () => {
       within(screen.getByRole("listbox")).getByRole("option", {
         name: "96 well plate",
       }),
-
     );
     expect(spy).toHaveBeenCalledWith({
       gridLayout: expect.objectContaining({ columnsNumber: 12, rowsNumber: 8 }),
     });
-
   });
   test("When a menu option is chosen, the same values should be passed to setAttributesDirty as displayed in the numerical fields.", async () => {
     const user = userEvent.setup();
@@ -347,7 +331,6 @@ describe("GridDimensions", () => {
               <GridDimensions />
             </storesContext.Provider>
           </ThemeProvider>,
-
         );
         // get list of all menu options by opening and closing menu
         fireEvent.mouseDown(screen.getByRole("combobox"));
@@ -358,13 +341,12 @@ describe("GridDimensions", () => {
           .filter((o) => o !== "Custom");
 
         const option = menuOptions[unboundedIndex % menuOptions.length];
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         let gridLayout: any;
-        vi.spyOn(gridContainer, "setAttributesDirty").mockImplementation(
-          (args: any) => {
-            gridLayout = args.gridLayout;
-
-          },
-        );
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+        vi.spyOn(gridContainer, "setAttributesDirty").mockImplementation((args: any) => {
+          gridLayout = args.gridLayout;
+        });
         await user.click(
           within(screen.getByRole("listbox")).getByRole("option", {
             name: option,

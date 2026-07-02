@@ -1,18 +1,16 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
+import CardHeader from "@mui/material/CardHeader";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
 import { useTheme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 
 function Header({
   strikeThroughTitle,
   ...rest
-}: { strikeThroughTitle: boolean } & React.ComponentProps<
-  typeof CardHeader
->): React.ReactNode {
+}: { strikeThroughTitle: boolean } & React.ComponentProps<typeof CardHeader>): React.ReactNode {
   const theme = useTheme();
   return (
     <CardHeader
@@ -99,12 +97,7 @@ function CardStructure({
           {image}
         </Grid>
         {/* img has separate onClick */}
-        <Grid
-          onClick={onClick}
-          container
-          sx={{ flexDirection: "column" }}
-          size={8}
-        >
+        <Grid onClick={onClick} container sx={{ flexDirection: "column" }} size={8}>
           <Grid>
             <Header
               strikeThroughTitle={deleted}
@@ -120,9 +113,7 @@ function CardStructure({
           <Grid>
             <CardContent sx={{ p: 1, pb: 0 }}>{content}</CardContent>
           </Grid>
-          {Boolean(contentFooter) && (
-            <Grid sx={{ mt: "auto" }}>{contentFooter}</Grid>
-          )}
+          {Boolean(contentFooter) && <Grid sx={{ mt: "auto" }}>{contentFooter}</Grid>}
         </Grid>
       </Grid>
     </Card>

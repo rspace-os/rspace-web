@@ -1,37 +1,26 @@
-import React, { useEffect, useState, useRef, useMemo, useId } from "react";
-import TextField from "@mui/material/TextField";
-import useAutocomplete, {
-  AutocompleteCloseReason,
-  AutocompleteGroupedOption,
-} from "@mui/material/useAutocomplete";
-import { VariableSizeList as List, VariableSizeList } from "react-window";
-import InfiniteLoader from "react-window-infinite-loader";
-import Popover from "@mui/material/Popover";
-import InputAdornment from "@mui/material/InputAdornment";
+import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import FilterIcon from "@mui/icons-material/FilterAlt";
-import ListItemText from "@mui/material/ListItemText";
-import * as ArrayUtils from "../../util/ArrayUtils";
-import {
-  checkUserInputString,
-  checkInternalTag,
-  helpText,
-  isAllowed,
-} from "./TagValidation";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import { useTheme } from "@mui/material/styles";
-import { Optional, lift3 } from "../../util/optional";
-import { stableSort } from "../../util/table";
-import { type Tag } from "../../stores/definitions/Tag";
-import RsSet from "../../util/set";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import Grow from "@mui/material/Grow";
-import {
-  parseEncodedTags,
-  SMALL_DATASET_SIGNAL,
-  FINAL_DATA_SIGNAL,
-} from "./ParseEncodedTagStrings";
+import InputAdornment from "@mui/material/InputAdornment";
+import ListItemText from "@mui/material/ListItemText";
+import Popover from "@mui/material/Popover";
+import { useTheme } from "@mui/material/styles";
+import TextField from "@mui/material/TextField";
+import useAutocomplete, {
+  type AutocompleteCloseReason,
+  type AutocompleteGroupedOption,
+} from "@mui/material/useAutocomplete";
+import type React from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { List, type ListImperativeAPI, type RowComponentProps } from "react-window";
+import type { Tag } from "../../stores/definitions/Tag";
+import { lift3, Optional } from "../../util/optional";
+import type RsSet from "../../util/set";
+import { FINAL_DATA_SIGNAL, parseEncodedTags, SMALL_DATASET_SIGNAL } from "./ParseEncodedTagStrings";
+import { checkInternalTag, checkUserInputString, helpText, isAllowed } from "./TagValidation";
 
 /*
  * This component is a general purpose combobox for selecting a tag. The list
@@ -48,8 +37,8 @@ import {
  * perform layout and paint, JS must be executed and DOM nodes must be created
  * before the browser can perform layout and paint.
  *
- * Moreover, this combobox also uses infinite loading (using
- * react-window-infinite-loader) to load the list of suggested tags in pages,
+ * Moreover, this combobox also uses infinite loading (via the List's
+ * `onRowsRendered` callback) to load the list of suggested tags in pages,
  * loading the next page as the user approaches the end of the list. This,
  * again, reduces performance issues by reducing the size of the network calls.
  *
@@ -58,7 +47,6 @@ import {
  * https://github.com/mui/material-ui/blob/5046cc18373a169edbd75ef471245c23d8363fc9/docs/data/base/components/autocomplete/UseAutocomplete.js
  * https://github.com/mui/material-ui/blob/b0e10a1805ad7abd6f3c368bfbf63f4d85d29b47/packages/material-ui-lab/src/useAutocomplete/useAutocomplete.d.ts
  * https://react-window.vercel.app/#/examples/list/variable-size
- * https://www.npmjs.com/package/react-window-infinite-loader
  *
  * IMPORTANT: MUI's useAutocomplete validates on mount that its <input> element
  * is present in the DOM, and immediately operates on the input's ref. Because
@@ -87,9 +75,120 @@ const POPOVER_WIDTH = 300;
  */
 const OPTION_HEIGHT = 36;
 
+/*
+ * Prefetch the next page when the user scrolls within this many rows of the end
+ * of the loaded options.
+ */
+const LOAD_MORE_THRESHOLD = 15;
+
 type InternalTag = Tag & {
   selected: boolean;
 };
+
+type TagRowProps = {
+  sortedOptions: Array<InternalTag>;
+  groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
+  isNextPageLoading: boolean;
+  hasNextPage: boolean;
+  enforceOntologies: boolean;
+  filter: string;
+  keyboardFocusIndex: number | null;
+  getOptionProps: (optionAndIndex: {
+    option: InternalTag;
+    index: number;
+  }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
+};
+
+/*
+ * Row renderer for the virtualised options list: a component passed as the
+ * List's `rowComponent`, receiving `index`/`style` plus the values supplied via
+ * `rowProps`. Defined at module scope so its identity is stable across renders
+ * (otherwise the list remounts every row).
+ */
+function TagRow({
+  index,
+  style,
+  sortedOptions,
+  groupedOptions,
+  isNextPageLoading,
+  hasNextPage,
+  enforceOntologies,
+  filter,
+  keyboardFocusIndex,
+  getOptionProps,
+}: RowComponentProps<TagRowProps>) {
+  const theme = useTheme();
+  const isItemLoaded = !hasNextPage || index < sortedOptions.length;
+  if (!isItemLoaded && isNextPageLoading) {
+    return <li style={style}>Loading...</li>;
+  }
+  if (!groupedOptions || index >= groupedOptions.length) return <li style={style} />;
+
+  const option = groupedOptions[index] as InternalTag;
+  const name = option.value || "no name";
+  const tagIsAllowed = isAllowed(checkInternalTag(option, { enforceOntologies }));
+
+  const start = name.indexOf(filter);
+  const end = start + filter.length;
+  const label =
+    start > -1 ? (
+      <>
+        {name.substring(0, start)}
+        <strong>{filter}</strong>
+        {name.substring(end)}
+      </>
+    ) : (
+      name
+    );
+
+  /*
+   * In MUI v9 getOptionProps returns a `key`. React requires keys to be passed
+   * to JSX directly rather than spread in with the other props, so we pull it
+   * out here and apply it explicitly.
+   */
+  const { key, ...optionProps } = getOptionProps({ option, index });
+
+  return (
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: initial biome migration
+    <li
+      key={key}
+      {...optionProps}
+      style={{
+        padding: "8px",
+        cursor: "default",
+        border: index === keyboardFocusIndex ? `2px solid ${theme.palette.primary.main}` : "none",
+        backgroundColor: index === keyboardFocusIndex ? theme.palette.hover.iconButton : "default",
+        borderRadius: "4px",
+        // `style` positions the row within the virtualised list (absolute, with
+        // top/left/height/width). Keep it after the static styles so it wins.
+        ...style,
+        // These depend on `option`, so must stay inline (a class-based width
+        // would otherwise be overridden by the positioning `style` above).
+        filter: tagIsAllowed ? "" : "opacity(0.2)",
+        pointerEvents: tagIsAllowed ? "auto" : "none",
+        whiteSpace: "nowrap",
+        width: "unset",
+      }}
+      data-tag-value={option.value}
+      data-tag-vocabulary={option.vocabulary.orElse("")}
+      data-tag-uri={option.uri.orElse("")}
+      data-tag-version={option.version.orElse("")}
+      aria-selected={index === keyboardFocusIndex}
+      aria-disabled={!tagIsAllowed}
+    >
+      {/*
+       * No checkboxes here: in some places tags are persisted as a plain array
+       * or comma-separated string, so when the suggestions contain multiple
+       * tags with the same name (e.g. different ontology versions) we cannot
+       * identify which one the user originally chose, and so cannot show a
+       * checked state against just that suggestion. Instead we disable any
+       * suggestion whose name matches an already-selected tag; removing tags is
+       * the parent component's responsibility.
+       */}
+      <ListItemText primary={label} secondary={helpText(checkInternalTag(option, { enforceOntologies }))} />
+    </li>
+  );
+}
 
 function OptionsListing({
   hasNextPage,
@@ -112,196 +211,65 @@ function OptionsListing({
     option: InternalTag;
     index: number;
   }) => React.HTMLAttributes<HTMLLIElement> & { key: React.Key };
-  groupedOptions:
-    | Array<InternalTag>
-    | Array<AutocompleteGroupedOption<InternalTag>>;
+  groupedOptions: Array<InternalTag> | Array<AutocompleteGroupedOption<InternalTag>>;
   listboxProps: object;
-  listRef: React.MutableRefObject<VariableSizeList | null>;
+  listRef: React.MutableRefObject<ListImperativeAPI | null>;
   keyboardFocusIndex: number | null;
   filter: string;
   enforceOntologies: boolean;
 }) {
-  const itemCount = hasNextPage
-    ? sortedOptions.length + 1
-    : sortedOptions.length;
-  const loadMoreItems = isNextPageLoading ? () => {} : loadNextPage;
-  const isItemLoaded = (index: number) =>
-    !hasNextPage || index < sortedOptions.length;
-
-  const Item = ({
-    index,
-    style,
-  }: {
-    index: number;
-    style: React.CSSProperties;
-  }) => {
-    const theme = useTheme();
-    if (!isItemLoaded(index) && isNextPageLoading) {
-      return <li style={style}>Loading...</li>;
+  const itemCount = hasNextPage ? sortedOptions.length + 1 : sortedOptions.length;
+  // Load the next page when the user scrolls within LOAD_MORE_THRESHOLD rows of
+  // the end of the loaded options. The component already tracks the paging state
+  // (hasNextPage/isNextPageLoading) and loads pages sequentially, so a single
+  // threshold check on the List's onRowsRendered suffices.
+  const onRowsRendered = ({ stopIndex }: { startIndex: number; stopIndex: number }) => {
+    if (hasNextPage && !isNextPageLoading && stopIndex >= sortedOptions.length - LOAD_MORE_THRESHOLD) {
+      loadNextPage();
     }
-    if (!groupedOptions || index >= groupedOptions.length)
-      return <li style={style} />;
-
-    const option = groupedOptions[index] as InternalTag;
-    const name = option.value || "no name";
-    const tagIsAllowed = isAllowed(
-      checkInternalTag(option, { enforceOntologies }),
-    );
-
-    const start = name.indexOf(filter);
-    const end = start + filter.length;
-    const label =
-      start > -1 ? (
-        <>
-          {name.substring(0, start)}
-          <strong>{filter}</strong>
-          {name.substring(end)}
-        </>
-      ) : (
-        name
-      );
-
-    /*
-     * In MUI v9 getOptionProps returns a `key`. React requires keys to be
-     * passed to JSX directly rather than spread in with the other props, so we
-     * pull it out here and apply it explicitly.
-     */
-    const { key, ...optionProps } = getOptionProps({ option, index });
-
-    return (
-      <li
-        key={key}
-        {...optionProps}
-        style={{
-          padding: "8px",
-          cursor: "default",
-          border:
-            index === keyboardFocusIndex
-              ? `2px solid ${theme.palette.primary.main}`
-              : "none",
-          backgroundColor:
-            index === keyboardFocusIndex
-              ? theme.palette.hover.iconButton
-              : "default",
-          borderRadius: "4px",
-          /*
-           * This style object is what positions the MenuItem correctly within
-           * the virtualised list; it gives it `position: absolute` with a top,
-           * left, height (as specified by `itemSize`), and width
-           */
-          ...style,
-
-          /*
-           * These styles, which use `option` to conditionally determine the
-           * style value, must stay inline because otherwise an indexing error
-           * occurs when the user presses backspace inside the filter text
-           * field.
-           */
-          filter: tagIsAllowed ? "" : "opacity(0.2)",
-          pointerEvents: tagIsAllowed ? "auto" : "none",
-
-          /*
-           * Scroll horizontally rather than wrap. The styles are inline here
-           * because the width will be overriden by the `style` variable coming
-           * from `InfiniteLoader` if it is specified in a class.
-           */
-          whiteSpace: "nowrap",
-          width: "unset",
-        }}
-        data-tag-value={option.value}
-        data-tag-vocabulary={option.vocabulary.orElse("")}
-        data-tag-uri={option.uri.orElse("")}
-        data-tag-version={option.version.orElse("")}
-        aria-selected={index === keyboardFocusIndex}
-        aria-disabled={!tagIsAllowed}
-      >
-        {/*
-         * At first glance, it may seem sensible to provide checkboxes for the
-         * user to be able to deselect tags from within the popup window of
-         * suggested tags. However, in some places in the product tags are
-         * persisted in the database as a simple array or comma-separated
-         * string so when the list of suggestions contains multiple tags with
-         * the same name string we run into issues, for example when when
-         * there are different versions of the same ontology file in play. It
-         * is impossible for us to identify which partiular tag from which
-         * version the user original chose, so we can't display a checked
-         * checkbox against just that one suggestion. Instead, what we can do
-         * is disable all suggestions whose name matches any of the already
-         * selected tags to prevent the user from picking the same tag string
-         * twice. Removing tags from the selection is therefore the
-         * responsibility of the parent component. If we were to store all of
-         * the metadata in the database in everywhere where tags are used then
-         * we could look at add checkboxes to the combobox.
-         */}
-        <ListItemText
-          primary={label}
-          secondary={helpText(checkInternalTag(option, { enforceOntologies }))}
-        />
-      </li>
-    );
   };
 
   return (
-    <InfiniteLoader
-      isItemLoaded={isItemLoaded}
-      itemCount={itemCount}
-      loadMoreItems={loadMoreItems}
-    >
-      {({ onItemsRendered, ref }) => (
-        <List
-          {...listboxProps}
-          height={300}
-          itemCount={itemCount}
-          onItemsRendered={onItemsRendered}
-          width={POPOVER_WIDTH}
-          innerElementType="ul"
-          /*
-           * Here, we're merging the two refs. `ref` comes from InfiniteLoader,
-           * and `listRef` comes from the parent component where it is used to
-           * call `resetAfterIndex` when `itemSize` should be recalculated. For
-           * more information on exactly how this works see this StackOverflow
-           * answer https://stackoverflow.com/a/70284705
-           */
-          ref={(node: VariableSizeList) => {
-            ref(node);
-            listRef.current = node;
-          }}
-          /*
-           * This calculates the height that should be allocated for any given
-           * tag, as identified by its index. Most tags will be allocated an
-           * OPTION_HEIGHT amount of space but some show helper text underneath
-           * and so need more space.
-           *
-           * Space cannot be allocated dynamically with CSS, e.g. with flexbox,
-           * because the virtualised list library code needs to know all of the
-           * vertical offsets to calculate what is visible and thus what should
-           * be rendered.
-           *
-           * `itemSize` is not automatically recalculated when the underlying
-           * list of `tags` changes (would be ideal if it integrated with mobx)
-           * instead `listRef.current.resetAfterIndex(0)` should be called
-           * whenever the heights should be recalculated.
-           *
-           * `i`, the index of a given tag, could be greater than `tags.length`
-           * when the "Loading..." placeholder tag is showing. As such, we're
-           * using `getAt` and `orElse` to avoid dealing with undefined.
-           */
-          itemSize={(i) =>
-            OPTION_HEIGHT +
-            ArrayUtils.getAt(i, sortedOptions)
-              .map((tag) => {
-                const tagHasHelpText =
-                  helpText(checkInternalTag(tag, { enforceOntologies })) ===
-                  null;
-                return tagHasHelpText ? 0 : 20;
-              })
-              .orElse(0)
-          }
-        >
-          {Item}
-        </List>
-      )}
-    </InfiniteLoader>
+    <List
+      {...listboxProps}
+      // tagName makes the scroll container a <ul> so the <li> rows are valid.
+      tagName="ul"
+      style={{ height: 300, width: POPOVER_WIDTH }}
+      rowCount={itemCount}
+      onRowsRendered={onRowsRendered}
+      listRef={listRef}
+      rowComponent={TagRow}
+      rowProps={{
+        sortedOptions,
+        groupedOptions,
+        isNextPageLoading,
+        hasNextPage,
+        enforceOntologies,
+        filter,
+        keyboardFocusIndex,
+        getOptionProps,
+      }}
+      /*
+       * Allocates the height for each tag by index. Most tags get OPTION_HEIGHT;
+       * those showing helper text need more. The virtualised list needs explicit
+       * heights to compute vertical offsets (CSS flexbox can't be used). The list
+       * re-reads this function when `rowProps` change, so heights recalculate when
+       * the tag list changes.
+       *
+       * `i` may exceed `sortedOptions.length` while the "Loading..." placeholder
+       * shows, so `Optional.fromNullable(sortedOptions.at(i))`/`orElse` guard
+       * against undefined.
+       */
+      rowHeight={(i) =>
+        OPTION_HEIGHT +
+        Optional.fromNullable(sortedOptions.at(i))
+          .map((tag) => {
+            const tagHasHelpText = helpText(checkInternalTag(tag, { enforceOntologies })) === null;
+            return tagHasHelpText ? 0 : 20;
+          })
+          .orElse(0)
+      }
+    />
   );
 }
 
@@ -412,23 +380,15 @@ function TagsComboboxContent<
           version: Optional<string>;
         };
       },
->({
-  onSelection,
-  value,
-  anchorEl,
-  onClose,
-  enforceOntologies,
-}: TagsComboboxArgs<Toggle>): React.ReactNode {
+>({ onSelection, value, anchorEl, onClose, enforceOntologies }: TagsComboboxArgs<Toggle>): React.ReactNode {
   const [tags, setTags] = useState<Array<InternalTag>>([]);
   const [isNextPageLoading, setIsNextPageLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState("");
   const [reachedEnd, setReachedEnd] = useState(false);
   const [error, setError] = useState(false);
-  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(
-    null,
-  );
-  const listRef = useRef<VariableSizeList | null>(null);
+  const [keyboardFocusIndex, setKeyboardFocusIndex] = useState<number | null>(null);
+  const listRef = useRef<ListImperativeAPI | null>(null);
 
   const loadPage = (): Promise<{
     tags: Array<InternalTag>;
@@ -437,16 +397,12 @@ function TagsComboboxContent<
     if (reachedEnd) return Promise.resolve({ tags: [], lastPage: true });
     setIsNextPageLoading(true);
     setError(false);
-    return fetch(
-      `/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`,
-    )
+    return fetch(`/workspace/editor/structuredDocument/userTagsAndOntologies?pos=${page}&tagFilter=${filter}`)
       .then((response) => response.json())
       .then(({ data }: { data: Array<string> }) => {
         const alreadySelectedTagValues = value.map((v) => v.value);
         return {
-          lastPage:
-            data.includes(SMALL_DATASET_SIGNAL) ||
-            data.includes(FINAL_DATA_SIGNAL),
+          lastPage: data.includes(SMALL_DATASET_SIGNAL) || data.includes(FINAL_DATA_SIGNAL),
           tags: parseEncodedTags(data).map(
             (tag: Tag): InternalTag => ({
               ...tag,
@@ -494,7 +450,7 @@ function TagsComboboxContent<
      * response, which at time of writing is 1000 tags, so applying client-side
      * sorting is a safe operation.
      */
-    return stableSort(tags, (tagA, tagB) => {
+    return tags.toSorted((tagA, tagB) => {
       // sort all complete matches above all other suggestions
       if (tagA.value === filter) return -1;
       if (tagB.value === filter) return 1;
@@ -506,19 +462,12 @@ function TagsComboboxContent<
   }, [tags]);
 
   /*
-   * useAutocomplete, a hook exposes my MUI, rather than the standard MUI
-   * Autocomplete component is necessary because there is a scrolling bug with
-   * using react-window-infinite-loader with Autocomplete. See this
-   * StackOverflow post for more info
-   * https://stackoverflow.com/questions/59013367/react-window-infinite-loader-material-ui-autocomplete
+   * useAutocomplete, a hook exposed by MUI, rather than the standard MUI
+   * Autocomplete component is necessary because there is a scrolling bug when
+   * virtualising the listbox (with react-window) inside the standard
+   * Autocomplete.
    */
-  const {
-    getRootProps,
-    getInputProps,
-    getListboxProps,
-    getOptionProps,
-    groupedOptions,
-  } = useAutocomplete({
+  const { getRootProps, getInputProps, getListboxProps, getOptionProps, groupedOptions } = useAutocomplete({
     open: Boolean(anchorEl),
     options: sortedOptions,
     getOptionLabel: (option) => {
@@ -528,7 +477,7 @@ function TagsComboboxContent<
       return option.value;
     },
     filterOptions: (x) => x,
-    onInputChange: (event, newInputValue, reason) => {
+    onInputChange: (_event, newInputValue, reason) => {
       setPage(0);
       setReachedEnd(false);
       if (reason === "input") {
@@ -545,10 +494,7 @@ function TagsComboboxContent<
        * details of the tapped tag.
        */
     },
-    onClose: (
-      event: React.SyntheticEvent<Element, Event>,
-      reason: AutocompleteCloseReason,
-    ) => {
+    onClose: (event: React.SyntheticEvent<Element, Event>, reason: AutocompleteCloseReason) => {
       /*
        * This event is fired whenever the user taps inside the Popover. There
        * are various different parts of the Popover that the user may tap on
@@ -557,10 +503,7 @@ function TagsComboboxContent<
        */
       let li = null;
       const relatedTarget = (event as React.FocusEvent).relatedTarget;
-      if (
-        event.currentTarget.nodeName === "INPUT" &&
-        relatedTarget?.nodeName === "LI"
-      ) {
+      if (event.currentTarget.nodeName === "INPUT" && relatedTarget?.nodeName === "LI") {
         li = relatedTarget;
       }
       if (event.currentTarget.nodeName === "LI") {
@@ -568,9 +511,7 @@ function TagsComboboxContent<
       }
 
       if ((reason === "blur" || reason === "selectOption") && li) {
-        const { tagValue, tagVocabulary, tagUri, tagVersion } = (
-          li as HTMLLIElement
-        ).dataset;
+        const { tagValue, tagVocabulary, tagUri, tagVersion } = (li as HTMLLIElement).dataset;
         if (enforceOntologies) {
           if (tagVocabulary === "") throw new Error("Missing tag's vocabulary");
           if (tagUri === "") throw new Error("Missing tag's vocabulary URI");
@@ -584,18 +525,9 @@ function TagsComboboxContent<
         } else {
           onSelection({
             value: tagValue as string,
-            vocabulary:
-              tagVocabulary === ""
-                ? Optional.empty()
-                : Optional.present(tagVocabulary as string),
-            uri:
-              tagUri === ""
-                ? Optional.empty()
-                : Optional.present(tagUri as string),
-            version:
-              tagVersion === ""
-                ? Optional.empty()
-                : Optional.present(tagVersion as string),
+            vocabulary: tagVocabulary === "" ? Optional.empty() : Optional.present(tagVocabulary as string),
+            uri: tagUri === "" ? Optional.empty() : Optional.present(tagUri as string),
+            version: tagVersion === "" ? Optional.empty() : Optional.present(tagVersion as string),
           });
         }
         onClose();
@@ -626,16 +558,10 @@ function TagsComboboxContent<
         selected: alreadySelectedTagStrings.has(tag.value),
       })),
     );
-    listRef.current?.resetAfterIndex(0);
   }, [value]);
 
-  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(
-    null,
-  );
-  function debounce<FuncReturn>(
-    func: () => FuncReturn,
-    timeout: number = 1000,
-  ): () => void {
+  const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
+  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 1000): () => void {
     return () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
@@ -651,7 +577,6 @@ function TagsComboboxContent<
         setTags(newPageOfTags);
         setPage(1);
         setReachedEnd(lastPage);
-        listRef.current?.resetAfterIndex(0);
       });
     })();
   }, [filter]);
@@ -782,7 +707,7 @@ function TagsComboboxContent<
                 )
               );
               setKeyboardFocusIndex(newIndex);
-              listRef.current?.scrollToItem(newIndex);
+              listRef.current?.scrollToRow({ index: newIndex });
               return;
             }
 
@@ -810,7 +735,7 @@ function TagsComboboxContent<
                 )
               );
               setKeyboardFocusIndex(newIndex);
-              listRef.current?.scrollToItem(newIndex);
+              listRef.current?.scrollToRow({ index: newIndex });
               return;
             }
 
@@ -839,12 +764,7 @@ function TagsComboboxContent<
                    */}
                   <Grow in={isNextPageLoading} timeout={300}>
                     <div>
-                      <FontAwesomeIcon
-                        icon={faSpinner}
-                        spin
-                        size="sm"
-                        style={{ animationDuration: "1.5s" }}
-                      />
+                      <FontAwesomeIcon icon={faSpinner} spin size="sm" style={{ animationDuration: "1.5s" }} />
                     </div>
                   </Grow>
                 </InputAdornment>
@@ -885,10 +805,8 @@ function TagsComboboxContent<
       )}
       {!error && groupedOptions.length === 0 && filter !== "" && (
         <Alert severity="info">
-          <AlertTitle>
-            No matching tag suggestions{" "}
-            {enforceOntologies ? "from ontologies" : ""}.
-          </AlertTitle>
+          <AlertTitle>No matching tag suggestions {enforceOntologies ? "from ontologies" : ""}.</AlertTitle>
+          {/** biome-ignore lint/complexity/noUselessFragments: initial biome migration */}
           {enforceOntologies ? <></> : <>To use a new tag, press Enter.</>}
         </Alert>
       )}
@@ -938,9 +856,7 @@ export default function TagsCombobox<
       },
 >(props: TagsComboboxArgs<Toggle>): React.ReactNode {
   const { anchorEl, onClose } = props;
-  const reduceMotion = window.matchMedia(
-    "(prefers-reduced-motion: reduce)",
-  ).matches;
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   return (
     <Popover
       onClose={onClose}

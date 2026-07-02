@@ -1,21 +1,20 @@
-import Avatar from "@mui/material/Avatar";
-import Button from "@mui/material/Button";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import CropIcon from "@mui/icons-material/Crop";
-import Grid from "@mui/material/Grid";
 import ImageIcon from "@mui/icons-material/Image";
-import React, { useState, useEffect } from "react";
-import { isMobile } from "react-device-detect";
+import Avatar from "@mui/material/Avatar";
+import Button from "@mui/material/Button";
+import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
-import { doNotAwait } from "../../util/Util";
-import ImagePreview from "../ImagePreview";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { isMobile } from "react-device-detect";
 import NoValue from "../../components/NoValue";
+import ImagePreview from "../ImagePreview";
+import DynamicallyLoadedImageEditor from "./DynamicallyLoadedImageEditor";
 import FileField from "./FileField";
 export type ImageData = {
   dataURL: string;
   file: Blob;
-  binaryString?: string;
 };
 type ImageFieldArgs = {
   // required
@@ -65,21 +64,11 @@ function ImageField({
     setEditorFile(imageData.file);
     storeImage(imageData);
   };
-  const imageSelection = ({
-    binaryString,
-    file,
-  }: {
-    binaryString: string;
-    file: File;
-  }) => {
+  const imageSelection = ({ dataURL, file }: { dataURL: string; file: File }) => {
     if (!/^image/.test(file.type)) {
       throw new Error("Not an image");
     }
-    storeNewImage({
-      binaryString,
-      dataURL: `data:${file.type};base64,${btoa(binaryString)}`,
-      file,
-    });
+    storeNewImage({ dataURL, file });
   };
   const readAsDataUrl = (file: Blob): Promise<string> =>
     new Promise((resolve, reject) => {
@@ -112,9 +101,7 @@ function ImageField({
   }, [imageAsObjectURL]);
   return (
     <>
-      {disabled && !imageAsObjectURL && (
-        <NoValue label={noValueLabel ?? "None"} />
-      )}
+      {disabled && !imageAsObjectURL && <NoValue label={noValueLabel ?? "None"} />}
       {showPreview && imageAsObjectURL && (
         <Grid
           container
@@ -131,14 +118,7 @@ function ImageField({
             sx={{ m: "10px", width, height, cursor: "zoom-in" }}
             slotProps={{ img: { alt, sx: { objectFit: "contain" } } }}
           />
-          {link && (
-            <ImagePreview
-              closePreview={closePreview}
-              link={link}
-              size={size}
-              setSize={setSize}
-            />
-          )}
+          {link && <ImagePreview closePreview={closePreview} link={link} size={size} setSize={setSize} />}
         </Grid>
       )}
       {!disabled && (
@@ -146,9 +126,7 @@ function ImageField({
           <FileField
             accept=".png, .jpg, .jpeg, .gif"
             buttonLabel={imageAsObjectURL ? "Replace Image" : "Add Image"}
-            data-test-id={
-              imageAsObjectURL ? "ReplaceImageButton" : "AddImageButton"
-            }
+            data-test-id={imageAsObjectURL ? "ReplaceImageButton" : "AddImageButton"}
             id={id}
             onChange={imageSelection}
             icon={isMobile ? <CameraAltIcon /> : <ImageIcon />}
@@ -190,7 +168,7 @@ function ImageField({
               close={() => {
                 setEditorOpen(false);
               }}
-              submitHandler={doNotAwait(submit)}
+              submitHandler={(...args) => void submit(...args)}
               alt={alt}
             />
           )}

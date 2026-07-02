@@ -23,4 +23,4 @@ const Order = {
 };
 Object.freeze(Order);
 
-export { ErrorReason, BookingType, Order };
+export { BookingType, ErrorReason, Order };

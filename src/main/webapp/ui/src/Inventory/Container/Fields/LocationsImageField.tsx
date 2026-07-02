@@ -1,32 +1,26 @@
-import Button from "@mui/material/Button";
-import ContentImage from "../Content/ImageView/PlaceMarkers/ContentImage";
-import ImageField, {
-  type ImageData,
-} from "../../../components/Inputs/ImageField";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
-import LocationsImageMarkersDialog from "./LocationsImageMarkersDialog";
-import React from "react";
-import useStores from "../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import ContainerModel from "../../../stores/models/ContainerModel";
-import { doNotAwait } from "@/util/Util";
-import docLinks from "../../../assets/DocLinks";
-import { mkAlert, type Alert } from "@/stores/contexts/Alert";
-import FormField from "../../components/Inputs/FormField";
+import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-
-const CANVAS_ID = "locationsCanvas";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { type Alert, mkAlert } from "@/stores/contexts/Alert";
+import docLinks from "../../../assets/DocLinks";
+import ImageField, { type ImageData } from "../../../components/Inputs/ImageField";
+import ContainerModel from "../../../stores/models/ContainerModel";
+import useStores from "../../../stores/use-stores";
+import FormField from "../../components/Inputs/FormField";
+import ContentImage from "../Content/ImageView/PlaceMarkers/ContentImage";
+import LocationsImageMarkersDialog from "./LocationsImageMarkersDialog";
 
 function LocationsImageField(): React.ReactNode {
   const { searchStore, trackingStore, uiStore } = useStores();
   const activeResult = searchStore.activeResult;
-  if (!activeResult || !(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
+  if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const [editMarkers, setEditMarkers] = React.useState(false);
   const [toast, setToast] = React.useState<Alert | null>(null);
 
   const storeImage = (newImageData: ImageData) => {
-    void activeResult.setImage("locationsImage", CANVAS_ID)(newImageData);
+    void activeResult.setImage("locationsImage")(newImageData);
     if (activeResult.image) return;
 
     if (toast) {
@@ -37,9 +31,7 @@ function LocationsImageField(): React.ReactNode {
       variant: "notice",
       isInfinite: true,
       actionLabel: "yes",
-      onActionClick: doNotAwait(() =>
-        activeResult.setImage("image", CANVAS_ID)(newImageData),
-      ),
+      onActionClick: () => void activeResult.setImage("image")(newImageData),
     });
     setToast(newToast);
     activeResult.addScopedToast(newToast);
@@ -55,11 +47,7 @@ function LocationsImageField(): React.ReactNode {
         explanation={
           <>
             See the documentation for information on{" "}
-            <a
-              href={docLinks.editLocationsInVisualContainers}
-              target="_blank"
-              rel="noreferrer"
-            >
+            <a href={docLinks.editLocationsInVisualContainers} target="_blank" rel="noreferrer">
               choosing an image and marking locations
             </a>
             .
@@ -78,7 +66,7 @@ function LocationsImageField(): React.ReactNode {
                     size="large"
                     color="primary"
                     variant="outlined"
-                      sx={{ flexGrow: 1 }}
+                    sx={{ flexGrow: 1 }}
                     startIcon={<LocationOnIcon />}
                     disabled={!locationsImage}
                     onClick={() => {
@@ -101,7 +89,6 @@ function LocationsImageField(): React.ReactNode {
               }
               alt={`The marked locations of ${activeResult.name}`}
             />
-            <canvas id={CANVAS_ID} style={{ display: "none" }}></canvas>
           </>
         )}
       />

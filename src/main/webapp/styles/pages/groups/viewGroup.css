@@ -26,6 +26,23 @@
   align-self: flex-start;
 }
 
+#groupBlocks a,
+#groupBlocks a:link,
+#groupBlocks a:active {
+  color: #1465b7;
+  text-decoration: none;
+}
+
+#groupBlocks a:visited {
+  color: #1465b7;
+  background-color: transparent;
+}
+
+#groupBlocks a:hover {
+  color: #cc0000;
+  text-decoration: none;
+}
+
 #membersBlock {
   display: flex;
 }
@@ -116,23 +133,47 @@
   height: 240px;
 }
 
-.groupEditButton {
-  white-space: nowrap;
-  overflow: hidden;
-  font-size: 1em !important;
-  line-height: 1em !important;
+.groupEditButton,
+#groupDrop dt,
+.changeRoleButton,
+.removeLink {
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 26px;
+  font-size: 12px !important;
+  line-height: 1.2em !important;
   font-weight: normal !important;
-  padding: 3px 7px 2px 25px;
+  color: #1465b7;
   border-style: solid;
   border-width: 1px 1px 1px 1px;
   border-color: #AFAFAF;
   background: white;
-  background-image: url('/images/icons/editIcon.png');
-  background-repeat: no-repeat;
-  background-position: top left;
+  background-position: 5px center !important;
   border-radius: 0 !important;
   text-shadow: none !important;
   cursor: pointer;
+}
+
+.groupEditButton:hover,
+.changeRoleButton:hover,
+.removeLink:hover {
+  color: #cc0000;
+}
+
+.groupEditButton,
+.changeRoleButton,
+.removeLink {
+  display: inline-flex;
+}
+
+.groupDropdown {
+  margin-bottom: 0px;
+  white-space: nowrap;
+}
+
+.groupEditButton {
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 #groupDrop {
@@ -147,22 +188,16 @@
   position: relative;
 }
 
+#groupDrop dl {
+  margin: 0;
+}
+
 #groupDrop dt {
-  font-size: 1em !important;
-  line-height: 1em !important;
-  font-weight: normal !important;
+  display: flex;
   padding: 4px 7px 4px 20px;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #AFAFAF;
-  background: white;
   background-image: url('/images/blueDropDownArrow.png');
   background-repeat: no-repeat;
-  background-position: 5px 4px;
-  border-radius: 0 !important;
-  text-shadow: none !important;
-  cursor: pointer;
-  margin-top: 1px;
+  margin-top: 0;
 }
 
 #groupDrop dd ul {
@@ -193,6 +228,17 @@
   text-align: left;
 }
 
+.exportUsersWorkButton {
+  position: relative;
+  padding: 3px 7px 2px;
+}
+
+.exportUsersWorkButtonIcon {
+  display: block;
+  width: 45px;
+  height: 20px;
+}
+
 .groupInviteButton {
   height: 20px;
   color: #FFF;
@@ -216,6 +262,7 @@
 }
 
 .groupEditBar a,
+.groupEditBar button,
 .groupEditBar #groupDrop {
   margin-right: 2px;
 }
@@ -244,33 +291,11 @@
 }
 
 .changeRoleButton {
-  font-size: 1em !important;
-  line-height: 1em !important;
-  font-weight: normal !important;
-  padding: 3px 7px 2px 32px;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #AFAFAF;
-  background: white;
-  background-position: top left;
-  border-radius: 0 !important;
-  text-shadow: none !important;
-  cursor: pointer;
+  padding: 3px 7px 2px;
 }
 
 .removeLink {
-  font-size: 1em !important;
-  line-height: 1em !important;
-  font-weight: normal !important;
-  padding: 3px 7px 2px 25px;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #AFAFAF;
-  background: white;
-  background-position: top left;
-  border-radius: 0 !important;
-  text-shadow: none !important;
-  cursor: pointer;
+  padding: 3px 7px 2px;
 }
 
 #grpDetails.table td a {

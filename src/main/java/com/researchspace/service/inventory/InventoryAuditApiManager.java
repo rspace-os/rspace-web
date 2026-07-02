@@ -11,7 +11,8 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 
 /** For handling revision history requests around RS Inventory items */
@@ -23,7 +24,7 @@ public interface InventoryAuditApiManager {
 
   ApiSubSample getApiSubSampleRevision(Long subSampleId, Long revisionId);
 
-  ApiSampleTemplate getApiTemplateVersion(Sample latestTemplate, Long version);
+  ApiSampleTemplate getApiTemplateVersion(SampleTemplate latestTemplate, Long version);
 
   ApiInstrument getApiInstrumentRevision(Long instrumentId, Long revisionId);
 
@@ -33,26 +34,27 @@ public interface InventoryAuditApiManager {
       InstrumentTemplate latestTemplate, Long version);
 
   /**
-   * Returns the sample as it was at the given user-facing version. The current version is served
-   * from the live entity; older versions resolve to the newest audit revision carrying that
-   * version, flagged as historical. Returns null if the version does not exist.
+   * Returns the sample (or sample template) as it was at the given user-facing version. The current
+   * version is served from the live entity; older versions resolve to the newest audit revision
+   * carrying that version, flagged as historical. Returns null if the version does not exist.
    *
    * <p>Must be called with an entity attached to the current transaction (i.e. from within another
-   * manager's transaction, as {@link #getApiTemplateVersion(Sample, Long)} is). The caller is
-   * responsible for populating outgoing fields, such as permitted actions, on the result.
+   * manager's transaction, as {@link #getApiTemplateVersion(SampleTemplate, Long)} is). The caller
+   * is responsible for populating outgoing fields, such as permitted actions, on the result.
    */
-  ApiSample getApiSampleVersion(Sample currentSample, Long version);
+  ApiSample getApiSampleVersion(SampleEntity currentSample, Long version);
 
-  /** As {@link #getApiSampleVersion(Sample, Long)}, for a subsample. */
+  /** As {@link #getApiSampleVersion(SampleEntity, Long)}, for a subsample. */
   ApiSubSample getApiSubSampleVersion(SubSample currentSubSample, Long version);
 
   /**
-   * As {@link #getApiSampleVersion(Sample, Long)}, for a container. Historical container snapshots
-   * exclude content: locations are not audited, so a snapshot could only show present-day contents.
+   * As {@link #getApiSampleVersion(SampleEntity, Long)}, for a container. Historical container
+   * snapshots exclude content: locations are not audited, so a snapshot could only show present-day
+   * contents.
    */
   ApiContainer getApiContainerVersion(Container currentContainer, Long version);
 
-  /** As {@link #getApiSampleVersion(Sample, Long)}, for an instrument. */
+  /** As {@link #getApiSampleVersion(SampleEntity, Long)}, for an instrument. */
   ApiInstrument getApiInstrumentVersion(Instrument currentInstrument, Long version);
 
   /**

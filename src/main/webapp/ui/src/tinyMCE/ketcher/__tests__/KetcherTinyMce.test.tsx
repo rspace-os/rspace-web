@@ -1,26 +1,26 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
+import type React from "react";
+import { isValidElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } =
-  vi.hoisted(() => {
-    const renderCalls: Array<{
-      container: Element;
-      node: React.ReactNode;
-    }> = [];
+const { mockAxiosGet, mockAxiosPost, mockCreateRoot, rootRenderCalls } = vi.hoisted(() => {
+  const renderCalls: Array<{
+    container: Element;
+    node: React.ReactNode;
+  }> = [];
 
-    return {
-      rootRenderCalls: renderCalls,
-      mockCreateRoot: vi.fn((container: Element) => ({
-        render: vi.fn((node: React.ReactNode) => {
-          renderCalls.push({ container, node });
-        }),
-        unmount: vi.fn(),
-      })),
-      mockAxiosGet: vi.fn(),
-      mockAxiosPost: vi.fn(),
-    };
-  });
+  return {
+    rootRenderCalls: renderCalls,
+    mockCreateRoot: vi.fn((container: Element) => ({
+      render: vi.fn((node: React.ReactNode) => {
+        renderCalls.push({ container, node });
+      }),
+      unmount: vi.fn(),
+    })),
+    mockAxiosGet: vi.fn(),
+    mockAxiosPost: vi.fn(),
+  };
+});
 
 vi.mock("react-dom/client", () => ({
   createRoot: mockCreateRoot,
@@ -95,9 +95,7 @@ describe("KetcherTinyMce accessibility", () => {
 
     const { baseElement } = render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(
-      await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
 
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -115,7 +113,7 @@ describe("KetcherTinyMce accessibility", () => {
     mockAxiosGet.mockResolvedValueOnce({
       data: {
         data: {
-          chemElements: "{\"mol0\":{}}",
+          chemElements: '{"mol0":{}}',
         },
       },
     });
@@ -137,17 +135,12 @@ describe("KetcherTinyMce accessibility", () => {
 
     render(<KetcherTinyMce onUnmount={vi.fn()} />);
 
-    expect(
-      await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" }),
-    ).toBeVisible();
-    expect(mockAxiosGet).toHaveBeenCalledWith(
-      "/chemical/ajax/loadChemElements",
-      {
-        params: {
-          chemId: "chem-42",
-        },
+    expect(await screen.findByRole("dialog", { name: "Ketcher Insert Chemical" })).toBeVisible();
+    expect(mockAxiosGet).toHaveBeenCalledWith("/chemical/ajax/loadChemElements", {
+      params: {
+        chemId: "chem-42",
       },
-    );
+    });
   });
 
   it("reuses the existing React root when the TinyMCE Ketcher dialog is opened multiple times", () => {
@@ -169,18 +162,19 @@ describe("KetcherTinyMce accessibility", () => {
     expect(mockCreateRoot).toHaveBeenCalledTimes(1);
     expect(rootRenderCalls).toHaveLength(1);
 
-    // Extract the onUnmount callback passed to KetcherTinyMce.
-    // Tree: ThemeProvider > Analytics > Alerts > KetcherTinyMce
-    const themeProvider = rootRenderCalls[0].node as React.ReactElement;
-    const analytics = themeProvider.props.children as React.ReactElement;
-    const alerts = analytics.props.children as React.ReactElement;
-    const ketcherEl = alerts.props.children as React.ReactElement;
-    const onUnmount = ketcherEl.props.onUnmount as () => void;
+    // Find KetcherTinyMce's onUnmount by walking the rendered tree's `children`
+    // chain, so the test doesn't depend on how many wrapper providers sit above it.
+    const findOnUnmount = (node: React.ReactNode): (() => void) | undefined => {
+      if (!isValidElement(node)) return undefined;
+      const props = node.props as { onUnmount?: () => void; children?: React.ReactNode };
+      return props.onUnmount ?? findOnUnmount(props.children);
+    };
+    const onUnmount = findOnUnmount(rootRenderCalls[0].node);
 
     expect(onUnmount).toBeTypeOf("function");
 
     // Simulates the user closing the dialog.
-    onUnmount();
+    onUnmount?.();
 
     // The mock root's unmount should have been called.
     const firstRoot = mockCreateRoot.mock.results[0].value as {

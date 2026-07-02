@@ -24,17 +24,7 @@ export type GlobalId = string;
  * record that the Global ID refers to. Various record classes supported by the
  * frontend code are detailed below.
  */
-export type GlobalIdPrefix =
-  | "SA"
-  | "SS"
-  | "IC"
-  | "IT"
-  | "BE"
-  | "BA"
-  | "IF"
-  | "SF"
-  | "SD"
-  | "GP";
+export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "SF" | "SD" | "GP" | "IN" | "NT";
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
@@ -54,6 +44,8 @@ export const globalIdPatterns: Record<string, RegExp> = {
   field: /^sf\d+$/i,
   document: /^sd\d+$/i,
   group: /^gp\d+$/i,
+  instrument: /^in\d+$/i,
+  instrumentTemplate: /^nt\d+(v\d+)?$/i,
 };
 
 export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
@@ -67,6 +59,8 @@ export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
   field: "SF",
   document: "SD",
   group: "GP",
+  instrument: "IN",
+  instrumentTemplate: "NT",
 };
 
 /*
@@ -80,6 +74,8 @@ export const inventoryRecordTypeLabels = {
   sampleTemplate: "Sample Template",
   bench: "Bench",
   basket: "Basket",
+  instrument: "Instrument",
+  instrumentTemplate: "Instrument Template",
 };
 
 /**
@@ -87,46 +83,26 @@ export const inventoryRecordTypeLabels = {
  * record.
  */
 export const globalIdToInventoryRecordTypeLabel: (
-  globalId: GlobalId
-) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] =
-  match([
-    [
-      (globalId: GlobalId) => globalIdPatterns.sample.test(globalId),
-      inventoryRecordTypeLabels.sample,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.subsample.test(globalId),
-      inventoryRecordTypeLabels.subsample,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.container.test(globalId),
-      inventoryRecordTypeLabels.container,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId),
-      inventoryRecordTypeLabels.sampleTemplate,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.bench.test(globalId),
-      inventoryRecordTypeLabels.bench,
-    ],
-    [
-      (globalId: GlobalId) => globalIdPatterns.basket.test(globalId),
-      inventoryRecordTypeLabels.basket,
-    ],
-  ]);
+  globalId: GlobalId,
+) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] = match([
+  [(globalId: GlobalId) => globalIdPatterns.sample.test(globalId), inventoryRecordTypeLabels.sample],
+  [(globalId: GlobalId) => globalIdPatterns.subsample.test(globalId), inventoryRecordTypeLabels.subsample],
+  [(globalId: GlobalId) => globalIdPatterns.container.test(globalId), inventoryRecordTypeLabels.container],
+  [(globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId), inventoryRecordTypeLabels.sampleTemplate],
+  [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
+  [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
+  [(globalId: GlobalId) => globalIdPatterns.instrument.test(globalId), inventoryRecordTypeLabels.instrument],
+  [
+    (globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId),
+    inventoryRecordTypeLabels.instrumentTemplate,
+  ],
+]);
 
 /**
  * Creates the Global ID string for a given record type and ID.
  * This works because "type + id <-> Global ID" is an isomorphism
  */
-export function globalId({
-  type,
-  id,
-}: {
-  type: keyof typeof globalIdPatterns;
-  id: number;
-}): GlobalId {
+export function globalId({ type, id }: { type: keyof typeof globalIdPatterns; id: number }): GlobalId {
   const prefix = globalIdPrefixes[type];
   return `${prefix}${id}`;
 }
@@ -156,8 +132,7 @@ export interface BaseRecord {
  * that the Global ID will be available in a way that Flow can recognise.
  */
 export const getSavedGlobalId = (record: BaseRecord): GlobalId => {
-  if (record.globalId === null || typeof record.globalId === "undefined")
-    throw new TypeError('"globalId" is null.');
+  if (record.globalId === null || typeof record.globalId === "undefined") throw new TypeError('"globalId" is null.');
   return record.globalId;
 };
 

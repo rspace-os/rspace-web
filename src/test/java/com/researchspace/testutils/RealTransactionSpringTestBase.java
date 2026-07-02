@@ -150,7 +150,7 @@ public class RealTransactionSpringTestBase extends BaseManagerTestCaseBase {
 
   @Before
   public void beforeEach() {
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
   @AfterClass

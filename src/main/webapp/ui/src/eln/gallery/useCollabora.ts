@@ -37,9 +37,7 @@ export default function useCollabora(): {
    * button will not be shown. As such, we don't need to expose the complexity
    * of promises and FetchingData to the caller.
    */
-  const [supportedExts, setSupportedExts] = React.useState<Set<string>>(
-    new Set()
-  );
+  const [supportedExts, setSupportedExts] = React.useState<Set<string>>(new Set());
   const context = React.useContext(CollaboraContext);
 
   React.useEffect(() => {
@@ -47,20 +45,17 @@ export default function useCollabora(): {
       setSupportedExts(context.supportedExts);
       return;
     }
-    void axios
-      .get<unknown>("/collaboraOnline/supportedExts")
-      .then(({ data }) => {
-        Parsers.isObject(data)
-          .flatMap(Parsers.isNotNull)
-          .do((obj) => {
-            const newSupportedExts: Set<string> = new Set(Object.keys(obj));
-            setSupportedExts(newSupportedExts);
-            context.supportedExts = newSupportedExts;
-          });
-      });
+    void axios.get<unknown>("/collaboraOnline/supportedExts").then(({ data }) => {
+      Parsers.isObject(data)
+        .flatMap(Parsers.isNotNull)
+        .do((obj) => {
+          const newSupportedExts: Set<string> = new Set(Object.keys(obj));
+          setSupportedExts(newSupportedExts);
+          context.supportedExts = newSupportedExts;
+        });
+    });
     // we should probably store the result in session storage
     // as it doesn't need to be loaded everytime this component is mounted
-
   }, []);
 
   return { supportedExts };

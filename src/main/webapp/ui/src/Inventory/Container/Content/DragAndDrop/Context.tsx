@@ -1,26 +1,13 @@
-import React from "react";
-import {
-  DndContext,
-  useSensors,
-  useSensor,
-  MouseSensor,
-  TouchSensor,
-  KeyboardSensor,
-} from "@dnd-kit/core";
-import AlertContext, {
-  mkAlert,
-  type Alert,
-} from "../../../../stores/contexts/Alert";
-import {
-  type Container,
-  type Location,
-} from "../../../../stores/definitions/Container";
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-import { type InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
+import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { runInAction } from "mobx";
+import React from "react";
+import AlertContext, { type Alert, mkAlert } from "../../../../stores/contexts/Alert";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import type { Container, Location } from "../../../../stores/definitions/Container";
+import type { HasLocation } from "../../../../stores/definitions/HasLocation";
+import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
-import { useContainerHelpers, type DroppableId } from "./common";
-import { type HasLocation } from "../../../../stores/definitions/HasLocation";
+import { type DroppableId, useContainerHelpers } from "./common";
 
 type ContextArgs = {
   children: React.ReactNode;
@@ -35,15 +22,9 @@ type ContextArgs = {
   supportMultiple?: boolean;
 };
 
-export function Context({
-  children,
-  container,
-  supportKeyboard,
-  supportMultiple,
-}: ContextArgs): React.ReactNode {
+export function Context({ children, container, supportKeyboard, supportMultiple }: ContextArgs): React.ReactNode {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
-  const { getDestinationLocationForSourceLocation } =
-    useContainerHelpers(container);
+  const { getDestinationLocationForSourceLocation } = useContainerHelpers(container);
   const { moveStore } = useStores();
   const mouseSensor = useSensor(MouseSensor, {
     activationConstraint: {
@@ -65,9 +46,9 @@ export function Context({
      * required to move by a whole column/row.
      */
     coordinateGetter: (e: KeyboardEvent, { currentCoordinates }) => {
-      const { width, height } = (e.target as HTMLElement)
-        .closest("td")!
-        .getBoundingClientRect();
+      const rect = (e.target as HTMLElement).closest("td")?.getBoundingClientRect();
+      const width = rect?.width ?? 0;
+      const height = rect?.height ?? 0;
       switch (e.code) {
         case "ArrowRight":
           return {
@@ -92,9 +73,7 @@ export function Context({
       }
     },
   });
-  const sensors = useSensors(
-    ...[mouseSensor, touchSensor, ...(supportKeyboard ? [keyboardSensor] : [])]
-  );
+  const sensors = useSensors(...[mouseSensor, touchSensor, ...(supportKeyboard ? [keyboardSensor] : [])]);
 
   /*
    * We can't support dragging-and-dropping multiple items in visual containers
@@ -110,20 +89,14 @@ export function Context({
     <DndContext
       sensors={sensors}
       onDragStart={(event) => {
-        if (
-          container.selectedLocations?.length === 0 &&
-          event.active.data.current
-        ) {
+        if (container.selectedLocations?.length === 0 && event.active.data.current) {
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
           (event.active.data.current as any).location.toggleSelected(true);
         }
-        if (
-          !supportMultiple &&
-          (container.selectedLocations ?? []).length > 1
-        ) {
+        if (!supportMultiple && (container.selectedLocations ?? []).length > 1) {
           const alert = mkAlert({
             variant: "warning",
-            message:
-              "Dragging-and-dropping multiple items is not supported in visual containers.",
+            message: "Dragging-and-dropping multiple items is not supported in visual containers.",
             isInfinite: true,
           });
           setMultipleAlert(alert);
@@ -137,21 +110,17 @@ export function Context({
         // event.over is null if the dragging is release when not hovering
         if (!event.over) return;
 
-        if (!supportMultiple && (container.selectedLocations ?? []).length > 1)
-          return;
+        if (!supportMultiple && (container.selectedLocations ?? []).length > 1) return;
 
+        // biome-ignore lint/style/noNonNullAssertion: initial biome migration
         const [, col, row] = (event.over.id as string).match(/(\d+),(\d+)/)!;
-        const destinationLocation = container.findLocation(
-          parseInt(col, 10),
-          parseInt(row, 10)
-        );
-        if (!destinationLocation)
-          throw new Error("Cannot find destination location.");
+        const destinationLocation = container.findLocation(parseInt(col, 10), parseInt(row, 10));
+        if (!destinationLocation) throw new Error("Cannot find destination location.");
+        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         const sourceLocation = (event.active.data.current as any)?.location;
         if (!sourceLocation) throw new Error("Source location is undefined");
 
-        if (!container.selectedLocations)
-          throw new Error("Container must have some selected locations");
+        if (!container.selectedLocations) throw new Error("Container must have some selected locations");
         const selectedLocations = container.selectedLocations;
         const sourceLocations: {
           [key: GlobalId]: {
@@ -160,14 +129,10 @@ export function Context({
           };
         } = Object.fromEntries(
           selectedLocations.map((l) => {
-            if (!l.content)
-              throw new Error("Selected location cannot be empty when moving.");
-            if (!l.content.globalId)
-              throw new Error(
-                "Content of selected location must have a Global ID when moving."
-              );
+            if (!l.content) throw new Error("Selected location cannot be empty when moving.");
+            if (!l.content.globalId) throw new Error("Content of selected location must have a Global ID when moving.");
             return [l.content.globalId, { content: l.content, loc: l }];
-          })
+          }),
         );
         const destinationLocations: {
           [key: GlobalId]: {
@@ -176,12 +141,8 @@ export function Context({
           };
         } = Object.fromEntries(
           selectedLocations.map((l) => {
-            if (!l.content)
-              throw new Error("Selected location cannot be empty when moving.");
-            if (!l.content.globalId)
-              throw new Error(
-                "Content of selected location must have a Global ID when moving."
-              );
+            if (!l.content) throw new Error("Selected location cannot be empty when moving.");
+            if (!l.content.globalId) throw new Error("Content of selected location must have a Global ID when moving.");
             const globalId = l.content.globalId;
             const compatibleEvent = {
               active: event.active
@@ -189,8 +150,7 @@ export function Context({
                     data: {
                       current: event.active.data.current
                         ? {
-                            relativeCoords:
-                              event.active.data.current.relativeCoords || [],
+                            relativeCoords: event.active.data.current.relativeCoords || [],
                           }
                         : null,
                     },
@@ -198,12 +158,9 @@ export function Context({
                 : null,
               over: event.over ? { id: event.over.id as DroppableId } : null,
             };
-            const dest = getDestinationLocationForSourceLocation(
-              compatibleEvent,
-              l
-            );
+            const dest = getDestinationLocationForSourceLocation(compatibleEvent, l);
             return [globalId, { content: dest.content, loc: dest }];
-          })
+          }),
         );
 
         /*
@@ -215,11 +172,7 @@ export function Context({
          */
         if (
           Object.values(destinationLocations)
-            .filter(
-              (l) =>
-                l.content?.globalId &&
-                !Object.keys(sourceLocations).includes(l.content.globalId)
-            )
+            .filter((l) => l.content?.globalId && !Object.keys(sourceLocations).includes(l.content.globalId))
             .some((l) => l.content)
         )
           return;
@@ -238,10 +191,9 @@ export function Context({
                   type,
                   globalId,
                   parentContainers: [container.paramsForBackend],
-                  parentLocation:
-                    destinationLocations[globalId].loc.paramsForBackend,
+                  parentLocation: destinationLocations[globalId].loc.paramsForBackend,
                 };
-              }
+              },
             );
             /*
              * Immediately update the data model so that the UI doesn't bounce
@@ -249,22 +201,15 @@ export function Context({
              * was an error.
              */
             runInAction(() => {
-              Object.entries(destinationLocations).forEach(
-                ([globalId, { loc }]) => {
-                  loc.content = sourceLocations[globalId].content;
-                }
-              );
-              const destCoords = Object.values(destinationLocations).map(
-                ({ loc }) => ({ coordX: loc.coordX, coordY: loc.coordY })
-              );
-              const sourceLocationsThatAreNotDestinations = Object.values(
-                sourceLocations
-              ).filter(
-                ({ loc }) =>
-                  !destCoords.some(
-                    ({ coordX, coordY }) =>
-                      loc.coordX === coordX && loc.coordY === coordY
-                  )
+              Object.entries(destinationLocations).forEach(([globalId, { loc }]) => {
+                loc.content = sourceLocations[globalId].content;
+              });
+              const destCoords = Object.values(destinationLocations).map(({ loc }) => ({
+                coordX: loc.coordX,
+                coordY: loc.coordY,
+              }));
+              const sourceLocationsThatAreNotDestinations = Object.values(sourceLocations).filter(
+                ({ loc }) => !destCoords.some(({ coordX, coordY }) => loc.coordX === coordX && loc.coordY === coordY),
               );
               sourceLocationsThatAreNotDestinations.forEach(({ loc }) => {
                 loc.content = null;
@@ -299,17 +244,12 @@ export function Context({
             Object.values(sourceLocations).forEach(({ loc, content }) => {
               loc.content = content;
             });
-            const sourceCoords = Object.values(sourceLocations).map(
-              ({ loc }) => ({ coordX: loc.coordX, coordY: loc.coordY })
-            );
-            const destinationLocationsThatAreNotSources = Object.values(
-              destinationLocations
-            ).filter(
-              ({ loc }) =>
-                !sourceCoords.some(
-                  ({ coordX, coordY }) =>
-                    loc.coordX === coordX && loc.coordY === coordY
-                )
+            const sourceCoords = Object.values(sourceLocations).map(({ loc }) => ({
+              coordX: loc.coordX,
+              coordY: loc.coordY,
+            }));
+            const destinationLocationsThatAreNotSources = Object.values(destinationLocations).filter(
+              ({ loc }) => !sourceCoords.some(({ coordX, coordY }) => loc.coordX === coordX && loc.coordY === coordY),
             );
             destinationLocationsThatAreNotSources.forEach(({ loc }) => {
               loc.content = null;

@@ -1,15 +1,15 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import ErrorBoundary from "../../components/ErrorBoundary";
-import App from "./App";
-import Alerts from "../../components/Alerts/Alerts";
+import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import materialTheme, { COLORS } from "../../theme";
-import Analytics from "../../components/Analytics";
-import CssBaseline from "@mui/material/CssBaseline";
-import { hslToHex } from "../../util/colors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import React from "react";
+import { createRoot } from "react-dom/client";
+import Alerts from "../../components/Alerts/Alerts";
+import Analytics from "../../components/Analytics";
+import ErrorBoundary from "../../components/ErrorBoundary";
+import materialTheme, { COLORS } from "../../theme";
+import { hslToHex } from "../../util/colors";
+import App from "./App";
 
 const queryClient = new QueryClient();
 
@@ -30,19 +30,10 @@ window.addEventListener("load", () => {
                 MuiLink: {
                   styleOverrides: {
                     root: {
-                      color: hslToHex(
-                        COLORS.primary.hue,
-                        COLORS.primary.saturation,
-                        33
-                      ),
+                      color: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, 33),
                       fontWeight: 700,
                       textUnderlineOffset: "2px",
-                      textDecorationColor: hslToHex(
-                        COLORS.primary.hue,
-                        COLORS.primary.saturation,
-                        33,
-                        0.4
-                      ),
+                      textDecorationColor: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, 33, 0.4),
                     },
                   },
                 },
@@ -50,11 +41,7 @@ window.addEventListener("load", () => {
                   styleOverrides: {
                     root: {
                       "&.Mui-selected": {
-                        color: hslToHex(
-                          COLORS.primary.hue,
-                          COLORS.primary.saturation,
-                          33
-                        ),
+                        color: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, 33),
                       },
                     },
                   },
@@ -62,11 +49,7 @@ window.addEventListener("load", () => {
                 MuiTabs: {
                   styleOverrides: {
                     indicator: {
-                      backgroundColor: hslToHex(
-                        COLORS.primary.hue,
-                        COLORS.primary.saturation,
-                        33
-                      ),
+                      backgroundColor: hslToHex(COLORS.primary.hue, COLORS.primary.saturation, 33),
                     },
                   },
                 },
@@ -85,7 +68,7 @@ window.addEventListener("load", () => {
             </QueryClientProvider>
           </ThemeProvider>
         </StyledEngineProvider>
-      </React.StrictMode>
+      </React.StrictMode>,
     );
 
     const meta = document.createElement("meta");

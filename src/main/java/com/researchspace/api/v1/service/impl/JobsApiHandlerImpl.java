@@ -10,6 +10,7 @@ import com.researchspace.service.OperationFailedMessageGenerator;
 import jakarta.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +70,7 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
   }
 
   Double roundTo3sf(ProgressMonitor pm) {
-    return Double.parseDouble(String.format("%.2f", pm.getPercentComplete()));
+    return Double.parseDouble(String.format(Locale.US, "%.2f", pm.getPercentComplete()));
   }
 
   private ApiError createApiErrorObjectForInternalFailure(JobExecution exe) {

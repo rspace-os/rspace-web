@@ -20,6 +20,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -110,11 +111,12 @@ public class StoichiometryInventoryLinkManagerImplTest {
     StoichiometryInventoryLinkRequest req = new StoichiometryInventoryLinkRequest();
     req.setInventoryItemGlobalId("IT200");
 
-    invSample.setTemplate(true);
+    SampleTemplate invSampleTemplate = new SampleTemplate();
+    invSampleTemplate.setId(200L);
 
     when(moleculeManager.getById(10L)).thenReturn(molecule);
     when(invPerms.assertUserCanEditInventoryRecord(any(GlobalIdentifier.class), eq(user)))
-        .thenReturn(invSample);
+        .thenReturn(invSampleTemplate);
 
     IllegalArgumentException ex =
         assertThrows(IllegalArgumentException.class, () -> manager.createLink(10L, req, user));

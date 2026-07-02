@@ -1,8 +1,9 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
 import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import ValidatingSubmitButton from "../../../components/ValidatingSubmitButton";
+import useStores from "../../../stores/use-stores";
 
 type StepperActionsArgs = {
   onSubmit: () => void;
@@ -30,14 +31,24 @@ function StepperActions({ onSubmit }: StepperActionsArgs): React.ReactNode {
         borderTopRightRadius: theme.spacing(0.5),
       })}
     >
-      <ValidatingSubmitButton
-        onClick={onSubmit}
-        validationResult={activeResult.submittable}
-        loading={activeResult.loading}
-        progress={activeResult.uploadProgress}
-      >
-        Save
-      </ValidatingSubmitButton>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {activeResult.submittable.orElseGet((errors) =>
+          errors.map((error, i) => (
+            <Typography key={i} variant="body2" color="warning.main" role="alert">
+              {error.message}
+            </Typography>
+          )),
+        )}
+        <ValidatingSubmitButton
+          onClick={onSubmit}
+          validationResult={activeResult.submittable}
+          loading={activeResult.loading}
+          progress={activeResult.uploadProgress}
+          disabled={!activeResult.submittable.isOk}
+        >
+          Save
+        </ValidatingSubmitButton>
+      </Box>
     </Box>
   );
 }

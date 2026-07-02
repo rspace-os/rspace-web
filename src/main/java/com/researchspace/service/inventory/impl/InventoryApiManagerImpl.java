@@ -4,7 +4,6 @@ import static com.researchspace.api.v1.model.ApiInventoryRecordInfo.tagDifferenc
 
 import com.axiope.search.SearchUtils;
 import com.researchspace.api.v1.model.ApiBarcode;
-import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiGroupBasicInfo;
 import com.researchspace.api.v1.model.ApiInventoryEditLock;
 import com.researchspace.api.v1.model.ApiInventoryEditLock.ApiInventoryEditLockStatus;
@@ -26,7 +25,8 @@ import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.MovableInventoryRecord;
 import com.researchspace.model.inventory.SubSample;
-import com.researchspace.model.inventory.field.ExtraField;
+import com.researchspace.model.inventory.field.InventoryEntityField;
+import com.researchspace.model.inventory.field.InventoryLinkField;
 import com.researchspace.model.permissions.ACLElement;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.PermissionDomain;
@@ -41,7 +41,6 @@ import com.researchspace.service.inventory.ApiBarcodesHelper;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.service.inventory.ApiIdentifiersHelper;
 import com.researchspace.service.inventory.InventoryApiManager;
-import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import com.researchspace.service.inventory.InventoryFileApiManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
 import java.awt.image.BufferedImage;
@@ -53,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import lombok.extern.slf4j.Slf4j;
@@ -80,6 +80,35 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
   private @Autowired InventoryFileApiManager inventoryFileApiManager;
   @Autowired @Lazy private DocumentTagManager documentTagManager;
   private @Autowired FileStoreMetaManager fileMetaManagerImpl;
+
+  /**
+   * Copies each template link field's allowed-relation-types whitelist onto the matching record
+   * link field. The model's per-field template sync ({@code
+   * InventoryEntityField#updateToLatestTemplateDefinition}) copies name/columnIndex/mandatory/
+   * deletion but not the link whitelist, so without this an existing record (sample or instrument)
+   * keeps the whitelist captured when it was created and never picks up a later template edit
+   * (RSDEV-1200). New records are unaffected: they clone the template field via {@code
+   * shallowCopy()}, which copies the whitelist. A record link field with no connected template link
+   * field is left untouched.
+   *
+   * @return true if any record field's whitelist was changed
+   */
+  static boolean syncLinkFieldWhitelistsFromTemplate(List<InventoryEntityField> recordFields) {
+    boolean changed = false;
+    for (InventoryEntityField field : recordFields) {
+      if (field instanceof InventoryLinkField
+          && field.getTemplateField() instanceof InventoryLinkField) {
+        InventoryLinkField recordLink = (InventoryLinkField) field;
+        String templateWhitelist =
+            ((InventoryLinkField) field.getTemplateField()).getAllowedRelationTypes();
+        if (!Objects.equals(recordLink.getAllowedRelationTypes(), templateWhitelist)) {
+          recordLink.setAllowedRelationTypes(templateWhitelist);
+          changed = true;
+        }
+      }
+    }
+    return changed;
+  }
 
   protected void updateOntologyOnUpdate(
       ApiInventoryRecordInfo original, ApiInventoryRecordInfo updated, User user) {
@@ -111,15 +140,10 @@ public abstract class InventoryApiManagerImpl<T extends InventoryRecord>
     }
     saveSharingACLForIncomingApiInvRec(invRec, apiInvRec);
 
-    InventoryFieldNameUniquenessValidator.assertNoDuplicateFieldNamesInRequest(
-        null, apiInvRec.getExtraFields());
-    for (ApiExtraField apiExtraField : apiInvRec.getExtraFields()) {
-      ExtraField extraField =
-          recordFactory.createExtraField(
-              apiExtraField.getName(), apiExtraField.getTypeAsFieldType(), user, invRec);
-      extraField.setData(apiExtraField.getContent());
-      invRec.addExtraField(extraField);
-    }
+    // create extra-fields (Link fields included) through the link-aware helper so a record
+    // created together with a link persists that link; a plain create loop here built the
+    // ExtraLinkField but dropped its InventoryLink (RSDEV-1131).
+    extraFieldHelper.addExtraFieldsForNewInventoryRecord(apiInvRec.getExtraFields(), invRec, user);
 
     for (ApiBarcode apiBarcode : apiInvRec.getBarcodes()) {
       Barcode barcode = new Barcode(apiBarcode.getData(), user.getUsername());

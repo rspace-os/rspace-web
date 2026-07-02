@@ -1,11 +1,11 @@
-import React from "react";
-import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import type React from "react";
+import { describe, expect, it, vi } from "vitest";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import type { InventoryUpdateStockDisplay } from "@/tinyMCE/stoichiometry/utils";
@@ -54,9 +54,7 @@ const molecule: EditableMolecule = {
 };
 
 describe("StoichiometryInventoryUpdateMoleculeRow", () => {
-  const renderInTable = (
-    ui: React.ReactElement<typeof StoichiometryInventoryUpdateMoleculeRow>,
-  ) =>
+  const renderInTable = (ui: React.ReactElement<typeof StoichiometryInventoryUpdateMoleculeRow>) =>
     render(
       <Table aria-label="Inventory update test table">
         <TableHead>
@@ -81,9 +79,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
   } as const;
 
   const getMoleculeRow = (name: string) => {
-    const row = screen.getAllByRole("row").find((candidate) =>
-      within(candidate).queryByRole("checkbox", { name }) !== null,
-    );
+    const row = screen
+      .getAllByRole("row")
+      .find((candidate) => within(candidate).queryByRole("checkbox", { name }) !== null);
 
     if (!row) {
       throw new Error(`Molecule row not found: ${name}`);
@@ -92,13 +90,8 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     return row;
   };
 
-  const getMetric = (
-    moleculeName: string,
-    name: keyof typeof columnIndexes,
-  ) => {
-    const metric = within(getMoleculeRow(moleculeName)).getAllByRole("cell")[
-      columnIndexes[name]
-    ];
+  const getMetric = (moleculeName: string, name: keyof typeof columnIndexes) => {
+    const metric = within(getMoleculeRow(moleculeName)).getAllByRole("cell")[columnIndexes[name]];
 
     if (!metric) {
       throw new Error(`Metric column not found: ${moleculeName} / ${name}`);
@@ -139,31 +132,17 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("table", { name: "Inventory update test table" }),
-    ).toBeVisible();
+    expect(screen.getByRole("table", { name: "Inventory update test table" })).toBeVisible();
     expect(screen.getByText("In Stock")).toBeVisible();
     expect(screen.getByText("Will Use")).toBeVisible();
     expect(screen.getByText("Remaining")).toBeVisible();
     expect(screen.getByText("Molecule")).toBeVisible();
-    expect(
-      screen.getByRole("checkbox", { name: "Ethanol" }),
-    ).toHaveAccessibleName("Ethanol");
-    expect(
-      within(getMetric("Ethanol", "Molecule")).getByText("Ethanol"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Molecule")).getByText("reactant"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Will Use")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("5.0 g"),
-    ).toBeVisible();
+    expect(screen.getByRole("checkbox", { name: "Ethanol" })).toHaveAccessibleName("Ethanol");
+    expect(within(getMetric("Ethanol", "Molecule")).getByText("Ethanol")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Molecule")).getByText("reactant")).toBeVisible();
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("5.0 g")).toBeVisible();
   });
 
   it("only toggles when the checkbox is clicked", () => {
@@ -206,7 +185,6 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-
   it("still shows will-use and remaining metrics when stock was already deducted", () => {
     const stockDisplay: InventoryUpdateStockDisplay = {
       inStock: {
@@ -248,15 +226,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       />,
     );
 
-    expect(
-      within(getMetric("Ethanol", "Will Use")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Molecule")).getByText("Stock Deducted"),
-    ).toBeVisible();
+    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Molecule")).getByText("Stock Deducted")).toBeVisible();
   });
 
   it("shows a remaining warning and negative status when stock is insufficient", () => {
@@ -292,22 +264,11 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(getMetric("Ethanol", "Remaining")).toHaveAttribute(
-      "data-status",
-      "negative",
-    );
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("4.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Will Use")).getByText("5.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("-1.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("Insufficient Stock"),
-    ).toBeVisible();
+    expect(getMetric("Ethanol", "Remaining")).toHaveAttribute("data-status", "negative");
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("4.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Will Use")).getByText("5.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("-1.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("Insufficient Stock")).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -343,15 +304,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       />,
     );
 
-    expect(
-      screen.getByText("Link an inventory item before updating stock."),
-    ).toBeVisible();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "Link an inventory item before updating stock.",
-    );
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("—"),
-    ).toBeVisible();
+    expect(screen.getByText("Link an inventory item before updating stock.")).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent("Link an inventory item before updating stock.");
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("—")).toBeVisible();
     expect(screen.queryByText("Insufficient Stock")).not.toBeInTheDocument();
   });
 
@@ -388,12 +343,8 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("—"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Will Use")).getByText("—"),
-    ).toBeVisible();
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("—")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Will Use")).getByText("—")).toBeVisible();
   });
 
   it("disables the card when actual mass is not defined", () => {
@@ -429,20 +380,10 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
     expect(screen.getByRole("checkbox", { name: "Ethanol" })).toBeDisabled();
-    expect(
-      screen.getByText(
-        "Define actual mass before updating linked inventory stock.",
-      ),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Will Use")).getByText("— g"),
-    ).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("— g"),
-    ).toBeVisible();
+    expect(screen.getByText("Define actual mass before updating linked inventory stock.")).toBeVisible();
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Will Use")).getByText("— g")).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("— g")).toBeVisible();
   });
 
   it("hides projected Will Use and Remaining metrics when stock was already deducted", () => {
@@ -471,6 +412,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
         molecule={{
           ...molecule,
           inventoryLink: {
+            // biome-ignore lint/style/noNonNullAssertion: initial biome migration
             ...molecule.inventoryLink!,
             stockDeducted: true,
           },
@@ -483,13 +425,9 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
       />,
     );
 
-    expect(
-      within(getMetric("Ethanol", "In Stock")).getByText("10.0 g"),
-    ).toBeVisible();
+    expect(within(getMetric("Ethanol", "In Stock")).getByText("10.0 g")).toBeVisible();
     expect(within(getMetric("Ethanol", "Will Use")).getByText("—")).toBeVisible();
-    expect(
-      within(getMetric("Ethanol", "Remaining")).getByText("—"),
-    ).toBeVisible();
+    expect(within(getMetric("Ethanol", "Remaining")).getByText("—")).toBeVisible();
     expect(
       screen.getByText(
         "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",

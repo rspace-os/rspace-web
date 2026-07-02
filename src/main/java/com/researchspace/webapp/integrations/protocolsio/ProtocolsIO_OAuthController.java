@@ -9,6 +9,7 @@ import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
 import com.researchspace.protocolsio.PIOUser;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Principal;
@@ -52,8 +53,12 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
   @Value("${protocolsio.secret}")
   private String clientSecret;
 
-  static final String PROTOCOLSIO_ACCESS_TOKEN_URL = "https://www.protocols.io/api/v3/oauth/token";
-  static final String PROTOCOLSIO_AUTH_URL = "https://www.protocols.io/api/v3/oauth/authorize";
+  @Value("${protocolsio.oauth.token.url}")
+  private String protocolsioAccessTokenUrl;
+
+  @Value("${protocolsio.oauth.authorize.url}")
+  private String protocolsioAuthUrl;
+
   static final int REFRESH_TOKEN_EXPIRED_CODE = 1217;
 
   private RestTemplate restTemplate;
@@ -76,7 +81,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     String url =
         String.format(
             "%s?client_id=%s&redirect_url=%s&response_type=%s&scope=readwrite&state=%s",
-            PROTOCOLSIO_AUTH_URL, clientId, redirectUrl, "code", state);
+            protocolsioAuthUrl, clientId, redirectUrl, "code", state);
     return new RedirectView(url);
   }
 
@@ -134,8 +139,9 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
       conn.setRank(1);
       conn.setRefreshToken(accessToken.getBody().getRefreshToken());
       userConnectionManager.save(conn);
-      model.addAttribute("pioAccessToken", conn.getAccessToken());
-      return "connect/protocolsio/connected";
+      ConnectionResultPage.addConnectionAttributes(
+          model, "Protocols.io", "rspace.apps.protocolsio.connection", "PROTOCOLS_IO_CONNECTED");
+      return ConnectionResultPage.VIEW;
     } catch (HttpStatusCodeException e) {
       OauthAuthorizationError error =
           OauthAuthorizationError.builder()
@@ -143,8 +149,13 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
               .errorMsg("Exception during token exchange")
               .errorDetails(e.getResponseBodyAsString())
               .build();
-      model.addAttribute("error", error);
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model,
+          "Protocols.io",
+          "rspace.apps.protocolsio.connection",
+          "PROTOCOLS_IO_CONNECTED",
+          error);
+      return ConnectionResultPage.VIEW;
     }
   }
 
@@ -183,7 +194,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
     try {
       ResponseEntity<AccessToken> newToken =
           restTemplate.exchange(
-              PROTOCOLSIO_ACCESS_TOKEN_URL,
+              protocolsioAccessTokenUrl,
               HttpMethod.POST,
               accessTokenRequestEntity,
               AccessToken.class);
@@ -236,7 +247,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
 
     ResponseEntity<AccessToken> accessToken =
         restTemplate.exchange(
-            PROTOCOLSIO_ACCESS_TOKEN_URL,
+            protocolsioAccessTokenUrl,
             HttpMethod.POST,
             accessTokenRequestEntity,
             AccessToken.class);

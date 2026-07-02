@@ -1,26 +1,21 @@
-import React, { useContext } from "react";
-import { observer } from "mobx-react-lite";
+import SelectAllIcon from "@mui/icons-material/SelectAll";
+import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
-import TableCell from "@mui/material/TableCell";
-import ContextMenu from "../../components/ContextMenu/ContextMenu";
-import SearchContext from "../../../stores/contexts/Search";
-import SelectAllIcon from "@mui/icons-material/SelectAll";
-import { type SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
-import { menuIDs } from "../../../util/menuIDs";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext } from "react";
 import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
-import SortableProperty, {
-  type SortProperty,
-} from "../../components/Tables/SortableProperty";
-import { type AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
-import {
-  sortProperties,
-  isSortable,
-} from "@/stores/models/InventoryBaseRecord";
-import * as ArrayUtils from "@/util/ArrayUtils";
+import { isSortable, sortProperties } from "@/stores/models/InventoryBaseRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
-import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
+import SearchContext from "../../../stores/contexts/Search";
+import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
+import type { menuIDs } from "../../../util/menuIDs";
+import ContextMenu from "../../components/ContextMenu/ContextMenu";
+import type { SplitButtonOption } from "../../components/ContextMenu/ContextMenuSplitButton";
+import { useIsSingleColumnLayout } from "../../components/Layout/Layout2x1";
+import SortableProperty from "../../components/Tables/SortableProperty";
 
 type TableHeadArgs = {
   selectedCount: number;
@@ -29,12 +24,7 @@ type TableHeadArgs = {
   contextMenuId: (typeof menuIDs)[keyof typeof menuIDs];
 };
 
-function CustomTableHead({
-  selectedCount,
-  onSelectOptions,
-  toggleAll,
-  contextMenuId,
-}: TableHeadArgs): React.ReactNode {
+function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMenuId }: TableHeadArgs): React.ReactNode {
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
@@ -47,17 +37,14 @@ function CustomTableHead({
   if (isViewportLarge && isSingleColumnLayout) cols++;
 
   /* this could be made adjustable too (e.g. name or global ID) */
-  const mainProperty: SortProperty = ArrayUtils.find(
-    (p) => p.label === search.uiConfig.mainColumn,
-    sortProperties,
-  ).orElseGet(() => {
+  const mainProperty = sortProperties.find((p) => p.label === search.uiConfig.mainColumn);
+  if (!mainProperty) {
     throw new Error("mainColumn is not a sortable property");
-  });
+  }
 
-  const handleAdjustableColumnChange =
-    (index: number) => (newColumn: AdjustableTableRowLabel) => {
-      search.setAdjustableColumn(newColumn, index);
-    };
+  const handleAdjustableColumnChange = (index: number) => (newColumn: AdjustableTableRowLabel) => {
+    search.setAdjustableColumn(newColumn, index);
+  };
 
   return (
     <TableHead>
@@ -106,24 +93,16 @@ function CustomTableHead({
             )}
           </>
         ) : (
-          <>
-            <TableCell
-              variant="head"
-              colSpan={cols}
-              sx={{ p: "6px !important", pt: "0px !important" }}
-            >
-              <ContextMenu
-                menuID={contextMenuId}
-                selectedResults={search.selectedResults}
-                onSelectOptions={onSelectOptions}
-                forceDisabled={
-                  search.processingContextActions ? "Action In Progress" : ""
-                }
-                paddingTop
-                basketSearch={search.fetcher.basketSearch}
-              />
-            </TableCell>
-          </>
+          <TableCell variant="head" colSpan={cols} sx={{ p: "6px !important", pt: "0px !important" }}>
+            <ContextMenu
+              menuID={contextMenuId}
+              selectedResults={search.selectedResults}
+              onSelectOptions={onSelectOptions}
+              forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
+              paddingTop
+              basketSearch={search.fetcher.basketSearch}
+            />
+          </TableCell>
         )}
       </TableRow>
     </TableHead>

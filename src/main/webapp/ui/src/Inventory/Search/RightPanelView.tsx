@@ -1,39 +1,37 @@
+import Box from "@mui/material/Box";
+import type { Theme } from "@mui/material/styles";
+import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import { useLandmark } from "../../components/LandmarksContext";
+import LoadingCircular from "../../components/LoadingCircular";
+import type { RecordType } from "../../stores/definitions/InventoryRecord";
 import useStores from "../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import SampleNewRecordForm from "../Sample/NewRecordForm";
-import SampleForm from "../Sample/Form";
-import SubSampleForm from "../Subsample/Form";
+import { UserCancelledAction } from "../../util/error";
+import ContainerBatchForm from "../Container/BatchForm";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
+import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
+import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
+import MixedBatchForm from "../Mixed/BatchForm";
+import SampleBatchForm from "../Sample/BatchForm";
+import SampleForm from "../Sample/Form";
+import SampleNewRecordForm from "../Sample/NewRecordForm";
+import SubSampleBatchForm from "../Subsample/BatchForm";
+import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
 import NoActiveResultPlaceholder from "./components/NoActiveResultPlaceholder";
 import PermalinkNotFound from "./PermalinkNotFound";
-import ContainerBatchForm from "../Container/BatchForm";
-import SampleBatchForm from "../Sample/BatchForm";
-import SubSampleBatchForm from "../Subsample/BatchForm";
-import MixedBatchForm from "../Mixed/BatchForm";
-import LoadingCircular from "../../components/LoadingCircular";
-import { type RecordType } from "../../stores/definitions/InventoryRecord";
-import { type Theme } from "@mui/material/styles";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
-import { useIsSingleColumnLayout } from "../components/Layout/Layout2x1";
-import { UserCancelledAction } from "../../util/error";
-import { useLandmark } from "../../components/LandmarksContext";
-import Box from "@mui/material/Box";
 
-const border = (
-  theme: Theme,
-  isMobile: boolean,
-  recordType: RecordType | "mixed" | null,
-): string => {
+const border = (theme: Theme, isMobile: boolean, recordType: RecordType | "mixed" | null): string => {
   const width = 4 + (isMobile ? 2 : 0);
   const color =
-    recordType && recordType !== "mixed"
-      ? theme.palette.record[recordType].bg
-      : theme.palette.background.default;
+    recordType && recordType !== "mixed" ? theme.palette.record[recordType].bg : theme.palette.background.default;
   return `${width}px solid ${color}`;
 };
 
@@ -86,11 +84,7 @@ function RightPanelView(): ReactNode {
 
   React.useEffect(() => {
     void (async () => {
-      if (
-        !searchStore.activeResult &&
-        Boolean(searchStore.search.filteredResults.length) &&
-        !isSingleColumnLayout
-      ) {
+      if (!searchStore.activeResult && searchStore.search.filteredResults.length && !isSingleColumnLayout) {
         try {
           await searchStore.search.setActiveResult();
           uiStore.setVisiblePanel("right");
@@ -106,32 +100,18 @@ function RightPanelView(): ReactNode {
     const search = searchStore.search;
 
     // check if the reason for there being no single active result is because of batch editing
-    if (search.loadingBatchEditing)
-      return <LoadingCircular message="Loading batch editing" />;
+    if (search.loadingBatchEditing) return <LoadingCircular message="Loading batch editing" />;
     if (search.batchEditingRecordsByType?.type === "container")
-      return (
-        <ContainerBatchForm
-          records={search.batchEditingRecordsByType.records}
-        />
-      );
+      return <ContainerBatchForm records={search.batchEditingRecordsByType.records} />;
     if (search.batchEditingRecordsByType?.type === "sample")
-      return (
-        <SampleBatchForm records={search.batchEditingRecordsByType.records} />
-      );
+      return <SampleBatchForm records={search.batchEditingRecordsByType.records} />;
     if (search.batchEditingRecordsByType?.type === "subSample")
-      return (
-        <SubSampleBatchForm
-          records={search.batchEditingRecordsByType.records}
-        />
-      );
+      return <SubSampleBatchForm records={search.batchEditingRecordsByType.records} />;
     if (search.batchEditingRecordsByType?.type === "mixed")
-      return (
-        <MixedBatchForm records={search.batchEditingRecordsByType.records} />
-      );
+      return <MixedBatchForm records={search.batchEditingRecordsByType.records} />;
 
     // a permalink (possibly versioned) pointed at something that doesn't exist
-    if (search.fetcher.permalinkNotFound)
-      return <PermalinkNotFound permalink={search.fetcher.permalinkNotFound} />;
+    if (search.fetcher.permalinkNotFound) return <PermalinkNotFound permalink={search.fetcher.permalinkNotFound} />;
 
     // if we're not loading then show placeholder
     if (!search.fetcher.loading) return <NoActiveResultPlaceholder />;
@@ -145,8 +125,7 @@ function RightPanelView(): ReactNode {
     if (!activeResult) return noActiveResult();
 
     // show nothing if record has not yet been full loaded
-    if (Boolean(activeResult.id) && Boolean(activeResult.noFullDetails))
-      return null;
+    if (activeResult.id && activeResult.noFullDetails) return null;
 
     if (activeResult.recordType === "sample") {
       if (activeResult.id) return <SampleForm />;
@@ -168,6 +147,16 @@ function RightPanelView(): ReactNode {
       return <TemplateNewRecordForm />;
     }
 
+    if (activeResult.recordType === "instrument") {
+      if (activeResult.id) return <InstrumentForm />;
+      return <InstrumentNewRecordForm />;
+    }
+
+    if (activeResult.recordType === "instrumentTemplate") {
+      if (activeResult.id) return <InstrumentTemplateForm />;
+      return <InstrumentTemplateNewRecordForm />;
+    }
+
     throw Error("The active item's type is not valid.");
   };
 
@@ -175,12 +164,8 @@ function RightPanelView(): ReactNode {
     <ErrorBoundary>
       <BorderContainer
         data-testid="MainActiveResult"
-        ref={mainContentRef as React.RefObject<HTMLDivElement>}
-        recordType={
-          searchStore.activeResult?.recordType ??
-          searchStore.search.batchEditingRecordsByType?.type ??
-          null
-        }
+        ref={mainContentRef as React.RefObject<HTMLDivElement | null>}
+        recordType={searchStore.activeResult?.recordType ?? searchStore.search.batchEditingRecordsByType?.type ?? null}
       >
         <SynchroniseFormSections>{form()}</SynchroniseFormSections>
       </BorderContainer>

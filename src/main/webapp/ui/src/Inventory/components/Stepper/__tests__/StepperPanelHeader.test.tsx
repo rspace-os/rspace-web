@@ -1,29 +1,28 @@
-import { test, describe, expect } from 'vitest';
-import React,
-  { useState } from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  fireEvent,
-  waitFor,
-} from "@testing-library/react";
-import {
-  StepperPanelHeader,
-  useFormSectionError,
-  setFormSectionError,
-} from "../StepperPanelHeader";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import { describe, expect, test } from "vitest";
+import { StepperPanelHeader, setFormSectionError, useFormSectionError } from "../StepperPanelHeader";
 import "@/__tests__/__mocks__/matchMedia";
-import fc from "fast-check";
 import Collapse from "@mui/material/Collapse";
-import * as ArrayUtils from "../../../../util/ArrayUtils";
-import { observable, makeObservable, action } from "mobx";
-import { type GlobalId } from "../../../../stores/definitions/BaseRecord";
-import materialTheme from "../../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
-import FormSectionsContext from "../../../../stores/contexts/FormSections";
-
 import userEvent from "@testing-library/user-event";
+import fc from "fast-check";
+import { action, makeObservable, observable } from "mobx";
+import FormSectionsContext from "../../../../stores/contexts/FormSections";
+import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
+import materialTheme from "../../../../theme";
+import * as ArrayUtils from "../../../../util/ArrayUtils";
+
+async function replaceInputValue(user: ReturnType<typeof userEvent.setup>, label: string, value: string) {
+  const input = screen.getAllByLabelText(label).at(-1);
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error(`Could not find input labelled "${label}"`);
+  }
+  await user.click(input);
+  input.setSelectionRange(0, input.value.length);
+  await user.paste(value);
+}
+
 class DummyResult {
   editing: boolean = true;
 
@@ -34,18 +33,15 @@ class DummyResult {
       globalId: observable,
       setEditing: action,
     });
-
   }
   setEditing(editing: boolean): void {
     this.editing = editing;
   }
-
 }
 function DummyFormSection({ result }: { result: DummyResult }) {
   const formSectionError = useFormSectionError({
     editing: result.editing,
     globalId: result.globalId,
-
   });
 
   const [open, setOpen] = useState(true);
@@ -59,7 +55,7 @@ function DummyFormSection({ result }: { result: DummyResult }) {
       <FormSectionsContext.Provider
         value={{
           isExpanded: () => open,
-          setExpanded: (recordType, sectionName, value) => setOpen(value),
+          setExpanded: (_recordType, _sectionName, value) => setOpen(value),
           setAllExpanded: () => {},
         }}
       >
@@ -92,7 +88,6 @@ function DummyFormSection({ result }: { result: DummyResult }) {
       </FormSectionsContext.Provider>
     </ThemeProvider>
   );
-
 }
 describe("StepperPanelHeader", () => {
   test("When useFormSectionError is passed a unique list of strings, the badge should show a number equal to the list's length.", async () => {
@@ -107,78 +102,48 @@ describe("StepperPanelHeader", () => {
 
           render(<DummyFormSection result={new DummyResult()} />);
           for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
-
+            await replaceInputValue(user, "Set error", error);
           }
-          await user.click(
-            screen.getByRole("button", { name: "Collapse section" })
-
-          );
+          await user.click(screen.getByRole("button", { name: "Collapse section" }));
           await waitFor(() => {
-            expect(
-              screen.getByRole("button", { name: "Expand section" })
-            ).toBeVisible();
-
+            expect(screen.getByRole("button", { name: "Expand section" })).toBeVisible();
           });
-          expect(
-            parseInt(
-              (await screen.findByLabelText("Expand section")).textContent ??
-                "",
-              10
-            )
-          ).toEqual(errors.length);
-        }
+          expect(parseInt((await screen.findByLabelText("Expand section")).textContent ?? "", 10)).toEqual(
+            errors.length,
+          );
+        },
       ),
-      { numRuns: 10 }
+      { numRuns: 10 },
     );
-
   });
   test("When useFormSectionError is passed a list of strings, the badge should show a number equal to or less than the list's length.", async () => {
     await fc.assert(
-      fc.asyncProperty(
-        fc.array(fc.string({ minLength: 1 })),
-        async (errors) => {
-          cleanup();
-          const user = userEvent.setup();
+      fc.asyncProperty(fc.array(fc.string({ minLength: 1 })), async (errors) => {
+        cleanup();
+        const user = userEvent.setup();
 
-          render(<DummyFormSection result={new DummyResult()} />);
-          for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
-
-          }
-
-          await user.click(screen.getByLabelText("Collapse section"));
-          expect(
-            parseInt(
-              screen.getByLabelText("Expand section").textContent ?? "",
-              10
-            )
-          ).toBeLessThanOrEqual(errors.length);
+        render(<DummyFormSection result={new DummyResult()} />);
+        for (const error of errors) {
+          await replaceInputValue(user, "Set error", error);
         }
-      ),
-      { numRuns: 10 }
-    );
 
+        await user.click(screen.getByLabelText("Collapse section"));
+        expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toBeLessThanOrEqual(
+          errors.length,
+        );
+      }),
+      { numRuns: 10 },
+    );
   });
   test("When opened, the header shows no badge.", async () => {
+    cleanup();
     const user = userEvent.setup();
 
     render(<DummyFormSection result={new DummyResult()} />);
-    fireEvent.change(screen.getByLabelText("Set error"), {
-      target: { value: "an error" },
-
-    });
-    expect(screen.getByLabelText("Collapse section")).not.toHaveTextContent(
-      "1"
-
-    );
+    await replaceInputValue(user, "Set error", "an error");
+    expect(screen.getByLabelText("Collapse section")).not.toHaveTextContent("1");
     await user.click(screen.getByLabelText("Collapse section"));
     expect(screen.getByLabelText("Expand section")).toHaveTextContent("1");
-
   });
   const arbitraryErrorsAndErrorsToRemove = () =>
     fc
@@ -189,95 +154,57 @@ describe("StepperPanelHeader", () => {
             minLength: n,
             maxLength: n,
           }),
-          fc.array(fc.boolean(), { minLength: n, maxLength: n })
-        )
+          fc.array(fc.boolean(), { minLength: n, maxLength: n }),
+        ),
       )
-      .map(([errors, shouldRemove]) => [
-        errors,
-        ArrayUtils.takeWhere(errors, shouldRemove),
-
-      ]);
+      .map(([errors, shouldRemove]) => [errors, ArrayUtils.takeWhere(errors, shouldRemove)]);
   test("Errors can be unset, decrementing the badge.", async () => {
     await fc.assert(
-      fc.asyncProperty(
-        arbitraryErrorsAndErrorsToRemove(),
-        async ([errors, errorsToRemove]) => {
-          cleanup();
-          const user = userEvent.setup();
+      fc.asyncProperty(arbitraryErrorsAndErrorsToRemove(), async ([errors, errorsToRemove]) => {
+        cleanup();
+        const user = userEvent.setup();
 
-          render(<DummyFormSection result={new DummyResult()} />);
-          for (const error of errors) {
-            fireEvent.change(screen.getByLabelText("Set error"), {
-              target: { value: error },
-            });
-
-          }
-          await user.click(
-            screen.getByRole("button", { name: "Collapse section" })
-
-          );
-          expect(
-            parseInt(
-              screen.getByLabelText("Expand section").textContent ?? "",
-              10
-            )
-          ).toEqual(errors.length);
-          await user.click(
-            screen.getByRole("button", { name: "Expand section" })
-
-          );
-          for (const errorToRemove of errorsToRemove) {
-            fireEvent.change(screen.getByLabelText("Unset error"), {
-              target: { value: errorToRemove },
-            });
-
-          }
-          await user.click(
-            screen.getByRole("button", { name: "Collapse section" })
-
-          );
-          if (errors.length - errorsToRemove.length > 0) {
-            expect(
-              parseInt(
-                screen.getByLabelText("Expand section").textContent ?? "",
-                10
-              )
-            ).toEqual(errors.length - errorsToRemove.length);
-          } else {
-            /*
-             * There's no way to assert that the badge is not visible with Jest
-             * as Mui uses CSS transform, leaving the previously number in the
-             * DOM
-             */
-            expect(true).toBe(true);
-          }
+        render(<DummyFormSection result={new DummyResult()} />);
+        for (const error of errors) {
+          await replaceInputValue(user, "Set error", error);
         }
-      ),
-      { numRuns: 10 }
+        await user.click(screen.getByRole("button", { name: "Collapse section" }));
+        expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toEqual(errors.length);
+        await user.click(screen.getByRole("button", { name: "Expand section" }));
+        for (const errorToRemove of errorsToRemove) {
+          await replaceInputValue(user, "Unset error", errorToRemove);
+        }
+        await user.click(screen.getByRole("button", { name: "Collapse section" }));
+        if (errors.length - errorsToRemove.length > 0) {
+          expect(parseInt(screen.getByLabelText("Expand section").textContent ?? "", 10)).toEqual(
+            errors.length - errorsToRemove.length,
+          );
+        } else {
+          /*
+           * There's no way to assert that the badge is not visible with Jest
+           * as Mui uses CSS transform, leaving the previously number in the
+           * DOM
+           */
+          expect(true).toBe(true);
+        }
+      }),
+      { numRuns: 10 },
     );
     cleanup();
-
   });
   test("When `editing` is set to false, the errors are reset.", async () => {
+    cleanup();
     const user = userEvent.setup();
     const result = new DummyResult();
 
     render(<DummyFormSection result={result} />);
-    fireEvent.change(screen.getByLabelText("Set error"), {
-      target: { value: "an error" },
-
-    });
+    await replaceInputValue(user, "Set error", "an error");
     await user.click(screen.getByRole("button", { name: "Collapse section" }));
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Expand section" })
-      ).toBeVisible();
+      expect(screen.getByRole("button", { name: "Expand section" })).toBeVisible();
     });
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "Expand section" })
-      ).toHaveTextContent("1");
-
+      expect(screen.getByRole("button", { name: "Expand section" })).toHaveTextContent("1");
     });
 
     result.setEditing(false);
@@ -291,4 +218,3 @@ describe("StepperPanelHeader", () => {
     expect(screen.getByLabelText("Expand section")).not.toHaveTextContent("1");
   });
 });
-

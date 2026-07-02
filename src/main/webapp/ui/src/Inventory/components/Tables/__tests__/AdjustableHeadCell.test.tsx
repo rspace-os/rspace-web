@@ -1,15 +1,12 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-} from "@testing-library/react";
-import AdjustableHeadCell from "../AdjustableHeadCell";
-import RsSet from "../../../../util/set";
-import materialTheme from "../../../../theme";
+import "@/stores/stores/RootStore";
 
 import { ThemeProvider } from "@mui/material/styles";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, test } from "vitest";
+import materialTheme from "../../../../theme";
+import RsSet from "../../../../util/set";
+import AdjustableHeadCell from "../AdjustableHeadCell";
+
 describe("AdjustableHeadCell", () => {
   describe("The menu of available options should", () => {
     test("include an item with aria-current, as set by the `current` prop.", () => {
@@ -21,15 +18,10 @@ describe("AdjustableHeadCell", () => {
             onChange={() => {}}
             sortableProperties={[]}
           />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       fireEvent.click(screen.getByRole("button", { name: "Column options" }));
-      expect(screen.getByRole("menuitem", { name: "foo" })).toHaveAttribute(
-        "aria-current",
-        "true"
-      );
+      expect(screen.getByRole("menuitem", { name: "foo" })).toHaveAttribute("aria-current", "true");
     });
   });
 });
-

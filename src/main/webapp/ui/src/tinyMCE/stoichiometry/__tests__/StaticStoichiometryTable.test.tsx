@@ -1,4 +1,3 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import StaticStoichiometryTable from "@/tinyMCE/stoichiometry/table/StaticStoichiometryTable";
@@ -42,6 +41,7 @@ vi.mock("@/tinyMCE/stoichiometry/editableMolecules", () => ({
 vi.mock("@/tinyMCE/stoichiometry/table/StoichiometryTableGrid", () => ({
   default: (props: unknown) => {
     stoichiometryTableGridSpy(props);
+    // biome-ignore lint/a11y/useSemanticElements: initial biome migration
     return <div role="grid" aria-label="Static stoichiometry grid" />;
   },
 }));
@@ -79,16 +79,9 @@ describe("StaticStoichiometryTable", () => {
   });
 
   it("loads stoichiometry data and renders the grid in read-only mode", () => {
-    render(
-      <StaticStoichiometryTable
-        stoichiometryId={3}
-        stoichiometryRevision={4}
-      />,
-    );
+    render(<StaticStoichiometryTable stoichiometryId={3} stoichiometryRevision={4} />);
 
-    expect(
-      screen.getByRole("grid", { name: "Static stoichiometry grid" }),
-    ).toBeVisible();
+    expect(screen.getByRole("grid", { name: "Static stoichiometry grid" })).toBeVisible();
     expect(lastUseGetStoichiometryQueryArgs).toMatchObject({
       stoichiometryId: 3,
       revision: 4,

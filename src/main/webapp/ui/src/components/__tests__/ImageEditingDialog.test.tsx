@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
-import { describe, expect, test, vi } from 'vitest';
-import React from "react";
-import { render, cleanup, screen, waitFor } from "@testing-library/react";
+
+import "@/__tests__/__mocks__/muiTransitions";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ImageEditingDialog from "../ImageEditingDialog";
+import { delay } from "es-toolkit";
 import fc from "fast-check";
-import { sleep } from "../../util/Util";
+import { describe, expect, test, vi } from "vitest";
+import ImageEditingDialog from "../ImageEditingDialog";
 
 // Import image and canvas __mocks__ for this test
 import "@/__tests__/__mocks__/imageCanvasMocks";
@@ -26,7 +27,6 @@ describe("ImageEditingDialog", () => {
         if (b === null) throw new Error("toBlob failed");
         resolve(b);
       });
-
     });
     const { baseElement } = render(
       <ImageEditingDialog
@@ -36,13 +36,12 @@ describe("ImageEditingDialog", () => {
         submitHandler={() => {}}
         alt="dummy alt text"
       />,
-
     );
     // wait for image to load
 
-    await screen.findByRole("img") as HTMLImageElement;
+    (await screen.findByRole("img")) as HTMLImageElement;
     // wait for rotated image to load
-    await sleep(1000);
+    await delay(1000);
     // @ts-expect-error toBeAccessible is from @sa11y/vitest
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     await expect(baseElement).toBeAccessible();
@@ -52,7 +51,6 @@ describe("ImageEditingDialog", () => {
       fc.asyncProperty(
         fc.tuple(fc.constantFrom("clockwise", "counter clockwise"), fc.nat(20)),
         async ([direction, number]) => {
-
           cleanup();
           // submitHandler is not invoked if no edits have been made
 
@@ -85,7 +83,7 @@ describe("ImageEditingDialog", () => {
             />,
           );
 
-          await screen.findByRole("img") as HTMLImageElement;
+          (await screen.findByRole("img")) as HTMLImageElement;
           // Wait for image to fully load and set dimensions
           await waitFor(() => {
             const image = screen.getByRole("img") as HTMLImageElement;
@@ -94,7 +92,7 @@ describe("ImageEditingDialog", () => {
             expect(image.naturalHeight).toBeGreaterThan(0);
           });
           const rotateButton = screen.getByRole("button", {
-            name: "rotate " + direction,
+            name: `rotate ${direction}`,
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);
@@ -103,7 +101,6 @@ describe("ImageEditingDialog", () => {
               const image = screen.getByRole("img") as HTMLImageElement;
               expect(image.complete).toBe(true);
             });
-
           }
           await user.click(screen.getByRole("button", { name: /done/i }));
           await waitFor(() => {
@@ -116,7 +113,6 @@ describe("ImageEditingDialog", () => {
       ),
       { numRuns: 4 },
     );
-
   });
   test("Rotating by 90º clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
@@ -147,7 +143,7 @@ describe("ImageEditingDialog", () => {
       />,
     );
 
-    await screen.findByRole("img") as HTMLImageElement;
+    (await screen.findByRole("img")) as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;
@@ -172,7 +168,6 @@ describe("ImageEditingDialog", () => {
       expect(submitHandler).toHaveBeenCalled();
     });
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
-
   });
   test("Rotating by 90º counter clockwise should result in the correct image", async () => {
     const user = userEvent.setup();
@@ -203,7 +198,7 @@ describe("ImageEditingDialog", () => {
       />,
     );
 
-    await screen.findByRole("img") as HTMLImageElement;
+    (await screen.findByRole("img")) as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;
@@ -227,7 +222,6 @@ describe("ImageEditingDialog", () => {
       expect(submitHandler).toHaveBeenCalled();
     });
     expect(submitHandler.mock.calls[0][0]).toBeInstanceOf(Blob);
-
   });
   test("If no change has been made, then submitHandler is not called", async () => {
     const user = userEvent.setup();
@@ -259,11 +253,10 @@ describe("ImageEditingDialog", () => {
       />,
     );
 
-    await screen.findByRole("img") as HTMLImageElement;
+    (await screen.findByRole("img")) as HTMLImageElement;
     await user.click(screen.getByRole("button", { name: /done/i }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
-
   });
   /*
    * Testing the cropping functionality was attempted but it seems to be
@@ -303,7 +296,7 @@ describe("ImageEditingDialog", () => {
       />,
     );
 
-    await screen.findByRole("img") as HTMLImageElement;
+    (await screen.findByRole("img")) as HTMLImageElement;
     // Wait for image to fully load and set dimensions
     await waitFor(() => {
       const image = screen.getByRole("img") as HTMLImageElement;

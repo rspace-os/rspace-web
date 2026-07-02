@@ -160,7 +160,7 @@ are the leaf nodes. The component tree can be interactively explored with the
 Computed properties are the properties of JavaScript object or instances of classes
 whose value is automatically derived by mobx from the object's observable state.
 They are implemented using [getters](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get),
-and are typed using Flow as [read-only properties](https://flow.org/en/docs/lang/variance/#toc-covariance).
+and can be typed as read-only properties.
 For [more information on mobx computeds, see their documentation](https://mobx.js.org/computeds.html).
 
 ### Conjuction
@@ -240,12 +240,6 @@ data will be prepared for archiving and preservation.
 [DataGrid](https://mui.com/x/react-data-grid/) is a complex react component
 provided by MUI for displaying tabular data.
 
-### Dependency Cruiser
-
-[Dependency Cruiser](https://github.com/sverweij/dependency-cruiser) is an
-open-source tool for performing static analysis on a JavaScript project to
-validate and report on the dependencies between modules.
-
 ### Dialog
 
 > A dialog is a window overlaid on either the primary window or another dialog
@@ -257,11 +251,10 @@ validate and report on the dependencies between modules.
 
 ### Disjoint object union
 
-A Flow type where each value of the type is an object and there is a property
+A union type where each value of the type is an object and there is a property
 that has a distinct constant value for each branch of the union, thereby
-supporting refinement. It is the closest thing that JavaScript with Flow type
-annotations has to the tagged unions of pure functional programming languages.
-For more information, see [the Flow docs](https://flow.org/en/docs/types/unions/#toc-disjoint-object-unions).
+supporting refinement. It is the closest thing that TypeScript has to the tagged
+unions of pure functional programming languages.
 
 ### Disjuction
 
@@ -298,9 +291,8 @@ returns a response with a status code and a body.
 
 ### Eslint
 
-A static analysis tool for identifying potentially problematic patterns in
-JavaScript code. Via its plugin system, it can also be used to enforce code
-style.
+Formerly the static analysis tool for identifying potentially problematic patterns in
+JavaScript code. Replaced by Biome for linting and formatting the frontend.
 
 ### Extra field
 
@@ -322,21 +314,6 @@ A piece of editable data associated with an Inventory record, such as name,
 description, or expiry date. For the additional fields that samples inherit
 from templates, see [custom field](#custom-field). For additional fields that
 the user can add to any record, see [extra field](#extra-field).
-
-### Flow
-
-[Flow](https://flow.org/) is a static type checker for JavaScript. It's very
-similar to TypeScript, and the reason we use Flow is largely historical.
-
-### FlowExpectedError
-
-See [Flow suppression](#flow-supression).
-
-### Flow suppression
-
-> A suppression is a special kind of comment that you can place on the line
-> before a type error. It tells Flow not to report that error when checking
-> your code. — [Flow](https://flow.org/en/docs/errors/)
 
 ### Form
 
@@ -445,15 +422,9 @@ See [their website](https://www.intercom.com/) and their
 > module must know in order to use the given module.
 >   — A Philosophy of Software Design.
 
-2. An [interface in Flow](https://flow.org/en/docs/types/interfaces/) is the same
-   as Java: an abstract definition of a class that declares what the classes
-   that implement it expose to the rest of the system. There is no way to have
-   an object that is not an instance of a class to implement an interface,
-   there an object type alias must be used instead.
+2. For the interface exposed to user, see [User Interface](#user-interface).
 
-3. For the interface exposed to user, see [User Interface](#user-interface).
-
-4. For the interface that the server exposes to the clients, like Web browser,
+3. For the interface that the server exposes to the clients, like Web browser,
    see [API](#application-programming-interface).
 
 ### Integration
@@ -603,9 +574,7 @@ limiting but is a powerful feature in enforcing constraints on a generic type:
 by exporting a smart constructor that performs validation logic we ensure that
 only valid values are allowed; using this we can define types such as a
 numerical that requires that the value not be negative or an array that is not
-empty. [Flow's documentation on opaque type aliases](https://flow.org/en/docs/types/opaque-types/)
-doesn't provide much help about why and when to use them, but it does explain
-the syntax.
+empty.
 
 ## P
 
@@ -824,8 +793,7 @@ to define a list data structure, one must handle the appending of new elements
 and the removal of arbitrary ones, all whilst ensuring that the types remain
 consistent. To do this, a type variable is defined which is used to refer to
 the type of the elements of the list; the type check then makes sure that this
-type is used consistently. The [Flow documentation on Generics][https://flow.org/en/docs/types/generics/)
-describes how to define such data structures that have a type variable.
+type is used consistently.
 
 ## U
 
@@ -871,8 +839,8 @@ easier to use.
 
 ### void
 
-1. The Flow type of JavaScript's `undefined`; the return type of a function
-   that doesn't explicitly return a value.
+1. The TypeScript return type of a function that doesn't explicitly return a
+   value.
 
 2. The JavaScript operator that evaluates the passed expression and returns
    undefined. A helpful little tool for explicitly discarding a promise, i.e.

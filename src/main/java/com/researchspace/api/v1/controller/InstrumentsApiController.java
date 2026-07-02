@@ -22,7 +22,6 @@ import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -38,9 +37,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Autowired private InstrumentApiPostFullValidator instrumentApiPostFullValidator;
   @Autowired private InstrumentApiPutValidator instrumentApiPutValidator;
   @Autowired private InventoryAuditApiManager inventoryAuditMgr;
-
-  @Value("${inventory.instrument.enabled:false}")
-  private boolean inventoryInstrumentEnabled;
 
   @Data
   @AllArgsConstructor
@@ -73,7 +69,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
 
     if (apiPgCrit == null) {
@@ -103,7 +98,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     validateCreateInstrumentInput(apiInstrument, errors, user);
 
     if (apiInstrument.getNewTargetLocation() != null) {
@@ -122,7 +116,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument getInstrumentById(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
 
     ApiInstrument instrument = retrieveApiInstrumentIfExists(id, user);
     buildAndAddInventoryRecordLinks(instrument);
@@ -133,7 +126,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   public String validateNameForNewInstrument(
       @RequestParam(name = "name") String name, @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
 
     String errorMsg = "";
     if (StringUtils.isEmpty(name)) {
@@ -157,7 +149,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     validateUpdateInstrumentInput(incomingInstrument, errors);
     incomingInstrument.setIdIfNotSet(id);
     instrumentApiMgr.assertUserCanEditInstrument(id, user);
@@ -170,7 +161,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument deleteInstrument(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     instrumentApiMgr.assertUserCanDeleteInstrument(id, user);
 
     return instrumentApiMgr.markInstrumentAsDeleted(id, user);
@@ -179,7 +169,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument restoreDeletedInstrument(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     instrumentApiMgr.assertUserCanDeleteInstrument(id, user);
     return instrumentApiMgr.restoreDeletedInstrument(id, user);
   }
@@ -187,7 +176,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ResponseEntity<byte[]> getInstrumentImage(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
-    assertIsInventoryInstrumentEnabled();
     return doImageResponse(
         user, () -> instrumentApiMgr.assertUserCanReadInstrument(id, user).getImageFileProperty());
   }
@@ -195,7 +183,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ResponseEntity<byte[]> getInstrumentThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
-    assertIsInventoryInstrumentEnabled();
     return doImageResponse(
         user,
         () -> instrumentApiMgr.assertUserCanReadInstrument(id, user).getThumbnailFileProperty());
@@ -208,7 +195,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
     incomingInstrument.setIdIfNotSet(id);
     instrumentApiMgr.assertUserCanTransferInstrument(id, user);
@@ -221,7 +207,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument duplicate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     instrumentApiMgr.assertUserCanReadInstrument(id, user);
 
     ApiInstrument copy = instrumentApiMgr.duplicateInstrument(id, user);
@@ -232,7 +217,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInstrument updateToLatestTemplateVersion(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     ApiInstrument updated = instrumentApiMgr.updateInstrumentToLatestTemplateVersion(id, user);
     buildAndAddInventoryRecordLinks(updated);
     return updated;
@@ -241,7 +225,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
   @Override
   public ApiInventoryRecordRevisionList getInstrumentAllRevisions(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
 
     Instrument dbInstrument = instrumentApiMgr.assertUserCanReadInstrument(id, user);
     ApiInventoryRecordRevisionList revisions =
@@ -257,7 +240,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       @PathVariable Long id,
       @PathVariable Long revisionId,
       @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
 
     instrumentApiMgr.assertUserCanReadInstrument(id, user);
     ApiInstrument instrument = inventoryAuditMgr.getApiInstrumentRevision(id, revisionId);
@@ -273,7 +255,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       @PathVariable Long id,
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
 
     ApiInstrument instrument = instrumentApiMgr.getApiInstrumentVersion(id, version, user);
     if (instrument == null) {
@@ -281,13 +262,6 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
     }
     buildAndAddInventoryRecordLinks(instrument);
     return instrument;
-  }
-
-  private void assertIsInventoryInstrumentEnabled() {
-    if (!inventoryInstrumentEnabled) {
-      throw new UnsupportedOperationException(
-          "The inventory Instrument is not enabled in this RSpace instance");
-    }
   }
 
   /* errors might already be populated with simple validation errors using javax.validation annotations

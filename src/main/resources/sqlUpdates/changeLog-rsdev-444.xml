@@ -212,15 +212,15 @@ END
             RSDEV-444 (B2): migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
             existing deployments.
 
-            The fresh-install changeset (changeLog-1.47.xml::17-09-10z) only creates these tables when
+            The fresh-install baseline (initial-seed-changeLog.xml) only creates these tables when
             BATCH_JOB_EXECUTION is ABSENT, so an upgraded database keeps the Batch 3 schema and the async
             export JobRepository fails at runtime against the changed columns (most notably the redesigned
             BATCH_JOB_EXECUTION_PARAMS). This changeset drops and recreates the BATCH_* tables using the
             Batch 5 jar's own scripts, so the layout always matches the Batch version on the classpath.
 
             Guarded to fire ONLY on an un-migrated existing DB (BATCH_JOB_EXECUTION present AND the old
-            TYPE_CD column present): a no-op on fresh installs (17-09-10z already built the Batch 5 schema,
-            so TYPE_CD is absent) and idempotent once migrated (TYPE_CD gone).
+            TYPE_CD column present): a no-op on fresh installs (the baseline already built the Batch 5
+            schema, so TYPE_CD is absent) and idempotent once migrated (TYPE_CD gone).
 
             TRADE-OFF: drop+recreate discards historical Spring Batch job-execution rows. These back ONLY the
             REST API v1 export (status polled via /api/v1/jobs/{id}); the interactive UI export uses a

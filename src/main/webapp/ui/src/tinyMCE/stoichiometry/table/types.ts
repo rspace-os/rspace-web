@@ -15,29 +15,13 @@ export type StoichiometryTableGridProps = {
   allMolecules: ReadonlyArray<EditableMolecule>;
   hasChanges?: boolean;
   activeChemId?: number | null;
-  linkedInventoryQuantityInfoByGlobalId?: ReadonlyMap<
-    string,
-    InventoryQuantityQueryResult
-  >;
-  onAddReagent?: (
-    smilesString: string,
-    name: string,
-    source: string,
-  ) => Promise<void>;
-  onUpdateInventoryStock?: (
-    selectedMoleculeIds: number[],
-  ) => Promise<InventoryStockUpdateResult>;
+  linkedInventoryQuantityInfoByGlobalId?: ReadonlyMap<string, InventoryQuantityQueryResult>;
+  onAddReagent?: (smilesString: string, name: string, source: string) => Promise<void>;
+  onUpdateInventoryStock?: (selectedMoleculeIds: number[]) => Promise<InventoryStockUpdateResult>;
   onDeleteReagent?: (moleculeId: number) => void;
-  onPickInventoryItem?: (
-    moleculeId: number,
-    inventoryItemId: number,
-    inventoryItemGlobalId: string,
-  ) => void;
+  onPickInventoryItem?: (moleculeId: number, inventoryItemId: number, inventoryItemGlobalId: string) => void;
   onRemoveInventoryLink?: (moleculeId: number) => void;
   onUndoRemoveInventoryLink?: (moleculeId: number) => void;
   onSelectLimitingReagent?: (molecule: EditableMolecule) => void;
-  onProcessRowUpdate?: (
-    newRow: EditableMolecule,
-    oldRow: EditableMolecule,
-  ) => EditableMolecule;
+  onProcessRowUpdate?: (newRow: EditableMolecule, oldRow: EditableMolecule) => EditableMolecule;
 };

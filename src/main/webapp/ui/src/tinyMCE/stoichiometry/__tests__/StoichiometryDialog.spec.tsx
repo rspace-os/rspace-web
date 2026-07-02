@@ -1,12 +1,21 @@
-import { test, expect } from "@playwright/experimental-ct-react";
+import { cleanup, render } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import React from "react";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { worker } from "@/__tests__/browserSetup";
+import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
+import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
+import {
+  chemistryIntegrationHandler,
+  createDialogStoichiometryResponse,
+  oauthTokenHandler,
+} from "./mocks/stoichiometryMocks";
+import { StoichiometryDialogPage } from "./pageObjects/StoichiometryDialogPage";
 import {
   StoichiometryDialogWithCalculateButtonStory,
   StoichiometryDialogWithTableStory,
 } from "./StoichiometryDialog.story";
-import * as Jwt from "jsonwebtoken";
 
-import AxeBuilder from "@axe-core/playwright";
 type CalledSpy = {
   handler: () => void;
   hasBeenCalled: () => boolean;
@@ -14,612 +23,193 @@ type CalledSpy = {
 
 const createCalledSpy = (): CalledSpy => {
   let called = false;
-  const handler = () => {
-    called = true;
-  };
-
-  const hasBeenCalled = () => called;
   return {
-    handler,
-    hasBeenCalled,
+    handler: () => {
+      called = true;
+    },
+    hasBeenCalled: () => called,
   };
 };
 
-const hasStoichiometryRequest = (
-  networkRequests: Array<{ url: URL; postData: string | null; method: string }>,
-  method: "POST" | "PUT" | "DELETE",
-): boolean =>
-  networkRequests.some(
-    (request) =>
-      request.url.pathname.includes("/api/v1/stoichiometry") &&
-      request.method === method,
-  );
+type NetworkRequest = { method: string; pathname: string };
 
-const feature = test.extend<{
-  Given: {
-    "the dialog is open without a stoichiometry table": ({
-      onTableCreatedSpy,
-    }?: {
-      onTableCreatedSpy?: CalledSpy;
-    }) => Promise<void>;
-    "the dialog is open with a stoichiometry table": ({
-      onSaveSpy,
-      onDeleteSpy,
-    }?: {
-      onSaveSpy?: CalledSpy;
-      onDeleteSpy?: CalledSpy;
-    }) => Promise<void>;
-  };
-  When: {
-    "the user clicks calculate": () => Promise<void>;
-    "the user edits a cell in the table": () => Promise<void>;
-    "the user changes the limiting reagent": () => Promise<void>;
-    "the user saves the changes": () => Promise<void>;
-    "the user clicks the delete button": () => Promise<void>;
-    "the user confirms the deletion": () => Promise<void>;
-  };
-  Then: {
-    "the calculate button is visible": () => Promise<void>;
-    "an inline calculate error should be displayed": (
-      message: string,
-    ) => Promise<void>;
-    "the table is displayed": () => Promise<void>;
-    "the callback should have been invoked": ({
-      onTableCreatedSpy,
-    }: {
-      onTableCreatedSpy: CalledSpy;
-    }) => void;
-    "a POST request should have been made to create the stoichiometry table": () => void;
-    "the save button should not be visible": () => Promise<void>;
-    "the save button should be visible": () => Promise<void>;
-    "a PUT request should have been made to update the stoichiometry table": () => void;
-    "a DELETE request should have been made to delete the stoichiometry table": () => void;
-    "the delete button should be visible": () => Promise<void>;
-    "the confirmation dialog should be displayed": () => Promise<void>;
-    "the table should be hidden": () => Promise<void>;
-    "there shouldn't be any axe violations": () => Promise<void>;
-  };
-  networkRequests: Array<{ url: URL; postData: string | null; method: string }>;
-}>({
-  Given: async ({ mount }, use) => {
-    await use({
-      "the dialog is open without a stoichiometry table": async (spies) => {
-        const onTableCreatedSpy = spies?.onTableCreatedSpy;
-        await mount(
-          <StoichiometryDialogWithCalculateButtonStory
-            onTableCreated={onTableCreatedSpy?.handler}
-          />,
-        );
-      },
-      "the dialog is open with a stoichiometry table": async (spies) => {
-        const onSaveSpy = spies?.onSaveSpy;
-        const onDeleteSpy = spies?.onDeleteSpy;
-        await mount(
-          <StoichiometryDialogWithTableStory
-            onSave={onSaveSpy?.handler}
-            onDelete={onDeleteSpy?.handler}
-          />,
-        );
-      },
-    });
-  },
-  When: async ({ page }, use) => {
-    await use({
-      "the user clicks calculate": async () => {
-        const button = page.getByRole("button", {
-          name: "Calculate Stoichiometry",
-        });
-        await button.click();
-      },
-      "the user edits a cell in the table": async () => {
-        const table = page.getByRole("grid");
-        await expect(table).toBeVisible();
+const networkRequests: Array<NetworkRequest> = [];
 
-        const indexOfMassColumn = await Promise.all(
-          (await table.getByRole("columnheader").all()).map((cell) =>
-            cell.textContent(),
-          ),
-        ).then((textOfCells) =>
-          textOfCells.findIndex((text) => /mass \(g\)/i.test(text ?? "")),
-        );
+const hasStoichiometryRequest = (method: "POST" | "PUT" | "DELETE"): boolean =>
+  networkRequests.some((request) => request.pathname.includes("/api/v1/stoichiometry") && request.method === method);
 
-        if (indexOfMassColumn < 0) {
-          throw new Error("Mass column not found");
-        }
+const dialogStoichiometryHandlers = () => {
+  const response = createDialogStoichiometryResponse();
+  return [
+    http.get("/api/v1/stoichiometry", () => HttpResponse.json(response)),
+    http.post("/api/v1/stoichiometry", () => HttpResponse.json(response)),
+    http.put("/api/v1/stoichiometry", () => HttpResponse.json(response)),
+    http.delete("/api/v1/stoichiometry", () => HttpResponse.json({ success: true })),
+  ];
+};
 
-        const massCell = table
-          .getByRole("row")
-          .nth(1)
-          .getByRole("gridcell")
-          .nth(indexOfMassColumn);
+const dialog = new StoichiometryDialogPage();
 
-        await massCell.click();
-        await massCell.press("Enter");
-
-        // Edit using keyboard only; avoids brittle input-selector waits.
-        await page.keyboard.type("1");
-        await page.keyboard.press("Enter");
-      },
-      "the user changes the limiting reagent": async () => {
-        const cyclopentadieneRadio = page.getByRole("radio", {
-          name: /Select Cyclopentadiene as limiting reagent/,
-        });
-        await cyclopentadieneRadio.click();
-      },
-      "the user saves the changes": async () => {
-        await page.getByRole("button", { name: "Save Changes" }).click();
-      },
-      "the user clicks the delete button": async () => {
-        await page.getByRole("button", { name: "Delete", exact: true }).click();
-      },
-      "the user confirms the deletion": async () => {
-        const confirmDialog = page.getByRole("dialog", {
-          name: /Delete Stoichiometry Table/,
-        });
-        const confirmButton = confirmDialog.getByRole("button", {
-          name: "Delete",
-          exact: true,
-        });
-        await confirmButton.click();
-      },
-    });
-  },
-  Then: async ({ page, networkRequests }, use) => {
-    await use({
-      "the calculate button is visible": async () => {
-        const button = page.getByRole("button", {
-          name: "Calculate Stoichiometry",
-        });
-        await expect(button).toBeVisible();
-      },
-      "an inline calculate error should be displayed": async (message) => {
-        const errorAlert = page.getByRole("alert").filter({
-          hasText: message,
-        });
-        await expect(errorAlert).toBeVisible();
-      },
-      "the table is displayed": async () => {
-        const table = page.getByRole("grid");
-        await expect(table).toBeVisible();
-      },
-      "the callback should have been invoked": ({ onTableCreatedSpy }) => {
-        expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
-      },
-      "a POST request should have been made to create the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "POST")).toBe(true);
-        },
-      "the save button should not be visible": async () => {
-        await expect(
-          page.getByRole("button", { name: "Save Changes" }),
-        ).toHaveCount(0);
-      },
-      "the save button should be visible": async () => {
-        const saveButton = page.getByRole("button", { name: "Save Changes" });
-        await expect(saveButton).toBeVisible();
-      },
-      "a PUT request should have been made to update the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "PUT")).toBe(true);
-        },
-      "a DELETE request should have been made to delete the stoichiometry table":
-        () => {
-          expect(hasStoichiometryRequest(networkRequests, "DELETE")).toBe(
-            true,
-          );
-        },
-      "the delete button should be visible": async () => {
-        const deleteButton = page.getByRole("button", {
-          name: "Delete",
-          exact: true,
-        });
-        await expect(deleteButton).toBeVisible();
-      },
-      "the confirmation dialog should be displayed": async () => {
-        const confirmDialog = page.getByRole("dialog", {
-          name: /Delete Stoichiometry Table/,
-        });
-        await expect(confirmDialog).toBeVisible();
-      },
-      "the table should be hidden": async () => {
-        const table = page.getByRole("grid");
-        await expect(table).not.toBeVisible();
-      },
-      "there shouldn't be any axe violations": async () => {
-        const accessibilityScanResults = await new AxeBuilder({
-          page,
-        }).analyze();
-        expect(
-          accessibilityScanResults.violations.filter((v) => {
-            /*
-             * These violations are expected in component tests as we're not rendering
-             * a complete page with proper document structure:
-             *
-             * 1. MUI DataGrid renders its immediate children with role=presentation,
-             *    which Firefox considers to be a violation
-             * 2. Component tests don't have main landmarks as they're isolated components
-             * 3. Component tests typically don't have h1 headings as they're not full pages
-             * 4. Content not in landmarks is expected in component testing context
-             */
-            return (
-              v.description !==
-                "Ensure elements with an ARIA role that require child roles contain them" &&
-              v.id !== "landmark-one-main" &&
-              v.id !== "page-has-heading-one" &&
-              v.id !== "region"
-            );
-          }),
-        ).toEqual([]);
-      },
-    });
-  },
-  networkRequests: async ({}, use) => {
-    await use([]);
-  },
-
-});
-feature.beforeEach(async ({ router, page, networkRequests }) => {
-  await router.route("/userform/ajax/inventoryOauthToken", (route) => {
-    const payload = {
-      iss: "http://localhost:8080",
-      iat: new Date().getTime(),
-      exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash:
-        "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-    };
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: Jwt.sign(payload, "dummySecretKey"),
-      }),
-    });
-
-  });
-  const mockResponse = {
-    id: 3,
-    revision: 1,
-    parentReaction: {
-      id: 32769,
-      parentId: 226,
-      ecatChemFileId: null,
-      dataImage: "mock-image-data",
-      chemElements: "mock-chem-elements",
-      smilesString: "C1=CC=CC=C1.C1C=CC=C1>>C1CCCCC1",
-      chemId: null,
-      reactionId: null,
-      rgroupId: null,
-      metadata: "{}",
-      chemElementsFormat: "KET",
-      creationDate: 1753964538000,
-      imageFileProperty: {},
-    },
-    molecules: [
-      {
-        id: 4,
-        rsChemElement: {
-          id: 32770,
-          parentId: null,
-          ecatChemFileId: null,
-          dataImage: null,
-          chemElements: "C1=CC=CC=C1",
-          smilesString: null,
-          chemId: null,
-          reactionId: null,
-          rgroupId: null,
-          metadata: null,
-          chemElementsFormat: "MOL",
-          creationDate: 1753964548124,
-          imageFileProperty: null,
-        },
-        role: "REACTANT",
-        formula: "C6 H6",
-        name: "Benzene",
-        smiles: "C1=CC=CC=C1",
-        coefficient: 1.0,
-        molecularWeight: 78.11,
-        mass: null,
-        moles: null,
-        actualAmount: null,
-        actualYield: null,
-        limitingReagent: false,
-        notes: null,
-      },
-      {
-        id: 5,
-        rsChemElement: {
-          id: 32771,
-          parentId: null,
-          ecatChemFileId: null,
-          dataImage: null,
-          chemElements: "C1C=CC=C1",
-          smilesString: null,
-          chemId: null,
-          reactionId: null,
-          rgroupId: null,
-          metadata: null,
-          chemElementsFormat: "MOL",
-          creationDate: 1753964548126,
-          imageFileProperty: null,
-        },
-        role: "REACTANT",
-        formula: "C5 H6",
-        name: "Cyclopentadiene",
-        smiles: "C1C=CC=C1",
-        coefficient: 1.0,
-        molecularWeight: 66.1,
-        mass: null,
-        moles: null,
-        actualAmount: null,
-        actualYield: null,
-        limitingReagent: false,
-        notes: null,
-      },
-      {
-        id: 6,
-        rsChemElement: {
-          id: 32772,
-          parentId: null,
-          ecatChemFileId: null,
-          dataImage: null,
-          chemElements: "C1CCCCC1",
-          smilesString: null,
-          chemId: null,
-          reactionId: null,
-          rgroupId: null,
-          metadata: null,
-          chemElementsFormat: "MOL",
-          creationDate: 1753964548127,
-          imageFileProperty: null,
-        },
-        role: "PRODUCT",
-        formula: "C6 H12",
-        name: "Cyclohexane",
-        smiles: "C1CCCCC1",
-        coefficient: 1.0,
-        molecularWeight: 84.16,
-        mass: null,
-        moles: null,
-        actualAmount: null,
-        actualYield: null,
-        limitingReagent: false,
-        notes: null,
-      },
-    ],
-
-  };
-  await router.route("/api/v1/stoichiometry*", (route) => {
-
-    const method = route.request().method();
-    if (method === "GET" || method === "POST" || method === "PUT") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(mockResponse),
-      });
-
-    }
-    if (method === "DELETE") {
-      return route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify({ success: true }),
-      });
-
-    }
-    throw new Error("Other methods are not supported");
-
-  });
-  await router.route("/integration/integrationInfo?name=CHEMISTRY", (route) => {
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        data: {
-          name: "CHEMISTRY",
-          displayName: "Chemistry",
-          available: true,
-          enabled: true,
-          oauthConnected: false,
-          options: {},
-        },
-        error: null,
-        success: true,
-        errorMsg: null,
-      }),
-    });
-
-  });
-  page.on("request", (request) => {
+beforeEach(() => {
+  networkRequests.length = 0;
+  worker.use(oauthTokenHandler(), chemistryIntegrationHandler(), ...dialogStoichiometryHandlers());
+  worker.events.on("request:start", ({ request }) => {
     networkRequests.push({
-      url: new URL(request.url()),
-      postData: request.postData(),
-      method: request.method(),
+      method: request.method,
+      pathname: new URL(request.url).pathname,
     });
   });
-
 });
-feature.afterEach(({ networkRequests }) => {
-  networkRequests.splice(0, networkRequests.length);
 
+afterEach(() => {
+  worker.events.removeAllListeners();
+  cleanup();
 });
-test.describe("Stoichiometry Dialog", () => {
-  feature(
-    "shows calculate button when no table is present",
-    async ({ Given, Then }) => {
-      await Given["the dialog is open without a stoichiometry table"]();
-      await Then["the calculate button is visible"]();
-    },
 
-  );
-  feature(
-    "calculate dialog has no accessibility violations",
-    async ({ Given, Then }) => {
-      await Given["the dialog is open without a stoichiometry table"]();
-      await Then["there shouldn't be any axe violations"]();
-    },
-  );
-  feature(
-    "displays stoichiometry table when data is available",
-    async ({ Given, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-    },
-
-  );
-  feature("Has no accessibility violations", async ({ Given, Then }) => {
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["there shouldn't be any axe violations"]();
-
+describe("Stoichiometry Dialog", () => {
+  test("shows calculate button when no table is present", async () => {
+    render(<StoichiometryDialogWithCalculateButtonStory />);
+    await expect.element(dialog.calculateButton).toBeVisible();
   });
-  feature("supports high-contrast mode", async ({ Given, Then, page }) => {
-    page.emulateMedia({ contrast: "more" });
-    await Given["the dialog is open with a stoichiometry table"]();
-    await Then["there shouldn't be any axe violations"]();
 
+  test("calculate dialog has no accessibility violations", async () => {
+    render(<StoichiometryDialogWithCalculateButtonStory />);
+    await expect.element(dialog.calculateButton).toBeVisible();
+    await expectNoAxeViolations();
   });
-  feature(
-    "invokes callback when table is successfully created",
-    async ({ Given, When, Then }) => {
-      const onTableCreatedSpy = createCalledSpy();
-      await Given["the dialog is open without a stoichiometry table"]({
-        onTableCreatedSpy,
-      });
-      await When["the user clicks calculate"]();
-      await Then["the table is displayed"]();
-      Then["the callback should have been invoked"]({
-        onTableCreatedSpy,
-      });
-    },
 
-  );
-  feature(
-    "makes a POST API call when creating a new table",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open without a stoichiometry table"]();
-      await When["the user clicks calculate"]();
-      await Then["the table is displayed"]();
-      Then[
-        "a POST request should have been made to create the stoichiometry table"
-      ]();
-    },
+  test("displays stoichiometry table when data is available", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+  });
 
-  );
-  feature(
-    "shows an inline error when creating a new table fails",
-    async ({ Given, When, Then, page }) => {
-      const createErrorMessage = "Unable to create stoichiometry table.";
-      await page.route(
-        /\/api\/v1\/stoichiometry\?recordId=1&chemId=12345$/,
-        async (route) => {
-          await route.fulfill({
-            status: 500,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "error",
-              httpCode: 500,
-              internalCode: 500,
-              message: createErrorMessage,
-              messageCode: null,
-              errors: [],
-              iso8601Timestamp: "2026-04-07T00:00:00Z",
-              data: null,
-            }),
-          });
-        },
+  test("Has no accessibility violations", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await expectNoAxeViolations();
+  });
+
+  test("supports high-contrast mode", async () => {
+    await emulateHighContrast();
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await expectNoAxeViolations();
+  });
+
+  test("invokes callback when table is successfully created", async () => {
+    const onTableCreatedSpy = createCalledSpy();
+    render(<StoichiometryDialogWithCalculateButtonStory onTableCreated={onTableCreatedSpy.handler} />);
+    await dialog.clickCalculate();
+    await expect.element(dialog.table).toBeVisible();
+    expect(onTableCreatedSpy.hasBeenCalled()).toBe(true);
+  });
+
+  test("makes a POST API call when creating a new table", async () => {
+    render(<StoichiometryDialogWithCalculateButtonStory />);
+    await dialog.clickCalculate();
+    await expect.element(dialog.table).toBeVisible();
+    await expect.poll(() => hasStoichiometryRequest("POST")).toBe(true);
+  });
+
+  test("shows an inline error when creating a new table fails", async () => {
+    const createErrorMessage = "Unable to create stoichiometry table.";
+    worker.use(
+      http.post("/api/v1/stoichiometry", () =>
+        HttpResponse.json(
+          {
+            status: "error",
+            httpCode: 500,
+            internalCode: 500,
+            message: createErrorMessage,
+            messageCode: null,
+            errors: [],
+            iso8601Timestamp: "2026-04-07T00:00:00Z",
+            data: null,
+          },
+          { status: 500 },
+        ),
+      ),
+    );
+
+    render(<StoichiometryDialogWithCalculateButtonStory />);
+    await dialog.clickCalculate();
+    await expect.element(dialog.calculateButton).toBeVisible();
+    await expect.element(dialog.inlineError(createErrorMessage)).toBeVisible();
+  });
+
+  test("does not show save button when table has not been modified", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await expect.element(dialog.saveButton).not.toBeInTheDocument();
+  });
+
+  test("shows save button when table data is modified by editing a cell", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.editFirstMassCell();
+    await expect.element(dialog.saveButton).toBeVisible();
+  });
+
+  test("shows save button when limiting reagent is changed", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.selectLimitingReagent("Cyclopentadiene");
+    await expect.element(dialog.saveButton).toBeVisible();
+  });
+
+  test("hides save button after saving changes", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.editFirstMassCell();
+    await dialog.saveChanges();
+    await expect.element(dialog.saveButton).not.toBeInTheDocument();
+  });
+
+  test("makes a PUT API call when saving changes to the table", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.editFirstMassCell();
+    await dialog.saveChanges();
+    await expect.poll(() => hasStoichiometryRequest("PUT")).toBe(true);
+  });
+
+  test("shows delete button when table is present", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await expect.element(dialog.deleteButton).toBeVisible();
+  });
+
+  test("shows confirmation dialog when delete button is clicked", async () => {
+    render(<StoichiometryDialogWithTableStory />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.clickDelete();
+    await expect.element(dialog.deleteConfirmationDialog).toBeVisible();
+  });
+
+  test("makes a DELETE API call and hides table when deletion is confirmed", async () => {
+    // The dialog delegates hiding the table to its parent (it calls onDelete);
+    // this stateful wrapper clears the stoichiometry id on delete, mirroring
+    // how the document editor drops the table from the page after deletion.
+    const DeletableDialog = () => {
+      const [stoichiometryId, setStoichiometryId] = React.useState<number | undefined>(1);
+      return (
+        <StoichiometryDialogEntrypoint
+          open
+          onClose={() => {}}
+          chemId={12345}
+          recordId={1}
+          stoichiometryId={stoichiometryId}
+          stoichiometryRevision={1}
+          onDelete={() => setStoichiometryId(undefined)}
+        />
       );
+    };
 
-      await Given["the dialog is open without a stoichiometry table"]();
-      await When["the user clicks calculate"]();
-      await Then["the calculate button is visible"]();
-      await Then["an inline calculate error should be displayed"](
-        createErrorMessage,
-      );
-    },
-  );
-  feature(
-    "does not show save button when table has not been modified",
-    async ({ Given, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await Then["the save button should not be visible"]();
-    },
-
-  );
-  feature(
-    "shows save button when table data is modified by editing a cell",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user edits a cell in the table"]();
-      await Then["the save button should be visible"]();
-    },
-
-  );
-  feature(
-    "shows save button when limiting reagent is changed",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user changes the limiting reagent"]();
-      await Then["the save button should be visible"]();
-    },
-
-  );
-  feature(
-    "hides save button after saving changes",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user edits a cell in the table"]();
-      await When["the user saves the changes"]();
-      await Then["the save button should not be visible"]();
-    },
-
-  );
-  feature(
-    "makes a PUT API call when saving changes to the table",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user edits a cell in the table"]();
-      await When["the user saves the changes"]();
-      Then[
-        "a PUT request should have been made to update the stoichiometry table"
-      ]();
-    },
-
-  );
-  feature(
-    "shows delete button when table is present",
-    async ({ Given, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await Then["the delete button should be visible"]();
-    },
-
-  );
-  feature(
-    "shows confirmation dialog when delete button is clicked",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user clicks the delete button"]();
-      await Then["the confirmation dialog should be displayed"]();
-    },
-
-  );
-  feature(
-    "makes a DELETE API call and hides table when deletion is confirmed",
-    async ({ Given, When, Then }) => {
-      await Given["the dialog is open with a stoichiometry table"]();
-      await Then["the table is displayed"]();
-      await When["the user clicks the delete button"]();
-      await When["the user confirms the deletion"]();
-      Then[
-        "a DELETE request should have been made to delete the stoichiometry table"
-      ]();
-      await Then["the table should be hidden"]();
-    },
-  );
+    render(<DeletableDialog />);
+    await expect.element(dialog.table).toBeVisible();
+    await dialog.clickDelete();
+    await dialog.confirmDeletion();
+    await expect.poll(() => hasStoichiometryRequest("DELETE")).toBe(true);
+    await expect.element(dialog.table).not.toBeInTheDocument();
+  });
 });

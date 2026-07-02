@@ -30,9 +30,7 @@ import { modulo } from "../../util/Util";
  *  - https://www.w3.org/WAI/ARIA/apg/patterns/radio/examples/radio/
  *  - https://www.youtube.com/watch?v=uCIC2LNt0bk
  */
-export default function useOneDimensionalRovingTabIndex<
-  RefComponent extends HTMLElement,
->({
+export default function useOneDimensionalRovingTabIndex<RefComponent extends HTMLElement>({
   max,
   direction = "column",
 }: {
@@ -66,7 +64,7 @@ export default function useOneDimensionalRovingTabIndex<
    * Given the index of an element of the vertical list, return a ref if it has
    * a tab index of 0. Otherwise returns null.
    */
-  getRef: (index: number) => null | React.RefObject<RefComponent>;
+  getRef: (index: number) => null | React.RefObject<RefComponent | null>;
 } {
   const [rovingTabIndex, setRovingTabIndex] = React.useState(0);
   const [hasFocus, setHasFocus] = React.useState(false);
@@ -74,7 +72,6 @@ export default function useOneDimensionalRovingTabIndex<
 
   React.useEffect(() => {
     if (hasFocus) refOfRovingTabIndex.current?.focus();
-
   }, [rovingTabIndex]);
 
   function getTabIndex(i: number) {

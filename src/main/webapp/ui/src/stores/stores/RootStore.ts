@@ -1,13 +1,14 @@
 import AuthStore from "./AuthStore";
+import ImageStore from "./ImageStore";
+import ImportStore from "./ImportStore";
+import MaterialsStore from "./MaterialsStore";
+import MoveStore from "./MoveStore";
+import PeopleStore from "./PeopleStore";
+import { registerRootStore } from "./rootStoreRegistry";
+import SearchStore from "./SearchStore";
+import TrackingStore from "./TrackingStore";
 import UiStore from "./UiStore";
 import UnitStore from "./UnitStore";
-import SearchStore from "./SearchStore";
-import PeopleStore from "./PeopleStore";
-import MoveStore from "./MoveStore";
-import TrackingStore from "./TrackingStore";
-import ImportStore from "./ImportStore";
-import ImageStore from "./ImageStore";
-import MaterialsStore from "./MaterialsStore";
 
 export type StoreContainer = {
   authStore: AuthStore;
@@ -69,9 +70,16 @@ class RootStore {
 export type { RootStore };
 
 let rootStore: undefined | RootStore;
-export default function getRootStore(): StoreContainer {
+
+/**
+ * Register the lazy singleton factory with the registry. Consumers import
+ * `getRootStore` from `./getRootStore` (which reads from the registry); this
+ * side effect runs when application/test bootstrap imports this module, wiring
+ * up the concrete construction without the accessor pulling in the store graph.
+ */
+registerRootStore((): StoreContainer => {
   if (!rootStore) {
     rootStore = new RootStore();
   }
   return rootStore.getStores;
-}
+});

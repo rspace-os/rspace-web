@@ -1,13 +1,11 @@
-import React from "react";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
-import useStores from "../../../stores/use-stores";
+import React from "react";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
-import useUiPreference, {
-  PREFERENCES,
-} from "../../../hooks/api/useUiPreference";
+import useStores from "../../../stores/use-stores";
 
 /**
  * The main Inventory UI is divided into two column on large viewports and a
@@ -42,9 +40,7 @@ const UserHiddenRightPanelContext = React.createContext<{
  */
 export function useIsSingleColumnLayout(): boolean {
   const { isViewportSmall } = useViewportDimensions();
-  const { userHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext,
-  );
+  const { userHiddenRightPanel } = React.useContext(UserHiddenRightPanelContext);
   return isViewportSmall || userHiddenRightPanel;
 }
 
@@ -57,9 +53,7 @@ export function useIsSingleColumnLayout(): boolean {
  * exported to the whole codebase.
  */
 export const RightPanelToggle = observer(() => {
-  const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(
-    UserHiddenRightPanelContext,
-  );
+  const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(UserHiddenRightPanelContext);
   const { uiStore } = useStores();
 
   if (uiStore.isVerySmall || uiStore.isSmall) return null;
@@ -92,8 +86,7 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const hideLeftPanel = isSingleColumnLayout && uiStore.visiblePanel !== "left";
-  const hideRightPanel =
-    isSingleColumnLayout && uiStore.visiblePanel !== "right";
+  const hideRightPanel = isSingleColumnLayout && uiStore.visiblePanel !== "right";
   return (
     <Grid
       container
@@ -139,17 +132,12 @@ const Layout2x1 = observer((props: Layout2x1Args) => {
   );
 });
 
-export default function Layout2x1Wrapper(
-  props: Layout2x1Args,
-): React.ReactNode {
-  const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(
-    PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL,
-    { defaultValue: false },
-  );
+export default function Layout2x1Wrapper(props: Layout2x1Args): React.ReactNode {
+  const [userHiddenRightPanel, setUserHiddenRightPanel] = useUiPreference(PREFERENCES.INVENTORY_HIDDEN_RIGHT_PANEL, {
+    defaultValue: false,
+  });
   return (
-    <UserHiddenRightPanelContext.Provider
-      value={{ userHiddenRightPanel, setUserHiddenRightPanel }}
-    >
+    <UserHiddenRightPanelContext.Provider value={{ userHiddenRightPanel, setUserHiddenRightPanel }}>
       <Layout2x1 {...props} />
     </UserHiddenRightPanelContext.Provider>
   );

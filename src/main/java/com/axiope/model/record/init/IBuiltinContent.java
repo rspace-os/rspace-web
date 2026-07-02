@@ -1,7 +1,7 @@
 package com.axiope.model.record.init;
 
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
@@ -28,7 +28,7 @@ public interface IBuiltinContent {
    * @param createdBy
    * @return
    */
-  default Optional<Sample> createSampleTemplate(User createdBy) {
+  default Optional<SampleTemplate> createSampleTemplate(User createdBy) {
     return Optional.empty();
   }
 

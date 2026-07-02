@@ -1,15 +1,15 @@
-import { ChangeEvent, MouseEvent, useContext, useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
-import { stableSort, getSorting, paginationOptions } from "@/util/table";
-import EnhancedTableHead from "../../components/EnhancedTableHead";
+import { type ChangeEvent, useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
-import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
-import { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 import ConnectedAppsTableRow from "@/my-rspace/profile/ConnectedAppsTableRow";
+import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getSorting, paginationOptions } from "@/util/table";
+import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 const headCells = [
   { id: "clientName", numeric: false, label: "App Name" },
@@ -34,7 +34,7 @@ export default function ConnectedAppsTable() {
       const response = await axios.get<{
         data: {
           oauthConnectedApps: ConnectedOAuthApp[];
-        }
+        };
       }>(urlConnected);
       if (response.status === 200) {
         setApps(response.data.data.oauthConnectedApps);
@@ -92,10 +92,7 @@ export default function ConnectedAppsTable() {
 
   return (
     <Box sx={{ width: "690px", padding: "0px 15px" }}>
-      <Box
-        className="api-menu__header"
-        sx={{ marginTop: "15px", display: "flex" }}
-      >
+      <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
         <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Connected Apps</Box>
       </Box>
       <br />
@@ -111,12 +108,11 @@ export default function ConnectedAppsTable() {
                 rowCount={apps.length}
               />
               <TableBody>
-                {/* @ts-expect-error stableSort needs better types */}
-                {stableSort(apps, getSorting(order, orderBy))
+                {apps
+                  .toSorted(getSorting(order, orderBy))
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((app) => (
                     <ConnectedAppsTableRow
-                      // @ts-expect-error stableSort needs better types
                       app={app}
                       onConfirmDisconnectApp={() => handleConfirmDisconnectApp(app.clientId)}
                       key={app.clientId}
@@ -136,9 +132,7 @@ export default function ConnectedAppsTable() {
           />
         </>
       )}
-      {!fetchSuccess && (
-        <>There was a problem fetching your apps. Please, try again.</>
-      )}
+      {!fetchSuccess && <>There was a problem fetching your apps. Please, try again.</>}
     </Box>
   );
 }

@@ -1,7 +1,7 @@
-import React from "react";
-import type { Theme } from "@mui/material/styles";
-import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import ClearIcon from "@mui/icons-material/Clear";
+import type { Theme } from "@mui/material/styles";
+import type React from "react";
+import IconButtonWithTooltip from "./IconButtonWithTooltip";
 
 type RemoveButtonArgs = {
   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -9,11 +9,7 @@ type RemoveButtonArgs = {
   disabled?: boolean;
 };
 
-const RemoveButton = ({
-  onClick,
-  title = "Delete",
-  disabled = false,
-}: RemoveButtonArgs): React.ReactNode => {
+const RemoveButton = ({ onClick, title = "Delete", disabled = false }: RemoveButtonArgs): React.ReactNode => {
   return (
     <IconButtonWithTooltip
       title={title}

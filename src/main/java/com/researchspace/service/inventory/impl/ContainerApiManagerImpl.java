@@ -229,7 +229,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
 
     if (!canRead
         || searchType == InventorySearchType.SAMPLE
-        || searchType == InventorySearchType.TEMPLATE) {
+        || searchType == InventorySearchType.SAMPLE_TEMPLATE) {
       return ApiInventorySearchResult.emptyResult();
     }
 

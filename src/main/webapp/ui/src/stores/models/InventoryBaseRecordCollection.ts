@@ -1,15 +1,14 @@
-import InventoryBaseRecord, {
-  type InventoryBaseRecordEditableFields,
-} from "./InventoryBaseRecord";
-import { action, observable, makeObservable, computed, override } from "mobx";
-import { match } from "../../util/Util";
-import * as ArrayUtils from "../../util/ArrayUtils";
+import { action, computed, makeObservable, observable, override } from "mobx";
+import { firstValue } from "../../util/ArrayUtils";
 import RsSet, { flattenWithIntersectionWithEq } from "../../util/set";
+import { match } from "../../util/Util";
+import type { HasEditableFields } from "../definitions/Editable";
+import type { SharedWithGroup } from "../definitions/Group";
+import { areSameTag, type Tag } from "../definitions/Tag";
 import { truncateIsoTimestamp } from "../definitions/Units";
-import { type HasEditableFields } from "../definitions/Editable";
 import { PersistedBarcode } from "./Barcode";
-import { type SharedWithGroup } from "../definitions/Group";
-import { areSameTag, Tag } from "../definitions/Tag";
+import type InventoryBaseRecord from "./InventoryBaseRecord";
+import type { InventoryBaseRecordEditableFields } from "./InventoryBaseRecord";
 
 export type BatchName = {
   common: string;
@@ -40,9 +39,7 @@ export type InventoryBaseRecordCollectionEditableFields = Omit<
  * This is a wrapper around a set of InventoryBaseRecord, making it easier to perform batch
  * operations e.g. editing.
  */
-export default class InventoryBaseRecordCollection<
-  ResultSubtype extends InventoryBaseRecord
-> {
+export default class InventoryBaseRecordCollection<ResultSubtype extends InventoryBaseRecord> {
   records: RsSet<ResultSubtype>;
   name: BatchName;
   sharedWith: Array<SharedWithGroup>;
@@ -58,10 +55,10 @@ export default class InventoryBaseRecordCollection<
       canChooseWhichToEdit: computed,
     });
     this.records = records;
-    const currentNames = new RsSet(this.records.map((r) => r.name));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
     this.name =
       currentNames.size === 1
-        ? { common: currentNames.first, suffix: "NONE" }
+        ? { common: firstValue(currentNames) ?? "", suffix: "NONE" }
         : { common: "", suffix: "NONE" };
     this.sharedWith = [];
   }
@@ -71,9 +68,7 @@ export default class InventoryBaseRecordCollection<
   }
 
   get fieldValues(): InventoryBaseRecordCollectionEditableFields {
-    const currentDescriptions = new RsSet(
-      this.records.map((r) => r.description)
-    );
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
 
     /*
      * Image preview can only be shown after the user has modified the image,
@@ -87,7 +82,7 @@ export default class InventoryBaseRecordCollection<
      * which is because the API returns the same URL for the images of each
      * subsample.
      */
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
 
     /*
      * Only new barcodes are shown as editing/deleting existing barcodes across
@@ -98,33 +93,28 @@ export default class InventoryBaseRecordCollection<
      * adding of new barcodes.
      */
     const newBarcodes = new RsSet(
-      ArrayUtils.filterClass(
-        PersistedBarcode,
-        this.records.first.barcodes
-      ).filter((b) => b.id === null)
+      this.records.first.barcodes
+        .filter((barcode): barcode is PersistedBarcode => barcode instanceof PersistedBarcode)
+        .filter((b) => b.id === null),
     );
 
-    const currentSharingMode = new RsSet(
-      this.records.map((r) => r.sharingMode)
-    );
+    const currentSharingMode = new Set(Array.from(this.records, (r) => r.sharingMode));
+    const currentImage = firstValue(currentImages);
 
     return {
-      image: currentImages.first ?? null,
-      newBase64Image: currentImages.first ?? null,
-      description: currentDescriptions.first ?? "",
+      image: currentImage ?? null,
+      newBase64Image: currentImage ?? null,
+      description: firstValue(currentDescriptions) ?? "",
       name: this.name,
 
       // all the tags that the records have in common
       tags: flattenWithIntersectionWithEq(
         new RsSet(this.records).map((r) => new RsSet(r.tags)),
-        areSameTag
+        areSameTag,
       ).toArray(),
 
       barcodes: [...newBarcodes],
-      sharingMode:
-        currentSharingMode.size === 1
-          ? currentSharingMode.first
-          : "OWNER_GROUPS", // owner's groups acts as default
+      sharingMode: currentSharingMode.size === 1 ? (firstValue(currentSharingMode) ?? "OWNER_GROUPS") : "OWNER_GROUPS", // owner's groups acts as default
       sharedWith: this.sharedWith,
     };
   }
@@ -144,15 +134,12 @@ export default class InventoryBaseRecordCollection<
   get noValueLabel(): {
     [key in keyof InventoryBaseRecordCollectionEditableFields]: string | null;
   } {
-    const currentNames = new RsSet(this.records.map((r) => r.name));
-    const currentDescriptions = new RsSet(
-      this.records.map((r) => r.description)
-    );
-    const currentTags = new RsSet(this.records.map((r) => r.tags));
-    const currentImages = new RsSet(this.records.map((r) => r.image));
+    const currentNames = new Set(Array.from(this.records, (r) => r.name));
+    const currentDescriptions = new Set(Array.from(this.records, (r) => r.description));
+    const currentTags = new Set(Array.from(this.records, (r) => r.tags));
+    const currentImages = new Set(Array.from(this.records, (r) => r.image));
     return {
-      image:
-        currentImages.size === 1 ? null : "Enable to set image for all items",
+      image: currentImages.size === 1 ? null : "Enable to set image for all items",
       newBase64Image: null,
       name: currentNames.size === 1 ? null : "Varies",
       description: currentDescriptions.size === 1 ? null : "Varies",
@@ -175,7 +162,7 @@ export default class InventoryBaseRecordCollection<
 
     const commonTags = flattenWithIntersectionWithEq(
       new RsSet(this.records).map((r) => new RsSet(r.tags)),
-      areSameTag
+      areSameTag,
     );
 
     this.records
@@ -185,27 +172,15 @@ export default class InventoryBaseRecordCollection<
           const name = newFieldValues.name as BatchName;
           const suffix = match<string, () => string>([
             [(s) => s === "NONE", () => ""],
-            [
-              (s) => s === "INDEX_NUMBER",
-              () => `.${formatIndex(i, this.records.size)}`,
-            ],
+            [(s) => s === "INDEX_NUMBER", () => `.${formatIndex(i, this.records.size)}`],
             [
               (s) => s === "INDEX_LETTER" && this.records.size >= 27,
               () => {
-                throw new Error(
-                  "Too many records selected for alphabetical index."
-                );
+                throw new Error("Too many records selected for alphabetical index.");
               },
             ],
-            [
-              (s) => s === "INDEX_LETTER",
-              () => `.${String.fromCharCode("A".charCodeAt(0) + i)}`,
-            ],
-            [
-              (s) => s === "CREATED",
-              () =>
-                truncateIsoTimestamp(record.created, "second").orElse("ERROR"),
-            ],
+            [(s) => s === "INDEX_LETTER", () => `.${String.fromCharCode("A".charCodeAt(0) + i)}`],
+            [(s) => s === "CREATED", () => truncateIsoTimestamp(record.created, "second").orElse("ERROR")],
           ])(this.name.suffix)();
           values.name = `${name.common}${suffix}`;
         }

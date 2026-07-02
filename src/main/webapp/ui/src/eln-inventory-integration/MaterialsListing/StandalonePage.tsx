@@ -1,8 +1,9 @@
-import React, { useEffect } from "react";
-import MaterialsDialog from "./MaterialsDialog";
-import { useParams } from "react-router-dom";
-import useStores from "../../stores/use-stores";
+import type React from "react";
+import { useEffect } from "react";
+import { useParams } from "react-router";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
+import useStores from "../../stores/use-stores";
+import MaterialsDialog from "./MaterialsDialog";
 
 export default function StandaloneListOfMaterialsPage(): React.ReactNode {
   const { lomId } = useParams();

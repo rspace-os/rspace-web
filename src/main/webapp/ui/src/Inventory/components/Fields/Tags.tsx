@@ -1,11 +1,11 @@
-import React, { useContext } from "react";
 import { observer } from "mobx-react-lite";
-import { type HasEditableFields } from "../../../stores/definitions/Editable";
+import type React from "react";
+import { useContext } from "react";
 import AddTag from "../../../components/Tags/AddTag";
-import { type Tag } from "../../../stores/definitions/Tag";
 import TagListing from "../../../components/Tags/TagListing";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import NavigateContext from "../../../stores/contexts/Navigate";
+import type { HasEditableFields } from "../../../stores/definitions/Editable";
+import type { Tag } from "../../../stores/definitions/Tag";
 import BatchFormField from "../Inputs/BatchFormField";
 
 const MAX_TOTAL = 8000;
@@ -15,16 +15,13 @@ function Tags<
   Fields extends {
     tags: Array<Tag>;
   },
-  FieldOwner extends HasEditableFields<Fields>
+  FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
 
   const errorMessage = () => {
-    if (
-      fieldOwner.fieldValues.tags.map((t) => t.value).join(",").length >
-      MAX_TOTAL
-    )
+    if (fieldOwner.fieldValues.tags.map((t) => t.value).join(",").length > MAX_TOTAL)
       return `Tags must be no longer than ${MAX_TOTAL} characters.`;
     if (fieldOwner.fieldValues.tags.some((t) => t.value.length < MIN_EACH))
       return `Each tag cannot be less than ${MIN_EACH} characters.`;
@@ -52,7 +49,7 @@ function Tags<
       }}
       renderInput={({ disabled }) => (
         // id prop is ignored because there is no singular HTMLInputElement to attach it to
-        (<TagListing
+        <TagListing
           onClick={(tag) => {
             navigate(`/inventory/search?query=l: (tags:"${tag.value}")`);
           }}
@@ -61,34 +58,28 @@ function Tags<
             ? {
                 onDelete: (index) => {
                   fieldOwner.setFieldsDirty({
-                    tags: ArrayUtils.splice(
-                      fieldOwner.fieldValues.tags,
-                      index,
-                      1
-                    ),
+                    tags: fieldOwner.fieldValues.tags.toSpliced(index, 1),
                   });
                 },
               }
             : {})}
           endAdornment={
             !disabled && (
-                  <AddTag
-                    onSelection={(tag) => {
-                      if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
-                        console.warn(
-                          "Preventing the same tag from being added twice"
-                        );
-                        return;
-                      }
-                      fieldOwner.setFieldsDirty({
-                        tags: [...fieldOwner.fieldValues.tags, tag as Tag],
-                      });
-                    }}
-                    value={fieldOwner.fieldValues.tags}
-                  />
+              <AddTag
+                onSelection={(tag) => {
+                  if (fieldOwner.fieldValues.tags.includes(tag as Tag)) {
+                    console.warn("Preventing the same tag from being added twice");
+                    return;
+                  }
+                  fieldOwner.setFieldsDirty({
+                    tags: [...fieldOwner.fieldValues.tags, tag as Tag],
+                  });
+                }}
+                value={fieldOwner.fieldValues.tags}
+              />
             )
           }
-        />)
+        />
       )}
     />
   );

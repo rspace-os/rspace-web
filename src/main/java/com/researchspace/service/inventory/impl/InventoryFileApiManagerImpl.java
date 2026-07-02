@@ -14,7 +14,7 @@ import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.field.InventoryEntityField;
 import com.researchspace.model.record.IRecordFactory;
 import com.researchspace.service.BaseRecordManager;
@@ -132,7 +132,8 @@ public class InventoryFileApiManagerImpl implements InventoryFileApiManager {
       InventoryRecord invRec, InventoryFile invFile, GlobalIdentifier globalIdToAttachTo) {
 
     if (GlobalIdPrefix.SF.equals(globalIdToAttachTo.getPrefix())) {
-      Sample sample = (Sample) invRec;
+      // sample fields can belong to a sample or a template, so cast to the common supertype
+      SampleEntity sample = (SampleEntity) invRec;
       InventoryEntityField field = sample.getFieldById(globalIdToAttachTo.getDbId()).orElse(null);
       if (field == null) {
         throwNotFoundException(globalIdToAttachTo.getDbId(), "Sample field");

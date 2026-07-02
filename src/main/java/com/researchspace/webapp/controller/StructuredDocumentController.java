@@ -1145,12 +1145,12 @@ public class StructuredDocumentController extends BaseController {
     }
 
     StructuredDocument currentDoc = (StructuredDocument) record;
-    AuditedRecord auditedRecord = null;
-    if (!currentDoc.isDeleted()) {
-      auditedRecord = auditMgr.getDocumentRevisionOrVersion(currentDoc, revision, null);
-    } else {
-      auditedRecord = auditMgr.restoredDeletedForView(recordId);
-    }
+    // Envers retains every revision's content regardless of the document's current deletion state,
+    // so resolve the requested revision the same way whether or not it is deleted. The deleted
+    // case must NOT use restoredDeletedForView here: that returns the live deletion-point row and
+    // ignores `revision`, so a deleted document would render the same content for every requested
+    // version (e.g. a link pinned to v3 would show the version it had at deletion, not v3).
+    AuditedRecord auditedRecord = auditMgr.getDocumentRevisionOrVersion(currentDoc, revision, null);
     StructuredDocument auditedDoc = auditedRecord.getRecordAsDocument();
     // PRT-385 Set temp record to null here to prevent errors when accessing temp records that dont
     // exist.
@@ -1220,12 +1220,13 @@ public class StructuredDocumentController extends BaseController {
           "Viewing record's audit history only works with StructuredDocuments!");
     }
 
-    Number revision;
-    if (!record.isDeleted()) {
-      revision = auditMgr.getRevisionNumberForDocumentVersion(record.getId(), userVersion);
-    } else {
-      revision = auditMgr.restoredDeletedForView(recordId).getRevision();
-    }
+    // Resolve the audit revision for the requested version. Envers retains the full version
+    // history of soft-deleted documents (a soft delete is a MOD, not an Envers DEL), so the
+    // version->revision lookup works whether or not the target is currently deleted. The deleted
+    // case must NOT use restoredDeletedForView here: its AuditedRecord carries a null revision,
+    // which produced a "...&revision=null" redirect that failed to bind to the Integer 'revision'
+    // param on the /audit/view endpoint.
+    Number revision = auditMgr.getRevisionNumberForDocumentVersion(record.getId(), userVersion);
 
     return "redirect:"
         + STRUCTURED_DOCUMENT_AUDIT_VIEW_URL

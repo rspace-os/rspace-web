@@ -1,13 +1,5 @@
-export const arraysEqual = <T extends string | number>(
-  _arr1: Array<T>,
-  _arr2: Array<T>
-): boolean => {
-  if (
-    !Array.isArray(_arr1) ||
-    !Array.isArray(_arr2) ||
-    _arr1.length !== _arr2.length
-  )
-    return false;
+export const arraysEqual = <T extends string | number>(_arr1: Array<T>, _arr2: Array<T>): boolean => {
+  if (!Array.isArray(_arr1) || !Array.isArray(_arr2) || _arr1.length !== _arr2.length) return false;
 
   const arr1 = _arr1.concat().sort();
   const arr2 = _arr2.concat().sort();
@@ -19,7 +11,9 @@ export const arraysEqual = <T extends string | number>(
 };
 
 export const isMac = (): boolean => {
-  return navigator.platform.indexOf("Mac") > -1;
+  const platform =
+    (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform;
+  return /mac/i.test(platform);
 };
 
 export const humanize = (combination: string): string => {
@@ -48,12 +42,7 @@ export const rev_humanize = (combination: string): string => {
 
 export const isShortcutSingle = (combination: string): boolean => {
   const combKeys = combination.split(" ");
-  const keys = [
-    String.fromCharCode(17),
-    String.fromCharCode(16),
-    String.fromCharCode(18),
-    String.fromCharCode(91),
-  ];
+  const keys = [String.fromCharCode(17), String.fromCharCode(16), String.fromCharCode(18), String.fromCharCode(91)];
   const isSingle = combKeys.length === 2 && keys.indexOf(combKeys[1]) !== -1;
   return isSingle;
 };
@@ -63,13 +52,11 @@ export const isShiftwithsomeKey = (combination: string): boolean => {
   return keys.length === 2 && keys[0] === "Shift";
 };
 
-export const isShortcutForbidden = (
-  combination: string,
-  forbidden: Array<string>
-): boolean => {
+export const isShortcutForbidden = (combination: string, forbidden: Array<string>): boolean => {
   const keys = combination.split(" ");
   let isForbidden = false;
 
+  // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
   forbidden.forEach((command) => {
     const commandKeys = command.split("+");
     if (arraysEqual(commandKeys, keys)) {

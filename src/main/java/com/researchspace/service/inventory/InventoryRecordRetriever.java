@@ -5,6 +5,7 @@ import com.researchspace.dao.ContainerDao;
 import com.researchspace.dao.InstrumentDao;
 import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.SubSampleDao;
 import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
@@ -14,6 +15,8 @@ import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import jakarta.ws.rs.NotFoundException;
 import java.util.List;
@@ -33,6 +36,7 @@ public class InventoryRecordRetriever {
   // lazy-loaded as a quick fix for non-obvious cycle problem with spring context loading
   private @Autowired @Lazy ContainerDao containerDao;
   private @Autowired SampleDao sampleDao;
+  private @Autowired SampleTemplateDao sampleTemplateDao;
   private @Autowired SubSampleDao subSampleDao;
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
@@ -152,10 +156,10 @@ public class InventoryRecordRetriever {
   /**
    * Looks for a sample (or sample template) with given id.
    *
-   * @return a Sample with given id, or null if doesn't exist
+   * @return the Sample or SampleTemplate with the given id, or null if it doesn't exist
    */
-  public Sample getSampleById(Long id) {
-    Sample result = null;
+  public SampleEntity getSampleById(Long id) {
+    SampleEntity result = null;
     try {
       result = getSampleIfExists(id);
     } catch (NotFoundException nfe) {
@@ -189,16 +193,18 @@ public class InventoryRecordRetriever {
   }
 
   /**
-   * Tries retrieving sample with given id.
+   * Tries retrieving sample (or sample template) with given id.
    *
-   * @throws NotFoundException if there is no sample with given id
+   * @throws NotFoundException if there is no sample (or sample template) with given id
    */
-  public Sample getSampleIfExists(Long id) {
-    boolean exists = sampleDao.exists(id);
-    if (!exists) {
-      throw new NotFoundException("No sample with id: " + id);
+  public SampleEntity getSampleIfExists(Long id) {
+    if (sampleDao.exists(id)) {
+      return sampleDao.get(id);
     }
-    return sampleDao.get(id);
+    if (sampleTemplateDao.exists(id)) {
+      return sampleTemplateDao.get(id);
+    }
+    throw new NotFoundException("No sample with id: " + id);
   }
 
   /**
@@ -225,7 +231,8 @@ public class InventoryRecordRetriever {
   }
 
   public boolean userHasCanViewFileProperty(User user, FileProperty fileProperty) {
-    List<Sample> templatesUsingImageFile = sampleDao.getAllTemplatesUsingImage(fileProperty);
+    List<SampleTemplate> templatesUsingImageFile =
+        sampleTemplateDao.getAllTemplatesUsingImage(fileProperty);
     if (userHasReadPermissionsForRecord(user, templatesUsingImageFile)) {
       return true;
     }
@@ -242,6 +249,17 @@ public class InventoryRecordRetriever {
 
     List<Container> containersUsingImageFile = containerDao.getAllUsingImage(fileProperty);
     if (userHasReadPermissionsForRecord(user, containersUsingImageFile)) {
+      return true;
+    }
+
+    List<Instrument> instrumentsUsingImageFile = instrumentDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, instrumentsUsingImageFile)) {
+      return true;
+    }
+
+    List<InstrumentTemplate> instrumentTemplatesUsingImageFile =
+        instrumentTemplateDao.getAllUsingImage(fileProperty);
+    if (userHasReadPermissionsForRecord(user, instrumentTemplatesUsingImageFile)) {
       return true;
     }
 

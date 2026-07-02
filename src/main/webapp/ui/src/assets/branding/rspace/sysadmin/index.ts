@@ -28,4 +28,3 @@ export const ACCENT_COLOR = {
     lightness: 35,
   },
 };
-

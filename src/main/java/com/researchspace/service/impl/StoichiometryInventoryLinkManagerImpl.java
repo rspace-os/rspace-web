@@ -6,7 +6,6 @@ import com.researchspace.dao.StoichiometryInventoryLinkDao;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.InventoryRecord;
-import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
@@ -67,14 +66,11 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         invPermissionUtils.assertUserCanEditInventoryRecord(
             new GlobalIdentifier(req.getInventoryItemGlobalId()), user);
 
-    if (inventoryRecord instanceof Sample) {
-      Sample sample = (Sample) inventoryRecord;
-      if (sample.isTemplate()) {
-        throw new IllegalArgumentException(
-            inventoryRecord.getGlobalIdentifier()
-                + " is a sample template. Only Containers, Samples and Subsamples are valid for"
-                + " linking.");
-      }
+    if (inventoryRecord.isSampleTemplate()) {
+      throw new IllegalArgumentException(
+          inventoryRecord.getGlobalIdentifier()
+              + " is a sample template. Only Containers, Samples and Subsamples are valid for"
+              + " linking.");
     }
 
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();

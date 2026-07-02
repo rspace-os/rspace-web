@@ -1,22 +1,22 @@
-import React from "react";
-import { Dialog } from "../DialogBoundary";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Link from "@mui/material/Link";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import React from "react";
+import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
+import createAccentedTheme from "../../accentedTheme";
+import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
+import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
-import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
+import { Dialog } from "../DialogBoundary";
 import ErrorBoundary from "../ErrorBoundary";
-import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
-import Stack from "@mui/material/Stack";
-import { ThemeProvider } from "@mui/material/styles";
-import createAccentedTheme from "../../accentedTheme";
-import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
 
 interface AboutRSpaceDialogProps {
   open: boolean;
@@ -76,12 +76,7 @@ export function AboutRSpaceContent(): React.ReactElement {
         success: (description) => {
           if (typeof description === "string" && description.trim()) {
             return (
-              <Typography
-                variant="body2"
-                align="center"
-                color="textSecondary"
-                gutterBottom
-              >
+              <Typography variant="body2" align="center" color="textSecondary" gutterBottom>
                 {description}
               </Typography>
             );
@@ -90,16 +85,8 @@ export function AboutRSpaceContent(): React.ReactElement {
         },
       })}
 
-      <Typography
-        variant="body2"
-        align="center"
-        color="textSecondary"
-        gutterBottom
-      >
-        For general support, email:{" "}
-        <Link href="mailto:support@researchspace.com">
-          support@researchspace.com
-        </Link>
+      <Typography variant="body2" align="center" color="textSecondary" gutterBottom>
+        For general support, email: <Link href="mailto:support@researchspace.com">support@researchspace.com</Link>
       </Typography>
 
       {FetchingData.match(helpEmail, {
@@ -108,14 +95,8 @@ export function AboutRSpaceContent(): React.ReactElement {
         success: (email) => {
           if (typeof email === "string" && email.trim()) {
             return (
-              <Typography
-                variant="body2"
-                align="center"
-                color="textSecondary"
-                gutterBottom
-              >
-                For account and group queries, email:{" "}
-                <Link href={`mailto:${email}`}>{email}</Link>
+              <Typography variant="body2" align="center" color="textSecondary" gutterBottom>
+                For account and group queries, email: <Link href={`mailto:${email}`}>{email}</Link>
               </Typography>
             );
           }
@@ -133,23 +114,15 @@ export function AboutRSpaceContent(): React.ReactElement {
       </Typography>
 
       <Box sx={{ mt: 2, mb: 3 }}>
-        <Typography variant="body2">
+        <Typography variant="body2" component="div">
           <Stack spacing={2} direction="row" sx={{ alignItems: "center" }}>
-            <Link
-              href="https://researchspace.com"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <Link href="https://researchspace.com" target="_blank" rel="noreferrer">
               Website
             </Link>
             <Link href={docLinks.changelog} target="_blank" rel="noreferrer">
               Changelog
             </Link>
-            <Link
-              href="https://github.com/rspace-os"
-              target="_blank"
-              rel="noreferrer"
-            >
+            <Link href="https://github.com/rspace-os" target="_blank" rel="noreferrer">
               Source Code
             </Link>
           </Stack>
@@ -159,10 +132,7 @@ export function AboutRSpaceContent(): React.ReactElement {
   );
 }
 
-export default function AboutRSpaceDialog({
-  open,
-  onClose,
-}: AboutRSpaceDialogProps): React.ReactElement {
+export default function AboutRSpaceDialog({ open, onClose }: AboutRSpaceDialogProps): React.ReactElement {
   return (
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>

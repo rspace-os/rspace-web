@@ -1,23 +1,16 @@
-import { test, describe, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import {
-  render,
-  screen,
-  fireEvent,
-  waitFor,
-  act,
-} from "@testing-library/react";
-import DMPDialog from "../DMPDialog";
-import materialTheme from "../../../theme";
 import { ThemeProvider } from "@mui/material/styles";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import axios from "@/common/axios";
-
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import axios from "@/common/axios";
+import materialTheme from "../../../theme";
+import DMPDialog from "../DMPDialog";
+
 const mockAxios = new MockAdapter(axios);
 
 const uiNavigationData = {
@@ -44,20 +37,12 @@ let restoreConsole = () => {};
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
-  mockAxios
-    .onGet("/api/v1/userDetails/uiNavigationData")
-    .reply(200, uiNavigationData);
-  mockAxios
-    .onGet("/apps/dmptool/baseUrlHost")
-    .reply(200, "https://dmptool.org");
-  restoreConsole = silenceConsole(
-    ["info"],
-    ["The response from this request is being discarded"]
-  );
+  mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData);
+  mockAxios.onGet("/apps/dmptool/baseUrlHost").reply(200, "https://dmptool.org");
+  restoreConsole = silenceConsole(["info"], ["The response from this request is being discarded"]);
 });
 afterEach(() => {
   restoreConsole();
-
 });
 describe("DMPDialog", () => {
   test("Label is shown when no DMPs are returned.", async () => {
@@ -68,13 +53,11 @@ describe("DMPDialog", () => {
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     await waitFor(() => {
       expect(screen.getByText("No DMPs")).toBeVisible();
     });
-
   });
   test("The latest request is always the one that's shown.", async () => {
     mockAxios.onGet("/apps/dmptool/plans?scope=MINE").reply(200, {
@@ -93,20 +76,16 @@ describe("DMPDialog", () => {
         200,
         {
           data: {
-            items: [
-              { dmp: { id: 1, title: "public", description: "very public" } },
-            ],
+            items: [{ dmp: { id: 1, title: "public", description: "very public" } }],
           },
           success: true,
         },
-
       ]),
     );
     render(
       <ThemeProvider theme={materialTheme}>
         <DMPDialog open setOpen={() => {}} />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
     // public will take a second to return a listing
 

@@ -20,12 +20,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
 @WebAppConfiguration
-@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InventoryImportApiControllerInstrumentMVCIT extends API_MVC_InventoryTestBase {
 
   private User anyUser;

@@ -12,6 +12,7 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.model.inventory.Instrument;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import jakarta.validation.Valid;
@@ -106,7 +107,7 @@ public class InventorySearchApiController extends BaseApiInventoryController
       if ((GlobalIdPrefix.IC.equals(parentOid.getPrefix())
               || GlobalIdPrefix.BE.equals(parentOid.getPrefix()))
           && (searchType.equals(InventorySearchType.SAMPLE)
-              || searchType.equals(InventorySearchType.TEMPLATE))) {
+              || searchType.equals(InventorySearchType.SAMPLE_TEMPLATE))) {
         /* subsamples and subcontainers are only children of the container, we can reject at this point */
         return false;
       }
@@ -137,6 +138,11 @@ public class InventorySearchApiController extends BaseApiInventoryController
             getPaginationCriteriaForApiSearch(apiPgCrit, Sample.class);
         return findSamplesFromTemplate(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, samplePgCrit, user);
+      case NT:
+        PaginationCriteria<Instrument> instrumentPgCrit =
+            getPaginationCriteriaForApiSearch(apiPgCrit, Instrument.class);
+        return findInstrumentsFromTemplate(
+            parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, instrumentPgCrit, user);
       case SA:
         return findSubSamplesForSample(
             parentOid.getDbId(), ownedBy, searchType, deletedItemsOption, pgCrit, user);
@@ -177,6 +183,21 @@ public class InventorySearchApiController extends BaseApiInventoryController
       return ApiInventorySearchResult.emptyResult();
     }
     return sampleApiMgr.getSamplesCreatedFromTemplate(
+        templateId, ownedBy, deletedItemsOption, pgCrit, user);
+  }
+
+  private ApiInventorySearchResult findInstrumentsFromTemplate(
+      Long templateId,
+      String ownedBy,
+      InventorySearchType searchType,
+      InventorySearchDeletedOption deletedItemsOption,
+      PaginationCriteria<Instrument> pgCrit,
+      User user) {
+
+    if (searchType != InventorySearchType.ALL && searchType != InventorySearchType.INSTRUMENT) {
+      return ApiInventorySearchResult.emptyResult();
+    }
+    return instrumentApiMgr.getInstrumentsCreatedFromTemplate(
         templateId, ownedBy, deletedItemsOption, pgCrit, user);
   }
 

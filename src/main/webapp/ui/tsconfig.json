@@ -15,11 +15,7 @@
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": [
-      "@testing-library/jest-dom",
-      "@sa11y/vitest",
-      "jquery",
-    ]
+    "types": ["@testing-library/jest-dom", "@sa11y/vitest", "jquery", "vite/client"]
   },
-  "exclude": ["dist"]
+  "exclude": ["dist", "playwright-report"]
 }

@@ -1,5 +1,5 @@
-import React from "react";
 import MenuList from "@mui/material/MenuList";
+import React from "react";
 
 type GridId = string | number;
 
@@ -17,12 +17,7 @@ type GridColumn<Row> = {
   hide?: boolean;
   disableExport?: boolean;
   renderHeader?: () => React.ReactNode;
-  renderCell?: (params: {
-    id: GridId;
-    field: string;
-    row: Row;
-    value: unknown;
-  }) => React.ReactNode;
+  renderCell?: (params: { id: GridId; field: string; row: Row; value: unknown }) => React.ReactNode;
   valueGetter?: (...args: Array<unknown>) => unknown;
   valueFormatter?: (value: unknown) => unknown;
 };
@@ -33,10 +28,7 @@ type DataGridStubProps<Row> = {
   getRowId?: (row: Row) => GridId;
   checkboxSelection?: boolean;
   rowSelectionModel?: SelectionModel;
-  onRowSelectionModelChange?: (model: {
-    type: "include";
-    ids: Set<GridId>;
-  }) => void;
+  onRowSelectionModelChange?: (model: { type: "include"; ids: Set<GridId> }) => void;
   columnVisibilityModel?: Record<string, boolean>;
   localeText?: {
     checkboxSelectionHeaderName?: string;
@@ -54,13 +46,16 @@ type DataGridStubProps<Row> = {
   slotProps?: {
     toolbar?: Record<string, unknown>;
   };
-  apiRef?: React.MutableRefObject<{ exportDataAsCsv: () => void } | null>;
-  ["aria-label"]?: string;
+  apiRef?: React.MutableRefObject<GridApi | null>;
+  "aria-label"?: string;
 };
 
-const GridApiContext = React.createContext<React.MutableRefObject<{
+type GridApi = {
   exportDataAsCsv: () => void;
-} | null> | null>(null);
+  autosizeColumns: (options?: unknown) => Promise<void>;
+};
+
+const GridApiContext = React.createContext<React.MutableRefObject<GridApi | null> | null>(null);
 
 const toSelectedIds = (selectionModel: SelectionModel): Set<GridId> => {
   if (Array.isArray(selectionModel)) return new Set(selectionModel);
@@ -138,27 +133,26 @@ export const GRID_CHECKBOX_SELECTION_COL_DEF = {
 };
 
 export const useGridApiRef = () =>
-  React.useRef<{ exportDataAsCsv: () => void }>({
+  React.useRef<GridApi>({
     exportDataAsCsv: () => {},
+    autosizeColumns: () => Promise.resolve(),
   });
 
 export const useGridApiContext = () => {
   const apiRef = React.useContext(GridApiContext);
   return (
-    apiRef ??
-    ({
+    apiRef ?? {
       current: {
         exportDataAsCsv: () => {},
+        autosizeColumns: () => Promise.resolve(),
       },
-    })
+    }
   );
 };
 
-export const GridToolbarContainer = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => <div role="toolbar">{children}</div>;
+export const GridToolbarContainer = ({ children }: { children: React.ReactNode }) => (
+  <div role="toolbar">{children}</div>
+);
 
 const ColumnsMenuContext = React.createContext<{
   columns: Array<{ label: string }>;
@@ -179,11 +173,7 @@ export const GridToolbarColumnsButton = () => {
           Show/Hide All
         </label>
         <label>
-          <input
-            type="checkbox"
-            aria-label="Checkbox selection"
-            defaultChecked
-          />
+          <input type="checkbox" aria-label="Checkbox selection" defaultChecked />
           Checkbox selection
         </label>
         {(columnsMenu?.columns ?? []).map(({ label }) => (
@@ -199,11 +189,7 @@ export const GridToolbarColumnsButton = () => {
 
 export const ColumnsPanelTrigger = GridToolbarColumnsButton;
 
-export const GridToolbarExportContainer = ({
-  children,
-}: {
-  children: React.ReactNode;
-}) => {
+export const GridToolbarExportContainer = ({ children }: { children: React.ReactNode }) => {
   // Stub renders the trigger and menu items inline without an open/close toggle
   // because the toolbar slot in real usage is re-created on each parent render,
   // which would unmount any local state in jsdom tests.
@@ -233,13 +219,12 @@ export function DataGrid<Row>({
   apiRef,
   "aria-label": ariaLabel,
 }: DataGridStubProps<Row>) {
-  const internalApiRef =
-    apiRef ??
-    ({
-      current: {
-        exportDataAsCsv: () => {},
-      },
-    });
+  const internalApiRef: React.MutableRefObject<GridApi | null> = apiRef ?? {
+    current: {
+      exportDataAsCsv: () => {},
+      autosizeColumns: () => Promise.resolve(),
+    },
+  };
 
   const selectedIds = toSelectedIds(rowSelectionModel);
   const effectiveColumnVisibility = {
@@ -248,20 +233,13 @@ export function DataGrid<Row>({
   };
   const visibleColumns = columns.filter((column) => {
     if (!column.field) return true;
-    return (
-      effectiveColumnVisibility[column.field] !== false && column.hide !== true
-    );
+    return effectiveColumnVisibility[column.field] !== false && column.hide !== true;
   });
-  const allColumns = columns.filter(
-    (column) => column.field !== "__checkbox__" && !column.disableExport,
-  );
+  const allColumns = columns.filter((column) => column.field !== "__checkbox__" && !column.disableExport);
   const ToolbarComponent = showToolbar ? slots?.toolbar : undefined;
 
   internalApiRef.current = {
-    exportDataAsCsv: (options?: {
-      getRowsToExport?: () => Array<GridId>;
-      allColumns?: boolean;
-    }) => {
+    exportDataAsCsv: (options?: { getRowsToExport?: () => Array<GridId>; allColumns?: boolean }) => {
       const selectedRowIds = toSelectedIds(rowSelectionModel);
       const rowIdsToExport =
         options?.getRowsToExport?.() ??
@@ -274,22 +252,17 @@ export function DataGrid<Row>({
           ...column,
           field: column.field as string,
         }));
-      const exportedRows = rows.filter((row, rowIndex) =>
-        rowIdsToExport.includes(getRowId ? getRowId(row) : rowIndex),
-      );
+      const exportedRows = rows.filter((row, rowIndex) => rowIdsToExport.includes(getRowId ? getRowId(row) : rowIndex));
       const lines = [
-        columnsToExport
-          .map((column) => escapeCsv(column.headerName ?? column.field))
-          .join(","),
+        columnsToExport.map((column) => escapeCsv(column.headerName ?? column.field)).join(","),
         ...exportedRows.map((row) =>
-          columnsToExport
-            .map((column) => escapeCsv(toText(getColumnValue(row, column))))
-            .join(","),
+          columnsToExport.map((column) => escapeCsv(toText(getColumnValue(row, column)))).join(","),
         ),
       ];
       const blob = new Blob([lines.join("\n")], { type: "text/csv" });
       window.URL.createObjectURL(blob);
     },
+    autosizeColumns: () => Promise.resolve(),
   };
 
   const toggleRow = (id: GridId, checked: boolean) => {
@@ -315,70 +288,79 @@ export function DataGrid<Row>({
       >
         <div>
           {ToolbarComponent ? <ToolbarComponent {...slotProps?.toolbar} /> : null}
-        <div role="grid" aria-label={ariaLabel}>
-          <div role="row">
-            {checkboxSelection ? (
-              <div role="columnheader">
-                {localeText?.checkboxSelectionHeaderName ?? "Select"}
+          {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
+          <div role="grid" aria-label={ariaLabel}>
+            {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
+            {/* biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup */}
+            <div role="row">
+              {checkboxSelection ? (
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+                <div role="columnheader">{localeText?.checkboxSelectionHeaderName ?? "Select"}</div>
+              ) : null}
+              {visibleColumns.map((column, index) => (
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+                <div role="columnheader" key={column.field ?? column.headerName ?? index}>
+                  {typeof column.renderHeader === "function"
+                    ? column.renderHeader()
+                    : (column.headerName ?? column.field ?? "")}
+                </div>
+              ))}
+            </div>
+            {rows.length === 0 ? (
+              // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+              // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+              <div role="row">
+                {/* biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup */}
+                {/* biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup */}
+                <div role="gridcell">{localeText?.noRowsLabel ?? "No rows"}</div>
               </div>
             ) : null}
-            {visibleColumns.map((column, index) => (
-              <div
-                role="columnheader"
-                key={column.field ?? column.headerName ?? index}
-              >
-                {typeof column.renderHeader === "function"
-                  ? column.renderHeader()
-                  : column.headerName ?? column.field ?? ""}
-              </div>
-            ))}
-          </div>
-          {rows.length === 0 ? (
-            <div role="row">
-              <div role="gridcell">
-                {localeText?.noRowsLabel ?? "No rows"}
-              </div>
-            </div>
-          ) : null}
-          {rows.map((row, rowIndex) => {
-            const id = getRowId ? getRowId(row) : rowIndex;
-            return (
-              <div role="row" key={String(id)}>
-                {checkboxSelection ? (
-                  <div role="gridcell">
-                    <input
-                      type="checkbox"
-                      role="checkbox"
-                      aria-label="Select row"
-                      checked={selectedIds.has(id)}
-                      onChange={(event) => toggleRow(id, event.target.checked)}
-                    />
-                  </div>
-                ) : null}
-                {visibleColumns.map((column, columnIndex) => {
-                  const value = getColumnValue(row, column);
-                  const content =
-                    typeof column.renderCell === "function"
-                      ? column.renderCell({
-                          id,
-                          field: column.field ?? String(columnIndex),
-                          row,
-                          value,
-                        })
-                      : toText(value);
-                  return (
-                    <div
-                      role="gridcell"
-                      key={`${String(id)}-${column.field ?? columnIndex}`}
-                    >
-                      {content}
+            {rows.map((row, rowIndex) => {
+              const id = getRowId ? getRowId(row) : rowIndex;
+              return (
+                // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+                <div role="row" key={String(id)}>
+                  {checkboxSelection ? (
+                    // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                    // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+                    <div role="gridcell">
+                      <input
+                        type="checkbox"
+                        // biome-ignore lint/a11y/useAriaPropsForRole: test stub mirrors MUI DataGrid ARIA markup
+                        // biome-ignore lint/a11y/noRedundantRoles: test stub mirrors MUI DataGrid ARIA markup
+                        role="checkbox"
+                        aria-label="Select row"
+                        checked={selectedIds.has(id)}
+                        onChange={(event) => toggleRow(id, event.target.checked)}
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                  ) : null}
+                  {visibleColumns.map((column, columnIndex) => {
+                    const value = getColumnValue(row, column);
+                    const content =
+                      typeof column.renderCell === "function"
+                        ? column.renderCell({
+                            id,
+                            field: column.field ?? String(columnIndex),
+                            row,
+                            value,
+                          })
+                        : toText(value);
+                    return (
+                      // biome-ignore lint/a11y/useSemanticElements: test stub mirrors MUI DataGrid ARIA markup
+                      // biome-ignore lint/a11y/useFocusableInteractive: test stub mirrors MUI DataGrid ARIA markup
+                      <div role="gridcell" key={`${String(id)}-${column.field ?? columnIndex}`}>
+                        {content}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </ColumnsMenuContext.Provider>
     </GridApiContext.Provider>

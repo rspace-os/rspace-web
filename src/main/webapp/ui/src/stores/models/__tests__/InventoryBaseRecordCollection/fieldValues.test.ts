@@ -1,12 +1,12 @@
-import { describe, expect, test, vi } from 'vitest';
-import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
-import { PersistedBarcode } from "../../Barcode";
-import { makeMockContainer } from "../ContainerModel/mocking";
+import { describe, expect, test, vi } from "vitest";
 import RsSet from "../../../../util/set";
+import { PersistedBarcode } from "../../Barcode";
+import InventoryBaseRecordCollection from "../../InventoryBaseRecordCollection";
+import { makeMockContainer } from "../ContainerModel/mocking";
 
 vi.mock("../../../../common/InvApiService", () => ({ default: {} }));
-vi.mock("../../../../stores/stores/RootStore", () => ({
-  default: () => ({})
+vi.mock("../../../../stores/stores/getRootStore", () => ({
+  default: () => ({}),
 }));
 describe("Computed: fieldValues", () => {
   describe("Should support batch editing of barcodes.", () => {
@@ -20,7 +20,6 @@ describe("Computed: fieldValues", () => {
           id: 2,
           globalId: "IC2",
         }),
-
       ]);
 
       const collection = new InventoryBaseRecordCollection(containers);
@@ -28,16 +27,13 @@ describe("Computed: fieldValues", () => {
         data: "foo",
         newBarcodeRequest: true,
         description: "bar",
-
       });
       containers.forEach((container) => {
         container.setFieldsDirty({
           barcodes: [barcode],
         });
-
       });
       expect(collection.fieldValues.barcodes).toEqual([barcode]);
-
     });
     test("Should not return any shared existing barcodes.", () => {
       const containers = new RsSet([
@@ -69,7 +65,6 @@ describe("Computed: fieldValues", () => {
             },
           ],
         }),
-
       ]);
 
       const collection = new InventoryBaseRecordCollection(containers);
@@ -77,4 +72,3 @@ describe("Computed: fieldValues", () => {
     });
   });
 });
-

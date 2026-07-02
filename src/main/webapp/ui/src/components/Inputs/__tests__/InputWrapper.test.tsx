@@ -1,14 +1,11 @@
-
-import { describe, expect, test } from "vitest";
-import React from "react";
-import { render } from "@testing-library/react";
-import InputWrapper from "../InputWrapper";
 import { ThemeProvider } from "@mui/material/styles";
-
+import { render } from "@testing-library/react";
+import { describe, expect, test } from "vitest";
 import materialTheme from "../../../theme";
-const expectText = (text: string) => (container: Element) => {
-  expect(container).toHaveTextContent("Nothing here" + text);
+import InputWrapper from "../InputWrapper";
 
+const expectText = (text: string) => (container: Element) => {
+  expect(container).toHaveTextContent(`Nothing here${text}`);
 };
 const expectNothing = expectText("");
 const expectHelpText = expectText("help");
@@ -146,20 +143,13 @@ describe("InputWrapper", () => {
       }) => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
-            <InputWrapper
-              disabled={disabled}
-              maxLength={maxLength}
-              error={error}
-              value={value}
-              helperText={helperText}
-            >
+            <InputWrapper disabled={disabled} maxLength={maxLength} error={error} value={value} helperText={helperText}>
               <div>Nothing here</div>
             </InputWrapper>
-          </ThemeProvider>
+          </ThemeProvider>,
         );
         expectFn(container);
-      }
+      },
     );
   });
 });
-

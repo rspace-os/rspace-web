@@ -1,40 +1,36 @@
-import React from "react";
+import ClearIcon from "@mui/icons-material/Clear";
+import SearchIcon from "@mui/icons-material/Search";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import Popover from "@mui/material/Popover";
+import TextField from "@mui/material/TextField";
 import {
   DataGrid,
-  GridRowSelectionModel,
-  useGridApiContext,
-  GridToolbarContainer,
+  type DataGridProps,
+  type GridRowId,
+  type GridRowSelectionModel,
+  type GridSlotProps,
   GridToolbarColumnsButton,
+  GridToolbarContainer,
   GridToolbarExportContainer,
-  GridSlotProps,
-  GridRowId,
-  DataGridProps,
+  useGridApiContext,
 } from "@mui/x-data-grid";
-import TextField from "@mui/material/TextField";
-import InputAdornment from "@mui/material/InputAdornment";
-import IconButton from "@mui/material/IconButton";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import {
-  type Identifier,
-  useIdentifiersListing,
-  useIdentifiersRefresh,
-} from "../../useIdentifiers";
+import React from "react";
+import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
+import ExportMenuItem from "@/components/ExportMenuItem";
+import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
+import AccentMenuItem from "../../../components/AccentMenuItem";
+import GlobalId from "../../../components/GlobalId";
+import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
+import useDebounce from "../../../hooks/ui/useDebounce";
+import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
+import RsSet from "../../../util/set";
 import { DataGridColumn } from "../../../util/table";
 import { toTitleCase } from "../../../util/Util";
-import GlobalId from "../../../components/GlobalId";
-import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
-import Box from "@mui/material/Box";
-import MenuItem from "@mui/material/MenuItem";
-import MenuWithSelectedState from "../../../components/MenuWithSelectedState";
-import AccentMenuItem from "../../../components/AccentMenuItem";
-import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
-import RsSet from "../../../util/set";
-import useDebounce from "../../../hooks/ui/useDebounce";
-import Popover from "@mui/material/Popover";
-import Button from "@mui/material/Button";
 import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
-import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
+import { type Identifier, useIdentifiersListing, useIdentifiersRefresh } from "../../useIdentifiers";
 
 declare module "@mui/x-data-grid" {
   interface ToolbarPropsOverrides {
@@ -125,8 +121,7 @@ function Toolbar({
     debouncedSetSearchTerm(value);
   };
 
-  const [scannerAnchorEl, setScannerAnchorEl] =
-    React.useState<null | HTMLElement>(null);
+  const [scannerAnchorEl, setScannerAnchorEl] = React.useState<null | HTMLElement>(null);
 
   return (
     <GridToolbarContainer sx={{ width: "100%" }}>
@@ -173,10 +168,7 @@ function Toolbar({
       >
         Scan
       </Button>
-      <Panel
-        anchorEl={scannerAnchorEl}
-        onClose={() => setScannerAnchorEl(null)}
-      >
+      <Panel anchorEl={scannerAnchorEl} onClose={() => setScannerAnchorEl(null)}>
         <BarcodeScanner
           onScan={(result) => {
             setLocalSearchTerm(result.rawValue);
@@ -186,11 +178,7 @@ function Toolbar({
           buttonPrefix="Search for IGSN"
         />
       </Panel>
-      <MenuWithSelectedState
-        label="State"
-        currentState={state ?? "All"}
-        defaultState="All"
-      >
+      <MenuWithSelectedState label="State" currentState={state ?? "All"} defaultState="All">
         <AccentMenuItem
           title="All"
           subheader="Show all IGSN IDs"
@@ -224,11 +212,7 @@ function Toolbar({
           current={state === "registered"}
         />
       </MenuWithSelectedState>
-      <MenuWithSelectedState
-        label="Linked Item"
-        currentState={linkedItemStateLabel}
-        defaultState="All"
-      >
+      <MenuWithSelectedState label="Linked Item" currentState={linkedItemStateLabel} defaultState="All">
         <AccentMenuItem
           title="All Identifiers"
           onClick={() => {
@@ -258,7 +242,7 @@ function Toolbar({
         }}
       />
       <GridToolbarExportContainer>
-        <MenuItem
+        <ExportMenuItem
           onClick={() => {
             apiRef.current?.exportDataAsCsv({
               allColumns: true,
@@ -266,7 +250,7 @@ function Toolbar({
           }}
         >
           Export to CSV
-        </MenuItem>
+        </ExportMenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
   );
@@ -330,15 +314,9 @@ export default function IgsnTable({
     searchTerm?: string | null;
   };
 }): React.ReactNode {
-  const [state, setState] = React.useState<
-    "draft" | "findable" | "registered" | null
-  >(controlDefaults?.state ?? null);
-  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(
-    controlDefaults?.isAssociated ?? null,
-  );
-  const [searchTerm, setSearchTerm] = React.useState<string>(
-    controlDefaults?.searchTerm ?? "",
-  );
+  const [state, setState] = React.useState<"draft" | "findable" | "registered" | null>(controlDefaults?.state ?? null);
+  const [isAssociated, setIsAssociated] = React.useState<boolean | null>(controlDefaults?.isAssociated ?? null);
+  const [searchTerm, setSearchTerm] = React.useState<string>(controlDefaults?.searchTerm ?? "");
   const { identifiers, loading, refreshListing } = useIdentifiersListing({
     state,
     isAssociated,
@@ -350,8 +328,7 @@ export default function IgsnTable({
     return () => setRefreshListing(null);
   }, [refreshListing, setRefreshListing]);
 
-  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] =
-    React.useState<HTMLElement | null>(null);
+  const [columnsMenuAnchorEl, setColumnsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const common: DataGridProps<Identifier> = {
     rows: identifiers,
@@ -369,26 +346,18 @@ export default function IgsnTable({
         sortable: false,
         renderCell: ({ row }) => toTitleCase(row.state),
       }),
-      DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>(
-        "associatedGlobalId",
-        {
-          headerName: "Linked Item",
-          flex: 1,
-          resizable: true,
-          sortable: false,
-          renderCell: ({ row }) => {
-            if (row.associatedGlobalId === null) {
-              return "None";
-            }
-            return (
-              <GlobalId
-                record={new LinkableRecordFromGlobalId(row.associatedGlobalId)}
-                onClick={() => {}}
-              />
-            );
-          },
+      DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>("associatedGlobalId", {
+        headerName: "Linked Item",
+        flex: 1,
+        resizable: true,
+        sortable: false,
+        renderCell: ({ row }) => {
+          if (row.associatedGlobalId === null) {
+            return "None";
+          }
+          return <GlobalId record={new LinkableRecordFromGlobalId(row.associatedGlobalId)} onClick={() => {}} />;
         },
-      ),
+      }),
     ],
     loading,
     initialState: {
@@ -456,9 +425,7 @@ export default function IgsnTable({
       onRowSelectionModelChange={(selectionModel: GridRowSelectionModel) => {
         const selectedIdentifiers =
           selectionModel.type === "include"
-            ? identifiers.filter((identifier) =>
-                selectionModel.ids.has(identifier.doi),
-              )
+            ? identifiers.filter((identifier) => selectionModel.ids.has(identifier.doi))
             : identifiers;
         setSelectedIgsns(new RsSet(selectedIdentifiers));
       }}

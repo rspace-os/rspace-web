@@ -1,16 +1,10 @@
-import { observable, override, makeObservable, runInAction } from "mobx";
+import { makeObservable, observable, override, runInAction } from "mobx";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { CacheFetcher as CacheFetcherInterface, CoreFetcherArgs } from "../../definitions/Search";
 import CoreFetcher from "./CoreFetcher";
-import {
-  type CoreFetcherArgs,
-  type CacheFetcher as CacheFetcherInterface,
-} from "../../definitions/Search";
-import { type Factory } from "../../definitions/Factory";
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
 
-export default class CacheFetcher
-  extends CoreFetcher
-  implements CacheFetcherInterface
-{
+export default class CacheFetcher extends CoreFetcher implements CacheFetcherInterface {
   cachedResults: Array<InventoryRecord> = [];
   cachedPageSize: number = 0;
 
@@ -60,9 +54,7 @@ export default class CacheFetcher
        * list/card/tree view because then the locations would appear empty.
        */
       runInAction(() => {
-        this.cachedResults = this.cachedResults.length
-          ? this.cachedResults
-          : this.results;
+        this.cachedResults = this.cachedResults.length ? this.cachedResults : this.results;
         this.cachedResults.map((r) => r.toggleSelected(false));
         this.cachedPageSize = this.cachedPageSize || this.pageSize;
       });
@@ -83,15 +75,10 @@ export default class CacheFetcher
       }
     });
 
-    return this.search(params, (results: Array<InventoryRecord>) =>
-      this.setResults(results)
-    );
+    return this.search(params, (results: Array<InventoryRecord>) => this.setResults(results));
   }
 
-  async search(
-    params: CoreFetcherArgs | null = null,
-    storeResults: (results: Array<InventoryRecord>) => void
-  ) {
+  async search(params: CoreFetcherArgs | null = null, storeResults: (results: Array<InventoryRecord>) => void) {
     if (params?.query || params?.resultType || params?.owner) {
       await super.search(params, storeResults);
     } else {

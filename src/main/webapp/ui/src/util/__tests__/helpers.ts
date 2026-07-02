@@ -1,4 +1,3 @@
-
 import fc, { type Arbitrary } from "fast-check";
 import * as ArrayUtils from "../ArrayUtils";
 
@@ -10,13 +9,8 @@ import * as ArrayUtils from "../ArrayUtils";
  * Useful for asserting that two distinct arrays contain the same elements in
  * the same order
  */
-export const arrayOfSameElements = <T>(
-  arrayA: Array<T>,
-  arrayB: Array<T>,
-): boolean =>
-  ArrayUtils.zipWith(arrayA, arrayB, (a, b) => a === b).every(
-    (isSame) => isSame,
-  );
+export const arrayOfSameElements = <T>(arrayA: Array<T>, arrayB: Array<T>): boolean =>
+  ArrayUtils.zipWith(arrayA, arrayB, (a, b) => a === b).every((isSame) => isSame);
 
 /*
  * === Monoids ===
@@ -39,9 +33,7 @@ export const arrayOfSameElements = <T>(
  * The type of a mondoid; a function that generates a random value of the type,
  * a binary function for combining two such values, and an identity value.
  */
-export type ArbitraryMonoid<T> = Arbitrary<
-  [() => Arbitrary<T>, (t1: T, t2: T) => T, T]
->;
+export type ArbitraryMonoid<T> = Arbitrary<[() => Arbitrary<T>, (t1: T, t2: T) => T, T]>;
 
 const addition: ArbitraryMonoid<number> = fc.tuple(
   fc.constant(() => fc.integer()),
@@ -85,9 +77,7 @@ const minimum: ArbitraryMonoid<number> = fc.tuple(
  * operate on data of a particular type and an associated binary function that
  * together form a monoid.
  */
-export const monoids: Array<
-  ArbitraryMonoid<number> | ArbitraryMonoid<boolean> | ArbitraryMonoid<string>
-> = [
+export const monoids: Array<ArbitraryMonoid<number> | ArbitraryMonoid<boolean> | ArbitraryMonoid<string>> = [
   addition,
   multiplication,
   conjunction,

@@ -1,11 +1,10 @@
 import React from "react";
-import * as FetchingData from "../../util/fetchingData";
-import * as Parsers from "../../util/parsers";
 import axios from "@/common/axios";
-import { Optional } from "../../util/optional";
-import Result from "../../util/result";
-import RsSet from "../../util/set";
 import { getErrorMessage } from "../../util/error";
+import type * as FetchingData from "../../util/fetchingData";
+import { Optional } from "../../util/optional";
+import * as Parsers from "../../util/parsers";
+import Result from "../../util/result";
 
 export type UserId = number;
 
@@ -137,9 +136,7 @@ export type UserListing = {
 export function useUserListing(): {
   userListing: FetchingData.Fetched<UserListing>;
 } {
-  const [userListing, setUserListing] = React.useState<
-    FetchingData.Fetched<UserListing>
-  >({ tag: "loading" });
+  const [userListing, setUserListing] = React.useState<FetchingData.Fetched<UserListing>>({ tag: "loading" });
 
   async function listUsers(params: ApiParameters): Promise<void> {
     const { page, pageSize, orderBy, sortOrder, searchTerm, tags } = params;
@@ -180,10 +177,7 @@ export function useUserListing(): {
     }
   }
 
-  const listingConstructor = (
-    apiParameters: ApiParameters,
-    fetchedData: FetchedData,
-  ): UserListing => {
+  const listingConstructor = (apiParameters: ApiParameters, fetchedData: FetchedData): UserListing => {
     const userConstructor = (fetchedUser: FetchedUser): User => {
       const id = fetchedUser.userInfo.id;
       const role = fetchedUser.userInfo.role;
@@ -294,10 +288,7 @@ export function useUserListing(): {
         const formData = new FormData();
         formData.append("userId", `${id}`);
         try {
-          const { data } = await axios.post<unknown>(
-            "/system/ajax/removeUserAccount/",
-            formData,
-          );
+          const { data } = await axios.post<unknown>("/system/ajax/removeUserAccount/", formData);
           Parsers.isObject(data)
             .flatMap(Parsers.isNotNull)
             .flatMap(Parsers.getValueWithKey("exceptionMessage"))
@@ -315,13 +306,10 @@ export function useUserListing(): {
 
       async function setAlias(alias: string): Promise<void> {
         try {
-          const { data } = await axios.post<unknown>(
-            "/system/users/saveUsernameAlias",
-            {
-              userId: id,
-              usernameAlias: alias,
-            },
-          );
+          const { data } = await axios.post<unknown>("/system/users/saveUsernameAlias", {
+            userId: id,
+            usernameAlias: alias,
+          });
           Parsers.isObject(data)
             .flatMap(Parsers.isNotNull)
             .flatMap(Parsers.getValueWithKey("exceptionMessage"))
@@ -356,12 +344,8 @@ export function useUserListing(): {
         isRegularUser: role.includes("ROLE_USER") && !isPi,
         recordCount: fetchedUser.recordCount,
         fileUsage: fetchedUser.fileUsage,
-        lastLogin: Optional.fromNullable(fetchedUser.lastLogin).map(
-          (l) => new Date(l),
-        ),
-        created: Optional.fromNullable(fetchedUser.creationDate).map(
-          (l) => new Date(l),
-        ),
+        lastLogin: Optional.fromNullable(fetchedUser.lastLogin).map((l) => new Date(l)),
+        created: Optional.fromNullable(fetchedUser.creationDate).map((l) => new Date(l)),
         enabled: fetchedUser.userInfo.enabled,
         locked: fetchedUser.userInfo.accountLocked,
         groups: fetchedUser.userInfo.groupNames,
@@ -383,21 +367,13 @@ export function useUserListing(): {
 
     const users = fetchedData.userInfo.results.map((r) => userConstructor(r));
     const totalListingCount = fetchedData.userInfo.totalHits;
-    const { page, pageSize, orderBy, sortOrder, searchTerm, tags } =
-      apiParameters;
-    const {
-      availableSeats,
-      usedLicenseSeats,
-      totalEnabledSysAdmins,
-      totalEnabledRSpaceAdmins,
-      totalUsers,
-    } = fetchedData.userStats;
+    const { page, pageSize, orderBy, sortOrder, searchTerm, tags } = apiParameters;
+    const { availableSeats, usedLicenseSeats, totalEnabledSysAdmins, totalEnabledRSpaceAdmins, totalUsers } =
+      fetchedData.userStats;
 
     const getSearchParameters = () => apiParameters;
 
-    const setSearchParameters = (
-      newApiParameters: ApiParameters,
-    ): Promise<void> => listUsers(newApiParameters);
+    const setSearchParameters = (newApiParameters: ApiParameters): Promise<void> => listUsers(newApiParameters);
 
     const setPage = (newPage: number): Promise<void> =>
       listUsers({
@@ -412,10 +388,7 @@ export function useUserListing(): {
         pageSize: newPageSize,
       });
 
-    const setOrdering = (
-      newOrderBy: string,
-      newSortOrder: "asc" | "desc",
-    ): Promise<void> =>
+    const setOrdering = (newOrderBy: string, newSortOrder: "asc" | "desc"): Promise<void> =>
       listUsers({
         ...apiParameters,
         page: 0,
@@ -515,10 +488,16 @@ export function useUserListing(): {
           `system/users/saveTagsForUsers`,
           usersToBeTagged.map((user) => ({
             userId: user.id,
-            userTags: new RsSet(user.tags)
-              .union(new RsSet(addedTags))
-              .subtract(new RsSet(deletedTags))
-              .toArray(),
+            userTags: (() => {
+              const tags = new Set(user.tags);
+              addedTags.forEach((tag) => {
+                tags.add(tag);
+              });
+              deletedTags.forEach((tag) => {
+                tags.delete(tag);
+              });
+              return Array.from(tags);
+            })(),
           })),
         );
         if (typeof data === "object") throw new Error(data.exceptionMessage);

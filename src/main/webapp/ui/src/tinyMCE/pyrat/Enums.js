@@ -35,4 +35,4 @@ const Sex = {
 };
 Object.freeze(Sex);
 
-export { ErrorReason, AnimalType, AnimalState, Order, Sex };
+export { AnimalState, AnimalType, ErrorReason, Order, Sex };

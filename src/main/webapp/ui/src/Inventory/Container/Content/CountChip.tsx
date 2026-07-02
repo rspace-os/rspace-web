@@ -1,9 +1,9 @@
-import React from "react";
-import Chip from "@mui/material/Chip";
 import Box from "@mui/material/Box";
+import Chip from "@mui/material/Chip";
+import type React from "react";
+import type { Container } from "@/stores/definitions/Container";
+import type { ContentSummary } from "@/stores/definitions/container/types";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
-import { type Container } from "@/stores/definitions/Container";
-import { ContentSummary } from "@/stores/definitions/container/types";
 
 type CountChipArgs = {
   type: string;
@@ -13,9 +13,7 @@ type CountChipArgs = {
 function getCount(type: string, cs: ContentSummary): number {
   if (type === "container") return cs.containerCount;
   if (type === "subSample") return cs.subSampleCount;
-  throw new TypeError(
-    'The string "type" can only be "container" or "subSample"'
-  );
+  throw new TypeError('The string "type" can only be "container" or "subSample"');
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {

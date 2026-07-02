@@ -1,6 +1,4 @@
-//@flow
-
-import React from "react";
+import type React from "react";
 
 /**
  * All of the DOM events that happen inside of a dialog shouldn't propagate
@@ -8,11 +6,7 @@ import React from "react";
  * providing keyboard navigation. See ../../../../QuirksOfMaterialUi.md,
  * section "Dialogs inside Menus", for more information.
  */
-export default function EventBoundary({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
+export default function EventBoundary({ children }: { children: React.ReactNode }): React.ReactNode {
   return (
     /*
      * The eslint suppression is required because `div`s should not ordinarilly
@@ -22,6 +16,7 @@ export default function EventBoundary({
      * the `div` itself for this to work.
      */
 
+    // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
     <div
       onKeyDown={(e) => {
         e.stopPropagation();

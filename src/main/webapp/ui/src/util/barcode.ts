@@ -1,4 +1,3 @@
-
 export type BarcodeFormat =
   | "aztec"
   | "code_128"
@@ -22,9 +21,7 @@ export type Barcode = {
 /**
  * Given a barcode format, return a human-readable string.
  */
-export function barcodeFormatAsString(
-  barcodeFormat: BarcodeFormat | "Unknown"
-): string {
+export function barcodeFormatAsString(barcodeFormat: BarcodeFormat | "Unknown"): string {
   return {
     aztec: "Aztec",
     code_128: "Code 128",

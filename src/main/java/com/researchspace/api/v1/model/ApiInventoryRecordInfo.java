@@ -20,10 +20,10 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
 import com.researchspace.model.inventory.field.ExtraField;
 import com.researchspace.service.impl.DocumentTagManagerImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +34,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.apache.commons.collections.CollectionUtils;
+import org.hibernate.Hibernate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -160,10 +161,22 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
   @JsonProperty(value = "newBase64Image", access = Access.WRITE_ONLY)
   private String newBase64Image;
 
+  /*
+   * Lazily-loaded references (Envers revision reads in particular) arrive as proxies typed to
+   * the abstract hierarchy root (e.g. SampleEntity). The is*() checks dispatch through proxies,
+   * but the casts to concrete subclasses still need the real instance, so unwrap first.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> T unproxy(T entity) {
+    return (T) Hibernate.unproxy(entity);
+  }
+
   public static ApiInventoryRecordInfo fromInventoryRecord(InventoryRecord invRecord) {
-    if (invRecord.isSample()) {
-      Sample sample = (Sample) invRecord;
-      return sample.isTemplate() ? new ApiSampleTemplateInfo(sample) : new ApiSampleInfo(sample);
+    invRecord = unproxy(invRecord);
+    if (invRecord.isSampleTemplate()) {
+      return new ApiSampleTemplateInfo((SampleTemplate) invRecord);
+    } else if (invRecord.isSample()) {
+      return new ApiSampleInfo((Sample) invRecord);
     } else if (invRecord.isSubSample()) {
       return new ApiSubSampleInfoWithSampleInfo((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
@@ -179,9 +192,11 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
 
   public static ApiInventoryRecordInfo fromInventoryRecordToFullApiRecord(
       InventoryRecord invRecord) {
-    if (invRecord.isSample()) {
-      Sample sample = (Sample) invRecord;
-      return sample.isTemplate() ? new ApiSampleTemplate(sample) : new ApiSample(sample);
+    invRecord = unproxy(invRecord);
+    if (invRecord.isSampleTemplate()) {
+      return new ApiSampleTemplate((SampleTemplate) invRecord);
+    } else if (invRecord.isSample()) {
+      return new ApiSample((Sample) invRecord);
     } else if (invRecord.isSubSample()) {
       return new ApiSubSample((SubSample) invRecord);
     } else if (invRecord.isContainer()) {
@@ -251,7 +266,6 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     tags = apiTagInfo;
   }
 
-  @SuppressFBWarnings
   @JsonIgnore
   public String getDBStringFromTags() {
     if (tags == null || tags.isEmpty()) {

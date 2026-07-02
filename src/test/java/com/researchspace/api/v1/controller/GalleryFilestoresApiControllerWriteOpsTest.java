@@ -17,6 +17,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
@@ -27,6 +30,8 @@ import com.researchspace.model.netfiles.NfsFileSystem;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.views.CompositeRecordOperationResult;
 import com.researchspace.netfiles.ApiNfsCredentials;
+import com.researchspace.netfiles.DeletableTarget;
+import com.researchspace.netfiles.FilestoreAuditMetadata;
 import com.researchspace.netfiles.NfsAuthentication;
 import com.researchspace.netfiles.NfsClient;
 import com.researchspace.netfiles.NfsFactory;
@@ -35,12 +40,15 @@ import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.ExternalStorageManager;
+import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +63,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
   private static final String USERNAME = "username";
   private static final String PASSWORD = "password";
+  private static final java.time.Clock FIXED_CLOCK =
+      java.time.Clock.fixed(
+          java.time.Instant.parse("2026-06-18T10:00:00Z"), java.time.ZoneOffset.UTC);
 
   @Mock private NfsManager nfsManager;
   @Mock private RecordDeletionManager deletionManager;
@@ -86,6 +97,9 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     filestoreWriteManager.setExternalStorageManager(externalStorageManager);
     filestoreWriteManager.setCredentialsStore(credentialsStore);
     filestoreWriteManager.setAclChecker(GalleryFilestoreTestUtils.filestoreAclCheckerForTest());
+    filestoreWriteManager.setClock(FIXED_CLOCK);
+    filestoreWriteManager.setProperties(propertyHolder);
+    filestoreWriteManager.setMessages(mock(com.researchspace.service.MessageSourceUtils.class));
 
     controller = new GalleryFilestoresApiController();
     controller.nfsManager = nfsManager;
@@ -121,12 +135,12 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void moveToFilestore_validRequest_invokesUploadAndDelete() throws BindException, IOException {
+  void uploadFromGallery_removeOriginal_invokesUploadAndDelete() throws BindException, IOException {
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(
-            validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD));
+            validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD), true);
 
-    controller.moveToFilestore(
+    controller.uploadFromGallery(
         validFilestorePathId, request, new BeanPropertyBindingResult(request, "request"), user);
 
     verify(nfsManager)
@@ -135,12 +149,13 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void copyToFilestore_validRequest_invokesUploadButNotDelete() throws BindException, IOException {
+  void uploadFromGallery_keepOriginal_invokesUploadButNotDelete()
+      throws BindException, IOException {
     ApiGalleryFilestoreOperationRequest request =
         new ApiGalleryFilestoreOperationRequest(
             validRecordIds, new ApiNfsCredentials(null, USERNAME, PASSWORD));
 
-    controller.copyToFilestore(
+    controller.uploadFromGallery(
         validFilestorePathId, request, new BeanPropertyBindingResult(request, "request"), user);
 
     verify(nfsManager)
@@ -149,7 +164,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void copyToFilestore_multipleInvalidRecordIds_allErrorsReported() {
+  void uploadFromGallery_multipleInvalidRecordIds_allErrorsReported() {
     when(baseRecordManager.get(eq(789L), any()))
         .thenThrow(new ObjectRetrievalFailureException("EcatMediaFile", "789"));
     when(baseRecordManager.get(eq(987L), any()))
@@ -162,7 +177,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         assertThrows(
             BindException.class,
             () ->
-                controller.copyToFilestore(
+                controller.uploadFromGallery(
                     validFilestorePathId,
                     request,
                     new BeanPropertyBindingResult(request, "request"),
@@ -351,7 +366,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.transferBetweenFilestores(
         srcId, request, new BeanPropertyBindingResult(request, "request"), user);
 
-    WriteAttribution expected = new WriteAttribution("alice", null);
+    WriteAttribution expected =
+        new WriteAttribution("alice", null, java.time.Instant.now(FIXED_CLOCK));
     verify(srcClient)
         .copyObject("src/file.txt", destClient, "dst/file.txt", expected.metadataForRecord(null));
   }
@@ -513,7 +529,8 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void copyToFilestore_folderRecordId_throwsBindException() {
+  void uploadFromGallery_folderRecordId_throwsBindException() {
+    // folder rejection happens in retrieveMediaFiles, independent of the move/copy flag
     Long folderId = 999L;
     BaseRecord folderMock = mock(BaseRecord.class);
     when(folderMock.isFolder()).thenReturn(true);
@@ -526,7 +543,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
         assertThrows(
             BindException.class,
             () ->
-                controller.copyToFilestore(
+                controller.uploadFromGallery(
                     validFilestorePathId,
                     request,
                     new BeanPropertyBindingResult(request, "request"),
@@ -536,30 +553,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void moveToFilestore_folderRecordId_throwsBindException() {
-    Long folderId = 999L;
-    BaseRecord folderMock = mock(BaseRecord.class);
-    when(folderMock.isFolder()).thenReturn(true);
-    when(baseRecordManager.get(eq(folderId), any())).thenReturn(folderMock);
-    ApiGalleryFilestoreOperationRequest request =
-        new ApiGalleryFilestoreOperationRequest(
-            Set.of(folderId), new ApiNfsCredentials(null, USERNAME, PASSWORD));
-
-    BindException ex =
-        assertThrows(
-            BindException.class,
-            () ->
-                controller.moveToFilestore(
-                    validFilestorePathId,
-                    request,
-                    new BeanPropertyBindingResult(request, "request"),
-                    user));
-
-    assertEquals(1, ex.getAllErrors().size());
-  }
-
-  @Test
-  void moveToFilestore_userNotOnWriteAllowlist_throwsAuthorizationException() throws IOException {
+  void uploadFromGallery_userNotOnWriteAllowlist_throwsAuthorizationException() throws IOException {
     // override the permissive default with a allowlist that excludes the request's user
     NfsFileStore restrictedFilestore =
         GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(2L, "restricted", user);
@@ -576,7 +570,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThrows(
         AuthorizationException.class,
         () ->
-            controller.moveToFilestore(
+            controller.uploadFromGallery(
                 2L, request, new BeanPropertyBindingResult(request, "request"), user));
 
     verify(nfsManager, never())
@@ -661,7 +655,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   }
 
   @Test
-  void copyToFilestore_unauthorizedMediaFile_propagatesAuthorizationExceptionAndDoesNotUpload()
+  void uploadFromGallery_unauthorizedMediaFile_propagatesAuthorizationExceptionAndDoesNotUpload()
       throws IOException {
     // AuthorizationException must propagate (rather than be caught and translated to a
     // BindException), so the surrounding transaction rolls back cleanly.
@@ -677,7 +671,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     assertThrows(
         AuthorizationException.class,
         () ->
-            controller.copyToFilestore(
+            controller.uploadFromGallery(
                 validFilestorePathId,
                 request,
                 new BeanPropertyBindingResult(request, "request"),
@@ -685,5 +679,83 @@ class GalleryFilestoresApiControllerWriteOpsTest {
 
     verify(nfsManager, never())
         .uploadFilesToNfs(anyCollection(), anyString(), any(WritableNfsClient.class), any());
+  }
+
+  /** Wires an S3 filestore + a mock writable client resolved by the factory, for the new ops. */
+  private WritableNfsClient setupS3FilestoreWithClient(Long id) {
+    NfsFileStore filestore =
+        GalleryFilestoreTestUtils.createS3FileSystemAndFileStore(id, "s3fs", user);
+    when(nfsManager.getNfsFileStore(id)).thenReturn(filestore);
+    WritableNfsClient s3Client = mock(WritableNfsClient.class);
+    when(nfsFactory.getNfsClient(any(), any(), eq(filestore.getFileSystem()))).thenReturn(s3Client);
+    return s3Client;
+  }
+
+  @Test
+  void createFolder_delegatesToManagerWithCreatorMetadata() throws Exception {
+    WritableNfsClient s3Client = setupS3FilestoreWithClient(5L);
+    when(user.getUsername()).thenReturn(USERNAME);
+    ApiGalleryFilestoreFolderRequest request =
+        new ApiGalleryFilestoreFolderRequest("parent", "newfolder");
+
+    controller.createFolder(5L, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(s3Client)
+        .createFolder(
+            "parent/newfolder",
+            Map.of("rspace-created-by", USERNAME, "rspace-created-at", "2026-06-18T10:00:00Z"));
+  }
+
+  @Test
+  void moveWithinFilestore_delegatesToManager() throws Exception {
+    WritableNfsClient s3Client = setupS3FilestoreWithClient(5L);
+    when(user.getUsername()).thenReturn(USERNAME);
+    when(s3Client.moveWithin("src/a.txt", "dest")).thenReturn("dest/a.txt");
+    ApiGalleryFilestoreMoveRequest request =
+        new ApiGalleryFilestoreMoveRequest("src/a.txt", "dest");
+
+    controller.moveWithinFilestore(
+        5L, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(s3Client).moveWithin("src/a.txt", "dest");
+  }
+
+  @Test
+  void deleteFromFilestore_gateAllows_deletes() throws Exception {
+    WritableNfsClient s3Client = setupS3FilestoreWithClient(5L);
+    when(user.getUsername()).thenReturn(USERNAME);
+    when(propertyHolder.getS3DeleteWindowMinutes()).thenReturn(60);
+    when(s3Client.resolveDeletableTarget("dir/f.txt"))
+        .thenReturn(
+            new DeletableTarget(
+                "dir/f.txt",
+                new FilestoreAuditMetadata(USERNAME, Instant.parse("2026-06-18T09:30:00Z"))));
+    ApiGalleryFilestoreDeleteRequest request = new ApiGalleryFilestoreDeleteRequest("dir/f.txt");
+
+    controller.deleteFromFilestore(
+        5L, request, new BeanPropertyBindingResult(request, "request"), user);
+
+    verify(s3Client).deleteByKey("dir/f.txt");
+  }
+
+  @Test
+  void deleteFromFilestore_gateDeniesForeignItem_returns403() throws Exception {
+    WritableNfsClient s3Client = setupS3FilestoreWithClient(5L);
+    when(user.getUsername()).thenReturn(USERNAME);
+    when(propertyHolder.getS3DeleteWindowMinutes()).thenReturn(60);
+    when(s3Client.resolveDeletableTarget("dir/f.txt"))
+        .thenReturn(
+            new DeletableTarget(
+                "dir/f.txt",
+                new FilestoreAuditMetadata("someoneelse", Instant.parse("2026-06-18T09:30:00Z"))));
+    ApiGalleryFilestoreDeleteRequest request = new ApiGalleryFilestoreDeleteRequest("dir/f.txt");
+
+    // FilestoreOperationForbiddenException is mapped to HTTP 403 by ApiControllerAdvice
+    assertThrows(
+        FilestoreOperationForbiddenException.class,
+        () ->
+            controller.deleteFromFilestore(
+                5L, request, new BeanPropertyBindingResult(request, "request"), user));
+    verify(s3Client, never()).deleteByKey(any());
   }
 }

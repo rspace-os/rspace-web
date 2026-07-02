@@ -1,7 +1,7 @@
-import React from "react";
-import { Navigate, Routes, Route } from "react-router-dom";
-import IGSNs from "./IGSN";
+import type React from "react";
+import { Navigate, Route, Routes } from "react-router";
 import PageNotFoundScreen from "../components/Layout/PageNotFoundScreen";
+import IGSNs from "./IGSN";
 import NavigationContext from "./NavigationContext";
 
 /**
@@ -17,10 +17,7 @@ export default function Router(): React.ReactNode {
   return (
     <NavigationContext>
       <Routes>
-        <Route
-          path="/"
-          element={<Navigate to="/inventory/identifiers/igsn" />}
-        />
+        <Route path="/" element={<Navigate to="/inventory/identifiers/igsn" />} />
         <Route path="igsn" element={<IGSNs />} />
         <Route path="*" element={<PageNotFoundScreen />} />
       </Routes>

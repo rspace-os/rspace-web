@@ -89,7 +89,7 @@ exist until the UI is built. Run the build now so the integration is fully
 functional immediately after the scaffold is applied:
 
 ```bash
-cd src/main/webapp/ui && npm run build
+pnpm run build
 ```
 
 > **⚠️ This step is mandatory.** Without it, clicking the toolbar button opens
@@ -102,13 +102,13 @@ cd src/main/webapp/ui && npm run build
 Run the frontend type-check and lint to catch typos in the generated edits:
 
 ```bash
-cd src/main/webapp/ui && npm run tsc && npm run lint
+pnpm run tsc && pnpm run lint
 ```
 
 Optionally run the smoke test for the new TinyMCE component:
 
 ```bash
-cd src/main/webapp/ui && npx vitest run src/tinyMCE/<name>/__tests__/<Name>.test.tsx
+pnpm run test -- src/tinyMCE/<name>/__tests__/<Name>.test.tsx
 ```
 
 To verify the backend changes (Liquibase changeset applied, `SystemPropertyName` enum correct, integration visible in the API), run the existing MVC integration test against a running database:
@@ -141,7 +141,5 @@ plumbing. If any of these are needed, scaffold the empty integration first,
 then add those layers by hand following
 `DevDocs/DeveloperNotes/CreatingNewIntegration.md` and
 `src/main/webapp/ui/src/eln/apps/AddingANewIntegration.md`.
-
-
 
 

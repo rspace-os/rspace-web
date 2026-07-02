@@ -1,14 +1,10 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import {
-  render,
-  cleanup,
-} from "@testing-library/react";
-import Tags from "../Tags";
-import fc from "fast-check";
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render } from "@testing-library/react";
+import fc from "fast-check";
+import { describe, expect, test, vi } from "vitest";
 import materialTheme from "../../../../theme";
 import { Optional } from "../../../../util/optional";
+import Tags from "../Tags";
 import "@/__tests__/__mocks__/matchMedia";
 
 window.fetch = vi.fn(() =>
@@ -16,8 +12,7 @@ window.fetch = vi.fn(() =>
     status: 200,
     ok: true,
     json: () => Promise.resolve({}),
-  } as Response)
-
+  } as Response),
 );
 describe("Tags", () => {
   test("Should enter an error state when value is longer than 8000 characters.", () => {
@@ -48,15 +43,11 @@ describe("Tags", () => {
                 },
               }}
             />
-          </ThemeProvider>
-
+          </ThemeProvider>,
         );
-        expect(container).toHaveTextContent(
-          "Tags must be no longer than 8000 characters."
-        );
+        expect(container).toHaveTextContent("Tags must be no longer than 8000 characters.");
       }),
-      { numRuns: 10 }
+      { numRuns: 10 },
     );
   });
 });
-

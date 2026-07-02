@@ -1,13 +1,13 @@
-import React from "react";
-import { GalleryFile } from "../useGalleryListing";
-import { Dialog } from "@/components/DialogBoundary";
-import DialogActions from "@mui/material/DialogActions";
 import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import React from "react";
 import axios from "@/common/axios";
-import { getErrorMessage } from "@/util/error";
+import { Dialog } from "@/components/DialogBoundary";
 import useOauthToken from "@/hooks/auth/useOauthToken";
+import { getErrorMessage } from "@/util/error";
+import type { GalleryFile } from "../useGalleryListing";
 
 const SnippetPreviewContext = React.createContext((_file: GalleryFile) => {});
 
@@ -20,17 +20,9 @@ export function useSnippetPreview(): {
   };
 }
 
-export function CallableSnippetPreview({
-  children,
-}: {
-  children: React.ReactNode;
-}): React.ReactNode {
-  const [snippetFile, setSnippetFile] = React.useState<null | GalleryFile>(
-    null,
-  );
-  const [snippetContent, setSnippetContent] = React.useState<null | string>(
-    null,
-  );
+export function CallableSnippetPreview({ children }: { children: React.ReactNode }): React.ReactNode {
+  const [snippetFile, setSnippetFile] = React.useState<null | GalleryFile>(null);
+  const [snippetContent, setSnippetContent] = React.useState<null | string>(null);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<null | string>(null);
   const { getToken } = useOauthToken();
@@ -46,10 +38,7 @@ export function CallableSnippetPreview({
       });
       setSnippetContent(response.data);
     } catch (err) {
-      const errorMessage = getErrorMessage(
-        err,
-        "Failed to load snippet content",
-      );
+      const errorMessage = getErrorMessage(err, "Failed to load snippet content");
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -69,11 +58,13 @@ export function CallableSnippetPreview({
       >
         {children}
       </SnippetPreviewContext.Provider>
+      {/* Match the PDF preview: 2000 keeps it above the raised picker layers and legacy jQuery dialogs. */}
       <Dialog
         open={snippetFile !== null}
         fullWidth
         maxWidth="md"
         onClose={() => setSnippetFile(null)}
+        sx={{ zIndex: 2000 }}
       >
         <DialogTitle>Snippet Preview: {snippetFile?.name}</DialogTitle>
         <DialogContent dividers>

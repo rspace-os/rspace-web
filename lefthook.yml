@@ -1,0 +1,35 @@
+# Git hooks managed by lefthook (https://lefthook.dev).
+# Enable once per clone by running `pnpm install` in the repo root.
+colors: false
+
+pre-commit:
+  parallel: true
+  commands:
+    # Fail the commit if any staged Java file is not spotless-formatted.
+    # spotlessFiles matches the absolute path via String#matches, so each
+    # staged (repo-relative) path is prefixed with `.*` to anchor correctly.
+    # Guard against an empty list (drop blank lines) so we never fall back to
+    # `-DspotlessFiles=".*"`, which would match every file in the repo.
+    spotless:
+      glob: "**/*.java"
+      run: |
+        spotless_files=$(printf '%s\n' {staged_files} \
+          | sed '/^$/d; s/[.[\](){}+^$|\\]/\\&/g; s#^#.*#' \
+          | paste -sd, -)
+        if [ -n "$spotless_files" ]; then
+          ./mvnw -q spotless:check -DspotlessFiles="$spotless_files"
+        fi
+    # Type-check the frontend when any staged TS/TSX file changes. tsc is a
+    # whole-project check, so we run the full `tsc --noEmit` rather than a
+    # per-file subset.
+    tsc:
+      glob: "src/main/webapp/ui/**/*.{ts,tsx}"
+      run: pnpm run tsc
+    # Lint/format-check the frontend with Biome when any staged TS/TSX/CSS file
+    # changes. Reject the commit on ANY Biome diagnostic: --error-on-warnings
+    # makes warnings (and errors) fail the exit code, and --diagnostic-level=info
+    # surfaces info-level diagnostics too. Biome lints the whole UI tree in well
+    # under a second, so we run it project-wide like tsc rather than per-file.
+    biome:
+      glob: "src/main/webapp/ui/**/*.{ts,tsx,css}"
+      run: pnpm run lint:ci

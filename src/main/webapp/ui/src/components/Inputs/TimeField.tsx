@@ -1,28 +1,31 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
-import NoValue from "../../components/NoValue";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { format, isValid, parse } from "date-fns";
 import { enGB } from "date-fns/locale";
+import type React from "react";
+import NoValue from "../../components/NoValue";
+
+const TIME_FORMAT = "HH:mm";
 
 export type TimeFieldArgs = {
   onChange: (event: { target: { value: string | null } }) => void;
-  value: string;
+  /*
+   * FieldModel stores a time field's value as a Date object (it parses the
+   * "HH:mm" string on the way in), whereas other callers pass the "HH:mm"
+   * string directly. Accept both, plus null/empty. Passing a non-string
+   * straight to date-fns `parse` throws ("dateString.match is not a
+   * function"), which is what broke complex templates after the MUI v9
+   * upgrade; parseTimeFieldValue handles each shape instead.
+   */
+  value: string | Date | null;
   disabled?: boolean;
   id?: string;
 };
 
-export default function TimeField({
-  disabled,
-  value,
-  onChange,
-  id,
-}: TimeFieldArgs): React.ReactNode {
-  const parsedValue = value ? parse(value, "HH:mm", new Date()) : null;
-  const pickerValue =
-    parsedValue && isValid(parsedValue) ? parsedValue : null;
+export default function TimeField({ disabled, value, onChange, id }: TimeFieldArgs): React.ReactNode {
+  const pickerValue = parseTimeFieldValue(value);
 
   return (
     <Grid container spacing={0}>
@@ -30,16 +33,15 @@ export default function TimeField({
         <NoValue label="None" />
       ) : (
         <Grid size={{ md: 6, xs: 12 }}>
-          <LocalizationProvider
-            dateAdapter={AdapterDateFns}
-            adapterLocale={enGB}
-          >
+          <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
             <TimePicker
               value={pickerValue}
+              format={TIME_FORMAT}
+              ampm={false}
               onChange={(newValue) => {
                 onChange({
                   target: {
-                    value: newValue ? format(newValue, "HH:mm") : null,
+                    value: newValue && isValid(newValue) ? format(newValue, TIME_FORMAT) : null,
                   },
                 });
               }}
@@ -68,4 +70,24 @@ export default function TimeField({
       )}
     </Grid>
   );
+}
+
+/**
+ * Resolves the various shapes a time value can arrive in (a Date from
+ * FieldModel, an "HH:mm" string from other callers, or null/empty) to the Date
+ * the picker expects, or null when there is no valid value. Crucially it never
+ * hands a non-string to date-fns `parse`, which throws on one.
+ */
+function parseTimeFieldValue(value: string | Date | null): Date | null {
+  if (!value) {
+    return null;
+  }
+  if (value instanceof Date) {
+    return isValid(value) ? value : null;
+  }
+  if (typeof value === "string") {
+    const parsed = parse(value, TIME_FORMAT, new Date());
+    return isValid(parsed) ? parsed : null;
+  }
+  return null;
 }

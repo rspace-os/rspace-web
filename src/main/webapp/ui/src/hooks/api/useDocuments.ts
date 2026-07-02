@@ -1,8 +1,8 @@
 import React from "react";
 import axios from "@/common/axios";
-import useOauthToken from "../auth/useOauthToken";
-import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
+import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
+import useOauthToken from "../auth/useOauthToken";
 
 type MoveDocumentRequest = {
   documentId: number;

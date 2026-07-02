@@ -14,18 +14,11 @@ import com.researchspace.model.User;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 
-/**
- * MVC integration tests for bulk operations on Instrument and InstrumentTemplate records.
- *
- * <p>These tests are kept separate from {@link InventoryBulkOperationsApiControllerMVCIT} because
- * they require the {@code inventory.instrument.enabled} feature flag, which is off by default.
- */
+/** MVC integration tests for bulk operations on Instrument and InstrumentTemplate records. */
 @WebAppConfiguration
-@TestPropertySource(properties = {"inventory.instrument.enabled=true"})
 public class InventoryBulkOperationsApiControllerInstrumentMVCIT extends API_MVC_InventoryTestBase {
 
   private User anyUser;

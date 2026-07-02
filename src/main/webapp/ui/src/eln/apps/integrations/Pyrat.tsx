@@ -1,27 +1,23 @@
-import Grid from "@mui/material/Grid";
-import React, { useState } from "react";
-import IntegrationCard from "../IntegrationCard";
-import {
-  useIntegrationsEndpoint,
-  type IntegrationStates,
-} from "../useIntegrationsEndpoint";
-import TextField from "@mui/material/TextField";
-import { Optional } from "../../../util/optional";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import CardActions from "@mui/material/CardActions";
 import Button from "@mui/material/Button";
-import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Grid from "@mui/material/Grid";
+import ListItemText from "@mui/material/ListItemText";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
-import { useLocalObservable, observer } from "mobx-react-lite";
-import { runInAction } from "mobx";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import RsSet from "../../../util/set";
+import { runInAction } from "mobx";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React, { useState } from "react";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
+import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { Optional } from "../../../util/optional";
+import IntegrationCard from "../IntegrationCard";
+import { type IntegrationStates, useIntegrationsEndpoint } from "../useIntegrationsEndpoint";
 
 type PyratArgs = {
   integrationState: IntegrationStates["PYRAT"];
@@ -34,25 +30,21 @@ type PyratArgs = {
 function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
-  const authenticatedServers = useLocalObservable(() => [
-    ...integrationState.credentials.authenticatedServers,
-  ]);
-  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(
-    null
-  );
+  const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
+  const [addMenuAnchorEl, setAddMenuAnchorEl] = useState<null | HTMLElement>(null);
 
-  const unauthenticatedServers =
-    integrationState.credentials.configuredServers.filter(
-      ({ alias }) => !authenticatedServers.find((s) => s.alias === alias)
-    );
+  const unauthenticatedServers = integrationState.credentials.configuredServers.filter(
+    ({ alias }) => !authenticatedServers.find((s) => s.alias === alias),
+  );
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="PyRAT"
         integrationState={integrationState}
@@ -66,48 +58,34 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li>
-                Request a user access token by going to Administration → API →
-                Request access in PyRAT.
-              </li>
+              <li>Request a user access token by going to Administration → API → Request access in PyRAT.</li>
               <li>Choose the corresponding server from the add menu below.</li>
-              <li>
-                Enter the access token into the field that appears, and save.
-              </li>
+              <li>Enter the access token into the field that appears, and save.</li>
               <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the PyRAT icon in the text
-                editor toolbar.
-              </li>
+              <li>When editing a document, click on the PyRAT icon in the text editor toolbar.</li>
             </ol>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>
                   {authenticatedServers.length === 0 && (
-                    <Typography variant="body2">
-                      No authenticated servers.
-                    </Typography>
+                    <Typography variant="body2">No authenticated servers.</Typography>
                   )}
                   {authenticatedServers.map((server) => (
                     <form
                       key={server.alias}
                       onSubmit={(event) => {
                         event.preventDefault();
-                        void saveAppOptions(
-                          "PYRAT",
-                          Optional.present(server.optionsId),
-                          {
-                            PYRAT_ALIAS: server.alias,
-                            PYRAT_URL: server.url,
-                            PYRAT_APIKEY: server.apiKey,
-                          }
-                        )
+                        void saveAppOptions("PYRAT", Optional.present(server.optionsId), {
+                          PYRAT_ALIAS: server.alias,
+                          PYRAT_URL: server.url,
+                          PYRAT_APIKEY: server.apiKey,
+                        })
                           .then(() => {
                             addAlert(
                               mkAlert({
                                 variant: "success",
                                 message: "Successfully saved API key.",
-                              })
+                              }),
                             );
                           })
                           .catch((e) => {
@@ -117,7 +95,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                   variant: "error",
                                   title: "Error saving API key.",
                                   message: e.message,
-                                })
+                                }),
                               );
                           });
                       }}
@@ -142,20 +120,16 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                             void deleteAppOptions("PYRAT", server.optionsId)
                               .then(() => {
                                 runInAction(() => {
-                                  const indexOfRemovedServer =
-                                    authenticatedServers.findIndex(
-                                      (s) => s.alias === server.alias
-                                    );
-                                  authenticatedServers.splice(
-                                    indexOfRemovedServer,
-                                    1
+                                  const indexOfRemovedServer = authenticatedServers.findIndex(
+                                    (s) => s.alias === server.alias,
                                   );
+                                  authenticatedServers.splice(indexOfRemovedServer, 1);
                                 });
                                 addAlert(
                                   mkAlert({
                                     variant: "success",
                                     message: "Successfully deleted API key.",
-                                  })
+                                  }),
                                 );
                               })
                               .catch((e) => {
@@ -165,7 +139,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                       variant: "error",
                                       title: "Could not delete API key.",
                                       message: e.message,
-                                    })
+                                    }),
                                   );
                               });
                           }}
@@ -202,32 +176,25 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                         })
                           .then((newConfigs) => {
                             setAddMenuAnchorEl(null);
-                            const optionIdsOfExistingServers = new RsSet(
-                              authenticatedServers.map(
-                                ({ optionsId }) => optionsId
-                              )
+                            const optionIdsOfExistingServers = new Set(
+                              authenticatedServers.map(({ optionsId }) => optionsId),
                             );
-                            const optionIdsOfNewServers = new RsSet(
-                              newConfigs.credentials.authenticatedServers.map(
-                                ({ optionsId }) => optionsId
-                              )
+                            const newServer = newConfigs.credentials.authenticatedServers.find(
+                              ({ optionsId }) => !optionIdsOfExistingServers.has(optionsId),
                             );
-                            const newOptionId = optionIdsOfNewServers.subtract(
-                              optionIdsOfExistingServers
-                            ).first;
+                            if (!newServer) throw new Error("Save completed but cannot show results.");
                             runInAction(() => {
                               authenticatedServers.push({
                                 alias,
                                 url,
                                 apiKey: "",
-                                optionsId: newOptionId,
+                                optionsId: newServer.optionsId,
                               });
                               addAlert(
                                 mkAlert({
                                   variant: "success",
-                                  message:
-                                    "Successfully added new PyRAT server.",
-                                })
+                                  message: "Successfully added new PyRAT server.",
+                                }),
                               );
                             });
                           })
@@ -238,7 +205,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                   variant: "error",
                                   title: "Error added new PyRAT server.",
                                   message: e.message,
-                                })
+                                }),
                               );
                           });
                       }}

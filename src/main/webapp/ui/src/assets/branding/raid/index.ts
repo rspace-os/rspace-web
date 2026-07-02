@@ -6,4 +6,3 @@ export const LOGO_COLOR = {
   saturation: 60,
   lightness: 51,
 };
-

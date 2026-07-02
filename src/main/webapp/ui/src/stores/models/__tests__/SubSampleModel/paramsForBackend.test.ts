@@ -1,17 +1,13 @@
-import { describe, expect, test, vi } from 'vitest';
-import {
-  makeMockSubSample,
-  makeMockSubSampleWithParentContainer,
-} from "./mocking";
+import { describe, expect, test, vi } from "vitest";
+import { makeMockSubSample, makeMockSubSampleWithParentContainer } from "./mocking";
 
 vi.mock("../../../use-stores", () => () => {});
-vi.mock("../../../../stores/stores/RootStore", () => ({
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  unitStore: {
-    getUnit: () => ({ label: "ml" }),
-  },
-})
-
+    unitStore: {
+      getUnit: () => ({ label: "ml" }),
+    },
+  }),
 }));
 describe("computed: paramsForBackend", () => {
   /*
@@ -24,17 +20,11 @@ describe("computed: paramsForBackend", () => {
   describe("paramsForBackend should be JSON serialisable when", () => {
     test("the subSample is on the bench.", () => {
       const subSample = makeMockSubSample();
-      expect(JSON.stringify(subSample.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
-
+      expect(JSON.stringify(subSample.paramsForBackend)).toEqual(expect.any(String));
     });
     test("the subSample has a parent container.", () => {
       const subSample = makeMockSubSampleWithParentContainer();
-      expect(JSON.stringify(subSample.paramsForBackend)).toEqual(
-        expect.any(String)
-      );
+      expect(JSON.stringify(subSample.paramsForBackend)).toEqual(expect.any(String));
     });
   });
 });
-

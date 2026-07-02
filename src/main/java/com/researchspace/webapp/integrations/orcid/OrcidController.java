@@ -34,6 +34,9 @@ public class OrcidController {
   @Value("${orcid.client.secret}")
   private String clientSecret;
 
+  @Value("${orcid.oauth.token.url}")
+  private String tokenUrl;
+
   @Autowired private IntegrationsHandler integrationsHandler;
 
   @Autowired protected UserManager userManager;
@@ -104,7 +107,7 @@ public class OrcidController {
 
   private OrcidConnector getOrcidConnector() {
     if (connector == null) {
-      connector = new OrcidConnector(clientId, clientSecret);
+      connector = new OrcidConnector(clientId, clientSecret, tokenUrl);
     }
     return connector;
   }

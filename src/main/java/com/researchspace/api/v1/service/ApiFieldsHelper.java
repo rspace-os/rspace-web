@@ -3,6 +3,7 @@ package com.researchspace.api.v1.service;
 import com.researchspace.api.v1.model.ApiDocumentField;
 import com.researchspace.api.v1.model.ApiField;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.linkedelements.RichTextUpdater;
 import com.researchspace.model.EcatAudio;
 import com.researchspace.model.EcatChemistryFile;
@@ -342,6 +343,25 @@ public class ApiFieldsHelper {
                 "errors.inventory." + entityTypeName + ".mandatory.field.no.selection",
                 new Object[] {templateField.getName()},
                 "no option selected for mandatory field");
+          }
+        } else if (FieldType.LINK.equals(templateField.getType())) {
+          // Link fields carry their value in the `link` object, not `content` (which is always
+          // empty for them). So the mandatory check must read the incoming link's target,
+          // falling back to any link already present on the field when no value is supplied.
+          boolean hasLinkTarget;
+          if (hasApiFieldForTemplateField) {
+            ApiInventoryLink incomingLink = incomingApiFields.get(i).getLink();
+            hasLinkTarget =
+                incomingLink != null && StringUtils.isNotBlank(incomingLink.getTargetGlobalId());
+          } else {
+            hasLinkTarget = templateField.isValidValueForMandatoryField(null);
+          }
+          if (!hasLinkTarget) {
+            errors.rejectValue(
+                "fields",
+                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
+                new Object[] {templateField.getName()},
+                "no content for mandatory field");
           }
         } else {
           String incomingContent =

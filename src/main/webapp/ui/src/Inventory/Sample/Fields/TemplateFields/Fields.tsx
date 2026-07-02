@@ -1,12 +1,8 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
-import { type Sample } from "../../../../stores/definitions/Sample";
 import Box from "@mui/material/Box";
-import FormField from "../../../components/Inputs/FormField";
-import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
+import { observer } from "mobx-react-lite";
+import type React from "react";
 import ChoiceField from "../../../../components/Inputs/ChoiceField";
 import DateField from "../../../../components/Inputs/DateField";
-import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
 import NumberField from "../../../../components/Inputs/NumberField";
 import RadioField from "../../../../components/Inputs/RadioField";
 import ReferenceField from "../../../../components/Inputs/ReferenceField";
@@ -14,9 +10,14 @@ import StringField from "../../../../components/Inputs/StringField";
 import TextField from "../../../../components/Inputs/TextField";
 import TimeField from "../../../../components/Inputs/TimeField";
 import UriField from "../../../../components/Inputs/UriField";
-import { type Field } from "../../../../stores/definitions/Field";
-import InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
-import { type GalleryFile } from "../../../../eln/gallery/useGalleryListing";
+import type { GalleryFile } from "../../../../eln/gallery/useGalleryListing";
+import type { Field } from "../../../../stores/definitions/Field";
+import type { Sample } from "../../../../stores/definitions/Sample";
+import { truncateIsoTimestamp } from "../../../../stores/definitions/Units";
+import type InventoryBaseRecord from "../../../../stores/models/InventoryBaseRecord";
+import AttachmentField from "../../../components/Fields/Attachments/AttachmentField";
+import FormField from "../../../components/Inputs/FormField";
+import LinkFieldValue from "./LinkFieldValue";
 
 type FieldsArgs = {
   onErrorStateChange: (fieldName: string, hasError: boolean) => void;
@@ -39,8 +40,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     };
 
     if (field.type === "attachment") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
+      if (typeof field.content === "number") throw new Error("Invalid content type");
       const description = String(field.content);
       return (
         <FormField
@@ -65,10 +65,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
               fieldOwner={sample}
               onChange={({ target }) => {
                 field.setAttributesDirty({ content: target.value });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
               attachment={value.attachment}
               onAttachmentChange={(file: GalleryFile | File) => {
@@ -101,10 +98,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
               }))}
               onChange={({ target }) => {
                 field.setAttributesDirty({ selectedOptions: target.value });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -113,9 +107,8 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     if (field.type === "date") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
-      const value = String(field.content);
+      if (typeof field.content === "number") throw new Error("Invalid content type");
+      const value = field.content as string | Date | null;
       return (
         <FormField
           {...commonProps}
@@ -126,16 +119,9 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
               {...props}
               onChange={({ target }) => {
                 field.setAttributesDirty({
-                  content: target.value
-                    ? truncateIsoTimestamp(target.value, "date").orElse(
-                        "NaN-NaN-NaN",
-                      )
-                    : null,
+                  content: target.value ? truncateIsoTimestamp(target.value, "date").orElse("NaN-NaN-NaN") : null,
                 });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -157,10 +143,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                   content: target.value,
                 });
                 field.setError(!target.checkValidity());
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
               slotProps={{
                 htmlInput: {
@@ -194,10 +177,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
               }))}
               onChange={({ target }) => {
                 field.setAttributesDirty({ selectedOptions: [target.value] });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -206,19 +186,11 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     if (field.type === "reference") {
-      return (
-        <FormField
-          {...commonProps}
-          key={field.name}
-          value={void 0}
-          renderInput={() => <ReferenceField />}
-        />
-      );
+      return <FormField {...commonProps} key={field.name} value={void 0} renderInput={() => <ReferenceField />} />;
     }
 
     if (field.type === "string") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
+      if (typeof field.content === "number") throw new Error("Invalid content type");
       return (
         <FormField
           {...commonProps}
@@ -231,10 +203,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -243,8 +212,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     if (field.type === "text") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
+      if (typeof field.content === "number") throw new Error("Invalid content type");
       return (
         <FormField
           {...commonProps}
@@ -259,10 +227,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -271,13 +236,16 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     if (field.type === "time") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
+      if (typeof field.content === "number") throw new Error("Invalid content type");
+      const timeValue =
+        field.content instanceof Date
+          ? field.content.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+          : String(field.content);
       return (
         <FormField
           {...commonProps}
           key={field.name}
-          value={String(field.content)}
+          value={timeValue}
           renderInput={({ error: _error, ...props }) => (
             <TimeField
               {...props}
@@ -285,13 +253,8 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                 field.setAttributesDirty({
                   content: target.value,
                 });
-                field.setError(
-                  target.value ? Number.isNaN(Number(target.value)) : false,
-                );
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                field.setError(target.value ? Number.isNaN(Number(target.value)) : false);
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
             />
           )}
@@ -300,8 +263,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
     }
 
     if (field.type === "uri") {
-      if (typeof field.content === "number")
-        throw new Error("Invalid content type");
+      if (typeof field.content === "number") throw new Error("Invalid content type");
       return (
         <FormField
           {...commonProps}
@@ -315,11 +277,33 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
                   content: target.value,
                 });
                 field.setError(false); // URIs are strings, so isNaN is not the right validation
-                onErrorStateChange(
-                  `template_${field.name}`,
-                  (field.mandatory && !field.hasContent) || field.error,
-                );
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
+            />
+          )}
+        />
+      );
+    }
+
+    if (field.type === "link") {
+      return (
+        <FormField
+          {...commonProps}
+          key={field.name}
+          value={field.link?.targetGlobalId ?? ""}
+          // ID is not used because there is no singular HTMLInputElement to attach it to
+          doNotAttachIdToLabel
+          // the field name is shown inside the link card (after "Link"), like a
+          // custom Link extra-field, so the duplicate label above the card is hidden
+          hideLabel
+          renderInput={() => (
+            <LinkFieldValue
+              field={field}
+              sourceGlobalId={sample.globalId ?? ""}
+              disabled={!sample.isFieldEditable("fields")}
+              onChange={() =>
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
+              }
             />
           )}
         />

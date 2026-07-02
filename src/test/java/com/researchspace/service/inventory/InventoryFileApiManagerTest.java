@@ -15,7 +15,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.InventoryFile;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.service.impl.ContentInitializerForDevRunManager;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestGroup;
@@ -30,7 +30,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
   public void setUp() throws Exception {
     super.setUp();
 
-    sampleDao.resetDefaultTemplateOwner();
+    sampleTemplateDao.resetDefaultTemplateOwner();
   }
 
   @Test
@@ -68,7 +68,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     User user = createInitAndLoginAnyUser();
     ApiSampleWithFullSubSamples apiSample = createBasicSampleForUser(user);
-    Sample dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
+    SampleEntity dbSample = sampleApiMgr.getSampleById(apiSample.getId(), user);
     assertEquals(0, dbSample.getAttachedFiles().size());
 
     // add file attachment
@@ -89,7 +89,7 @@ public class InventoryFileApiManagerTest extends SpringTransactionalTest {
 
     // copy inventory item
     ApiSampleWithFullSubSamples copiedSample = sampleApiMgr.duplicate(apiSample.getId(), user);
-    Sample dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
+    SampleEntity dbSampleCopy = sampleApiMgr.getSampleById(copiedSample.getId(), user);
     assertEquals(2, dbSampleCopy.getAttachedFiles().size());
 
     // delete attachment from original sample

@@ -1,23 +1,18 @@
-import React from "react";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import React from "react";
 import materialTheme from "../../../theme";
-import IgsnTable from "./IgsnTable";
-import { type Identifier } from "../../useIdentifiers";
 import RsSet from "../../../util/set";
+import type { Identifier } from "../../useIdentifiers";
+import IgsnTable from "./IgsnTable";
 
 export function SimpleIgsnTable() {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
-    new RsSet([])
-  );
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
         <h1>IGSN Table</h1>
-        <IgsnTable
-          selectedIgsns={selectedIgsns}
-          setSelectedIgsns={setSelectedIgsns}
-        />
+        <IgsnTable selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} />
         <h2>Selected IGSNs</h2>
         <ul aria-label="selected IGSNs">
           {[...selectedIgsns].map((igsn) => (
@@ -30,18 +25,12 @@ export function SimpleIgsnTable() {
 }
 
 export function SingularSelectionIgsnTable() {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
-    new RsSet([])
-  );
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>
         <h1>IGSN Table</h1>
-        <IgsnTable
-          selectedIgsns={selectedIgsns}
-          setSelectedIgsns={setSelectedIgsns}
-          disableMultipleRowSelection
-        />
+        <IgsnTable selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} disableMultipleRowSelection />
         <h2>Selected IGSNs</h2>
         <ul aria-label="selected IGSNs">
           {[...selectedIgsns].map((igsn) => (
@@ -54,9 +43,7 @@ export function SingularSelectionIgsnTable() {
 }
 
 export function IgsnTableWithControlDefaults() {
-  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(
-    new RsSet([])
-  );
+  const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   return (
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={materialTheme}>

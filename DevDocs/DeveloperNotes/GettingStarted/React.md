@@ -1,89 +1,54 @@
 # Getting started as a React developer
 
-In general, we use [TypeScript](https://www.typescriptlang.org/) and [Prettier](https://prettier.io/) for
-making the development less error prone and more convenient.
-
-[ESlint](https://eslint.org/) is used for editors that don't come with great out of
-the box JavaScript IDE functionalities.
+In general, we use [TypeScript](https://www.typescriptlang.org/) and
+[Biome](https://biomejs.dev/) to make development less error prone and more
+convenient. Biome is a single fast tool that both formats and lints the frontend,
+replacing the previous ESLint + Prettier setup.
 
 ## Do
-- To enable the use of Flow, add `// @flow` at the top of a JavaScript file
-- Please familiarise yourself with [Flow types](https://flow.org/en/docs/types/)
-- If Prettier is not run on autosave, run Prettier on all modified JavaScript files
-  before commit
-- If you are installing a new npm package and need flow typings, do `npm run
-  flow-typed search <package-name>` and install with `npm run flow-typed install <annotations-package-name>`.
-  For example `npm run flow-typed install react-router-dom` installs type annotations
-  for `react-router-dom`.
+- Type new and modified code with TypeScript. Run `pnpm run tsc` to type-check
+  the whole project (`tsc --noEmit`).
+- If your editor does not format with Biome on save, run `pnpm run lint:fix` on
+  modified files before committing.
+- When you add a new npm package that ships its own types, no extra step is
+  needed; otherwise install the community types, e.g. `pnpm add -D @types/<package-name>`.
 
 ## Notes
-- Flow does not support typescript type information files `.d.ts` :confused:
-  [link](https://github.com/facebook/flow/issues/7)
-- The more of the codebase is covered with Flow, the easier it will become to migrate
-  to TypeScript if desired
-- Prettier works with JavaScript, JSON, Markdown, ...
+- Biome formats and lints JavaScript, TypeScript, JSX/TSX, JSON, and CSS (not Markdown).
+- Type-checking is done by `tsc`; Biome handles linting and formatting. Both run
+  in CI and in the pre-commit hook, and any Biome info/warning/error fails the
+  check (`pnpm run lint:ci`).
 
 ## Editor set up
 
 ### VSCode
-1. Make sure you have the latest version of VS Code
-2. Install ESlint plugin `dbaeumer.vscode-eslint`
-3. Install Prettier plugin `esbenp.prettier-vscode`. VSCode will now automatically
-   format code on save. In addition, you can use the following shortcuts to manually
-   trigger Prettier:
+1. Make sure you have the latest version of VS Code.
+2. Install the Biome plugin `biomejs.biome`. VSCode will then automatically
+   format code on save. You can also trigger formatting manually:
    - Windows `Shift + Alt + F`
    - Mac `Shift + Option + F`
    - Ubuntu `Ctrl + Shift + I`
-4. Install Flow language support `flowtype.flow-for-vscode`
 
-#### VSCode comments
-_Correct as of 2020 June:_
-In VSCode JavaScript and TypeScript are tighly coupled. VSCode intellisense and other IDE
-features for JavaScript are dependent on TypeScript. When Flow is enabled, this
-results in double type annotations on hover and double autocomplete suggestions.
-Generally, the top type pop-up annotation comes from Flow and the bottom one from
-TypeScript. At the moment it is not possible to disable the double annotation
-pop-ups  without disabling TypeScript and hence disabling some important IDE
-features.
+   The workspace `.vscode/settings.json` already sets Biome as the default
+   formatter and enables fix-all / organize-imports on save.
 
 #### VSCode __recommendations__
 - Additional plugins:
   1. npm - `eg2.vscode-npm-script`
   1. npm-intellisense - `christian-kohler.npm-intellisense`
 - Replace VSCode with VSCodium. VSCodium is a drop-in replacement for VSCode
-  without Microsoft telemetry and tracking
+  without Microsoft telemetry and tracking.
 
 ### WebStorm / Intellij
-- ESLint is optional, WebStorm/Intellij provide decent inspections out of the box
-- Install Prettier plugin in `File > Settings/Preferences > Plugins`.
-  Two ways to trigger it:
-  1. Use the “Reformat with Prettier” action (`Alt-Shift-Cmd-P` on macOS or
-     `Alt-Shift-Ctrl-P` on Windows and Linux) or find it using the “Find Action”
-     popup (`Cmd/Ctrl-Shift-A`)
-  1. Tick the "Run on save for files" option in `File > Settings/Preferences >
-     Languages & Frameworks > JavaScript > Prettier`
-- Change the project language level to Flow:
-  1. Go to `File > Settings/Preferences > Languages & Frameworks > JavaScript`
-  1. From the `JavaScript Language Version` list, choose Flow
-  1. In the Flow package or executable field, specify the path to `node_modules/flow-bin`
-  1. In the Use Flow server for area tick: `Type checking` and `Navigation, code
-     completion, and type hinting`
-  1. Ensure `Save all modified files automatically` checkbox is selected
+- WebStorm/IntelliJ provide decent TypeScript inspections out of the box.
+- Install the Biome plugin from `File > Settings/Preferences > Plugins`, then
+  enable "Run Biome on save" (or trigger the "Reformat with Biome" action) so
+  formatting and safe lint fixes are applied automatically.
 
 ### Other editors
-You need to set up Flow, Prettier and Eslint. If your editor/IDE does not provide
-plugins for these, it is possible to run these from the command line.
-
-### Flow
-A lot of editor plugins for flow are simple wrappers around calls to the
-[Language Server][lsp] that the [flow binary exposes][flow-cli]. If your editor
-is having trouble displaying any flow errors then ensure that this server is
-running correctly (to restart run `npm run flow stop ; npm run flow start`). If
-your editor does not have a dedicated flow plugin, then see if you editor's
-Language Server Protocol integration will do the same job.
-
-[lsp]: https://microsoft.github.io/language-server-protocol/
-[flow-cli]: https://flow.org/en/docs/cli/
+Biome ships a language server. If your editor does not have a dedicated Biome
+plugin, point its Language Server Protocol integration at `biome lsp-proxy`, or
+run `pnpm run lint` / `pnpm run lint:fix` from the command line.
 
 
 ## General Notes

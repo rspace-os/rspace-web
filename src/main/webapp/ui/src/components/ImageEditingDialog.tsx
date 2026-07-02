@@ -1,43 +1,20 @@
-import React from "react";
 import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
-import { paperClasses } from "@mui/material/Paper";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
+import { paperClasses } from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
+import React from "react";
 import ReactCrop from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import RotateLeftIcon from "@mui/icons-material/RotateLeft";
 import RotateRightIcon from "@mui/icons-material/RotateRight";
-import ButtonGroup from "@mui/material/ButtonGroup";
-import Divider from "@mui/material/Divider";
 import Box from "@mui/material/Box";
-import IconButton from "@mui/material/IconButton";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import DialogTitle from "@mui/material/DialogTitle";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 
-const isTestEnv =
-  typeof process !== "undefined" && process.env.NODE_ENV === "test";
-type NoopTransitionProps = {
-  in?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
 const imageTypeFromFile = (file: Blob): string => file.type.split("/")[1];
 const readAsBinaryString = (file: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
@@ -88,8 +65,7 @@ function ImageEditingDialog({
     if (imageFile) {
       setImageType(imageTypeFromFile(imageFile));
       void readAsBinaryString(imageFile).then((binaryString: string) => {
-        if (settable)
-          setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
+        if (settable) setEditorData(`data:${imageType};base64,${btoa(binaryString)}`);
       });
     }
     return () => {
@@ -191,25 +167,6 @@ function ImageEditingDialog({
       open={open}
       onClose={close}
       aria-labelledby={titleId}
-      transitionDuration={isTestEnv ? 0 : undefined}
-      disableAutoFocus={isTestEnv}
-      disableEnforceFocus={isTestEnv}
-      disableRestoreFocus={isTestEnv}
-      slotProps={
-        isTestEnv
-          ? {
-              backdrop: {
-                transitionDuration: 0,
-                slots: {
-                  transition: NoopTransition,
-                },
-              },
-            }
-          : undefined
-      }
-      slots={{
-        transition: isTestEnv ? NoopTransition : undefined,
-      }}
       sx={{
         [`& > .${dialogClasses.container} > .${paperClasses.root}`]: {
           /*

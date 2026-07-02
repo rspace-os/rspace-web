@@ -1,43 +1,43 @@
-import React from "react";
+import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import InvApiService from "../../../../common/InvApiService";
-import TemplatePicker from "../TemplatePicker";
-import materialTheme from "../../../../theme";
-import { ThemeProvider } from "@mui/material/styles";
 import { templateAttrs } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import { makeMockRootStore } from "../../../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../../../stores/stores-context";
+import materialTheme from "../../../../theme";
+import TemplatePicker from "../TemplatePicker";
 import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/matchMedia";
 import userEvent from "@testing-library/user-event";
-import { type AxiosResponse } from "@/common/axios";
+import { describe, expect, type Mock, test, vi } from "vitest";
+import type { AxiosResponse } from "@/common/axios";
 
-import { test, type Mock, describe, expect, vi } from 'vitest';
 vi.mock("../../../../common/InvApiService", () => ({
   default: {
-  get: () => ({}),
-  query: () => ({}),
-  }}));
-vi.mock("../../../../stores/stores/RootStore", () => ({
+    get: () => ({}),
+    query: () => ({}),
+  },
+}));
+vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
-  searchStore: {
-    savedSearches: [{ name: "Dummy saved search", query: "foo" }],
-  },
-  uiStore: {
-    addAlert: () => {},
-  },
-  peopleStore: {
-    currentUser: {
-      id: 1,
-      username: "jb",
-      firstName: "joe",
-      lastName: "bloggs",
-      email: null,
-      workbenchId: 1,
-      _links: [],
+    searchStore: {
+      savedSearches: [{ name: "Dummy saved search", query: "foo" }],
     },
-  },
-})
+    uiStore: {
+      addAlert: () => {},
+    },
+    peopleStore: {
+      currentUser: {
+        id: 1,
+        username: "jb",
+        firstName: "joe",
+        lastName: "bloggs",
+        email: null,
+        workbenchId: 1,
+        _links: [],
+      },
+    },
+  }),
 }));
 
 (window.fetch as Mock) = vi.fn(() =>
@@ -57,8 +57,7 @@ vi.mock("../../../../stores/stores/RootStore", () => ({
     blob: () => Promise.resolve(new Blob()),
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
-  } as Response)
-
+  } as Response),
 );
 describe("TemplatePicker", () => {
   describe("Should support saved searches", () => {
@@ -99,15 +98,13 @@ describe("TemplatePicker", () => {
             config: {},
           } as AxiosResponse);
         throw new Error(`Endpoint not supported: ${endpoint}`);
-
       });
       render(
         <ThemeProvider theme={materialTheme}>
           <storesContext.Provider value={rootStore}>
             <TemplatePicker setTemplate={() => {}} disabled={false} />
           </storesContext.Provider>
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");
@@ -115,10 +112,7 @@ describe("TemplatePicker", () => {
 
       expect(screen.getByRole("table")).toHaveTextContent("bar");
       await user.click(screen.getByRole("button", { name: "Saved Searches" }));
-      await user.click(
-        screen.getByRole("menuitem", { name: /^Dummy saved search/ })
-
-      );
+      await user.click(screen.getByRole("menuitem", { name: /^Dummy saved search/ }));
       await waitFor(() => {
         expect(screen.getByRole("table")).toHaveTextContent("foo");
       });
@@ -126,4 +120,3 @@ describe("TemplatePicker", () => {
     });
   });
 });
-

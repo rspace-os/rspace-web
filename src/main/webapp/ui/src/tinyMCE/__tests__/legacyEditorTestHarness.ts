@@ -1,5 +1,5 @@
-import path from "node:path";
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { vi } from "vitest";
 
@@ -18,10 +18,11 @@ type JQueryRequestChain = {
   always: (handler: (...args: Array<unknown>) => void) => JQueryRequestChain;
 };
 
-type JQueryWindow = Window & typeof globalThis & {
-  $: JQueryWithTestDoubles;
-  jQuery: JQueryWithTestDoubles;
-};
+type JQueryWindow = Window &
+  typeof globalThis & {
+    $: JQueryWithTestDoubles;
+    jQuery: JQueryWithTestDoubles;
+  };
 
 export type LegacyEditorHarness = {
   $: JQueryWithTestDoubles;
@@ -47,14 +48,8 @@ export type LegacyEditorHarness = {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const WEBAPP_ROOT = path.resolve(__dirname, "../../../..");
 const SCRIPTS_ROOT = path.resolve(WEBAPP_ROOT, "scripts");
-const EDITOR_SCRIPTS_ROOT = path.resolve(
-  SCRIPTS_ROOT,
-  "pages/workspace/editor",
-);
-const JQUERY_PATH = path.resolve(
-  SCRIPTS_ROOT,
-  "bower_components/jquery/dist/jquery.js",
-);
+const EDITOR_SCRIPTS_ROOT = path.resolve(SCRIPTS_ROOT, "pages/workspace/editor");
+const JQUERY_PATH = path.resolve(SCRIPTS_ROOT, "bower_components/jquery/dist/jquery.js");
 
 let jqueryLoaded = false;
 
@@ -80,6 +75,7 @@ function ensureJQueryLoaded() {
     return;
   }
 
+  // biome-ignore lint/security/noGlobalEval: initial biome migration
   window.eval(`${readFileSync(JQUERY_PATH, "utf8")}`);
   const jqueryWindow = getJQueryWindow();
   setGlobal("$", jqueryWindow.$);
@@ -89,6 +85,7 @@ function ensureJQueryLoaded() {
 
 export function loadLegacyEditorScript(scriptName: string) {
   const scriptPath = path.resolve(EDITOR_SCRIPTS_ROOT, scriptName);
+  // biome-ignore lint/security/noGlobalEval: initial biome migration
   window.eval(`${readFileSync(scriptPath, "utf8")}\n//# sourceURL=${scriptPath}`);
 }
 
@@ -236,7 +233,3 @@ export function bootstrapLegacyEditorHarness(): LegacyEditorHarness {
     getFieldIdFromTextFieldId,
   };
 }
-
-
-
-

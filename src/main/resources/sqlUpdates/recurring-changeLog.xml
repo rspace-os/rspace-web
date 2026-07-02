@@ -1,0 +1,20 @@
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+    <!-- runAlways changesets: diagnostics run on every startup. -->
+
+    <changeSet id="1-35-16-4-7b" author="richard" runAlways="true">
+        <preConditions onFailMessage="There should be 1 current filestoreroot row if a root has been set.">
+            <or>
+                <sqlCheck expectedResult="0">select count(*) from FileStoreRoot</sqlCheck>
+                <sqlCheck expectedResult="1">select count(*) from FileStoreRoot where current=1</sqlCheck>
+                <!-- if external FS is set too -->
+                <sqlCheck expectedResult="2">select count(*) from FileStoreRoot where current=1</sqlCheck>
+            </or>
+        </preConditions>
+        <comment>This is a diagnostic to ensure that there is only one current root, if there is a root set at all</comment>
+    </changeSet>
+
+</databaseChangeLog>

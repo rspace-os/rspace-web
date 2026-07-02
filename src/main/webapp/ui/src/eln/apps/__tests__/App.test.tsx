@@ -1,17 +1,17 @@
-import { test, describe, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
-import React from "react";
 import { render, screen } from "@testing-library/react";
 import App from "../App";
 import "@/__tests__/assertSemanticHeadings";
+import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
-import { ThemeProvider } from "@mui/material/styles";
 
 import "@/__tests__/__mocks__/matchMedia";
+
 const mockAxios = new MockAdapter(axios);
 
 const uiNavigationData = {
@@ -37,13 +37,10 @@ const uiNavigationData = {
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
-  mockAxios
-    .onGet("/api/v1/userDetails/uiNavigationData")
-    .reply(200, uiNavigationData);
+  mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData);
   mockAxios.onGet("livechatProperties").reply(200, {
     livechatEnabled: false,
   });
-
 });
 describe("Apps page", () => {
   describe("Accessibility", () => {
@@ -52,13 +49,11 @@ describe("Apps page", () => {
         success: false,
         data: null,
         error: "",
-
       });
       const { container } = render(
         <ThemeProvider theme={materialTheme}>
           <App />
-        </ThemeProvider>
-
+        </ThemeProvider>,
       );
       await screen.findAllByText(/Something went wrong!/i);
 
@@ -67,20 +62,17 @@ describe("Apps page", () => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
       await expect(container).toBeAccessible();
     });
-
   });
   test("Has all of the correct headings.", async () => {
     mockAxios.onPost("integration/allIntegrations").reply(200, {
       success: false,
       data: null,
       error: "",
-
     });
     const { container } = render(
       <ThemeProvider theme={materialTheme}>
         <App />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
 
     await screen.findAllByText(/Something went wrong!/i);

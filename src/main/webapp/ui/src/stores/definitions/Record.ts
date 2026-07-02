@@ -1,9 +1,9 @@
-import { type URL } from "../../util/types";
-import { type Container } from "./Container";
-import { type Person } from "../definitions/Person";
-import { type InventoryRecord } from "./InventoryRecord";
-import { type Tag } from "./Tag";
-import { type LinkableRecord } from "./LinkableRecord";
+import type { URL } from "../../util/types";
+import type { Person } from "../definitions/Person";
+import type { Container } from "./Container";
+import type { InventoryRecord } from "./InventoryRecord";
+import type { LinkableRecord } from "./LinkableRecord";
+import type { Tag } from "./Tag";
 
 export type ReadAccessLevel = "full" | "limited" | "public";
 

@@ -14,6 +14,7 @@ import com.researchspace.dao.UserDao;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
+import com.researchspace.model.dtos.ShareConfigElement;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
 import com.researchspace.model.permissions.DefaultPermissionFactory;
@@ -22,16 +23,22 @@ import com.researchspace.model.permissions.PermissionDomain;
 import com.researchspace.model.permissions.PermissionFactory;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.BaseRecord;
+import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
+import java.util.Optional;
 import org.apache.shiro.authz.Permission;
+import org.apache.shiro.subject.Subject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -48,6 +55,8 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
   @Mock RecordDao recordDao;
   @Mock UserDao userDao;
   @Mock GroupDao grpDao;
+  @Mock DocumentSharedStateCalculator docSharedStatusCalculator;
+  @Mock CommunicationManager commMgr;
 
   private Long docId01 = 75567L;
   private Long docId02 = 74205L;
@@ -440,5 +449,46 @@ public class RecordSharingManagerImplTest { // } extends SpringTransactionalTest
         recordSharingManager.listSharesForRecordsAndUser(
             List.of(docId01), new PaginationCriteria<>(), u);
     assertEquals(1, shares.getHits().intValue());
+  }
+
+  @Test
+  public void unsharingNotifiesShareeToRefreshPermissionsCache() {
+    // the sharee's Shiro authorisation cache still grants RECORD:READ after an
+    // unshare; without a notification it serves stale permissions (and e.g. the
+    // link card's "No access" pill) until the server restarts
+    User alice = TestFactory.createAnyUser("alice");
+    alice.setId(7L);
+    User bob = TestFactory.createAnyUser("bob");
+    bob.setId(8L);
+    StructuredDocument doc = TestFactory.createAnySDForUser(TestFactory.createAnyForm(), alice);
+    doc.setId(docId02);
+
+    Subject subject = Mockito.mock(Subject.class);
+    when(subject.getPrincipal()).thenReturn("alice");
+    ShiroTestUtils shiroUtils = new ShiroTestUtils();
+    shiroUtils.setSubject(subject);
+    try {
+      RecordGroupSharing bobShare = new RecordGroupSharing();
+      bobShare.setSharee(bob);
+      bobShare.setShared(doc);
+      when(recordDao.getSafeNull(docId02)).thenReturn(Optional.of(doc));
+      when(userDao.get(8L)).thenReturn(bob);
+      when(userDao.getUserByUsername("alice")).thenReturn(alice);
+      when(docSharedStatusCalculator.canShare(bob, doc, alice)).thenReturn(false);
+      when(permissnUtils.isPermitted(doc, PermissionType.SHARE, alice)).thenReturn(true);
+      when(permissnUtils.createFromString("read")).thenReturn(PermissionType.READ);
+      when(groupshareRecordDao.findByRecordAndUserOrGroup(8L, docId02))
+          .thenReturn(Optional.of(bobShare));
+      when(folderDao.getUserSharedFolder(bob)).thenReturn(null);
+
+      ShareConfigElement cfg = new ShareConfigElement();
+      cfg.setUserId(8L);
+      cfg.setOperation("read");
+      recordSharingManager.unshareRecord(alice, docId02, new ShareConfigElement[] {cfg});
+
+      Mockito.verify(permissnUtils).notifyUserOrGroupToRefreshCache(bob);
+    } finally {
+      shiroUtils.clearSubject();
+    }
   }
 }

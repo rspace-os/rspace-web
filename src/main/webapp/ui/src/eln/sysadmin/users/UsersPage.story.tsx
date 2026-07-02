@@ -1,9 +1,9 @@
-import { Suspense } from "react";
-import { UsersPage } from "./index";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../../theme";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Suspense } from "react";
+import materialTheme from "../../../theme";
+import { UsersPage } from "./index";
 
 const queryClient = new QueryClient({
   defaultOptions: {

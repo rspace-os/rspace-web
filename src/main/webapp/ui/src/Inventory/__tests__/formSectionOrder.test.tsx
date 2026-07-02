@@ -1,38 +1,39 @@
-import { test, describe, vi } from 'vitest';
+import { describe, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
-import React from "react";
-import {
-  render,
-  cleanup,
-  screen,
-  within,
-} from "@testing-library/react";
+import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import type React from "react";
+import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderOfLists";
+import { IsValid } from "../../components/ValidatingSubmitButton";
+import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
+import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../stores/models/__tests__/InstrumentTemplateModel/mocking";
+import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
+import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
+import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
+import { makeMockTemplate } from "../../stores/models/__tests__/TemplateModel/mocking";
+import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
+import { storesContext } from "../../stores/stores-context";
+import materialTheme from "../../theme";
 import RsSet from "../../util/set";
+import ContainerBatchForm from "../Container/BatchForm";
 import ContainerForm from "../Container/Form";
 import ContainerNewRecordForm from "../Container/NewRecordForm";
-import ContainerBatchForm from "../Container/BatchForm";
+import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentNewRecordForm from "../Instrument/NewRecordForm";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
+import InstrumentTemplateNewRecordForm from "../InstrumentTemplate/NewRecordForm";
+import MixedBatchForm from "../Mixed/BatchForm";
+import SampleBatchForm from "../Sample/BatchForm";
 import SampleForm from "../Sample/Form";
 import SampleNewRecordForm from "../Sample/NewRecordForm";
-import SampleBatchForm from "../Sample/BatchForm";
+import SubSampleBatchForm from "../Subsample/BatchForm";
+import SubSampleForm from "../Subsample/Form";
 import TemplateForm from "../Template/Form";
 import TemplateNewRecordForm from "../Template/NewRecordForm";
-import SubSampleForm from "../Subsample/Form";
-import SubSampleBatchForm from "../Subsample/BatchForm";
-import MixedBatchForm from "../Mixed/BatchForm";
-import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
-import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
-import { makeMockSample } from "../../stores/models/__tests__/SampleModel/mocking";
-import { makeMockTemplate } from "../../stores/models/__tests__/TemplateModel/mocking";
-import { makeMockSubSample } from "../../stores/models/__tests__/SubSampleModel/mocking";
-import { storesContext } from "../../stores/stores-context";
-import { ThemeProvider } from "@mui/material/styles";
-import materialTheme from "../../theme";
-import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
-import { type InventoryRecord } from "../../stores/definitions/InventoryRecord";
-import { assertConsistentOrderOfLists } from "@/__tests__/assertConsistentOrderOfLists";
-import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 
-import { IsValid } from "../../components/ValidatingSubmitButton";
 class ResizeObserver {
   observe(): void {}
   unobserve(): void {}
@@ -60,6 +61,12 @@ vi.mock("../components/ContextMenu/ContextMenu", () => ({
 vi.mock("../Sample/Fields/Template/Template", () => ({
   default: vi.fn(() => <div></div>),
 }));
+vi.mock("../Instrument/Fields/InstrumentTemplateField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../InstrumentTemplate/Fields/InstrumentsList", () => ({
+  default: vi.fn(() => <div></div>),
+}));
 vi.mock("../Sample/Fields/Quantity", () => ({
   default: vi.fn(() => <div></div>),
 }));
@@ -70,7 +77,7 @@ vi.mock("../../common/InvApiService", () => ({
   },
 }));
 
-vi.mock("../../stores/stores/RootStore", () => ({
+vi.mock("../../stores/stores/getRootStore", () => ({
   default: () => ({
     searchStore: {
       savedSearches: [{ name: "Dummy saved search", query: "foo" }],
@@ -102,25 +109,20 @@ window.fetch = vi.fn(() =>
     statusText: "OK",
     type: "basic",
     url: "",
-    clone: () => ({} as Response),
+    clone: () => ({}) as Response,
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
     blob: () => Promise.resolve(new Blob()),
     formData: () => Promise.resolve(new FormData()),
     text: () => Promise.resolve(""),
     body: null,
     bodyUsed: false,
-  } as Response)
-
+  } as Response),
 );
 type MakeRootStoreArgs = {
   activeResult: InventoryRecord | null;
   batchEditingRecords?: Array<InventoryRecord>;
-
 };
-function makeRootStore({
-  activeResult,
-  batchEditingRecords,
-}: MakeRootStoreArgs) {
+function makeRootStore({ activeResult, batchEditingRecords }: MakeRootStoreArgs) {
   return makeMockRootStore({
     searchStore: {
       activeResult,
@@ -147,34 +149,27 @@ function makeRootStore({
       unitsOfCategory: () => [],
     },
   });
-
 }
-function getSectionNames(
-  reactComponent: React.ReactNode,
-  rootStore: MakeRootStoreArgs
-): Array<string> {
+function getSectionNames(reactComponent: React.ReactNode, rootStore: MakeRootStoreArgs): Array<string> {
   render(
     <ThemeProvider theme={materialTheme}>
       <storesContext.Provider value={makeRootStore(rootStore)}>
         <SynchroniseFormSections>{reactComponent}</SynchroniseFormSections>
       </storesContext.Provider>
-    </ThemeProvider>
+    </ThemeProvider>,
   );
   const sectionNames = screen
     .getAllByRole("region")
-    .map(
-      (r) => within(r).getByRole("heading", { level: 3 }).textContent
-    );
+    .map((r) => within(r).getByRole("heading", { level: 3 }).textContent);
   cleanup();
   return sectionNames;
-
 }
 describe("Form Section Order", () => {
   test("Across all of the forms, all of the sections should be in a consistent order.", () => {
-    window.ResizeObserver =
-      ResizeObserver;
+    window.ResizeObserver = ResizeObserver;
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
     window.scrollTo = vi.fn() as any;
     assertConsistentOrderOfLists(
       new Map([
@@ -194,10 +189,10 @@ describe("Form Section Order", () => {
         ],
         [
           "Container Batch Edit Form",
-          getSectionNames(
-            <ContainerBatchForm records={new RsSet([makeMockContainer()])} />,
-            { activeResult: null, batchEditingRecords: [makeMockContainer()] }
-          ),
+          getSectionNames(<ContainerBatchForm records={new RsSet([makeMockContainer()])} />, {
+            activeResult: null,
+            batchEditingRecords: [makeMockContainer()],
+          }),
         ],
         [
           "Sample Form",
@@ -215,10 +210,10 @@ describe("Form Section Order", () => {
         ],
         [
           "Sample Batch Edit Form",
-          getSectionNames(
-            <SampleBatchForm records={new RsSet([makeMockSample()])} />,
-            { activeResult: null, batchEditingRecords: [makeMockSample()] }
-          ),
+          getSectionNames(<SampleBatchForm records={new RsSet([makeMockSample()])} />, {
+            activeResult: null,
+            batchEditingRecords: [makeMockSample()],
+          }),
         ],
         [
           "Subsample Form",
@@ -230,10 +225,10 @@ describe("Form Section Order", () => {
         ],
         [
           "Subsample Batch Edit Form",
-          getSectionNames(
-            <SubSampleBatchForm records={new RsSet([makeMockSubSample()])} />,
-            { activeResult: null, batchEditingRecords: [makeMockSubSample()] }
-          ),
+          getSectionNames(<SubSampleBatchForm records={new RsSet([makeMockSubSample()])} />, {
+            activeResult: null,
+            batchEditingRecords: [makeMockSubSample()],
+          }),
         ],
         [
           "Template Form",
@@ -250,19 +245,41 @@ describe("Form Section Order", () => {
           }),
         ],
         [
-          "Mixed Batch Edit Form",
-          getSectionNames(
-            <MixedBatchForm
-              records={new RsSet([makeMockSubSample(), makeMockContainer()])}
-            />,
-            {
-              activeResult: null,
-              batchEditingRecords: [makeMockSubSample(), makeMockContainer()],
-            }
-          ),
+          "Instrument Form",
+          getSectionNames(<InstrumentForm />, {
+            activeResult: makeMockInstrument({
+              owner: personAttrs(),
+            }),
+          }),
         ],
-      ])
+        [
+          "Instrument New Form",
+          getSectionNames(<InstrumentNewRecordForm />, {
+            activeResult: makeMockInstrument({ id: null, globalId: null }),
+          }),
+        ],
+        [
+          "Instrument Template Form",
+          getSectionNames(<InstrumentTemplateForm />, {
+            activeResult: makeMockInstrumentTemplate({
+              owner: personAttrs(),
+            }),
+          }),
+        ],
+        [
+          "Instrument Template New Form",
+          getSectionNames(<InstrumentTemplateNewRecordForm />, {
+            activeResult: makeMockInstrumentTemplate({ id: null, globalId: null }),
+          }),
+        ],
+        [
+          "Mixed Batch Edit Form",
+          getSectionNames(<MixedBatchForm records={new RsSet([makeMockSubSample(), makeMockContainer()])} />, {
+            activeResult: null,
+            batchEditingRecords: [makeMockSubSample(), makeMockContainer()],
+          }),
+        ],
+      ]),
     );
   });
 });
-

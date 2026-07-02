@@ -1,9 +1,9 @@
-import React from "react";
 import Box from "@mui/material/Box";
-import type { State } from "@/stores/definitions/InventoryRecord";
-import { match } from "@/util/Util";
 import { cyan } from "@mui/material/colors";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
+import type { State } from "@/stores/definitions/InventoryRecord";
+import { match } from "@/util/Util";
 
 type RecordStatusArgs = {
   recordState: State;
@@ -15,16 +15,11 @@ type RecordStatusArgs = {
  * is. This component displays the most important information, passed as props,
  * using bold colours to make the information clear.
  */
-export default function RecordStatus({
-  recordState,
-  deleted,
-}: RecordStatusArgs): React.ReactNode {
+export default function RecordStatus({ recordState, deleted }: RecordStatusArgs): React.ReactNode {
   const areEditing = recordState === "edit";
   const areCreating = recordState === "create";
   const theme = useTheme();
-  const prefersMoreContrast = window.matchMedia(
-    "(prefers-contrast: more)"
-  ).matches;
+  const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
   const color = match<void, string>([
     [() => areEditing, cyan[prefersMoreContrast ? 900 : 800]],
     [() => areCreating, cyan[prefersMoreContrast ? 900 : 800]],

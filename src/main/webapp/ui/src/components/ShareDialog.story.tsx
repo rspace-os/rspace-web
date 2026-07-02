@@ -1,12 +1,12 @@
-import React from "react";
-import { ShareDialog } from "./ShareDialog";
-import { ThemeProvider } from "@mui/material/styles";
 import Portal from "@mui/material/Portal";
-import Alerts from "./Alerts/Alerts";
-import { DialogBoundary } from "./DialogBoundary";
+import { ThemeProvider } from "@mui/material/styles";
+import React from "react";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/rspace/workspace";
 import AnalyticsContext from "@/stores/contexts/Analytics";
+import Alerts from "./Alerts/Alerts";
+import { DialogBoundary } from "./DialogBoundary";
+import { ShareDialog } from "./ShareDialog";
 
 export function NoPreviousShares() {
   return (
@@ -14,12 +14,7 @@ export function NoPreviousShares() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD1"]}
-              names={["Sample Document 1"]}
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD1"]} names={["Sample Document 1"]} />
           </DialogBoundary>
         </Alerts>
       </Portal>
@@ -33,12 +28,7 @@ export function SharedWithAnotherUser() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD2"]}
-              names={["A shared document"]}
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD2"]} names={["A shared document"]} />
           </DialogBoundary>
         </Alerts>
       </Portal>
@@ -52,12 +42,7 @@ export function SharedWithAGroup() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD3"]}
-              names={["Another shared document"]}
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared document"]} />
           </DialogBoundary>
         </Alerts>
       </Portal>
@@ -112,12 +97,7 @@ export function DocumentThatHasBeenSharedIntoANotebook() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD4"]}
-              names={["A shared notebook document"]}
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD4"]} names={["A shared notebook document"]} />
           </DialogBoundary>
         </Alerts>
       </Portal>
@@ -139,12 +119,7 @@ export function SharedWithAControlledOpenState() {
             Close share dialog
           </button>
           <DialogBoundary>
-            <ShareDialog
-              open={open}
-              onClose={() => setOpen(false)}
-              globalIds={["SD1"]}
-              names={["Sample Document 1"]}
-            />
+            <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />
           </DialogBoundary>
         </Alerts>
       </Portal>

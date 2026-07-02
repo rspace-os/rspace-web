@@ -2,7 +2,7 @@ package com.researchspace.service.impl;
 
 import com.axiope.model.record.init.IBuiltInPersistor;
 import com.researchspace.model.User;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
@@ -43,7 +43,7 @@ class BuiltInPersistorFacade implements IBuiltInPersistor {
   }
 
   @Override
-  public void saveSampleTemplate(Sample template) {
+  public void saveSampleTemplate(SampleTemplate template) {
     delegate.saveSampleTemplate(template);
   }
 }

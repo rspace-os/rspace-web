@@ -1,8 +1,7 @@
-import React from "react";
-import { Gallery } from ".";
-import { MemoryRouter } from "react-router-dom";
-import { GallerySection } from "./common";
+import { MemoryRouter } from "react-router";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { Gallery } from ".";
+import type { GallerySection } from "./common";
 
 /**
  * Not exactly a reusable component, but a story that shows the different URL

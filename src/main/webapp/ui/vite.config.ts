@@ -1,21 +1,19 @@
-import path from "node:path";
 import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import bundleEntries from "./bundleEntries.json";
-import { defineConfig } from "vitest/config";
-import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
-import { nodePolyfills } from "vite-plugin-node-polyfills";
 import browserslist from "browserslist";
 import browserslistToEsbuild from "browserslist-to-esbuild";
 import { browserslistToTargets } from "lightningcss";
+import type { Alias, Plugin, PluginOption, UserConfig } from "vite";
+import { defineConfig } from "vitest/config";
+import bundleEntries from "./bundleEntries.json";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const resolveFromRoot = (relativePath: string) =>
-  path.resolve(__dirname, relativePath);
+const resolveFromRoot = (relativePath: string) => path.resolve(__dirname, relativePath);
 
 /*
  * Serves the self-hosted TinyMCE 8 build as static files under
@@ -42,14 +40,7 @@ const TINYMCE_MIME: Record<string, string> = {
   ".html": "text/html",
 };
 // Subset of the package needed at runtime (omit TS/source files from dist).
-const TINYMCE_RUNTIME_ENTRIES = [
-  "tinymce.min.js",
-  "models",
-  "themes",
-  "icons",
-  "skins",
-  "plugins",
-];
+const TINYMCE_RUNTIME_ENTRIES = ["tinymce.min.js", "models", "themes", "icons", "skins", "plugins"];
 
 // Resolve the installed TinyMCE package and read its version. The version is
 // the cache-busting token for the lazily-loaded TinyMCE assets (see the
@@ -57,9 +48,7 @@ const TINYMCE_RUNTIME_ENTRIES = [
 // TinyMCE release changes the `?v=` suffix and invalidates browser/proxy
 // caches, matching the `?v=<token>` convention RSpace uses elsewhere
 // (com.axiope.webapp.taglib.AssetUrlTag).
-const tinymceDir = path.dirname(
-  createRequire(import.meta.url).resolve("tinymce/package.json"),
-);
+const tinymceDir = path.dirname(createRequire(import.meta.url).resolve("tinymce/package.json"));
 const tinymceVersion = (
   JSON.parse(fs.readFileSync(path.join(tinymceDir, "package.json"), "utf8")) as {
     version: string;
@@ -80,17 +69,10 @@ function tinymceAssets(base: string): Plugin {
         if (!matched) return next();
         const rel = decodeURIComponent(pathname.slice(matched.length));
         const filePath = path.normalize(path.join(tinymceDir, rel));
-        if (
-          !filePath.startsWith(tinymceDir) ||
-          !fs.existsSync(filePath) ||
-          !fs.statSync(filePath).isFile()
-        ) {
+        if (!filePath.startsWith(tinymceDir) || !fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
           return next();
         }
-        res.setHeader(
-          "Content-Type",
-          TINYMCE_MIME[path.extname(filePath)] ?? "application/octet-stream",
-        );
+        res.setHeader("Content-Type", TINYMCE_MIME[path.extname(filePath)] ?? "application/octet-stream");
         // Keep dev fresh; production cache-busting is handled by the `?v=`
         // version suffix on the asset URLs (see __TINYMCE_VERSION__).
         res.setHeader("Cache-Control", "no-cache");
@@ -115,6 +97,15 @@ const lightningCssTargets = browserslistToTargets(browserslist());
 const shouldGenerateBuildStats = process.env.FRONTEND_BUILD_STATS === "true";
 const devServerHost = process.env.VITE_DEV_SERVER_HOST ?? "127.0.0.1";
 const devServerPort = Number(process.env.VITE_DEV_SERVER_PORT ?? "5173");
+// When the dev server runs in a container, it binds 0.0.0.0 internally while the
+// browser reaches HMR via a published host port. These let the browser-facing
+// HMR host/port differ from the bind host/port; both default to the bind values
+// so local (non-container) dev is unchanged. VITE_USE_POLLING enables polling-
+// based file watching, which is needed for HMR over bind mounts (macOS/Windows
+// Docker), where native filesystem events are not delivered.
+const hmrHost = process.env.VITE_HMR_HOST ?? devServerHost;
+const hmrClientPort = Number(process.env.VITE_HMR_CLIENT_PORT ?? devServerPort);
+const useFsPolling = process.env.VITE_USE_POLLING === "true";
 
 const vitestAliases: Alias[] = [
   {
@@ -140,22 +131,13 @@ const vitestAliases: Alias[] = [
 ];
 
 const resolvedBundleEntries = Object.fromEntries(
-  Object.entries(bundleEntries).map(([name, relativePath]) => [
-    name,
-    resolveFromRoot(relativePath),
-  ]),
+  Object.entries(bundleEntries).map(([name, relativePath]) => [name, resolveFromRoot(relativePath)]),
 ) satisfies Record<string, string>;
 
 export default defineConfig(async ({ mode }) => {
   const isVitest = mode === "test" || process.env.VITEST === "true";
 
-  const plugins: PluginOption[] = [
-    react(),
-    nodePolyfills({
-      globals: { process: true, Buffer: true, global: true },
-      protocolImports: false,
-    }),
-  ];
+  const plugins: PluginOption[] = [react()];
 
   if (!isVitest) {
     plugins.push(tinymceAssets("/ui/dist/"));
@@ -163,6 +145,7 @@ export default defineConfig(async ({ mode }) => {
 
   if (shouldGenerateBuildStats) {
     const { visualizer } = await import("rollup-plugin-visualizer");
+    const { analyzer } = await import("vite-bundle-analyzer");
 
     plugins.push(
       visualizer({
@@ -171,17 +154,34 @@ export default defineConfig(async ({ mode }) => {
         brotliSize: true,
         sourcemap: true,
       }),
+      // Emits stats.json consumed by wojtekmaj/vite-compare-bundle-size in CI.
+      analyzer({
+        analyzerMode: "json",
+        fileName: "stats",
+      }),
     );
   }
+
+  // Some chemistry deps (openchemlib, pulled in lazily by the Ketcher editor)
+  // bundle Node's `util` polyfill, which reads bare `process.*`
+  // (process.stderr.isTTY, process.nextTick, …) at module-eval time. The
+  // browser has no `process`, so the chunk throws "process is not defined" the
+  // moment Ketcher loads. Provide a minimal global shim. esbuild/rolldown only
+  // substitute *unbound* `process` references, so deps that declare their own
+  // local `process` are untouched. The shim carries NODE_ENV so code that reads
+  // process.env.NODE_ENV (e.g. React) still sees the right mode.
+  const processShim = `{env:{NODE_ENV:${JSON.stringify(
+    mode === "production" ? "production" : "development",
+  )}},platform:"browser",browser:true,version:"",versions:{},argv:[],nextTick:(cb)=>Promise.resolve().then(cb),cwd:()=>"/",emitWarning:()=>{}}`;
 
   const config: UserConfig = {
     base: "/ui/dist/",
     define: {
       global: "globalThis",
+      process: processShim,
       // Cache-busting token + base URL for the lazily-loaded, self-hosted
-      // TinyMCE assets. The base differs between the app build ("/ui/dist/")
-      // and the Playwright component-test build ("/", see
-      // playwright-ct.config.ts), so it is injected rather than hard-coded.
+      // TinyMCE assets. The base is injected at build time rather than
+      // hard-coded so different build targets can use different paths.
       __TINYMCE_VERSION__: JSON.stringify(tinymceVersion),
       // Full directory URL the TinyMCE assets are served from (the
       // rspace:tinymce-assets plugin serves /ui/dist/tinymce/*).
@@ -190,12 +190,7 @@ export default defineConfig(async ({ mode }) => {
     plugins,
     resolve: {
       tsconfigPaths: true,
-      alias: isVitest
-        ? [
-            { find: /^@\//, replacement: `${resolveFromRoot("src")}/` },
-            ...vitestAliases,
-          ]
-        : [],
+      alias: isVitest ? [{ find: /^@\//, replacement: `${resolveFromRoot("src")}/` }, ...vitestAliases] : [],
       ...(isVitest ? { externalConditions: ["require"] } : {}),
     },
     // HTTP requests for /ui/dist/* are reverse-proxied by Jetty (see
@@ -207,10 +202,11 @@ export default defineConfig(async ({ mode }) => {
       port: devServerPort,
       strictPort: true,
       hmr: {
-        host: devServerHost,
+        host: hmrHost,
         port: devServerPort,
-        clientPort: devServerPort,
+        clientPort: hmrClientPort,
       },
+      ...(useFsPolling ? { watch: { usePolling: true, interval: 200 } } : {}),
     },
     build: {
       outDir: "dist",
@@ -222,6 +218,40 @@ export default defineConfig(async ({ mode }) => {
           entryFileNames: "[name]-[hash].js",
           chunkFileNames: "chunks/[name]-[hash].js",
           assetFileNames: "assets/[name]-[hash][extname]",
+          // Required by the codeSplitting workaround below.
+          strictExecutionOrder: true,
+          codeSplitting: {
+            groups: [
+              /*
+               * Workaround for the Ketcher circular-chunk crash that
+               * rolldown 1.0.1 (pinned in pnpm-workspace.yaml) produces:
+               * without this group, rolldown splits Ketcher into two chunks
+               * that import each other circularly, each calling the other's
+               * __commonJS factory (lodash / regenerator-runtime) before that
+               * chunk has evaluated, crashing as "TypeError: undefined is not
+               * a function" the moment Ketcher is opened in production.
+               * (https://github.com/rolldown/rolldown/issues/9502 tracks the
+               * root cause in rolldown 1.0.2+; 1.0.1 has the same splitting
+               * bug from a different code path.)
+               *
+               * This group forces Ketcher and its CJS-only dependencies into
+               * one chunk family, removing the circular edge. entriesAware is
+               * required: without it rolldown's recursive dependency capture
+               * pulls React and emotion into the group, producing a 25 MB
+               * chunk eagerly loaded by every page. includeDependenciesRecursively:false
+               * was tried as an alternative but only relocated the crash.
+               *
+               * Remove this group (and the rolldown override in
+               * pnpm-workspace.yaml) once rolldown ships a release that fixes
+               * the init_* missing-import bug (rolldown#9502 / vite#22499).
+               */
+              {
+                name: "ketcher",
+                test: /node_modules[\\/](ketcher-(core|react|standalone)|miew|lodash|regenerator-runtime)[\\/]/,
+                entriesAware: true,
+              },
+            ],
+          },
         },
       },
       target: esbuildTargets as NonNullable<UserConfig["build"]>["target"],

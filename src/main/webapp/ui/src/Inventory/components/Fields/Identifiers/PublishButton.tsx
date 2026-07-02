@@ -1,7 +1,6 @@
 import React from "react";
-import { type Identifier } from "../../../../stores/definitions/Identifier";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
-import { doNotAwait } from "../../../../util/Util";
+import type { Identifier } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
 
 type PublishButtonArgs = {
@@ -9,10 +8,7 @@ type PublishButtonArgs = {
   disabled?: boolean;
 };
 
-export default function PublishButton({
-  identifier,
-  disabled,
-}: PublishButtonArgs): React.ReactNode {
+export default function PublishButton({ identifier, disabled }: PublishButtonArgs): React.ReactNode {
   const [publishing, setPublishing] = React.useState(false);
   const { uiStore } = useStores();
 
@@ -27,23 +23,25 @@ export default function PublishButton({
       size="small"
       loading={publishing}
       type="button"
-      onClick={doNotAwait(async () => {
-        try {
-          setPublishing(true);
-          if (republish) {
-            await identifier.republish({
-              addAlert: (...args) => uiStore.addAlert(...args),
-            });
-          } else {
-            await identifier.publish({
-              confirm: (...args) => uiStore.confirm(...args),
-              addAlert: (...args) => uiStore.addAlert(...args),
-            });
+      onClick={() => {
+        void (async () => {
+          try {
+            setPublishing(true);
+            if (republish) {
+              await identifier.republish({
+                addAlert: (...args) => uiStore.addAlert(...args),
+              });
+            } else {
+              await identifier.publish({
+                confirm: (...args) => uiStore.confirm(...args),
+                addAlert: (...args) => uiStore.addAlert(...args),
+              });
+            }
+          } finally {
+            setPublishing(false);
           }
-        } finally {
-          setPublishing(false);
-        }
-      })}
+        })();
+      }}
       disabled={publishing || disabled || !identifier.isValid}
       label={republish ? "Republish" : "Publish"}
     />

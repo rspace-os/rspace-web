@@ -1,25 +1,22 @@
-import React from "react";
-import TreeView from "./TreeView";
-import { LocalGalleryFile, Description } from "../useGalleryListing";
-import { Optional } from "@/util/optional";
-import {
-  CssBaseline,
-  StyledEngineProvider,
-  ThemeProvider,
-} from "@mui/material";
+// biome-ignore lint/style/noRestrictedImports: initial biome migration
+import { CssBaseline, StyledEngineProvider, ThemeProvider } from "@mui/material";
 import Box from "@mui/material/Box";
+import React from "react";
+import { BrowserRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
-import Analytics from "@/components/Analytics";
-import { UiPreferences } from "@/hooks/api/useUiPreference";
-import { BrowserRouter } from "react-router-dom";
-import ErrorBoundary from "@/components/ErrorBoundary";
 import Alerts from "@/components/Alerts/Alerts";
+import Analytics from "@/components/Analytics";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { LandmarksProvider } from "@/components/LandmarksContext";
+import { UiPreferences } from "@/hooks/api/useUiPreference";
+import { DisableDragAndDropByDefault } from "@/hooks/ui/useFileImportDragAndDrop";
+import { Optional } from "@/util/optional";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
+import { Description, LocalGalleryFile } from "../useGalleryListing";
 import { CallableImagePreview } from "./CallableImagePreview";
 import { CallablePdfPreview } from "./CallablePdfPreview";
 import OpenFolderProvider from "./OpenFolderProvider";
+import TreeView from "./TreeView";
 
 const mockFolder = new LocalGalleryFile({
   id: 1,
@@ -156,8 +153,7 @@ const mockDocumentFile = new LocalGalleryFile({
   token: "test-token",
 });
 
-mockDocumentFile.downloadHref = () =>
-  Promise.resolve("/mock/document/download");
+mockDocumentFile.downloadHref = () => Promise.resolve("/mock/document/download");
 
 const mockVeryLongNameFile = new LocalGalleryFile({
   id: 6,
@@ -183,8 +179,7 @@ const mockVeryLongNameFile = new LocalGalleryFile({
   token: "test-token",
 });
 
-mockVeryLongNameFile.downloadHref = () =>
-  Promise.resolve("/mock/longname/download");
+mockVeryLongNameFile.downloadHref = () => Promise.resolve("/mock/longname/download");
 
 const mockSpecialCharsFile = new LocalGalleryFile({
   id: 7,

@@ -3,10 +3,9 @@
  * integrations.
  */
 
-import axios from "@/common/axios";
-import * as FetchingData from "../../util/fetchingData";
-import { doNotAwait } from "../../util/Util";
 import React from "react";
+import axios from "@/common/axios";
+import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
 
@@ -38,16 +37,11 @@ export type IntegrationInfo = {
  * made the integration available, whether the user has enabled it, and
  * whether they are authenticated (if applicable).
  */
-export async function fetchIntegrationInfo(
-  name: IntegrationName,
-): Promise<IntegrationInfo> {
-  const { data } = await axios.get<{ data: IntegrationInfo }>(
-    "/integration/integrationInfo",
-    {
-      params: new URLSearchParams({ name }),
-      responseType: "json",
-    },
-  );
+export async function fetchIntegrationInfo(name: IntegrationName): Promise<IntegrationInfo> {
+  const { data } = await axios.get<{ data: IntegrationInfo }>("/integration/integrationInfo", {
+    params: new URLSearchParams({ name }),
+    responseType: "json",
+  });
   return Parsers.isObject(data)
     .flatMap(Parsers.isNotNull)
     .flatMap(Parsers.getValueWithKey("data"))
@@ -55,21 +49,11 @@ export async function fetchIntegrationInfo(
     .flatMap(Parsers.isNotNull)
     .flatMap((obj) => {
       try {
-        const available = Parsers.getValueWithKey("available")(obj)
-          .flatMap(Parsers.isBoolean)
-          .elseThrow();
-        const displayName = Parsers.getValueWithKey("displayName")(obj)
-          .flatMap(Parsers.isString)
-          .elseThrow();
-        const enabled = Parsers.getValueWithKey("enabled")(obj)
-          .flatMap(Parsers.isBoolean)
-          .elseThrow();
-        const name = Parsers.getValueWithKey("name")(obj)
-          .flatMap(Parsers.isString)
-          .elseThrow();
-        const oauthConnected = Parsers.getValueWithKey("oauthConnected")(obj)
-          .flatMap(Parsers.isBoolean)
-          .elseThrow();
+        const available = Parsers.getValueWithKey("available")(obj).flatMap(Parsers.isBoolean).elseThrow();
+        const displayName = Parsers.getValueWithKey("displayName")(obj).flatMap(Parsers.isString).elseThrow();
+        const enabled = Parsers.getValueWithKey("enabled")(obj).flatMap(Parsers.isBoolean).elseThrow();
+        const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
+        const oauthConnected = Parsers.getValueWithKey("oauthConnected")(obj).flatMap(Parsers.isBoolean).elseThrow();
         return Result.Ok({
           available,
           displayName,
@@ -107,16 +91,13 @@ export async function fetchIntegrationInfo(
  * `keepMounted` prop to the Menu to prevent this, see
  * https://mui.com/material-ui/api/modal/#modal-prop-keepMounted
  */
-export function useIntegrationIsAllowedAndEnabled(
-  name: IntegrationName,
-): FetchingData.Fetched<boolean> {
+export function useIntegrationIsAllowedAndEnabled(name: IntegrationName): FetchingData.Fetched<boolean> {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
-  const [integrationState, setIntegrationState] =
-    React.useState<null | IntegrationInfo>(null);
+  const [integrationState, setIntegrationState] = React.useState<null | IntegrationInfo>(null);
 
-  React.useEffect(
-    doNotAwait(async () => {
+  React.useEffect(() => {
+    void (async () => {
       try {
         setIntegrationState(await fetchIntegrationInfo(name));
       } catch (e) {
@@ -124,9 +105,8 @@ export function useIntegrationIsAllowedAndEnabled(
       } finally {
         setLoading(false);
       }
-    }),
-    [],
-  );
+    })();
+  }, []);
 
   return React.useMemo(() => {
     if (loading) return { tag: "loading" };

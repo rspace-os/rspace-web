@@ -31,7 +31,6 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
-import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
@@ -174,7 +173,7 @@ class DMPAssistantControllerTest {
             new MockHttpServletRequest());
 
     mockServer.verify();
-    assertEquals("connect/dmpassistant/connected", result);
+    assertEquals("connect/connected", result);
     verify(userConnectionManager).save(any(UserConnection.class));
   }
 
@@ -192,7 +191,7 @@ class DMPAssistantControllerTest {
             new MockHttpServletRequest());
 
     mockServer.verify();
-    assertEquals("connect/authorizationError", result);
+    assertEquals("connect/connected", result);
   }
 
   @Test
@@ -211,11 +210,11 @@ class DMPAssistantControllerTest {
             new MockHttpServletRequest());
 
     mockServer.verify();
-    assertEquals("connect/authorizationError", result);
-    OauthAuthorizationError error = (OauthAuthorizationError) model.getAttribute("error");
+    assertEquals("connect/connected", result);
+    String connectionError = (String) model.getAttribute("connectionError");
     assertTrue(
-        error.getErrorDetails().contains("empty body"),
-        "Expected a descriptive empty-body message but was: " + error.getErrorDetails());
+        connectionError.contains("empty body"),
+        "Expected a descriptive empty-body message but was: " + connectionError);
     verify(userConnectionManager, never()).save(any(UserConnection.class));
   }
 
@@ -234,7 +233,7 @@ class DMPAssistantControllerTest {
             principal,
             new MockHttpServletRequest());
 
-    assertEquals("connect/authorizationError", result);
+    assertEquals("connect/connected", result);
     verify(userConnectionManager, never()).save(any(UserConnection.class));
   }
 
@@ -257,7 +256,7 @@ class DMPAssistantControllerTest {
     String result = controller.refreshToken(new ExtendedModelMap(), principal);
 
     mockServer.verify();
-    assertEquals("connect/dmpassistant/connected", result);
+    assertEquals("connect/connected", result);
     verify(userConnection).setAccessToken("REFRESHED");
     verify(userConnection).setRefreshToken("NEW_REFRESH");
     verify(userConnection).setDisplayName("DMP Assistant refreshed access token");
@@ -277,8 +276,8 @@ class DMPAssistantControllerTest {
     String result = controller.refreshToken(model, principal);
 
     mockServer.verify();
-    assertEquals("connect/authorizationError", result);
-    assertNotNull(model.getAttribute("error"));
+    assertEquals("connect/connected", result);
+    assertNotNull(model.getAttribute("connectionError"));
   }
 
   @Test

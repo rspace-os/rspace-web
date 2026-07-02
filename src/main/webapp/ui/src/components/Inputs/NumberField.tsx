@@ -1,5 +1,5 @@
-import React from "react";
-import TextField, { TextFieldProps } from "@mui/material/TextField";
+import TextField, { type TextFieldProps } from "@mui/material/TextField";
+import type React from "react";
 import NoValue from "../../components/NoValue";
 
 export type NumberFieldArgs = {
@@ -23,7 +23,7 @@ export type NumberFieldArgs = {
      * storable in state variables. Examples include the empty string and
      * strings ending in the letter "e".
      */
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => void;
   onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
@@ -62,7 +62,7 @@ export default function NumberField({
       value={value}
       {...props}
       variant={props.variant ?? "standard"}
-      onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+      onInput={(e) => {
         /*
          * onChange only fires if the field is in a valid state and so it would
          * be impossible to show an error state if the user inputted an invalid
@@ -72,7 +72,7 @@ export default function NumberField({
          * onChange props to check whether the user's current input is valid
          * even if `target.value` is the empty string.
          */
-        props.onChange?.(e);
+        props.onChange?.(e as unknown as React.ChangeEvent<HTMLInputElement>);
       }}
       onChange={() => {}}
       slotProps={{
@@ -84,9 +84,10 @@ export default function NumberField({
            */
           inputMode: "text",
           lang: "en", // force dot in decimal numbers in compatible browsers
-          ["aria-label"]: ariaLabel,
+          "aria-label": ariaLabel,
           ...slotProps?.htmlInput,
         },
-      }} />
+      }}
+    />
   );
 }

@@ -1,5 +1,5 @@
+import { type RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 import { parse } from "@/modules/common/queries/parseOrThrow";
-import { RestApiError, RestApiErrorSchema } from "@/modules/common/api/schema";
 
 export const WORKSPACE_API_BASE_URL = "/workspace";
 
@@ -67,10 +67,7 @@ function getWorkspaceAjaxErrorMessage(data: unknown): string | null {
   return null;
 }
 
-export const toWorkspaceError = (
-  data: unknown,
-  fallbackMessage: string,
-): Error => {
+export const toWorkspaceError = (data: unknown, fallbackMessage: string): Error => {
   const restApiError = parse(RestApiErrorSchema, data).caseOf({
     Left: () => null,
     Right: (validatedError: RestApiError) => validatedError,
@@ -86,4 +83,3 @@ export const toWorkspaceError = (
 
   return new Error(fallbackMessage);
 };
-

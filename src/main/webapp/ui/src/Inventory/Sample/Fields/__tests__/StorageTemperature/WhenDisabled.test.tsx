@@ -1,17 +1,12 @@
-import { test, describe, expect, vi } from 'vitest';
-import React from "react";
-import { render } from "@testing-library/react";
-import {
-  CELSIUS,
-  KELVIN,
-  FAHRENHEIT,
-  type Temperature,
-} from "../../../../../stores/definitions/Units";
 import { ThemeProvider } from "@mui/material/styles";
+import { render } from "@testing-library/react";
+import { describe, expect, test, vi } from "vitest";
+import { CELSIUS, FAHRENHEIT, KELVIN, type Temperature } from "../../../../../stores/definitions/Units";
 
 import materialTheme from "../../../../../theme";
 
 import StorageTemperature from "../../StorageTemperature";
+
 const mockFieldOwner = (mockedParts: {
   fieldValues: {
     storageTempMin: Temperature | null;
@@ -36,13 +31,11 @@ const mockFieldOwner = (mockedParts: {
       storageTempMin: null,
       storageTempMax: null,
     },
-
   };
   return {
     ...defaults,
     ...mockedParts,
   };
-
 };
 describe("StorageTemperature", () => {
   describe("When disabled, the component should,", () => {
@@ -64,8 +57,7 @@ describe("StorageTemperature", () => {
                 isFieldEditable: () => false,
               })}
             />
-          </ThemeProvider>
-
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent("unspecified");
       });
@@ -86,8 +78,7 @@ describe("StorageTemperature", () => {
                 isFieldEditable: () => false,
               })}
             />
-          </ThemeProvider>
-
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent("unspecified");
       });
@@ -108,12 +99,10 @@ describe("StorageTemperature", () => {
                 isFieldEditable: () => false,
               })}
             />
-          </ThemeProvider>
-
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent("unspecified");
       });
-
     });
     describe("Display a string when both values are valid temperatures,", () => {
       test("That includer both min and max values.", () => {
@@ -133,8 +122,7 @@ describe("StorageTemperature", () => {
                 isFieldEditable: () => false,
               })}
             />
-          </ThemeProvider>
-
+          </ThemeProvider>,
         );
         expect(container).toHaveTextContent("1");
         expect(container).toHaveTextContent("2");
@@ -157,8 +145,7 @@ describe("StorageTemperature", () => {
                   isFieldEditable: () => false,
                 })}
               />
-            </ThemeProvider>
-
+            </ThemeProvider>,
           );
           expect(container).toHaveTextContent("0°C");
         });
@@ -179,8 +166,7 @@ describe("StorageTemperature", () => {
                   isFieldEditable: () => false,
                 })}
               />
-            </ThemeProvider>
-
+            </ThemeProvider>,
           );
           expect(container).toHaveTextContent("0K");
         });
@@ -201,8 +187,7 @@ describe("StorageTemperature", () => {
                   isFieldEditable: () => false,
                 })}
               />
-            </ThemeProvider>
-
+            </ThemeProvider>,
           );
           expect(container).toHaveTextContent("0°F");
         });
@@ -210,4 +195,3 @@ describe("StorageTemperature", () => {
     });
   });
 });
-

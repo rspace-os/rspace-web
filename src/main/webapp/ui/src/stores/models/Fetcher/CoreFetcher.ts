@@ -1,35 +1,29 @@
-import {
-  action,
-  computed,
-  observable,
-  makeObservable,
-  runInAction,
-} from "mobx";
-import { mkAlert } from "../../contexts/Alert";
+import { omitBy, pick, pickBy } from "es-toolkit";
+import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import { getErrorMessage } from "@/util/error";
 import ApiService from "../../../common/InvApiService";
-import getRootStore from "../../stores/RootStore";
-import { globalIdPatterns, type GlobalId } from "../../definitions/BaseRecord";
-import { omitNull, match, filterObject } from "../../../util/Util";
+import * as Parsers from "../../../util/parsers";
 import { parseInteger } from "../../../util/parsers";
+import Result from "../../../util/result";
 import RsSet from "../../../util/set";
-import { type Person, type Username } from "../../definitions/Person";
-import { type Factory } from "../../definitions/Factory";
+import { type Order, parseOrder } from "../../../util/types";
+import { match } from "../../../util/Util";
+import { mkAlert } from "../../contexts/Alert";
+import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
+import type { Factory } from "../../definitions/Factory";
+import type { InventoryRecord } from "../../definitions/InventoryRecord";
+import type { Person, Username } from "../../definitions/Person";
 import {
+  type CoreFetcherArgs,
+  type DeletedItems,
+  type ParentGlobalIdType,
+  type Permalink,
+  type PermalinkType,
+  parseDeletedItems,
   parseResultType,
   type ResultType,
-  parseDeletedItems,
-  type DeletedItems,
-  type CoreFetcherArgs,
-  type Permalink,
-  type ParentGlobalIdType,
-  type PermalinkType,
 } from "../../definitions/Search";
-import { type InventoryRecord } from "../../definitions/InventoryRecord";
-import { type Order, parseOrder } from "../../../util/types";
-import { pick } from "../../../util/unsafeUtils";
-import Result from "../../../util/result";
-import { getErrorMessage } from "@/util/error";
-import * as Parsers from "../../../util/parsers";
+import getRootStore from "../../stores/getRootStore";
 
 export const DEFAULT_SEARCH = {
   query: "",
@@ -57,13 +51,12 @@ const omitDefault = <T extends object>(obj: T): object => {
   (Object.keys({ ...obj }) as Array<keyof T>)
     // @ts-expect-error this function is pretty hacky
     .filter((k) => obj[k] === DEFAULT_SEARCH[k])
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
     .forEach((k: keyof T) => delete obj[k]);
   return obj;
 };
 
-export const parseCoreFetcherArgsFromUrl = (
-  searchParams: URLSearchParams,
-): CoreFetcherArgs => {
+export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): CoreFetcherArgs => {
   const query = searchParams.get("query");
   const pageSize = Result.fromNullable(
     searchParams.get("pageSize"),
@@ -90,15 +83,15 @@ export const parseCoreFetcherArgsFromUrl = (
   ).flatMap(parseDeletedItems);
   // prettier-ignore
   return {
-    ...((query          ? { query          } : {})),
-    ...((orderBy        ? { orderBy        } : {})),
-    ...((ownedBy        ? { ownedBy        } : {})),
-    ...((parentGlobalId ? { parentGlobalId } : {})),
-    ...(deletedItems.map(dItems  => ({ deletedItems: dItems })).orElse({})),
-    ...(order.map(       o       => ({ order:        o      })).orElse({})),
-    ...(pageNumber.map(  pNumber => ({ pageNumber:   pNumber})).orElse({})),
-    ...(pageSize.map(    pSize   => ({ pageSize:     pSize  })).orElse({})),
-    ...(resultType.map(  rType   => ({ resultType:   rType  })).orElse({})),
+    ...(query ? { query } : {}),
+    ...(orderBy ? { orderBy } : {}),
+    ...(ownedBy ? { ownedBy } : {}),
+    ...(parentGlobalId ? { parentGlobalId } : {}),
+    ...deletedItems.map((dItems) => ({ deletedItems: dItems })).orElse({}),
+    ...order.map((o) => ({ order: o })).orElse({}),
+    ...pageNumber.map((pNumber) => ({ pageNumber: pNumber })).orElse({}),
+    ...pageSize.map((pSize) => ({ pageSize: pSize })).orElse({}),
+    ...resultType.map((rType) => ({ resultType: rType })).orElse({}),
   };
 };
 
@@ -111,18 +104,19 @@ export const parseCoreFetcherArgsFromUrl = (
  * simply amend the current search parameters, but instead to replace them all
  * with either specified values or else their defaults.
  */
-export const generateUrlFromCoreFetcherArgs = (
-  fetcherArgs: CoreFetcherArgs,
-): string => {
-  const params = pick(...Object.keys(DEFAULT_SEARCH))({
-    ...DEFAULT_SEARCH,
-    ...fetcherArgs,
-  }) as Partial<typeof DEFAULT_SEARCH>;
+export const generateUrlFromCoreFetcherArgs = (fetcherArgs: CoreFetcherArgs): string => {
+  const params = pick(
+    {
+      ...DEFAULT_SEARCH,
+      ...fetcherArgs,
+    },
+    Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
+  ) as Partial<typeof DEFAULT_SEARCH>;
   delete params.permalink;
   delete params.benchOwner;
   delete params.owner;
   const searchParams = new URLSearchParams(
-    omitDefault(omitNull(params)) as Record<string, string>,
+    omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
   );
   return `/inventory/search?${searchParams.toString()}`;
 };
@@ -265,6 +259,8 @@ export default class CoreFetcher {
         [(t) => t === "container", "containers"],
         [(t) => t === "subsample", "subSamples"],
         [(t) => t === "sampletemplate", "sampleTemplates"],
+        [(t) => t === "instrument", "instruments"],
+        [(t) => t === "instrumenttemplate", "instrumentTemplates"],
       ])(type);
       return;
     }
@@ -279,8 +275,14 @@ export default class CoreFetcher {
       if (!this.query && this.resultType === "CONTAINER") {
         this.endpoint = "containers";
       }
-      if (!this.query && this.resultType === "TEMPLATE") {
+      if (!this.query && this.resultType === "SAMPLE_TEMPLATE") {
         this.endpoint = "sampleTemplates";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT") {
+        this.endpoint = "instruments";
+      }
+      if (!this.query && this.resultType === "INSTRUMENT_TEMPLATE") {
+        this.endpoint = "instrumentTemplates";
       }
     }
   }
@@ -304,10 +306,7 @@ export default class CoreFetcher {
     await this.search(null, (r) => this.setResults(r));
   }
 
-  async search(
-    _params: CoreFetcherArgs | null = null,
-    storeResults: (results: Array<InventoryRecord>) => void,
-  ) {
+  async search(_params: CoreFetcherArgs | null = null, storeResults: (results: Array<InventoryRecord>) => void) {
     this.setLoading(true);
 
     let params = _params ?? this.generateParams();
@@ -339,9 +338,7 @@ export default class CoreFetcher {
           params.permalink.version != null
             ? `${params.permalink.id}/versions/${params.permalink.version}`
             : params.permalink.id;
-        const { data } = await ApiService.get<
-          Record<string, unknown> & { globalId: GlobalId }
-        >(endpoint, slug);
+        const { data } = await ApiService.get<Record<string, unknown> & { globalId: GlobalId }>(endpoint, slug);
         runInAction(() => {
           this.count = 1;
         });
@@ -368,43 +365,29 @@ export default class CoreFetcher {
           subSamples?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           containers?: Array<Record<string, unknown> & { globalId: GlobalId }>;
           templates?: Array<Record<string, unknown> & { globalId: GlobalId }>;
+          instruments?: Array<Record<string, unknown> & { globalId: GlobalId }>;
         }>(
           endpoint,
-          new URLSearchParams(omitNull(params) as Record<string, string>),
+          new URLSearchParams(
+            omitBy(params, (v) => v === null || v === "" || typeof v === "undefined") as Record<string, string>,
+          ),
         );
-        const records = match<
-          void,
-          Array<Record<string, unknown> & { globalId: GlobalId }>
-        >([
-          [
-            () => endpoint === "search",
-            data.records as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
-          ],
-          [
-            () => endpoint === "samples",
-            data.samples as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
-          ],
-          [
-            () => endpoint === "subSamples",
-            data.subSamples as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
-          ],
-          [
-            () => endpoint === "containers",
-            data.containers as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
-          ],
+        const records = match<void, Array<Record<string, unknown> & { globalId: GlobalId }>>([
+          [() => endpoint === "search", data.records as Array<Record<string, unknown> & { globalId: GlobalId }>],
+          [() => endpoint === "samples", data.samples as Array<Record<string, unknown> & { globalId: GlobalId }>],
+          [() => endpoint === "subSamples", data.subSamples as Array<Record<string, unknown> & { globalId: GlobalId }>],
+          [() => endpoint === "containers", data.containers as Array<Record<string, unknown> & { globalId: GlobalId }>],
           [
             () => endpoint === "sampleTemplates",
-            data.templates as Array<
-              Record<string, unknown> & { globalId: GlobalId }
-            >,
+            data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instruments",
+            data.instruments as Array<Record<string, unknown> & { globalId: GlobalId }>,
+          ],
+          [
+            () => endpoint === "instrumentTemplates",
+            data.templates as Array<Record<string, unknown> & { globalId: GlobalId }>,
           ],
         ])();
         runInAction(() => {
@@ -429,28 +412,27 @@ export default class CoreFetcher {
         if (
           (data.totalHits === 0 || records.length === 0) &&
           typeof params.query === "string" &&
+          // a previous version relied on omitNull mutating `params` to drop an
+          // empty query here; guard explicitly so an empty query never triggers
+          // the wildcard re-search
+          params.query !== "" &&
           !/\*$/.test(params.query)
         ) {
           await this.search(
             {
               ..._params,
-              query: params.query + "*",
+              query: `${params.query}*`,
             },
             storeResults,
           );
         }
       }
       if (this.endpoint !== endpoint)
-        console.warn(
-          "search.endpoint has changed during fetching, which may result in buggy behaviour.",
-        );
+        console.warn("search.endpoint has changed during fetching, which may result in buggy behaviour.");
       this.setLoading(false);
     } catch (error) {
       this.resetSearch();
-      const notFound =
-        Parsers.objectPath(["response", "status"], error)
-          .flatMap(Parsers.isNumber)
-          .orElse(null) === 404;
+      const notFound = Parsers.objectPath(["response", "status"], error).flatMap(Parsers.isNumber).orElse(null) === 404;
       if (params.permalink && notFound) {
         // let the right panel render a specific not-found state; transient
         // failures (500s, network errors) keep the generic error alert only
@@ -493,11 +475,11 @@ export default class CoreFetcher {
 
     const params = {
       ...DEFAULT_SEARCH,
-      ...filterObject((k) => keys.has(k), { ...this }),
+      ...pickBy({ ...this }, (_, k) => keys.has(k as string)),
       ...editedParams,
     };
 
-    return omitDefault(omitNull(params));
+    return omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined"));
   }
 
   /*
@@ -509,21 +491,17 @@ export default class CoreFetcher {
     this.setAttributes(params);
     const preparedParams: CoreFetcherArgs = (
       Object.entries(DEFAULT_SEARCH) as Array<
-        [
-          keyof typeof DEFAULT_SEARCH,
-          (typeof DEFAULT_SEARCH)[keyof typeof DEFAULT_SEARCH],
-        ]
+        [keyof typeof DEFAULT_SEARCH, (typeof DEFAULT_SEARCH)[keyof typeof DEFAULT_SEARCH]]
       >
     ).reduce(
       (acc, [k, v]) => ({
+        // biome-ignore lint/performance/noAccumulatingSpread: initial biome migration
         ...acc,
         [k]: acc[k] || this[k] || v,
       }),
       params,
     );
-    preparedParams.orderBy = `${String(preparedParams.orderBy)} ${String(
-      preparedParams.order,
-    )}`;
+    preparedParams.orderBy = `${String(preparedParams.orderBy)} ${String(preparedParams.order)}`;
     delete preparedParams.order;
     delete preparedParams.owner;
     delete preparedParams.benchOwner;
@@ -538,8 +516,9 @@ export default class CoreFetcher {
    */
   generateQuery(editedParams: CoreFetcherArgs): URLSearchParams {
     const params = pick(
-      ...(Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>),
-    )(this.generateParams(editedParams)) as Partial<CoreFetcherArgs>;
+      this.generateParams(editedParams),
+      Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
+    ) as Partial<CoreFetcherArgs>;
 
     // These aren't URL serialisable
     delete params.owner;
@@ -549,7 +528,7 @@ export default class CoreFetcher {
     params.pageNumber = 0;
 
     return new URLSearchParams(
-      omitDefault(omitNull(params)) as Record<string, string>,
+      omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
     );
   }
 
@@ -560,15 +539,16 @@ export default class CoreFetcher {
    * currently set on `this`.
    */
   generateNewQuery(editedParams: CoreFetcherArgs): URLSearchParams {
-    const params = pick(...Object.keys(DEFAULT_SEARCH))(
+    const params = pick(
       this.generateParams({
         ...DEFAULT_SEARCH,
         ...editedParams,
       }),
+      Object.keys(DEFAULT_SEARCH) as Array<keyof typeof DEFAULT_SEARCH>,
     ) as Partial<CoreFetcherArgs>;
     // Don't need to delete those that aren't serialisable as they are null.
     return new URLSearchParams(
-      omitDefault(omitNull(params)) as Record<string, string>,
+      omitDefault(omitBy(params, (v) => v === null || v === "" || typeof v === "undefined")) as Record<string, string>,
     );
   }
 
@@ -579,30 +559,26 @@ export default class CoreFetcher {
    */
   get serialize(): Partial<CoreFetcherArgs> {
     const keysOfComplexData = new RsSet(["owner", "benchOwner", "permalink"]);
-    const keysOfSimpleData: RsSet<string> = new RsSet(
-      Object.keys(DEFAULT_SEARCH),
-    ).subtract(keysOfComplexData);
-    return filterObject((k) => keysOfSimpleData.has(k), {
-      ...DEFAULT_SEARCH,
-      ...this,
-    }) as Partial<CoreFetcherArgs>;
+    const keysOfSimpleData: RsSet<string> = new RsSet(Object.keys(DEFAULT_SEARCH)).subtract(keysOfComplexData);
+    return pickBy(
+      {
+        ...DEFAULT_SEARCH,
+        ...this,
+      },
+      (_, k) => keysOfSimpleData.has(k as string),
+    ) as Partial<CoreFetcherArgs>;
   }
 
   setResults(results: Array<InventoryRecord> = []): void {
     this.results = results;
   }
 
-  addResults(
-    prependResults: Array<InventoryRecord> = [],
-    appendResults: Array<InventoryRecord> = [],
-  ): void {
+  addResults(prependResults: Array<InventoryRecord> = [], appendResults: Array<InventoryRecord> = []): void {
     this.results = [...prependResults, ...this.results, ...appendResults];
   }
 
   replaceResult(result: InventoryRecord): void {
-    this.results = this.results.map((r) =>
-      r.globalId === result.globalId ? result : r,
-    );
+    this.results = this.results.map((r) => (r.globalId === result.globalId ? result : r));
   }
 
   resetSearch(): void {
@@ -625,6 +601,7 @@ export default class CoreFetcher {
       [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
       [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
       [(id) => globalIdPatterns.sampleTemplate.test(id ?? ""), "TEMPLATE"],
+      [(id) => globalIdPatterns.instrumentTemplate.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
       [(id) => globalIdPatterns.bench.test(id ?? ""), "BENCH"],
       [(id) => globalIdPatterns.basket.test(id ?? ""), "BASKET"],
       [(id) => !id, null],

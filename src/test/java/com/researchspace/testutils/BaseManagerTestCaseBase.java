@@ -45,6 +45,7 @@ import com.researchspace.dao.FormDao;
 import com.researchspace.dao.ListOfMaterialsDao;
 import com.researchspace.dao.RecordDao;
 import com.researchspace.dao.SampleDao;
+import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.UserDao;
 import com.researchspace.linkedelements.FieldLinksEntitiesSynchronizer;
 import com.researchspace.linkedelements.FieldParser;
@@ -80,7 +81,7 @@ import com.researchspace.model.field.Field;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.model.inventory.InventoryFile;
 import com.researchspace.model.inventory.InventorySeriesNamingHelper;
-import com.researchspace.model.inventory.Sample;
+import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.netfiles.NfsElement;
 import com.researchspace.model.netfiles.NfsFileStore;
 import com.researchspace.model.permissions.ConstraintBasedPermission;
@@ -287,6 +288,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
   protected @Autowired SampleApiManager sampleApiMgr;
   protected @Autowired InstrumentEntityApiManager instrumentApiMgr;
   protected @Autowired SampleDao sampleDao;
+  protected @Autowired SampleTemplateDao sampleTemplateDao;
   protected @Autowired ContainerDao containerDao;
   protected @Autowired SubSampleApiManager subSampleApiMgr;
   protected @Autowired InventoryTagApiManager inventoryTagsApiManager;
@@ -1820,7 +1822,7 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples();
     newSample.setName("myComplexSample");
 
-    Sample complexTemplate = findComplexSampleTemplate(user);
+    SampleTemplate complexTemplate = findComplexSampleTemplate(user);
     newSample.setTemplateId(complexTemplate.getId());
     newSample.setApiTagInfo("complexSampleTag");
     newSample.setDescription("complexSampleDescription");
@@ -1870,16 +1872,16 @@ public abstract class BaseManagerTestCaseBase extends AbstractJUnit4SpringContex
     return sampleApiMgr.createNewApiSample(newSample, user);
   }
 
-  protected Sample findComplexSampleTemplate(User user) {
+  protected SampleTemplate findComplexSampleTemplate(User user) {
     return findSampleTemplateByName(
         user, ContentInitializerForDevRunManager.COMPLEX_SAMPLE_TEMPLATE_NAME);
   }
 
-  protected Sample findBasicSampleTemplate(User user) {
+  protected SampleTemplate findBasicSampleTemplate(User user) {
     return findSampleTemplateByName(user, AbstractContentInitializer.DEFAULT_SAMPLE_TEMPLATE_NAME);
   }
 
-  private Sample findSampleTemplateByName(User user, String templateName) {
+  private SampleTemplate findSampleTemplateByName(User user, String templateName) {
     return sampleApiMgr.getAllTemplates(user).stream()
         .filter(t -> t.getName().equals(templateName))
         .findAny()

@@ -15,6 +15,7 @@ import com.researchspace.service.DMPManager;
 import com.researchspace.service.MediaManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.BaseOAuth2Controller;
+import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
 import jakarta.annotation.PostConstruct;
@@ -78,7 +79,10 @@ import org.springframework.web.servlet.view.RedirectView;
 public class DMPAssistantController extends BaseOAuth2Controller {
 
   static final String APP_NAME = "DMPASSISTANT";
-  private static final String CONNECTED_VIEW = "connect/dmpassistant/connected";
+  private static final String CONNECTED_VIEW = "connect/connected";
+  private static final String APP_DISPLAY_NAME = "DMP Assistant";
+  private static final String CONNECTION_CHANNEL = "rspace.apps.dmpassistant.connection";
+  private static final String CONNECTION_TYPE = "DMPASSISTANT_CONNECTED";
 
   /** Each imported plan costs an upstream fetch plus a media write; cap the batch size. */
   static final int MAX_IMPORT_BATCH_SIZE = 50;
@@ -151,13 +155,16 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       AccessToken accessToken = requestAccessToken(params.get("code"));
       createUserConnection(principal, accessToken);
       log.info("Connected DMP Assistant for user {}", principal.getName());
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       return CONNECTED_VIEW;
     } catch (Exception ex) {
       log.error("Couldn't complete the token request on DMP Assistant", ex);
       error.errorMsg("Error during token creation");
       error.errorDetails(ex.getMessage());
-      model.addAttribute("error", error.build());
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
+      return "connect/connected";
     }
   }
 
@@ -184,13 +191,16 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       conn.setDisplayName("DMP Assistant refreshed access token");
       userConnectionManager.save(conn);
       log.info("Refreshed DMP Assistant token for user {}", principal.getName());
+      ConnectionResultPage.addConnectionAttributes(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE);
       return CONNECTED_VIEW;
     } catch (Exception e) {
       log.error("Error while refreshing DMP Assistant token: {}", e.getMessage());
       error.errorMsg("Error during token refresh");
       error.errorDetails(e.getMessage());
-      model.addAttribute("error", error.build());
-      return "connect/authorizationError";
+      ConnectionResultPage.addError(
+          model, APP_DISPLAY_NAME, CONNECTION_CHANNEL, CONNECTION_TYPE, error.build());
+      return "connect/connected";
     }
   }
 
@@ -371,7 +381,8 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     }
     Long expireTime = optConn.get().getExpireTime();
     if (expireTime != null && expireTime - Instant.now().toEpochMilli() < timeThreshold * 1000L) {
-      if (!CONNECTED_VIEW.equals(refreshToken(model, principal))) {
+      refreshToken(model, principal);
+      if (model.containsAttribute("connectionError")) {
         // proceeding with the stale token would only yield an opaque upstream 401; tell
         // the user to reconnect instead
         throw new TokenRefreshFailedException();

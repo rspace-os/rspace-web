@@ -11,7 +11,6 @@ import com.researchspace.integrations.omero.model.WellRSpaceView;
 import com.researchspace.webapp.integrations.omero.JSONClient;
 import com.researchspace.webapp.integrations.omero.OmeroAuthController;
 import com.researchspace.webapp.integrations.omero.OmeroUser;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import jakarta.json.JsonObject;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -29,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@SuppressFBWarnings("DM_DEFAULT_ENCODING")
 @Slf4j
 @Component
 public class OmeroClientImpl implements OmeroClient {

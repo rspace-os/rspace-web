@@ -1,27 +1,27 @@
-import React, { useState, useRef } from "react";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
-import { useLandmarksList } from "./LandmarksContext";
+import type React from "react";
+import { useState } from "react";
 import useOneDimensionalRovingTabIndex from "../hooks/ui/useOneDimensionalRovingTabIndex";
+import { useLandmarksList } from "./LandmarksContext";
 
 const SkipToContentButton: React.FC = () => {
   const { landmarks } = useLandmarksList();
   const [isVisible, setIsVisible] = useState(false);
 
-  const { getTabIndex, getRef, eventHandlers } =
-    useOneDimensionalRovingTabIndex<HTMLDivElement>({
-      max: landmarks.length - 1,
-      direction: "column",
-    });
+  const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({
+    max: landmarks.length - 1,
+    direction: "column",
+  });
 
   const handleFocus = () => {
     setIsVisible(true);
   };
 
-  const handleSkipToLandmark = (ref: React.RefObject<HTMLElement>) => {
+  const handleSkipToLandmark = (ref: React.RefObject<HTMLElement | null>) => {
     if (ref.current) {
       /*
        * Setting tabIndex to -1 (even if already -1) forces the browser to
@@ -75,12 +75,7 @@ const SkipToContentButton: React.FC = () => {
       onBlur={eventHandlers.onBlur}
       onKeyDown={handleKeyDown}
     >
-      <List
-        dense
-        sx={{ opacity: isVisible ? 1 : 0 }}
-        role="menu"
-        aria-label="Skip to content navigation"
-      >
+      <List dense sx={{ opacity: isVisible ? 1 : 0 }} role="menu" aria-label="Skip to content navigation">
         {landmarks.map((landmark, index) => (
           <ListItem key={landmark.name} disablePadding role="menuitem">
             <ListItemButton

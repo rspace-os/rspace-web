@@ -1,17 +1,24 @@
-import Grid from "@mui/material/Grid";
-import React, { useEffect, useState, useContext } from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import Button from "@mui/material/Button";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
-import { useFigshareEndpoint } from "../useFigshare";
+import Grid from "@mui/material/Grid";
+import React, { useContext, useState } from "react";
+import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
+import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import IntegrationCard from "../IntegrationCard";
+import { useFigshareEndpoint } from "../useFigshare";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type FigshareArgs = {
   integrationState: IntegrationStates["FIGSHARE"];
   update: (newIntegrationState: IntegrationStates["FIGSHARE"]) => void;
 };
+
+export interface FigshareConnectedMessage extends Record<string, unknown> {
+  type: "FIGSHARE_CONNECTED";
+  error?: string;
+}
+export const FIGSHARE_CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
 
 /*
  * Figshare uses OAuth based authentication, as implemented by this form.
@@ -40,42 +47,47 @@ type FigshareArgs = {
 function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useFigshareEndpoint();
-  const [connected, setConnected] = useState(
-    integrationState.credentials.ACCESS_TOKEN.isPresent()
-  );
+  const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
 
-  useEffect(() => {
-    const f = () => {
+  useBroadcastChannel<FigshareConnectedMessage>(
+    FIGSHARE_CONNECTION_CHANNEL,
+    (e: MessageEvent<FigshareConnectedMessage>) => {
+      if (e.data?.type !== "FIGSHARE_CONNECTED") return;
+      if (e.data.error) {
+        addAlert(
+          mkAlert({
+            variant: "error",
+            title: "Could not connect to Figshare",
+            message: e.data.error,
+          }),
+        );
+        return;
+      }
       setConnected(true);
       addAlert(
         mkAlert({
           variant: "success",
           message: "Successfully connected to Figshare.",
-        })
+        }),
       );
-    };
-    window.addEventListener("FIGSHARE_CONNECTED", f);
-    return () => {
-      window.removeEventListener("FIGSHARE_CONNECTED", f);
-    };
-  }, []);
+    },
+  );
 
   return (
     <Grid
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Figshare"
         integrationState={integrationState}
         explanatoryText="Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner."
         image={FigshareIcon}
         color={LOGO_COLOR}
-        update={(newMode) =>
-          update({ mode: newMode, credentials: integrationState.credentials })
-        }
+        update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText="You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
         helpLinkText="Figshare integration docs"
         website="figshare.com"
@@ -83,15 +95,9 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
         setupSection={
           <>
             <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your Figshare
-                account.
-              </li>
+              <li>Click on Connect to authorise RSpace to access your Figshare account.</li>
               <li>Enable the integration.</li>
-              <li>
-                Figshare will now be available as an option in the export
-                dialog.
-              </li>
+              <li>Figshare will now be available as an option in the export dialog.</li>
             </ol>
             {connected ? (
               <form
@@ -108,12 +114,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
                 </Button>
               </form>
             ) : (
-              <form
-                action="/apps/figshare/connect"
-                method="POST"
-                target="_blank"
-                rel="opener"
-              >
+              <form action="/apps/figshare/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
                   Connect
                 </Button>

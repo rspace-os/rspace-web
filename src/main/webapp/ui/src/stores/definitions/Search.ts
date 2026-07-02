@@ -1,15 +1,16 @@
-import { type InventoryRecord, type Action } from "./InventoryRecord";
-import { type Username, type Person } from "./Person";
-import RsSet from "../../util/set";
-import { type TreeView } from "./TreeView";
-import { type AdjustableTableRowLabel } from "./Tables";
-import { type Sample } from "./Sample";
-import { type Id, type GlobalId } from "./BaseRecord";
-import { type SubSample } from "./SubSample";
-import { type Order } from "../../util/types";
-import { type Basket } from "./Basket";
 import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
+import type RsSet from "../../util/set";
+import type { Order } from "../../util/types";
+import type { GlobalId, Id } from "./BaseRecord";
+import type { Basket } from "./Basket";
+import type { Instrument } from "./Instrument";
+import type { Action, InventoryRecord } from "./InventoryRecord";
+import type { Person, Username } from "./Person";
+import type { Sample } from "./Sample";
+import type { SubSample } from "./SubSample";
+import type { AdjustableTableRowLabel } from "./Tables";
+import type { TreeView } from "./TreeView";
 
 export type SearchView = "LIST" | "TREE" | "CARD" | "IMAGE" | "GRID";
 export const TYPE_LABEL = {
@@ -20,15 +21,7 @@ export const TYPE_LABEL = {
   IMAGE: "Visual",
 };
 
-export type SearchModule =
-  | "BENCHES"
-  | "TYPE"
-  | "STATUS"
-  | "OWNER"
-  | "SCAN"
-  | "TAG"
-  | "SAVEDSEARCHES"
-  | "SAVEDBASKETS";
+export type SearchModule = "BENCHES" | "TYPE" | "STATUS" | "OWNER" | "SCAN" | "TAG" | "SAVEDSEARCHES" | "SAVEDBASKETS";
 /*
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
  * extended functionality of RsSet is not needed.
@@ -38,11 +31,7 @@ export type SelectionMode = "NONE" | "SINGLE" | "MULTIPLE";
 export type DeletedItems = "EXCLUDE" | "INCLUDE" | "DELETED_ONLY";
 
 export function parseDeletedItems(str: string): Result<DeletedItems> {
-  return Result.first(
-    parseString("EXCLUDE", str),
-    parseString("INCLUDE", str),
-    parseString("DELETED_ONLY", str),
-  );
+  return Result.first(parseString("EXCLUDE", str), parseString("INCLUDE", str), parseString("DELETED_ONLY", str));
 }
 
 export type ResultType =
@@ -50,7 +39,9 @@ export type ResultType =
   | "CONTAINER"
   | "SAMPLE"
   | "SUBSAMPLE"
-  | "TEMPLATE";
+  | "SAMPLE_TEMPLATE"
+  | "INSTRUMENT"
+  | "INSTRUMENT_TEMPLATE";
 
 export function parseResultType(str: string): Result<ResultType> {
   return Result.first(
@@ -58,7 +49,9 @@ export function parseResultType(str: string): Result<ResultType> {
     parseString("CONTAINER", str),
     parseString("SAMPLE", str),
     parseString("SUBSAMPLE", str),
-    parseString("TEMPLATE", str),
+    parseString("SAMPLE_TEMPLATE", str),
+    parseString("INSTRUMENT", str),
+    parseString("INSTRUMENT_TEMPLATE", str),
   );
 }
 
@@ -67,12 +60,13 @@ export type ParentGlobalIdType =
   | "SUBSAMPLE"
   | "CONTAINER"
   | "TEMPLATE"
+  | "INSTRUMENT_TEMPLATE"
   | "BENCH"
   | "BASKET";
 
 /*
  * Except for container's contentSearch in  'public view case', must include
- * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "TEMPLATE".
+ * at least one of "SAMPLE", "SUBSAMPLE", "CONTAINER", "SAMPLE_TEMPLATE".
  * "ALL" can optionally be included if more than one of the above are added.
  *
  * Uses Set rather than RsSet as Set has a smaller memory footprint and the
@@ -152,7 +146,9 @@ export type PermalinkType =
   | "sample"
   | "container"
   | "subsample"
-  | "sampletemplate";
+  | "sampletemplate"
+  | "instrument"
+  | "instrumenttemplate";
 export type Permalink = {
   type: PermalinkType;
   id: number;
@@ -425,23 +421,18 @@ export interface Search {
   /*
    * These methods SHOULD perform the associated contextual action.
    */
-  createTemplateFromSample(
+  createTemplateFromSample(name: string, sample: Sample, includeContentForFields: Set<Id>): Promise<void>;
+  createInstrumentTemplateFromInstrument(
     name: string,
-    sample: Sample,
+    instrument: Instrument,
     includeContentForFields: Set<Id>,
   ): Promise<void>;
   deleteRecords(records: Array<InventoryRecord>): Promise<void>;
   duplicateRecords(records: Array<InventoryRecord>): Promise<void>;
   restoreRecords(records: Array<InventoryRecord>): Promise<void>;
   splitRecord(copies: number, subsample: SubSample): Promise<void>;
-  transferRecords(
-    username: Username,
-    records: Array<InventoryRecord>,
-  ): Promise<void>;
-  exportRecords(
-    exportOptions: ExportOptions,
-    records: Array<InventoryRecord>,
-  ): Promise<void>;
+  transferRecords(username: Username, records: Array<InventoryRecord>): Promise<void>;
+  exportRecords(exportOptions: ExportOptions, records: Array<InventoryRecord>): Promise<void>;
 
   /*
    * LIST view MAY provide a mechanism to adjust the column. For more

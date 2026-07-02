@@ -1,19 +1,20 @@
+import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
+import FormControl from "@mui/material/FormControl";
+import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import Typography from "@mui/material/Typography";
+import { mapValues } from "es-toolkit";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useState } from "react";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import NumberField from "../../../../components/Inputs/NumberField";
-import React, { useState } from "react";
-import useStores from "../../../../stores/use-stores";
-import { observer } from "mobx-react-lite";
-import FormHelperText from "@mui/material/FormHelperText";
 import ContainerModel from "../../../../stores/models/ContainerModel";
-import MenuItem from "@mui/material/MenuItem";
-import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
-import Divider from "@mui/material/Divider";
-import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
-import { mapObject } from "../../../../util/Util";
+import useStores from "../../../../stores/use-stores";
 
 const minGridSize = 1;
 const maxGridSize = 24;
@@ -27,30 +28,31 @@ type CommonSize = {
   name: string;
 };
 
-// the order of these key/value pairs is significant
+// Declaration order is the menu display order: the most popular size (96 well
+// plate) first, "Custom" last.
 const commonSizes: Record<CommonSizeIndex, CommonSize> = {
-  custom: { rows: null, cols: null, name: "Custom" },
-  "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
-  "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
-  "100-place-freezer-box": {
-    rows: 10,
-    cols: 10,
-    name: "100 place freezer box",
+  "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
+  "24-well-plate": { rows: 4, cols: 6, name: "24 well plate" },
+  "12-well-plate": { rows: 3, cols: 4, name: "12 well plate" },
+  "6-well-plate": { rows: 2, cols: 3, name: "6 well plate" },
+  "196-place-freezer-box": {
+    rows: 14,
+    cols: 14,
+    name: "196 place freezer box",
   },
   "169-place-freezer-box": {
     rows: 13,
     cols: 13,
     name: "169 place freezer box",
   },
-  "196-place-freezer-box": {
-    rows: 14,
-    cols: 14,
-    name: "196 place freezer box",
+  "100-place-freezer-box": {
+    rows: 10,
+    cols: 10,
+    name: "100 place freezer box",
   },
-  "6-well-plate": { rows: 2, cols: 3, name: "6 well plate" },
-  "12-well-plate": { rows: 3, cols: 4, name: "12 well plate" },
-  "24-well-plate": { rows: 4, cols: 6, name: "24 well plate" },
-  "96-well-plate": { rows: 8, cols: 12, name: "96 well plate" },
+  "81-place-freezer-box": { rows: 9, cols: 9, name: "81 place freezer box" },
+  "64-place-freezer-box": { rows: 8, cols: 8, name: "64 place freezer box" },
+  custom: { rows: null, cols: null, name: "Custom" },
 };
 
 function GridDimensions(): React.ReactNode {
@@ -62,19 +64,13 @@ function GridDimensions(): React.ReactNode {
   const [validRows, setValidRows] = useState(true);
   const [commonSize, setCommonSize] = useState<CommonSizeIndex>("custom");
 
-  if (!activeResult || !(activeResult instanceof ContainerModel))
-    throw new Error("ActiveResult must be a Container");
+  if (!activeResult || !(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
   const gridLayout = activeResult.gridLayout;
-  if (activeResult.cType !== "GRID" || !gridLayout)
-    throw new Error("Container must be a Grid Container");
+  if (activeResult.cType !== "GRID" || !gridLayout) throw new Error("Container must be a Grid Container");
 
   const [columnsNumber, setColumnsNumber] = useState<number>(1);
 
-  const handleChangeColumns = ({
-    target,
-  }: {
-    target: { value: string; checkValidity: () => boolean };
-  }) => {
+  const handleChangeColumns = ({ target }: { target: { value: string; checkValidity: () => boolean } }) => {
     setCommonSize("custom");
     setColumnsNumber(parseInt(target.value, 10));
     if (!target.checkValidity() || target.value === "") {
@@ -96,11 +92,7 @@ function GridDimensions(): React.ReactNode {
 
   const [rowsNumber, setRowsNumber] = useState(1);
 
-  const handleChangeRows = ({
-    target,
-  }: {
-    target: { value: string; checkValidity: () => boolean };
-  }) => {
+  const handleChangeRows = ({ target }: { target: { value: string; checkValidity: () => boolean } }) => {
     setCommonSize("custom");
     setRowsNumber(parseInt(target.value, 10));
     if (!target.checkValidity() || target.value === "") {
@@ -120,9 +112,7 @@ function GridDimensions(): React.ReactNode {
     }
   };
 
-  const handleChooseCommonSize = (
-    event: SelectChangeEvent<CommonSizeIndex>,
-  ) => {
+  const handleChooseCommonSize = (event: SelectChangeEvent<CommonSizeIndex>) => {
     const value = event.target.value;
     const size = commonSizes[value];
     setCommonSize(value);
@@ -156,14 +146,11 @@ function GridDimensions(): React.ReactNode {
         <FormControl fullWidth size="small">
           <Select value={commonSize} label="" onChange={handleChooseCommonSize}>
             {Object.values(
-              mapObject(
-                (value, size) => (
-                  <MenuItem value={value} key={value}>
-                    {size.name}
-                  </MenuItem>
-                ),
-                commonSizes,
-              ),
+              mapValues(commonSizes, (size, value) => (
+                <MenuItem value={value} key={value}>
+                  {size.name}
+                </MenuItem>
+              )),
             )}
           </Select>
         </FormControl>
@@ -197,9 +184,7 @@ function GridDimensions(): React.ReactNode {
                 step: 1,
               },
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">Rows</InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start">Rows</InputAdornment>,
               },
             }}
           />
@@ -233,9 +218,7 @@ function GridDimensions(): React.ReactNode {
                 step: 1,
               },
               input: {
-                startAdornment: (
-                  <InputAdornment position="start">Columns</InputAdornment>
-                ),
+                startAdornment: <InputAdornment position="start">Columns</InputAdornment>,
               },
             }}
           />

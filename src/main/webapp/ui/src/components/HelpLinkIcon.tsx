@@ -1,9 +1,9 @@
-import { type URL } from "../util/types";
-import React from "react";
+import HelpIcon from "@mui/icons-material/Help";
 import IconButton from "@mui/material/IconButton";
 import { svgIconClasses } from "@mui/material/SvgIcon";
-import HelpIcon from "@mui/icons-material/Help";
 import { useTheme } from "@mui/material/styles";
+import type React from "react";
+import type { URL } from "../util/types";
 import CustomTooltip from "./CustomTooltip";
 
 type HelpIconProps = {
@@ -28,8 +28,7 @@ function IconLink({
     color: React.ComponentProps<typeof IconButton>["color"] | "white";
   }): React.ReactNode {
   const theme = useTheme();
-  const resolvedColor =
-    color === "primary" ? theme.palette.primary.dark : color;
+  const resolvedColor = color === "primary" ? theme.palette.primary.dark : color;
   return (
     <IconButton
       {...rest}
@@ -62,15 +61,7 @@ export default function HelpLinkIcon({
 }: HelpIconProps): React.ReactNode {
   return (
     <CustomTooltip title={title}>
-      <IconLink
-        component="a"
-        href={link}
-        target="_blank"
-        rel="noreferrer"
-        size={size}
-        color={color}
-        aria-label={title}
-      >
+      <IconLink component="a" href={link} target="_blank" rel="noreferrer" size={size} color={color} aria-label={title}>
         <HelpIcon />
       </IconLink>
     </CustomTooltip>

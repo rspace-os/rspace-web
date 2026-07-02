@@ -1,10 +1,10 @@
-import React from "react";
-import { observer } from "mobx-react-lite";
 import Grid from "@mui/material/Grid";
-import BatchGridContainer from "./BatchGridContainer";
-import { sleep } from "../../../util/Util";
-import { take, incrementForever } from "../../../util/iterators";
+import { delay } from "es-toolkit";
+import { observer } from "mobx-react-lite";
+import React from "react";
+import { incrementForever, take } from "../../../util/iterators";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
+import BatchGridContainer from "./BatchGridContainer";
 
 type LoadingListArgs = {
   onVisible: () => void;
@@ -14,25 +14,19 @@ type LoadingListArgs = {
   placeholder: React.ReactNode;
 };
 
-function LoadingList({
-  onVisible,
-  count,
-  placeholder,
-  pageNumber,
-  loading,
-}: LoadingListArgs): React.ReactNode {
+function LoadingList({ onVisible, count, placeholder, pageNumber, loading }: LoadingListArgs): React.ReactNode {
   const ref = React.useRef(null);
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const [intObs] = React.useState(
     new IntersectionObserver(([{ isIntersecting }]) => {
       if (isIntersecting) onVisible();
-    })
+    }),
   );
 
   React.useEffect(() => {
     void (async () => {
       if (ref.current) intObs.unobserve(ref.current);
-      await sleep(100); // give React a chance to re-render
+      await delay(100); // give React a chance to re-render
       if (ref.current && !loading) intObs.observe(ref.current);
     })();
   }, [pageNumber, loading]);
@@ -45,8 +39,9 @@ function LoadingList({
           size={{
             xs: 12,
             md: isSingleColumnLayout ? 6 : 12,
-            xl: isSingleColumnLayout ? 4 : 12
-          }}>
+            xl: isSingleColumnLayout ? 4 : 12,
+          }}
+        >
           {placeholder}
         </Grid>
       ))}

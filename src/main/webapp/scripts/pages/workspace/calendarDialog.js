@@ -80,7 +80,7 @@ function initCreateCalendarEntryDlg() {
                       $().toastmessage('showSuccessToast', 'Calendar event is being downloaded.');
                       $('#createCalendarEntryDlg').dialog('close');
 
-                      window.location.href = window.location.href = "/messaging/get_calendar_event";
+                      window.location.href = "/messaging/get_calendar_event";
                   } else {
                       $().toastmessage('showErrorToast', response.error.errorMessages[0]);
                   }

@@ -19,6 +19,14 @@ public interface FileStoreMetaManager extends GenericManager<FileProperty, Long>
    */
   List<FileProperty> findProperties(Map<String, String> wheres);
 
+  /**
+   * Counts FileProperty rows with no associated FileStoreRoot (a data-integrity diagnostic; should
+   * be 0).
+   *
+   * @return number of FileProperty rows whose root is null
+   */
+  long countFilePropertiesWithoutRoot();
+
   boolean doesUserOwnDocWithHash(User user, String contentsHash);
 
   FileProperty getByHash(String contentsHash);

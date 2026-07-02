@@ -35,10 +35,7 @@ export function* incrementForever(): Generator<number, void, void> {
  * @arg iterator - The iterator to take from.
  * @arg n        - The number of elements to take.
  */
-export function* take<T>(
-  iterator: Iterable<T>,
-  n: number,
-): Generator<T, void, void> {
+export function* take<T>(iterator: Iterable<T>, n: number): Generator<T, void, void> {
   let count = n;
   for (const x of iterator) {
     if (count === 0) return;

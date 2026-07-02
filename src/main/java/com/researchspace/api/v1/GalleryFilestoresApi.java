@@ -5,6 +5,10 @@
 package com.researchspace.api.v1;
 
 import com.researchspace.api.v1.model.ApiExternalStorageOperationResult;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreAuditInfo;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.User;
@@ -42,6 +46,15 @@ public interface GalleryFilestoresApi {
       Long filestoreId, String downloadPath, Long remoteId, User user, HttpServletResponse response)
       throws IOException;
 
+  /**
+   * Returns the RSpace write-provenance (created-by / created-at) of a single filestore item,
+   * fetched on demand for the Gallery info panel. Both fields are null when the object carries no
+   * such metadata. Requires read access.
+   */
+  @GetMapping("/filestores/{filestoreId}/metadata")
+  ApiGalleryFilestoreAuditInfo getFilestoreItemMetadata(
+      Long filestoreId, String remotePath, User user) throws BindException;
+
   @PostMapping("/filestores")
   @ResponseBody
   @ResponseStatus(HttpStatus.CREATED)
@@ -74,43 +87,69 @@ public interface GalleryFilestoresApi {
   /* ========= filestore write ops (unified across S3, iRODS, ...) =========== */
 
   /**
-   * Moves Gallery items into the filestore identified by {@code filestoreId}. After successful
-   * upload, the RSpace media file records are deleted and {@code ExternalStorageLocation} link rows
-   * are created. Unwritable backends produce 501 Not Implemented.
+   * Uploads (imports) Gallery items into the filestore identified by {@code filestoreId}, creating
+   * an {@code ExternalStorageLocation} link row per success. When {@code removeOriginalFromRspace}
+   * in the request is true the RSpace media records are deleted after a successful upload (a
+   * "move"); when false they are kept (a "copy"). Unwritable backends produce 404 Not Found.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/uploadFromGallery",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.OK)
+  ApiExternalStorageOperationResult uploadFromGallery(
+      Long filestoreId,
+      ApiGalleryFilestoreOperationRequest request,
+      BindingResult errors,
+      User user)
+      throws BindException;
+
+  /**
+   * Moves a file or folder to another folder within the same filestore (server-side; S3 only).
+   * Paths are relative to the filestore root; the moved item keeps its leaf name. Non-S3 backends
+   * produce 404.
    */
   @PostMapping(
       value = "/filestores/{filestoreId}/move",
       produces = MediaType.APPLICATION_JSON_VALUE,
       consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.OK)
-  ApiExternalStorageOperationResult moveToFilestore(
-      Long filestoreId,
-      ApiGalleryFilestoreOperationRequest request,
-      BindingResult errors,
-      User user)
+  ApiExternalStorageOperationResult moveWithinFilestore(
+      Long filestoreId, ApiGalleryFilestoreMoveRequest request, BindingResult errors, User user)
       throws BindException;
 
   /**
-   * Copies Gallery items into the filestore identified by {@code filestoreId} (does not delete from
-   * RSpace). An {@code ExternalStorageLocation} link row is created per success. Unwritable
-   * backends produce 501.
+   * Creates a new subfolder within the filestore identified by {@code filestoreId} (S3 only; a
+   * zero-byte placeholder object carrying creator/creation-time metadata). Non-S3 backends produce
+   * 404.
    */
   @PostMapping(
-      value = "/filestores/{filestoreId}/copy",
+      value = "/filestores/{filestoreId}/folder",
       produces = MediaType.APPLICATION_JSON_VALUE,
       consumes = MediaType.APPLICATION_JSON_VALUE)
-  @ResponseStatus(HttpStatus.OK)
-  ApiExternalStorageOperationResult copyToFilestore(
-      Long filestoreId,
-      ApiGalleryFilestoreOperationRequest request,
-      BindingResult errors,
-      User user)
+  @ResponseStatus(HttpStatus.CREATED)
+  ApiExternalStorageOperationResult createFolder(
+      Long filestoreId, ApiGalleryFilestoreFolderRequest request, BindingResult errors, User user)
+      throws BindException;
+
+  /**
+   * Deletes a file or folder within the filestore identified by {@code filestoreId} (S3 only),
+   * subject to the creator/age gate: only the creating user may delete, and only within the
+   * configured window after creation. A non-empty folder is rejected. Returns 204 on success; 403
+   * when the gate denies the deletion; 404 for non-S3 backends.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/delete",
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  void deleteFromFilestore(
+      Long filestoreId, ApiGalleryFilestoreDeleteRequest request, BindingResult errors, User user)
       throws BindException;
 
   /**
    * Server-side transfers a single object from the filestore identified by {@code filestoreId} (the
    * source) to the filestore identified by {@code destFilestoreId} in the body. Currently supports
-   * S3↔S3 only; other source/destination backends produce 501. Rejects same source+dest filestore
+   * S3↔S3 only; other source/destination backends produce 404. Rejects same source+dest filestore
    * id (within-filestore moves are out of scope of this subtask). When {@code deleteSource} is
    * true, the source object is deleted after a successful copy.
    */

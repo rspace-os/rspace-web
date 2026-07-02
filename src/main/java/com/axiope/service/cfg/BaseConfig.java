@@ -215,6 +215,8 @@ import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
 import com.researchspace.service.impl.UserExternalIdResolverImpl;
+import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
+import com.researchspace.service.inventory.impl.RspaceToExternalProviderAdapterImpl;
 import com.researchspace.slack.SlackMessageSender;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
 import com.researchspace.snapgene.wclient.SnapgeneWSClientImpl;
@@ -231,6 +233,8 @@ import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import com.researchspace.webapp.filter.SSOShiroFormAuthFilterExt;
 import com.researchspace.webapp.filter.StandaloneShiroFormAuthFilterExt;
 import com.researchspace.webapp.integrations.argos.ArgosDMPProvider;
+import com.researchspace.webapp.integrations.b2inst.B2instConnector;
+import com.researchspace.webapp.integrations.b2inst.B2instConnectorImpl;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnectorImpl;
 import com.researchspace.webapp.integrations.dmptool.DMPToolDMPProvider;
@@ -1309,6 +1313,16 @@ public abstract class BaseConfig {
   @Bean(name = "dataCiteConnector")
   public DataCiteConnector getDataCiteConnector() {
     return new DataCiteConnectorImpl();
+  }
+
+  @Bean(name = "b2instConnector")
+  public B2instConnector getB2instConnector() {
+    return new B2instConnectorImpl();
+  }
+
+  @Bean(name = "rspaceToExternalProviderAdapter")
+  public RspaceToExternalProviderAdapter getRspaceToExternalProviderAdapter() {
+    return new RspaceToExternalProviderAdapterImpl();
   }
 
   @Bean(name = "pyrat")

@@ -1,30 +1,29 @@
-import React from "react";
-import { Dialog } from "../../../components/DialogBoundary";
-import DialogTitle from "@mui/material/DialogTitle";
-import DialogContent from "@mui/material/DialogContent";
-import DialogActions from "@mui/material/DialogActions";
-import Stepper from "@mui/material/Stepper";
-import Step from "@mui/material/Step";
-import StepLabel from "@mui/material/StepLabel";
-import StepContent from "@mui/material/StepContent";
-import axios from "@/common/axios";
-import Result from "../../../util/result";
-import useOauthToken from "../../../hooks/auth/useOauthToken";
-import * as Parsers from "../../../util/parsers";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { TreeItem } from "@mui/x-tree-view/TreeItem";
-import { Optional } from "../../../util/optional";
-import * as ArrayUtils from "../../../util/ArrayUtils";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Step from "@mui/material/Step";
+import StepContent from "@mui/material/StepContent";
+import StepLabel from "@mui/material/StepLabel";
+import Stepper from "@mui/material/Stepper";
 import TextField from "@mui/material/TextField";
-import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import { useFilestoreLogin } from "./FilestoreLoginDialog";
 import Typography from "@mui/material/Typography";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import { TreeItem } from "@mui/x-tree-view/TreeItem";
+import React from "react";
+import axios from "@/common/axios";
+import { Dialog } from "../../../components/DialogBoundary";
 import EventBoundary from "../../../components/EventBoundary";
+import useOauthToken from "../../../hooks/auth/useOauthToken";
+import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
+import { Optional } from "../../../util/optional";
+import * as Parsers from "../../../util/parsers";
+import Result from "../../../util/result";
+import { useFilestoreLogin } from "./FilestoreLoginDialog";
 
 type AddFilestoreDialogArgs = {
   open: boolean;
@@ -43,15 +42,18 @@ function FilesystemSelectionStep(props: {
     id,
     name,
     url,
+    clientType,
   }: {
     id: number;
     name: string;
     url: string;
+    clientType: string;
   }) => void;
   selectedFilesystem: Optional<{
     id: number;
     name: string;
     url: string;
+    clientType: string;
   }>;
 }) {
   const { selectedFilesystem, setSelectedFilesystem, ...rest } = props;
@@ -59,12 +61,14 @@ function FilesystemSelectionStep(props: {
     id: number;
     name: string;
     url: string;
+    clientType: string;
   } | null>(null);
   const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
     id: number;
     name: string;
     url: string;
     canRead: boolean;
+    clientType: string;
   }>>(null);
   const { getToken } = useOauthToken();
   const api = React.useRef(
@@ -72,7 +76,7 @@ function FilesystemSelectionStep(props: {
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -89,30 +93,24 @@ function FilesystemSelectionStep(props: {
                 .flatMap(Parsers.isNotNull)
                 .flatMap((obj) => {
                   try {
-                    const id = Parsers.getValueWithKey("id")(obj)
-                      .flatMap(Parsers.isNumber)
-                      .elseThrow();
-                    const name = Parsers.getValueWithKey("name")(obj)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
-                    const url = Parsers.getValueWithKey("url")(obj)
-                      .flatMap(Parsers.isString)
-                      .elseThrow();
-                    const canRead = Parsers.getValueWithKey("userPermissions")(
-                      obj,
-                    )
+                    const id = Parsers.getValueWithKey("id")(obj).flatMap(Parsers.isNumber).elseThrow();
+                    const name = Parsers.getValueWithKey("name")(obj).flatMap(Parsers.isString).elseThrow();
+                    const url = Parsers.getValueWithKey("url")(obj).flatMap(Parsers.isString).elseThrow();
+                    const canRead = Parsers.getValueWithKey("userPermissions")(obj)
                       .flatMap(Parsers.isObject)
                       .flatMap(Parsers.isNotNull)
                       .flatMap(Parsers.getValueWithKey("canRead"))
                       .flatMap(Parsers.isBoolean)
                       .orElse(true);
-                    return Result.Ok({ id, name, url, canRead });
+                    const clientType = Parsers.getValueWithKey("clientType")(obj).flatMap(Parsers.isString).orElse("");
+                    return Result.Ok({ id, name, url, canRead, clientType });
                   } catch (e) {
                     return Result.Error<{
                       id: number;
                       name: string;
                       url: string;
                       canRead: boolean;
+                      clientType: string;
                     }>([e instanceof Error ? e : new Error("Unknown error")]);
                   }
                 }),
@@ -128,8 +126,7 @@ function FilesystemSelectionStep(props: {
       <StepLabel
         optional={
           <Typography variant="body2">
-            Your sysadmin needs to configure a file system before it appears
-            here.
+            Your sysadmin needs to configure a file system before it appears here.
           </Typography>
         }
       >
@@ -137,16 +134,11 @@ function FilesystemSelectionStep(props: {
       </StepLabel>
       <StepContent>
         <RadioGroup
-          value={
-            chosenFilesystem?.id ??
-            selectedFilesystem.map(({ id }) => id).orElse(null)
-          }
+          value={chosenFilesystem?.id ?? selectedFilesystem.map(({ id }) => id).orElse(null)}
           onChange={({ target: { value } }) => {
             const chosenId = parseInt(value, 10);
             Optional.fromNullable(filesystems)
-              .flatMap((fss) =>
-                ArrayUtils.find(({ id }) => id === chosenId, fss),
-              )
+              .flatMap((fss) => Optional.fromNullable(fss.find(({ id }) => id === chosenId)))
               .do((fs) => {
                 setChosenFilesysem(fs);
               });
@@ -164,11 +156,7 @@ function FilesystemSelectionStep(props: {
                 ) : (
                   <>
                     {fs.name}
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      sx={{ ml: 1, color: "text.secondary" }}
-                    >
+                    <Typography component="span" variant="body2" sx={{ ml: 1, color: "text.secondary" }}>
                       (no read access; contact your sysadmin)
                     </Typography>
                   </>
@@ -183,8 +171,7 @@ function FilesystemSelectionStep(props: {
             variant="contained"
             color="primary"
             onClick={() => {
-              if (chosenFilesystem !== null)
-                setSelectedFilesystem(chosenFilesystem);
+              if (chosenFilesystem !== null) setSelectedFilesystem(chosenFilesystem);
             }}
             sx={{ mt: 1, mr: 1 }}
           >
@@ -207,11 +194,14 @@ function TreeListing({
   fsName,
   path,
   onFailToAuthenticate,
+  showBucketTopLevel = false,
 }: {
   fsId: number;
   fsName: string;
   path: string;
   onFailToAuthenticate: () => void;
+  /** Root S3 listing only: prepend the "(bucket top level)" option once the folders have loaded. */
+  showBucketTopLevel?: boolean;
 }): React.ReactNode {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
@@ -220,20 +210,20 @@ function TreeListing({
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
   );
 
   const [listing, setListing] = React.useState<FilesystemListing>([]);
+  const [loading, setLoading] = React.useState(true);
   const { login } = useFilestoreLogin();
   React.useEffect(() => {
+    setLoading(true);
     async function browse(): Promise<void> {
       try {
-        const { data } = await (
-          await api.current
-        ).get<{ content: FilesystemListing }>(
+        const { data } = await (await api.current).get<{ content: FilesystemListing }>(
           `filesystems/${fsId}/browse?remotePath=${path}`,
         );
         if (!data.content) throw new Error("No content");
@@ -270,22 +260,25 @@ function TreeListing({
                 }
               }),
         );
+      } finally {
+        setLoading(false);
       }
     }
     void browse();
-
   }, [fsId, path]);
 
+  // Root S3 listing: hold back the "(bucket top level)" option until the folders have loaded, so
+  // every option appears at once rather than top-level looking like the only choice.
+  if (showBucketTopLevel && loading) {
+    return <TreeItem itemId="__loading__" label="Loading..." disabled />;
+  }
   return (
     <>
+      {showBucketTopLevel && <TreeItem itemId={TOP_LEVEL_ITEM_ID} label="(bucket top level)" />}
       {listing.map(
         ({ folder, name }) =>
           folder && (
-            <TreeItem
-              itemId={`${path}${name}/`}
-              label={name}
-              key={`${path}${name}/`}
-            >
+            <TreeItem itemId={`${path}${name}/`} label={name} key={`${path}${name}/`}>
               <TreeListing
                 fsId={fsId}
                 fsName={name}
@@ -299,23 +292,29 @@ function TreeListing({
   );
 }
 
+// Sentinel tree-item id for "the bucket top level" (an empty filestore path). Distinct from any
+// real folder id, which always ends in "/".
+const TOP_LEVEL_ITEM_ID = "__top_level__";
+
 function FolderSelectionStep(props: {
-  selectedFilesystem: Optional<{ id: number; name: string; url: string }>;
+  selectedFilesystem: Optional<{ id: number; name: string; url: string; clientType: string }>;
   onConfirm: (folderPath: string) => void;
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
-  const [selectedFolderPath, setSelectedFolderPath] = React.useState("");
+  // null = nothing chosen yet; "" = the bucket top level (S3); otherwise a subfolder path.
+  const [selectedFolderPath, setSelectedFolderPath] = React.useState<string | null>(null);
+  // S3 folders are virtual, so an S3 filestore may be rooted at the bucket top level (empty path).
+  const isS3 = selectedFilesystem.map(({ clientType }) => clientType === "S3").orElse(false);
 
   return (
     <Step key="folderSelection" component="div" {...rest}>
       <StepLabel
         optional={
           <Typography variant="body2">
-            You can configure multiple Filestores from the same File system with
-            different top-level folders, to facilitate accessing deeply-nested
-            content.
+            You can configure multiple Filestores from the same File system with different top-level folders, to
+            facilitate accessing deeply-nested content.
           </Typography>
         }
       >
@@ -327,15 +326,10 @@ function FolderSelectionStep(props: {
           onExpandedItemsChange={(_event, nodeIds) => {
             setExpandedItems(nodeIds);
           }}
-          onItemSelectionToggle={(
-            event,
-            itemId: string | ReadonlyArray<string>,
-            selected,
-          ) => {
+          onItemSelectionToggle={(_event, itemId: string | ReadonlyArray<string>, selected) => {
             if (!(typeof itemId === "string")) return;
-            const selectedFolder: string = itemId;
             if (!selected) return;
-            setSelectedFolderPath(decodeURIComponent(selectedFolder));
+            setSelectedFolderPath(itemId === TOP_LEVEL_ITEM_ID ? "" : decodeURIComponent(itemId));
           }}
         >
           {selectedFilesystem
@@ -345,6 +339,7 @@ function FolderSelectionStep(props: {
                 fsId={id}
                 fsName={name}
                 key={null}
+                showBucketTopLevel={isS3}
                 onFailToAuthenticate={() => {
                   onCancel();
                 }}
@@ -354,11 +349,11 @@ function FolderSelectionStep(props: {
         </SimpleTreeView>
         <Box sx={{ mb: 2 }}>
           <Button
-            disabled={!selectedFolderPath}
+            disabled={selectedFolderPath === null}
             variant="contained"
             color="primary"
             onClick={() => {
-              onConfirm(selectedFolderPath);
+              if (selectedFolderPath !== null) onConfirm(selectedFolderPath);
             }}
             sx={{ mt: 1, mr: 1 }}
           >
@@ -373,19 +368,14 @@ function FolderSelectionStep(props: {
   );
 }
 
-function NameStep(props: {
-  onConfirm: (name: string) => void;
-  onCancel: () => void;
-}) {
+function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => void }) {
   const { onConfirm, onCancel, ...rest } = props;
   const [name, setName] = React.useState("");
   return (
     <Step key="name" component="div" {...rest}>
       <StepLabel
         optional={
-          <Typography variant="body2">
-            This name is used in RSpace to help you identify the Filestore.
-          </Typography>
+          <Typography variant="body2">This name is used in RSpace to help you identify the Filestore.</Typography>
         }
       >
         Name the Filestore
@@ -399,7 +389,7 @@ function NameStep(props: {
           slotProps={{
             htmlInput: {
               "aria-label": "Filestore name",
-            }
+            },
           }}
         />
         <Box sx={{ mb: 2 }}>
@@ -430,10 +420,7 @@ function NameStep(props: {
  * filesystem, and they can give it a name. Once submitted, a new filesystem
  * appears in the filesystems section.
  */
-export default function AddFilestoreDialog({
-  open,
-  onClose,
-}: AddFilestoreDialogArgs): React.ReactNode {
+export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialogArgs): React.ReactNode {
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
@@ -448,6 +435,7 @@ export default function AddFilestoreDialog({
       id: number;
       name: string;
       url: string;
+      clientType: string;
     }>
   >(Optional.empty());
 
@@ -460,7 +448,7 @@ export default function AddFilestoreDialog({
       return axios.create({
         baseURL: "/api/v1/gallery",
         headers: {
-          Authorization: "Bearer " + (await getToken()),
+          Authorization: `Bearer ${await getToken()}`,
         },
       });
     })(),
@@ -470,9 +458,7 @@ export default function AddFilestoreDialog({
       const filesystemId = selectedFilesystem
         .toResult(() => new Error("No filestore has been selected,"))
         .elseThrow().id;
-      await (
-        await api.current
-      ).post<unknown>(
+      await (await api.current).post<unknown>(
         "filestores",
         {},
         {
@@ -509,12 +495,7 @@ export default function AddFilestoreDialog({
 
   return (
     <EventBoundary>
-      <Dialog
-        fullWidth
-        maxWidth="sm"
-        open={open}
-        onClose={() => onClose(false)}
-      >
+      <Dialog fullWidth maxWidth="sm" open={open} onClose={() => onClose(false)}>
         <DialogTitle>Add a Filestore</DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} component="div" orientation="vertical">

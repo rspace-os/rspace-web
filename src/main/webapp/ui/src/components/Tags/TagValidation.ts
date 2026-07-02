@@ -8,8 +8,8 @@
  * ================
  */
 
+import type { Tag } from "../../stores/definitions/Tag";
 import { lift2 } from "../../util/optional";
-import { type Tag } from "../../stores/definitions/Tag";
 
 /**
  * The max length of an individual tag. Chosen rather arbitrarily based on the
@@ -56,12 +56,9 @@ export const checkTagString = (tag: string): TagValidation => {
         char,
       };
   }
-  if (tag.startsWith(" "))
-    return { reason: "InvalidWhitespace", detail: "Prefix" };
-  if (tag.endsWith(" "))
-    return { reason: "InvalidWhitespace", detail: "Suffix" };
-  if (/ {2}/.test(tag))
-    return { reason: "InvalidWhitespace", detail: "Consecutive" };
+  if (tag.startsWith(" ")) return { reason: "InvalidWhitespace", detail: "Prefix" };
+  if (tag.endsWith(" ")) return { reason: "InvalidWhitespace", detail: "Suffix" };
+  if (/ {2}/.test(tag)) return { reason: "InvalidWhitespace", detail: "Consecutive" };
   return { reason: "NoIssues" };
 };
 
@@ -94,7 +91,7 @@ type InternalTag = Tag & {
  */
 export const checkInternalTag = (
   tag: InternalTag,
-  { enforceOntologies }: { enforceOntologies: boolean }
+  { enforceOntologies }: { enforceOntologies: boolean },
 ): TagValidation => {
   const checkedName = checkTagString(tag.value);
   if (checkedName.reason !== "NoIssues") return checkedName;
@@ -106,12 +103,8 @@ export const checkInternalTag = (
       filename,
     }),
     tag.version,
-    tag.vocabulary
-  ).orElse(
-    enforceOntologies
-      ? { reason: "OntologiesAreEnforced" }
-      : { reason: "NoIssues" }
-  );
+    tag.vocabulary,
+  ).orElse(enforceOntologies ? { reason: "OntologiesAreEnforced" } : { reason: "NoIssues" });
 };
 
 /* =======================
@@ -127,10 +120,7 @@ export const checkInternalTag = (
  * For disabling a tab based on the validation of a tag.
  */
 export const isAllowed = (tagValidation: TagValidation): boolean => {
-  return (
-    tagValidation.reason === "NoIssues" ||
-    tagValidation.reason === "NoIssuesWithSourceInformation"
-  );
+  return tagValidation.reason === "NoIssues" || tagValidation.reason === "NoIssuesWithSourceInformation";
 };
 
 /**
@@ -138,25 +128,17 @@ export const isAllowed = (tagValidation: TagValidation): boolean => {
  */
 export const helpText = (tagValidation: TagValidation): string | null => {
   if (tagValidation.reason === "NoIssues") return null;
-  if (tagValidation.reason === "OntologiesAreEnforced")
-    return "Not from an ontology";
+  if (tagValidation.reason === "OntologiesAreEnforced") return "Not from an ontology";
   if (tagValidation.reason === "NoIssuesWithSourceInformation")
     return `From version ${tagValidation.version} of ${tagValidation.filename}`;
-  if (tagValidation.reason === "TooLong")
-    return `Tag cannot exceed ${MAX_LENGTH} characters.`;
-  if (tagValidation.reason === "TooShort")
-    return `Tag must be at least ${MIN_LENGTH} characters long.`;
-  if (tagValidation.reason === "AlreadySelected")
-    return "Tag is already selected.";
-  if (tagValidation.reason === "InvalidChar")
-    return `Tag contains invalid character "${tagValidation.char}".`;
+  if (tagValidation.reason === "TooLong") return `Tag cannot exceed ${MAX_LENGTH} characters.`;
+  if (tagValidation.reason === "TooShort") return `Tag must be at least ${MIN_LENGTH} characters long.`;
+  if (tagValidation.reason === "AlreadySelected") return "Tag is already selected.";
+  if (tagValidation.reason === "InvalidChar") return `Tag contains invalid character "${tagValidation.char}".`;
   if (tagValidation.reason === "InvalidWhitespace") {
-    if (tagValidation.detail === "Prefix")
-      return "Tags cannot start with whitespace characters.";
-    if (tagValidation.detail === "Suffix")
-      return "Tags cannot end with whitespace characters.";
-    if (tagValidation.detail === "Consecutive")
-      return "Tags cannot contain consecutive whitespace characters.";
+    if (tagValidation.detail === "Prefix") return "Tags cannot start with whitespace characters.";
+    if (tagValidation.detail === "Suffix") return "Tags cannot end with whitespace characters.";
+    if (tagValidation.detail === "Consecutive") return "Tags cannot contain consecutive whitespace characters.";
   }
   throw new Error("impossible");
 };

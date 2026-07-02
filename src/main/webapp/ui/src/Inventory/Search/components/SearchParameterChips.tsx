@@ -1,25 +1,14 @@
-import React, { useContext, useEffect } from "react";
 import Chip from "@mui/material/Chip";
-import SearchContext from "../../../stores/contexts/Search";
-import { toTitleCase } from "../../../util/Util";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useContext, useEffect } from "react";
+import SearchContext from "../../../stores/contexts/Search";
 import useStores from "../../../stores/use-stores";
+import { toTitleCase } from "../../../util/Util";
 
-function ParameterChip({
-  label,
-  onDelete,
-}: {
-  label: string;
-  onDelete?: () => void;
-}): React.ReactNode {
-  return (
-    <Chip
-      size="small"
-      label={label}
-      onDelete={onDelete}
-    />
-  );
+function ParameterChip({ label, onDelete }: { label: string; onDelete?: () => void }): React.ReactNode {
+  return <Chip size="small" label={label} onDelete={onDelete} />;
 }
 
 function SearchParameterChips(): React.ReactNode {
@@ -39,8 +28,7 @@ function SearchParameterChips(): React.ReactNode {
         <ParameterChip
           label={`Type: ${toTitleCase(resultType)}s`}
           onDelete={
-            search.fetcher.allTypesAllowed &&
-            search.uiConfig.allowedTypeFilters.has("ALL")
+            search.fetcher.allTypesAllowed && search.uiConfig.allowedTypeFilters.has("ALL")
               ? () => {
                   search.setTypeFilter("ALL");
                 }

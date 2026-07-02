@@ -1,12 +1,10 @@
-import React from "react";
+import Autocomplete, { type AutocompleteInputChangeReason } from "@mui/material/Autocomplete";
 import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import Autocomplete, {
-  AutocompleteInputChangeReason,
-} from "@mui/material/Autocomplete";
 import MenuItem from "@mui/material/MenuItem";
+import TextField from "@mui/material/TextField";
+import type React from "react";
 import Users from "../ExportRepoUser";
-import { type Person, type Repo, type StandardValidations } from "./common";
+import type { Person, Repo, StandardValidations } from "./common";
 
 /**
  * Boolean flags for the valid state of the Dryad metadata fields.
@@ -23,14 +21,11 @@ type DryadRepoArgs = {
       value: string;
     };
   }) => void;
-  handleCrossrefFunderChange: (
-    _unused: unknown,
-    event: { name: string }
-  ) => void;
+  handleCrossrefFunderChange: (_unused: unknown, event: { name: string }) => void;
   handleFetchCrossrefFunder: (
     event: React.SyntheticEvent<Element, Event>,
     value: string,
-    reason: AutocompleteInputChangeReason
+    reason: AutocompleteInputChangeReason,
   ) => void;
   crossrefFunders: Array<{ name: string }>;
   inputValidations: DryadValidations;

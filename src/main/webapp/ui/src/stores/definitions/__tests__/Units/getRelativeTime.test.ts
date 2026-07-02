@@ -1,7 +1,7 @@
-import { describe, expect, test, vi } from 'vitest';
+import fc from "fast-check";
+import { describe, expect, test, vi } from "vitest";
 import { getRelativeTime } from "../../Units";
 
-import fc from "fast-check";
 describe("getRelativeTime", () => {
   test("Simple example", () => {
     const now = new Date();
@@ -11,7 +11,6 @@ describe("getRelativeTime", () => {
     vi.setSystemTime(now);
     expect(getRelativeTime(futureDate)).toBe("in 2 hours");
     vi.useRealTimers();
-
   });
   // this is important so that callers get the grammar right
   test("Always starts with 'in'", () => {
@@ -22,9 +21,8 @@ describe("getRelativeTime", () => {
     fc.assert(
       fc.property(futureDate, (date) => {
         expect(getRelativeTime(date)).toMatch(/^in /);
-      })
+      }),
     );
     vi.useRealTimers();
   });
 });
-

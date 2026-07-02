@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -48,9 +47,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   private @Autowired InstrumentTemplatePostValidator postValidator;
   private @Autowired InstrumentTemplatePutValidator putValidator;
 
-  @Value("${inventory.instrument.enabled:false}")
-  private boolean inventoryInstrumentEnabled;
-
   @Override
   public ApiInstrumentTemplateSearchResult getTemplatesForUser(
       @Valid InventoryApiPaginationCriteria apiPgCrit,
@@ -58,7 +54,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
 
     if (apiPgCrit == null) {
@@ -84,7 +79,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ApiInstrumentTemplate getInstrumentTemplateById(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     ApiInstrumentTemplate template = retrieveApiInstrumentTemplateIfExists(id, user);
     buildAndAddInventoryRecordLinks(template);
     return template;
@@ -95,7 +89,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       @PathVariable Long id,
       @PathVariable Long version,
       @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     ApiInstrumentTemplate template =
         instrumentApiMgr.getApiInstrumentTemplateVersion(id, version, user);
     if (template != null) {
@@ -110,7 +103,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
     validatePostBody(templatePost, errors);
 
@@ -134,7 +126,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
     validatePutRequest(incomingTemplate, errors);
 
@@ -165,7 +156,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ApiInstrumentTemplate deleteInstrumentTemplate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     InstrumentTemplate dbTemplate =
         instrumentApiMgr.assertUserCanDeleteInstrumentTemplate(id, user);
     assertIsInstrumentTemplate(dbTemplate);
@@ -175,7 +165,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ApiInstrumentTemplate restoreDeletedInstrumentTemplate(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     InstrumentTemplate dbTemplate =
         instrumentApiMgr.assertUserCanDeleteInstrumentTemplate(id, user);
     assertIsInstrumentTemplate(dbTemplate);
@@ -185,7 +174,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ResponseEntity<byte[]> getInstrumentTemplateImage(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
-    assertIsInventoryInstrumentEnabled();
     return doImageResponse(
         user,
         () ->
@@ -195,7 +183,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ResponseEntity<byte[]> getInstrumentTemplateThumbnail(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) throws IOException {
-    assertIsInventoryInstrumentEnabled();
     return doImageResponse(
         user,
         () ->
@@ -208,7 +195,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   public ApiInstrumentEntityInfo setIcon(
       @PathVariable Long templateId, MultipartFile file, @RequestAttribute(name = "user") User user)
       throws BindException, IOException {
-    assertIsInventoryInstrumentEnabled();
 
     InstrumentTemplate template =
         instrumentApiMgr.assertUserCanReadInstrumentTemplate(templateId, user);
@@ -237,7 +223,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       @RequestAttribute(name = "user") User user,
       HttpServletResponse response)
       throws IOException {
-    assertIsInventoryInstrumentEnabled();
     iconImageManager.getIconEntity(
         iconId, response.getOutputStream(), this::getDefaultInstrumentTemplateIcon);
   }
@@ -253,7 +238,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       BindingResult errors,
       @RequestAttribute(name = "user") User user)
       throws BindException {
-    assertIsInventoryInstrumentEnabled();
     throwBindExceptionIfErrors(errors);
     incomingTemplate.setIdIfNotSet(id);
     instrumentApiMgr.assertUserCanTransferInstrumentTemplate(id, user);
@@ -267,7 +251,6 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   @Override
   public ApiInventoryBulkOperationResult updateInstrumentsToLatestTemplateVersion(
       @PathVariable Long id, @RequestAttribute(name = "user") User user) {
-    assertIsInventoryInstrumentEnabled();
     InstrumentTemplate template = instrumentApiMgr.assertUserCanReadInstrumentTemplate(id, user);
     assertIsInstrumentTemplate(template);
 
@@ -291,20 +274,12 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
    * only by /bulk endpoint, therefore no REST mappings.
    */
   public ApiInventoryRecordInfo duplicate(Long id, User user) {
-    assertIsInventoryInstrumentEnabled();
     InstrumentTemplate dbTemplate = instrumentApiMgr.assertUserCanReadInstrumentTemplate(id, user);
     assertIsInstrumentTemplate(dbTemplate);
 
     ApiInstrumentTemplate copy = instrumentApiMgr.duplicateInstrumentTemplate(id, user);
     buildAndAddInventoryRecordLinks(copy);
     return copy;
-  }
-
-  private void assertIsInventoryInstrumentEnabled() {
-    if (!inventoryInstrumentEnabled) {
-      throw new UnsupportedOperationException(
-          messages.getMessage("errors.inventory.instrument.feature.disabled"));
-    }
   }
 
   private ApiInstrumentTemplate retrieveApiInstrumentTemplateIfExists(Long id, User user) {

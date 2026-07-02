@@ -80,7 +80,11 @@ public class FileIndexer extends AttachmentSearchBase implements IFileIndexer {
       writer.deleteAll();
       writer.commit();
     } else {
-      writerConfig.setOpenMode(OpenMode.APPEND);
+      // CREATE_OR_APPEND (not APPEND) so a missing/empty index folder is created on the
+      // fly rather than throwing IndexNotFoundException. APPEND requires a pre-existing
+      // committed index, which breaks on a clean environment (e.g. fresh CI runner) where
+      // onInitialAppDeployment hasn't created one yet.
+      writerConfig.setOpenMode(OpenMode.CREATE_OR_APPEND);
       writer = new IndexWriter(dir, writerConfig);
     }
 

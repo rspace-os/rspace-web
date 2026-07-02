@@ -1,10 +1,9 @@
-import { test, describe, expect } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
-import NameDialog from "../NameDialog";
 import { ThemeProvider } from "@mui/material/styles";
-
+import { render, screen } from "@testing-library/react";
+import { describe, expect, test } from "vitest";
 import materialTheme from "../../../../theme";
+import NameDialog from "../NameDialog";
+
 describe("NameDialog", () => {
   test("Naming a new saved search the same name as an existing saved search should be an error.", () => {
     render(
@@ -17,12 +16,8 @@ describe("NameDialog", () => {
           existingNames={["foo"]}
           onChange={() => {}}
         />
-      </ThemeProvider>
-
+      </ThemeProvider>,
     );
-    expect(
-      screen.getByText("This name is already taken. Please modify it.")
-    ).toBeVisible();
+    expect(screen.getByText("This name is already taken. Please modify it.")).toBeVisible();
   });
 });
-

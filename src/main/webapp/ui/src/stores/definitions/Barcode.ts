@@ -1,7 +1,7 @@
-import React from "react";
-import { type Id } from "./BaseRecord";
-import { type Username } from "./Person";
-import { type IsoTimestamp, type _LINK, type URL } from "../../util/types";
+import type React from "react";
+import type { _LINK, IsoTimestamp, URL } from "../../util/types";
+import type { Id } from "./BaseRecord";
+import type { Username } from "./Person";
 
 /**
  * @module Barcode

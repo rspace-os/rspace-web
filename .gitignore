@@ -11,6 +11,11 @@
 /ApiRequests.txt
 /FTsearchIndices/
 /LuceneFTsearchIndices/
+# Hibernate Search / Lucene per-entity index directories created at the project
+# root when running via jetty:run (the default index base is unset, so Lucene
+# uses the working directory). Runtime artifacts, never committed.
+/com.researchspace.model.*/
+/com.axiope.*/
 /Users/
 .run
 /jmeterusers.csv
@@ -25,8 +30,12 @@
 /src/main/webapp/ui/dist
 /src/main/webapp/ui/node/
 /src/main/webapp/ui/node_modules/
+/node/
 node_modules
 src/main/webapp/ui/playwright/
+# Playwright/Vitest browser-mode HTML report, sometimes emitted at the repo
+# root when the runner is invoked from here rather than the ui/ dir.
+/playwright-report/
 /.classpath
 /.project
 /.settings
@@ -69,3 +78,8 @@ src/main/webapp/ui/junit.xml
 # other tooling
 /.claude/
 .worktrees/
+
+.pnpm-store
+# Playwright outputs (repo root; written by the component-test runner)
+/test-results/
+/playwright-report/

@@ -1,34 +1,32 @@
-import React, { type ReactNode } from "react";
-import { observer } from "mobx-react-lite";
-import useStores from "../../../../stores/use-stores";
-import { justFilenameExtension } from "@/util/files";
-import TableContainer from "@mui/material/TableContainer";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TextField from "@mui/material/TextField";
-import { inputBaseClasses } from "@mui/material/InputBase";
-import Box from "@mui/material/Box";
-import FileField from "../../../../components/Inputs/FileField";
-import NoValue from "../../../../components/NoValue";
-import AttachmentTableRow from "./AttachmentTableRow";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
-import Stack from "@mui/material/Stack";
+import UploadIcon from "@mui/icons-material/Publish";
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import type { HasEditableFields } from "@/stores/definitions/Editable";
-import type { BlobUrl } from "@/util/types";
-import type { Attachment } from "@/stores/definitions/Attachment";
+import Box from "@mui/material/Box";
+import { inputBaseClasses } from "@mui/material/InputBase";
+import Stack from "@mui/material/Stack";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import TextField from "@mui/material/TextField";
+import { observer } from "mobx-react-lite";
+import React, { type ReactNode } from "react";
 import type { GalleryFile } from "@/eln/gallery/useGalleryListing";
-import UploadIcon from "@mui/icons-material/Publish";
-import BigIconButton from "../../../../components/BigIconButton";
-import Result from "../../../../util/result";
 import { useDeploymentProperty } from "@/hooks/api/useDeploymentProperty";
+import type { Attachment } from "@/stores/definitions/Attachment";
+import type { HasEditableFields } from "@/stores/definitions/Editable";
+import { justFilenameExtension } from "@/util/files";
+import type { BlobUrl } from "@/util/types";
+import BigIconButton from "../../../../components/BigIconButton";
+import FileField from "../../../../components/Inputs/FileField";
+import NoValue from "../../../../components/NoValue";
+import useStores from "../../../../stores/use-stores";
 import * as FetchingData from "../../../../util/fetchingData";
 import * as Parser from "../../../../util/parsers";
+import Result from "../../../../util/result";
+import AttachmentTableRow from "./AttachmentTableRow";
 
-const GalleryPicker = React.lazy(
-  () => import("../../../../eln/gallery/picker"),
-);
+const GalleryPicker = React.lazy(() => import("../../../../eln/gallery/picker"));
 
 export type AttachmentFieldArgs<FieldOwner> = {
   attachment: Attachment | null;
@@ -80,9 +78,7 @@ function AttachmentField<
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
 
-  const chemistryProvider = FetchingData.getSuccessValue(
-    useDeploymentProperty("chemistry.provider"),
-  )
+  const chemistryProvider = FetchingData.getSuccessValue(useDeploymentProperty("chemistry.provider"))
     .flatMap(Parser.isString)
     .orElse("");
 
@@ -129,8 +125,8 @@ function AttachmentField<
       {!value && (
         <Box sx={{ mt: 1 }}>
           <Alert severity="info" role="none">
-            <AlertTitle>Attachment</AlertTitle>A file of any type can be
-            attached (e.g. image, document, or chemistry file)
+            <AlertTitle>Attachment</AlertTitle>A file of any type can be attached (e.g. image, document, or chemistry
+            file)
           </Alert>
         </Box>
       )}
@@ -168,6 +164,7 @@ function AttachmentField<
               }}
             />
             {galleryDialogOpen && (
+              // biome-ignore lint/complexity/noUselessFragments: initial biome migration
               <React.Suspense fallback={<></>}>
                 <GalleryPicker
                   open={true}
@@ -183,11 +180,7 @@ function AttachmentField<
                   onlyAllowSingleSelection
                   validateSelection={(file) =>
                     file.isSnippet
-                      ? Result.Error([
-                          new Error(
-                            "Snippets cannot be attached to Inventory records.",
-                          ),
-                        ])
+                      ? Result.Error([new Error("Snippets cannot be attached to Inventory records.")])
                       : Result.Ok(null)
                   }
                 />

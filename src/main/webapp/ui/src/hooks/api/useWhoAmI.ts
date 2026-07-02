@@ -1,8 +1,7 @@
 import React from "react";
 import axios from "@/common/axios";
-import { Person, PersonAttrs } from "@/stores/definitions/Person";
-import { Fetched } from "@/util/fetchingData";
-import { doNotAwait } from "@/util/Util";
+import type { Person, PersonAttrs } from "@/stores/definitions/Person";
+import type { Fetched } from "@/util/fetchingData";
 import useOauthToken from "../auth/useOauthToken";
 
 /**
@@ -14,17 +13,14 @@ export default function useWhoAmI(): Fetched<Person> {
     tag: "loading",
   });
 
-  React.useEffect(
-    doNotAwait(async () => {
+  React.useEffect(() => {
+    void (async () => {
       try {
-        const { data } = await axios.get<PersonAttrs>(
-          "/api/v1/userDetails/whoami",
-          {
-            headers: {
-              Authorization: `Bearer ${await getToken.getToken()}`,
-            },
+        const { data } = await axios.get<PersonAttrs>("/api/v1/userDetails/whoami", {
+          headers: {
+            Authorization: `Bearer ${await getToken.getToken()}`,
           },
-        );
+        });
         setCurrentUser({
           tag: "success",
           value: {
@@ -37,10 +33,7 @@ export default function useWhoAmI(): Fetched<Person> {
             email: data.email,
             bench: null,
             workbenchId: data.workbenchId,
-            getBench: () =>
-              Promise.reject(
-                new Error("Not implemented by this Person implementation"),
-              ),
+            getBench: () => Promise.reject(new Error("Not implemented by this Person implementation")),
             isCurrentUser: true,
             fullName: `${data.firstName} ${data.lastName}`,
             label: `${data.firstName} ${data.lastName} (${data.username})`,
@@ -52,9 +45,8 @@ export default function useWhoAmI(): Fetched<Person> {
           error: error instanceof Error ? error.message : "Unknown error",
         });
       }
-    }),
-    [],
-  );
+    })();
+  }, []);
 
   return currentUser;
 }

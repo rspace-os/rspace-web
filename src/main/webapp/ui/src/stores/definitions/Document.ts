@@ -1,6 +1,6 @@
-import { type GlobalId, type Id } from "./BaseRecord";
-import { type Record } from "./Record";
-import { type PersonAttrs } from "./Person";
+import type { GlobalId, Id } from "./BaseRecord";
+import type { PersonAttrs } from "./Person";
+import type { Record } from "./Record";
 
 /**
  * A simple definition of an ELN document, sufficient for use in Inventory.

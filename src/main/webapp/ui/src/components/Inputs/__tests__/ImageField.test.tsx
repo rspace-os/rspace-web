@@ -1,13 +1,13 @@
-import { describe, expect, beforeEach, test, vi } from 'vitest';
-import React from "react";
-import { render, screen } from "@testing-library/react";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import ImageIcon from "@mui/icons-material/Image";
-import { __setIsMobile } from "react-device-detect";
-import ImageField from "../ImageField";
-import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
-
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
+import { __setIsMobile } from "react-device-detect";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import DynamicallyLoadedImageEditor from "../DynamicallyLoadedImageEditor";
+import ImageField from "../ImageField";
+
 declare module "react-device-detect" {
   export const __setIsMobile: (value: boolean) => void;
 }
@@ -20,13 +20,7 @@ vi.mock("@mui/icons-material/Image", () => ({
 }));
 vi.mock("../FileField", () => ({
   default: vi.fn(
-    ({
-      icon,
-      slotProps,
-    }: {
-      icon: React.ReactNode;
-      slotProps?: { input?: { endAdornment?: React.ReactNode } };
-    }) => {
+    ({ icon, slotProps }: { icon: React.ReactNode; slotProps?: { input?: { endAdornment?: React.ReactNode } } }) => {
       return (
         <>
           <div id="icon">{icon}</div>
@@ -37,17 +31,11 @@ vi.mock("../FileField", () => ({
   ),
 }));
 vi.mock("@mui/material/Button", () => ({
-  default: vi.fn(
-    ({
-      children,
-      onClick,
-    }: {
-      children: React.ReactNode;
-      onClick?: () => void;
-    }) => {
-      return <div onClick={onClick}>{children}</div>;
-    },
-  ),
+  default: vi.fn(({ children, onClick }: { children: React.ReactNode; onClick?: () => void }) => {
+    // biome-ignore lint/a11y/noStaticElementInteractions: initial biome migration
+    // biome-ignore lint/a11y/useKeyWithClickEvents: initial biome migration
+    return <div onClick={onClick}>{children}</div>;
+  }),
 }));
 let isMobileValue = false;
 vi.mock("react-device-detect", () => ({
@@ -61,7 +49,6 @@ vi.mock("react-device-detect", () => ({
 vi.mock("../DynamicallyLoadedImageEditor", () => ({
   default: vi.fn(() => {
     return <div></div>;
-
   }),
 }));
 describe("ImageField", () => {
@@ -73,39 +60,21 @@ describe("ImageField", () => {
     describe("On mobile, there should", () => {
       beforeEach(() => {
         __setIsMobile(true);
-
       });
       test("be a camera icon shown.", () => {
-        render(
-          <ImageField
-            storeImage={() => {}}
-            imageAsObjectURL={null}
-            id="foo"
-            alt="dummy alt text"
-          />,
-        );
+        render(<ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" alt="dummy alt text" />);
         expect(CameraAltIcon).toHaveBeenCalled();
       });
-
     });
     describe("On desktop, there should", () => {
       beforeEach(() => {
         __setIsMobile(false);
-
       });
       test("be an image icon shown.", () => {
-        render(
-          <ImageField
-            storeImage={() => {}}
-            imageAsObjectURL={null}
-            id="foo"
-            alt="dummy alt text"
-          />,
-        );
+        render(<ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" alt="dummy alt text" />);
         expect(ImageIcon).toHaveBeenCalled();
       });
     });
-
   });
   /*
    * Tapping 'Edit Image' should open the image editor
@@ -113,15 +82,7 @@ describe("ImageField", () => {
   describe("When the 'Edit Image' button is tapped there should", () => {
     test("be a DynamicallyLoadedImageEditor that opens.", async () => {
       const user = userEvent.setup();
-      render(
-        <ImageField
-          storeImage={() => {}}
-          imageAsObjectURL={null}
-          id="foo"
-          alt="dummy alt text"
-        />,
-
-      );
+      render(<ImageField storeImage={() => {}} imageAsObjectURL={null} id="foo" alt="dummy alt text" />);
       const editImageButton = screen.getByText("Edit Image");
       await user.click(editImageButton);
       expect(DynamicallyLoadedImageEditor).toHaveBeenCalledWith(
@@ -132,7 +93,7 @@ describe("ImageField", () => {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           submitHandler: expect.any(Function),
         }),
-        {} as never,
+        undefined,
       );
     });
   });

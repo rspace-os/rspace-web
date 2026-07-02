@@ -14,25 +14,18 @@ on:
         description: 'Run fast Java tests'
         type: boolean
         default: false
-# Re-enable in the future
-#      full_java_tests:
-#        description: 'Run all Java tests'
-#        type: boolean
-#        default: false
-# Re-enable when build is fixed
-#      run_build:
-#        description: 'Run build'
-#        type: boolean
-#        default: false
+      full_java_tests:
+        description: 'Run all Java tests'
+        type: boolean
+        default: false
+      run_build:
+        description: 'Run build'
+        type: boolean
+        default: false
       java_vendor:
         description: 'Java vendor Maven toolchain'
         type: string
         default: 'temurin'
-# Re-enable when full java tests are fixed
-#      nightly_build:
-#        description: 'Optional nightly build configuration'
-#        type: string
-#        default: ''
 
 permissions:
   contents: read
@@ -42,18 +35,6 @@ env:
   CI: "true"
 
 jobs:
-#  initialize:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      sanitized_dbname: ${{ steps.dbname.outputs.name }}
-#    steps:
-#      - name: Generate sanitized DB name
-#        id: dbname
-#        run: |
-#          BRANCH_NAME="${GITHUB_REF_NAME}"
-#          SANITIZED=$(echo "$BRANCH_NAME" | sed 's/[^A-Za-z0-9]/_/g' | cut -c1-63)
-#          echo "name=$SANITIZED" >> $GITHUB_OUTPUT
-
   changed-files:
     runs-on: ubuntu-latest
     permissions:
@@ -63,19 +44,19 @@ jobs:
       frontend: ${{ steps.filter.outputs.frontend }}
       java: ${{ steps.filter.outputs.java }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           persist-credentials: false
-      - uses: dorny/paths-filter@v4
+      - uses: dorny/paths-filter@v4.0.1
         id: filter
         with:
           filters: |
             frontend:
               - 'src/main/webapp/ui/**/*.{js,jsx,ts,tsx}'
               - 'src/main/webapp/ui/**/*.{css,json}'
-              - 'src/main/webapp/ui/package.json'
-              - 'src/main/webapp/ui/package-lock.json'
-              - 'src/main/webapp/ui/webpack.config.mjs'
+              - 'package.json'
+              - 'pnpm-lock.yaml'
+              - 'pnpm-workspace.yaml'
             java:
               - 'src/main/java/**'
               - 'src/test/java/**'
@@ -96,13 +77,13 @@ jobs:
       inputs.fast_java_tests ||
       needs.changed-files.outputs.java == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up JDK
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: ${{ inputs.java_vendor || 'temurin' }}
           java-version: ${{ matrix.java-version }}
@@ -115,12 +96,13 @@ jobs:
 
       - name: Run fast tests
         run: |
-          ./mvnw clean test -U -Dfast=true -DRS_FILE_BASE=${RS_FILE_BASE} \
+          # ponytail: forkCount=2 is conservative; raise it / isolate RS_FILE_BASE per fork (${surefire.forkNumber}) if file-collision flakiness appears
+          ./mvnw clean test -U -Dfast=true -DforkCount=2 -DreuseForks=true -DRS_FILE_BASE=${RS_FILE_BASE} \
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
           (
@@ -139,140 +121,75 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
+      # Biome lint + format check over the changed JS/TS/CSS frontend, run
+      # before tsc. lint:ci uses --error-on-warnings --diagnostic-level=info, so
+      # any Biome info/warning/error fails the run.
+      - name: Biome lint and format check
+        run: pnpm run lint:ci
+
+      # Runs even when the Biome check above failed (`!cancelled()`) so a Biome
+      # failure never hides a TypeScript failure; the job still fails if either
+      # step fails.
       - name: TypeScript check
-        working-directory: src/main/webapp/ui
+        if: ${{ !cancelled() }}
         run: |
-          npx tsc --version
-          npm run tsc --noEmit
+          pnpm exec tsc --version
+          pnpm run tsc
 
-      - name: Dependency Cruiser
-        working-directory: src/main/webapp/ui
-        run: npm run depcruise | sed 's/\x1b\[[0-9;]*[a-zA-Z]//g'
+  backend-checks:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        java-version: [17]
+    if: |
+      github.event_name == 'pull_request' ||
+      inputs.fast_java_tests ||
+      needs.changed-files.outputs.java == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-# These are currently failing because of stats.json being too large - https://github.com/github/webpack-bundlesize-compare-action/issues/762
-#  build-current-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs: changed-files
-#    permissions:
-#      contents: read
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - uses: actions/checkout@v5
-#        with:
-#          ref: ${{ github.event.pull_request.head.sha }}
-#          persist-credentials: false
-#
-#      - name: Setup Node.js
-#        uses: actions/setup-node@v6
-#        with:
-#          node-version: '24'
-#          cache: 'npm'
-#          cache-dependency-path: src/main/webapp/ui/package-lock.json
-#
-#      - name: Install dependencies
-#        working-directory: src/main/webapp/ui
-#        run: npm ci --force
-#
-#      - name: Build current webpack stats
-#        working-directory: src/main/webapp/ui
-#        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
-#
-#      - name: Upload current webpack stats
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: webpack-stats-current
-#          path: src/main/webapp/ui/dist/stats.json
-#
-#  build-base-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs: changed-files
-#    permissions:
-#      contents: read
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - uses: actions/checkout@v5
-#        with:
-#          ref: ${{ github.event.pull_request.base.sha }}
-#          persist-credentials: false
-#
-#      - name: Setup Node.js
-#        uses: actions/setup-node@v6
-#        with:
-#          node-version: '24'
-#          cache: 'npm'
-#          cache-dependency-path: src/main/webapp/ui/package-lock.json
-#
-#      - name: Install dependencies
-#        working-directory: src/main/webapp/ui
-#        run: npm ci --force
-#
-#      - name: Build base webpack stats
-#        working-directory: src/main/webapp/ui
-#        run: NODE_OPTIONS="${NODE_OPTIONS} --max-old-space-size=6144" npm run build:stats
-#
-#      - name: Upload base webpack stats
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: webpack-stats-base
-#          path: src/main/webapp/ui/dist/stats.json
-#
-#  compare-webpack-stats:
-#    runs-on: ubuntu-latest
-#    needs:
-#      - changed-files
-#      - frontend-checks
-#      - build-current-webpack-stats
-#      - build-base-webpack-stats
-#    permissions:
-#      contents: read
-#      pull-requests: write
-#    if: |
-#      github.event_name == 'pull_request' &&
-#      needs.changed-files.outputs.frontend == 'true' &&
-#      github.event.pull_request.head.repo.full_name == github.repository
-#    steps:
-#      - name: Download current webpack stats
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: webpack-stats-current
-#          path: ${{ runner.temp }}/webpack-stats/current
-#
-#      - name: Download base webpack stats
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: webpack-stats-base
-#          path: ${{ runner.temp }}/webpack-stats/base
-#
-#      - name: Compare webpack bundle size
-#        uses: github/webpack-bundlesize-compare-action@v2.1.0
-#        with:
-#          current-stats-json-path: ${{ runner.temp }}/webpack-stats/current/stats.json
-#          base-stats-json-path: ${{ runner.temp }}/webpack-stats/base/stats.json
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          title: Frontend Webpack Bundle Size
-#          describe-assets: changed-only
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      # Fail the build if any Java file is not Spotless-formatted. This is an
+      # independent job from frontend-checks, so it runs in parallel and a
+      # Spotless failure here fails the overall CI run without stopping the
+      # frontend checks (and vice versa).
+      - name: Spotless check
+        run: |
+          ./mvnw -q spotless:check \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
   vitest-tests:
     runs-on: ubuntu-latest
@@ -286,28 +203,31 @@ jobs:
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
       - name: Run Vitest tests
-        working-directory: src/main/webapp/ui
-        run: npm run test
+        run: pnpm run test
 
       - name: Publish test results
-        uses: EnricoMi/publish-unit-test-result-action@v2
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
           always() &&
           (
@@ -319,153 +239,439 @@ jobs:
           comment_mode: off
           files: src/main/webapp/ui/junit.xml
 
-  playwright-tests:
+  # Vitest Browser Mode component tests (successors to the former Playwright-CT
+  # suite). Each browser runs as its own matrix leg via VITEST_BROWSERS so a
+  # failure is attributable to one engine and the legs don't contend for
+  # resources (running all three in one process is contention-prone).
+  browser-tests:
     runs-on: ubuntu-latest
     needs: changed-files
     permissions:
       contents: read
-      issues: write
+      checks: write
       pull-requests: write
     strategy:
+      fail-fast: false
       matrix:
         browser: [ chromium, firefox, webkit ]
     if: |
-      github.event_name == 'pull_request' || 
+      github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
       needs.changed-files.outputs.frontend == 'true'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: src/main/webapp/ui/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: src/main/webapp/ui
-        run: npm ci --force
+        run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        working-directory: src/main/webapp/ui
-        run: npx playwright install --with-deps
+      # The Vitest browser provider drives real Playwright browsers, so the
+      # browser binaries still need installing (just the one for this leg).
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps ${{ matrix.browser }}
 
-      - name: Run Playwright tests
-        working-directory: src/main/webapp/ui
+      - name: Run Vitest browser-mode tests
         env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: playwright-report/results-${{ matrix.browser }}.json
-        run: |
-          rm -rf playwright/.cache
-          npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          VITEST_BROWSERS: ${{ matrix.browser }}
+        run: pnpm run test-browser
 
-      - name: Summarize Playwright report
-        if: always()
-        uses: daun/playwright-report-summary@v3
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2.24.0
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
         with:
-          report-file: src/main/webapp/ui/playwright-report/results-${{ matrix.browser }}.json
-          report-tag: ${{ matrix.browser }}
-          create-comment: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository }}
-          job-summary: true
-          comment-title: Playwright component test results
-          test-command: npm run test-ct -- --project=${{ matrix.browser }} --workers=2 --reporter=html,json
+          check_name: Browser Tests (${{ matrix.browser }})
+          comment_mode: off
+          files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
 
-#  full-java-tests:
-#    runs-on: ubuntu-latest
-#    strategy:
-#      matrix:
-#        java-version: [17]
-#    needs: initialize
-#    if: inputs.full_java_tests && !inputs.liquibase
-#    steps:
-#      - uses: actions/checkout@v5
-#      - uses: liquibase/setup-liquibase@v2
-#        with:
-#          version: '4.27.0'
-#          edition: 'community'
-#      - uses: shogo82148/actions-setup-mysql@v1
-#        with:
-#          distribution: "mariadb"
-#          mysql-version: "10.11"
-#          user: rspacedbuser
-#          password: rspacedbpwd
-#
-#      - name: Set up JDK
-#        uses: actions/setup-java@v5
-#        with:
-#          distribution: ${{ inputs.java_vendor || 'temurin' }}
-#          java-version: ${{ matrix.java-version }}
-#          cache: maven
-#
-#      - name: Setup filestore
-#        run: |
-#          rm -rf $RS_FILE_BASE
-#          mkdir -p $RS_FILE_BASE
-#
-#      - name: Create test database
-#        run: |
-#          mysql -h127.0.0.1 -urspacedbuser -prspacedbpwd -e "CREATE DATABASE IF NOT EXISTS ${{ needs.initialize.outputs.sanitized_dbname }}"
-#
-#      - name: Run full tests
-#        run: |
-#          ./mvnw clean verify \
-#            -Djava-version=${{ matrix.java-version }} \
-#            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
-#            -Djavax.xml.accessExternalDTD=all \
-#            -Dlog4j2.configurationFile=log4j2-dev.xml \
-#            -Dsurefire.rerunFailingTestsCount=2 \
-#            -Djdbc.db.maven=${{ needs.initialize.outputs.sanitized_dbname }} \
-#            -Djdbc.url=jdbc:mysql://localhost:3306/${{ needs.initialize.outputs.sanitized_dbname }} \
-#            -Dmaven.test.failure.ignore=false \
-#            -Denvironment=drop-recreate-db \
-#            -DRS.devlogLevel=INFO \
-#            -DRS_FILE_BASE=${RS_FILE_BASE} \
-#            -DenableTestCoverage \
-#            ${{ inputs.nightly_build }}
-#
-#      - name: Publish test results
-#        uses: EnricoMi/publish-unit-test-result-action@v2
-#        with:
-#          files: target/surefire-reports/*.xml
-#
-#      - name: Upload coverage to Codecov
-#        uses: codecov/codecov-action@v5
-#        with:
-#          files: target/site/jacoco/jacoco.xml
+  # Bundle-size comparison: build the frontend on both the PR and the base
+  # branch, then diff the two stats.json files and post the result as a PR
+  # comment. Restricted to same-repo PRs because posting the comment needs a
+  # writable GITHUB_TOKEN, which fork PRs do not receive. Each build produces
+  # src/main/webapp/ui/dist/stats.json via the vite-bundle-analyzer plugin
+  # (enabled by FRONTEND_BUILD_STATS, see pnpm run build:stats).
+  bundle-size-pr:
+    name: Bundle size (PR)
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          persist-credentials: false
 
-#  build:
-#    runs-on: ubuntu-latest
-#    if: |
-#      github.event_name == 'pull_request' ||
-#      inputs.run_build ||
-#      needs.changed-files.outputs.frontend == 'true' ||
-#      needs.changed-files.outputs.java == 'true'
-#    strategy:
-#      matrix:
-#        java-version: [17]
-#    steps:
-#      - uses: actions/checkout@v5
-#        with:
-#          fetch-depth: 0
-#
-#      - name: Set up JDK
-#        uses: actions/setup-java@v5
-#        with:
-#          distribution: ${{ inputs.java_vendor || 'temurin' }}
-#          java-version: ${{ matrix.java-version }}
-#          cache: maven
-#
-#      - name: Setup filestore
-#        run: |
-#          rm -rf $RS_FILE_BASE
-#          mkdir -p $RS_FILE_BASE
-#
-#      - name: Build project
-#        run: |
-#          ./mvnw clean package -X -DskipTests=true -DgenerateReactDist=clean -DrenameResourcesMD5=true \
-#            -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
-#            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
-#            -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle stats
+        run: pnpm run build:stats
+
+      - name: Upload PR bundle stats
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-pr
+          path: src/main/webapp/ui/dist/stats.json
+          if-no-files-found: error
+          retention-days: 1
+
+  bundle-size-base:
+    name: Bundle size (base)
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      needs.changed-files.outputs.frontend == 'true'
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          ref: ${{ github.base_ref }}
+          persist-credentials: false
+
+      # The base branch may predate the pnpm migration (no root pnpm-lock.yaml or
+      # build:stats script). There is nothing to build in that case, so detect it
+      # and skip the build; the report job tolerates a missing base artifact and
+      # simply omits the comparison. Once the migration lands on the base branch
+      # this guard becomes a no-op and the comparison runs normally.
+      - name: Check base branch supports bundle stats
+        id: base-support
+        run: |
+          if [ -f pnpm-lock.yaml ] && [ -f package.json ] && grep -q '"build:stats"' package.json; then
+            echo "supported=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "supported=false" >> "$GITHUB_OUTPUT"
+            echo "Base branch lacks pnpm bundle-stats tooling; skipping base build."
+          fi
+
+      - name: Setup pnpm
+        if: steps.base-support.outputs.supported == 'true'
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        if: steps.base-support.outputs.supported == 'true'
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        if: steps.base-support.outputs.supported == 'true'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build with bundle stats
+        if: steps.base-support.outputs.supported == 'true'
+        run: pnpm run build:stats
+
+      - name: Upload base bundle stats
+        if: steps.base-support.outputs.supported == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-stats-base
+          path: src/main/webapp/ui/dist/stats.json
+          if-no-files-found: error
+          retention-days: 1
+
+  bundle-size-report:
+    name: Bundle size report
+    runs-on: ubuntu-latest
+    needs: [bundle-size-pr, bundle-size-base]
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download PR bundle stats
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: bundle-stats-pr
+          path: pr
+
+      # The base artifact is absent when the base branch predates the pnpm
+      # migration (see bundle-size-base). Tolerate that and skip the comparison.
+      - name: Download base bundle stats
+        id: download-base
+        continue-on-error: true
+        uses: actions/download-artifact@v8.0.1
+        with:
+          name: bundle-stats-base
+          path: base
+
+      - name: Compare bundle size and comment
+        if: steps.download-base.outcome == 'success' && hashFiles('base/stats.json') != ''
+        uses: wojtekmaj/vite-compare-bundle-size@v1.2.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          current-stats-json-path: pr/stats.json
+          base-stats-json-path: base/stats.json
+          title: Frontend bundle size change
+          # The bundle is hundreds of chunks; only list assets that actually
+          # changed (added/removed/bigger/smaller) and omit the unchanged list.
+          describe-assets: changed-only
+
+  # The slow DB-backed suite is split into two jobs that run on parallel runners:
+  # - spring-tests: runs the `test` phase (pure-unit + Spring-transactional tests)
+  # - integration-tests: runs only the `integration-test` phase via -DskipUnitTests=true
+  # Their union equals a full `mvn verify`. Both jobs run drop-recreate-db independently.
+  # ponytail: this doubles DB schema-init cost (each job runs drop-recreate-db); a
+  # pre-seeded DB image (planned) would remove that overhead.
+
+  spring-tests:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    strategy:
+      matrix:
+        java-version: [17]
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
+      (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
+      inputs.full_java_tests
+    services:
+      db:
+        image: mariadb:lts-jammy
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Run Spring tests
+        run: |
+          ./mvnw clean test -Denvironment=drop-recreate-db \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djavax.xml.accessExternalDTD=all \
+            -Dlog4j2.configurationFile=log4j2-dev.xml \
+            -Djdbc.db.maven=rspace \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Dmaven.test.failure.ignore=false \
+            -DRS.devlogLevel=INFO \
+            -DRS_FILE_BASE=${RS_FILE_BASE}
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
+        with:
+          check_name: Spring Tests
+          comment_mode: off
+          files: target/surefire-reports/*.xml
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    strategy:
+      matrix:
+        java-version: [17]
+    if: |
+      (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
+      (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
+      inputs.full_java_tests
+    services:
+      db:
+        image: mariadb:lts-jammy
+        env:
+          MARIADB_ROOT_PASSWORD: rspacedbpwd
+          MARIADB_DATABASE: rspace
+          MARIADB_USER: rspacedbuser
+          MARIADB_PASSWORD: rspacedbpwd
+        ports:
+          - 3306:3306
+        options: >-
+          --tmpfs /var/lib/mysql:rw,noexec,nosuid,size=2g
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=40
+          --health-start-period=30s
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h127.0.0.1 -uroot -prspacedbpwd <<'SQL'
+          SET GLOBAL character_set_server = 'utf8mb4';
+          SET GLOBAL collation_server = 'utf8mb4_unicode_ci';
+          SET GLOBAL sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+          GRANT CREATE, DROP ON *.* TO 'rspacedbuser'@'%';
+          FLUSH PRIVILEGES;
+          SQL
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Run integration tests
+        run: |
+          ./mvnw clean integration-test -DskipUnitTests=true -Denvironment=drop-recreate-db \
+            -Djava-version=${{ matrix.java-version }} \
+            -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Djavax.xml.accessExternalDTD=all \
+            -Dlog4j2.configurationFile=log4j2-dev.xml \
+            -Dsurefire.rerunFailingTestsCount=1 \
+            -Djdbc.db.maven=rspace \
+            -Djdbc.url=jdbc:mysql://localhost:3306/rspace \
+            -Dmaven.test.failure.ignore=false \
+            -DRS.devlogLevel=INFO \
+            -DRS_FILE_BASE=${RS_FILE_BASE}
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
+        if: |
+          always() &&
+          (
+            github.event_name != 'pull_request' ||
+            github.event.pull_request.head.repo.full_name == github.repository
+          )
+        with:
+          check_name: Integration Tests
+          comment_mode: off
+          files: target/surefire-reports/*.xml
+
+  # WAR build with the production frontend bundle, tests skipped. Replaces the
+  # Jenkins "Build feature branch" stage. Needs both the JDK and Node/pnpm
+  # because -DgenerateReactDist runs the Vite production build into the WAR.
+  build:
+    runs-on: ubuntu-latest
+    needs: changed-files
+    if: |
+      github.event_name == 'pull_request' ||
+      inputs.run_build ||
+      needs.changed-files.outputs.frontend == 'true' ||
+      needs.changed-files.outputs.java == 'true'
+    strategy:
+      matrix:
+        java-version: [17]
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: ${{ inputs.java_vendor || 'temurin' }}
+          java-version: ${{ matrix.java-version }}
+          cache: maven
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6.0.8
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup filestore
+        run: |
+          rm -rf $RS_FILE_BASE
+          mkdir -p $RS_FILE_BASE
+
+      - name: Build project
+        run: |
+          ./mvnw clean package -DskipTests=true -DgenerateReactDist -DrenameResourcesMD5=true \
+            -Denvironment=keepdbintact -Dspring.profiles.active=prod -DRS.logLevel=INFO \
+            -Djava-version=${{ matrix.java-version }} -Djava-vendor=${{ inputs.java_vendor || 'temurin' }} \
+            -Dliquibase.context=run,dev-test -DpropertyFileDirPlaceholder=\$\{propertyFileDir\}

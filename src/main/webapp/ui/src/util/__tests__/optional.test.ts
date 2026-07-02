@@ -1,15 +1,14 @@
-//@flow
-import { describe, expect, test } from 'vitest';
 import fc, { type Arbitrary } from "fast-check";
+import { describe, expect, test } from "vitest";
 
 import { Optional } from "../optional";
+
 /**
  * Generates an arbitrary Optional<T> from an arbitrary T.
  * Sometimes it will return an empty Optional, sometimes it will return a
  * non-empty Optional with the passed value.
  */
 const arbOptional = <T>(arb: Arbitrary<T>): Arbitrary<Optional<T>> =>
-
   fc.option(arb).map((x) => Optional.fromNullable(x));
 describe("optional", () => {
   /*
@@ -22,7 +21,7 @@ describe("optional", () => {
       fc.assert(
         fc.property(arbOptional(fc.anything()), (opt) => {
           expect(opt.map((x) => x)).toEqual(opt);
-        })
+        }),
       );
     });
     test("Mapping once with two functions is the same as mapping with each separately", () => {
@@ -32,14 +31,11 @@ describe("optional", () => {
           fc.func<Array<unknown>, unknown>(fc.anything()),
           fc.func<Array<unknown>, unknown>(fc.anything()),
           (opt, funcA, funcB) => {
-            expect(opt.map(funcA).map(funcB)).toEqual(
-              opt.map((x) => funcB(funcA(x)))
-            );
-          }
-        )
+            expect(opt.map(funcA).map(funcB)).toEqual(opt.map((x) => funcB(funcA(x))));
+          },
+        ),
       );
     });
-
   });
   /*
    * The Optional type also adheres to the definitions of a Monad, which is to
@@ -52,40 +48,31 @@ describe("optional", () => {
       fc.assert(
         fc.property(
           fc.anything(),
-          fc.func<Array<unknown>, Optional<unknown>>(
-            arbOptional(fc.anything())
-          ),
+          fc.func<Array<unknown>, Optional<unknown>>(arbOptional(fc.anything())),
           (value, func) => {
             expect(Optional.present(value).flatMap(func)).toEqual(func(value));
-          }
-        )
+          },
+        ),
       );
     });
     test("Right identity", () => {
       fc.assert(
         fc.property(arbOptional(fc.anything()), (opt) => {
           expect(opt.flatMap((x) => Optional.present(x))).toEqual(opt);
-        })
+        }),
       );
     });
     test("Associativity", () => {
       fc.assert(
         fc.property(
           arbOptional(fc.anything()),
-          fc.func<Array<unknown>, Optional<unknown>>(
-            arbOptional(fc.anything())
-          ),
-          fc.func<Array<unknown>, Optional<unknown>>(
-            arbOptional(fc.anything())
-          ),
+          fc.func<Array<unknown>, Optional<unknown>>(arbOptional(fc.anything())),
+          fc.func<Array<unknown>, Optional<unknown>>(arbOptional(fc.anything())),
           (opt, funcA, funcB) => {
-            expect(opt.flatMap(funcA).flatMap(funcB)).toEqual(
-              opt.flatMap((x) => funcA(x).flatMap(funcB))
-            );
-          }
-        )
+            expect(opt.flatMap(funcA).flatMap(funcB)).toEqual(opt.flatMap((x) => funcA(x).flatMap(funcB)));
+          },
+        ),
       );
     });
   });
 });
-

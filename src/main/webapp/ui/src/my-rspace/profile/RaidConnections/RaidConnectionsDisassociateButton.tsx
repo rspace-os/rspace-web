@@ -1,6 +1,6 @@
-import { useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
+import { useState } from "react";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { useRemoveRaidIdentifierMutation } from "@/modules/raid/mutations";
 
@@ -41,15 +41,10 @@ const RaidConnectionsDisassociateButton = ({
         consequences={
           <>
             <Typography variant="body1">
-              Are you sure you want to disassociate the RAiD identifier{" "}
-              <strong>{raidTitle}</strong> ({raidIdentifier}) from this project
-              group?
+              Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier})
+              from this project group?
             </Typography>
-            {mutation.isError && (
-              <Typography variant="body2">
-                Error: {mutation.error?.message}
-              </Typography>
-            )}
+            {mutation.isError && <Typography variant="body2">Error: {mutation.error?.message}</Typography>}
           </>
         }
         variant="warning"

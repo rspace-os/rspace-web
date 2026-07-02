@@ -1,9 +1,9 @@
-import React from "react";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
-import { type SxProps, type Theme } from "@mui/material/styles";
-import { Optional } from "../../util/optional";
+import type { SxProps, Theme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
+import React from "react";
+import { Optional } from "../../util/optional";
 import FieldLabel from "./FieldLabel";
 
 /**
@@ -249,6 +249,27 @@ export type FormFieldArgs<T> = {
   doNotAttachIdToLabel?: boolean;
 
   sx?: SxProps<Theme>;
+
+  /**
+   * When true the label stays in the DOM (so screen readers and the
+   * `aria-labelledby` wiring still find it) but is hidden visually. Use this
+   * where the field's name is presented elsewhere in the input itself - e.g. a
+   * Link field renders its name inside the link card, so the duplicate label
+   * above the card is suppressed.
+   */
+  hideLabel?: boolean;
+};
+
+const VISUALLY_HIDDEN: SxProps<Theme> = {
+  border: 0,
+  clip: "rect(0 0 0 0)",
+  height: "1px",
+  margin: "-1px",
+  overflow: "hidden",
+  padding: 0,
+  position: "absolute",
+  whiteSpace: "nowrap",
+  width: "1px",
 };
 
 export default function FormField<T>({
@@ -265,18 +286,14 @@ export default function FormField<T>({
   asFieldset,
   doNotAttachIdToLabel,
   sx,
+  hideLabel,
 }: FormFieldArgs<T>): React.ReactNode {
   const inputId = React.useId();
   const labelId = React.useId();
   const explanationId = React.useId();
 
   const lengthLabel = (): Optional<string> => {
-    if (
-      Boolean(error) &&
-      typeof helperText === "string" &&
-      helperText.length > 0
-    )
-      return Optional.empty();
+    if (error && typeof helperText === "string" && helperText.length > 0) return Optional.empty();
     if (disabled === true) return Optional.empty();
     if (typeof value !== "string") return Optional.empty();
     if (typeof maxLength === "undefined") return Optional.empty();
@@ -288,18 +305,11 @@ export default function FormField<T>({
       role="group"
       sx={sx}
       fullWidth
-      error={
-        error ||
-        (typeof value === "string" &&
-          typeof maxLength === "number" &&
-          value.length > maxLength)
-      }
+      error={error || (typeof value === "string" && typeof maxLength === "number" && value.length > maxLength)}
       aria-labelledby={labelId}
       required={required}
       id={id}
-      {...(typeof explanation !== "undefined"
-        ? { "aria-describedby": explanationId }
-        : {})}
+      {...(typeof explanation !== "undefined" ? { "aria-describedby": explanationId } : {})}
       {...(asFieldset && !disabled ? { component: "fieldset" } : {})}
     >
       <FieldLabel
@@ -307,6 +317,7 @@ export default function FormField<T>({
         disabled={disabled}
         asFieldset={asFieldset}
         htmlFor={doNotAttachIdToLabel ? undefined : inputId}
+        sx={hideLabel ? VISUALLY_HIDDEN : undefined}
       >
         {label}
       </FieldLabel>
@@ -324,9 +335,9 @@ export default function FormField<T>({
       {lengthLabel()
         .map((l) => <FormHelperText key={null}>{l}</FormHelperText>)
         .orElse(null)}
-      {Boolean(error) &&
-        typeof helperText === "string" &&
-        helperText.length > 0 && <FormHelperText>{helperText}</FormHelperText>}
+      {Boolean(error) && typeof helperText === "string" && helperText.length > 0 && (
+        <FormHelperText>{helperText}</FormHelperText>
+      )}
     </FormControl>
   );
 }

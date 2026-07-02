@@ -195,37 +195,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <executions>
-          <execution> <!-- default execution skips 'prod'/'prod-test' profile tests -->
+          <execution> <!-- honour -DskipUnitTests so the integration-test CI shard skips the test phase -->
             <id>default-test</id>
             <configuration>
-              <excludes>
-                <exclude>**/EgnyteFileSetupConfigTest.java</exclude>
-                <exclude>**/ProdConfigWiringTest.java</exclude>
-              </excludes>
-            </configuration>
-          </execution>
-          <execution> <!-- separte execution for egnyte wiring -->
-            <id>unit-tests-egnyte-wiring</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/EgnyteFileSetupConfigTest.java</include>
-              </includes>
-            </configuration>
-          </execution>
-          <execution> <!-- separate execution for 'prod' profile tests -->
-            <id>unit-tests-production</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/ProdConfigWiringTest.java</include>
-              </includes>
+              <skip>${skipUnitTests}</skip>
             </configuration>
           </execution>
           <execution> <!-- for 'dev' profile IT tests -->
@@ -315,15 +288,6 @@
       </plugin>
 
       <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <configuration>
-          <failOnError>false</failOnError>
-          <excludeFilterFile>build-resources/findbugs_exclude_rs.xml</excludeFilterFile>
-        </configuration>
-        <version>4.3.0</version>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
       </plugin>
@@ -411,6 +375,19 @@
             well for deployment-dependent property files. -->
           <include>deployments/${deployment}/**</include>
           <include>deployments/defaultDeployment.properties</include>
+        </includes>
+        <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+          placeholders resolve from deployment.properties at runtime. -->
+        <excludes>
+          <exclude>applicationContext-dao.xml</exclude>
+        </excludes>
+      </resource>
+
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <includes>
+          <include>applicationContext-dao.xml</include>
         </includes>
       </resource>
 
@@ -545,6 +522,25 @@
         <exclusion>
           <groupId>io.netty</groupId>
           <artifactId>netty-transport-native-unix-common</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.mnode.ical4j</groupId>
+      <artifactId>ical4j</artifactId>
+      <version>${ical4j.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-collections4</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -722,7 +718,7 @@
     <dependency>
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>s3</artifactId>
-      <version>2.44.10</version>
+      <version>2.46.11</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -732,7 +728,17 @@
           <groupId>org.apache.httpcomponents</groupId>
           <artifactId>httpcore</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>httpcore5</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- apache5-client's tree diverges on httpcore5 (5.4 vs 5.4.2); excluded above and pinned here -->
+    <dependency>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5</artifactId>
+      <version>5.4.2</version>
     </dependency>
     <dependency>
       <groupId>com.github.rspace-os</groupId>
@@ -1674,6 +1680,14 @@
           <groupId>org.apache.shiro</groupId>
           <artifactId>shiro-core</artifactId>
         </exclusion>
+        <!-- core-model (>= 2.26.1) re-introduces ical4j (calendar/ICS), which drags in older
+             slf4j-api:1.7.25 and commons-lang3:3.8.1 and breaks dependency convergence (the rest
+             of the build uses 1.7.21 / 3.18.0). rspace-web does not use ICS (it built against
+             2.26.0 which had no ical4j), so exclude ical4j entirely. -->
+        <exclusion>
+          <groupId>org.mnode.ical4j</groupId>
+          <artifactId>ical4j</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -2061,24 +2075,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>annotations</artifactId>
-      <version>3.0.1</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>com.google.code.findbugs</groupId>
-          <artifactId>jsr305</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-      <version>3.0.2</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-snapgene-adapter</artifactId>
       <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
@@ -2133,7 +2129,7 @@
 
   <profiles>
     <!-- Generates the React/Vite frontend dist files and bundles them into the WAR.
-      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the npm
+      Opt-in: activated only when -DgenerateReactDist is passed. This keeps the pnpm
       install and Vite build out of everyday `mvn compile`/`test` runs, while CI
       packaging and release stages pass the flag explicitly (see Jenkinsfile). The
       executions use the implicit generate-resources phase so that
@@ -2155,29 +2151,29 @@
             <version>2.0.0</version>
             <configuration>
               <nodeVersion>v24.15.0</nodeVersion>
-              <npmVersion>11.14.1</npmVersion>
-              <workingDirectory>src/main/webapp/ui</workingDirectory>
+              <pnpmVersion>11.8.0</pnpmVersion>
+              <workingDirectory>.</workingDirectory>
             </configuration>
             <executions>
               <execution>
-                <id>Install node and npm locally to the project</id>
+                <id>Install node and pnpm locally to the project</id>
                 <goals>
-                  <goal>install-node-and-npm</goal>
+                  <goal>install-node-and-pnpm</goal>
                 </goals>
               </execution>
               <execution>
-                <id>Collect npm dependencies</id>
+                <id>Collect frontend dependencies</id>
                 <goals>
-                  <goal>npm</goal>
+                  <goal>pnpm</goal>
                 </goals>
                 <configuration>
-                  <arguments>${npm.dependencies.collection.arg}</arguments>
+                  <arguments>${frontend.dependencies.install.arg}</arguments>
                 </configuration>
               </execution>
               <execution>
                 <id>Build react dist files</id>
                 <goals>
-                  <goal>npm</goal>
+                  <goal>pnpm</goal>
                 </goals>
                 <configuration>
                   <arguments>run build</arguments>
@@ -2539,8 +2535,6 @@
       </build>
       <properties>
         <jdbc.db.maven>rspace_hib</jdbc.db.maven>
-        <!-- only dev-test changesets should be run on top of auto-generated schema -->
-        <liquibase.context>dev-test</liquibase.context>
         <context.path>/</context.path>
         <ssl.enabled>false</ssl.enabled>
         <jdbc.url>jdbc:mysql://localhost:3306/${jdbc.db.maven}?useSSL=false</jdbc.url>
@@ -2575,6 +2569,18 @@
               <!-- see Spring application-resources.xml which uses this variable
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>
+            </includes>
+            <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
+              placeholders resolve from deployment.properties at runtime. -->
+            <excludes>
+              <exclude>applicationContext-dao.xml</exclude>
+            </excludes>
+          </resource>
+          <resource>
+            <directory>src/main/resources</directory>
+            <filtering>false</filtering>
+            <includes>
+              <include>applicationContext-dao.xml</include>
             </includes>
           </resource>
           <resource>
@@ -2655,7 +2661,7 @@
           <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.8</version>
+            <version>0.8.15</version>
             <executions>
               <execution>
                 <id>default-prepare-agent</id>
@@ -2780,8 +2786,9 @@
     <servlet.version>6.0.0</servlet.version>
     <sitemesh.version>3.2.2</sitemesh.version>
     <urlrewrite.version>5.1.3</urlrewrite.version>
+    <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>
-    <npm.dependencies.collection.arg>ci</npm.dependencies.collection.arg>
+    <frontend.dependencies.install.arg>install --frozen-lockfile</frontend.dependencies.install.arg>
 
     <!--Sonar properties-->
     <sonar.coverage.exclusions>**/__tests__/**,**/tinymce/tinymce5109/**,**/scripts/pdfjs/**,**/scripts/handsontable-ruleJS/**,**/egnyte/egnyte.js</sonar.coverage.exclusions>

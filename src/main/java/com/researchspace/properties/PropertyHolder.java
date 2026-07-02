@@ -37,6 +37,9 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${netfilestores.enabled}")
   private String netFileStoresEnabled;
 
+  @Value("${netfilestores.s3.delete.window.minutes}")
+  private int s3DeleteWindowMinutes;
+
   @Value("${netfilestores.export.enabled}")
   private String netFileStoresExportEnabled;
 
@@ -486,6 +489,11 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public boolean isNetFileStoresEnabled() {
     return "true".equals(getNetFileStoresEnabled());
+  }
+
+  @Override
+  public int getS3DeleteWindowMinutes() {
+    return s3DeleteWindowMinutes;
   }
 
   @Override

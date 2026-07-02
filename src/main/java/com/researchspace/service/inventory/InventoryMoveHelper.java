@@ -179,6 +179,9 @@ public class InventoryMoveHelper {
           case SUBSAMPLE:
             dbRecords.add(invRecRetriever.getSubSampleIfExists(recInfo.getId()));
             break;
+          case INSTRUMENT:
+            dbRecords.add(invRecRetriever.getInstrumentIfExists(recInfo.getId()));
+            break;
           default:
             throw new IllegalArgumentException(
                 "bulk move doesn't support records of type: " + recInfo.getClass().getName());

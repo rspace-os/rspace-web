@@ -1,34 +1,33 @@
-import React from "react";
-import Fade from "@mui/material/Fade";
-import { SELECTED_OR_FOCUS_BORDER, type GallerySection } from "../common";
-import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
-import Avatar from "@mui/material/Avatar";
+import { useDndContext, useDraggable, useDroppable } from "@dnd-kit/core";
 import FileIcon from "@mui/icons-material/InsertDriveFile";
-import * as FetchingData from "../../../util/fetchingData";
-import * as MapUtils from "../../../util/MapUtils";
-import { useGalleryListing, type GalleryFile } from "../useGalleryListing";
-import { useGalleryActions, folderDestination } from "../useGalleryActions";
-import { useGallerySelection, GallerySelection } from "../useGallerySelection";
-import { doNotAwait } from "../../../util/Util";
+import Avatar from "@mui/material/Avatar";
+import Box from "@mui/material/Box";
+import Fade from "@mui/material/Fade";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
-import { useDroppable, useDraggable, useDndContext } from "@dnd-kit/core";
-import Box from "@mui/material/Box";
 import { runInAction } from "mobx";
-import { useLocalObservable, observer } from "mobx-react-lite";
+import { observer, useLocalObservable } from "mobx-react-lite";
+import React from "react";
+import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
-import PlaceholderLabel from "./PlaceholderLabel";
-import { Optional } from "../../../util/optional";
-import LoadMoreButton from "./LoadMoreButton";
+import AnalyticsContext from "../../../stores/contexts/Analytics";
+import * as FetchingData from "../../../util/fetchingData";
+import * as MapUtils from "../../../util/MapUtils";
+import type { Optional } from "../../../util/optional";
+import { type GallerySection, SELECTED_OR_FOCUS_BORDER } from "../common";
+import usePrimaryAction from "../primaryActionHooks";
+import { folderDestination, useGalleryActions } from "../useGalleryActions";
+import { type GalleryFile, useGalleryListing } from "../useGalleryListing";
+import { GallerySelection, useGallerySelection } from "../useGallerySelection";
+import { useAsposePreview } from "./CallableAsposePreview";
 import { useImagePreview } from "./CallableImagePreview";
 import { usePdfPreview } from "./CallablePdfPreview";
-import { useAsposePreview } from "./CallableAsposePreview";
 import { useSnapGenePreview } from "./CallableSnapGenePreview";
 import { useSnippetPreview } from "./CallableSnippetPreview";
-import usePrimaryAction from "../primaryActionHooks";
+import LoadMoreButton from "./LoadMoreButton";
 import { useFolderOpen } from "./OpenFolderProvider";
-import AnalyticsContext from "../../../stores/contexts/Analytics";
+import PlaceholderLabel from "./PlaceholderLabel";
 
 type TreeItemContentArgs = {
   file: GalleryFile;
@@ -86,14 +85,13 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
       }),
       [section],
     );
-    const { galleryListing, refreshListing: refreshingThisListing } =
-      useGalleryListing({
-        listingOf,
-        searchTerm: "",
-        orderBy,
-        sortOrder,
-        foldersOnly,
-      });
+    const { galleryListing, refreshListing: refreshingThisListing } = useGalleryListing({
+      listingOf,
+      searchTerm: "",
+      orderBy,
+      sortOrder,
+      foldersOnly,
+    });
     React.useEffect(() => {
       /*
        * Note that if the user has just deleted this folder, then refreshing
@@ -107,8 +105,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
       FetchingData.getSuccessValue(galleryListing).do((listing) => {
         if (listing.tag === "empty") return;
         runInAction(() => {
-          for (const f of listing.list)
-            treeViewItemIdMap.set(f.treeViewItemId, f);
+          for (const f of listing.list) treeViewItemIdMap.set(f.treeViewItemId, f);
         });
       });
     }, [galleryListing]);
@@ -142,11 +139,7 @@ const TreeItemContent: React.FC<TreeItemContentArgs> = observer(
                 />
               ) : null,
             )}
-            {listing.loadMore
-              .map((loadMore) => (
-                <LoadMoreButton key={null} onClick={loadMore} />
-              ))
-              .orElse(null)}
+            {listing.loadMore.map((loadMore) => <LoadMoreButton key={null} onClick={loadMore} />).orElse(null)}
           </>
         ) : null,
     });
@@ -224,15 +217,7 @@ const CustomTreeItem = observer(
             break;
         }
       });
-    }, [
-      file,
-      primaryAction,
-      openFolder,
-      openImagePreview,
-      openPdfPreview,
-      openAsposePreview,
-      openSnapGenePreview,
-    ]);
+    }, [file, primaryAction, openFolder, openImagePreview, openPdfPreview, openAsposePreview, openSnapGenePreview]);
 
     /*
      * Here we setup the drag-and-drop handlers for files that are being
@@ -244,15 +229,16 @@ const CustomTreeItem = observer(
      * to create a new property that abstracts over file.id, file.logicPath, or
      * whatever other property uniquely identifies a user's file.
      */
-    const { onDragEnter, onDragOver, onDragLeave, onDrop, over } =
-      useFileImportDropZone({
-        onDrop: doNotAwait(async (files) => {
+    const { onDragEnter, onDragOver, onDragLeave, onDrop, over } = useFileImportDropZone({
+      onDrop: (files) => {
+        void (async () => {
           await uploadFiles(file.id, files);
           void refreshListing();
           trackEvent("user:drag_uploads:file:into_folder");
-        }),
-        disabled: !file.isFolder,
-      });
+        })();
+      },
+      disabled: !file.isFolder,
+    });
     const { setNodeRef: setDropRef, isOver } = useDroppable({
       id: file.id ?? -1,
       disabled: disableDragAndDrop || !file.isFolder || file.id === null,
@@ -273,9 +259,7 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
-    const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(
-      null,
-    );
+    const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(null);
     const dndInProgress = Boolean(dndContext.active);
     const normalBorder = `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`;
     const dropStyle: {
@@ -372,8 +356,7 @@ const CustomTreeItem = observer(
             if (dndDebounce !== null) clearTimeout(dndDebounce);
           }}
           {...(listeners?.onKeyDown && {
-            onKeyDown:
-              listeners.onKeyDown as React.KeyboardEventHandler<HTMLLIElement>,
+            onKeyDown: listeners.onKeyDown as React.KeyboardEventHandler<HTMLLIElement>,
           })}
           {...attributes}
           role="treeitem"
@@ -384,12 +367,13 @@ const CustomTreeItem = observer(
             borderRadius: "4px",
           }}
           sx={(theme) => ({
+            // x-tree-view v9: selection/focus are data attributes, not Mui-selected/Mui-focused classes.
             [`.${treeItemClasses.content}`]: {
-              "&.Mui-selected": {
+              "&[data-selected]": {
                 backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                   ? "black"
                   : theme.palette.callToAction.main,
-                "&.Mui-focused": {
+                "&[data-focused]": {
                   backgroundColor: window.matchMedia("(prefers-contrast: more)").matches
                     ? "black"
                     : theme.palette.callToAction.main,
@@ -488,20 +472,10 @@ const TreeView = ({
    * the listing is done refreshing. This is a bit of a hack, but it works.
    */
   if (listing.refreshing) return null;
-  if (
-    listing.tag === "empty" ||
-    listing.list.every((file) => filter(file) === "hide")
-  ) {
+  if (listing.tag === "empty" || listing.list.every((file) => filter(file) === "hide")) {
     return (
       <div key={listing.tag === "empty" ? listing.reason : "hiding all"}>
-        <Fade
-          in={true}
-          timeout={
-            window.matchMedia("(prefers-reduced-motion: reduce)").matches
-              ? 0
-              : 300
-          }
-        >
+        <Fade in={true} timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300}>
           <div>
             <PlaceholderLabel>
               {listing.refreshing
@@ -527,11 +501,7 @@ const TreeView = ({
         .asSet()
         .map((file) => file.treeViewItemId)
         .toArray()}
-      onItemSelectionToggle={(
-        event,
-        itemId: string | ReadonlyArray<string>,
-        selected,
-      ) => {
+      onItemSelectionToggle={(event, itemId: string | ReadonlyArray<string>, selected) => {
         /*
          * If there are multiple files selected and the user taps any file
          * (already selected or not) then this function is called twice: first
@@ -561,8 +531,7 @@ const TreeView = ({
             addAlert(
               mkAlert({
                 title: "Shift selection is not supported in tree view.",
-                message:
-                  "Either use command/ctrl to select each in turn, or use grid view.",
+                message: "Either use command/ctrl to select each in turn, or use grid view.",
                 variant: "warning",
               }),
             );
@@ -606,7 +575,7 @@ const TreeView = ({
        */}
       <GallerySelection>
         {listing.list.map((file, index) =>
-          filter(file) ? (
+          filter(file) !== "hide" ? (
             <CustomTreeItem
               index={index}
               file={file}
@@ -626,9 +595,7 @@ const TreeView = ({
           ) : null,
         )}
       </GallerySelection>
-      {listing.loadMore
-        .map((loadMore) => <LoadMoreButton key={null} onClick={loadMore} />)
-        .orElse(null)}
+      {listing.loadMore.map((loadMore) => <LoadMoreButton key={null} onClick={loadMore} />).orElse(null)}
     </SimpleTreeView>
   );
 };

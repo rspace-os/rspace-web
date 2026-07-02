@@ -1,30 +1,31 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
-import {
-  getOmeroData,
-  getImages,
-  getWells,
-  getDatasets,
-  getPlates,
-  getAnnotations,
-  getImage,
-  getPlateAcquisitions,
-} from "./OmeroClient";
 import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
-import { FormControlLabel, Stack } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Grid from "@mui/material/Grid";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import Stack from "@mui/material/Stack";
+import { ThemeProvider } from "@mui/material/styles";
+import Typography from "@mui/material/Typography";
+import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Cell } from "../../components/EnhancedTableHead";
+import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import materialTheme from "../../theme";
 import { ErrorReason, type ErrorReasonType, Order } from "./Enums";
 import ErrorView from "./ErrorView";
+import {
+  getAnnotations,
+  getDatasets,
+  getImage,
+  getImages,
+  getOmeroData,
+  getPlateAcquisitions,
+  getPlates,
+  getWells,
+} from "./OmeroClient";
+import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable from "./ResultsTable";
-import useLocalStorage from "../../hooks/browser/useLocalStorage";
-import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { ThemeProvider } from "@mui/material/styles";
-import Typography from "@mui/material/Typography";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import { $PropertyExists, type OmeroItem, type OmeroArgs } from "./OmeroTypes";
-import type { Cell } from "../../components/EnhancedTableHead";
 
 const TABLE_HEADER_CELLS: Array<Cell<string>> = [
   { id: "path", numeric: false, label: "Path" },
@@ -41,32 +42,19 @@ const ORDER_KEY = "omeroSearchOrder";
 const ORDER_BY_KEY = "omeroSearchOrderBy";
 const DEFAULT_ORDER = Order.asc;
 const DEFAULT_ORDERBY = "name";
-export const getOrder = (): string =>
-  (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
-export const getOrderBy = (): string =>
-  (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
+export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
+export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
-  const [errorReason, setErrorReason] = useState<ErrorReasonType>(
-    ErrorReason.None,
-  );
+  const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedItemIds, setSelectedItemIds] = useState<Array<string>>([]);
   const [order, setOrder] = useLocalStorage(ORDER_KEY, DEFAULT_ORDER);
-  const [orderBy, setOrderBy] = useLocalStorage<string>(
-    ORDER_BY_KEY,
-    DEFAULT_ORDERBY,
-  );
-  const [dataTypeChoice, setDataTypeChoice] = useLocalStorage(
-    "omeroDataTypeChoice",
-    "Projects And Screens",
-  );
-  const [latestGridOfThumbnails, setLatestGridOfThumbnails] = useState<
-    OmeroItem["imageGridDetails"] | null
-  >(null);
-  const [latestPlateAcquisition, setLatestPlateAcquisition] =
-    useState<OmeroItem | null>(null);
+  const [orderBy, setOrderBy] = useLocalStorage<string>(ORDER_BY_KEY, DEFAULT_ORDERBY);
+  const [dataTypeChoice, setDataTypeChoice] = useLocalStorage("omeroDataTypeChoice", "Projects And Screens");
+  const [latestGridOfThumbnails, setLatestGridOfThumbnails] = useState<OmeroItem["imageGridDetails"] | null>(null);
+  const [latestPlateAcquisition, setLatestPlateAcquisition] = useState<OmeroItem | null>(null);
   const [newItems, setNewItems] = useState<Array<OmeroItem>>([]);
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -83,10 +71,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       void addGridOfThumbnailsToItem(latestPlateAcquisition, 0);
     }
   }, [latestPlateAcquisition]);
-  function handleRequestError(error: {
-    message: string;
-    response?: { status: number; data: string };
-  }) {
+  function handleRequestError(error: { message: string; response?: { status: number; data: string } }) {
     if (error.message === "Network Error") {
       setErrorReason(ErrorReason.NetworkError);
     } else if (error.message.startsWith("timeout")) {
@@ -127,10 +112,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     }
   };
 
-  const hideChildren = (
-    item: OmeroItem,
-    onlyImageGridDetails: boolean = false,
-  ) => {
+  const hideChildren = (item: OmeroItem, onlyImageGridDetails: boolean = false) => {
     showHideChildren(item, false, onlyImageGridDetails);
   };
 
@@ -165,11 +147,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     setSelectedItemIds(newSelected);
   };
 
-  const showHideChildren = (
-    item: OmeroItem,
-    show: boolean,
-    onlyImageGridDetails: boolean = false,
-  ) => {
+  const showHideChildren = (item: OmeroItem, show: boolean, onlyImageGridDetails: boolean = false) => {
     if (onlyImageGridDetails) {
       item.gridShown = show;
     } else {
@@ -184,21 +162,21 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       directChildOfToggledElement: boolean = true,
     ) => {
       const children = parent.children;
-      children.map((child) => {
+      children.forEach((child) => {
         if (directChildOfToggledElement) {
           child.hide = !show;
         } else {
           child.hideAsIndirectDescendant = !show;
         }
         if (!show && child.selected) {
-          itemsToToggleSelection.push(child.type + "_" + child.id);
+          itemsToToggleSelection.push(`${child.type}_${child.id}`);
           child.selected = false;
           child.deselectedByHiding = true;
         }
         if (show && child.deselectedByHiding) {
           child.deselectedByHiding = false;
           child.selected = true;
-          itemsToToggleSelection.push(child.type + "_" + child.id);
+          itemsToToggleSelection.push(`${child.type}_${child.id}`);
         }
         toggleChildDisplay(child, show, itemsToToggleSelection, false);
       });
@@ -208,16 +186,15 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
         if (!item.hiddenImageGridDetails) {
           item.hiddenImageGridDetails = [];
         }
-        item.hiddenImageGridDetails[item.gridBeingShown] =
-          item.imageGridDetails[item.gridBeingShown];
+        item.hiddenImageGridDetails[item.gridBeingShown] = item.imageGridDetails[item.gridBeingShown];
         item.imageGridDetails[item.gridBeingShown] = [];
         if (item.deselectedByHiding) {
           item.deselectedByHiding = false;
           item.selected = true;
-          itemsToToggleSelection.push(item.type + "_" + item.id);
+          itemsToToggleSelection.push(`${item.type}_${item.id}`);
         }
       } else if (item.selected) {
-        itemsToToggleSelection.push(item.type + "_" + item.id);
+        itemsToToggleSelection.push(`${item.type}_${item.id}`);
         item.selected = false;
         item.deselectedByHiding = true;
       }
@@ -239,19 +216,14 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
 
   const itemHasHiddenChildren = (item: OmeroItem) => {
     return items.some(
-      (anItem) =>
-        item.id === anItem.parentId &&
-        (anItem.hide === true || anItem.hideAsIndirectDescendant === true),
+      (anItem) => item.id === anItem.parentId && (anItem.hide === true || anItem.hideAsIndirectDescendant === true),
     );
   };
-  const addGridItemToDisplayedChildren = async (
-    item: OmeroItem,
-    gridItem: OmeroItem,
-  ) => {
+  const addGridItemToDisplayedChildren = async (item: OmeroItem, gridItem: OmeroItem) => {
     if (item.children.includes(gridItem)) {
       return;
     }
-    let image;
+    let image: OmeroItem;
     if (item.type === "plateAcquisition") {
       const wellsample = gridItem.children[0];
       image = wellsample.children[0];
@@ -267,19 +239,12 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     }
     item.addedChildren.unshift(gridItem);
     setItemDataOnChildren(item, item.children);
-    const newItems = addChildrenToDisplayList(
-      item.id,
-      item.children,
-      items,
-      item.type,
-    );
+    const newItems = addChildrenToDisplayList(item.id, item.children, items, item.type);
     setNewItems([...newItems]);
     await addDetailsToItem(image);
-    const observer = new MutationObserver((mutations, me) => {
+    const observer = new MutationObserver((_, me) => {
       if (scrollRef.current) {
-        const scrollTarget = scrollRef.current.querySelector(
-          "#" + `${image.type}_name_display_${image.id}`,
-        );
+        const scrollTarget = scrollRef.current.querySelector(`#${image.type}_name_display_${image.id}`);
         if (scrollTarget) {
           scrollTarget.scrollIntoView({
             block: "center",
@@ -301,11 +266,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   };
 
   const addimageDatailsToImage = async (image: OmeroItem) => {
-    const imageData = await getImage(
-      image.id,
-      image.parentId,
-      Boolean(image.fetchLarge),
-    );
+    const imageData = await getImage(image.id, image.parentId, Boolean(image.fetchLarge));
 
     image.imageData = makeListEntries(imageData.displayImageData, image);
     image.dataDescriptionArray = [];
@@ -313,10 +274,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     image.base64ThumbnailData = imageData.base64ThumbnailData;
     image.displayType = makeThumbNail(image, image.omeroConnectionKey);
   };
-  const addDataToItemDataDescriptionArray = (
-    datalist: Array<string>,
-    item: OmeroItem,
-  ) => {
+  const addDataToItemDataDescriptionArray = (datalist: Array<string>, item: OmeroItem) => {
     if (!item.dataDescriptionArray) {
       if (item.description) {
         item.dataDescriptionArray = [item.description];
@@ -325,23 +283,17 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       }
     }
     if (item.firstDescription?.indexOf("Publication Title") !== -1) {
-      datalist = datalist.filter(
-        (text) => text.indexOf("Publication Title") === -1,
-      );
+      datalist = datalist.filter((text) => text.indexOf("Publication Title") === -1);
     }
     item.dataDescriptionArray = item.dataDescriptionArray?.concat(datalist);
-    item.descriptionElems = makeListEntries(
-      $PropertyExists(item.dataDescriptionArray),
-      item,
-    );
+    item.descriptionElems = makeListEntries($PropertyExists(item.dataDescriptionArray), item);
     item.firstDescription = $PropertyExists(item.dataDescriptionArray)[0];
   };
   const greyOutClickedThumbnails = (thumbnails: Array<OmeroItem>) => {
-    thumbnails.map((thumbnail) => {
+    thumbnails.forEach((thumbnail) => {
       if (thumbnail.imageSrc) {
         //thumbnails only gets an imageSrc when user clicks on grid of thumbnails, see below
-        thumbnail.imageSrc.style.cssText =
-          "opacity: 0.6; padding : 2px; border: 2px solid grey;";
+        thumbnail.imageSrc.style.cssText = "opacity: 0.6; padding : 2px; border: 2px solid grey;";
       }
     });
   };
@@ -350,12 +302,9 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
    * @param gridIndex - plate acquisitions can have many different 'fields' with one grid of thumbnails for each.
    * In contrast, the grid of thumbnails for a dataset will always be at gridIndex 0
    */
-  const addGridOfThumbnailsToItem = async (
-    item: OmeroItem,
-    gridIndex: number = 0,
-  ) => {
+  const addGridOfThumbnailsToItem = async (item: OmeroItem, gridIndex: number = 0) => {
     item.gridBeingShown = gridIndex;
-    if (item.hiddenImageGridDetails && item.hiddenImageGridDetails[gridIndex]) {
+    if (item.hiddenImageGridDetails?.[gridIndex]) {
       item.imageGridDetails[gridIndex] = item.hiddenImageGridDetails[gridIndex];
       showHideChildren(item, true, true);
       setLatestGridOfThumbnails(item.imageGridDetails);
@@ -390,8 +339,8 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           gridOfImages[rowpos][colpos] = makeEmptyThumbNail();
         }
       }
-      images.map((dataValue, pos) => {
-        let underlyingImage;
+      images.forEach((dataValue, pos) => {
+        let underlyingImage: OmeroItem;
         let row: number, column: number;
         if (dataValue.type === "well") {
           underlyingImage = dataValue.children[0].children[0];
@@ -402,7 +351,9 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           row = Math.floor(pos / 10);
           column = pos % 10;
         }
-        const onClick = async (event: any): Promise<void> => {
+        const onClick = async (
+          event: React.MouseEvent<HTMLImageElement> | React.KeyboardEvent<HTMLImageElement>,
+        ): Promise<void> => {
           event.preventDefault();
           if (clickInProgress) {
             return;
@@ -410,22 +361,14 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           clickInProgress = true;
           greyOutClickedThumbnails(images);
           underlyingImage.currentclicked = true;
-          dataValue.imageSrc = event.target;
-          gridOfImages[row][column] = makeThumbNail(
-            underlyingImage,
-            item.omeroConnectionKey,
-          );
+          dataValue.imageSrc = event.currentTarget;
+          gridOfImages[row][column] = makeThumbNail(underlyingImage, item.omeroConnectionKey);
           underlyingImage.currentclicked = false;
           await addGridItemToDisplayedChildren(item, dataValue);
-          event.target.style.cssText =
-            "opacity: 1; border: 4px solid blue;padding:0px";
+          event.currentTarget.style.cssText = "opacity: 1; border: 4px solid blue;padding:0px";
           clickInProgress = false;
         };
-        const thumbnail = makeThumbNail(
-          underlyingImage,
-          item.omeroConnectionKey,
-          onClick,
-        );
+        const thumbnail = makeThumbNail(underlyingImage, item.omeroConnectionKey, onClick);
         gridOfImages[row][column] = thumbnail;
       });
       setFetchDone(true);
@@ -447,9 +390,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     }
   };
 
-  const populateOmeroItemWithFetchedChildrenOrShowHiddenChildren = async (
-    item: OmeroItem,
-  ) => {
+  const populateOmeroItemWithFetchedChildrenOrShowHiddenChildren = async (item: OmeroItem) => {
     item.showingChildren = true;
     if (!item.fetchNew && itemHasHiddenChildren(item)) {
       showChildren(item);
@@ -469,12 +410,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
         children = [];
       }
       item.children = children;
-      const newItems = addChildrenToDisplayList(
-        item.id,
-        children,
-        items,
-        item.type,
-      );
+      const newItems = addChildrenToDisplayList(item.id, children, items, item.type);
       await setItems([...newItems]);
       setFetchDone(true);
       if (item.type === "plate" && children.length === 1) {
@@ -483,11 +419,8 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     }
   };
 
-  const setItemDataOnChildren = (
-    item: OmeroItem,
-    children: Array<OmeroItem>,
-  ) => {
-    children.map((child) => {
+  const setItemDataOnChildren = (item: OmeroItem, children: Array<OmeroItem>) => {
+    children.forEach((child) => {
       child.parentName = item.name;
       child.parentType = item.type;
       child.parentId = item.id;
@@ -502,20 +435,9 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     type: string,
   ) => {
     const newDisplayList = [...displayList];
-    const parentItem = newDisplayList.filter(
-      (item) => item.type === type && item.id === parentID,
-    )[0];
-    const formattedItems = addDataToDisplayList(
-      children,
-      parentItem.paths,
-      parentItem,
-      false,
-    );
-    newDisplayList.splice(
-      newDisplayList.indexOf(parentItem) + 1,
-      0,
-      ...formattedItems,
-    );
+    const parentItem = newDisplayList.filter((item) => item.type === type && item.id === parentID)[0];
+    const formattedItems = addDataToDisplayList(children, parentItem.paths, parentItem, false);
+    newDisplayList.splice(newDisplayList.indexOf(parentItem) + 1, 0, ...formattedItems);
     return newDisplayList;
   };
 
@@ -527,18 +449,10 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   ): Array<OmeroItem> => {
     let displayData: Array<OmeroItem> = [];
     const omeroConnectionKey = items[0].omeroConnectionKey;
-    formatDataForDisplay(
-      items,
-      parentPaths,
-      omeroConnectionKey,
-      parent,
-      shouldSort,
-    ).map((item) => {
+    formatDataForDisplay(items, parentPaths, omeroConnectionKey, parent, shouldSort).forEach((item) => {
       displayData.push(item);
       if (item.children && item.children.length > 0) {
-        displayData = displayData.concat(
-          addDataToDisplayList(item.children, item.paths, item, shouldSort),
-        );
+        displayData = displayData.concat(addDataToDisplayList(item.children, item.paths, item, shouldSort));
       }
     });
     return displayData;
@@ -555,7 +469,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       dataList.sort((data1, data2) => data1.name.localeCompare(data2.name));
     }
     return dataList.map((data) => {
-      const thisPath = "/" + data.type + "/" + data.name + "/" + data.id;
+      const thisPath = `/${data.type}/${data.name}/${data.id}`;
       data.paths = [...thisparentPaths, thisPath];
       if (parent && !data.parentType) {
         data.parentType = parent.type;
@@ -577,52 +491,31 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     });
   };
 
-  const makeListEntries = (
-    annotations: Array<string>,
-    item: OmeroItem,
-  ): Array<React.ReactElement> => {
+  const makeListEntries = (annotations: Array<string>, item: OmeroItem): Array<React.ReactElement> => {
     return annotations.map((annotation, index) => {
       const annotationId = `${item.type}_annotation_${item.id}_${index}`;
-      annotation = annotation.replaceAll(
-        "Screen Description",
-        "Screen Description - ",
-      );
-      annotation = annotation.replaceAll(
-        "Experiment Description",
-        "Experiment Description - ",
-      );
-      annotation = annotation.replaceAll(
-        "Study Description",
-        "Study Description - ",
-      );
+      annotation = annotation.replaceAll("Screen Description", "Screen Description - ");
+      annotation = annotation.replaceAll("Experiment Description", "Experiment Description - ");
+      annotation = annotation.replaceAll("Study Description", "Study Description - ");
       let publicationTitle =
         annotation.indexOf("Screen Description") !== -1
           ? annotation.substring(0, annotation.indexOf("Screen Description"))
           : annotation.indexOf("Experiment Description") !== -1
-            ? annotation.substring(
-                0,
-                annotation.indexOf("Experiment Description"),
-              )
+            ? annotation.substring(0, annotation.indexOf("Experiment Description"))
             : annotation.indexOf("Study Description") !== -1
               ? annotation.substring(0, annotation.indexOf("Study Description"))
               : annotation;
       const originalText = publicationTitle;
       publicationTitle = publicationTitle.replaceAll("Publication Title", "");
       publicationTitle = publicationTitle.trim();
-      publicationTitle = 'Publication Title: "' + publicationTitle + '"';
+      publicationTitle = `Publication Title: "${publicationTitle}"`;
       const restOfText = annotation.substring(originalText.length);
       return annotation.indexOf("Publication Title") !== -1 ? (
         <div key={annotationId}>
-          <Box
-            id={`${item.type}_first_description_${item.id}`}
-            sx={{ fontStyle: "italic", fontWeight: "bold" }}
-          >
+          <Box id={`${item.type}_first_description_${item.id}`} sx={{ fontStyle: "italic", fontWeight: "bold" }}>
             {publicationTitle}
           </Box>
-          <Box
-            id={`${item.type}_rest_description_${item.id}`}
-            sx={{ fontWeight: "lighter" }}
-          >
+          <Box id={`${item.type}_rest_description_${item.id}`} sx={{ fontWeight: "lighter" }}>
             {restOfText}
           </Box>
         </div>
@@ -638,38 +531,31 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
     return paths.map((path) => <dt key={path}>{path}</dt>);
   };
   const makeEmptyThumbNail = () => {
-    return (
-      <img
-        title={"no image"}
-        style={{ padding: "4px" }}
-        src={"/images/White_square.png"}
-      />
-    );
+    return <img alt="Unavailable" title={"no image"} style={{ padding: "4px" }} src={"/images/White_square.png"} />;
   };
   const makeThumbNail = (
     data: OmeroItem,
     omeroConnectionKey: string,
-    onClick?: (event: any) => Promise<void>,
+    onClick?: (event: React.MouseEvent<HTMLImageElement> | React.KeyboardEvent<HTMLImageElement>) => Promise<void>,
   ): React.ReactElement<"img"> => {
     const image = (
       <img
         id={`${data.type}_img_${data.id}`}
         data-testid={`${data.type}_img_${data.id}`}
+        alt={data.name}
         title={data.name}
         onClick={onClick}
+        onKeyDown={(event) => {
+          if (onClick && (event.key === "Enter" || event.key === " ")) {
+            void onClick(event as unknown as React.KeyboardEvent<HTMLImageElement>);
+          }
+        }}
         tabIndex={-1}
-        style={
-          data.currentclicked
-            ? { padding: "2px", opacity: "0.6", border: "2px solid grey" }
-            : { padding: "4px" }
-        }
+        style={data.currentclicked ? { padding: "2px", opacity: "0.6", border: "2px solid grey" } : { padding: "4px" }}
         src={
           data.base64ThumbnailData
             ? data.base64ThumbnailData
-            : "/public/publicView/apps/omero/thumbnail/" +
-              omeroConnectionKey +
-              "/" +
-              data.id
+            : `/public/publicView/apps/omero/thumbnail/${omeroConnectionKey}/${data.id}`
         }
       />
     );
@@ -677,7 +563,11 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   };
   //return true if item has a string property that includes 'term' - also recursively checks items object
   //properties for a match but ignores item's `children` field, as they are separately displayed as their own table rows
-  const doesItemHaveMatchingValue = (item: any, term: string): boolean => {
+  const doesItemHaveMatchingValue = (item: unknown, term: string): boolean => {
+    if (!item || typeof item !== "object") {
+      return false;
+    }
+
     let doesHaveMatch = false;
     for (const [key, value] of Object.entries(item)) {
       if (value && typeof value === "object") {
@@ -687,11 +577,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
             break;
           }
         }
-      } else if (
-        value &&
-        typeof value === "string" &&
-        value.toLowerCase().indexOf(term.toLowerCase()) !== -1
-      ) {
+      } else if (value && typeof value === "string" && value.toLowerCase().indexOf(term.toLowerCase()) !== -1) {
         doesHaveMatch = true;
         break;
       }
@@ -707,10 +593,10 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       const filterTerm = (event.target as HTMLInputElement).value;
       const newData = [...items];
       const itemsToUnSelect: Array<string> = [];
-      newData.map((item) => {
+      newData.forEach((item) => {
         item.hide = !doesItemHaveMatchingValue(item, filterTerm);
         if (item.hide) {
-          itemsToUnSelect.push(item.type + "_" + item.id);
+          itemsToUnSelect.push(`${item.type}_${item.id}`);
         }
       });
       removeManyFromSelectedItems(itemsToUnSelect);
@@ -723,9 +609,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   }, [dataTypeChoice]);
 
   SELECTED_ITEMS = useMemo(() => {
-    const selected_items = items.filter((item) =>
-      selectedItemIds.includes(item.type + "_" + item.id),
-    );
+    const selected_items = items.filter((item) => selectedItemIds.includes(`${item.type}_${item.id}`));
 
     window.parent.postMessage(
       {
@@ -760,24 +644,11 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
             control={<Radio color="primary" />}
             label="Projects And Screens"
           />
-          <FormControlLabel
-            value="Projects"
-            control={<Radio color="primary" />}
-            label="Projects"
-          />
-          <FormControlLabel
-            value="Screens"
-            control={<Radio color="primary" />}
-            label="Screens"
-          />
+          <FormControlLabel value="Projects" control={<Radio color="primary" />} label="Projects" />
+          <FormControlLabel value="Screens" control={<Radio color="primary" />} label="Screens" />
         </RadioGroup>
         <label htmlFor="omeroFilter">Filter results</label>
-        <input
-          id="omeroFilterID"
-          type="text"
-          name="omeroFilter"
-          onKeyPress={filterDataAndDeselectHidden}
-        />
+        <input id="omeroFilterID" type="text" name="omeroFilter" onKeyPress={filterDataAndDeselectHidden} />
         <Grid container spacing={1}>
           <Grid size={12}>
             <ResultsTable
@@ -793,15 +664,12 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
               setSelectedItemIds={setSelectedItemIds}
               order={order}
               orderBy={orderBy}
-              setOrder={(orderValue) =>
-                setOrder(orderValue as typeof DEFAULT_ORDER)
-              }
+              setOrder={(orderValue) => setOrder(orderValue as typeof DEFAULT_ORDER)}
               setOrderBy={setOrderBy}
               refreshItems={refreshItems}
               addDetailsToItem={addDetailsToItem}
               addGridOfThumbnailsToItem={addGridOfThumbnailsToItem}
-              // @ts-ignore - The component uses forwardRef but TypeScript isn't recognizing it
-              ref={scrollRef}
+              ref={scrollRef as React.Ref<HTMLDivElement>}
             />
           </Grid>
           <Grid sx={{ textAlign: "center" }} size={12}>

@@ -1,6 +1,6 @@
-import { type RawEditorOptions } from "tinymce";
-import React from "react";
 import { Editor } from "@tinymce/tinymce-react";
+import type React from "react";
+import type { RawEditorOptions } from "tinymce";
 
 /*
  * The Inventory rich-text editor uses a self-hosted TinyMCE 8 build that is
@@ -32,8 +32,8 @@ import { Editor } from "@tinymce/tinymce-react";
 const TINYMCE_CACHE_SUFFIX = `?v=${__TINYMCE_VERSION__}`;
 // `__TINYMCE_BASE__` is injected by the bundler and is the full directory URL
 // the self-hosted TinyMCE assets are served from (always ending in a slash):
-// "/ui/dist/tinymce/" for the app build, and "/" for the Playwright CT build
-// (where the assets are served at the server root via Vite's publicDir).
+// "/ui/dist/tinymce/" for the app build, and "/tinymce/" for browser-mode
+// tests (served by the `tinymceAssetsPlugin` in vitest.browser.config.ts).
 const TINYMCE_SCRIPT_SRC = `${__TINYMCE_BASE__}tinymce.min.js${TINYMCE_CACHE_SUFFIX}`;
 
 const customStyles =

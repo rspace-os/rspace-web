@@ -1,7 +1,6 @@
 package com.researchspace.extmessages.msteams;
 
 import com.researchspace.analytics.service.AnalyticsEvent;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.extmessages.base.AbstractExternalWebhookMessageSender;
 import com.researchspace.extmessages.base.ExternalMessageSender;
 import com.researchspace.extmessages.base.MessageDetails;
@@ -10,11 +9,12 @@ import com.researchspace.model.apps.App;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.properties.IPropertyHolder;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
@@ -34,54 +34,32 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
     return webhookPropertyName;
   }
 
+  /**
+   * Builds an Adaptive Card "message" payload. Teams Workflows incoming webhooks (which replaced
+   * the retired Office 365 connector webhooks) require this format and reject the legacy
+   * MessageCard format with HTTP 400.
+   */
   protected String createMessage(MessageDetails message) {
+    AdaptiveCard card = new AdaptiveCard();
+    List<CardElement> body = card.getBody();
     final int docCount = message.getRecords().size();
-    if (docCount > 0) {
-      MSCard card = new MSCard();
-      card.setTitle("From " + message.getOriginator().getFullName());
-      List<Section> sections = new ArrayList<>();
 
-      if (docCount == 1) {
-        IRSpaceDoc singleDoc = message.getRecords().iterator().next();
-        String link = createDocumentLink(singleDoc);
-        String summary = createSummary(singleDoc, link);
-        card.setSummary(summary);
-        card.setText(convert(message.getMessage()));
-        Fact owner = getOwnerFact(singleDoc);
-        Fact id = getIdFact(singleDoc);
-        Section section = new Section();
-        section.setFacts(TransformerUtils.toList(owner, id));
-        section.setActivityTitle(summary);
-        sections.add(section);
-      } else {
-        card.setSummary("Message about several documents");
-        card.setText(convert(message.getMessage()));
-        for (IRSpaceDoc doc : message.getRecords()) {
-
-          Fact owner = getOwnerFact(doc);
-          Fact id = getIdFact(doc);
-          Section section = new Section();
-          section.setFacts(TransformerUtils.toList(owner, id));
-          // summaries to sections if > 1 document
-
-          String link = createDocumentLink(doc);
-          String summary = createSummary(doc, link);
-          section.setActivityTitle(summary);
-          sections.add(section);
-        }
-      }
-      card.setSections(sections);
-
-      return card.toJSON();
-
+    if (docCount == 0) {
+      log.debug("Message has no associated documents; sending card without document summaries");
+      body.add(TextBlock.heading("Message from " + message.getOriginator().getFullName()));
+      body.add(TextBlock.body(convert(message.getMessage())));
     } else {
-      log.warn("No records, can't add attachment");
-      MSCard card = new MSCard();
-      card.setText(convert(message.getMessage()));
-      card.setTitle("Message from " + message.getOriginator().getFullName());
-      card.setSummary("Message from " + message.getOriginator().getFullName());
-      return card.toJSON();
+      body.add(TextBlock.heading("From " + message.getOriginator().getFullName()));
+      body.add(TextBlock.body(convert(message.getMessage())));
+      for (IRSpaceDoc doc : message.getRecords()) {
+        body.add(TextBlock.body(createSummary(doc, createDocumentLink(doc))));
+        body.add(factsFor(doc));
+      }
     }
+
+    AdaptiveCardMessage payload = new AdaptiveCardMessage();
+    payload.addCard(card);
+    return payload.toJSON();
   }
 
   @Override
@@ -90,12 +68,21 @@ public class MsTeamsMessageSender extends AbstractExternalWebhookMessageSender
     analyticsMgr.trackChatApp(subject, "message_post", AnalyticsEvent.TEAMS_USED);
   }
 
-  private Fact getIdFact(IRSpaceDoc singleDoc) {
-    return new Fact("ID", singleDoc.getGlobalIdentifier());
+  /**
+   * Workflows webhooks reject a {@code text/plain} body; the Adaptive Card must be sent as JSON.
+   */
+  @Override
+  protected HttpHeaders createPostHeaders() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    return headers;
   }
 
-  private Fact getOwnerFact(IRSpaceDoc singleDoc) {
-    return new Fact("Owner", singleDoc.getOwner().getFullName());
+  private FactSet factsFor(IRSpaceDoc doc) {
+    FactSet facts = new FactSet();
+    facts.add("Owner", doc.getOwner().getFullName());
+    facts.add("ID", doc.getGlobalIdentifier());
+    return facts;
   }
 
   private String createSummary(IRSpaceDoc doc, String link) {

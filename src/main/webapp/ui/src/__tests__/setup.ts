@@ -1,13 +1,10 @@
-import { TextEncoder, TextDecoder } from "node:util";
-import { vi, expect, afterEach, afterAll } from "vitest";
+import { TextDecoder, TextEncoder } from "node:util";
+import { afterAll, afterEach, expect, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import createFetchMock from "vitest-fetch-mock";
-import {
-  silenceConsole,
-  silenceProcessOutput,
-} from "@/__tests__/helpers/silenceConsole";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
+import createFetchMock from "vitest-fetch-mock";
+import { silenceConsole, silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 
 function createStorageMock() {
   const storage = new Map<string, string>();
@@ -42,10 +39,7 @@ afterEach(() => {
   globalThis.sessionStorage?.clear?.();
 });
 
-const restoreConsole = silenceConsole(
-  ["error"],
-  ["Could not fetch set of users in the same group as current user"],
-);
+const restoreConsole = silenceConsole(["error"], ["Could not fetch set of users in the same group as current user"]);
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
   restoreConsole();
@@ -105,3 +99,41 @@ if (typeof globalThis.IntersectionObserver !== "function") {
   globalThis.IntersectionObserver = IntersectionObserverMock;
 }
 
+/*
+ * Polyfill for DOMMatrix in Vitest tests. jsdom does not implement it, but
+ * pdfjs-dist v5 (pulled in by react-pdf) references DOMMatrix at module-load
+ * time, so importing any component that uses react-pdf (e.g. the gallery
+ * Carousel / PDF preview) throws "DOMMatrix is not defined". A minimal,
+ * chainable stub is enough for tests that import these components without
+ * actually rasterising a PDF.
+ */
+if (typeof globalThis.DOMMatrix !== "function") {
+  class DOMMatrixMock {
+    a = 1;
+    b = 0;
+    c = 0;
+    d = 1;
+    e = 0;
+    f = 0;
+    multiplySelf(): this {
+      return this;
+    }
+    preMultiplySelf(): this {
+      return this;
+    }
+    translateSelf(): this {
+      return this;
+    }
+    scaleSelf(): this {
+      return this;
+    }
+    rotateSelf(): this {
+      return this;
+    }
+    invertSelf(): this {
+      return this;
+    }
+  }
+  // @ts-expect-error Mocking
+  globalThis.DOMMatrix = DOMMatrixMock;
+}

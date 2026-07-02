@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -36,7 +35,6 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
   public void setUp() {
     testUser = createInitAndLoginAnyUser();
     assertTrue(testUser.isContentInitialized());
-    ReflectionTestUtils.setField(instrumentsApi, "inventoryInstrumentEnabled", true);
     when(mockBindingResult.hasErrors()).thenReturn(false);
   }
 
@@ -124,22 +122,6 @@ public class InstrumentsApiControllerTest extends SpringTransactionalTest {
     assertNotNull(bindException.getFieldError());
     assertEquals("name", bindException.getFieldError().getField());
     assertEquals("errors.maxlength", bindException.getFieldError().getCode());
-  }
-
-  @Test
-  public void createInstrumentThrowsWhenFeatureDisabled() {
-    ReflectionTestUtils.setField(instrumentsApi, "inventoryInstrumentEnabled", false);
-    ApiInstrument request = new ApiInstrument();
-    request.setName("disabled instrument");
-
-    UnsupportedOperationException unsupportedOperationException =
-        assertThrows(
-            UnsupportedOperationException.class,
-            () -> instrumentsApi.createNewInstrument(request, mockBindingResult, testUser));
-
-    assertEquals(
-        "The inventory Instrument is not enabled in this RSpace instance",
-        unsupportedOperationException.getMessage());
   }
 
   @Test

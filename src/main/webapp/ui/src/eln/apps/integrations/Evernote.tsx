@@ -1,10 +1,10 @@
 import Grid from "@mui/material/Grid";
-import React from "react";
-import IntegrationCard from "../IntegrationCard";
-import { type IntegrationStates } from "../useIntegrationsEndpoint";
 import { observer } from "mobx-react-lite";
-import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
+import React from "react";
 import { LOGO_COLOR } from "../../../assets/branding/evernote";
+import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
+import IntegrationCard from "../IntegrationCard";
+import type { IntegrationStates } from "../useIntegrationsEndpoint";
 
 type EvernoteArgs = {
   integrationState: IntegrationStates["EVERNOTE"];
@@ -21,8 +21,9 @@ function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
       sx={{ display: "flex" }}
       size={{
         sm: 6,
-        xs: 12
-      }}>
+        xs: 12,
+      }}
+    >
       <IntegrationCard
         name="Evernote"
         integrationState={integrationState}
