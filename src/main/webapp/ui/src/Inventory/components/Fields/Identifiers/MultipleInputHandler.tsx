@@ -206,8 +206,9 @@ const MultipleInputHandler = ({ field, activeResult, editable }: MultipleInputAr
                   subFields(field.value[i]).map((sf) => (
                     <Grid container direction="row" key={sf.key} spacing={1} sx={{ margin: "8px" }}>
                       <Grid sx={{ minWidth: "150px" }}>
-                        {RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS]}
-                        {":"}
+                        {t("fields.identifiers.wrapper.fieldLabel", {
+                          label: RECOMMENDED_FIELDS_LABELS[sf.key as keyof typeof RECOMMENDED_FIELDS_LABELS],
+                        })}
                       </Grid>
                       <Grid>
                         {sf.value ? (

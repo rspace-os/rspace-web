@@ -773,6 +773,7 @@
       "wrapper": {
         "enterValue": "Enter value for {key}",
         "fieldInvalid": "In order to publish the identifier, a valid value is required.",
+        "fieldLabel": "{label}:",
         "inventoryFields": {
           "alert": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the IGSN schema. <strong>Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.</strong>",
           "customFields": "Custom Fields",
@@ -1148,13 +1149,6 @@
     "descriptionTypes": {
       "abstract": "Abstract",
       "methods": "Methods"
-    },
-    "recommendedFields": {
-      "classificationCode": "Classification Code",
-      "schemeUri": "Scheme URI",
-      "subjectScheme": "Subject Scheme",
-      "type": "Type",
-      "valueUri": "Value URI"
     }
   },
   "identifiers": {

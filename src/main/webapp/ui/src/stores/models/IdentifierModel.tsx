@@ -114,13 +114,22 @@ export const subFieldsForNew: object = {
   },
 };
 
+/*
+ * DataCite identifier-metadata field labels. These are intentionally NOT
+ * translated and must stay in English: `subjectScheme`, `schemeURI`, `valueURI`
+ * and `classificationCode` are verbatim DataCite Metadata Schema attribute names
+ * (Subject property), and "Type" corresponds to DataCite's alternateIdentifierType.
+ * Keeping them in English preserves consistency with the DataCite schema and the
+ * export/deposit metadata that references these terms.
+ * See https://datacite-metadata-schema.readthedocs.io/ (6. Subject).
+ */
 export const RECOMMENDED_FIELDS_LABELS = {
-  type: i18n.t("inventory:identifierModel.recommendedFields.type"),
-  freeType: i18n.t("inventory:identifierModel.recommendedFields.type"),
-  subjectScheme: i18n.t("inventory:identifierModel.recommendedFields.subjectScheme"),
-  schemeURI: i18n.t("inventory:identifierModel.recommendedFields.schemeUri"),
-  valueURI: i18n.t("inventory:identifierModel.recommendedFields.valueUri"),
-  classificationCode: i18n.t("inventory:identifierModel.recommendedFields.classificationCode"),
+  type: "Type",
+  freeType: "Type",
+  subjectScheme: "Subject Scheme",
+  schemeURI: "Scheme URI",
+  valueURI: "Value URI",
+  classificationCode: "Classification Code",
 };
 
 export default class IdentifierModel implements Identifier {

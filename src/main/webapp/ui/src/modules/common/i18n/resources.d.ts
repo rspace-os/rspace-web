@@ -495,9 +495,7 @@ export default interface Resources {
         "name": "JoVE",
         "setup": {
           "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-          "pasteUrl": "Paste a full JoVE URL from a supported",
-          "pasteUrlOr": "or",
-          "pasteUrlSuffix": "page, for example",
+          "pasteUrlStep": "Paste a full JoVE URL from a supported <code>{domain}</code> page, for example <code>{exampleUrl}</code> or <code>{appExampleUrl}</code>.",
           "step1": "Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.",
           "step2": "Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position."
         },
@@ -3233,6 +3231,7 @@ export default interface Resources {
         "wrapper": {
           "enterValue": "Enter value for {key}",
           "fieldInvalid": "In order to publish the identifier, a valid value is required.",
+          "fieldLabel": "{label}:",
           "inventoryFields": {
             "alert": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the IGSN schema. <strong>Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.</strong>",
             "customFields": "Custom Fields",
@@ -3608,13 +3607,6 @@ export default interface Resources {
       "descriptionTypes": {
         "abstract": "Abstract",
         "methods": "Methods"
-      },
-      "recommendedFields": {
-        "classificationCode": "Classification Code",
-        "schemeUri": "Scheme URI",
-        "subjectScheme": "Subject Scheme",
-        "type": "Type",
-        "valueUri": "Value URI"
       }
     },
     "identifiers": {

@@ -469,9 +469,7 @@
       "name": "JoVE",
       "setup": {
         "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-        "pasteUrl": "Paste a full JoVE URL from a supported",
-        "pasteUrlOr": "or",
-        "pasteUrlSuffix": "page, for example",
+        "pasteUrlStep": "Paste a full JoVE URL from a supported <code>{domain}</code> page, for example <code>{exampleUrl}</code> or <code>{appExampleUrl}</code>.",
         "step1": "Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.",
         "step2": "Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position."
       },

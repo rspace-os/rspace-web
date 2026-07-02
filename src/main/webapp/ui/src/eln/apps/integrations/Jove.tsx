@@ -42,10 +42,10 @@ function Jove(): React.ReactNode {
                 <TransRichText i18nKey="apps:integrations.jove.setup.step1" />
               </li>
               <li>
-                {t("integrations.jove.setup.pasteUrl")} <code>{exampleDomain}</code>{" "}
-                {t("integrations.jove.setup.pasteUrlSuffix")} <code>{exampleUrl}</code>{" "}
-                {t("integrations.jove.setup.pasteUrlOr")} <code>{appExampleUrl}</code>
-                {"."}
+                <TransRichText
+                  i18nKey="apps:integrations.jove.setup.pasteUrlStep"
+                  values={{ domain: exampleDomain, exampleUrl, appExampleUrl }}
+                />
               </li>
               <li>
                 <TransRichText i18nKey="apps:integrations.jove.setup.step2" />
