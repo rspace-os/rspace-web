@@ -2,7 +2,6 @@ package com.researchspace.slack;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.core.util.JacksonUtil;
-import jakarta.annotation.Nullable;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.Instant;

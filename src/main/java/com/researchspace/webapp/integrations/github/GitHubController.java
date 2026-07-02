@@ -11,7 +11,6 @@ import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError;
 import com.researchspace.webapp.integrations.helper.OauthAuthorizationError.OauthAuthorizationErrorBuilder;
-import jakarta.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Paths;
 import java.security.Principal;

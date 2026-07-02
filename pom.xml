@@ -732,12 +732,22 @@
           <groupId>org.apache.httpcomponents.core5</groupId>
           <artifactId>httpcore5</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>httpcore5-h2</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
-    <!-- apache5-client's tree diverges on httpcore5 (5.4 vs 5.4.2); excluded above and pinned here -->
+    <!-- apache5-client (s3) and httpclient5 5.6.1 both drag in httpcore5 / httpcore5-h2 at 5.4;
+         excluded from those trees and pinned here to the newer 5.4.2 patch so they converge. -->
     <dependency>
       <groupId>org.apache.httpcomponents.core5</groupId>
       <artifactId>httpcore5</artifactId>
+      <version>5.4.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents.core5</groupId>
+      <artifactId>httpcore5-h2</artifactId>
       <version>5.4.2</version>
     </dependency>
     <dependency>
@@ -1703,11 +1713,20 @@
     <dependency>
       <groupId>org.apache.httpcomponents.client5</groupId>
       <artifactId>httpclient5</artifactId>
-      <version>5.2.3</version>
+      <version>5.6.1</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
           <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <!-- httpclient5 5.6.1 pulls httpcore5/httpcore5-h2 5.4; we pin both to 5.4.2 below -->
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>httpcore5</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>httpcore5-h2</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
