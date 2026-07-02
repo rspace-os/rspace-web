@@ -9,7 +9,7 @@ Below is the main docker-compose.yaml file:
 ```
 services:
     rspace-db:
-      image: 'mariadb:lts-jammy'
+      image: 'mariadb:lts'
       restart: always
       container_name: rspace-db
       volumes:
@@ -52,4 +52,4 @@ You will also need the SQL file to import into the DB, which you can find here -
 
 At this stage you will need to import the SQL file into the database, you can do this by coping the file into the docker container and then importing the file from the containers bash command line.
 
-You may now go back to continue the Getting Started Guide.  
+You may now go back to continue the Getting Started Guide.
