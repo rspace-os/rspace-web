@@ -1,38 +1,5 @@
-<%@ include file="/common/taglibs.jsp"%>
-<!DOCTYPE html>
-<html>
-<head>
-    <title><fmt:message key="403.title"/></title>
-    <meta name="heading" content="<fmt:message key='403.title'/>"/>
-    <style>
-    	.errorBlock {
-    		max-width: 449px;
-    		padding: 15px;
-    		margin: 0 auto;
-    		font-size: 14px;
-    		line-height: 18px;
-    		text-align: center;
-    	}
-    	.errorBlock img {
-    		max-width: 200px;
-    	}
-    	.errorBlock h2 {
-    		color: #333;
-    		margin: 15px 0 10px;
-    	}
-    </style>
-</head>
-<body>
-<div id="errorContainer" style="margin-top: 20px;">
-<div class="errorBlock">
-    <img src="<c:url value="/images/mainLogo3.svg"/>" alt="RSpace" />
-    <h2><fmt:message key="403.title"/></h2>
-</div>
-<div class="errorBlock">
-    <fmt:message key="403.message">
-        <fmt:param><c:url value="/"/></fmt:param>
-    </fmt:message>
-</div>
-</div>
-</body>
-</html>
+<jsp:include page="/WEB-INF/pages/error/simpleErrorPage.jsp">
+    <jsp:param name="titleKey" value="403.title"/>
+    <jsp:param name="messageKey" value="403.message"/>
+    <jsp:param name="linkUrl" value="/"/>
+</jsp:include>

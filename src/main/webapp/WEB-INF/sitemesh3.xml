@@ -50,9 +50,9 @@
     <mapping path="/listOfMaterials/**" exclude="true"/>
     <mapping path="*/public/inventory/**" exclude="true"/>
     <mapping path="/apps" exclude="true"/>
-    <mapping path="/gallery" exclude="true"/>
+    <!-- '*' spans path segments in SiteMesh 3's PathMapper, so /gallery* already covers
+         /gallery and every /gallery/** subpath (the whole reactified gallery module). -->
     <mapping path="/gallery*" exclude="true"/>
-    <mapping path="/gallery/**" exclude="true"/>
     <mapping path="/about" exclude="true"/>
     <mapping path="/about/**" exclude="true"/>
 
