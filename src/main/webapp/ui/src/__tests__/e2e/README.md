@@ -11,24 +11,25 @@ tests (`*.api.spec.ts`) that run against a real RSpace instance.
 
 ## Configuration
 
-Copy the template and fill in values:
+All variables have seed-data defaults — no `.env` file is needed for a standard
+local stack. Copy the template only if you need to override for a non-seed
+environment (pangolin, cloud staging):
 
 ```bash
 cp src/main/webapp/ui/.env.example src/main/webapp/ui/.env
 ```
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `RSPACE_BASE_URL` | `http://localhost:8080` | No | Target instance URL |
-| `HEADLESS` | `true` | No | Set `false` to watch browsers |
-| `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | No | Sysadmin username |
-| `RSPACE_SYSADMIN_PASSWORD` | — | **Yes** | Sysadmin password |
-| `RSPACE_TEST_API_KEY` | — | **Yes** | API key for API tests |
-| `RSPACE_TEST_USERNAME` | `user1a` | No | Override test user (UI tests use `appUser`) |
-| `RSPACE_TEST_PASSWORD` | `user1234` | No | Override test user password |
+| Variable | Default | Description |
+|---|---|---|
+| `RSPACE_BASE_URL` | `http://localhost:8080` | Target instance URL |
+| `HEADLESS` | `true` | Set `false` to watch browsers |
+| `E2E_BROWSER` | _(all)_ | Limit to one project: `chromium`, `firefox`, `webkit`, or `api` |
+| `RSPACE_SYSADMIN_USERNAME` | `sysadmin1` | Sysadmin username |
+| `RSPACE_SYSADMIN_PASSWORD` | `sysWisc23!` | Sysadmin password |
+| `RSPACE_SYSADMIN_API_KEY` | `abcdefghijklmnop12` | Sysadmin API key |
 
-UI tests use seed users (`user1a`–`user3c`) with password `user1234` via the
-`appUser` fixture — no env vars needed for them on a fresh local stack.
+All three sysadmin variables default to the devtest seed values. Override them
+when targeting an environment where the sysadmin credentials differ.
 
 ## Running locally
 
@@ -36,17 +37,14 @@ UI tests use seed users (`user1a`–`user3c`) with password `user1234` via the
 # All browsers + API
 pnpm run test-e2e
 
-# Single browser
-pnpm run test-e2e -- --project=chromium
+# Single browser (use E2E_BROWSER — --project flag does not work through pnpm)
+E2E_BROWSER=chromium pnpm run test-e2e
 
 # API tests only
 pnpm run test-e2e:api
 
 # Watch mode (headed)
 pnpm run test-e2e:ui
-
-# Specific file
-pnpm run test-e2e -- src/__tests__/e2e/specs/auth/login.e2e.ts
 
 # Tag filter
 pnpm run test-e2e -- --grep @smoke
@@ -94,7 +92,7 @@ src/__tests__/e2e/
     models/            # TypeScript types for request/response bodies
   fixtures.ts          # Import test + expect from here — not from @playwright/test
   env.ts               # All env/config reading — nowhere else
-  users.ts             # Seed user map (user1a–user8h, password: user1234)
+  users.ts             # Seed user map (user1a–user10 + SYSADMIN, password: user1234)
   tags.ts              # @smoke, @apps tag constants
   integrationMode.ts   # mock | real switch (used by @apps specs)
 ```
@@ -117,15 +115,55 @@ RSpace uses `data-test-id` (not `data-testid`). The config sets
   `WebKit encountered an internal error`. The webkit project sets
   `ignoreHTTPSErrors: true` to bypass this. Does not apply to chromium/firefox.
 
+  When a `beforeAll` creates a secondary context via `browser.newContext()`,
+  the project-level option does **not** carry over automatically. Use the
+  `browserContextOptions` fixture instead of a hand-written condition:
+
+  ```ts
+  test.beforeAll(async ({ browser, browserContextOptions, appUser }) => {
+    const ctx = await browser.newContext(browserContextOptions);
+    // ...
+  });
+  ```
+
 ## Parallel isolation
 
-Each browser project uses a distinct seed user so shards don't collide on
+Each project uses a distinct seed user so parallel shards don't collide on
 shared backend state:
 
-| Project | User |
-|---|---|
-| chromium | user1a |
-| firefox | user2b |
-| webkit | user3c |
+| Project | User | Roles |
+|---|---|---|
+| chromium | user1a | PI + USER |
+| firefox | user3c | PI + USER |
+| webkit | user4d | PI + USER |
+| api | user2b | USER |
 
-Override per-test via the `appUser` fixture option.
+All browser projects use PI+USER accounts so PI-gated actions behave
+consistently across browsers. USER-only accounts (`user6f`, `user8h`) are
+reserved for tests that explicitly verify non-PI behaviour.
+
+See `users.ts` for the full seed user map (`user1a`–`user10`).
+
+### Before picking a seed user for a new test
+
+A seed user's workspace root folder is created lazily on their **first UI
+login** — never by account creation or by an API-key request. An account
+that has never logged in has no root folder yet, and any workspace-touching
+call (e.g. `POST /api/v1/documents`) 500s with a `Folder.addChild` NPE. This
+resets on every `drop-recreate-db`, so it can resurface even for an account
+that worked before.
+
+| User | Role | Group / PI-of | Status |
+|---|---|---|---|
+| `user1a` | PI + USER | **PI** of a lab group | Used by `chromium` — don't reuse as a second actor in the same run |
+| `user2b` | USER | member of `user1a`'s group | Used by `api` — already has a root folder, safe to reuse for a second HTTP-only actor |
+| `user3c` | PI + USER | **PI** of a lab group | Used by `firefox` — don't reuse as a second actor in the same run |
+| `user4d` | PI + USER | member of `user3c`'s group (not its PI) | Used by `webkit` — don't reuse as a second actor in the same run |
+| `sysadmin1` | SYSADMIN | — | Used by `flowSysadminConfig` |
+| `user7g` | PI + USER | none — holds the PI role but isn't PI of any group | Free, but has never logged in; also can't do group-PI actions without first creating a group for it |
+| `user6f`, `user8h`, `user9i`, `user10` | USER | none | Free, but have never logged in |
+
+If a new project or multi-actor test needs a fresh seed user, prefer one
+already marked "free" above — but if it's never logged in, add it to
+`auth.setup.ts`'s `accounts` list first so its root folder exists before any
+spec runs, rather than discovering the NPE mid-test.

@@ -94,7 +94,16 @@ test("...", async ({ pageInventory }) => {
 **Exception:** `beforeAll` hooks that call `browser.newContext()` to create an
 isolated context (e.g. sysadmin setup, per-user app enablement). Those operate
 on a custom `page` that fixtures cannot target, so manual instantiation is
-correct and intentional.
+correct and intentional. Always pass the `browserContextOptions` fixture to
+`browser.newContext()` — it carries the WebKit TLS workaround that the
+project-level config sets but that manual contexts do not inherit automatically:
+
+```ts
+test.beforeAll(async ({ browser, browserContextOptions, appUser }) => {
+  const ctx = await browser.newContext(browserContextOptions);
+  // ...
+});
+```
 
 If a page object fixture is missing from `fixtures.ts`, add it there rather than
 instantiating the class in the spec.
