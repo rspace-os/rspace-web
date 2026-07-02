@@ -3,12 +3,20 @@
 <fmt:bundle basename="bundles.admin.admin">
 <head>
     <title><fmt:message key="admin.title"/></title>
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.css'/>" />
-    <link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
-    <script src="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.min.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
-    <script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 </head>
+
+<%-- Assets for the admin menu below. They live here in the body, NOT in the <head> above,
+     because admin.jsp is included as a fragment by ~13 pages that each declare their own <head>
+     first, and SiteMesh 3 keeps only the first <head> when heads nest. A second head here is
+     dropped and its scripts silently lost (breaking e.g. userform, which calls
+     applyAffiliationAutocomplete at init). Body <script>/<link> tags survive fragment inlining and
+     run before document.ready, which is when the menu init and those callers execute. The standalone
+     /admin page still gets its <title> from the head above. --%>
+<link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.css'/>" />
+<link rel="stylesheet" href="<rst:assetUrl value='/styles/admin.css'/>" />
+<script src="<rst:assetUrl value='/scripts/bower_components/slick-carousel/slick/slick.min.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
+<script src="<rst:assetUrl value='/scripts/pages/admin.js'/>"></script>
 
 <div class="separator"></div>
 <div id="menuScrollContainer">
