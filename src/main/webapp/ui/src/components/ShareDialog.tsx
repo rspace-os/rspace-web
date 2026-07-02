@@ -143,12 +143,6 @@ function ShareDialogFromGlobalEvent(): React.ReactNode {
 
 export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false }: ShareDialogProps) {
   const { t } = useTranslation("common");
-  /*
-   * The noun for the shared items ("document" vs "snippet") is selected inside
-   * each ICU message via `itemType`, so every locale supplies its own
-   * correctly-declined and pluralised noun. It is derived from `isSnippet`
-   * rather than passed as a separate prop.
-   */
   const itemType: string = isSnippet ? "snippet" : "document";
   const [shareData, setShareData] = React.useState<
     Map<

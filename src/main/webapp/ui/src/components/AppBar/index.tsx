@@ -310,15 +310,9 @@ type GalleryAppBarArgs = {
   variant: "page" | "dialog";
 
   /**
-   * The app bar is used across the product on whole pages and some dialogs. If
-   * the variant is "page" then we provide a series of links for jumping
-   * between the main parts of the product and if the `currentPage` is one of
-   * the stable tab keys (see {@link TabKey}, e.g. "gallery", "inventory",
-   * "workspace") then that tab is shown as active. The keys are deliberately
-   * not translated: they are stable identifiers that callers pass and that we
-   * compare against here; only the labels shown to the user are translated.
-   * If the variant is "dialog" then `currentPage` is just used to show a
-   * heading, so any (already-translated) string may be passed.
+   * For the "page" variant, a {@link TabKey} marks the active tab. For the
+   * "dialog" variant this is only shown as a heading, so any (already
+   * translated) string may be passed.
    */
   currentPage: TabKeyHint;
 
@@ -390,12 +384,6 @@ function GalleryAppBar({
 
   const isTabbedPage = (TAB_KEYS as ReadonlyArray<string>).includes(currentPage);
 
-  /*
-   * Translated title/subheader for each tabbed section, keyed by the stable
-   * tab key passed in `currentPage`. The keys themselves stay untranslated
-   * because they are compared against `currentPage` to mark the active tab;
-   * only the displayed labels are translated.
-   */
   const sectionLabels: Record<TabKey, { title: string; subheader: string }> = {
     workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
     gallery: { title: t("appBar.sections.gallery.title"), subheader: t("appBar.sections.gallery.subheader") },
