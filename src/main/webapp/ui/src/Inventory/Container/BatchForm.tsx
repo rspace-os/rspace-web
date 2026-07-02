@@ -36,7 +36,7 @@ function OverviewSection({ collection, recordsCount }: { collection: ContainerCo
       <Image fieldOwner={collection} alt={t("container.batch.imageAlt", { count: collection.size })} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">{t("container.batch.largeImageWarning")}</Alert>
+          <Alert severity="info">{t("bulkAlerts.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

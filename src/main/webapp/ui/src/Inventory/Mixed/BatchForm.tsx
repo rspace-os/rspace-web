@@ -44,7 +44,7 @@ function OverviewSection({
       <Image fieldOwner={collection} alt={t("mixed.batch.imageAlt")} />
       {collection.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">{t("mixed.batch.largeImageWarning")}</Alert>
+          <Alert severity="info">{t("bulkAlerts.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

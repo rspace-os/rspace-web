@@ -1257,7 +1257,6 @@ export default interface Resources {
     "helpDocs": {
       "chatWithUs": "Chat with us",
       "docLinks": {
-        "IGSNIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
         "apiDirect": "v0dxtfvj7u-api-direct-access",
         "appsIntroduction": "08ky7o0l1y-apps-introduction",
         "argos": "vkd8mt2ffb-argos-integration",
@@ -1292,6 +1291,7 @@ export default interface Resources {
         "gallery": "sl6mo1i9do-gallery",
         "gettingStarted": "tffkwcpizj-getting-started",
         "github": "y2080yw30x-github-integration",
+        "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
         "import": "a5zm2c3vtw-import-records",
         "irods": "xt21074dln-irods-integration",
         "jupyter": "gg0ao0rqpt-jupyter-integration",
@@ -1456,8 +1456,7 @@ export default interface Resources {
             "button": "disallow BioPortal Ontologies",
             "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
             "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
-          },
-          "onlyEnterprise": "Only available on Enterprise"
+          }
         },
         "dialog": {
           "addError": "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
@@ -1496,7 +1495,6 @@ export default interface Resources {
             "text": "Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from ontology files. These ontology files must be shared with a Group and any user creating new tags must be a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from free text and will not autopopulate from existing tags.",
             "title": "Enforce ontologies for tags"
           },
-          "onlyEnterprise": "Only available on Enterprise",
           "unenforce": {
             "button": "un-enforce Ontologies",
             "text": "Un-enforcing use of ontologies for tags will result in group members being able to enter free text when creating new tags. They may also use values autopopulated from ontology files. These ontology files may be their own, or may be files shared with them. They may also use values autopopulated from existing tags.",
@@ -1514,9 +1512,7 @@ export default interface Resources {
             "button": "enable publication",
             "text": "Enabling group-wide publication will allow non-PI members in the <strong>{groupDisplayName}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
             "title": "Enable group publication"
-          },
-          "notAvailableForCollaboration": "Not available for collaboration groups",
-          "onlyEnterprise": "Only available on Enterprise"
+          }
         },
         "seo": {
           "disable": {
@@ -1529,9 +1525,7 @@ export default interface Resources {
             "button": "enable published seo",
             "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
             "title": "Enable group-wide SEO for published documents"
-          },
-          "notAvailableForCollaboration": "Not available for collaboration groups",
-          "onlyEnterprise": "Only available on Enterprise"
+          }
         },
         "table": {
           "actions": "Actions",
@@ -2593,6 +2587,7 @@ export default interface Resources {
           "title": "The sample '{name}' includes subsamples that are in containers."
         }
       },
+      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
       "success": {
         "detail": "{operation} \"{name}\".",
         "items": "Items",
@@ -2606,7 +2601,6 @@ export default interface Resources {
       },
       "batch": {
         "imageAlt": "What the {count} containers look like",
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "title": "{count} Containers"
       },
       "content": {
@@ -3941,7 +3935,6 @@ export default interface Resources {
     "mixed": {
       "batch": {
         "imageAlt": "What all of the items look like",
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "title": "{count} Items"
       }
     },
@@ -4185,7 +4178,6 @@ export default interface Resources {
       },
       "batch": {
         "imageAlt": "What the {count} samples look like",
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "title": "{count} Samples"
       },
       "contextMenu": {
@@ -4535,7 +4527,6 @@ export default interface Resources {
       "batch": {
         "imageAlt": "What the {count} subsamples look like",
         "itemsTableLabel": "Subsamples being edited",
-        "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
         "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
         "title": "Batch editing {count} subsamples"
       },
@@ -4566,12 +4557,18 @@ export default interface Resources {
     "tableColumns": {
       "containerType": "Container Type",
       "contents": "Contents",
+      "currentLocation": "Current Location",
       "expiryDate": "Expiry Date",
+      "gridCoordinates": "Grid Coordinates",
+      "lastMoved": "Last Moved",
       "numberOfEmptyLocations": "Number of Empty Locations",
       "owner": "Owner",
+      "previousLocation": "Previous Location",
+      "quantity": "Quantity",
       "sample": "Sample",
       "subsamplesCount": "Subsamples Count",
-      "tags": "Tags"
+      "tags": "Tags",
+      "version": "Version"
     },
     "tables": {
       "adjustableHeadCell": {

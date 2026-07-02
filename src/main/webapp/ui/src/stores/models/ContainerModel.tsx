@@ -800,24 +800,24 @@ export default class ContainerModel
 
     const options: AdjustableTableRowOptions<string> = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel !== "full") {
-      options.set("Contents", () => ({ renderOption: "node", data: null }));
+      options.set("contents", () => ({ renderOption: "node", data: null }));
     } else {
-      options.set("Contents", () => ({
+      options.set("contents", () => ({
         renderOption: "node",
         data: <ContentsChips record={this} />,
       }));
     }
-    options.set("Number of Empty Locations", () => ({
+    options.set("numberOfEmptyLocations", () => ({
       renderOption: "node",
       data: renderAvailableLocations(),
     }));
     if (this.readAccessLevel === "public") {
-      options.set("Container Type", () => ({
+      options.set("containerType", () => ({
         renderOption: "node",
         data: null,
       }));
     } else {
-      options.set("Container Type", () => ({
+      options.set("containerType", () => ({
         renderOption: "node",
         data: this.containerTypeLabel,
       }));

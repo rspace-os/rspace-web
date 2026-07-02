@@ -68,7 +68,7 @@ export default function IgsnManagementPage({
               <TransRichText
                 i18nKey="inventory:igsnManagement.idsDescription"
                 components={{
-                  a: <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers} />,
+                  a: <Link target="_blank" rel="noreferrer" href={docLinks.igsnIdentifiers} />,
                 }}
               />
             </Typography>

@@ -42,7 +42,7 @@ function OverviewSection({ setOfSubSamples, recordsCount }: OverviewSectionArgs)
       <Image fieldOwner={setOfSubSamples} alt={t("subsample.batch.imageAlt", { count: setOfSubSamples.size })} />
       {setOfSubSamples.isFieldEditable("image") && (
         <Box sx={{ mt: 1 }}>
-          <Alert severity="info">{t("subsample.batch.largeImageWarning")}</Alert>
+          <Alert severity="info">{t("bulkAlerts.largeImageWarning")}</Alert>
         </Box>
       )}
       <BatchName

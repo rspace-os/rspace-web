@@ -127,6 +127,7 @@
         "title": "The sample '{name}' includes subsamples that are in containers."
       }
     },
+    "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
     "success": {
       "detail": "{operation} \"{name}\".",
       "items": "Items",
@@ -140,7 +141,6 @@
     },
     "batch": {
       "imageAlt": "What the {count} containers look like",
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
       "title": "{count} Containers"
     },
     "content": {
@@ -1475,7 +1475,6 @@
   "mixed": {
     "batch": {
       "imageAlt": "What all of the items look like",
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
       "title": "{count} Items"
     }
   },
@@ -1719,7 +1718,6 @@
     },
     "batch": {
       "imageAlt": "What the {count} samples look like",
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
       "title": "{count} Samples"
     },
     "contextMenu": {
@@ -2069,7 +2067,6 @@
     "batch": {
       "imageAlt": "What the {count} subsamples look like",
       "itemsTableLabel": "Subsamples being edited",
-      "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
       "quantityMixedUnitsWarning": "Quantity cannot be edited as the subsamples use a variety of different units.",
       "title": "Batch editing {count} subsamples"
     },
@@ -2100,12 +2097,18 @@
   "tableColumns": {
     "containerType": "Container Type",
     "contents": "Contents",
+    "currentLocation": "Current Location",
     "expiryDate": "Expiry Date",
+    "gridCoordinates": "Grid Coordinates",
+    "lastMoved": "Last Moved",
     "numberOfEmptyLocations": "Number of Empty Locations",
     "owner": "Owner",
+    "previousLocation": "Previous Location",
+    "quantity": "Quantity",
     "sample": "Sample",
     "subsamplesCount": "Subsamples Count",
-    "tags": "Tags"
+    "tags": "Tags",
+    "version": "Version"
   },
   "tables": {
     "adjustableHeadCell": {

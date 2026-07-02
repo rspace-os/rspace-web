@@ -269,9 +269,9 @@ export default class SubSampleModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel === "public") {
-      options.set("Sample", () => ({ renderOption: "node", data: null }));
+      options.set("sample", () => ({ renderOption: "node", data: null }));
     } else {
-      options.set("Sample", () => ({
+      options.set("sample", () => ({
         renderOption: "name",
         data: this.sample,
       }));

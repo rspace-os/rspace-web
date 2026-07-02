@@ -1,19 +1,25 @@
 import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 
 const columnLabelKeys = {
-  Name: "sortProperties.name",
-  Type: "sortProperties.type",
-  "Global ID": "sortProperties.globalId",
-  Created: "sortProperties.created",
-  "Last Modified": "sortProperties.lastModified",
-  Owner: "tableColumns.owner",
-  Tags: "tableColumns.tags",
-  Contents: "tableColumns.contents",
-  "Number of Empty Locations": "tableColumns.numberOfEmptyLocations",
-  "Container Type": "tableColumns.containerType",
-  "Expiry Date": "tableColumns.expiryDate",
-  "Subsamples Count": "tableColumns.subsamplesCount",
-  Sample: "tableColumns.sample",
+  containerType: "tableColumns.containerType",
+  contents: "tableColumns.contents",
+  created: "sortProperties.created",
+  currentLocation: "tableColumns.currentLocation",
+  expiryDate: "tableColumns.expiryDate",
+  globalId: "sortProperties.globalId",
+  gridCoordinates: "tableColumns.gridCoordinates",
+  lastModified: "sortProperties.lastModified",
+  lastMoved: "tableColumns.lastMoved",
+  name: "sortProperties.name",
+  numberOfEmptyLocations: "tableColumns.numberOfEmptyLocations",
+  owner: "tableColumns.owner",
+  previousLocation: "tableColumns.previousLocation",
+  quantity: "tableColumns.quantity",
+  sample: "tableColumns.sample",
+  subsamplesCount: "tableColumns.subsamplesCount",
+  tags: "tableColumns.tags",
+  type: "sortProperties.type",
+  version: "tableColumns.version",
 } as const;
 
 type ColumnLabel = keyof typeof columnLabelKeys;

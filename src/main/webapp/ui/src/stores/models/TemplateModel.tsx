@@ -424,9 +424,9 @@ export default class TemplateModel extends SampleModel implements Template {
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = super.adjustableTableOptions();
-    options.delete("Subsamples Count");
-    options.delete("Quantity");
-    options.set("Version", () => ({
+    options.delete("subsamplesCount");
+    options.delete("quantity");
+    options.set("version", () => ({
       renderOption: "node",
       data: this.version,
     }));

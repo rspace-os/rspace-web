@@ -707,17 +707,17 @@ export default class SampleModel
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = super.adjustableTableOptions();
     if (this.readAccessLevel !== "public") {
-      options.set("Expiry Date", () => ({
+      options.set("expiryDate", () => ({
         renderOption: "node",
         data: this.expiryDate ?? "NONE",
       }));
-      options.set("Subsamples Count", () => ({
+      options.set("subsamplesCount", () => ({
         renderOption: "node",
         data: this.subSamplesCount,
       }));
     } else {
-      options.set("Expiry Date", () => ({ renderOption: "node", data: null }));
-      options.set("Subsamples Count", () => ({
+      options.set("expiryDate", () => ({ renderOption: "node", data: null }));
+      options.set("subsamplesCount", () => ({
         renderOption: "node",
         data: null,
       }));

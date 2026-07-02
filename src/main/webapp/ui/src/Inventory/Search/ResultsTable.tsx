@@ -122,6 +122,10 @@ function ResultsTable({ contextMenuId }: ResultsTableArgs): React.ReactNode {
   ];
   const count = search.count;
   const rowsPerPageOptions = paginationOptions(count);
+  React.useEffect(() => {
+    search.resetColumnLabelSettingsIfUnknown();
+  });
+
   return (
     <>
       <ScrollBox overflowY="auto" overflowX="auto">

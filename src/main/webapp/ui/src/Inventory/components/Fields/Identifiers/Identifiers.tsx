@@ -451,7 +451,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a href={docLinks.IGSNIdentifiers} target="_blank" rel="noreferrer">
+              <a href={docLinks.igsnIdentifiers} target="_blank" rel="noreferrer">
                 {t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>
@@ -626,7 +626,7 @@ function Identifiers<
         fieldOwner.isFieldEditable("identifiers") ? (
           <TransRichText
             i18nKey="inventory:fields.identifiers.formField.explanation"
-            values={{ link: docLinks.IGSNIdentifiers }}
+            values={{ link: docLinks.igsnIdentifiers }}
           />
         ) : null
       }

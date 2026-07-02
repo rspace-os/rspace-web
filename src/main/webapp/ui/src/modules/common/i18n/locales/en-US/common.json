@@ -258,7 +258,7 @@
       "gallery": "sl6mo1i9do-gallery",
       "gettingStarted": "tffkwcpizj-getting-started",
       "github": "y2080yw30x-github-integration",
-      "IGSNIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+      "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
       "import": "a5zm2c3vtw-import-records",
       "irods": "xt21074dln-irods-integration",
       "jupyter": "gg0ao0rqpt-jupyter-integration",
@@ -423,8 +423,7 @@
           "button": "disallow BioPortal Ontologies",
           "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
           "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
-        },
-        "onlyEnterprise": "Only available on Enterprise"
+        }
       },
       "dialog": {
         "addError": "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
@@ -463,7 +462,6 @@
           "text": "Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from ontology files. These ontology files must be shared with a Group and any user creating new tags must be a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from free text and will not autopopulate from existing tags.",
           "title": "Enforce ontologies for tags"
         },
-        "onlyEnterprise": "Only available on Enterprise",
         "unenforce": {
           "button": "un-enforce Ontologies",
           "text": "Un-enforcing use of ontologies for tags will result in group members being able to enter free text when creating new tags. They may also use values autopopulated from ontology files. These ontology files may be their own, or may be files shared with them. They may also use values autopopulated from existing tags.",
@@ -481,9 +479,7 @@
           "button": "enable publication",
           "text": "Enabling group-wide publication will allow non-PI members in the <strong>{groupDisplayName}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
           "title": "Enable group publication"
-        },
-        "notAvailableForCollaboration": "Not available for collaboration groups",
-        "onlyEnterprise": "Only available on Enterprise"
+        }
       },
       "seo": {
         "disable": {
@@ -496,9 +492,7 @@
           "button": "enable published seo",
           "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
           "title": "Enable group-wide SEO for published documents"
-        },
-        "notAvailableForCollaboration": "Not available for collaboration groups",
-        "onlyEnterprise": "Only available on Enterprise"
+        }
       },
       "table": {
         "actions": "Actions",

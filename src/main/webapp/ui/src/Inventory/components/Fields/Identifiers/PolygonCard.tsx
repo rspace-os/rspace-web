@@ -299,7 +299,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             {editable
               ? t("fields.identifiers.polygonCard.editorTitle")
               : t("fields.identifiers.polygonCard.configurationTitle")}
-            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title={t("fields.identifiers.polygonCard.helpTitle")} />
+            <HelpLinkIcon link={docLinks.igsnIdentifiers} title={t("fields.identifiers.polygonCard.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
             {t("fields.identifiers.polygonCard.polygonDescription")}

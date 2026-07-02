@@ -45,7 +45,7 @@ import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
-import InventoryBaseRecord from "./InventoryBaseRecord";
+import InventoryBaseRecord, { sortProperties } from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import type { TemplateAttrs } from "./TemplateModel";
@@ -53,6 +53,26 @@ import TreeModel, { type TreeAttrs } from "./TreeModel";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
+const DEFAULT_MAIN_COLUMN = "name";
+const DEFAULT_ADJUSTABLE_COLUMNS: Array<AdjustableTableRowLabel> = ["globalId", "owner", "lastModified"];
+const VALID_MAIN_COLUMNS = new Set<AdjustableTableRowLabel>(sortProperties.map(({ label }) => label));
+const BUILT_IN_ADJUSTABLE_COLUMNS = new Set<AdjustableTableRowLabel>([
+  ...VALID_MAIN_COLUMNS,
+  "containerType",
+  "contents",
+  "currentLocation",
+  "expiryDate",
+  "gridCoordinates",
+  "lastMoved",
+  "numberOfEmptyLocations",
+  "owner",
+  "previousLocation",
+  "quantity",
+  "sample",
+  "subsamplesCount",
+  "tags",
+  "version",
+]);
 
 export const getViewGroup = (view: SearchView): "dynamic" | "cache" | "static" =>
   match<SearchView, "dynamic" | "cache" | "static">([
@@ -96,9 +116,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
     "SAMPLE_TEMPLATE",
     "INSTRUMENT_TEMPLATE",
   ]),
-  mainColumn: "Name",
-  // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-  adjustableColumns: ["Global ID", "Owner", "Last Modified"],
+  mainColumn: DEFAULT_MAIN_COLUMN,
+  adjustableColumns: [...DEFAULT_ADJUSTABLE_COLUMNS],
   selectionMode: "MULTIPLE",
   instantConfirm: true,
   highlightActiveResult: true,
@@ -170,6 +189,7 @@ export default class Search implements SearchInterface {
       setSearchView: action,
       refetchActiveResult: action,
       setAdjustableColumn: action,
+      resetColumnLabelSettingsIfUnknown: action,
       setOwner: action,
       setBench: action,
       setTypeFilter: action,
@@ -217,7 +237,9 @@ export default class Search implements SearchInterface {
     this.uiConfig = {
       ...DEFAULT_UI_CONFIG,
       ...uiConfig,
+      adjustableColumns: [...(uiConfig?.adjustableColumns ?? DEFAULT_UI_CONFIG.adjustableColumns)],
     };
+    this.resetColumnLabelSettingsIfUnknown();
     this.overrideSearchOnFilter = null;
 
     this.batchEditingRecords = null;
@@ -1291,6 +1313,22 @@ export default class Search implements SearchInterface {
 
   setAdjustableColumn(value: AdjustableTableRowLabel, index: number) {
     this.uiConfig.adjustableColumns[index] = value;
+  }
+
+  resetColumnLabelSettingsIfUnknown(): void {
+    const hasUnknownMainColumn = !VALID_MAIN_COLUMNS.has(this.uiConfig.mainColumn);
+    const adjustableColumnOptions = this.adjustableColumnOptions;
+    const hasUnknownAdjustableColumn = this.uiConfig.adjustableColumns.some(
+      (column) =>
+        !BUILT_IN_ADJUSTABLE_COLUMNS.has(column) &&
+        adjustableColumnOptions.size > 0 &&
+        !adjustableColumnOptions.has(column),
+    );
+
+    if (hasUnknownMainColumn || hasUnknownAdjustableColumn) {
+      this.uiConfig.mainColumn = DEFAULT_MAIN_COLUMN;
+      this.uiConfig.adjustableColumns = [...DEFAULT_ADJUSTABLE_COLUMNS];
+    }
   }
 
   performSearch() {

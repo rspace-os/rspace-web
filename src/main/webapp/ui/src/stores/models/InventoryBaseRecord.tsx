@@ -75,14 +75,13 @@ export type InventoryBaseRecordUneditableFields = {
 };
 
 export const sortProperties: Array<SortProperty> = [
-  { key: "name", label: "Name", adjustColumn: false },
-  { key: "type", label: "Type", adjustColumn: false },
-  // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-  { key: "globalId", label: "Global ID", adjustColumn: true },
-  { key: "creationDate", label: "Created", adjustColumn: true },
+  { key: "name", label: "name", adjustColumn: false },
+  { key: "type", label: "type", adjustColumn: false },
+  { key: "globalId", label: "globalId", adjustColumn: true },
+  { key: "creationDate", label: "created", adjustColumn: true },
   {
     key: "modificationDate",
-    label: "Last Modified",
+    label: "lastModified",
     adjustColumn: true,
   },
 ];
@@ -1556,28 +1555,27 @@ export default class InventoryBaseRecord
     if (!this.owner) throw new Error("Owner is required");
     const owner = this.owner;
     const options: AdjustableTableRowOptions<string> = new Map();
-    options.set("Owner", () => ({ renderOption: "owner", data: owner }));
-    // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-    options.set("Global ID", () => ({ renderOption: "globalId", data: this }));
+    options.set("owner", () => ({ renderOption: "owner", data: owner }));
+    options.set("globalId", () => ({ renderOption: "globalId", data: this }));
     if (this.readAccessLevel !== "public") {
-      options.set("Last Modified", () => ({
+      options.set("lastModified", () => ({
         renderOption: "node",
         data: isoToLocale(this.lastModified),
       }));
-      options.set("Created", () => ({
+      options.set("created", () => ({
         renderOption: "node",
         data: isoToLocale(this.created),
       }));
-      options.set("Tags", () => ({
+      options.set("tags", () => ({
         renderOption: "tags",
         data: this.tags,
       }));
     } else {
-      options.set("Last Modified", () => ({
+      options.set("lastModified", () => ({
         renderOption: "node",
         data: null,
       }));
-      options.set("Created", () => ({ renderOption: "node", data: null }));
+      options.set("created", () => ({ renderOption: "node", data: null }));
     }
     return options;
   }

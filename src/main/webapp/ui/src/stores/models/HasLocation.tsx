@@ -210,41 +210,41 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
       ).orElse("");
 
       if (this.readAccessLevel !== "public") {
-        options.set("Previous Location", () =>
+        options.set("previousLocation", () =>
           this.lastNonWorkbenchParent
             ? { renderOption: "name", data: this.lastNonWorkbenchParent }
             : { renderOption: "node", data: null },
         );
-        options.set("Current Location", () => ({
+        options.set("currentLocation", () => ({
           renderOption: "location",
           data: this,
         }));
         if (this.immediateParentContainer?.cType === "GRID") {
-          options.set("Grid Coordinates", () => ({
+          options.set("gridCoordinates", () => ({
             renderOption: "node",
             data: gridCoordinatesLabel,
           }));
         }
-        options.set("Last Moved", () => ({
+        options.set("lastMoved", () => ({
           renderOption: "node",
           data: this.lastMoveDate ? this.lastMoveDate.toLocaleString() : "\u2014",
         }));
       } else {
-        options.set("Previous Location", () => ({
+        options.set("previousLocation", () => ({
           renderOption: "node",
           data: null,
         }));
-        options.set("Current Location", () => ({
+        options.set("currentLocation", () => ({
           renderOption: "node",
           data: null,
         }));
         if (this.immediateParentContainer?.cType === "GRID") {
-          options.set("Grid Coordinates", () => ({
+          options.set("gridCoordinates", () => ({
             renderOption: "node",
             data: null,
           }));
         }
-        options.set("Last Moved", () => ({ renderOption: "node", data: null }));
+        options.set("lastMoved", () => ({ renderOption: "node", data: null }));
       }
       return options;
     }

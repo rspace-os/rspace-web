@@ -483,7 +483,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     <Typography variant="body2" sx={{ ml: 0.5 }}>
                       <TransRichText
                         i18nKey="inventory:fieldmarkImport.igsnMessage"
-                        values={{ link: docLinks.IGSNIdentifiers }}
+                        values={{ link: docLinks.igsnIdentifiers }}
                       />
                     </Typography>
                   )}

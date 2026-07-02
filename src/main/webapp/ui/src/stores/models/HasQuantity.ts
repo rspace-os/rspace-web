@@ -73,7 +73,7 @@ export function HasQuantityMixin<TBase extends new (...args: any[]) => Inventory
 
     adjustableTableOptions(): AdjustableTableRowOptions<string> {
       const options = super.adjustableTableOptions();
-      options.set("Quantity", () => ({
+      options.set("quantity", () => ({
         renderOption: "node",
         data: this.quantityLabel,
       }));
