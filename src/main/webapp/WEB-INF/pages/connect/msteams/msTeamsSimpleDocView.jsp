@@ -3,13 +3,6 @@
 <head>
     <title>Simple document view for MS Teams</title>
 
-    <%-- Set before coreEditor.js (loaded deep inside the structuredDocument include) reads it.
-         Must live in this single head: SiteMesh 3 keeps only the first <head> when heads nest,
-         so it cannot sit in an inner head of an included sub-page. --%>
-    <script>
-        var isSimpleEditorView = true;
-    </script>
-
     <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/MicrosoftTeams_sdk_v1.0.min.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/connect/msteams/msTeamsInitialiser.js'/>"></script>
 
@@ -18,7 +11,10 @@
 </head>
 
 <body>
-<div class="bootstrap-custom-flat">
+<%-- Flags this as the simplified editor view for coreEditor.js (which reads it via the
+     [data-simple-editor-view] attribute selector to skip the file-tree browser). Lives in the
+     body content, which SiteMesh 3 writes verbatim, rather than as a head-script global. --%>
+<div class="bootstrap-custom-flat" data-simple-editor-view="true">
     <div id="loggedUserSimpleDocPanel">
         Logged in as: ${sessionScope.userInfo.username}
         <div id="simpleDocLogoutBtn" class="btn btn-primary">Sign out</div>

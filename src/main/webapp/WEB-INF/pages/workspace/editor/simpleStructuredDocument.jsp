@@ -1,7 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%-- Body fragment: emits NO <head> of its own (SiteMesh 3 keeps only the first head when heads
-     nest). The <title> and the isSimpleEditorView flag it used to declare now live in the single
-     <head> of the only caller, msTeamsSimpleDocView.jsp. --%>
+     nest). The <title> it used to declare now lives in the single <head> of the only caller,
+     msTeamsSimpleDocView.jsp, which also marks the simplified view via a [data-simple-editor-view]
+     attribute in the body (read by coreEditor.js). --%>
 
 <style>
     #fileBrowsing,
