@@ -3,22 +3,24 @@ packages: []
 
 overrides:
   # The @mui core overrides below are intentionally COMMENTED OUT, not deleted,
-  # so the history and rationale stay visible. They pin RSpace's MUI v9 family to
-  # 9.0.x (9.1.x has an ESM Transition.mjs bug under Vitest, mui#48644).
+  # so the history and rationale stay visible. (The 9.1.x ESM Transition.mjs bug
+  # under Vitest that originally motivated pinning to 9.0.x, mui#48644, was
+  # verified NOT to reproduce on @mui/material 9.1.2: full vitest suite green,
+  # so package.json now pins the family at 9.1.x.)
   # DO NOT re-enable them as bare-name overrides: that also forces ketcher-react@3.x
   # (which requires @mui/material@^5 and ships its own v5 copy) onto v9, so
   # Ketcher's macromolecule editor renders v9 Tabs/Tab and crashes with
   # "MUI: RovingTabIndexContext is missing" in the ELN editor. RSpace is already
-  # held at 9.0.x by the exact pins in package.json, which do not touch ketcher's
+  # held at 9.1.x by the exact pins in package.json, which do not touch ketcher's
   # nested v5 (the working arrangement on main). If a future case genuinely needs
   # these, scope them so ketcher-react's subtree keeps MUI v5.
-  #   '@mui/material': 9.0.1
-  #   '@mui/icons-material': 9.0.1
-  #   '@mui/system': 9.0.1
-  #   '@mui/styled-engine': 9.0.0
-  #   '@mui/utils': 9.0.1
-  #   '@mui/private-theming': 9.0.1
-  #   '@mui/core-downloads-tracker': 9.0.1
+  #   '@mui/material': 9.1.2
+  #   '@mui/icons-material': 9.1.1
+  #   '@mui/system': 9.1.2
+  #   '@mui/styled-engine': 9.1.1
+  #   '@mui/utils': 9.1.1
+  #   '@mui/private-theming': 9.1.1
+  #   '@mui/core-downloads-tracker': 9.1.2
   #   '@mui/types': 9.0.0
   # ketcher-react and ketcher-standalone declare ketcher-core@3.12 as a peer dep
   # but work with 3.15.0; the override pins a single version to avoid a tsc
@@ -32,15 +34,12 @@ overrides:
   # dependency (the workspace protocol only resolves inside miew's own
   # monorepo). Redirect it to the published miew 0.12.0 on npm.
   miew-react>miew: 0.12.0
-  # Pin rolldown to 1.0.1 (bundled in Vite 8.0.13) to avoid
-  # https://github.com/rolldown/rolldown/issues/9502 and
-  # https://github.com/vitejs/vite/issues/22499, where rolldown 1.0.2+
-  # generates pre-bundled chunks that call init_*() helpers without importing
-  # them, crashing the dev server with "init_emotion_react_... is not defined".
-  # The Ketcher circular-chunk crash that 1.0.1 reintroduces is worked around
-  # in vite.config.ts via output.codeSplitting (see comment there).
-  # Remove this override once a rolldown release resolves #9502.
-  rolldown: 1.0.1
+  # @mui/x-* is pinned at 9.8.0. Background: 9.6.0-9.7.0 shipped a broken
+  # @mui/x-internals that imports `core-js-pure/actual/disposable-stack` as a bare
+  # directory import, which Node/Vitest ESM rejects (ERR_UNSUPPORTED_DIR_IMPORT),
+  # failing ~22 test files at load time (mui/mui-x#22984). Fixed by mui/mui-x#22985:
+  # 9.8.0 drops the core-js-pure ponyfill entirely (native Symbol.dispose), so no
+  # vitest shim is needed.
 
 allowBuilds:
   lefthook: true
