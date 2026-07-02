@@ -1,6 +1,6 @@
+import { storageStatePath } from "@/__tests__/e2e/authState";
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "@/__tests__/e2e/integrationMode";
-import { LoginPage } from "@/__tests__/e2e/pageObjects/LoginPage";
 import type { FieldmarkDialogComponent } from "./pageObjects/FieldmarkDialogComponent";
 
 /**
@@ -26,17 +26,17 @@ test.describe
       await flowSysadminConfig.ensureSetting("fieldmark.available", "ALLOWED");
     });
 
-    // Enable Fieldmark for the test user via the Apps page.
-    test.beforeAll(async ({ browser, browserName, appUser }) => {
+    // Enable Fieldmark for the test user via the Apps page. Uses the
+    // appUser's storageState rather than logging in again — a second
+    // concurrent login as the same user racing the project's other specs'
+    // `flowLogin` can trip Hibernate's optimistic lock on `User`.
+    test.beforeAll(async ({ browser, browserContextOptions, appUser }) => {
       const ctx = await browser.newContext({
-        ignoreHTTPSErrors: browserName === "webkit",
+        ...browserContextOptions,
+        storageState: storageStatePath(appUser.username),
       });
       try {
         const page = await ctx.newPage();
-        const loginPage = new LoginPage(page);
-        await loginPage.open();
-        await loginPage.login(appUser.username, appUser.password);
-        await page.waitForURL((url) => !url.pathname.includes("/login"));
         await page.goto("/apps");
         await page.locator('div[aria-label="Fieldmark"]').click();
         const dialog = page.getByRole("dialog");

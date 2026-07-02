@@ -1,8 +1,8 @@
+import { storageStatePath } from "@/__tests__/e2e/authState";
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 import { INTEGRATION_MODE } from "@/__tests__/e2e/integrationMode";
 import { AppsPage } from "@/__tests__/e2e/pageObjects/AppsPage";
 import type { DocumentEditorPage } from "@/__tests__/e2e/pageObjects/DocumentEditorPage";
-import { LoginPage } from "@/__tests__/e2e/pageObjects/LoginPage";
 import type { PubchemDialogComponent } from "./pageObjects/PubchemDialogComponent";
 
 /**
@@ -22,14 +22,16 @@ test.describe
       await flowSysadminConfig.ensureSetting("chemistry.available", "ALLOWED");
     });
 
-    test.beforeAll(async ({ browser, browserName, appUser }) => {
-      const ctx = await browser.newContext({ ignoreHTTPSErrors: browserName === "webkit" });
+    // Uses the appUser's storageState rather than logging in again — a
+    // second concurrent login as the same user racing the project's other
+    // specs' `flowLogin` can trip Hibernate's optimistic lock on `User`.
+    test.beforeAll(async ({ browser, browserContextOptions, appUser }) => {
+      const ctx = await browser.newContext({
+        ...browserContextOptions,
+        storageState: storageStatePath(appUser.username),
+      });
       try {
         const page = await ctx.newPage();
-        const loginPage = new LoginPage(page);
-        await loginPage.open();
-        await loginPage.login(appUser.username, appUser.password);
-        await page.waitForURL((url) => !url.pathname.includes("/login"));
         await new AppsPage(page).setEnabled("Chemistry", true);
       } finally {
         await ctx.close();

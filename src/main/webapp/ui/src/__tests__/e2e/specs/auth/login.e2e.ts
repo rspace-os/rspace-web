@@ -1,5 +1,9 @@
 import { expect, tags, test } from "@/__tests__/e2e/fixtures";
 
+// The login flow itself is under test here — start unauthenticated instead of
+// the project's pre-harvested storageState session.
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe(`Login ${tags.SMOKE}`, () => {
   test("As a registered user, I can log in and land on the Workspace", async ({
     page,

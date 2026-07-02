@@ -1,6 +1,7 @@
-import type { APIRequestContext } from "@playwright/test";
-import { test as base, expect, mergeTests, request } from "@playwright/test";
+import type { APIRequestContext, BrowserContextOptions } from "@playwright/test";
+import { test as base, expect, request } from "@playwright/test";
 import { DocumentsClient } from "./api/clients/DocumentsClient";
+import { storageStatePath } from "./authState";
 import { env } from "./env";
 import { DocumentEditorPage } from "./pageObjects/DocumentEditorPage";
 import { DocumentPage } from "./pageObjects/DocumentPage";
@@ -34,6 +35,7 @@ export type E2EOptions = { appUser: AppUser };
  */
 const uiTest = base.extend<
   E2EOptions & {
+    browserContextOptions: BrowserContextOptions;
     pageLogin: LoginPage;
     pageWorkspace: WorkspacePage;
     pageDocument: DocumentPage;
@@ -43,6 +45,17 @@ const uiTest = base.extend<
   }
 >({
   appUser: [USERS.user1a, { option: true }],
+  /**
+   * Options to pass to `browser.newContext()` when specs create a secondary
+   * browser context (e.g. beforeAll sysadmin setup). Centralises the WebKit
+   * TLS workaround so call sites don't repeat the condition.
+   *
+   * WebKit bundled in Playwright uses an older TLS stack that rejects certain
+   * cipher suites. `ignoreHTTPSErrors: true` bypasses this for webkit only.
+   */
+  browserContextOptions: async ({ browserName }, use) => {
+    await use({ ignoreHTTPSErrors: browserName === "webkit" });
+  },
   pageLogin: async ({ page }, use) => {
     await use(new LoginPage(page));
   },
@@ -59,58 +72,29 @@ const uiTest = base.extend<
     await use(new InventoryPage(page));
   },
   /**
-   * Logs in via the UI form. Uses `appUser` (set per project in config) so
-   * each browser project authenticates as a distinct seed user, avoiding
-   * parallel-run state collisions.
+   * Delivers a loaded Workspace for an already-authenticated session. The
+   * browser project's `storageState` (harvested once by the `setup` project
+   * — see `auth.setup.ts`) carries the `appUser` session, so this only opens
+   * the workspace and confirms it loaded; it does not drive the login form.
    *
-   * Worth replacing with `storageState` reuse once login becomes the
-   * bottleneck.
+   * If the workspace fails to load, the storageState session is missing or
+   * stale — the usual cause is running a spec directly with a `--project`
+   * filter that excludes `setup`.
    */
-  flowLogin: async ({ pageLogin, pageWorkspace, appUser }, use) => {
-    await pageLogin.open();
-    await pageLogin.login(appUser.username, appUser.password);
+  flowLogin: async ({ pageWorkspace, appUser }, use) => {
+    await pageWorkspace.open();
     const loaded = await pageWorkspace.isLoaded();
     if (!loaded) {
       throw new Error(
-        `flowLogin: workspace did not load after login as '${appUser.username}'. ` +
-          "Login may have failed or the server returned an unexpected page.",
+        `flowLogin: workspace did not load for '${appUser.username}'. ` +
+          "The storageState session may be missing or stale — ensure the 'setup' project ran.",
       );
     }
     await use(pageWorkspace);
   },
 });
 
-/**
- * `flowSysadminConfig` — multi-step setup fixture following the `flow*` naming
- * convention. Creates an isolated browser context, logs in as sysadmin, opens
- * SystemConfigPage, and delivers a ready-to-use instance. Context is torn down
- * after the consumer (test or beforeAll) returns.
- *
- * Use when sysadmin system-level state is a precondition (e.g. enabling
- * chemistry.available before an Apps integration test).
- */
-const sysadminFixtures = base.extend<{
-  flowSysadminConfig: SystemConfigPage;
-}>({
-  flowSysadminConfig: async ({ browser, browserName }, use) => {
-    // Manually created contexts don't inherit the project-level ignoreHTTPSErrors.
-    const ctx = await browser.newContext({ ignoreHTTPSErrors: browserName === "webkit" });
-    try {
-      const page = await ctx.newPage();
-      const loginPage = new LoginPage(page);
-      await loginPage.open();
-      await loginPage.login(SYSADMIN.username, SYSADMIN.password);
-      await page.waitForURL((url) => !url.pathname.includes("/login"));
-      const configPage = new SystemConfigPage(page);
-      await configPage.open();
-      await use(configPage);
-    } finally {
-      await ctx.close();
-    }
-  },
-});
-
-const apiTest = base.extend<{
+const apiTest = uiTest.extend<{
   apiContext: APIRequestContext;
   clientDocuments: DocumentsClient;
 }>({
@@ -120,11 +104,39 @@ const apiTest = base.extend<{
     await use(context);
     await context.dispose();
   },
-  clientDocuments: async ({ apiContext }, use) => {
-    await use(new DocumentsClient(apiContext, env.testApiKey));
+  clientDocuments: async ({ apiContext, appUser }, use) => {
+    await use(new DocumentsClient(apiContext, appUser.apiKey));
   },
 });
 
-export const test = mergeTests(uiTest, apiTest, sysadminFixtures);
+/**
+ * `flowSysadminConfig` — multi-step setup fixture following the `flow*` naming
+ * convention. Creates an isolated browser context authenticated as sysadmin
+ * (via the storageState harvested by `auth.setup.ts`), opens SystemConfigPage,
+ * and delivers a ready-to-use instance. Context is torn down after the
+ * consumer (test or beforeAll) returns.
+ *
+ * Use when sysadmin system-level state is a precondition (e.g. enabling
+ * chemistry.available before an Apps integration test).
+ */
+export const test = apiTest.extend<{
+  flowSysadminConfig: SystemConfigPage;
+}>({
+  flowSysadminConfig: async ({ browser, browserContextOptions }, use) => {
+    const ctx = await browser.newContext({
+      ...browserContextOptions,
+      storageState: storageStatePath(SYSADMIN.username),
+    });
+    try {
+      const page = await ctx.newPage();
+      const configPage = new SystemConfigPage(page);
+      await configPage.open();
+      await use(configPage);
+    } finally {
+      await ctx.close();
+    }
+  },
+});
+
 export { tags } from "./tags";
 export { expect };
