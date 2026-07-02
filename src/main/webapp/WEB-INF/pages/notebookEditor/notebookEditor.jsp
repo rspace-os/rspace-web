@@ -1,6 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 <c:url var="createFromTemplateURL" value="/workspace/editor/structuredDocument/create/${selectedNotebookId}"></c:url>
+<head>
 <jsp:include page="notebookHeader.jsp" />
+</head>
 
 <body>
 
