@@ -141,7 +141,7 @@ describe("MoveToS3", () => {
       await selectMyS3Bucket(user);
       await user.click(screen.getByRole("button", { name: "common:actions.move" }));
 
-      expect(await screen.findByText(/gallery:s3\.success\.moved/i)).toBeVisible();
+      expect(await screen.findByText("gallery:s3.success.moved")).toBeVisible();
       const req = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(req).toBeDefined();
       expect((JSON.parse(req?.data as string) as { removeOriginalFromRspace: boolean }).removeOriginalFromRspace).toBe(
@@ -158,7 +158,7 @@ describe("MoveToS3", () => {
       await user.click(screen.getByRole("checkbox", { name: "gallery:moveToS3.retainRspaceCopy" }));
       await user.click(screen.getByRole("button", { name: "common:actions.copy" }));
 
-      expect(await screen.findByText(/gallery:s3\.success\.copied/i)).toBeVisible();
+      expect(await screen.findByText("gallery:s3.success.copied")).toBeVisible();
       const req = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(req).toBeDefined();
       expect((JSON.parse(req?.data as string) as { removeOriginalFromRspace: boolean }).removeOriginalFromRspace).toBe(
@@ -174,7 +174,7 @@ describe("MoveToS3", () => {
       await selectMyS3Bucket(user);
       await user.click(screen.getByRole("button", { name: "common:actions.move" }));
 
-      expect(await screen.findByText(/gallery:s3\.success\.moved/i)).toBeVisible();
+      expect(await screen.findByText("gallery:s3.success.moved")).toBeVisible();
       const moveRequest = mockAxios.history.post.find(({ url }) => url === "/filestores/1/uploadFromGallery");
       expect(moveRequest).toBeDefined();
       const body = JSON.parse(moveRequest?.data as string) as {
@@ -236,7 +236,7 @@ describe("MoveToS3", () => {
       await selectMyS3Bucket(user);
       await user.click(screen.getByRole("button", { name: "common:actions.transfer" }));
 
-      expect(await screen.findByText(/gallery:s3\.success\.transferred/i)).toBeVisible();
+      expect(await screen.findByText("gallery:s3.success.transferred")).toBeVisible();
       expect(mockAxios.history.post.some(({ url }) => url === "/filestores/2/transfer")).toBe(true);
     });
 
@@ -290,7 +290,7 @@ describe("MoveToS3", () => {
       await selectMyS3Bucket(user);
       await user.click(screen.getByRole("button", { name: "common:actions.transfer" }));
 
-      expect((await screen.findAllByText(/gallery:s3\.success\.transferred/i))[0]).toBeVisible();
+      expect((await screen.findAllByText("gallery:s3.success.transferred"))[0]).toBeVisible();
 
       const transferRequests = mockAxios.history.post.filter(({ url }) => url === "/filestores/2/transfer");
       expect(transferRequests).toHaveLength(2);

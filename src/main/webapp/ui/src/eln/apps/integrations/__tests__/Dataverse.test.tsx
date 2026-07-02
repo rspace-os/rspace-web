@@ -431,7 +431,7 @@ describe("Dataverse", () => {
       fireEvent.click(screen.getByRole("button", { name: /test/i }));
       expect(
         await screen.findByRole("alert", {
-          name: /integrations\.dataverse\.alerts\.testValid/,
+          name: "apps:integrations.dataverse.alerts.testValid",
         }),
       ).toBeVisible();
       expect(mockAxios.history.get.length).toBe(1);

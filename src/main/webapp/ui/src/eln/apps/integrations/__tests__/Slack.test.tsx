@@ -110,7 +110,7 @@ describe("Slack", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    expect(await screen.findByRole("alert", { name: /integrations\.slack\.alerts\.addSuccess/ })).toBeVisible();
+    expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
     expect(integrationState.credentials.length).toBe(1);
   });
   test("When the add flow is triggered, there should be a cancel button.", async () => {
@@ -243,7 +243,7 @@ describe("Slack", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: /save/i }));
-    expect(await screen.findByRole("alert", { name: /integrations\.slack\.alerts\.labelSuccess/ })).toBeVisible();
+    expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
     expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("1");
@@ -331,7 +331,7 @@ describe("Slack", () => {
     });
 
     fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
-    expect(await screen.findByRole("alert", { name: /integrations\.slack\.alerts\.labelSuccess/ })).toBeVisible();
+    expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(screen.getAllByRole("textbox")[1]).toHaveValue("also custom label");
   });
   test("Deleting a channel should make the right API call.", async () => {
@@ -370,7 +370,7 @@ describe("Slack", () => {
     fireEvent.click(screen.getByRole("button"));
 
     fireEvent.click(screen.getByRole("button", { name: /remove/i }));
-    expect(await screen.findByRole("alert", { name: /integrations\.slack\.alerts\.deleteSuccess/ })).toBeVisible();
+    expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
 

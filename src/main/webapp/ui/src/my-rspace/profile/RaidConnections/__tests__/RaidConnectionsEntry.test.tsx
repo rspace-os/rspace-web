@@ -280,7 +280,7 @@ describe("RaidConnectionsEntry", () => {
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(screen.queryByRole("button", { name: /^add$/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "add" })).not.toBeInTheDocument();
       });
     });
 

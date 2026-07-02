@@ -70,18 +70,18 @@ describe("GallerySections", () => {
     // file size formatted
     expect(screen.getByText(/1\.02 kB|1024 B|1 kB/i)).toBeInTheDocument();
     // extension shown as its own row value (exact match, not the filename)
-    expect(screen.getByText(/^png$/i)).toBeInTheDocument();
+    expect(screen.getByText("png")).toBeInTheDocument();
   });
 
   it("renders an image thumbnail preview for Image targets", () => {
     renderGallery();
-    const img = screen.getByRole("img", { name: /microscope\.png|preview/i });
+    const img = screen.getByRole("img", { name: "Microscope.png" });
     expect(img).toHaveAttribute("src", expect.stringContaining("/gallery/getThumbnail/21/"));
   });
 
   it("links Download to the Streamfile endpoint for the media id", () => {
     renderGallery();
-    const download = screen.getByRole("link", { name: /fields\.link\.download/i });
+    const download = screen.getByRole("link", { name: "inventory:fields.link.download" });
     expect(download).toHaveAttribute("href", "/Streamfile/21");
   });
 
@@ -93,10 +93,10 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.gallerySections.showLinkedDocs" }));
 
     expect(getLinkedDocuments).toHaveBeenCalledWith(21);
-    expect(await screen.findByRole("link", { name: /SD7/ })).toHaveAttribute("href", "/globalId/SD7");
+    expect(await screen.findByRole("link", { name: "SD7" })).toHaveAttribute("href", "/globalId/SD7");
   });
 
   it("hides the related inventory items until 'Show linked docs' is clicked", () => {
@@ -124,19 +124,19 @@ describe("GallerySections", () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.gallerySections.showLinkedDocs" }));
 
     expect(useReferencingInventoryItems).toHaveBeenCalledWith("GL21");
     expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.title")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /SA42/ })).toHaveAttribute("href", "/globalId/SA42");
-    expect(screen.getByText(/\(References\)/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "SA42" })).toHaveAttribute("href", "/globalId/SA42");
+    expect(screen.getByText("(References)")).toBeInTheDocument();
   });
 
   it("shows an empty message when no Inventory items link to this file", async () => {
     const user = userEvent.setup();
     renderGallery();
 
-    await user.click(screen.getByRole("button", { name: /fields\.link\.gallerySections\.showLinkedDocs/i }));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.gallerySections.showLinkedDocs" }));
 
     expect(await screen.findByText("inventory:fields.link.relatedInventoryItems.none")).toBeInTheDocument();
   });
@@ -144,14 +144,14 @@ describe("GallerySections", () => {
   it("shows the upload-new-version control when the file is editable (VIEW_MODE)", () => {
     renderGallery();
     expect(
-      screen.getByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+      screen.getByRole("button", { name: "inventory:fields.link.gallerySections.uploadNewVersion" }),
     ).toBeInTheDocument();
   });
 
   it("hides the upload-new-version control for a revision (historical) view", () => {
     renderGallery({ info: { ...imageInfo, revision: 5 } });
     expect(
-      screen.queryByRole("button", { name: /inventory:fields\.link\.gallerySections\.uploadNewVersion/i }),
+      screen.queryByRole("button", { name: "inventory:fields.link.gallerySections.uploadNewVersion" }),
     ).not.toBeInTheDocument();
   });
 

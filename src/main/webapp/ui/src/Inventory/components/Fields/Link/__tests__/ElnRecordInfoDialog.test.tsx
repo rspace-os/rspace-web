@@ -168,7 +168,7 @@ describe("ElnRecordInfoDialog", () => {
 
     renderDialog();
 
-    expect(await screen.findByText(/fields\.link\.elnInfoDialog\.unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.elnInfoDialog.unavailable")).toBeInTheDocument();
   });
 
   it("shows a version-specific error with a latest link when the pinned version cannot be loaded", async () => {
@@ -183,7 +183,7 @@ describe("ElnRecordInfoDialog", () => {
 
     renderDialog({ globalId: "SD599", versionPin: 4 });
 
-    expect(await screen.findByText(/fields\.link\.elnInfoDialog\.versionUnavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.elnInfoDialog.versionUnavailable")).toBeInTheDocument();
   });
 
   it("links the Open button to /globalId/<globalId> in a new tab", async () => {
@@ -191,7 +191,7 @@ describe("ElnRecordInfoDialog", () => {
 
     renderDialog({ globalId: "SD123" });
 
-    const openLink = await screen.findByRole("link", { name: /actions\.open/i });
+    const openLink = await screen.findByRole("link", { name: "common:actions.open" });
     expect(openLink).toHaveAttribute("href", "/globalId/SD123");
     expect(openLink).toHaveAttribute("target", "_blank");
   });
@@ -201,7 +201,7 @@ describe("ElnRecordInfoDialog", () => {
 
     renderDialog({ globalId: "GL9" });
 
-    const openLink = await screen.findByRole("link", { name: /actions\.open/i });
+    const openLink = await screen.findByRole("link", { name: "common:actions.open" });
     expect(openLink).toHaveAttribute("href", "/gallery/item/9");
   });
 
@@ -214,8 +214,8 @@ describe("ElnRecordInfoDialog", () => {
     renderDialog({ globalId: "SD123", targetDeleted: true });
 
     // the dialog still renders (Close present), but there is no Open affordance
-    await screen.findByRole("button", { name: /actions\.close/i });
-    expect(screen.queryByRole("link", { name: /actions\.open/i })).not.toBeInTheDocument();
+    await screen.findByRole("button", { name: "common:actions.close" });
+    expect(screen.queryByRole("link", { name: "common:actions.open" })).not.toBeInTheDocument();
   });
 
   it("hides the Open button when the ELN target is not readable (no access)", async () => {
@@ -225,8 +225,8 @@ describe("ElnRecordInfoDialog", () => {
 
     renderDialog({ globalId: "SD123", noAccess: true });
 
-    await screen.findByRole("button", { name: /actions\.close/i });
-    expect(screen.queryByRole("link", { name: /actions\.open/i })).not.toBeInTheDocument();
+    await screen.findByRole("button", { name: "common:actions.close" });
+    expect(screen.queryByRole("link", { name: "common:actions.open" })).not.toBeInTheDocument();
   });
 
   it("renders nothing when closed", () => {
@@ -248,7 +248,7 @@ describe("ElnRecordInfoDialog", () => {
     fetchMock.mockResponse(recordInfoResponse());
 
     const { rerender, queryClient } = renderDialog({ open: true });
-    expect(await screen.findByText(/fields\.link\.elnInfoDialog\.unavailable/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.elnInfoDialog.unavailable")).toBeInTheDocument();
 
     // Close, then reopen the same instance (reusing the same QueryClient, as the
     // app-level provider would, so the errored query is refetched on remount).

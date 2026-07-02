@@ -313,7 +313,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     const axiosGet = axios.get;
     renderDialog({ globalId: "NB9" });
 
-    expect(screen.getByText(/fields\.link\.versionLock\.cannotResolve/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.versionLock.cannotResolve")).toBeInTheDocument();
     expect(vi.mocked(axiosGet)).not.toHaveBeenCalled();
   });
 
@@ -324,7 +324,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     renderDialog({ globalId: "SD55" });
 
     // SD is a supported target, so this is NOT the cannot-resolve fallback...
-    expect(screen.queryByText(/fields\.link\.versionLock\.cannotResolve/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.versionLock.cannotResolve")).not.toBeInTheDocument();
     // ...the picker still renders with the Latest option and no version rows.
     expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(0);

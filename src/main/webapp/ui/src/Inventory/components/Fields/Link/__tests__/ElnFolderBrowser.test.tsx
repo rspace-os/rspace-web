@@ -119,7 +119,7 @@ describe("ElnFolderBrowser", () => {
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);
     const user = userEvent.setup();
-    await user.click(await screen.findByText(/lemmings\.gif/i));
+    await user.click(await screen.findByText("lemmings.gif"));
     expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "GL400",
       name: "lemmings.gif",

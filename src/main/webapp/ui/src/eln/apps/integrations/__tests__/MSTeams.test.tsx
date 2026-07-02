@@ -74,7 +74,9 @@ describe("MSTeams", () => {
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
-      expect(await screen.findByRole("alert", { name: /integrations\.msteams\.alerts\.removeSuccess/ })).toBeVisible();
+      expect(
+        await screen.findByRole("alert", { name: "apps:integrations.msteams.alerts.removeSuccess" }),
+      ).toBeVisible();
 
       const table = screen.getByRole("table");
       await waitFor(() => {
@@ -122,7 +124,7 @@ describe("MSTeams", () => {
       });
 
       fireEvent.click(screen.getByRole("button", { name: /save/i }));
-      expect(await screen.findByRole("alert", { name: /integrations\.msteams\.alerts\.addSuccess/ })).toBeVisible();
+      expect(await screen.findByRole("alert", { name: "apps:integrations.msteams.alerts.addSuccess" })).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({

@@ -77,9 +77,9 @@ describe("DocumentSections (structured document)", () => {
     // version
     expect(screen.getByText("4")).toBeInTheDocument();
     // status maps to a friendly label
-    expect(screen.getByText(/fields\.link\.documentSections\.statusLabels\.viewMode/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.documentSections.statusLabels.viewMode")).toBeInTheDocument();
     // signature status maps to a friendly label
-    expect(screen.getByText(/fields\.link\.documentSections\.signatureLabels\.unsigned/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.documentSections.signatureLabels.unsigned")).toBeInTheDocument();
     // tags are comma-spaced
     expect(screen.getByText(/alpha, beta/i)).toBeInTheDocument();
   });
@@ -106,12 +106,14 @@ describe("DocumentSections (structured document)", () => {
     const user = userEvent.setup();
     renderDoc();
 
-    expect(screen.getByText(/fields\.link\.documentSections\.linkedBy\.linkedByCount/i)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /fields\.link\.documentSections\.linkedBy\.showLinked/i }));
+    expect(screen.getByText("inventory:fields.link.documentSections.linkedBy.linkedByCount")).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "inventory:fields.link.documentSections.linkedBy.showLinked" }),
+    );
 
     expect(getLinkedByRecords).toHaveBeenCalledWith(123);
     expect(await screen.findByRole("link", { name: /SD11/ })).toHaveAttribute("href", "/globalId/SD11");
-    expect(screen.getByText(/fields\.link\.documentSections\.linkedBy\.privateDocs/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.documentSections.linkedBy.privateDocs")).toBeInTheDocument();
   });
 
   it("renders related inventory items from the referencing-items hook", () => {
@@ -144,7 +146,7 @@ describe("DocumentSections (structured document)", () => {
         sharedGroupsAndAccess: { "Lab Group": "READ" },
       },
     });
-    expect(screen.getByText(/fields\.link\.documentSections\.sharing\.withGroup/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.documentSections.sharing.withGroup")).toBeInTheDocument();
   });
 
   it("shows the public link when the document is published", async () => {
@@ -152,7 +154,7 @@ describe("DocumentSections (structured document)", () => {
     renderDoc();
     expect(getPublicLink).toHaveBeenCalledWith("SD123");
     const publicLink = await screen.findByRole("link", {
-      name: /fields\.link\.documentSections\.sharing\.publicLink/i,
+      name: "inventory:fields.link.documentSections.sharing.publicLink",
     });
     expect(publicLink).toHaveAttribute("href", expect.stringContaining("/public/publishedView/document/abc-123"));
   });
@@ -164,9 +166,9 @@ describe("DocumentSections (structured document)", () => {
     getPublicLink.mockResolvedValue("parent-link?initialRecordToDisplay=123");
     renderDoc();
     expect(
-      await screen.findByText(/fields\.link\.documentSections\.sharing\.inPublishedNotebook/i),
+      await screen.findByText("inventory:fields.link.documentSections.sharing.inPublishedNotebook"),
     ).toBeInTheDocument();
-    const publicLink = screen.getByRole("link", { name: /fields\.link\.documentSections\.sharing\.publicLink/i });
+    const publicLink = screen.getByRole("link", { name: "inventory:fields.link.documentSections.sharing.publicLink" });
     expect(publicLink).toHaveAttribute(
       "href",
       expect.stringContaining("/public/publishedView/notebook/parent-link?initialRecordToDisplay=123"),
@@ -230,6 +232,6 @@ describe("DocumentSections (notebook)", () => {
   it("uses notebook wording in the sharing/publication section", async () => {
     getPublicLink.mockResolvedValue(null);
     renderNotebook();
-    expect(await screen.findByText(/fields\.link\.documentSections\.sharing\.notPublished/i)).toBeInTheDocument();
+    expect(await screen.findByText("inventory:fields.link.documentSections.sharing.notPublished")).toBeInTheDocument();
   });
 });
