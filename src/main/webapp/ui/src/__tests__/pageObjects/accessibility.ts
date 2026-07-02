@@ -36,6 +36,20 @@ export async function expectNoAxeViolations(): Promise<void> {
 }
 
 /*
+ * Emulates the `prefers-reduced-motion: reduce` media feature. Like the
+ * contrast helpers below, this is driven via the Chrome DevTools Protocol and
+ * is therefore chromium-only; on firefox/webkit it is a no-op, so gate any
+ * assertion that depends on the emulated value behind `server.browser`.
+ */
+export async function emulateReducedMotion(): Promise<void> {
+  if (server.browser !== "chromium") return;
+  const session = cdp();
+  await session.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+  });
+}
+
+/*
  * Emulates the `prefers-contrast: more` media feature.
  *
  * Playwright's `page.emulateMedia` has no Vitest browser-mode equivalent, so we
