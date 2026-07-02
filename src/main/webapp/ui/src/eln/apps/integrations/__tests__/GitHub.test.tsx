@@ -133,7 +133,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -188,7 +188,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -205,7 +205,7 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       expect(mockAxios.history.post.length).toBe(1);
@@ -260,7 +260,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -277,7 +277,7 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       await waitFor(() => {
@@ -341,7 +341,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -358,7 +358,7 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       await waitFor(() => {
@@ -397,7 +397,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
 
@@ -434,7 +434,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
       });

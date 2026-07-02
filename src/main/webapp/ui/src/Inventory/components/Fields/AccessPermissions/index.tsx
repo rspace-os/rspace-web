@@ -107,8 +107,9 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                       <Box>
                         <OptionHeading>{t("fields.accessPermissions.ownerGroups.title")}</OptionHeading>
                         <OptionExplanation>
-                          {t("fields.accessPermissions.ownerGroups.description")}
-                          {!hideOwnersGroups && ` ${t("fields.accessPermissions.ownerGroups.tableNote")}`}
+                          {t("fields.accessPermissions.ownerGroups.description", {
+                            tableNote: hideOwnersGroups ? "" : t("fields.accessPermissions.ownerGroups.tableNote"),
+                          })}
                         </OptionExplanation>
                       </Box>
                       {!hideOwnersGroups && (

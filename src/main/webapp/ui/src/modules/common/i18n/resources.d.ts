@@ -62,8 +62,7 @@ export default interface Resources {
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
         "dmptoolDocsLink": "See <a href=\"https://dmptool.org\">dmptool.org</a> and our <helpLink>DMPTool integration docs</helpLink> for more.",
         "dmptoolImportDesc": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace.",
-        "dswDocsLink": "See <a href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</a> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
-        "dswImportDesc": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace.",
+        "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <a href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</a> and our <helpLink>DSW / FAIR Wizard integration docs</helpLink> for more.",
         "error": {
           "couldNotGet": "Could not get DMPs: {message}",
           "couldNotImport": "Could not import DMP",
@@ -74,6 +73,8 @@ export default interface Resources {
           "unableToLoadProjects": "Unable to load projects."
         },
         "forMoreInfo": "For more information <a href=\"{link}\" rel=\"noreferrer\">visit our docs</a>.",
+        "helpTitle": "{name} help",
+        "importButton": "Import{count, plural, =0 {} =1 {} other { (#)}}",
         "importButtonCount": "Import ({count})",
         "importDmpIntoGallery": "Import a DMP into the Gallery",
         "importDmpsIntoGallery": "Import DMPs into the Gallery",
@@ -107,8 +108,7 @@ export default interface Resources {
       "scope": {
         "both": "Both",
         "instructions": {
-          "selectPlan": "Select a plan and click \"Import\" to add it to the Gallery.",
-          "selectScope": "Select a scope to get the latest plans."
+          "selectScopeAndPlan": "Select a scope to get the latest plans. Select a plan and click \"Import\" to add it to the Gallery."
         },
         "mine": "Mine",
         "name": "DMP Scope Options",
@@ -2929,7 +2929,7 @@ export default interface Resources {
         "groupName": "Group Name",
         "label": "Access Permission Setting",
         "ownerGroups": {
-          "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
+          "description": "Accessible to only those who are in a lab or collaboration group with the owner. {tableNote}",
           "tableNote": "This table lists the groups that the owner is a member of.",
           "title": "Owner's groups"
         },

@@ -199,7 +199,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         }}
         helpPage={{
           docLink: docLinks.dmpassistant,
-          title: `${t("dmpIntegrations.dmpAssistant")} help`,
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmpAssistant") }),
         }}
       />
       <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpsIntoGallery")}</DialogTitle>
@@ -317,9 +317,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          {selectedDmps.length > 1
-            ? `${t("common:actions.import")} (${selectedDmps.length})`
-            : t("common:actions.import")}
+          {t("dmpIntegrations.dialog.importButton", { count: selectedDmps.length })}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

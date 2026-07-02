@@ -95,7 +95,7 @@ describe("Slack", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: /add/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
     // Simulate BroadcastChannel message from the OAuth redirect page
     const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
@@ -103,13 +103,13 @@ describe("Slack", () => {
     bc.close();
 
     await waitFor(() => {
-      expect(screen.getByText(/RSpace Dev/)).toBeVisible();
+      expect(screen.getByText("RSpace Dev")).toBeVisible();
     });
-    fireEvent.change(screen.getByRole("textbox", { name: /rspaceLabel/i }), {
+    fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.slack.fields.rspaceLabel" }), {
       target: { value: "custom label" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.addSuccess" })).toBeVisible();
     expect(integrationState.credentials.length).toBe(1);
   });
@@ -142,7 +142,7 @@ describe("Slack", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: /add/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
     // Simulate BroadcastChannel message from the OAuth redirect page
     const bc = new BroadcastChannel(SLACK_CONNECTION_CHANNEL);
@@ -150,14 +150,14 @@ describe("Slack", () => {
     bc.close();
 
     await waitFor(() => {
-      expect(screen.getByText(/RSpace Dev/)).toBeVisible();
+      expect(screen.getByText("RSpace Dev")).toBeVisible();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     await waitFor(() => {
-      expect(screen.queryByText(/RSpace Dev/)).not.toBeInTheDocument();
+      expect(screen.queryByText("RSpace Dev")).not.toBeInTheDocument();
     });
-    expect(screen.getByRole("button", { name: /add/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "common:actions.add" })).toBeVisible();
   });
   test("Should render the existing channels.", () => {
     render(
@@ -242,7 +242,7 @@ describe("Slack", () => {
       target: { value: "custom label" },
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");
@@ -330,7 +330,7 @@ describe("Slack", () => {
       target: { value: "also custom label" },
     });
 
-    fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "common:actions.save" })[0]);
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.labelSuccess" })).toBeVisible();
     expect(screen.getAllByRole("textbox")[1]).toHaveValue("also custom label");
   });
@@ -369,7 +369,7 @@ describe("Slack", () => {
 
     fireEvent.click(screen.getByRole("button"));
 
-    fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+    fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
     expect(await screen.findByRole("alert", { name: "apps:integrations.slack.alerts.deleteSuccess" })).toBeVisible();
     expect(mockAxios.history.post.length).toBe(1);
     expect(mockAxios.history.post[0].params.get("appName")).toEqual("SLACK");

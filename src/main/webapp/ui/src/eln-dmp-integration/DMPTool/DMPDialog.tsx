@@ -192,7 +192,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         }}
         helpPage={{
           docLink: docLinks.dmptool,
-          title: `${t("dmpIntegrations.dmptool")} help`,
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmptool") }),
         }}
       />
       <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>

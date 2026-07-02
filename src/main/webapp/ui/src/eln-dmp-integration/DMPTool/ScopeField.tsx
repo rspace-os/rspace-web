@@ -40,11 +40,7 @@ export default function ScopeField({ getDMPs }: ScopeFieldArgs): React.ReactNode
         smallText={true}
       />
 
-      <Typography variant="body2">
-        {t("dmpIntegrations.scope.instructions.selectScope")}
-        <br />
-        {t("dmpIntegrations.scope.instructions.selectPlan")}
-      </Typography>
+      <Typography variant="body2">{t("dmpIntegrations.scope.instructions.selectScopeAndPlan")}</Typography>
     </Stack>
   );
 }

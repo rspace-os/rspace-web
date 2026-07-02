@@ -109,7 +109,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         }}
         helpPage={{
           docLink: docLinks.dmponline,
-          title: `${t("dmpIntegrations.dmponline")} help`,
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmponline") }),
         }}
       />
       <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>

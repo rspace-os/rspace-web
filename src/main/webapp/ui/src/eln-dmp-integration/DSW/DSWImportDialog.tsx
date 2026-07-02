@@ -203,7 +203,7 @@ function DSWImportDialogContent({
         }}
         helpPage={{
           docLink: docLinks.dsw,
-          title: `${t("dmpIntegrations.dsw")} help`,
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dsw") }),
         }}
       />
       <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
@@ -223,13 +223,8 @@ function DSWImportDialogContent({
           <Box>
             <Typography variant="body2">
               <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.dswImportDesc"
+                i18nKey="apps:dmpIntegrations.dialog.dswImportDescAndDocsLink"
                 values={{ serverAlias: connection.DSW_ALIAS }}
-              />
-            </Typography>
-            <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.dswDocsLink"
                 components={{
                   helpLink: <Link href={docLinks.dsw} />,
                 }}

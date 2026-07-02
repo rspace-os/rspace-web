@@ -399,7 +399,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         }}
         helpPage={{
           docLink: docLinks.argos,
-          title: `${t("dmpIntegrations.argos")} help`,
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.argos") }),
         }}
       />
       <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>

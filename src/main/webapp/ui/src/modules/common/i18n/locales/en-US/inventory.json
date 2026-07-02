@@ -469,7 +469,7 @@
       "groupName": "Group Name",
       "label": "Access Permission Setting",
       "ownerGroups": {
-        "description": "Accessible to only those who are in a lab or collaboration group with the owner.",
+        "description": "Accessible to only those who are in a lab or collaboration group with the owner. {tableNote}",
         "tableNote": "This table lists the groups that the owner is a member of.",
         "title": "Owner's groups"
       },

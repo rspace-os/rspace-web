@@ -194,7 +194,7 @@ describe("DMPDialog", () => {
 
       fireEvent.click(await checkboxForPlan("Plan One"));
 
-      expect(screen.getByRole("button", { name: "common:actions.import" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
 
     test("label includes the count when more than one DMP is selected.", async () => {
@@ -205,11 +205,11 @@ describe("DMPDialog", () => {
       fireEvent.click(await checkboxForPlan("Plan One"));
       fireEvent.click(await checkboxForPlan("Plan Two"));
 
-      expect(screen.getByRole("button", { name: "common:actions.import (2)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
 
       fireEvent.click(await checkboxForPlan("Plan Three"));
 
-      expect(screen.getByRole("button", { name: "common:actions.import (3)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
 
     test(
@@ -228,7 +228,7 @@ describe("DMPDialog", () => {
         // wait until the dialog finishes loading and the Import button is present
         await checkboxForPlan("Plan One");
 
-        fireEvent.click(screen.getByRole("button", { name: "common:actions.import" }));
+        fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
         expect(await screen.findByText("apps:dmpIntegrations.dialog.noDmpIsSelected")).toBeVisible();
         expect(importPostSpy).not.toHaveBeenCalled();
@@ -252,7 +252,7 @@ describe("DMPDialog", () => {
 
       expect(await checkboxForPlan("Plan One")).toBeChecked();
       expect(await checkboxForPlan("Plan Two")).toBeChecked();
-      expect(screen.getByRole("button", { name: "common:actions.import (2)" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" })).toBeInTheDocument();
     });
 
     test("toggles back off when clicked a second time.", async () => {
@@ -319,7 +319,7 @@ describe("DMPDialog", () => {
       fireEvent.click(await checkboxForPlan("Plan One"));
       fireEvent.click(await checkboxForPlan("Plan Two"));
 
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.import (2)" }));
+      fireEvent.click(screen.getByRole("button", { name: "apps:dmpIntegrations.dialog.importButton" }));
 
       await waitFor(() => {
         const importCalls = mockAxios.history.post.filter((c) => /importPlans/.test(c.url ?? ""));

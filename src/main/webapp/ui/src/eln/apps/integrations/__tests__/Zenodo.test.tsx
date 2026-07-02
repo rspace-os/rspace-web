@@ -41,7 +41,9 @@ describe("Zenodo", () => {
     await waitFor(() => {
       screen.getByText("apps:integrations.zenodo.name");
     });
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
     expect(screen.getByRole("dialog")).toBeVisible();
   });
   test("should close dialog when close button is clicked", async () => {
@@ -52,11 +54,13 @@ describe("Zenodo", () => {
       screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Close dialog
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /close/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "common:actions.close" }));
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
@@ -77,13 +81,17 @@ describe("Zenodo", () => {
       screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Enable integration
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.enable" }));
     await waitFor(() => {
-      expect(within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i })).toBeVisible();
+      expect(
+        within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.disable" }),
+      ).toBeVisible();
     });
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
@@ -107,13 +115,17 @@ describe("Zenodo", () => {
       screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Disable integration
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.disable" }));
     await waitFor(() => {
-      expect(within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i })).toBeVisible();
+      expect(
+        within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.enable" }),
+      ).toBeVisible();
     });
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
@@ -136,7 +148,9 @@ describe("Zenodo", () => {
       screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
@@ -147,7 +161,7 @@ describe("Zenodo", () => {
      */
     await user.type(screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0], apiKey);
 
-    await user.click(screen.getByRole("button", { name: /save/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
     // Verify update was called with correct arguments
     expect(update).toHaveBeenCalledWith(expectedState);
   });
@@ -177,26 +191,30 @@ describe("Zenodo", () => {
       screen.getByText("apps:integrations.zenodo.name");
     });
     // Open dialog
-    await user.click(screen.getByRole("button", { name: /zenodo\.name/i }));
+    await user.click(
+      screen.getByRole("button", { name: "apps:integrations.zenodo.name apps:integrations.zenodo.description" }),
+    );
 
     expect(screen.getByRole("dialog")).toBeVisible();
     // Set API key
     await user.type(screen.getAllByLabelText("apps:integrations.zenodo.fields.apiKey")[0], apiKey);
 
-    await user.click(screen.getByRole("button", { name: /save/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
     // Verify update was called with correct arguments for setting API key
 
     expect(update).toHaveBeenCalledWith(apiKeyState);
     // Enable integration
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /enable/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.enable" }));
     await waitFor(() => {
-      expect(within(screen.getByRole("dialog")).getByRole("button", { name: /disable/i })).toBeVisible();
+      expect(
+        within(screen.getByRole("dialog")).getByRole("button", { name: "apps:integrationCard.disable" }),
+      ).toBeVisible();
     });
     // Verify update was called with correct arguments for enabling
 
     expect(update).toHaveBeenCalledWith(enabledState);
     // Close dialog
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /close/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "common:actions.close" }));
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
