@@ -154,8 +154,7 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
       </Heading>
       <Typography variant="body2">
         <TransRichText
-          ns="inventory"
-          i18nKey="subsample.sampleFieldsSection.parentSampleExplanation"
+          i18nKey="inventory:subsample.sampleFieldsSection.parentSampleExplanation"
           values={{ alias: activeResult.alias.alias }}
           components={{ recordLink: <RecordLink record={activeResult.sample} /> }}
         />

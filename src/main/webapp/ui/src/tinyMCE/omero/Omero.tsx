@@ -33,8 +33,8 @@ import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable from "./ResultsTable";
 
 const makeTableHeaderCells = (): Array<Cell<string>> => [
-  { id: "path", numeric: false, label: i18n.t("tinyMce.omero.columns.path", { ns: "apps" }) },
-  { id: "description", numeric: false, label: i18n.t("tinyMce.omero.columns.description", { ns: "apps" }) },
+  { id: "path", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.path") },
+  { id: "description", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.description") },
 ];
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];

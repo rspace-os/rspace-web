@@ -49,8 +49,7 @@ function LocationsImageField(): React.ReactNode {
         value={activeResult.locationsImage}
         explanation={
           <TransRichText
-            ns="inventory"
-            i18nKey="container.fields.locationsImage.explanation"
+            i18nKey="inventory:container.fields.locationsImage.explanation"
             values={{ link: docLinks.editLocationsInVisualContainers }}
           />
         }

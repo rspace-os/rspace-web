@@ -3,26 +3,17 @@
     "networkProblem": "There is a problem, please try again later"
   },
   "ror": {
-    "curationRequestLink": "curation request form.",
     "heading": "Research Organization Registry (ROR) Integration",
     "institutionalIdHeading": "Institutional ROR ID",
-    "introPrefix": "By associating a",
-    "introSuffix": "with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your research organisation. All research outputs with a DOI will automatically include the ROR ID in their affiliation metadata.",
+    "introText": "By associating a <a href=\"https://ror.org\" target=\"_blank\" rel=\"noreferrer\">ROR ID</a> with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your research organisation. All research outputs with a DOI will automatically include the ROR ID in their affiliation metadata.",
     "invalidFormatHelp": "Please ensure the ROR ID is one of the following formats:",
     "linkButton": "Link",
-    "linkHelpAction": "Link",
-    "linkHelpPrefix": "ROR ID found. Click",
-    "linkHelpSuffix": "to associate with this RSpace Instance.",
-    "registryLink": "ROR registry",
-    "rorIdLink": "ROR ID",
-    "searchHelpMiddle": "to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a",
-    "searchHelpPrefix": "You can search the",
+    "linkHelpText": "ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.",
+    "searchHelpText": "You can search the <a href=\"https://ror.org/search\" target=\"_blank\" rel=\"noreferrer\">ROR registry</a> to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a <a href=\"https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform\" target=\"_blank\" rel=\"noreferrer\">curation request form.</a>",
     "searchTooltip": "Search Registry",
     "statusLabel": "Status:",
     "unlinkButton": "UnLink",
-    "unlinkHelpAction": "UNLINK",
-    "unlinkHelpPrefix": "A ROR ID is linked to this RSpace Instance. Click on",
-    "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
+    "unlinkHelpText": "A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association. Future published or updated DOIs will not include the ROR ID."
   },
   "tags": {
     "errorFetchingTags": "Error fetching tags",

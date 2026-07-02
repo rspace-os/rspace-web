@@ -748,18 +748,18 @@ export class ListOfMaterials {
     if (
       !parentIsOnBench.isEmpty &&
       (await uiStore.confirm(
-        i18n.t("materialsListing.actions.move.confirmOnBench.title", { ns: "inventory" }),
+        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.title"),
         <>
-          {i18n.t("materialsListing.actions.move.confirmOnBench.itemsLabel", { ns: "inventory" })}
+          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.itemsLabel")}
           <ul>
             {parentIsOnBench.map(({ name, globalId }) => (
               <li key={globalId}>{`${name} (${globalId})`}</li>
             ))}
           </ul>
-          {i18n.t("materialsListing.actions.move.confirmOnBench.prompt", { ns: "inventory" })}
+          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.prompt")}
         </>,
-        i18n.t("materialsListing.actions.move.confirmOnBench.confirm", { ns: "inventory" }),
-        i18n.t("materialsListing.actions.move.confirmOnBench.cancel", { ns: "inventory" }),
+        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.confirm"),
+        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.cancel"),
       ))
     ) {
       moving = moving.union(parentIsOnBench);

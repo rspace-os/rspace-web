@@ -418,7 +418,7 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.publish.title"),
-          <TransRichText ns="inventory" i18nKey="identifierConfirm.publish.body" />,
+          <TransRichText i18nKey="inventory:identifierConfirm.publish.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )
@@ -481,7 +481,7 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.retract.title"),
-          <TransRichText ns="inventory" i18nKey="identifierConfirm.retract.body" />,
+          <TransRichText i18nKey="inventory:identifierConfirm.retract.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

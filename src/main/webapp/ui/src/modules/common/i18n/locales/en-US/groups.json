@@ -72,9 +72,7 @@
     "groupOwners": "Group owners",
     "groupPis": "Group PIs",
     "noUsersFound": "No users found",
-    "one": "one",
-    "pi": "PI",
     "search": "Search...",
-    "selectOnlyPrefix": "Please, select only"
+    "selectOnlyPi": "Please, select only <strong>one</strong> PI"
   }
 }

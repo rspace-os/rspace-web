@@ -468,17 +468,12 @@
       "helpLink": "Video integration docs",
       "name": "JoVE",
       "setup": {
-        "insertButton": "Insert",
-        "note": "Note:",
-        "noteText": "Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-        "openVideo": "Open a document in the Documents Editor and click the",
+        "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
         "pasteUrl": "Paste a full JoVE URL from a supported",
         "pasteUrlOr": "or",
         "pasteUrlSuffix": "page, for example",
-        "selectInsert": "Select",
-        "toolbarButton": "Video",
-        "toolbarSuffix": "button in the editor toolbar, the insert menu, or the slash menu.",
-        "toPlace": "to place the JoVE video embed at the current cursor position."
+        "step1": "Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.",
+        "step2": "Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position."
       },
       "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
     },
@@ -492,8 +487,6 @@
         "configureNotebook": "Configure notebook:",
         "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
         "doOncePerNotebook": "Do this step once per notebook:",
-        "enableApi": "Enable API access:",
-        "enableApiDesc": "Generate your API key in My RSpace → My Profile.",
         "installStep": "One time install step:",
         "lastCell": "the last cell in the notebook:",
         "pasteCode": "Paste this code into",
@@ -503,6 +496,7 @@
         "runCellFirst": "Run the cell then",
         "runCellSecond": "Run the cell,",
         "runCode": "Run the code:",
+        "step1": "<strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.",
         "tab": "tab running Jupyter.",
         "thenRunAgain": "and then run the cell one more time"
       },
@@ -648,17 +642,11 @@
       "name": "RAiD",
       "noServers": "No authenticated servers.",
       "setup": {
-        "addButton": "Add",
-        "addServer": "Click the",
-        "addServerSuffix": "button below and select the RAiD server you would like to connect to.",
         "configure": "Configure your RAiD service point to enable authentication and project association:",
-        "connectButton": "Connect",
-        "connectStep": "Once the server shows up in the server list, click on the",
-        "connectStepSuffix": "button and log in with your RAiD credentials.",
-        "docLink": "our documentation for system administrators",
-        "forMoreInfo": "for more information.",
-        "seeAdminDocs": "Ask your system administrator to set up RAiD server connections. See",
-        "startAssociating": "Start associating RAiDs with your project groups."
+        "startAssociating": "Start associating RAiDs with your project groups.",
+        "step1": "Ask your system administrator to set up RAiD server connections. See <a href=\"https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration\">our documentation for system administrators</a> for more information.",
+        "step2": "Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.",
+        "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
       },
       "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
     },

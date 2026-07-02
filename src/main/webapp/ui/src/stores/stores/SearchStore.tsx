@@ -236,11 +236,11 @@ export default class SearchStore {
         const name = this.savedBaskets.find((b) => b.id === id)?.name ?? i18n.t("inventory:baskets.fallbackName");
         if (
           await uiStore.confirm(
-            i18n.t("baskets.delete.title", { ns: "inventory" }),
+            i18n.t("inventory:baskets.delete.title"),
             <>
-              {i18n.t("baskets.delete.bodyPrefix", { ns: "inventory", name })}
+              {i18n.t("inventory:baskets.delete.bodyPrefix", { name })}
               <br />
-              {i18n.t("baskets.delete.bodySuffix", { ns: "inventory" })}
+              {i18n.t("inventory:baskets.delete.bodySuffix")}
             </>,
             i18n.t("common:actions.ok"),
             i18n.t("common:actions.cancel"),

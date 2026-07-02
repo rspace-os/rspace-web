@@ -55,7 +55,7 @@ describe("Apps page", () => {
           <App />
         </ThemeProvider>,
       );
-      await screen.findAllByText(/errorBoundary\.message/i);
+      await screen.findAllByText("common:errorBoundary.message");
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
@@ -74,7 +74,7 @@ describe("Apps page", () => {
       </ThemeProvider>,
     );
 
-    await screen.findAllByText(/errorBoundary\.message/i);
+    await screen.findAllByText("common:errorBoundary.message");
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([

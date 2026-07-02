@@ -368,7 +368,7 @@ export default class TemplateModel extends SampleModel implements Template {
             size="small"
           />
         </>,
-        <TransRichText ns="inventory" i18nKey="template.updateSamplesConfirm.body" />,
+        <TransRichText i18nKey="inventory:template.updateSamplesConfirm.body" />,
         i18n.t("inventory:template.updateSamplesConfirm.confirmButton"),
       ))
     )

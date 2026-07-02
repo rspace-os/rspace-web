@@ -18,20 +18,20 @@ export function useProtocolsioEndpoint(): {
   const disconnect = async (): Promise<void> => {
     try {
       await api.delete<void>("/connect");
-      const appName = t("integrations.protocolsIo.name", { ns: "apps" });
+      const appName = t("integrations.protocolsIo.name");
       addAlert(
         mkAlert({
           variant: "success",
-          message: t("disconnect.success", { ns: "apps", appName }),
+          message: t("disconnect.success", { appName }),
         }),
       );
     } catch (e) {
       console.error(e);
-      const appName = t("integrations.protocolsIo.name", { ns: "apps" });
+      const appName = t("integrations.protocolsIo.name");
       addAlert(
         mkAlert({
           variant: "error",
-          message: t("disconnect.error", { ns: "apps", appName }),
+          message: t("disconnect.error", { appName }),
         }),
       );
     }

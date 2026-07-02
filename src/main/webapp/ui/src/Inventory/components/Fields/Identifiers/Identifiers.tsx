@@ -186,7 +186,7 @@ const IdentifierWrapper = observer(
             {t("fields.identifiers.wrapper.inventoryFields.title")}
           </Typography>
           <Alert severity="info">
-            <TransRichText ns="inventory" i18nKey="fields.identifiers.wrapper.inventoryFields.alert" />
+            <TransRichText i18nKey="inventory:fields.identifiers.wrapper.inventoryFields.alert" />
           </Alert>
           <FormControlLabel
             control={
@@ -257,16 +257,14 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
     if (identifierState === "findable")
       return (
         <TransRichText
-          ns="inventory"
-          i18nKey="fields.identifiers.list.stateInfo.findable"
+          i18nKey="inventory:fields.identifiers.list.stateInfo.findable"
           values={{ link: identifierUrl || "" }}
         />
       );
     if (identifierState === "registered")
       return (
         <TransRichText
-          ns="inventory"
-          i18nKey="fields.identifiers.list.stateInfo.registered"
+          i18nKey="inventory:fields.identifiers.list.stateInfo.registered"
           values={{ link: identifierUrl || "" }}
         />
       );
@@ -518,7 +516,7 @@ const AssignDialog = observer(
                 }}
               />
               <Alert severity="warning">
-                <TransRichText ns="inventory" i18nKey="fields.identifiers.assignDialog.undoWarningFormatted" />
+                <TransRichText i18nKey="inventory:fields.identifiers.assignDialog.undoWarningFormatted" />
               </Alert>
             </Stack>
           </DialogContent>
@@ -627,8 +625,7 @@ function Identifiers<
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
           <TransRichText
-            ns="inventory"
-            i18nKey="fields.identifiers.formField.explanation"
+            i18nKey="inventory:fields.identifiers.formField.explanation"
             values={{ link: docLinks.IGSNIdentifiers }}
           />
         ) : null

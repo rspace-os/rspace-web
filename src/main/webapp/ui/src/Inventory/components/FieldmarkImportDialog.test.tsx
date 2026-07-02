@@ -124,7 +124,7 @@ async function renderAndWaitForNotebooks() {
     expect(screen.getByRole("grid")).toBeVisible();
   });
   await waitFor(() => {
-    expect(screen.getByRole("gridcell", { name: /^Test Notebook 1$/ })).toBeVisible();
+    expect(screen.getByRole("gridcell", { name: "Test Notebook 1" })).toBeVisible();
   });
   return result;
 }
@@ -162,10 +162,10 @@ describe("FieldmarkImportDialog", () => {
     test("should fetch and display notebooks when opened", async () => {
       await renderAndWaitForNotebooks();
 
-      expect(screen.getByRole("gridcell", { name: /^Test Notebook 1$/ })).toBeVisible();
-      expect(screen.getByRole("gridcell", { name: /^Test Notebook 2$/ })).toBeVisible();
-      expect(screen.getByRole("gridcell", { name: /^Notebook No Identifiers$/ })).toBeVisible();
-      expect(screen.getByRole("gridcell", { name: /^Notebook With Identifiers$/ })).toBeVisible();
+      expect(screen.getByRole("gridcell", { name: "Test Notebook 1" })).toBeVisible();
+      expect(screen.getByRole("gridcell", { name: "Test Notebook 2" })).toBeVisible();
+      expect(screen.getByRole("gridcell", { name: "Notebook No Identifiers" })).toBeVisible();
+      expect(screen.getByRole("gridcell", { name: "Notebook With Identifiers" })).toBeVisible();
       expect(screen.getAllByRole("gridcell", { name: "draft" })[0]).toBeVisible();
       expect(screen.getByRole("gridcell", { name: "published" })).toBeVisible();
       // The MUI Radio renders its <input> as visually-hidden (the styled span

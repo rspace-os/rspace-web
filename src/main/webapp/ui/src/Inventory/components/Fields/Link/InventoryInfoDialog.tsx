@@ -115,8 +115,7 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
               >
                 <Typography variant="body2">
                   <TransRichText
-                    ns="inventory"
-                    i18nKey="fields.link.infoDialog.versionNote"
+                    i18nKey="inventory:fields.link.infoDialog.versionNote"
                     values={{
                       versionPin: props.versionPin,
                       recordTypeLabel:

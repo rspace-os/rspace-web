@@ -102,11 +102,10 @@ function AccessibilityTipsPopup({
                 : t("accessibilityTips.highContrast.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
             <TransRichText
-              ns="common"
               i18nKey={
                 highContrastModeIsEnabled
-                  ? "accessibilityTips.highContrast.body.disable"
-                  : "accessibilityTips.highContrast.body.enable"
+                  ? "common:accessibilityTips.highContrast.body.disable"
+                  : "common:accessibilityTips.highContrast.body.enable"
               }
             />
           </Alert>
@@ -123,11 +122,10 @@ function AccessibilityTipsPopup({
                 : t("accessibilityTips.reducedMotion.supported", { elementType: elementTypeLabel })}
             </AlertTitle>
             <TransRichText
-              ns="common"
               i18nKey={
                 reducedMotionModeIsEnabled
-                  ? "accessibilityTips.reducedMotion.body.disable"
-                  : "accessibilityTips.reducedMotion.body.enable"
+                  ? "common:accessibilityTips.reducedMotion.body.disable"
+                  : "common:accessibilityTips.reducedMotion.body.enable"
               }
             />
           </Alert>
@@ -135,7 +133,7 @@ function AccessibilityTipsPopup({
         {supports2xZoom && (
           <Alert severity="info" elevation={0} aria-label={t("accessibilityTips.tip")}>
             <AlertTitle>{t("accessibilityTips.zoom.supported", { elementType: elementTypeLabel })}</AlertTitle>
-            <TransRichText ns="common" i18nKey="accessibilityTips.zoom.body" />
+            <TransRichText i18nKey="common:accessibilityTips.zoom.body" />
           </Alert>
         )}
         {supportsSkipToContent && (

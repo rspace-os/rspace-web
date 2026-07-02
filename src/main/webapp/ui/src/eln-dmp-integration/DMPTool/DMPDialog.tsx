@@ -101,8 +101,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
                 title: t("dmpIntegrations.dialog.error.unableToLoad"),
                 message: (
                   <TransRichText
-                    ns="apps"
-                    i18nKey="dmpIntegrations.dialog.forMoreInfo"
+                    i18nKey="apps:dmpIntegrations.dialog.forMoreInfo"
                     values={{ link: docLinks.dmptoolImportingDmps }}
                   />
                 ),
@@ -219,8 +218,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             </Typography>
             <Typography variant="body2">
               <TransRichText
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dmptoolDocsLink"
+                i18nKey="apps:dmpIntegrations.dialog.dmptoolDocsLink"
                 components={{
                   helpLink: <Link href={docLinks.dmptool} />,
                 }}

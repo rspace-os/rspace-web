@@ -39,8 +39,7 @@ const ConnectedAppsTableRow = ({
           consequences={
             <Typography variant="body1">
               <TransRichText
-                ns="common"
-                i18nKey="profile.oauth.connectedApps.confirmDisconnectText"
+                i18nKey="common:profile.oauth.connectedApps.confirmDisconnectText"
                 values={{ clientName: app.clientName }}
               />
             </Typography>

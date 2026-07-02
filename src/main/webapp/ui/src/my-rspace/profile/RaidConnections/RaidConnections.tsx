@@ -61,11 +61,11 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
     }
 
     if (!integrationData?.data?.enabled) {
-      return <TransRichText i18nKey="profile.raidConnections.notEnabled" ns="common" />;
+      return <TransRichText i18nKey="common:profile.raidConnections.notEnabled" />;
     }
 
     if (!hasConnectedServers) {
-      return <TransRichText i18nKey="profile.raidConnections.noConnectedServers" ns="common" />;
+      return <TransRichText i18nKey="common:profile.raidConnections.noConnectedServers" />;
     }
 
     return null;

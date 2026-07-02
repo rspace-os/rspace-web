@@ -3,7 +3,7 @@ import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
 const columnLabelKeys = {
   Name: "sortProperties.name",
   Type: "sortProperties.type",
-  "Global ID": "sortProperties.globalId",
+  "Global ID": "sortProperties.globalId",
   Created: "sortProperties.created",
   "Last Modified": "sortProperties.lastModified",
   Owner: "tableColumns.owner",

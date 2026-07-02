@@ -27,11 +27,7 @@ export const SimpleExample = ({ onClick = () => {} }: { onClick: () => void }) =
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
           <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>
-            {"Toggle Loading ("}
-            {loading ? "Off" : "On"}
-            {")"}
-          </button>
+          <button onClick={() => setLoading(!loading)}>{`Toggle Loading (${loading ? "Off" : "On"})`}</button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
           {"Submit"}
@@ -73,11 +69,7 @@ export const ProgressExample = ({ onClick = () => {} }: { onClick: () => void })
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
           <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>
-            {"Toggle Loading ("}
-            {loading ? "Off" : "On"}
-            {")"}
-          </button>
+          <button onClick={() => setLoading(!loading)}>{`Toggle Loading (${loading ? "Off" : "On"})`}</button>
         </Box>
         <ValidatingSubmitButton
           validationResult={validationResult}
@@ -110,11 +102,7 @@ export const HighContrastExample = ({ onClick = () => {} }: { onClick: () => voi
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
           <button onClick={() => setValidationResult(IsInvalid("Validation failed."))}>{"Set Invalid"}</button>
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={() => setLoading(!loading)}>
-            {"Toggle Loading ("}
-            {loading ? "Off" : "On"}
-            {")"}
-          </button>
+          <button onClick={() => setLoading(!loading)}>{`Toggle Loading (${loading ? "Off" : "On"})`}</button>
         </Box>
         <ValidatingSubmitButton validationResult={validationResult} loading={loading} onClick={handleClick}>
           {"Submit"}

@@ -13,7 +13,7 @@ import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
 import Alerts from "../../../components/Alerts/Alerts";
 
-const stoichiometryLoadingLabel = i18n.t("stoichiometry.dialog.loadingTable", { ns: "common" });
+const stoichiometryLoadingLabel = i18n.t("common:stoichiometry.dialog.loadingTable");
 
 function TestProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(

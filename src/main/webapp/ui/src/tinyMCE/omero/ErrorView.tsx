@@ -19,8 +19,7 @@ export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps)
       <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <TransRichText
-          ns="common"
-          i18nKey="integrationErrors.serverUnavailable"
+          i18nKey="common:integrationErrors.serverUnavailable"
           values={{ appName: "Omero", url: omeroUrl }}
           components={{
             serverLink: (

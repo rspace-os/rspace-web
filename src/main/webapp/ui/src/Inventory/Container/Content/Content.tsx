@@ -43,8 +43,7 @@ function ImageContainerZoomHelpText() {
     <>
       {zoomText}{" "}
       <TransRichText
-        ns="inventory"
-        i18nKey="container.content.zoom.panelAdjuster"
+        i18nKey="inventory:container.content.zoom.panelAdjuster"
         values={{ link: docLinks.panelAdjuster }}
       />
     </>

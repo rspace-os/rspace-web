@@ -213,12 +213,11 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.dmpassistantImportDesc" />
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmpassistantImportDesc" />
             </Typography>
             <Typography variant="body2">
               <TransRichText
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dmpassistantDocsLink"
+                i18nKey="apps:dmpIntegrations.dialog.dmpassistantDocsLink"
                 components={{
                   helpLink: <Link href={docLinks.dmpassistant} />,
                 }}

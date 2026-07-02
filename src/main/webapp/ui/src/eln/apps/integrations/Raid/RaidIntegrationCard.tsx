@@ -15,6 +15,7 @@ import React, { type FormEventHandler, type MouseEventHandler, useState } from "
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/raid";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Optional } from "@/util/optional";
 import RaidIcon from "../../../../assets/branding/raid/logo.svg";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
@@ -217,19 +218,13 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
             <Typography variant="body1">{t("integrations.raid.setup.configure")}</Typography>
             <ol>
               <li>
-                {t("integrations.raid.setup.seeAdminDocs")}{" "}
-                <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">
-                  {t("integrations.raid.setup.docLink")}
-                </Link>{" "}
-                {t("integrations.raid.setup.forMoreInfo")}
+                <TransRichText i18nKey="apps:integrations.raid.setup.step1" />
               </li>
               <li>
-                {t("integrations.raid.setup.addServer")} <strong>{t("integrations.raid.setup.addButton")}</strong>{" "}
-                {t("integrations.raid.setup.addServerSuffix")}
+                <TransRichText i18nKey="apps:integrations.raid.setup.step2" />
               </li>
               <li>
-                {t("integrations.raid.setup.connectStep")} <strong>{t("integrations.raid.setup.connectButton")}</strong>{" "}
-                {t("integrations.raid.setup.connectStepSuffix")}
+                <TransRichText i18nKey="apps:integrations.raid.setup.step3" />
               </li>
               <li>{t("integrations.raid.setup.startAssociating")}</li>
             </ol>

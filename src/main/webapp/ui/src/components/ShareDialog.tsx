@@ -149,7 +149,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
    * correctly-declined and pluralised noun. It is derived from `isSnippet`
    * rather than passed as a separate prop.
    */
-  const itemType = isSnippet ? "snippet" : "document";
+  const itemType: string = isSnippet ? "snippet" : "document";
   const [shareData, setShareData] = React.useState<
     Map<
       DocumentGlobalId,
@@ -587,7 +587,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
     >
       <DialogTitle>
         {names.length === 1 ? (
-          <TransRichText ns="common" i18nKey="shareDialog.titleSingle" values={{ name: names[0] }} />
+          <TransRichText i18nKey="common:shareDialog.titleSingle" values={{ name: names[0] }} />
         ) : (
           t("shareDialog.titleMultiple", { count: names.length, itemType })
         )}
@@ -754,7 +754,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
 
         {isSnippet && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            <TransRichText ns="common" i18nKey="shareDialog.snippetsSharedNote" />
+            <TransRichText i18nKey="common:shareDialog.snippetsSharedNote" />
           </Alert>
         )}
 
@@ -1070,11 +1070,7 @@ export function ShareDialog({ open, onClose, globalIds, names, isSnippet = false
                   })}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  <TransRichText
-                    ns="common"
-                    i18nKey="shareDialog.multipleSelection.description"
-                    values={{ itemType }}
-                  />
+                  <TransRichText i18nKey="common:shareDialog.multipleSelection.description" values={{ itemType }} />
                 </Typography>
                 {newShares.size > 0 && (
                   <Box>

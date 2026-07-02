@@ -35,8 +35,7 @@ function HistoricalVersionAlert({ record }: HistoricalVersionAlertArgs): React.R
       <AlertTitle>{t("historicalVersion.title", { version: record.version, type: typeLabel })}</AlertTitle>
       <div>
         <TransRichText
-          ns="inventory"
-          i18nKey="historicalVersion.readOnlyWithLink"
+          i18nKey="inventory:historicalVersion.readOnlyWithLink"
           components={{
             a: (
               <Link

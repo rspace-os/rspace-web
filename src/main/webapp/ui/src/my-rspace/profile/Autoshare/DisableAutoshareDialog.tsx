@@ -113,8 +113,7 @@ function DisableAutoshareDialog({
         <DialogContent>
           <DialogContentText>
             <TransRichText
-              i18nKey="profile.groups.autosharing.disableUserText"
-              ns="common"
+              i18nKey="common:profile.groups.autosharing.disableUserText"
               values={{ username, group: group.groupDisplayName }}
             />
           </DialogContentText>

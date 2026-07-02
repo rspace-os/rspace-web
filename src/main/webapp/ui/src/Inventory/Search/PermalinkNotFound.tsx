@@ -35,7 +35,7 @@ function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNod
       {permalink.version != null ? (
         <Alert severity="warning">
           <AlertTitle>{t("permalinkNotFound.versionedTitle", { typeLabel, version: permalink.version })}</AlertTitle>
-          <TransRichText ns="inventory" i18nKey="permalinkNotFound.versionedBody" values={{ link: latestUrl }} />
+          <TransRichText i18nKey="inventory:permalinkNotFound.versionedBody" values={{ link: latestUrl }} />
         </Alert>
       ) : (
         <Alert severity="warning">

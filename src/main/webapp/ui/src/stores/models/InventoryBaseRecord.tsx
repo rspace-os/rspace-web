@@ -78,7 +78,7 @@ export const sortProperties: Array<SortProperty> = [
   { key: "name", label: "Name", adjustColumn: false },
   { key: "type", label: "Type", adjustColumn: false },
   // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-  { key: "globalId", label: "Global ID", adjustColumn: true },
+  { key: "globalId", label: "Global ID", adjustColumn: true },
   { key: "creationDate", label: "Created", adjustColumn: true },
   {
     key: "modificationDate",
@@ -670,12 +670,9 @@ export default class InventoryBaseRecord
       if (
         getRootStore().uiStore.recentBatchEditExpiryCheck ??
         (await getRootStore().uiStore.confirm(
-          i18n.t("baseRecord.editSessionExpiring.title", { ns: "inventory" }),
-          i18n.t("baseRecord.editSessionExpiring.body", {
-            ns: "inventory",
-            recordType: this.recordTypeLabel.toLowerCase(),
-          }),
-          i18n.t("baseRecord.editSessionExpiring.continue", { ns: "inventory" }),
+          i18n.t("inventory:baseRecord.editSessionExpiring.title"),
+          i18n.t("inventory:baseRecord.editSessionExpiring.body", { recordType: this.recordTypeLabel.toLowerCase() }),
+          i18n.t("inventory:baseRecord.editSessionExpiring.continue"),
         ))
       ) {
         /*
@@ -718,8 +715,7 @@ export default class InventoryBaseRecord
       await getRootStore().uiStore.confirm(
         i18n.t("inventory:baseRecord.editSessionExpired.title"),
         <TransRichText
-          ns="inventory"
-          i18nKey="baseRecord.editSessionExpired.body"
+          i18nKey="inventory:baseRecord.editSessionExpired.body"
           values={{ recordType: this.recordTypeLabel.toLowerCase() }}
         />,
         i18n.t("common:actions.ok"),
@@ -1377,7 +1373,7 @@ export default class InventoryBaseRecord
       if (
         await getRootStore().uiStore.confirm(
           i18n.t("inventory:identifierConfirm.create.title"),
-          <TransRichText ns="inventory" i18nKey="identifierConfirm.create.body" />,
+          <TransRichText i18nKey="inventory:identifierConfirm.create.body" />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )
@@ -1417,8 +1413,8 @@ export default class InventoryBaseRecord
     try {
       if (
         await getRootStore().uiStore.confirm(
-          i18n.t("identifierConfirm.delete.title", { ns: "inventory" }),
-          i18n.t("identifierConfirm.delete.body", { ns: "inventory" }),
+          i18n.t("inventory:identifierConfirm.delete.title"),
+          i18n.t("inventory:identifierConfirm.delete.body"),
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )
@@ -1562,7 +1558,7 @@ export default class InventoryBaseRecord
     const options: AdjustableTableRowOptions<string> = new Map();
     options.set("Owner", () => ({ renderOption: "owner", data: owner }));
     // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-    options.set("Global ID", () => ({ renderOption: "globalId", data: this }));
+    options.set("Global ID", () => ({ renderOption: "globalId", data: this }));
     if (this.readAccessLevel !== "public") {
       options.set("Last Modified", () => ({
         renderOption: "node",

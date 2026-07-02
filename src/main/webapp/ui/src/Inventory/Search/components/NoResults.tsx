@@ -64,8 +64,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
             }}
           >
             <TransRichText
-              ns="inventory"
-              i18nKey="search.noResults.luceneInfo"
+              i18nKey="inventory:search.noResults.luceneInfo"
               components={{
                 luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
               }}

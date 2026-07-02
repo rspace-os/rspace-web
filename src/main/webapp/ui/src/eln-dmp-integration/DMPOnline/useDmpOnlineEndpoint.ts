@@ -75,7 +75,7 @@ export class DmpSummary {
       );
       this.#addAlert(
         mkAlert({
-          message: i18n.t("dmpIntegrations.endpoint.importSuccess", { ns: "apps", count: 1 }),
+          message: i18n.t("apps:dmpIntegrations.endpoint.importSuccess", { count: 1 }),
           variant: "success",
         }),
       );
@@ -83,7 +83,7 @@ export class DmpSummary {
       if (error instanceof Error) {
         this.#addAlert(
           mkAlert({
-            title: i18n.t("dmpIntegrations.endpoint.importFailed", { ns: "apps", count: 1 }),
+            title: i18n.t("apps:dmpIntegrations.endpoint.importFailed", { count: 1 }),
             message: error.message,
             variant: "error",
           }),
@@ -158,7 +158,7 @@ async function listPlans(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: i18n.t("dmpIntegrations.endpoint.listFailed", { ns: "apps" }),
+          title: i18n.t("apps:dmpIntegrations.endpoint.listFailed"),
           message: error.message,
           variant: "error",
         }),

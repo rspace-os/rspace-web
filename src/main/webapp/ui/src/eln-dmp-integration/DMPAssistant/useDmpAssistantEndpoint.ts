@@ -103,7 +103,7 @@ export async function importDmpsIntoGallery(
     if (error !== null) throw new Error(error.errorMessages[0]);
     addAlert(
       mkAlert({
-        message: i18n.t("dmpIntegrations.endpoint.importSuccess", { ns: "apps", count: dmps.length }),
+        message: i18n.t("apps:dmpIntegrations.endpoint.importSuccess", { count: dmps.length }),
         variant: "success",
       }),
     );
@@ -111,7 +111,7 @@ export async function importDmpsIntoGallery(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: i18n.t("dmpIntegrations.endpoint.importFailed", { ns: "apps", count: dmps.length }),
+          title: i18n.t("apps:dmpIntegrations.endpoint.importFailed", { count: dmps.length }),
           message: error.message,
           variant: "error",
         }),
@@ -178,7 +178,7 @@ async function listPlans(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: i18n.t("dmpIntegrations.endpoint.listFailed", { ns: "apps" }),
+          title: i18n.t("apps:dmpIntegrations.endpoint.listFailed"),
           message: error.message,
           variant: "error",
         }),

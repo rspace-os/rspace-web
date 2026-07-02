@@ -78,7 +78,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
             <HelpLinkIcon link={docLinks.IGSNIdentifiers} title={t("settings.datacite.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
-            <TransRichText ns="inventory" i18nKey="settings.datacite.formHelperText" />
+            <TransRichText i18nKey="inventory:settings.datacite.formHelperText" />
           </FormHelperText>
           <RadioField
             name={t("settings.datacite.formLabel")}

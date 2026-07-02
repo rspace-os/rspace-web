@@ -39,8 +39,7 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clie
             consequences={
               <Typography variant="body1">
                 <TransRichText
-                  ns="common"
-                  i18nKey="profile.oauth.createdApps.confirmDeleteText"
+                  i18nKey="common:profile.oauth.createdApps.confirmDeleteText"
                   values={{ appName: app.appName }}
                 />
               </Typography>

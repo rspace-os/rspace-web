@@ -36,7 +36,7 @@ function createTinyMceTable() {
     .slice(0, 4)
     .concat(
       [
-        { id: "notes", numeric: false, label: i18n.t("tinyMce.clustermarket.columns.notes", { ns: "apps" }) },
+        { id: "notes", numeric: false, label: i18n.t("apps:tinyMce.clustermarket.columns.notes") },
       ] as unknown as typeof headers,
       headers.slice(4),
     );

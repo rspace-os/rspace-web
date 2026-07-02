@@ -141,7 +141,7 @@ const RenameDialog = () => {
         <DialogTitle>{t("toolbar.rename.title")}</DialogTitle>
         <DialogContent>
           <DialogContentText variant="body2" sx={{ mb: 2 }}>
-            <TransRichText ns="workspace" i18nKey="toolbar.rename.prompt" values={{ currentName }} />
+            <TransRichText i18nKey="workspace:toolbar.rename.prompt" values={{ currentName }} />
           </DialogContentText>
           <TextField
             size="small"

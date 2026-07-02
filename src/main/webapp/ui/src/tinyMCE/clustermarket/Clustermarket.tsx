@@ -31,47 +31,47 @@ const makeBookingHeaderCells = () => [
   {
     id: "bookingID" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.bookingId", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.bookingId"),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.equipmentName", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.equipmentName"),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.manufacturer", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.manufacturer"),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.model", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.model"),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.bookedBy", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.bookedBy"),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.startTime", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.startTime"),
   },
   {
     id: "duration" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.durationMins", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.durationMins"),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.bookingType", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.bookingType"),
   },
   {
     id: "status" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.status", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.status"),
   },
 ];
 // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
@@ -79,48 +79,48 @@ const makeBookingHeaderCells = () => [
 const makeMaintenanceNotesHeader = () => ({
   id: "maintenance_notes",
   numeric: false,
-  label: i18n.t("tinyMce.clustermarket.columns.maintenanceNotes", { ns: "apps" }),
+  label: i18n.t("apps:tinyMce.clustermarket.columns.maintenanceNotes"),
 });
 const makeEquipmentHeaderCells = () => [
   {
     id: "equipmentID" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.equipmentId", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.equipmentId"),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.equipmentName", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.equipmentName"),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.manufacturer", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.manufacturer"),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.model", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.model"),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.bookingType", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.bookingType"),
   },
   {
     id: "bookingID" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.lastUse", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.lastUse"),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.onDate", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.onDate"),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: i18n.t("tinyMce.clustermarket.columns.bookedBy", { ns: "apps" }),
+    label: i18n.t("apps:tinyMce.clustermarket.columns.bookedBy"),
   },
 ];
 type ClustermarketArgs = {

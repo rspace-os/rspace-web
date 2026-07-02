@@ -72,7 +72,7 @@ function LoadingSkeleton() {
 function ErrorMessage() {
   return (
     <Alert severity="error">
-      <TransRichText ns="common" i18nKey="errorBoundary.message" />
+      <TransRichText i18nKey="common:errorBoundary.message" />
     </Alert>
   );
 }

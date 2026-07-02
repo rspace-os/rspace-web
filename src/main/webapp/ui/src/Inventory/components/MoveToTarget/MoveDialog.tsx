@@ -30,8 +30,7 @@ const DialogTitle = <RecordLike extends Record>({ beingMoved }: DialogTitleArgs<
     if (beingMoved.length > 1) return t("moveToTarget.movingItems", { count: beingMoved.length });
     return (
       <TransRichText
-        ns="inventory"
-        i18nKey="moveToTarget.movingItem"
+        i18nKey="inventory:moveToTarget.movingItem"
         components={{ name: <NameWithBadge record={beingMoved[0]} /> }}
       />
     );

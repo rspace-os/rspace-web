@@ -60,8 +60,7 @@ function Template(): React.ReactNode {
         explanation={
           activeResult.isFieldEditable("template") ? (
             <TransRichText
-              ns="inventory"
-              i18nKey="sample.fields.template.explanationNew"
+              i18nKey="inventory:sample.fields.template.explanationNew"
               values={{ link: docLinks.createTemplate }}
             />
           ) : null
@@ -96,8 +95,7 @@ function Template(): React.ReactNode {
         explanation={
           activeResult.isFieldEditable("template") ? (
             <TransRichText
-              ns="inventory"
-              i18nKey="sample.fields.template.explanationCreate"
+              i18nKey="inventory:sample.fields.template.explanationCreate"
               values={{ link: docLinks.createTemplate }}
             />
           ) : null

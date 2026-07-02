@@ -17,7 +17,6 @@ import type { StoichiometryTableGridProps } from "./types";
 const STOICHIOMETRY_TABLE_SLOTS = {
   toolbar: StoichiometryTableToolbar,
 };
-const EM_DASH = "—";
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
 const getInventoryLinkExportValue = (row: EditableMolecule): string =>
   row.inventoryLink?.inventoryItemGlobalId ?? row.deletedInventoryLink?.inventoryItemGlobalId ?? "";
@@ -105,7 +104,7 @@ export default function StoichiometryTableGrid({
               {t("actions.delete")}
             </Button>
           ) : (
-            EM_DASH
+            "—"
           ),
       },
       {
@@ -192,7 +191,7 @@ export default function StoichiometryTableGrid({
               }}
             />
           ) : (
-            EM_DASH
+            "—"
           ),
       },
       {
@@ -218,7 +217,7 @@ export default function StoichiometryTableGrid({
         type: "number",
         headerAlign: "left",
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : EM_DASH,
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : "—",
       },
       {
         field: "mass",
@@ -229,7 +228,7 @@ export default function StoichiometryTableGrid({
         type: "number",
         editable,
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : EM_DASH,
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : "—",
         cellClassName: (params) => {
           if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
             return "stoichiometry-disabled-cell";
@@ -247,7 +246,7 @@ export default function StoichiometryTableGrid({
         minWidth: 120,
         editable,
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : EM_DASH,
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : "—",
         cellClassName: (params) => {
           if (limitingReagentId !== undefined && params.id !== limitingReagentId) {
             return "stoichiometry-disabled-cell";
@@ -264,7 +263,7 @@ export default function StoichiometryTableGrid({
         editable,
         type: "number",
         renderCell: (params) =>
-          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : EM_DASH,
+          params.value !== null && params.value !== undefined ? Number(params.value).toFixed(3) : "—",
       },
       {
         field: "actualMoles",
@@ -276,7 +275,7 @@ export default function StoichiometryTableGrid({
         minWidth: 180,
         type: "number",
         renderCell: (params) => {
-          return params.value !== null ? Number(params.value).toFixed(3) : EM_DASH;
+          return params.value !== null ? Number(params.value).toFixed(3) : "—";
         },
       },
       {
@@ -289,12 +288,12 @@ export default function StoichiometryTableGrid({
         editable: false,
         renderCell: (params) => {
           if (limitingReagentId !== undefined && params.id === limitingReagentId) {
-            return EM_DASH;
+            return "—";
           }
           const value = params.value as number | null | undefined;
           return value !== null && value !== undefined
             ? `${Number((Number(Number(value).toFixed(3)) * 100).toFixed(3))}%`
-            : EM_DASH;
+            : "—";
         },
       },
       {
@@ -306,7 +305,7 @@ export default function StoichiometryTableGrid({
         editable,
         renderCell: (params) => {
           const value = params.value as string | null | undefined;
-          return value ?? EM_DASH;
+          return value ?? "—";
         },
       },
     ],

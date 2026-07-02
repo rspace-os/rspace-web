@@ -30,10 +30,7 @@ vi.mock("react-pdf", () => {
       );
     },
     Page: ({ pageNumber, scale }: PageProps) => (
-      <div data-scale={String(scale)} data-testid={`mock-pdf-page-${pageNumber}`}>
-        {"Page "}
-        {pageNumber}
-      </div>
+      <div data-scale={String(scale)} data-testid={`mock-pdf-page-${pageNumber}`}>{`Page ${pageNumber}`}</div>
     ),
   };
 });

@@ -168,8 +168,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
             <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="moreInfo.linkedDocumentsHelp.listOfMaterials"
+                  i18nKey="inventory:moreInfo.linkedDocumentsHelp.listOfMaterials"
                   values={{ link: docLinks.listOfMaterials }}
                 />
               </Typography>

@@ -25,10 +25,7 @@ function createTinyMceTable() {
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
-    .concat(
-      [{ id: "notes", numeric: false, label: i18n.t("tinyMce.omero.columns.notes", { ns: "apps" }) }],
-      headers.slice(4),
-    );
+    .concat([{ id: "notes", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.notes") }], headers.slice(4));
   headersWithNotes.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;

@@ -68,8 +68,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
         explanation={
           <>
             <TransRichText
-              ns="inventory"
-              i18nKey="fields.accessPermissions.explanation"
+              i18nKey="inventory:fields.accessPermissions.explanation"
               values={{ link: docLinks.permissions }}
             />
             <br />

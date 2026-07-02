@@ -178,8 +178,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
               t("fields.quantity.totalSingle", { alias: sample.subSampleAlias.alias })
             ) : (
               <TransRichText
-                ns="inventory"
-                i18nKey="fields.quantity.totalCalculated"
+                i18nKey="inventory:fields.quantity.totalCalculated"
                 values={{ count: sample.subSamplesCount, plural: sample.subSampleAlias.plural }}
                 components={{
                   link: (

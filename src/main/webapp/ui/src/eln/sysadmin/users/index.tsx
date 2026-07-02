@@ -221,8 +221,7 @@ const TagDialog = ({
           <Stack spacing={2}>
             <Typography variant="body2">
               <TransRichText
-                ns="system"
-                i18nKey="usersPage.tagDialog.description"
+                i18nKey="system:usersPage.tagDialog.description"
                 components={{
                   a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
                 }}
@@ -566,11 +565,10 @@ const PiAction = ({
                             }}
                           >
                             <TransRichText
-                              ns="system"
                               i18nKey={
                                 action === "grant"
-                                  ? "usersPage.piRoleDialog.grantPrompt"
-                                  : "usersPage.piRoleDialog.revokePrompt"
+                                  ? "system:usersPage.piRoleDialog.grantPrompt"
+                                  : "system:usersPage.piRoleDialog.revokePrompt"
                               }
                               values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
                             />
@@ -833,8 +831,7 @@ const DeleteAction = ({
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
                         <TransRichText
-                          ns="system"
-                          i18nKey="usersPage.deleteDialog.formsAndTemplatesNotice"
+                          i18nKey="system:usersPage.deleteDialog.formsAndTemplatesNotice"
                           values={{
                             ownerOfFormsAndTemplates: t("usersPage.ownerOfFormsAndTemplates"),
                             willTransferOwnership: t("usersPage.willTransferOwnership"),
@@ -860,8 +857,7 @@ const DeleteAction = ({
                       }}
                     >
                       <TransRichText
-                        ns="system"
-                        i18nKey="usersPage.deleteDialog.formsNotice"
+                        i18nKey="system:usersPage.deleteDialog.formsNotice"
                         values={{
                           ownerOfForms: t("usersPage.ownerOfForms"),
                           willTransferOwnership: t("usersPage.willTransferOwnership"),
@@ -885,8 +881,7 @@ const DeleteAction = ({
                     }}
                   >
                     <TransRichText
-                      ns="system"
-                      i18nKey="usersPage.deleteDialog.confirmUsername"
+                      i18nKey="system:usersPage.deleteDialog.confirmUsername"
                       values={{ fullName: selectedUser.map((u) => u.fullName).orElse("") }}
                     />
                   </Typography>
@@ -1563,9 +1558,9 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value?: Array<string>; tabIndex: number }): React.ReactNode => {
-        if (!params.value) return <>{`—`}</>;
+        if (!params.value) return <>{"—"}</>;
         const value = params.value;
-        if (value.length === 0) return <>{`—`}</>;
+        if (value.length === 0) return <>{"—"}</>;
         return (
           <Chip
             role="none"
@@ -1609,9 +1604,9 @@ export const UsersPage = (): React.ReactNode => {
       sortable: false,
       valueFormatter: (value: Array<string>) => value.join(", "),
       renderCell: (params: { value?: Array<string>; tabIndex: number }) => {
-        if (!params.value) return <>{`—`}</>;
+        if (!params.value) return <>{"—"}</>;
         const value = params.value;
-        if (value.length === 0) return <>{`—`}</>;
+        if (value.length === 0) return <>{"—"}</>;
         return (
           <Chip
             role="none"
@@ -1723,8 +1718,8 @@ export const UsersPage = (): React.ReactNode => {
                           <TableCell>{t("usersPage.summary.availableSeats")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>{`—`}</>,
-                              error: () => <>{`—`}</>,
+                              loading: () => <>{"—"}</>,
+                              error: () => <>{"—"}</>,
                               success: (listing) => listing.availableSeats,
                             })}
                           </TableCell>
@@ -1737,8 +1732,8 @@ export const UsersPage = (): React.ReactNode => {
                           </TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>{`—`}</>,
-                              error: () => <>{`—`}</>,
+                              loading: () => <>{"—"}</>,
+                              error: () => <>{"—"}</>,
                               success: (listing) => listing.billableUsersCount,
                             })}
                           </TableCell>
@@ -1747,8 +1742,8 @@ export const UsersPage = (): React.ReactNode => {
                           <TableCell>{t("usersPage.summary.systemAdmins")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>{`—`}</>,
-                              error: () => <>{`—`}</>,
+                              loading: () => <>{"—"}</>,
+                              error: () => <>{"—"}</>,
                               success: (listing) => listing.systemAdminCount,
                             })}
                           </TableCell>
@@ -1757,8 +1752,8 @@ export const UsersPage = (): React.ReactNode => {
                           <TableCell>{t("usersPage.summary.communityAdmins")}</TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>{`—`}</>,
-                              error: () => <>{`—`}</>,
+                              loading: () => <>{"—"}</>,
+                              error: () => <>{"—"}</>,
                               success: (listing) => listing.communityAdminCount,
                             })}
                           </TableCell>
@@ -1771,8 +1766,8 @@ export const UsersPage = (): React.ReactNode => {
                           </TableCell>
                           <TableCell>
                             {FetchingData.match<UserListing, React.ReactNode>(userListing, {
-                              loading: () => <>{`—`}</>,
-                              error: () => <>{`—`}</>,
+                              loading: () => <>{"—"}</>,
+                              error: () => <>{"—"}</>,
                               success: (listing) => listing.totalUsersCount,
                             })}
                           </TableCell>
@@ -1789,8 +1784,7 @@ export const UsersPage = (): React.ReactNode => {
                     }}
                   >
                     <TransRichText
-                      ns="system"
-                      i18nKey="usersPage.intro"
+                      i18nKey="system:usersPage.intro"
                       components={{
                         a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
                       }}

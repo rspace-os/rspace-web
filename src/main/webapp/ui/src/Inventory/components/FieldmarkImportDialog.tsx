@@ -375,8 +375,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
               </Typography>
               <Typography variant="body2">
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="fieldmarkImport.descriptionLinks"
+                  i18nKey="inventory:fieldmarkImport.descriptionLinks"
                   components={{
                     docLink: <Link href={docLinks.fieldmark} />,
                   }}
@@ -483,8 +482,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                   {showIgsnMessage && (
                     <Typography variant="body2" sx={{ ml: 0.5 }}>
                       <TransRichText
-                        ns="inventory"
-                        i18nKey="fieldmarkImport.igsnMessage"
+                        i18nKey="inventory:fieldmarkImport.igsnMessage"
                         values={{ link: docLinks.IGSNIdentifiers }}
                       />
                     </Typography>

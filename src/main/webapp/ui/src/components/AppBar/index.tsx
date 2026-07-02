@@ -793,7 +793,7 @@ function GalleryAppBar({
                               }}
                               primary={
                                 userDetails.orcidId === null ? (
-                                  <TransRichText ns="common" i18nKey="appBar.orcidAdd" />
+                                  <TransRichText i18nKey="common:appBar.orcidAdd" />
                                 ) : (
                                   <Stack
                                     direction="row"

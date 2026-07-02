@@ -62,12 +62,11 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
             />
             <Box>
               <DialogContentText>
-                <TransRichText ns="common" i18nKey="searchDialog.luceneTip" />
+                <TransRichText i18nKey="common:searchDialog.luceneTip" />
               </DialogContentText>
               <DialogContentText>
                 <TransRichText
-                  ns="common"
-                  i18nKey="searchDialog.moreInfo"
+                  i18nKey="common:searchDialog.moreInfo"
                   components={{
                     luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
                   }}

@@ -494,17 +494,12 @@ export default interface Resources {
         "helpLink": "Video integration docs",
         "name": "JoVE",
         "setup": {
-          "insertButton": "Insert",
-          "note": "Note:",
-          "noteText": "Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-          "openVideo": "Open a document in the Documents Editor and click the",
+          "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
           "pasteUrl": "Paste a full JoVE URL from a supported",
           "pasteUrlOr": "or",
           "pasteUrlSuffix": "page, for example",
-          "selectInsert": "Select",
-          "toPlace": "to place the JoVE video embed at the current cursor position.",
-          "toolbarButton": "Video",
-          "toolbarSuffix": "button in the editor toolbar, the insert menu, or the slash menu."
+          "step1": "Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.",
+          "step2": "Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position."
         },
         "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
       },
@@ -518,8 +513,6 @@ export default interface Resources {
           "configureNotebook": "Configure notebook:",
           "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
           "doOncePerNotebook": "Do this step once per notebook:",
-          "enableApi": "Enable API access:",
-          "enableApiDesc": "Generate your API key in My RSpace → My Profile.",
           "installStep": "One time install step:",
           "lastCell": "the last cell in the notebook:",
           "pasteCode": "Paste this code into",
@@ -529,6 +522,7 @@ export default interface Resources {
           "runCellFirst": "Run the cell then",
           "runCellSecond": "Run the cell,",
           "runCode": "Run the code:",
+          "step1": "<strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.",
           "tab": "tab running Jupyter.",
           "thenRunAgain": "and then run the cell one more time"
         },
@@ -674,17 +668,11 @@ export default interface Resources {
         "name": "RAiD",
         "noServers": "No authenticated servers.",
         "setup": {
-          "addButton": "Add",
-          "addServer": "Click the",
-          "addServerSuffix": "button below and select the RAiD server you would like to connect to.",
           "configure": "Configure your RAiD service point to enable authentication and project association:",
-          "connectButton": "Connect",
-          "connectStep": "Once the server shows up in the server list, click on the",
-          "connectStepSuffix": "button and log in with your RAiD credentials.",
-          "docLink": "our documentation for system administrators",
-          "forMoreInfo": "for more information.",
-          "seeAdminDocs": "Ask your system administrator to set up RAiD server connections. See",
-          "startAssociating": "Start associating RAiDs with your project groups."
+          "startAssociating": "Start associating RAiDs with your project groups.",
+          "step1": "Ask your system administrator to set up RAiD server connections. See <a href=\"https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration\">our documentation for system administrators</a> for more information.",
+          "step2": "Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.",
+          "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
         },
         "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
       },
@@ -2472,10 +2460,8 @@ export default interface Resources {
       "groupOwners": "Group owners",
       "groupPis": "Group PIs",
       "noUsersFound": "No users found",
-      "one": "one",
-      "pi": "PI",
       "search": "Search...",
-      "selectOnlyPrefix": "Please, select only"
+      "selectOnlyPi": "Please, select only <strong>one</strong> PI"
     }
   },
   "inventory": {
@@ -2806,8 +2792,7 @@ export default interface Resources {
       },
       "transfer": {
         "dialog": {
-          "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item.",
-          "irrevocable": "This action can only be undone by the recipient or their PI.",
+          "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
           "recipientLabel": "Recipient",
           "recipientNotFound": "If the desired recipient cannot be found in this list, try searching for their name or username.",
           "title": "Transfer Ownership"
@@ -4536,7 +4521,7 @@ export default interface Resources {
     },
     "sortProperties": {
       "created": "Created",
-      "globalId": "Global ID",
+      "globalId": "Global ID",
       "lastModified": "Last Modified",
       "name": "Name",
       "type": "Type"
@@ -4718,26 +4703,17 @@ export default interface Resources {
       "networkProblem": "There is a problem, please try again later"
     },
     "ror": {
-      "curationRequestLink": "curation request form.",
       "heading": "Research Organization Registry (ROR) Integration",
       "institutionalIdHeading": "Institutional ROR ID",
-      "introPrefix": "By associating a",
-      "introSuffix": "with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your research organisation. All research outputs with a DOI will automatically include the ROR ID in their affiliation metadata.",
+      "introText": "By associating a <a href=\"https://ror.org\" target=\"_blank\" rel=\"noreferrer\">ROR ID</a> with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your research organisation. All research outputs with a DOI will automatically include the ROR ID in their affiliation metadata.",
       "invalidFormatHelp": "Please ensure the ROR ID is one of the following formats:",
       "linkButton": "Link",
-      "linkHelpAction": "Link",
-      "linkHelpPrefix": "ROR ID found. Click",
-      "linkHelpSuffix": "to associate with this RSpace Instance.",
-      "registryLink": "ROR registry",
-      "rorIdLink": "ROR ID",
-      "searchHelpMiddle": "to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a",
-      "searchHelpPrefix": "You can search the",
+      "linkHelpText": "ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.",
+      "searchHelpText": "You can search the <a href=\"https://ror.org/search\" target=\"_blank\" rel=\"noreferrer\">ROR registry</a> to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a <a href=\"https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform\" target=\"_blank\" rel=\"noreferrer\">curation request form.</a>",
       "searchTooltip": "Search Registry",
       "statusLabel": "Status:",
       "unlinkButton": "UnLink",
-      "unlinkHelpAction": "UNLINK",
-      "unlinkHelpPrefix": "A ROR ID is linked to this RSpace Instance. Click on",
-      "unlinkHelpSuffix": "to remove the association. Future published or updated DOIs will not include the ROR ID."
+      "unlinkHelpText": "A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association. Future published or updated DOIs will not include the ROR ID."
     },
     "tags": {
       "errorFetchingTags": "Error fetching tags",

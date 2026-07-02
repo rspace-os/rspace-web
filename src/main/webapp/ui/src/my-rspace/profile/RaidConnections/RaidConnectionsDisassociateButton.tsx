@@ -45,8 +45,7 @@ const RaidConnectionsDisassociateButton = ({
           <>
             <Typography variant="body1">
               <TransRichText
-                i18nKey="profile.raidConnections.confirmDisassociateText"
-                ns="common"
+                i18nKey="common:profile.raidConnections.confirmDisassociateText"
                 values={{ raidTitle, raidIdentifier }}
               />
             </Typography>

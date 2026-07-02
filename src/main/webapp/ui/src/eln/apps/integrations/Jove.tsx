@@ -3,6 +3,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/jove";
 import JoveIcon from "../../../assets/branding/jove/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -38,8 +39,7 @@ function Jove(): React.ReactNode {
           <Stack direction="column" sx={{ gap: 2 }}>
             <ol>
               <li>
-                {t("integrations.jove.setup.openVideo")} <strong>{t("integrations.jove.setup.toolbarButton")}</strong>{" "}
-                {t("integrations.jove.setup.toolbarSuffix")}
+                <TransRichText i18nKey="apps:integrations.jove.setup.step1" />
               </li>
               <li>
                 {t("integrations.jove.setup.pasteUrl")} <code>{exampleDomain}</code>{" "}
@@ -48,12 +48,11 @@ function Jove(): React.ReactNode {
                 {"."}
               </li>
               <li>
-                {t("integrations.jove.setup.selectInsert")} <strong>{t("integrations.jove.setup.insertButton")}</strong>{" "}
-                {t("integrations.jove.setup.toPlace")}
+                <TransRichText i18nKey="apps:integrations.jove.setup.step2" />
               </li>
             </ol>
             <Typography variant="body2">
-              <strong>{t("integrations.jove.setup.note")}</strong> {t("integrations.jove.setup.noteText")}
+              <TransRichText i18nKey="apps:integrations.jove.setup.noteFull" />
             </Typography>
           </Stack>
         }

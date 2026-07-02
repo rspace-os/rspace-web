@@ -510,7 +510,7 @@ describe("RaidConnectionsAddForm", () => {
 
       await waitFor(() => {
         // When title is empty, the label will be " (raid-123)" with leading space
-        expect(screen.getByText(/^\s*\(raid-123\)$/)).toBeInTheDocument();
+        expect(screen.getByText("(raid-123)")).toBeInTheDocument();
       });
     });
   });

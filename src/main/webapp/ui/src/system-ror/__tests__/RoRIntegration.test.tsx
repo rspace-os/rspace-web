@@ -99,7 +99,7 @@ describe("Renders page with ROR data", () => {
     setupRoRMocks("https://ror.org/02mhbdp94");
     setUpComponent();
     await screen.findByText("system:ror.heading");
-    await screen.findByText(/ror.unlinkHelpPrefix/);
+    await screen.findByText("system:ror.unlinkHelpText");
     expect(
       screen.getByRole("button", {
         name: /ror.unlinkButton/,
@@ -113,7 +113,7 @@ describe("Renders page with ROR data", () => {
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails();
-    await screen.findByText(/ror.linkHelpPrefix/);
+    await screen.findByText("system:ror.linkHelpText");
     await assertRoRDetailsText();
   });
 

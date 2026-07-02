@@ -147,7 +147,7 @@ export class GeneratedBarcode implements BarcodeRecord {
       isDeleted: computed,
     });
     this.data = attrs.data;
-    this.description = i18n.t("recordInfo.barcodes.model.generatedDescription", { ns: "inventory", data: this.data });
+    this.description = i18n.t("inventory:recordInfo.barcodes.model.generatedDescription", { data: this.data });
     this.imageUrl = `barcodes?content=${this.data}&barcodeType=QR`;
   }
 
@@ -187,7 +187,7 @@ export class GeneratedBarcode implements BarcodeRecord {
   get renderedDescription(): React.ReactNode {
     return (
       <>
-        {i18n.t("recordInfo.barcodes.model.generatedByRspace", { ns: "inventory" })}
+        {i18n.t("inventory:recordInfo.barcodes.model.generatedByRspace")}
         <br />
         {this.data}
       </>

@@ -127,7 +127,7 @@ function DSWImportDialogContent({
               <>
                 {errorMsg}
                 <br />
-                <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.forMoreInfo" values={{ link: docLinks.dsw }} />
+                <TransRichText i18nKey="apps:dmpIntegrations.dialog.forMoreInfo" values={{ link: docLinks.dsw }} />
               </>
             ),
             variant: "error",
@@ -223,15 +223,13 @@ function DSWImportDialogContent({
           <Box>
             <Typography variant="body2">
               <TransRichText
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dswImportDesc"
+                i18nKey="apps:dmpIntegrations.dialog.dswImportDesc"
                 values={{ serverAlias: connection.DSW_ALIAS }}
               />
             </Typography>
             <Typography variant="body2">
               <TransRichText
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.dswDocsLink"
+                i18nKey="apps:dmpIntegrations.dialog.dswDocsLink"
                 components={{
                   helpLink: <Link href={docLinks.dsw} />,
                 }}

@@ -153,7 +153,7 @@ const PolygonEditor = observer(
               title={t("fields.identifiers.polygonCard.addPointAfter", { pointNumber: i + 1 })}
             />
           ) : (
-            " "
+            " "
           )}
         </Grid>
         <Grid
@@ -167,7 +167,7 @@ const PolygonEditor = observer(
               title={t("fields.identifiers.polygonCard.removePoint", { pointNumber: i + 1 })}
             />
           ) : (
-            " "
+            " "
           )}
         </Grid>
       </Grid>

@@ -91,8 +91,7 @@ function DialogBody({
       return (
         <Alert severity="error">
           <TransRichText
-            ns="inventory"
-            i18nKey="fields.link.elnInfoDialog.versionUnavailable"
+            i18nKey="inventory:fields.link.elnInfoDialog.versionUnavailable"
             values={{ versionPin, globalId }}
             components={{ a: <Link href={`/globalId/${globalId}`} target="_blank" rel="noopener noreferrer" /> }}
           />

@@ -8,6 +8,7 @@ import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 
 import UserList from "./UserList";
 
@@ -57,7 +58,7 @@ export default function main(props: any) {
     if (props.maxSelected && props.maxSelected < selected.length) {
       setSnackbarMessage(
         <span>
-          {t("userBox.selectOnlyPrefix")} <strong>{t("userBox.one")}</strong> {t("userBox.pi")}
+          <TransRichText i18nKey="groups:userBox.selectOnlyPi" />
         </span>,
       );
       setSnackbar(true);

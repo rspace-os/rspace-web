@@ -34,8 +34,7 @@ function BarcodesFromField<
       explanation={
         fieldOwner.isFieldEditable("barcodes") ? (
           <TransRichText
-            ns="inventory"
-            i18nKey="fields.barcodes.formField.addingBarcodes"
+            i18nKey="inventory:fields.barcodes.formField.addingBarcodes"
             values={{ link: docLinks.barcodes }}
           />
         ) : null

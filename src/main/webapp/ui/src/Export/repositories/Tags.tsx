@@ -68,8 +68,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
         >
           <FormHelperText sx={{ ml: 0, mb: 2 }}>
             <TransRichText
-              i18nKey="export.repositories.tags.helperText"
-              ns="workspace"
+              i18nKey="workspace:export.repositories.tags.helperText"
               values={{ link: docLinks.controlledVocabularies }}
             />
           </FormHelperText>

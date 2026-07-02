@@ -21,8 +21,7 @@ export default function ErrorView({
       <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
         <TransRichText
-          ns="common"
-          i18nKey="integrationErrors.serverUnavailable"
+          i18nKey="common:integrationErrors.serverUnavailable"
           values={{ appName: "Calira", url: clustermarketUrl }}
           components={{
             serverLink: (

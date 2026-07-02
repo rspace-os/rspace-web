@@ -37,8 +37,7 @@ export default function LimitedAccessAlert({
   return (
     <Alert severity="info">
       <TransRichText
-        ns="inventory"
-        i18nKey="limitedAccessAlert.message"
+        i18nKey="inventory:limitedAccessAlert.message"
         values={{
           access: readAccessLevel === "limited" ? "all" : "any",
           whatLabel,

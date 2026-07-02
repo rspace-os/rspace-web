@@ -114,8 +114,7 @@ function EnableAutoshareDialog({
         <DialogContent>
           <DialogContentText>
             <TransRichText
-              i18nKey="profile.groups.autosharing.enableUserText"
-              ns="common"
+              i18nKey="common:profile.groups.autosharing.enableUserText"
               values={{ username, group: group.groupDisplayName }}
             />
           </DialogContentText>

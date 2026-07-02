@@ -87,7 +87,7 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                   <>
                     <OptionHeading>{t("sample.fields.numberOfSubsamples.singular.heading")}</OptionHeading>
                     <OptionExplanation>
-                      <TransRichText ns="inventory" i18nKey="sample.fields.numberOfSubsamples.singular.explanation" />
+                      <TransRichText i18nKey="inventory:sample.fields.numberOfSubsamples.singular.explanation" />
                     </OptionExplanation>
                   </>
                 ),
@@ -98,7 +98,7 @@ function NumberOfSubSamples({ onErrorStateChange, sample }: NumberOfSubSamplesAr
                   <>
                     <OptionHeading>{t("sample.fields.numberOfSubsamples.many.heading")}</OptionHeading>
                     <OptionExplanation>
-                      <TransRichText ns="inventory" i18nKey="sample.fields.numberOfSubsamples.many.explanation" />
+                      <TransRichText i18nKey="inventory:sample.fields.numberOfSubsamples.many.explanation" />
                     </OptionExplanation>
                   </>
                 ),

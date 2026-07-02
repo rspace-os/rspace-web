@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import IntegrationCard from "../IntegrationCard";
 
@@ -30,8 +31,7 @@ function Jupyter(): React.ReactNode {
         setupSection={
           <ol>
             <li>
-              <strong>{t("integrations.jupyter.setup.enableApi")}</strong>{" "}
-              {t("integrations.jupyter.setup.enableApiDesc")}
+              <TransRichText i18nKey="apps:integrations.jupyter.setup.step1" />
             </li>
             <li>
               <strong>{t("integrations.jupyter.setup.configureJupyter")}</strong>{" "}

@@ -11,6 +11,7 @@ import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -97,8 +98,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
               <DialogContent>
                 <DialogContentText component="span">
                   <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    {t("contextMenu.transfer.dialog.body")}{" "}
-                    <strong>{t("contextMenu.transfer.dialog.irrevocable")}</strong>
+                    <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
                   </Typography>
                   <Typography component="p" variant="body1" sx={{ mb: 2 }}>
                     {t("contextMenu.transfer.dialog.recipientNotFound")}

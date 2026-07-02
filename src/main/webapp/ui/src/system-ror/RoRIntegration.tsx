@@ -13,6 +13,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import GenericsearchBar from "../components/GenericsearchBar";
 import materialTheme from "../theme";
 
@@ -186,11 +187,7 @@ function RoRIntegration(): React.ReactNode {
         <div>
           <h1>{t("ror.heading")}</h1>
           <RorHelpText>
-            {t("ror.introPrefix")}{" "}
-            <a target="_blank" rel="noreferrer" href="https://ror.org">
-              {t("ror.rorIdLink")}
-            </a>{" "}
-            {t("ror.introSuffix")}
+            <TransRichText i18nKey="system:ror.introText" />
           </RorHelpText>
         </div>
         <RorHelpText>
@@ -205,28 +202,17 @@ function RoRIntegration(): React.ReactNode {
         )}
         {!rorDetails && (
           <RorHelpText>
-            {t("ror.searchHelpPrefix")}{" "}
-            <a target="_blank" rel="noreferrer" href="https://ror.org/search">
-              {t("ror.registryLink")}
-            </a>{" "}
-            {t("ror.searchHelpMiddle")}{" "}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform"
-            >
-              {t("ror.curationRequestLink")}
-            </a>
+            <TransRichText i18nKey="system:ror.searchHelpText" />
           </RorHelpText>
         )}
         {showLinkAction && (
           <RorHelpText>
-            {t("ror.linkHelpPrefix")} <strong>{t("ror.linkHelpAction")}</strong> {t("ror.linkHelpSuffix")}
+            <TransRichText i18nKey="system:ror.linkHelpText" />
           </RorHelpText>
         )}
         {showUnlinkAction && (
           <RorHelpText>
-            {t("ror.unlinkHelpPrefix")} <strong>{t("ror.unlinkHelpAction")}</strong> {t("ror.unlinkHelpSuffix")}
+            <TransRichText i18nKey="system:ror.unlinkHelpText" />
           </RorHelpText>
         )}
         {rorDetails && (

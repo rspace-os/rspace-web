@@ -169,11 +169,7 @@ function SubsampleDetails({ search }: SubsampleDetailsArgs) {
         <CardActions>
           <Typography align="center" sx={{ width: "100%" }}>
             <Link component={ReactRouterLink} to={subsample.permalinkURL || ""}>
-              <TransRichText
-                ns="inventory"
-                i18nKey="subsample.details.seeFullDetails"
-                values={{ name: subsample.name }}
-              />
+              <TransRichText i18nKey="inventory:subsample.details.seeFullDetails" values={{ name: subsample.name }} />
             </Link>
           </Typography>
         </CardActions>

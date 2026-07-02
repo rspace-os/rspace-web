@@ -7,7 +7,7 @@ import AnalyticsContext from "@/stores/contexts/Analytics";
  * Error message to display when we cannot recover from an error and we cannot
  * provide any more specific information.
  */
-export const ERROR_MSG: React.ReactNode = <TransRichText ns="common" i18nKey="errorBoundary.message" />;
+export const ERROR_MSG: React.ReactNode = <TransRichText i18nKey="common:errorBoundary.message" />;
 
 /*
  * Last-resort message rendered as a plain string. It is intentionally NOT

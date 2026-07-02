@@ -415,12 +415,11 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              <TransRichText ns="apps" i18nKey="dmpIntegrations.dialog.argosImportDesc" />
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.argosImportDesc" />
             </Typography>
             <Typography variant="body2">
               <TransRichText
-                ns="apps"
-                i18nKey="dmpIntegrations.dialog.argosDocsLink"
+                i18nKey="apps:dmpIntegrations.dialog.argosDocsLink"
                 components={{
                   helpLink: <Link href={docLinks.argos} />,
                 }}

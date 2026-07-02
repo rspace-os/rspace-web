@@ -151,8 +151,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
               <DialogContent>
                 <DialogContentText>
                   <TransRichText
-                    i18nKey="profile.groups.autosharing.enableGroup.text"
-                    ns="common"
+                    i18nKey="common:profile.groups.autosharing.enableGroup.text"
                     values={{ groupDisplayName }}
                   />
                 </DialogContentText>
@@ -175,8 +174,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
               <DialogContent>
                 <DialogContentText>
                   <TransRichText
-                    i18nKey="profile.groups.autosharing.disableGroup.text"
-                    ns="common"
+                    i18nKey="common:profile.groups.autosharing.disableGroup.text"
                     values={{ groupDisplayName }}
                   />
                 </DialogContentText>

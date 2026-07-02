@@ -49,7 +49,7 @@ export default function StoichiometryDialog({
   onDelete,
 }: StandaloneDialogInnerProps): React.ReactNode {
   const titleId = React.useId();
-  const { t } = useTranslation("common");
+  const { t } = useTranslation(["common", "apps"]);
   const { getToken } = useOauthToken();
   const {
     mutate: mutateCalculateStoichiometry,
@@ -106,7 +106,7 @@ export default function StoichiometryDialog({
           mkAlert({
             variant: "error",
             title: t("stoichiometry.dialog.chemistryStatusErrorTitle"),
-            message: t("previewInfo.chemistryStatus.error", { ns: "apps", error }),
+            message: t("apps:previewInfo.chemistryStatus.error", { error }),
           }),
         );
       },
@@ -119,7 +119,7 @@ export default function StoichiometryDialog({
             mkAlert({
               variant: "error",
               title: t("stoichiometry.dialog.chemistryDisabledTitle"),
-              message: t("previewInfo.chemistryStatus.disabled", { ns: "apps" }),
+              message: t("apps:previewInfo.chemistryStatus.disabled"),
             }),
           );
         }
@@ -194,7 +194,7 @@ export default function StoichiometryDialog({
     >
       <AppBar
         variant="dialog"
-        currentPage={t("integrations.chemistry.name", { ns: "apps" })}
+        currentPage={t("apps:integrations.chemistry.name")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}

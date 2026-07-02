@@ -415,8 +415,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                 <DialogTitle sx={{ pb: 0.5 }}>
                   {currentList?.id === undefined
                     ? t("materialsListing.dialog.newTitle")
-                    : t("materialsListing.dialog.title")}
-                  {"\u00a0"}
+                    : t("materialsListing.dialog.title")}{" "}
                   <HelpLinkIcon link={docLinks.listOfMaterials} title={t("materialsListing.dialog.helpTitle")} />
                   {!isSingleColumn && (
                     <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />

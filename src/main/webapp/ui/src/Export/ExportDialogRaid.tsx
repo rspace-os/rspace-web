@@ -90,15 +90,13 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
             <Stack direction="column" spacing={2}>
               <Typography variant="body1">
                 <TransRichText
-                  i18nKey="export.raid.eligible.projectGroupLine"
-                  ns="workspace"
+                  i18nKey="workspace:export.raid.eligible.projectGroupLine"
                   values={{ name: raidExportStatus.projectGroup.name }}
                 />
               </Typography>
               <Typography variant="body1">
                 <TransRichText
-                  i18nKey="export.raid.eligible.raidDetails"
-                  ns="workspace"
+                  i18nKey="workspace:export.raid.eligible.raidDetails"
                   values={{
                     title: raidExportStatus.raid.raidTitle,
                     identifier: raidExportStatus.raid.raidIdentifier,

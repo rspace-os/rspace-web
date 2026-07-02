@@ -137,7 +137,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText component="div">
-                <TransRichText i18nKey="profile.groups.bioOntologies.allow.text" ns="common" />{" "}
+                <TransRichText i18nKey="common:profile.groups.bioOntologies.allow.text" />{" "}
                 <Box sx={{ fontSize: "8px" }}>{t("profile.groups.bioOntologies.allow.citation")}</Box>
               </DialogContentText>
             </DialogContent>
@@ -157,7 +157,7 @@ function GroupBioOntologiesManager({ groupId, isCloud, canManageOntologies }: an
             </DialogTitle>
             <DialogContent>
               <DialogContentText>
-                <TransRichText i18nKey="profile.groups.bioOntologies.disallow.text" ns="common" />
+                <TransRichText i18nKey="common:profile.groups.bioOntologies.disallow.text" />
               </DialogContentText>
             </DialogContent>
             <DialogActions>

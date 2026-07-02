@@ -227,8 +227,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
             }}
           >
             <TransRichText
-              ns="inventory"
-              i18nKey="detailedListing.card.modifiedBy"
+              i18nKey="inventory:detailedListing.card.modifiedBy"
               values={{ name: record.modifiedByFullName }}
               components={{
                 timeAgo: (

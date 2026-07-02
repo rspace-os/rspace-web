@@ -184,7 +184,7 @@ function TagDialog(): React.ReactNode {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
-            <TransRichText i18nKey="toolbar.tags.description" ns="workspace" values={{ link: docLinks.tags }} />
+            <TransRichText i18nKey="workspace:toolbar.tags.description" values={{ link: docLinks.tags }} />
           </Typography>
           <TagListing
             tags={

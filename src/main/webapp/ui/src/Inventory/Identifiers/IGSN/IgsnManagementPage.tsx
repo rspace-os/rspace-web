@@ -66,8 +66,7 @@ export default function IgsnManagementPage({
           <TitledBox title={t("igsnManagement.sections.ids")} border>
             <Typography>
               <TransRichText
-                ns="inventory"
-                i18nKey="igsnManagement.idsDescription"
+                i18nKey="inventory:igsnManagement.idsDescription"
                 components={{
                   a: <Link target="_blank" rel="noreferrer" href={docLinks.IGSNIdentifiers} />,
                 }}
@@ -83,8 +82,7 @@ export default function IgsnManagementPage({
             >
               <Typography>
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="igsnManagement.registerDescription"
+                  i18nKey="inventory:igsnManagement.registerDescription"
                   components={{
                     kbd: <Typography variant="button" component="kbd" />,
                     cite: <cite />,
@@ -158,8 +156,7 @@ export default function IgsnManagementPage({
             >
               <Typography>
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="igsnManagement.manageDescription"
+                  i18nKey="inventory:igsnManagement.manageDescription"
                   components={{
                     cite: <cite />,
                     strong: <strong />,

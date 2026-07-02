@@ -146,8 +146,7 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
               <TransRichText
-                ns="inventory"
-                i18nKey="print.options.labelShapeHint"
+                i18nKey="inventory:print.options.labelShapeHint"
                 values={{ link: docLinks.barcodesPrinting }}
               />
             </Alert>

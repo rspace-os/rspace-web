@@ -262,8 +262,7 @@ function Attachments<
       explanation={
         activeResult.isFieldEditable("attachments") ? (
           <TransRichText
-            ns="inventory"
-            i18nKey="fields.attachments.formField.explanation"
+            i18nKey="inventory:fields.attachments.formField.explanation"
             values={{ link: docLinks.attachments }}
           />
         ) : null

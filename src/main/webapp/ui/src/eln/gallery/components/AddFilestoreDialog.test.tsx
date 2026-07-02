@@ -118,14 +118,14 @@ describe("AddFilestoreDialog", () => {
     await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
 
     // the folder tree is rendered once the browse request resolves
-    await screen.findByRole("treeitem", { name: /^test$/ });
+    await screen.findByRole("treeitem", { name: "test" });
 
     // axe check on the folder-selection step
     await expectAccessible(baseElement);
 
     // the user selects a folder. The clickable surface is the treeitem's
     // content div, mirroring the spec's `.locator("> div")`.
-    const testTreeItem = screen.getByRole("treeitem", { name: /^test$/ });
+    const testTreeItem = screen.getByRole("treeitem", { name: "test" });
     const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
     await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i }));
@@ -144,7 +144,7 @@ describe("AddFilestoreDialog", () => {
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
     await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
 
-    expect(await screen.findByRole("treeitem", { name: /^test$/ })).toBeVisible();
+    expect(await screen.findByRole("treeitem", { name: "test" })).toBeVisible();
     expect(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i })).toBeInTheDocument();
   });
 
@@ -156,7 +156,7 @@ describe("AddFilestoreDialog", () => {
     await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
 
     const testTreeItem = await screen.findByRole("treeitem", {
-      name: /^test$/,
+      name: "test",
     });
     const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
@@ -200,7 +200,7 @@ describe("AddFilestoreDialog", () => {
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
     await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
 
-    await screen.findByRole("treeitem", { name: /^test$/ });
+    await screen.findByRole("treeitem", { name: "test" });
     expect(screen.queryByRole("treeitem", { name: /bucket top level/i })).not.toBeInTheDocument();
   });
 });

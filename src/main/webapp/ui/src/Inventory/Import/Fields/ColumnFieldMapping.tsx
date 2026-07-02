@@ -123,8 +123,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       severity: "info",
       content: (
         <TransRichText
-          ns="inventory"
-          i18nKey="import.columnMapping.parentSampleImportIdMissing"
+          i18nKey="inventory:import.columnMapping.parentSampleImportIdMissing"
           values={{ label }}
           components={{
             link: <Link to={onTypeSelect("SAMPLES")} />,
@@ -138,8 +137,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
       severity: "info",
       content: (
         <TransRichText
-          ns="inventory"
-          i18nKey="import.columnMapping.parentContainerImportIdMissing"
+          i18nKey="inventory:import.columnMapping.parentContainerImportIdMissing"
           values={{ label }}
           components={{
             link: <Link to={onTypeSelect("CONTAINERS")} />,

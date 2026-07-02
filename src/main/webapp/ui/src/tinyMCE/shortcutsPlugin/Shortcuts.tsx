@@ -374,7 +374,7 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             )}
             {this.state.instructions && (
               <p>
-                <TransRichText ns="apps" i18nKey="tinyMce.shortcuts.reservedShortcutsNote" />
+                <TransRichText i18nKey="apps:tinyMce.shortcuts.reservedShortcutsNote" />
               </p>
             )}
           </Alert>

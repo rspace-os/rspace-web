@@ -159,8 +159,7 @@ function SharingAndPublication({
             {Object.entries(info.sharedNotebooksAndOwners ?? {}).map(([nb, owner]) => (
               <ListItem key={`nb-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="fields.link.documentSections.sharing.intoNotebook"
+                  i18nKey="inventory:fields.link.documentSections.sharing.intoNotebook"
                   values={{ nb, owner }}
                   components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
                 />
@@ -169,8 +168,7 @@ function SharingAndPublication({
             {Object.entries(info.implicitShares ?? {}).map(([nb, owner]) => (
               <ListItem key={`im-${nb}`} disableGutters sx={{ display: "list-item", py: 0 }}>
                 <TransRichText
-                  ns="inventory"
-                  i18nKey="fields.link.documentSections.sharing.implicitlyInNotebook"
+                  i18nKey="inventory:fields.link.documentSections.sharing.implicitlyInNotebook"
                   values={{ nb, owner }}
                   components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
                 />
@@ -237,8 +235,7 @@ export default function DocumentSections({
         >
           <Typography variant="body2">
             <TransRichText
-              ns="inventory"
-              i18nKey="fields.link.documentSections.versionNote"
+              i18nKey="inventory:fields.link.documentSections.versionNote"
               values={{ pinnedVersion, globalId: unversionedGlobalId }}
             />
           </Typography>
