@@ -1,13 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
-
-<head>
-    <title>Simple document view</title>
-    
-    <script> 
-    	var isSimpleEditorView = true;
-    </script>
-
-</head>
+<%-- Body fragment: emits NO <head> of its own (SiteMesh 3 keeps only the first head when heads
+     nest). The <title> and the isSimpleEditorView flag it used to declare now live in the single
+     <head> of the only caller, msTeamsSimpleDocView.jsp. --%>
 
 <style>
     #fileBrowsing,
@@ -16,7 +10,7 @@
     .btn.attachmentButton {
         display:none;
     }
-    
+
     .mce-saveCloseDocMenuItem,
     .mce-saveCloneDocMenuItem,
     .mce-saveNewDocMenuItem {
@@ -30,4 +24,3 @@
 
 
 <jsp:include page="structuredDocument.jsp" />
-

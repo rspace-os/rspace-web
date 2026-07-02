@@ -16,7 +16,6 @@
     -->
 
     <!-- Paths that must never be decorated (evaluated before the decorator mappings below). -->
-    <mapping path="/error.jsp" exclude="true"/>
     <mapping path="*/ajax/*" exclude="true"/>
     <mapping path="/scripts/**" exclude="true"/>
     <mapping path="/ui/dist/**" exclude="true"/>
