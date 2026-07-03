@@ -208,7 +208,11 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
 
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
-      <link rel="stylesheet" href="/styles/simplicity/typo.css" />
+      {/* base typography, own copy of the rules this page needs from styles/simplicity/typo.css (RSDEV-1227) */}
+      <style>{`
+        body { text-align: left; font-family: arial, sans-serif; font-size: 76%; color: #444; }
+        a, a:link, a:active { text-decoration: none; }
+      `}</style>
       <link rel="stylesheet" href="/styles/simplicity/typoEdit.css" />
       <CssBaseline />
       <ThemeProvider theme={materialTheme}>
