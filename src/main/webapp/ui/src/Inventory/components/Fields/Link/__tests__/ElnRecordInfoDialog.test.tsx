@@ -68,18 +68,16 @@ function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDi
 async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
   const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
   const queryClient = new QueryClient();
-  return {
-    ...render(
-      <I18nextProvider i18n={i18n}>
-        <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={materialTheme}>
-            <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} {...props} />
-          </ThemeProvider>
-        </QueryClientProvider>
-      </I18nextProvider>,
-    ),
-    queryClient,
-  };
+  render(
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider theme={materialTheme}>
+          <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} {...props} />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </I18nextProvider>,
+  );
+  return { queryClient };
 }
 
 describe("ElnRecordInfoDialog", () => {

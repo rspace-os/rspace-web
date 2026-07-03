@@ -827,13 +827,12 @@
         },
         "sharing": {
           "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{nb}</a> (shared with: {owner})",
-          "inPublishedNotebook": "This document is in a published notebook:",
+          "inPublishedNotebook": "This document is in a published notebook: <a>public link</a>",
           "intoNotebook": "into Notebook <a>{nb}</a> (owner: {owner})",
-          "isPublished": "This {recordTypeName} is published:",
+          "isPublished": "This {recordTypeName} is published: <a>public link</a>",
           "isShared": "This {recordTypeName} is shared:",
           "notPublished": "This {recordTypeName} is not published.",
           "notShared": "This {recordTypeName} is not shared.",
-          "publicLink": "public link",
           "title": "Sharing",
           "withGroup": "with {group} (group) for {access}",
           "withUser": "with {user} (user) for {access}"

@@ -1,8 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, within } from "@/__tests__/customQueries";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
 
@@ -65,6 +68,20 @@ function renderDoc(props: Partial<React.ComponentProps<typeof DocumentSections>>
     <ThemeProvider theme={materialTheme}>
       <DocumentSections info={baseInfo} isNotebook={false} {...props} />
     </ThemeProvider>,
+  );
+}
+
+// The public-link sentence is rendered via TransRichText, embedding the <a> in the
+// translated copy; cimode returns the raw key with no <a> tag to embed, so these
+// two tests render against the real English bundle instead.
+async function renderDocWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
+  const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
+  return render(
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider theme={materialTheme}>
+        <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+      </ThemeProvider>
+    </I18nextProvider>,
   );
 }
 
@@ -151,11 +168,9 @@ describe("DocumentSections (structured document)", () => {
 
   it("shows the public link when the document is published", async () => {
     getPublicLink.mockResolvedValue("abc-123");
-    renderDoc();
+    await renderDocWithRealI18n();
     expect(getPublicLink).toHaveBeenCalledWith("SD123");
-    const publicLink = await screen.findByRole("link", {
-      name: "inventory:fields.link.documentSections.sharing.publicLink",
-    });
+    const publicLink = await screen.findByRole("link", { name: "public link" });
     expect(publicLink).toHaveAttribute("href", expect.stringContaining("/public/publishedView/document/abc-123"));
   });
 
@@ -164,15 +179,17 @@ describe("DocumentSections (structured document)", () => {
     // when the document itself is unpublished but its parent notebook is published;
     // the ELN routes these to /notebook/, not /document/ (recordInfoPanel.js).
     getPublicLink.mockResolvedValue("parent-link?initialRecordToDisplay=123");
-    renderDoc();
-    expect(
-      await screen.findByText("inventory:fields.link.documentSections.sharing.inPublishedNotebook"),
-    ).toBeInTheDocument();
-    const publicLink = screen.getByRole("link", { name: "inventory:fields.link.documentSections.sharing.publicLink" });
+    await renderDocWithRealI18n();
+    const publicLink = await screen.findByRole("link", { name: "public link" });
     expect(publicLink).toHaveAttribute(
       "href",
       expect.stringContaining("/public/publishedView/notebook/parent-link?initialRecordToDisplay=123"),
     );
+    expect(
+      screen.getByText(
+        (_content, element) => element?.textContent === "This document is in a published notebook: public link",
+      ),
+    ).toBeInTheDocument();
   });
 });
 
@@ -191,7 +208,7 @@ describe("DocumentSections (version-pinned SD)", () => {
   it("shows the 'may not be the latest version' header with the doc id as plain text (no link) when pinned", () => {
     renderPinned();
     const note = screen.getByRole("note");
-    expect(note).toHaveTextContent(/fields\.link\.documentSections\.versionNote/i);
+    expect(note).toHaveTextContent("inventory:fields.link.documentSections.versionNote");
     // The document id in the warning is plain text, not a link to the latest version.
     expect(within(note).queryByRole("link")).not.toBeInTheDocument();
   });

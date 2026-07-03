@@ -185,18 +185,25 @@ function SharingAndPublication({
           </Typography>
         ) : (
           <Typography variant="body2">
-            {publicLink.includes("initialRecordToDisplay")
-              ? t("fields.link.documentSections.sharing.inPublishedNotebook")
-              : t("fields.link.documentSections.sharing.isPublished", { recordTypeName })}{" "}
-            <Link
-              href={`${window.location.origin}/public/publishedView/${
-                publicLink.includes("initialRecordToDisplay") || isNotebook ? "notebook" : "document"
-              }/${publicLink}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t("fields.link.documentSections.sharing.publicLink")}
-            </Link>
+            <TransRichText
+              i18nKey={
+                publicLink.includes("initialRecordToDisplay")
+                  ? "inventory:fields.link.documentSections.sharing.inPublishedNotebook"
+                  : "inventory:fields.link.documentSections.sharing.isPublished"
+              }
+              values={{ recordTypeName }}
+              components={{
+                a: (
+                  <Link
+                    href={`${window.location.origin}/public/publishedView/${
+                      publicLink.includes("initialRecordToDisplay") || isNotebook ? "notebook" : "document"
+                    }/${publicLink}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                ),
+              }}
+            />
           </Typography>
         ))}
     </Box>
