@@ -5,6 +5,7 @@
    tools.css, header.css, layout.css and messages.css also still exist standalone -- they are
    linked directly elsewhere via rst:assetUrl, which already cache-busts them correctly. */
 
+@import url(/styles/google-roboto-font/Roboto_300_400_500_700.css);
 
 /* --- tools.css --- */
 /* A CSS Framework by Mike Stenhouse of Content with Style */
@@ -877,7 +878,6 @@ span.drag-drop-chem p.title, span.drag-drop-gallery.chem-enabled p.title {
 /*
   original pen http://codepen.io/kuddai/pen/LkoyPd
 */
-@import url(/styles/google-roboto-font/Roboto_300_400_500_700.css);
 
 .header-info {
   position: absolute;
