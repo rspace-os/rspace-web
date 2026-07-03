@@ -6,7 +6,11 @@ import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { useState } from "react";
+import { I18nextProvider } from "react-i18next";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import axios from "@/common/axios";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import Alerts from "../../components/Alerts/Alerts";
 import type { ExportSelection } from "../common";
 import ExportDialog from "../ExportDialog";
@@ -78,7 +82,12 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
       }),
     }),
   );
-function renderExportDialog({ allowFileStores }: { allowFileStores?: boolean } = {}): {
+type RenderExportDialogArgs = {
+  allowFileStores?: boolean;
+  i18n?: Awaited<ReturnType<typeof createTestI18n>>;
+};
+
+function renderExportDialog({ allowFileStores, i18n }: RenderExportDialogArgs = {}): {
   setProps: (props: { selection: ExportSelection; open: boolean }) => void;
 } {
   // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
@@ -95,16 +104,23 @@ function renderExportDialog({ allowFileStores }: { allowFileStores?: boolean } =
       setSelection(s);
       setOpen(o);
     };
-    return (
+    const dialog = (
       <Alerts>
         <ExportDialog exportSelection={selection} open={open} allowFileStores={allowFileStores ?? false} />
       </Alerts>
     );
+    return i18n ? <I18nextProvider i18n={i18n}>{dialog}</I18nextProvider> : dialog;
   };
   render(<Wrapper />);
   if (!setProps) throw new Error("setProps is not initialised");
   return { setProps };
 }
+
+async function renderExportDialogWithRealI18n({ allowFileStores }: { allowFileStores?: boolean } = {}) {
+  const i18n = await createTestI18n({ common: commonEn, workspace: workspaceEn }, "workspace");
+  return renderExportDialog({ allowFileStores, i18n });
+}
+
 describe("ExportDialog", () => {
   mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
   test("Should be renderable", () => {
@@ -130,7 +146,7 @@ describe("ExportDialog", () => {
           .onPost("/nfsExport/ajax/createQuickExportPlan")
 
           .reply(200, { ...CREATE_QUICK_EXPORT_PLAN });
-        const { setProps } = renderExportDialog({ allowFileStores: true });
+        const { setProps } = await renderExportDialogWithRealI18n({ allowFileStores: true });
         act(() => {
           setProps({
             open: true,
@@ -144,27 +160,27 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^workspace:export.format.chooser.formats.htmlHeading/,
+            name: /^.ZIP bundle containing .HTML files/,
           }),
         );
-        await user.click(
-          screen.getByRole("checkbox", { name: "workspace:export.format.chooser.includeFilestoreLinks" }),
-        );
+        await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
 
-        await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+        await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("workspace:export.format.htmlXml.includeLinksLabel")).toBeVisible();
+          expect(screen.getByText("Should linked RSpace documents be included in export?")).toBeVisible();
         });
 
-        await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+        await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("workspace:export.fileStore.foundLinks.summary")).toBeVisible();
+          expect(screen.getByText("Exported content contains 1 filestore link from 1 File System.")).toBeVisible();
         });
 
-        await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+        await user.click(screen.getByRole("button", { name: "Export" }));
         await waitFor(() => {
           expect(
-            within(screen.getByRole("dialog")).getByText("workspace:export.fileStore.validation.loggedOut"),
+            within(screen.getByRole("dialog")).getByText(
+              "You are not logged into all required File Systems and some filestore links won't be exported. Do you want to proceed without logging in?",
+            ),
           ).toBeVisible();
         });
       });
@@ -184,7 +200,7 @@ describe("ExportDialog", () => {
             },
           ],
         });
-        const { setProps } = renderExportDialog({ allowFileStores: true });
+        const { setProps } = await renderExportDialogWithRealI18n({ allowFileStores: true });
         act(() => {
           setProps({
             open: true,
@@ -198,30 +214,30 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^workspace:export.format.chooser.formats.htmlHeading/,
+            name: /^.ZIP bundle containing .HTML files/,
           }),
         );
-        await user.click(
-          screen.getByRole("checkbox", { name: "workspace:export.format.chooser.includeFilestoreLinks" }),
-        );
+        await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
 
-        await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+        await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("workspace:export.format.htmlXml.includeLinksLabel")).toBeVisible();
+          expect(screen.getByText("Should linked RSpace documents be included in export?")).toBeVisible();
         });
 
-        await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+        await user.click(screen.getByRole("button", { name: "Next" }));
         await waitFor(() => {
-          expect(screen.getByText("workspace:export.fileStore.foundLinks.summary")).toBeVisible();
+          expect(screen.getByText("Exported content contains 1 filestore link from 1 File System.")).toBeVisible();
         });
         await waitFor(() => {
-          expect(screen.getByText("workspace:export.fileStore.login.allLoggedIn")).toBeVisible();
+          expect(screen.getByText("You are logged into all File Systems referenced by filestore links.")).toBeVisible();
         });
 
-        await user.click(screen.getByRole("button", { name: "common:actions.export" }));
+        await user.click(screen.getByRole("button", { name: "Export" }));
         await waitFor(() => {
           expect(
-            within(screen.getByRole("dialog")).getByText("workspace:export.fileStore.validation.scanNotPerformed"),
+            within(screen.getByRole("dialog")).getByText(
+              "You have not performed links availability scan. We strongly recommend running it, as it will report any potential problems with accessing filestore link. Do you want to proceed without running the scan?",
+            ),
           ).toBeVisible();
         });
       });
@@ -352,7 +368,7 @@ describe("ExportDialog", () => {
           200,
           "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready.",
         );
-      const { setProps } = renderExportDialog();
+      const { setProps } = await renderExportDialogWithRealI18n();
       act(() => {
         setProps({
           open: true,
@@ -364,17 +380,15 @@ describe("ExportDialog", () => {
           },
         });
       });
-      fireEvent.click(
-        await screen.findByRole("radio", { name: /^workspace:export.format.chooser.formats.docHeading/ }),
-      );
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.next" }));
+      fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
       fireEvent.mouseDown(screen.getByRole("combobox"));
-      fireEvent.click(screen.getByRole("option", { name: "workspace:export.format.word.pageSize.letter" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "workspace:export.format.word.setDefault" }));
+      fireEvent.click(screen.getByRole("option", { name: "Letter" }));
+      fireEvent.click(screen.getByRole("checkbox", { name: "Set LETTER as default." }));
 
       mockAxios.resetHistory();
-      fireEvent.click(screen.getByRole("button", { name: "common:actions.export" }));
+      fireEvent.click(screen.getByRole("button", { name: "Export" }));
       await waitFor(() => {
         expect(screen.getByText(/submitted to the server/)).toBeVisible();
       });
@@ -417,19 +431,17 @@ describe("ExportDialog", () => {
           const user = userEvent.setup();
           await fc.assert(
             fc.asyncProperty(arbGroupSelection, async (selection) => {
-              const { setProps } = renderExportDialog();
+              const { setProps } = await renderExportDialogWithRealI18n();
               act(() => {
                 setProps({ open: true, selection });
               });
-              await user.click(
-                screen.getByRole("radio", { name: /^workspace:export.format.chooser.formats.pdfHeading/ }),
-              );
+              await user.click(screen.getByRole("radio", { name: /^PDF file/ }));
 
-              await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+              await user.click(screen.getByRole("button", { name: "Next" }));
               await waitFor(() => {
                 expect(screen.getByRole("textbox")).toBeVisible();
               });
-              expect(screen.getByRole("textbox")).toHaveValue("workspace:export.dialog.defaultExportName.groupAllWork");
+              expect(screen.getByRole("textbox")).toHaveValue(`${selection.groupName} - all work`);
             }),
             { numRuns: 1 },
           );
@@ -438,19 +450,17 @@ describe("ExportDialog", () => {
           const user = userEvent.setup();
           await fc.assert(
             fc.asyncProperty(arbUserSelection, async (selection) => {
-              const { setProps } = renderExportDialog();
+              const { setProps } = await renderExportDialogWithRealI18n();
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(
-                screen.getByRole("radio", { name: /^workspace:export.format.chooser.formats.pdfHeading/ }),
-              );
+              fireEvent.click(screen.getByRole("radio", { name: /^PDF file/ }));
 
-              await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+              await user.click(screen.getByRole("button", { name: "Next" }));
               await waitFor(() => {
                 expect(screen.getByRole("textbox")).toBeVisible();
               });
-              expect(screen.getByRole("textbox")).toHaveValue("workspace:export.dialog.defaultExportName.userAllWork");
+              expect(screen.getByRole("textbox")).toHaveValue(`${selection.username} - all work`);
             }),
             { numRuns: 1 },
           );
