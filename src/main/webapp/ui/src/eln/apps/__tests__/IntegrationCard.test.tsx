@@ -93,7 +93,7 @@ describe("IntegrationCard", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
   test("DialogContent should be shown once card has been tapped.", () => {
@@ -117,7 +117,7 @@ describe("IntegrationCard", () => {
 
     expect(screen.queryByText("Some dialog content")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
     expect(screen.getByText("Some dialog content")).toBeInTheDocument();
   });
   test("When tapped, the enable button should invoke update.", () => {
@@ -141,7 +141,7 @@ describe("IntegrationCard", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
 
     fireEvent.click(screen.getByRole("button", { name: "apps:integrationCard.enable" }));
     expect(update).toHaveBeenCalledWith("ENABLED");
@@ -167,7 +167,7 @@ describe("IntegrationCard", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
 
     fireEvent.click(screen.getByRole("button", { name: "apps:integrationCard.disable" }));
     expect(update).toHaveBeenCalledWith("DISABLED");

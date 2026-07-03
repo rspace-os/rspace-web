@@ -20,6 +20,11 @@ describe("TimeAgoCustom", () => {
     expect(screen.getByText("2 minutes ago")).toBeInTheDocument();
   });
 
+  test("renders the custom text for durations under a minute", () => {
+    render(<TimeAgoCustom time="2026-07-03T11:59:50.000Z" />);
+    expect(screen.getByText("common:timeAgo.lessThanOneMinuteAgo")).toBeInTheDocument();
+  });
+
   test("renders compact relative text with the former formatter behaviour", () => {
     render(<TimeAgoCustom time="2026-07-03T11:58:01.000Z" compact />);
     expect(screen.getByText("1m ago")).toBeInTheDocument();

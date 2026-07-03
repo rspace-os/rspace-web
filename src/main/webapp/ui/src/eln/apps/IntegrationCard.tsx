@@ -375,6 +375,7 @@ function IntegrationCard<Credentials>({
         }}
       >
         <CardActionArea
+          aria-label={name}
           disabled={mode === "UNAVAILABLE"}
           onClick={() => {
             setOpen(true);

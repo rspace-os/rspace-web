@@ -1911,6 +1911,10 @@ export default interface Resources {
         "whitespaceSuffix": "Tags cannot end with whitespace characters."
       }
     },
+    "timeAgo": {
+      "inLessThanOneMinute": "in < 1 minute",
+      "lessThanOneMinuteAgo": "< 1 minute ago"
+    },
     "toolbar": {
       "createDocument": "CREATE DOCUMENT",
       "createRecord": "Create a record",
