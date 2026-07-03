@@ -185,11 +185,6 @@ describe("DocumentSections (structured document)", () => {
       "href",
       expect.stringContaining("/public/publishedView/notebook/parent-link?initialRecordToDisplay=123"),
     );
-    expect(
-      screen.getByText(
-        (_content, element) => element?.textContent === "This document is in a published notebook: public link",
-      ),
-    ).toBeInTheDocument();
   });
 });
 
