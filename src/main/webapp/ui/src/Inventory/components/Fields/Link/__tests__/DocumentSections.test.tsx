@@ -205,10 +205,20 @@ describe("DocumentSections (version-pinned SD)", () => {
     });
   }
 
-  it("shows the 'may not be the latest version' header with the doc id as plain text (no link) when pinned", () => {
-    renderPinned();
+  function renderPinnedWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
+    return renderDocWithRealI18n({
+      info: { ...baseInfo, oid: { idString: "SD599v3" }, version: 3 },
+      pinnedVersion: 3,
+      ...props,
+    });
+  }
+
+  it("shows the 'may not be the latest version' header with the version and doc id as plain text (no link) when pinned", async () => {
+    await renderPinnedWithRealI18n();
     const note = screen.getByRole("note");
-    expect(note).toHaveTextContent("inventory:fields.link.documentSections.versionNote");
+    expect(note).toHaveTextContent(
+      "The information below describes version 3 of a document SD599, which may not be the latest version.",
+    );
     // The document id in the warning is plain text, not a link to the latest version.
     expect(within(note).queryByRole("link")).not.toBeInTheDocument();
   });
