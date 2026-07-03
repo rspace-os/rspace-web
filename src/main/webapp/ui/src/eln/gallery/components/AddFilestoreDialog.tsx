@@ -86,7 +86,8 @@ function FilesystemSelectionStep(props: {
 
   React.useEffect(() => {
     void (async () => {
-      const { data } = await (await api.current).get<unknown>("filesystems");
+      const client = await api.current;
+      const { data } = await client.get<unknown>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -220,7 +221,8 @@ function TreeListing({
     setLoading(true);
     async function browse(): Promise<void> {
       try {
-        const { data } = await (await api.current).get<{ content: FilesystemListing }>(
+        const client = await api.current;
+        const { data } = await client.get<{ content: FilesystemListing }>(
           `filesystems/${fsId}/browse?remotePath=${path}`,
         );
         if (!data.content) throw new Error("No content");
@@ -447,7 +449,8 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
       const filesystemId = selectedFilesystem
         .toResult(() => new Error("No filestore has been selected,"))
         .elseThrow().id;
-      await (await api.current).post<unknown>(
+      const client = await api.current;
+      await client.post<unknown>(
         "filestores",
         {},
         {

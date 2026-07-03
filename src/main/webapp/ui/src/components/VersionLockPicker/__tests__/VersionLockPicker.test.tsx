@@ -34,9 +34,12 @@ describe("VersionLockPicker", () => {
 
   it("renders a row for each revision and a 'latest' row", async () => {
     renderComponent({ currentSelection: LATEST_SELECTION, onChange: vi.fn() });
-    expect(await (await screen.findAllByText("common:versionLockPicker.versionValue"))[0]).toBeInTheDocument();
-    expect(await (await screen.findAllByText("common:versionLockPicker.versionValue"))[1]).toBeInTheDocument();
-    expect(await (await screen.findAllByText("common:versionLockPicker.versionValue"))[2]).toBeInTheDocument();
+    const versionRows = await screen.findAllByText("common:versionLockPicker.versionValue");
+
+    expect(versionRows).toHaveLength(revisions.length);
+    versionRows.forEach((row) => {
+      expect(row).toBeInTheDocument();
+    });
     expect(screen.getByText(/latest/i)).toBeInTheDocument();
   });
 
@@ -45,7 +48,7 @@ describe("VersionLockPicker", () => {
     const user = userEvent.setup();
     renderComponent({ currentSelection: LATEST_SELECTION, onChange });
 
-    const row = await (await screen.findAllByText("common:versionLockPicker.versionValue"))[1];
+    const row = (await screen.findAllByText("common:versionLockPicker.versionValue"))[1];
     await user.click(row);
 
     expect(onChange).toHaveBeenCalledWith(2);
@@ -66,7 +69,7 @@ describe("VersionLockPicker", () => {
     renderComponent({ currentSelection: 2, onChange: vi.fn() });
 
     // wait for rows to load
-    await (await screen.findAllByText("common:versionLockPicker.versionValue"))[1];
+    await screen.findAllByText("common:versionLockPicker.versionValue");
     const radios = screen.getAllByRole("radio");
     const checkedRadios = radios.filter((r) => (r as HTMLInputElement).checked);
     expect(checkedRadios).toHaveLength(1);

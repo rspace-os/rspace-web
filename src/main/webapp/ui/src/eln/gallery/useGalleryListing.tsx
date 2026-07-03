@@ -1042,7 +1042,8 @@ export function useGalleryListing({
     if (listingOf.tag === "folder") {
       void (async () => {
         try {
-          const response = await (await api).get<unknown>(`folders/${listingOf.folderId}?includePathToRootFolder=true`);
+          const client = await api;
+          const response = await client.get<unknown>(`folders/${listingOf.folderId}?includePathToRootFolder=true`);
           const data = Parsers.isObject(response.data).flatMap(Parsers.isNotNull);
           setDirectSection(
             data
@@ -1321,7 +1322,8 @@ export function useGalleryListing({
     clearAndSetGalleryListing([]);
     setLoading(true);
     try {
-      const { data } = await (await api).get<unknown>("gallery/filestores");
+      const client = await api;
+      const { data } = await client.get<unknown>("gallery/filestores");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -1425,7 +1427,8 @@ export function useGalleryListing({
 
     try {
       const token = await getToken();
-      const { data } = await (await api).get<unknown>(
+      const client = await api;
+      const { data } = await client.get<unknown>(
         `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${encodeURIComponent(
           Optional.fromNullable(pa.at(-1))
             .map((file) => file.pathAsString())

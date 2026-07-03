@@ -275,7 +275,8 @@ const AddFilestoreMenuItem = ({
   );
   React.useEffect(() => {
     void (async () => {
-      const { data } = await (await api.current).get<unknown>("filesystems");
+      const client = await api.current;
+      const { data } = await client.get<unknown>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
