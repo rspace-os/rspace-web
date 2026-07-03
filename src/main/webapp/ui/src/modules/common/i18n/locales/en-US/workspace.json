@@ -53,9 +53,7 @@
         "usernameBlank": "Username cannot be blank"
       },
       "noLinks": {
-        "checkSelection": "If that's unexpected, you should check your export selection.",
-        "heading": "No filestore links found in exported content.",
-        "proceed": "Otherwise you can proceed with the export."
+        "message": "No filestore links were found in the exported content; if that's unexpected, check your export selection, otherwise you can proceed with the export."
       },
       "scan": {
         "checkResults": "Please check the scan results for details.",

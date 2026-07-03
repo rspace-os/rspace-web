@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dropbox";
 import DropboxIcon from "../../../assets/branding/dropbox/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -42,12 +43,7 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
         helpLinkText={t("integrations.dropbox.helpLink")}
         website="dropbox.com"
         docLink="cloudstorage"
-        setupSection={
-          <ol>
-            <li>{t("integrations.dropbox.setup.enable")}</li>
-            <li>{t("integrations.dropbox.setup.toolbar")}</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.dropbox.setup.instructions" />}
       />
     </Grid>
   );

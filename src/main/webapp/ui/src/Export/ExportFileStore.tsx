@@ -290,9 +290,7 @@ export default function ExportFileStore({
       {!loadingQuickPlan && totalFilesFound === 0 && (
         <Card sx={{ p: 1 }}>
           <div>
-            <h4>{t("export.fileStore.noLinks.heading")}</h4>
-            <h4>{t("export.fileStore.noLinks.checkSelection")}</h4>
-            <h4>{t("export.fileStore.noLinks.proceed")}</h4>
+            <h4>{t("export.fileStore.noLinks.message")}</h4>
           </div>
         </Card>
       )}

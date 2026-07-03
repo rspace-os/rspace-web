@@ -13,6 +13,7 @@ import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/slack";
 import SlackIcon from "../../../assets/branding/slack/logo.svg";
 import docLinks from "../../../assets/DocLinks";
@@ -390,10 +391,12 @@ function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
         setupSection={
           <>
             <Typography variant="body2">
-              {t("integrations.slack.setup.article")}{" "}
-              <Link href={docLinks.slack} target="_blank" rel="noreferrer">
-                {t("integrations.slack.setup.articleLink")}
-              </Link>
+              <TransRichText
+                i18nKey="apps:integrations.slack.setup.instructions"
+                components={{
+                  articleLink: <Link href={docLinks.slack} target="_blank" rel="noreferrer" />,
+                }}
+              />
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedChannels) => (

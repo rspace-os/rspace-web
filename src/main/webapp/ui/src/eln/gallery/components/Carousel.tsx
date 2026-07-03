@@ -385,8 +385,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
   const [visibleIndex, setVisibleIndex] = React.useState(0);
   const selection = useGallerySelection();
   const [zoom, setZoom] = React.useState(1);
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
 
   React.useEffect(() => {
     if (listing.tag !== "list") return;
@@ -499,7 +498,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
             onClick={() => {
               setZoom((z) => z * ZOOM_SCALE_FACTOR);
             }}
-            aria-label={tCommon("actions.zoomIn")}
+            aria-label={t("common:actions.zoomIn")}
             size="small"
           >
             <ZoomInIcon />
@@ -517,7 +516,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
               setZoom(1);
             }}
             disabled={zoom === 1}
-            aria-label={tCommon("actions.resetZoom")}
+            aria-label={t("common:actions.resetZoom")}
             size="small"
           >
             <ResetZoomIcon />
@@ -535,7 +534,7 @@ export default function Carousel({ listing }: CarouselArgs): React.ReactNode {
               setZoom((z) => z / ZOOM_SCALE_FACTOR);
             }}
             disabled={zoom === 1}
-            aria-label={tCommon("actions.zoomOut")}
+            aria-label={t("common:actions.zoomOut")}
             size="small"
           >
             <ZoomOutIcon />

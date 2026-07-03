@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/onedrive";
 import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -42,12 +43,7 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
         helpLinkText={t("integrations.oneDrive.helpLink")}
         website="onedrive.live.com"
         docLink="cloudstorage"
-        setupSection={
-          <ol>
-            <li>{t("integrations.oneDrive.setup.enable")}</li>
-            <li>{t("integrations.oneDrive.setup.toolbar")}</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.oneDrive.setup.instructions" />}
       />
     </Grid>
   );

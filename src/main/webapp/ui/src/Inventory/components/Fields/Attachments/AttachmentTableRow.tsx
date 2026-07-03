@@ -188,8 +188,7 @@ function AttachmentTableRow<
   editable: boolean;
   chemistryProvider: string;
 }): ReactNode {
-  const { t } = useTranslation("inventory");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["inventory", "common"]);
   return (
     <TableRow>
       <TableCell>
@@ -220,7 +219,7 @@ function AttachmentTableRow<
               }}
               disabled={!editable}
               tooltipAfterClicked={t("fields.attachments.tooltips.deleteAfterClicked")}
-              tooltipBeforeClicked={tCommon("actions.remove")}
+              tooltipBeforeClicked={t("common:actions.remove")}
               tooltipWhenDisabled={t("fields.attachments.tooltips.editFirstRemove")}
             />
           </Grid>

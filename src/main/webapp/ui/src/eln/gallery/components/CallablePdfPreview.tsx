@@ -58,8 +58,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
   const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState<null | string>(null);
   const [numPages, setNumPages] = React.useState<number>(0);
   const [scale, setScale] = React.useState(1);
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
 
   React.useEffect(() => {
     if (!pdfPreviewOpen) {
@@ -114,7 +113,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale * 1.2);
                 }}
-                aria-label={tCommon("actions.zoomIn")}
+                aria-label={t("common:actions.zoomIn")}
                 size="small"
               >
                 <ZoomInIcon />
@@ -132,7 +131,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                   setScale(1);
                 }}
                 disabled={scale === 1}
-                aria-label={tCommon("actions.resetZoom")}
+                aria-label={t("common:actions.resetZoom")}
                 size="small"
               >
                 <ResetZoomIcon />
@@ -149,7 +148,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 onClick={() => {
                   setScale(scale / 1.2);
                 }}
-                aria-label={tCommon("actions.zoomOut")}
+                aria-label={t("common:actions.zoomOut")}
                 size="small"
               >
                 <ZoomOutIcon />
@@ -161,7 +160,7 @@ export function CallablePdfPreview({ children }: { children: React.ReactNode }):
                 setPdfPreviewOpen(null);
               }}
             >
-              {tCommon("actions.close")}
+              {t("common:actions.close")}
             </Button>
           </DialogActions>
         </Dialog>

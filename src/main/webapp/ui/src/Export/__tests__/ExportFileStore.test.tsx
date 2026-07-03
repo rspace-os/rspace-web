@@ -41,7 +41,7 @@ describe("ExportFileStore", () => {
           />,
         ),
     );
-    expect(screen.getByText("workspace:export.fileStore.noLinks.heading")).toBeVisible();
+    expect(screen.getByText("workspace:export.fileStore.noLinks.message")).toBeVisible();
   });
   test("Found filestore links dialog should show linked file.", async () => {
     const user = userEvent.setup();

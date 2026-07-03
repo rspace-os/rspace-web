@@ -7,6 +7,7 @@ import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -45,11 +46,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
         docLink="zenodo"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.zenodo.setup.getToken")}</li>
-              <li>{t("integrations.zenodo.setup.copyToken")}</li>
-              <li>{t("integrations.zenodo.setup.exportDialog")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.zenodo.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {

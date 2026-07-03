@@ -4,9 +4,13 @@ import "@/__tests__/__mocks__/useOauthToken";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { I18nextProvider } from "react-i18next";
 import { expectAccessible, render } from "@/__tests__/customQueries";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 
 const mockAxios = new MockAdapter(axios);
@@ -117,8 +121,8 @@ function stubEndpoints({ importResponder }: { importResponder?: (body: unknown) 
   });
 }
 
-async function renderAndWaitForNotebooks() {
-  const result = render(<FieldmarkImportDialogStory />);
+async function renderAndWaitForNotebooks(ui = <FieldmarkImportDialogStory />) {
+  const result = render(ui);
   expect(await screen.findByRole("dialog")).toBeVisible();
   await waitFor(() => {
     expect(screen.getByRole("grid")).toBeVisible();
@@ -240,6 +244,7 @@ describe("FieldmarkImportDialog", () => {
     });
 
     test("should show importing alert during import process", async () => {
+      const i18n = await createTestI18n({ common: commonEn, inventory: inventoryEn }, "inventory");
       // Delay the import response so the (infinite) "Importing notebook" alert
       // stays visible long enough to assert on.
       let resolveImport: (() => void) | null = null;
@@ -259,16 +264,19 @@ describe("FieldmarkImportDialog", () => {
       );
 
       const user = userEvent.setup();
-      await renderAndWaitForNotebooks();
+      await renderAndWaitForNotebooks(
+        <I18nextProvider i18n={i18n}>
+          <FieldmarkImportDialogStory />
+        </I18nextProvider>,
+      );
 
       await user.click(getRadioForNotebook("Test Notebook 1"));
-      await user.click(screen.getByRole("button", { name: "common:actions.import" }));
+      await user.click(screen.getByRole("button", { name: "Import" }));
 
-      const alert = await screen.findByText("inventory:fieldmarkImport.importNotebook.title");
+      const alert = await screen.findByText("Importing notebook");
       const alertContainer = alert.closest('[role="group"]') as HTMLElement;
       expect(alertContainer).toBeVisible();
-      expect(alertContainer).toHaveTextContent("inventory:fieldmarkImport.importNotebook.title");
-      expect(alertContainer).toHaveTextContent("inventory:fieldmarkImport.importNotebook.message");
+      expect(alertContainer).toHaveTextContent('Importing notebook "Test Notebook 1" from Fieldmark.');
 
       // Release the pending import so the test can clean up without dangling
       // promises.
@@ -308,12 +316,21 @@ describe("FieldmarkImportDialog", () => {
     test("should display IGSN message when igsnCandidateFields endpoint returns IGSN error", async () => {
       const restoreConsole = silenceConsole(["error"], [/.*/]);
       try {
+        const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
         const user = userEvent.setup();
-        await renderAndWaitForNotebooks();
+        await renderAndWaitForNotebooks(
+          <I18nextProvider i18n={i18n}>
+            <FieldmarkImportDialogStory />
+          </I18nextProvider>,
+        );
 
         await user.click(getRadioForNotebook("Notebook IGSN Error"));
 
-        expect(await screen.findByText("inventory:fieldmarkImport.igsnMessage")).toBeVisible();
+        const integrationLink = await screen.findByRole("link", { name: /DataCite IGSN ID integration/i });
+        expect(integrationLink).toHaveAttribute(
+          "href",
+          expect.stringContaining("add-igsn-identifiers-to-your-samples"),
+        );
       } finally {
         restoreConsole();
       }

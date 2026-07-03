@@ -211,14 +211,9 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
         >
           <Box>
             <Typography variant="body2">
-              {t("dmpIntegrations.dialog.dmptoolImportDesc", {
-                serverAlias: DMPHost ?? "",
-                hasAlias: DMPHost ? "yes" : "no",
-              })}
-            </Typography>
-            <Typography variant="body2">
               <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.dmptoolDocsLink"
+                i18nKey="apps:dmpIntegrations.dialog.dmptoolImportDescAndDocsLink"
+                values={{ serverAlias: DMPHost ?? "", hasAlias: DMPHost ? "yes" : "no" }}
                 components={{
                   helpLink: <Link href={docLinks.dmptool} />,
                 }}

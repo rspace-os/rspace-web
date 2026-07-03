@@ -30,6 +30,7 @@ async function createTestI18n(): Promise<I18nInstance> {
           richTextComponentUrlProbe:
             "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
           richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
+          richTextDefaultOrderedListProbe: "<ol><li>First item</li><li>Second item</li></ol>",
           richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
         },
       },
@@ -104,11 +105,17 @@ describe("TransRichText default vocabulary", () => {
           <p>
             <TransRichText i18nKey="richTextDefaultStrongProbe" />
           </p>
+          <TransRichText i18nKey="richTextDefaultOrderedListProbe" />
         </I18nextProvider>
       </ThemeProvider>,
     );
 
     expect(screen.getByRole("link", { name: "docs" })).toHaveAttribute("href", "/docs");
     expect(screen.getByText("important note").tagName).toBe("STRONG");
+    expect(screen.getByRole("list")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem").map(({ textContent }) => textContent)).toEqual([
+      "First item",
+      "Second item",
+    ]);
   });
 });

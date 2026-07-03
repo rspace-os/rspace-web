@@ -219,7 +219,6 @@ const RenameDialog = ({ open, onClose, file }: { open: boolean; onClose: () => v
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
   const { t } = useTranslation(["gallery", "common"]);
-  const { t: tCommon } = useTranslation("common");
   return (
     <Dialog
       open={open}
@@ -259,7 +258,7 @@ const RenameDialog = ({ open, onClose, file }: { open: boolean; onClose: () => v
               onClose();
             }}
           >
-            {tCommon("actions.cancel")}
+            {t("common:actions.cancel")}
           </Button>
           <ValidatingSubmitButton
             loading={false}
@@ -293,7 +292,6 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const { addAlert } = React.useContext(AlertContext);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { t } = useTranslation(["gallery", "common"]);
-  const { t: tCommon } = useTranslation("common");
   const canPreviewAsImage = useImagePreviewOfGalleryFile();
   const canEditWithCollabora = useCollaboraEdit();
   const canEditWithOfficeOnline = useOfficeOnlineEdit();
@@ -665,7 +663,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             />
           )}
           <AccentMenuItem
-            title={tCommon("actions.edit")}
+            title={t("common:actions.edit")}
             subheader={editingAllowed
               .get()
               .map(() => "")
@@ -709,7 +707,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={editingAllowed.get().isError}
           />
           <AccentMenuItem
-            title={tCommon("actions.duplicate")}
+            title={t("common:actions.duplicate")}
             subheader={duplicateAllowed
               .get()
               .map(() => "")
@@ -726,7 +724,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             disabled={duplicateAllowed.get().isError}
           />
           <AccentMenuItem
-            title={tCommon("actions.move")}
+            title={t("common:actions.move")}
             subheader={moveAllowed
               .get()
               .map(() => "")
@@ -1014,7 +1012,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             .map((filestore) => (
               <AccentMenuItem
                 key={filestore.id}
-                title={tCommon("actions.logOut")}
+                title={t("common:actions.logOut")}
                 subheader={logOutAllowed
                   .get()
                   .map(() => "")
@@ -1033,7 +1031,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             ))
             .orElse(null)}
           <AccentMenuItem
-            title={tCommon("actions.delete")}
+            title={t("common:actions.delete")}
             subheader={deleteAllowed
               .get()
               .map(() => "")

@@ -192,8 +192,7 @@ const TagDialog = ({
   onClose: () => void;
   setTags: (addedTags: Array<string>, deletedTags: Array<string>) => Promise<void>;
 }) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const { addAlert } = React.useContext(AlertContext);
   const [commonTags, setCommonTags] = React.useState<RsSet<string>>(new RsSet([]));
   const [addedTags, setAddedTags] = React.useState<Array<string>>([]);
@@ -242,7 +241,7 @@ const TagDialog = ({
               <Box>
                 <Chip
                   icon={<AddIcon />}
-                  label={tCommon("tags.addTag")}
+                  label={t("common:tags.addTag")}
                   color="primary"
                   skipFocusWhenDisabled
                   onClick={(e) => {
@@ -265,7 +264,7 @@ const TagDialog = ({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose}>{tCommon("actions.cancel")}</Button>
+          <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
           <SubmitSpinnerButton
             disabled={addedTags.length === 0 && deletedTags.length === 0}
             loading={submitting}
@@ -297,7 +296,7 @@ const TagDialog = ({
                 }
               })();
             }}
-            label={tCommon("actions.save")}
+            label={t("common:actions.save")}
           />
         </DialogActions>
       </Dialog>
@@ -305,8 +304,7 @@ const TagDialog = ({
   );
 };
 const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserListing> }) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const [searchTerm, setSearchTerm] = React.useState("");
   return (
     // biome-ignore lint/a11y/useSemanticElements: initial biome migration
@@ -357,7 +355,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
             endAdornment:
               searchTerm !== "" ? (
                 <IconButtonWithTooltip
-                  title={tCommon("actions.clear")}
+                  title={t("common:actions.clear")}
                   icon={
                     <CloseIcon
                       sx={{
@@ -381,7 +379,7 @@ const SearchBox = ({ userListing }: { userListing: FetchingData.Fetched<UserList
           },
         }}
         size="small"
-        placeholder={tCommon("actions.search")}
+        placeholder={t("common:actions.search")}
       />
     </form>
   );
@@ -401,8 +399,7 @@ const PiAction = ({
   setActionsAnchorEl: (_: null) => void;
   autoFocus: boolean;
 }) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const [open, setOpen] = React.useState(false);
   const [password, setPassword] = React.useState("");
   const { addAlert } = React.useContext(AlertContext);
@@ -596,7 +593,7 @@ const PiAction = ({
                       setActionsAnchorEl(null);
                     }}
                   >
-                    {tCommon("actions.cancel")}
+                    {t("common:actions.cancel")}
                   </Button>
                   <SubmitSpinnerButton
                     type="submit"
@@ -624,8 +621,7 @@ const SetUsernamAliasAction = ({
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [alias, setAlias] = React.useState("");
@@ -722,7 +718,7 @@ const SetUsernamAliasAction = ({
                     setActionsAnchorEl(null);
                   }}
                 >
-                  {tCommon("actions.cancel")}
+                  {t("common:actions.cancel")}
                 </Button>
                 <SubmitSpinnerButton
                   type="submit"
@@ -745,8 +741,7 @@ const DeleteAction = ({
   selectedUser: Result<User>;
   setActionsAnchorEl: (_: null) => void;
 }) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const { addAlert } = React.useContext(AlertContext);
   const [open, setOpen] = React.useState(false);
   const [username, setUsername] = React.useState("");
@@ -768,7 +763,7 @@ const DeleteAction = ({
           <RemoveUserIcon />
         </ListItemIcon>
         <ListItemText
-          primary={tCommon("actions.delete")}
+          primary={t("common:actions.delete")}
           secondary={allowedToDelete.map(() => null).orElseGet(([error]) => error.message)}
           slotProps={{
             secondary: {
@@ -904,7 +899,7 @@ const DeleteAction = ({
                     setActionsAnchorEl(null);
                   }}
                 >
-                  {tCommon("actions.cancel")}
+                  {t("common:actions.cancel")}
                 </Button>
                 <SubmitSpinnerButton
                   type="submit"
@@ -913,7 +908,7 @@ const DeleteAction = ({
                   label={
                     user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers
                       ? t("usersPage.deleteDialog.transferAndDelete")
-                      : tCommon("actions.delete")
+                      : t("common:actions.delete")
                   }
                 />
               </DialogActions>
@@ -1235,8 +1230,7 @@ const SelectionActions = ({
   );
 };
 const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) => {
-  const { t } = useTranslation("system");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["system", "common"]);
   const [filterAnchorEl, setFilterAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsComboboxAnchorEl, setTagsComboboxAnchorEl] = React.useState<HTMLElement | null>(null);
   const [tagsChecked, setTagsChecked] = React.useState(false);
@@ -1349,7 +1343,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                     }}
                   />
                 }
-                label={tCommon("tags.label")}
+                label={t("common:tags.label")}
               />
               <Stack direction="row" spacing={1} sx={{ flexWrap: "nowrap" }}>
                 <Box sx={{ width: 30, flexShrink: 0 }} />
@@ -1372,7 +1366,7 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
                   <Box>
                     <Chip
                       icon={<AddIcon />}
-                      label={tCommon("tags.addTag")}
+                      label={t("common:tags.addTag")}
                       color="primary"
                       skipFocusWhenDisabled
                       onClick={(e) => {

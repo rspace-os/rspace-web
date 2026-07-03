@@ -18,8 +18,7 @@ import { match } from "../../../util/Util";
 import RecordDetails from "../RecordDetails";
 
 function MoveInstructions(): React.ReactNode {
-  const { t } = useTranslation("inventory");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["inventory", "common"]);
   const { scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
@@ -143,7 +142,7 @@ function MoveInstructions(): React.ReactNode {
         action={
           action && (
             <IconButtonWithTooltip
-              title={expand ? tCommon("actions.collapse") : tCommon("actions.expand")}
+              title={expand ? t("common:actions.collapse") : t("common:actions.expand")}
               icon={<ExpandCollapseIcon open={expand} />}
               onClick={() => setExpand(!expand)}
               size="small"

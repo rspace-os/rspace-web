@@ -299,8 +299,7 @@ function FolderSelectionStep(props: {
   onCancel: () => void;
 }) {
   const { selectedFilesystem, onConfirm, onCancel, ...rest } = props;
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
   // null = nothing chosen yet; "" = the bucket top level (S3); otherwise a subfolder path.
   const [selectedFolderPath, setSelectedFolderPath] = React.useState<string | null>(null);
@@ -352,7 +351,7 @@ function FolderSelectionStep(props: {
             {t("addFilestoreDialog.chooseFolder")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            {tCommon("actions.back")}
+            {t("common:actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -362,8 +361,7 @@ function FolderSelectionStep(props: {
 
 function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => void }) {
   const { onConfirm, onCancel, ...rest } = props;
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const [name, setName] = React.useState("");
   return (
     <Step key="name" component="div" {...rest}>
@@ -395,7 +393,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
             {t("addFilestoreDialog.addFilestore")}
           </Button>
           <Button onClick={onCancel} sx={{ mt: 1, mr: 1 }}>
-            {tCommon("actions.back")}
+            {t("common:actions.back")}
           </Button>
         </Box>
       </StepContent>
@@ -411,8 +409,7 @@ function NameStep(props: { onConfirm: (name: string) => void; onCancel: () => vo
  * appears in the filesystems section.
  */
 export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialogArgs): React.ReactNode {
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const [activeStep, setActiveStep] = React.useState(-1);
   React.useEffect(() => {
     if (open) {
@@ -524,7 +521,7 @@ export default function AddFilestoreDialog({ open, onClose }: AddFilestoreDialog
               onClose(false);
             }}
           >
-            {tCommon("actions.cancel")}
+            {t("common:actions.cancel")}
           </Button>
         </DialogActions>
       </Dialog>

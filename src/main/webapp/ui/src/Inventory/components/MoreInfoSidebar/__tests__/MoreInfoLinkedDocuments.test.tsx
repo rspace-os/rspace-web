@@ -1,8 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { fireEvent, screen } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@/__tests__/customQueries";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../common/InvApiService";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
 import { newDocument } from "../../../../stores/models/Document";
@@ -197,6 +200,7 @@ describe("LinkedDocuments", () => {
   });
 
   test("When no documents link to the item, the empty-state mentions both List of Materials and inventory links", async () => {
+    const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
     vi.spyOn(InvApiService, "get").mockImplementation(() => {
       return Promise.resolve({
         data: [],
@@ -207,13 +211,18 @@ describe("LinkedDocuments", () => {
       } as AxiosResponse);
     });
     render(
-      <ThemeProvider theme={materialTheme}>
-        <LinkedDocuments factory={mockFactory()} globalId="IC1" />
-      </ThemeProvider>,
+      <I18nextProvider i18n={i18n}>
+        <ThemeProvider theme={materialTheme}>
+          <LinkedDocuments factory={mockFactory()} globalId="IC1" />
+        </ThemeProvider>
+      </I18nextProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedDocuments.show" }));
-    expect(await screen.findByText("inventory:moreInfo.linkedDocumentsHelp.listOfMaterials")).toBeVisible();
-    expect(await screen.findByText("inventory:moreInfo.linkedDocumentsHelp.linkField")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
+    const listOfMaterialsLink = await screen.findByRole("link", { name: "List of Materials" });
+    expect(listOfMaterialsLink).toHaveAttribute("href", expect.stringContaining("list-of-materials"));
+    expect(
+      await screen.findByText(/Other Inventory items that link to this item through a Link custom field/i),
+    ).toBeVisible();
   });
   test("Opening the dialog twice should trigger two network calls", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => {

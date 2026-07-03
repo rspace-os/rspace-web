@@ -9,6 +9,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/box";
 import BoxIcon from "../../../assets/branding/box/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -57,11 +58,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
         usageText={t("integrations.box.usage")}
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.box.setup.enable")}</li>
-              <li>{t("integrations.box.setup.checkLinkType")}</li>
-              <li>{t("integrations.box.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.box.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {

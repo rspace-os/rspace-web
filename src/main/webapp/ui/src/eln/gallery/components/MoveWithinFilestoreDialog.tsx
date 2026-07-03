@@ -41,8 +41,7 @@ const MoveWithinFilestoreDialog = observer(
   ({ open, onClose, filestore, sources, refreshListing }: MoveWithinFilestoreDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
-    const { t } = useTranslation("gallery");
-    const { t: tCommon } = useTranslation("common");
+    const { t } = useTranslation(["gallery", "common"]);
 
     const listingOf = React.useMemo(
       () => ({
@@ -147,7 +146,7 @@ const MoveWithinFilestoreDialog = observer(
                 onClose();
               }}
             >
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}

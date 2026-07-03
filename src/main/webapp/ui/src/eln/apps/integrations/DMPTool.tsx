@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dmptool";
 import DMPToolIcon from "../../../assets/branding/dmptool/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -75,11 +76,7 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         usageText={t("integrations.dmptool.usage")}
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.dmptool.setup.connect")}</li>
-              <li>{t("integrations.dmptool.setup.enable")}</li>
-              <li>{t("integrations.dmptool.setup.gallery")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dmptool.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

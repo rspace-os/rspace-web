@@ -156,10 +156,7 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                     label: t("recordDetails.labels.modified"),
                     value: (
                       <>
-                        <TimeAgoCustom
-                          time={record.recordDetails.modified[0]}
-                          formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
-                        />{" "}
+                        <TimeAgoCustom time={record.recordDetails.modified[0]} compact />{" "}
                         {t("recordDetails.modifiedBy", { user: record.recordDetails.modified[1] })}
                       </>
                     ),

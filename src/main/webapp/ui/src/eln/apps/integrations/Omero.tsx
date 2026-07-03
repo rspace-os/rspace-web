@@ -5,6 +5,7 @@ import TextField from "@mui/material/TextField";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -72,11 +73,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
         docLink="omero"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.omero.setup.credentials")}</li>
-              <li>{t("integrations.omero.setup.enable")}</li>
-              <li>{t("integrations.omero.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.omero.setup.instructions" />
             <form
               aria-label={t("integrations.omero.credentialsFormLabel")}
               action="/apps/omero/connect"

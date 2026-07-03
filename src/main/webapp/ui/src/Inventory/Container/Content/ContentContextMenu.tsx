@@ -13,8 +13,7 @@ import ExtendedContextMenu from "../../components/ContextMenu/ExtendedContextMen
 import useNavigateHelpers from "../../useNavigateHelpers";
 
 function ContentContextMenu(): React.ReactNode {
-  const { t } = useTranslation("inventory");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["inventory", "common"]);
   const { navigateToRecord } = useNavigateHelpers();
   const { search, scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
@@ -42,7 +41,7 @@ function ContentContextMenu(): React.ReactNode {
       },
     },
     {
-      text: tCommon("actions.none"),
+      text: t("common:actions.none"),
       selection: () => {
         selectedLocations.map((l) => l.toggleSelected(false));
       },
@@ -79,7 +78,7 @@ function ContentContextMenu(): React.ReactNode {
         void navigateToRecord(selectedResults[0]);
       },
       icon: <OpenInBrowserIcon />,
-      label: tCommon("actions.open"),
+      label: t("common:actions.open"),
       disabledHelp: match<void, string>([
         [() => selectedResults.length === 0, t("container.content.contextMenu.nothingSelected")],
         [() => selectedResults.length > 1, t("container.content.contextMenu.tooManySelected")],

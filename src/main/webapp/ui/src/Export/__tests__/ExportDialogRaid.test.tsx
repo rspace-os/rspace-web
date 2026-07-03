@@ -1,7 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 import materialTheme from "../../theme";
@@ -47,6 +50,20 @@ const renderExportDialogRaid = (stateOverrides: Partial<typeof DEFAULT_STATE> = 
     </ThemeProvider>,
   );
 
+const renderExportDialogRaidWithRealI18n = async (
+  stateOverrides: Partial<typeof DEFAULT_STATE> = {},
+  updateRepoConfig = vi.fn(),
+) => {
+  const i18n = await createTestI18n({ workspace: workspaceEn }, "workspace");
+  return render(
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider theme={materialTheme}>
+        <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
+      </ThemeProvider>
+    </I18nextProvider>,
+  );
+};
+
 const makeGroup = (id: number, overrides: Partial<GroupInfo> = {}): GroupInfo => ({
   id,
   globalId: `GR${id}`,
@@ -79,29 +96,31 @@ describe("ExportDialogRaid", () => {
     expect(spinner).toHaveAttribute("data-icon", "spinner");
   });
 
-  it("renders an error alert when the query errors", () => {
+  it("renders an error alert when the query errors", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({ data: new Map(), error: new Error("Boom") }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("workspace:export.raid.error.title")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.error.message")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.error.nextHint")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Error")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Boom");
+    expect(alert).toHaveTextContent("press Next to continue without reporting to RAiD");
   });
 
-  it("renders an ineligible message when groups are missing", () => {
+  it("renders an ineligible message when groups are missing", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([[101, null]]),
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.ineligible.missingGroups")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("101");
   });
 
   it("renders an ineligible message when no project groups are available", () => {
@@ -117,7 +136,7 @@ describe("ExportDialogRaid", () => {
     expect(screen.getByText("workspace:export.raid.ineligible.noProjectGroups")).toBeInTheDocument();
   });
 
-  it("renders an ineligible message when no RAiD association is found", () => {
+  it("renders an ineligible message when no RAiD association is found", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([
@@ -127,13 +146,15 @@ describe("ExportDialogRaid", () => {
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.ineligible.noRaidAssociation")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Project Group 7");
+    expect(alert).toHaveTextContent("Project Group 8");
   });
 
-  it("renders an ineligible message when multiple RAiD associations are found", () => {
+  it("renders an ineligible message when multiple RAiD associations are found", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([
@@ -143,10 +164,12 @@ describe("ExportDialogRaid", () => {
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("workspace:export.raid.ineligible.title")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.ineligible.multipleRaids")).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Project Group 3");
+    expect(alert).toHaveTextContent("Project Group 4");
   });
 
   it("renders the RAiD info and toggles exportToRaid when eligible", async () => {
@@ -158,16 +181,17 @@ describe("ExportDialogRaid", () => {
 
     const updateRepoConfig = vi.fn();
 
-    renderExportDialogRaid({}, updateRepoConfig);
+    await renderExportDialogRaidWithRealI18n({}, updateRepoConfig);
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
-    expect(within(alert).getByText("workspace:export.raid.eligible.title")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.eligible.projectGroupLine")).toBeInTheDocument();
-    expect(screen.getByText("workspace:export.raid.eligible.raidDetails")).toBeInTheDocument();
+    expect(within(alert).getByText("Report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("Project Group 5");
+    expect(alert).toHaveTextContent("Test RAiD 5");
+    expect(alert).toHaveTextContent("raid-5");
 
     const user = userEvent.setup();
-    const toggle = screen.getByRole("checkbox", { name: /export.raid.eligible.reportLabel/i });
+    const toggle = screen.getByRole("checkbox", { name: /report to raid/i });
     await user.click(toggle);
 
     expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));

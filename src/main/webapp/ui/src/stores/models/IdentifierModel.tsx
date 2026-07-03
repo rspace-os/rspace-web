@@ -57,7 +57,14 @@ export type IdentifierGeoLocation = {
   geoLocationPolygon: GeoLocationPolygon;
 };
 
-const creatorTypeOptions: Array<RadioOption<string>> = [
+/*
+ * These are functions rather than module constants so the labels resolve when
+ * the fields are rendered (after i18n has initialised and the inventory
+ * namespace has loaded, and re-resolving on a language change via the consuming
+ * component's `useTranslation`) instead of being frozen to whatever was
+ * available at import time.
+ */
+const getCreatorTypeOptions = (): Array<RadioOption<string>> => [
   {
     value: "Personal",
     label: i18n.t("inventory:identifierModel.creatorTypes.personal"),
@@ -68,11 +75,11 @@ const creatorTypeOptions: Array<RadioOption<string>> = [
   },
 ];
 
-const identifierDescriptionOptions: Array<DropdownOption> = [
+const getIdentifierDescriptionOptions = (): Array<DropdownOption> => [
   { value: "ABSTRACT", label: i18n.t("inventory:identifierModel.descriptionTypes.abstract") },
   { value: "METHODS", label: i18n.t("inventory:identifierModel.descriptionTypes.methods") },
 ];
-const identifierDateOptions: Array<DropdownOption> = [
+const getIdentifierDateOptions = (): Array<DropdownOption> => [
   { value: "ACCEPTED", label: i18n.t("inventory:identifierModel.dateTypes.accepted") },
   { value: "AVAILABLE", label: i18n.t("inventory:identifierModel.dateTypes.available") },
   { value: "COPYRIGHTED", label: i18n.t("inventory:identifierModel.dateTypes.copyrighted") },
@@ -258,7 +265,7 @@ export default class IdentifierModel implements Identifier {
         key: "Creator Type",
         value: this.creatorType,
         handler: (v) => this.setCreatorType(v as CreatorType),
-        radioOptions: creatorTypeOptions,
+        radioOptions: getCreatorTypeOptions(),
       },
       {
         key: "Name",
@@ -319,7 +326,7 @@ export default class IdentifierModel implements Identifier {
         key: "Descriptions",
         value: this.descriptions,
         handler: (v) => this.setDescriptions(v as Array<IdentifierDescription>),
-        options: identifierDescriptionOptions,
+        options: getIdentifierDescriptionOptions(),
         selectLabelLabel: "Description Type",
       },
       {
@@ -331,7 +338,7 @@ export default class IdentifierModel implements Identifier {
         key: "Dates",
         value: this.dates,
         handler: (v) => this.setDates(v as Array<IdentifierDate>),
-        options: identifierDateOptions,
+        options: getIdentifierDateOptions(),
         selectLabelLabel: "Event Type",
       },
       {

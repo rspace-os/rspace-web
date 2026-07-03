@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -75,11 +76,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
         docLink="dmponline"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.dmponline.setup.connect")}</li>
-              <li>{t("integrations.dmponline.setup.enable")}</li>
-              <li>{t("integrations.dmponline.setup.gallery")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dmponline.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

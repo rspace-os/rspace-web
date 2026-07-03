@@ -552,30 +552,37 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
                       {existingRecord.createOptions.length === 0 && (
                         <NoValue label={t("contextMenu.createDialog.noOptions")} />
                       )}
-                      {existingRecord.createOptions.map(({ label, explanation, disabled }, index) => (
-                        <FormControlLabel
-                          key={index}
-                          value={index}
-                          control={
-                            <Radio
-                              sx={{
-                                // align radio button with option heading
-                                mb: "auto",
-                                p: 0.5,
-                                mr: 0.5,
-                              }}
-                            />
-                          }
-                          disabled={disabled}
-                          label={
-                            <>
-                              <OptionHeading>{label}</OptionHeading>
-                              <OptionExplanation>{explanation}</OptionExplanation>
-                            </>
-                          }
-                          sx={{ mt: 2 }}
-                        />
-                      ))}
+                      {existingRecord.createOptions.map(({ label, explanation, disabled }, index) => {
+                        // Keep the radio's accessible name to just the option label and expose the
+                        // longer explanation as its description, rather than concatenating both into
+                        // the name.
+                        const explanationId = `create-option-explanation-${index}`;
+                        return (
+                          <FormControlLabel
+                            key={index}
+                            value={index}
+                            control={
+                              <Radio
+                                slotProps={{ input: { "aria-label": label, "aria-describedby": explanationId } }}
+                                sx={{
+                                  // align radio button with option heading
+                                  mb: "auto",
+                                  p: 0.5,
+                                  mr: 0.5,
+                                }}
+                              />
+                            }
+                            disabled={disabled}
+                            label={
+                              <>
+                                <OptionHeading>{label}</OptionHeading>
+                                <OptionExplanation id={explanationId}>{explanation}</OptionExplanation>
+                              </>
+                            }
+                            sx={{ mt: 2 }}
+                          />
+                        );
+                      })}
                     </RadioGroup>
                   </FormControl>
                 </StepContent>

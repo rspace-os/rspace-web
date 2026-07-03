@@ -114,8 +114,7 @@ const ActionButton = ({
 const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) => {
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { rename } = useGalleryActions();
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const [name, setName] = React.useState(file.name);
   const textField = React.useRef<HTMLInputElement | null>(null);
   function handleSubmit() {
@@ -232,7 +231,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -243,7 +242,7 @@ const NameFieldForLargeViewports = observer(({ file }: { file: GalleryFile }) =>
                 px: 0.75,
               }}
             >
-              {tCommon("actions.save")}
+              {t("common:actions.save")}
             </Button>
           </Stack>
         </Collapse>
@@ -291,8 +290,7 @@ const DescriptionField = observer(
     minimalStyling?: boolean;
   }) => {
     const { changeDescription } = useGalleryActions();
-    const { t } = useTranslation("gallery");
-    const { t: tCommon } = useTranslation("common");
+    const { t } = useTranslation(["gallery", "common"]);
     const [description, setDescription] = React.useState<string>(initialDescription);
     const prefersMoreContrast = window.matchMedia("(prefers-contrast: more)").matches;
     return (
@@ -381,7 +379,7 @@ const DescriptionField = observer(
                 setDescription(initialDescription);
               }}
             >
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <Button
               size="small"
@@ -391,7 +389,7 @@ const DescriptionField = observer(
                 void changeDescription(file, Description.Present(description));
               }}
             >
-              {tCommon("actions.save")}
+              {t("common:actions.save")}
             </Button>
           </Stack>
         </Collapse>
@@ -733,8 +731,7 @@ const InfoPanelMultipleContent = (): React.ReactNode => {
  * documents that link to the file.
  */
 export function InfoPanelForLargeViewports() {
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const selection = useGallerySelection();
   const { openImagePreview } = useImagePreview();
   const { openPdfPreview } = usePdfPreview();
@@ -806,7 +803,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           openFolder(file);
                         }}
-                        label={tCommon("actions.open")}
+                        label={t("common:actions.open")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -847,7 +844,7 @@ export function InfoPanelForLargeViewports() {
                           window.open(action.url);
                           trackEvent("user:opens:document:collabora");
                         }}
-                        label={tCommon("actions.edit")}
+                        label={t("common:actions.edit")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -869,7 +866,7 @@ export function InfoPanelForLargeViewports() {
                           window.open(action.url);
                           trackEvent("user:opens:document:officeonline");
                         }}
-                        label={tCommon("actions.edit")}
+                        label={t("common:actions.edit")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",
@@ -1026,8 +1023,7 @@ export function InfoPanelForLargeViewports() {
 export const InfoPanelForSmallViewports: React.ComponentType<{
   file: GalleryFile;
 }> = ({ file }) => {
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const [mobileInfoPanelOpen, setMobileInfoPanelOpen] = React.useState(false);
   const [previewSize, setPreviewSize] = React.useState<null | PreviewSize>(null);
   const [previewImageUrl, setPreviewImageUrl] = React.useState<null | string>(null);
@@ -1165,7 +1161,7 @@ export const InfoPanelForSmallViewports: React.ComponentType<{
                 .map(() => (
                   <Grid key={null}>
                     <ActionButton
-                      label={tCommon("actions.open")}
+                      label={t("common:actions.open")}
                       sx={{
                         borderRadius: 3,
                         px: 2.5,

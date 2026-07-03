@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/evernote";
 import EvernoteIcon from "../../../assets/branding/evernote/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -36,12 +37,7 @@ function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
         helpLinkText={t("integrations.evernote.helpLink")}
         website="evernote.com"
         docLink="evernote"
-        setupSection={
-          <ol>
-            <li>{t("integrations.evernote.setup.enable")}</li>
-            <li>{t("integrations.evernote.setup.import")}</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.evernote.setup.instructions" />}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
       />
     </Grid>

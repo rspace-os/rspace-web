@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -96,11 +97,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
         docLink="nextcloud"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.nextCloud.setup.connect")}</li>
-              <li>{t("integrations.nextCloud.setup.enable")}</li>
-              <li>{t("integrations.nextCloud.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.nextCloud.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/rspace/api";
 import ApiIcon from "../../../assets/branding/rspace/api/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -29,10 +30,7 @@ function ApiDirect(): React.ReactNode {
         docLink="apiDirect"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.apiDirect.setup.generateKey")}</li>
-              <li>{t("integrations.apiDirect.setup.useKey")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.apiDirect.setup.instructions" />
             <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
               <strong>{t("integrations.apiDirect.curlExample")}</strong>
             </Typography>

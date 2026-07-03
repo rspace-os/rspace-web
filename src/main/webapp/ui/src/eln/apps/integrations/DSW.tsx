@@ -10,6 +10,7 @@ import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import { LOGO_COLOR } from "../../../assets/branding/dsw";
 import DSWIcon from "../../../assets/branding/dsw/logo.svg";
@@ -430,12 +431,7 @@ function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
         setupSection={
           <>
             <Typography variant="body2">{t("integrations.dsw.multipleConfig")}</Typography>
-            <ol>
-              <li>{t("integrations.dsw.setup.enterCredentials")}</li>
-              <li>{t("integrations.dsw.setup.test")}</li>
-              <li>{t("integrations.dsw.setup.enable")}</li>
-              <li>{t("integrations.dsw.setup.gallery")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dsw.setup.instructions" />
             {ArrayUtils.all(integrationState.credentials)
               .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
               .orElse(t("integrations.dsw.errorGettingConfigs"))}

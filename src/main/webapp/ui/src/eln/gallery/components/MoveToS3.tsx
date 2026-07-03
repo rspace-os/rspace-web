@@ -44,8 +44,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
     [transferSources],
   );
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const s3Filestores = useS3Filestores();
   const [destinationAnchorEl, setDestinationAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedFilestore, setSelectedFilestore] = React.useState<S3Filestore | null>(null);
@@ -230,7 +229,7 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               validationResult={validateState()}
@@ -240,10 +239,10 @@ function MoveCopyDialog({ dialogOpen, setDialogOpen, selectedIds, transferSource
               }}
             >
               {isTransferMode
-                ? tCommon("actions.transfer")
+                ? t("common:actions.transfer")
                 : retainSourceCopy
-                  ? tCommon("actions.copy")
-                  : tCommon("actions.move")}
+                  ? t("common:actions.copy")
+                  : t("common:actions.move")}
             </ValidatingSubmitButton>
           </DialogActions>
         </Box>

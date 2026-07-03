@@ -408,10 +408,7 @@ describe("Dataverse", () => {
     });
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
-      mockAxios
-        .onGet("1")
-
-        .reply(200, "Success! Test connection OK!");
+      mockAxios.onGet("/repository/ajax/testRepository/1").reply(200, "Success! Test connection OK!");
       render(
         <Alerts>
           <Dataverse
@@ -441,7 +438,10 @@ describe("Dataverse", () => {
         }),
       ).toBeVisible();
       expect(mockAxios.history.get.length).toBe(1);
-      expect(mockAxios.history.get[0].url).toBe("1");
+      expect(mockAxios.history.get[0]).toMatchObject({
+        baseURL: "/repository/ajax/testRepository",
+        url: "1",
+      });
     });
   });
   describe("Deleting", () => {

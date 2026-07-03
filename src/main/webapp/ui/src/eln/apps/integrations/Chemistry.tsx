@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/chemistry";
 import ChemistryIcon from "../../../assets/branding/chemistry/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -35,13 +36,7 @@ function Chemistry({ integrationState, update }: ChemistryArgs): React.ReactNode
         usageText={t("integrations.chemistry.usage")}
         helpLinkText={t("integrations.chemistry.helpLink")}
         docLink="chemistry"
-        setupSection={
-          <ol>
-            <li>{t("integrations.chemistry.setup.enable")}</li>
-            <li>{t("integrations.chemistry.setup.toolbar")}</li>
-            <li>{t("integrations.chemistry.setup.dragDrop")}</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.chemistry.setup.instructions" />}
       />
     </Grid>
   );

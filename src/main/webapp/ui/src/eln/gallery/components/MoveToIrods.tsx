@@ -38,8 +38,7 @@ type MoveCopyDialogArgs = {
 
 function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDialogArgs) {
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const irods = useIrods();
   const [locationsAnchorEl, setLocationsAnchorEl] = React.useState<HTMLElement | null>(null);
   const [selectedDestination, setSelectedDestination] = React.useState<IrodsLocation | null>(null);
@@ -349,7 +348,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setDialogOpen(false)} disabled={operationInProgress}>
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               validationResult={validateState()}

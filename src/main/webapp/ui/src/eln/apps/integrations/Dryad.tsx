@@ -4,6 +4,7 @@ import Link from "@mui/material/Link";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dryad";
 import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -94,16 +95,12 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
         docLink="dryad"
         setupSection={
           <>
-            <ol>
-              <li>
-                {t("integrations.dryad.setup.orcid")}{" "}
-                <Link href="https://orcid.org/register" target="_blank" rel="noreferrer">
-                  {t("integrations.dryad.setup.orcidLink")}
-                </Link>
-              </li>
-              <li>{t("integrations.dryad.setup.connect")}</li>
-              <li>{t("integrations.dryad.setup.exportDialog")}</li>
-            </ol>
+            <TransRichText
+              i18nKey="apps:integrations.dryad.setup.instructions"
+              components={{
+                orcidLink: <Link href="https://orcid.org/register" target="_blank" rel="noreferrer" />,
+              }}
+            />
             {connected ? (
               <form
                 onSubmit={(e) => {

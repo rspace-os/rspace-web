@@ -196,6 +196,7 @@ export function OptionHeading({ children }: OptionHeadingArgs): React.ReactNode 
 
 type OptionExplanationArgs = {
   children: React.ReactNode;
+  id?: string;
   "data-testid"?: string;
 };
 

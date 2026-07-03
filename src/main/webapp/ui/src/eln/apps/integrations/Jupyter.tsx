@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +7,12 @@ import { LOGO_COLOR } from "@/assets/branding/Jupyter";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import IntegrationCard from "../IntegrationCard";
+
+const codeBlockSx = {
+  background: "#f5f5f5",
+  padding: "8px",
+  overflowX: "auto",
+} as const;
 
 function Jupyter(): React.ReactNode {
   const { t } = useTranslation("apps");
@@ -29,70 +34,22 @@ function Jupyter(): React.ReactNode {
         website="docs.jupyter.org/en/latest/"
         docLink="jupyter"
         setupSection={
-          <ol>
-            <li>
-              <TransRichText i18nKey="apps:integrations.jupyter.setup.step1" />
-            </li>
-            <li>
-              <strong>{t("integrations.jupyter.setup.configureJupyter")}</strong>{" "}
-              {t("integrations.jupyter.setup.configureJupyterDesc")}
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                <strong>{t("integrations.jupyter.setup.installStep")}</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
-                  {`%pip install rspace-client==2.6.2`}
-                </Box>
-              </Typography>
-              {t("integrations.jupyter.setup.runCellFirst")}{" "}
-              <strong>{t("integrations.jupyter.setup.restartKernel")}</strong>{" "}
-              <strong>{t("integrations.jupyter.setup.refreshTab")}</strong> {t("integrations.jupyter.setup.tab")}
-            </li>
-            <li>
-              <strong>{t("integrations.jupyter.setup.configureNotebook")}</strong>{" "}
-              {t("integrations.jupyter.setup.configureNotebookDesc")}
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                <strong>{t("integrations.jupyter.setup.doOncePerNotebook")}</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
-                  {`from rspace_client.notebook_sync import sync_notebook`}
-                </Box>
-              </Typography>
-              {t("integrations.jupyter.setup.runCellSecond")}{" "}
-              <strong>{t("integrations.jupyter.setup.restartKernel")}</strong>{" "}
-              {t("integrations.jupyter.setup.thenRunAgain")}{" "}
-              <strong>{t("integrations.jupyter.setup.runCellAgain")}</strong>
-            </li>
-            <li>
-              <strong>{t("integrations.jupyter.setup.runCode")}</strong>
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                {t("integrations.jupyter.setup.pasteCode")} <strong>{t("integrations.jupyter.setup.lastCell")}</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
+          <TransRichText
+            i18nKey="apps:integrations.jupyter.setup.instructions"
+            components={{
+              installCommand: <Box component="pre" sx={codeBlockSx}>{`%pip install rspace-client==2.6.2`}</Box>,
+              notebookCommand: (
+                <Box component="pre" sx={codeBlockSx}>{`from rspace_client.notebook_sync import sync_notebook`}</Box>
+              ),
+              syncCommand: (
+                <Box component="pre" sx={codeBlockSx}>
                   {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
 rspace_username="user1a")`}
                 </Box>
-              </Typography>
-            </li>
-          </ol>
+              ),
+            }}
+          />
         }
         update={() => {}}
         integrationState={{

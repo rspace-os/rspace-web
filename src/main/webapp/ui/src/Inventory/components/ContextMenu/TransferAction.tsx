@@ -101,7 +101,7 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
                     <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
                   </Typography>
                   <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    {t("contextMenu.transfer.dialog.recipientNotFound")}
+                    {t("contextMenu.transfer.dialog.recipientSearchHint")}
                   </Typography>
                 </DialogContentText>
                 <FormControl component="fieldset" fullWidth>

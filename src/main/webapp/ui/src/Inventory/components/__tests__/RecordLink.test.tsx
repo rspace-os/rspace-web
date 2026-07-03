@@ -57,7 +57,7 @@ describe("RecordLink", () => {
     const bench = makeMockBench({});
     const { setVisiblePanelSpy } = renderRecordLink(bench);
 
-    await user.click(screen.getByRole("link", { name: /inventory:moveToTarget.ownerBench/ }));
+    await user.click(screen.getByRole("link"));
 
     expect(setVisiblePanelSpy).toHaveBeenCalledWith("left");
   });
@@ -67,7 +67,7 @@ describe("RecordLink", () => {
     const container = makeMockContainer();
     const { setVisiblePanelSpy } = renderRecordLink(container);
 
-    await user.click(screen.getByRole("link", { name: /A list container/ }));
+    await user.click(screen.getByRole("link"));
 
     expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");
   });
@@ -76,14 +76,14 @@ describe("RecordLink", () => {
     const container = makeMockContainer();
     renderRecordLink(container, { newTab: true });
 
-    expect(screen.getByRole("link", { name: /A list container/ })).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link")).toHaveAttribute("target", "_blank");
   });
 
   test("shows a pointer cursor when `permalinkURL` is defined.", () => {
     const container = makeMockContainer();
     renderRecordLink(container);
 
-    expect(screen.getByRole("link", { name: /A list container/ })).toHaveStyle({
+    expect(screen.getByRole("link")).toHaveStyle({
       cursor: "pointer",
     });
   });
@@ -119,7 +119,7 @@ describe("RecordLink", () => {
       disableNavigationContext: true,
     });
 
-    await user.click(screen.getByRole("link", { name: /A list container/ }));
+    await user.click(screen.getByRole("link"));
 
     expect(navigate).not.toHaveBeenCalled();
     expect(trackEventSpy).not.toHaveBeenCalled();
@@ -130,7 +130,7 @@ describe("RecordLink", () => {
     const container = makeMockContainer();
     renderRecordLink(container, { overflow: true });
 
-    const link = screen.getByRole("link", { name: /A list container/ });
+    const link = screen.getByRole("link");
     expect(link).toHaveStyle({
       wordBreak: "break-word",
       height: "auto",

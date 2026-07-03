@@ -328,7 +328,7 @@
       "dialog": {
         "body": "Select someone to transfer ownership to. By performing this action you will give the new owner full control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>",
         "recipientLabel": "Recipient",
-        "recipientNotFound": "If the desired recipient cannot be found in this list, try searching for their name or username.",
+        "recipientSearchHint": "If the desired recipient cannot be found in this list, try searching for their name or username.",
         "title": "Transfer Ownership"
       },
       "disabled": {

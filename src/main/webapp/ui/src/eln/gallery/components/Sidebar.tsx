@@ -148,8 +148,7 @@ const NewFolderMenuItem = ({
   }, [path]);
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   React.useEffect(() => {
     setTimeout(() => {
@@ -202,7 +201,7 @@ const NewFolderMenuItem = ({
                   onDialogClose(false);
                 }}
               >
-                {tCommon("actions.cancel")}
+                {t("common:actions.cancel")}
               </Button>
               <ValidatingSubmitButton
                 loading={submitting}
@@ -222,7 +221,7 @@ const NewFolderMenuItem = ({
                     });
                 }}
               >
-                {tCommon("actions.create")}
+                {t("common:actions.create")}
               </ValidatingSubmitButton>
             </DialogActions>
           </form>
@@ -438,8 +437,7 @@ const Sidebar = ({
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
-  const { t } = useTranslation("gallery");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["gallery", "common"]);
   React.useEffect(() => {
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
@@ -493,7 +491,7 @@ const Sidebar = ({
           }
           sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
         >
-          {drawerOpen && <div>{tCommon("actions.create")}</div>}
+          {drawerOpen && <div>{t("common:actions.create")}</div>}
         </Button>
         <Menu
           open={Boolean(newMenuAnchorEl)}

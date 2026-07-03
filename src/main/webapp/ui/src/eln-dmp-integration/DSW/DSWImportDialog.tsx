@@ -124,11 +124,11 @@ function DSWImportDialogContent({
           mkAlert({
             title: t("dmpIntegrations.dialog.error.unableToLoadProjects"),
             message: (
-              <>
-                {errorMsg}
-                <br />
-                <TransRichText i18nKey="apps:dmpIntegrations.dialog.forMoreInfo" values={{ link: docLinks.dsw }} />
-              </>
+              <TransRichText
+                i18nKey="apps:dmpIntegrations.dialog.error.unableToLoadProjectsMessage"
+                values={{ link: docLinks.dsw }}
+                components={{ errorMsg: <>{errorMsg ?? ""}</> }}
+              />
             ),
             variant: "error",
           }),

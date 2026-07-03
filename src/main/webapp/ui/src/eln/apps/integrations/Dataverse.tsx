@@ -10,6 +10,7 @@ import { observable, runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dataverse";
 import DataverseIcon from "../../../assets/branding/dataverse/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -439,12 +440,7 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
         setupSection={
           <>
             <Typography variant="body2">{t("integrations.dataverse.multipleConfig")}</Typography>
-            <ol>
-              <li>{t("integrations.dataverse.setup.enterCredentials")}</li>
-              <li>{t("integrations.dataverse.setup.test")}</li>
-              <li>{t("integrations.dataverse.setup.enable")}</li>
-              <li>{t("integrations.dataverse.setup.exportDialog")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dataverse.setup.instructions" />
             {ArrayUtils.all(integrationState.credentials)
               .map((configs) => <DialogContent key={null} configs={configs} integrationState={integrationState} />)
               .orElse(t("integrations.dataverse.errorGettingConfigs"))}

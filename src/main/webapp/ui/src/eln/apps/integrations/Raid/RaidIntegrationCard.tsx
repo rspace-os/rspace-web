@@ -216,18 +216,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         setupSection={
           <>
             <Typography variant="body1">{t("integrations.raid.setup.configure")}</Typography>
-            <ol>
-              <li>
-                <TransRichText i18nKey="apps:integrations.raid.setup.step1" />
-              </li>
-              <li>
-                <TransRichText i18nKey="apps:integrations.raid.setup.step2" />
-              </li>
-              <li>
-                <TransRichText i18nKey="apps:integrations.raid.setup.step3" />
-              </li>
-              <li>{t("integrations.raid.setup.startAssociating")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.raid.setup.instructions" />
             <Typography variant="body1">{t("integrations.raid.multipleConfig")}</Typography>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>

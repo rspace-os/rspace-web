@@ -37,20 +37,10 @@ function Jove(): React.ReactNode {
         docLink="videoIntegration"
         setupSection={
           <Stack direction="column" sx={{ gap: 2 }}>
-            <ol>
-              <li>
-                <TransRichText i18nKey="apps:integrations.jove.setup.step1" />
-              </li>
-              <li>
-                <TransRichText
-                  i18nKey="apps:integrations.jove.setup.pasteUrlStep"
-                  values={{ domain: exampleDomain, exampleUrl, appExampleUrl }}
-                />
-              </li>
-              <li>
-                <TransRichText i18nKey="apps:integrations.jove.setup.step2" />
-              </li>
-            </ol>
+            <TransRichText
+              i18nKey="apps:integrations.jove.setup.instructions"
+              values={{ domain: exampleDomain, exampleUrl, appExampleUrl }}
+            />
             <Typography variant="body2">
               <TransRichText i18nKey="apps:integrations.jove.setup.noteFull" />
             </Typography>

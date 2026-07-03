@@ -32,6 +32,7 @@ vi.mock("../../../../stores/stores/getRootStore", () => ({
 
 const mockAddAlert = vi.fn();
 const createButton = () => screen.getByRole("button", { name: "common:actions.create" });
+const nextButton = () => screen.getByRole("button", { name: "common:actions.next" });
 describe("CreateDialog", () => {
   describe("Splitting", () => {
     test("Subsamples", async () => {
@@ -43,9 +44,9 @@ describe("CreateDialog", () => {
           <CreateDialog existingRecord={subsample} open={true} onClose={() => {}} />
         </ThemeProvider>,
       );
-      await user.click(await screen.findByRole("radio", { name: /inventory:subsample\.createOptions\.split\.label/ }));
+      await user.click(await screen.findByRole("radio", { name: "inventory:subsample.createOptions.split.label" }));
       expect(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
+        screen.getByRole("spinbutton", { name: "inventory:subsample.createOptions.split.countLabel" }),
       ).toBeVisible();
       expect(createButton()).toBeVisible();
     });
@@ -60,9 +61,9 @@ describe("CreateDialog", () => {
           </AlertContext.Provider>
         </ThemeProvider>,
       );
-      await user.click(await screen.findByRole("radio", { name: /inventory:subsample\.createOptions\.split\.label/ }));
+      await user.click(await screen.findByRole("radio", { name: "inventory:subsample.createOptions.split.label" }));
       await user.type(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
+        screen.getByRole("spinbutton", { name: "inventory:subsample.createOptions.split.countLabel" }),
         "200",
       );
       expect(createButton()).toBeDisabled();
@@ -78,17 +79,15 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.split\.label/,
+          name: "inventory:sample.createOptions.split.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:sample\.createOptions\.split\.label/,
+          name: "inventory:sample.createOptions.split.label",
         }),
       );
-      expect(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
-      ).toBeVisible();
+      expect(screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.split.countLabel" })).toBeVisible();
       expect(createButton()).toBeVisible();
     });
     test("Samples, with too many copies", async () => {
@@ -104,11 +103,11 @@ describe("CreateDialog", () => {
       );
       await user.click(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.split\.label/,
+          name: "inventory:sample.createOptions.split.label",
         }),
       );
       await user.type(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.split.countLabel" }),
         "200",
       );
       expect(createButton()).toBeDisabled();
@@ -127,7 +126,7 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.split\.label/,
+          name: "inventory:sample.createOptions.split.label",
         }),
       ).toBeDisabled();
     });
@@ -149,12 +148,12 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /Container/,
+          name: "inventory:container.createOptions.newContainer.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /Container/,
+          name: "inventory:container.createOptions.newContainer.label",
         }),
       );
       expect(screen.getByText("inventory:container.createOptions.location.listExplanation")).toBeVisible();
@@ -182,7 +181,7 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /Container/,
+          name: "inventory:container.createOptions.newContainer.label",
         }),
       ).toBeDisabled();
     });
@@ -204,12 +203,12 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:container\.createOptions\.newSample\.label/,
+          name: "inventory:container.createOptions.newSample.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:container\.createOptions\.newSample\.label/,
+          name: "inventory:container.createOptions.newSample.label",
         }),
       );
       expect(screen.getByText("inventory:container.createOptions.location.listExplanation")).toBeVisible();
@@ -236,7 +235,7 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:container\.createOptions\.newSample\.label/,
+          name: "inventory:container.createOptions.newSample.label",
         }),
       ).toBeDisabled();
     });
@@ -255,12 +254,12 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:template\.createOptions\.sample\.label/,
+          name: "inventory:template.createOptions.sample.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:template\.createOptions\.sample\.label/,
+          name: "inventory:template.createOptions.sample.label",
         }),
       );
     });
@@ -279,17 +278,17 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.template\.label/,
+          name: "inventory:sample.createOptions.template.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:sample\.createOptions\.template\.label/,
+          name: "inventory:sample.createOptions.template.label",
         }),
       );
-      await user.type(screen.getByRole("textbox", { name: /name/i }), "New template");
+      await user.type(screen.getByRole("textbox", { name: "inventory:createOptions.common.name" }), "New template");
 
-      await user.click(screen.getByRole("button", { name: /next/i }));
+      await user.click(nextButton());
       expect(screen.getByText("inventory:contextMenu.createDialog.noFields")).toBeVisible();
       expect(createButton()).toBeEnabled();
     });
@@ -306,17 +305,17 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.template\.label/,
+          name: "inventory:sample.createOptions.template.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:sample\.createOptions\.template\.label/,
+          name: "inventory:sample.createOptions.template.label",
         }),
       );
 
-      await user.type(screen.getByRole("textbox", { name: /name/i }), "x");
-      expect(screen.getByRole("button", { name: /next/i })).toBeDisabled();
+      await user.type(screen.getByRole("textbox", { name: "inventory:createOptions.common.name" }), "x");
+      expect(nextButton()).toBeDisabled();
     });
   });
   describe("New subsamples without splitting", () => {
@@ -333,33 +332,33 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.newSubsamples\.label/,
+          name: "inventory:sample.createOptions.newSubsamples.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:sample\.createOptions\.newSubsamples\.label/,
+          name: "inventory:sample.createOptions.newSubsamples.label",
         }),
       );
       expect(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.newSubsamples.countLabel" }),
       ).toBeVisible();
       await user.type(
-        screen.getByRole("spinbutton", { name: /createOptions\.(split|newSubsamples)\.countLabel/ }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.newSubsamples.countLabel" }),
         "4",
       );
       expect(createButton()).toBeVisible();
 
       expect(createButton()).toBeDisabled();
-      expect(screen.getByRole("button", { name: /next/i })).toBeVisible();
+      expect(nextButton()).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: /next/i }));
+      await user.click(nextButton());
       expect(
-        screen.getByRole("spinbutton", { name: /inventory:sample\.createOptions\.newSubsamples\.quantityLabel/i }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.newSubsamples.quantityLabel" }),
       ).toBeVisible();
       expect(createButton()).toBeEnabled();
       await user.type(
-        screen.getByRole("spinbutton", { name: /inventory:sample\.createOptions\.newSubsamples\.quantityLabel/i }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.newSubsamples.quantityLabel" }),
         "4",
       );
     });
@@ -374,19 +373,19 @@ describe("CreateDialog", () => {
       );
       expect(
         await screen.findByRole("radio", {
-          name: /inventory:sample\.createOptions\.newSubsamples\.label/,
+          name: "inventory:sample.createOptions.newSubsamples.label",
         }),
       ).toBeEnabled();
       await user.click(
         screen.getByRole("radio", {
-          name: /inventory:sample\.createOptions\.newSubsamples\.label/,
+          name: "inventory:sample.createOptions.newSubsamples.label",
         }),
       );
 
-      await user.click(screen.getByRole("button", { name: /next/i }));
+      await user.click(nextButton());
       expect(createButton()).toBeEnabled();
       await user.clear(
-        screen.getByRole("spinbutton", { name: /inventory:sample\.createOptions\.newSubsamples\.quantityLabel/i }),
+        screen.getByRole("spinbutton", { name: "inventory:sample.createOptions.newSubsamples.quantityLabel" }),
       );
       expect(createButton()).toBeDisabled();
     });

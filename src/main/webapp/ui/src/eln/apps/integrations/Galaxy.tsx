@@ -14,6 +14,7 @@ import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/galaxy";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import GalaxyIcon from "../../../assets/branding/galaxy/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import { Optional } from "../../../util/optional";
@@ -59,13 +60,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
         docLink="galaxy"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.galaxy.setup.requestToken")}</li>
-              <li>{t("integrations.galaxy.setup.chooseServer")}</li>
-              <li>{t("integrations.galaxy.setup.enterToken")}</li>
-              <li>{t("integrations.galaxy.setup.enable")}</li>
-              <li>{t("integrations.galaxy.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.galaxy.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>

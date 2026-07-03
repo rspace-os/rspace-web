@@ -48,7 +48,7 @@ const Picker = observer(
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
-    const { t: tCommon } = useTranslation("common");
+    const { t } = useTranslation("common");
     const theme = useTheme();
     // Float the info panel above this dialog, but keep its menus/dialogs above
     // the panel: drawer just over the dialog, modal just over the drawer.
@@ -141,7 +141,7 @@ const Picker = observer(
                   })}
                   slotProps={{
                     paper: {
-                      "aria-label": tCommon("appBar.sections.gallery.title"),
+                      "aria-label": t("appBar.sections.gallery.title"),
                     },
                     transition: {
                       timeout: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300,
@@ -157,7 +157,7 @@ const Picker = observer(
                 >
                   <AppBar
                     variant="dialog"
-                    currentPage={tCommon("appBar.sections.gallery.title")}
+                    currentPage={t("appBar.sections.gallery.title")}
                     sidebarToggle={
                       <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                     }
@@ -216,19 +216,19 @@ const Picker = observer(
                           setAppliedSearchTerm={setAppliedSearchTerm}
                         />
                         <DialogActions>
-                          <Button onClick={() => onClose()}>{tCommon("actions.cancel")}</Button>
+                          <Button onClick={() => onClose()}>{t("actions.cancel")}</Button>
                           <ValidatingSubmitButton
                             validationResult={
                               selection.size > 0
                                 ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
-                                : Result.Error([new Error(tCommon("galleryPicker.selectionRequired"))])
+                                : Result.Error([new Error(t("galleryPicker.selectionRequired"))])
                             }
                             loading={false}
                             onClick={() => {
                               onSubmit(selection.asSet());
                             }}
                           >
-                            {tCommon("actions.add")}
+                            {t("actions.add")}
                           </ValidatingSubmitButton>
                         </DialogActions>
                       </Box>

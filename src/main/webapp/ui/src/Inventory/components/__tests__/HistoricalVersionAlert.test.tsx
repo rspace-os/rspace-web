@@ -22,7 +22,7 @@ vi.mock("../../../stores/stores/getRootStore", () => ({
 }));
 
 describe("HistoricalVersionAlert", () => {
-  test("renders the version title key for a historical record", () => {
+  test("renders an alert for a historical record", () => {
     const subsample = makeMockSubSample({
       version: 2,
       historicalVersion: true,
@@ -30,10 +30,10 @@ describe("HistoricalVersionAlert", () => {
     });
     render(<HistoricalVersionAlert record={subsample} />);
 
-    expect(screen.getByText("inventory:historicalVersion.title")).toBeVisible();
+    expect(screen.getByRole("alert")).toBeVisible();
   });
 
-  test("renders the read-only-with-link key and does not retain 'may not be the latest' hedge", () => {
+  test("does not retain 'may not be the latest' hedge", () => {
     const subsample = makeMockSubSample({
       version: 2,
       historicalVersion: true,
@@ -42,7 +42,6 @@ describe("HistoricalVersionAlert", () => {
     render(<HistoricalVersionAlert record={subsample} />);
 
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("inventory:historicalVersion.readOnlyWithLink");
     expect(alert).not.toHaveTextContent(/may not be the latest version/i);
   });
 

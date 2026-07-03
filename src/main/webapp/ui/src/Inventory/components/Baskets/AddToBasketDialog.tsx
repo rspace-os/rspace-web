@@ -16,7 +16,7 @@ import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
 import type { Basket } from "../../../stores/definitions/Basket";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
-import { NEW_BASKET } from "../../../stores/models/Basket";
+import { getNewBasket } from "../../../stores/models/Basket";
 import useStores from "../../../stores/use-stores";
 import ContextDialog from "../ContextMenu/ContextDialog";
 
@@ -37,16 +37,17 @@ function AddToBasketDialog({
   const { searchStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
 
-  const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([NEW_BASKET]);
-  const [targetBasket, setTargetBasket] = useState<Basket>(NEW_BASKET);
+  const newBasket = React.useMemo(() => getNewBasket(), []);
+  const [targetBaskets, setTargetBaskets] = useState<Array<Basket>>([newBasket]);
+  const [targetBasket, setTargetBasket] = useState<Basket>(newBasket);
   const [newBasketName, setNewBasketName] = useState<string>("");
   const [error, setError] = useState<boolean>(false);
 
   useEffect(() => {
     void searchStore.getBaskets().then(() => {
-      setTargetBaskets([NEW_BASKET, ...searchStore.savedBaskets]);
+      setTargetBaskets([newBasket, ...searchStore.savedBaskets]);
     });
-  }, []);
+  }, [newBasket]);
 
   const noDuplicates = (): boolean => !searchStore.savedBaskets.map((b) => b.name).includes(newBasketName);
   const validLength = (): boolean => newBasketName.length <= 32;

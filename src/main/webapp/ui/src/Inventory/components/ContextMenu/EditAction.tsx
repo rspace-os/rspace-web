@@ -23,8 +23,7 @@ type EditActionArgs = {
 
 const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: EditActionArgs, ref) => {
-    const { t } = useTranslation("inventory");
-    const { t: tCommon } = useTranslation("common");
+    const { t } = useTranslation(["inventory", "common"]);
     const { searchStore, uiStore } = useStores();
 
     const displayErrorIfAllLocksCouldNotBeAcquired = (error: Error): boolean => {
@@ -172,7 +171,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       ],
       [() => selectedResults.length === 0, t("contextMenu.edit.nothingSelected")],
       [() => !selectedResults.every((r) => r.canEdit), t("contextMenu.edit.noPermission")],
-      [() => searchStore.search.editLoading !== "no", tCommon("loading")],
+      [() => searchStore.search.editLoading !== "no", t("common:loading")],
       [() => true, ""],
     ]);
 
@@ -182,7 +181,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
           <ContextMenuAction
             onClick={() => void doEdit()}
             icon={selectedResults.length > 1 ? <DoubleEditIcon /> : <SingleEditIcon />}
-            label={selectedResults.length > 1 ? t("contextMenu.edit.batchEdit") : tCommon("actions.edit")}
+            label={selectedResults.length > 1 ? t("contextMenu.edit.batchEdit") : t("common:actions.edit")}
             disabledHelp={disabledHelp()}
             as={as}
             ref={ref}

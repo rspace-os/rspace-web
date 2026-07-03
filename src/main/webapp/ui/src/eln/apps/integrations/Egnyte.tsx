@@ -6,6 +6,7 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/egnyte";
 import EgnyteIcon from "../../../assets/branding/egnyte/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -50,11 +51,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
         docLink="cloudstorage"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.egnyte.setup.provideDomain")}</li>
-              <li>{t("integrations.egnyte.setup.enable")}</li>
-              <li>{t("integrations.egnyte.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.egnyte.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {

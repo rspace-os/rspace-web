@@ -48,12 +48,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
         usageText={<TransRichText i18nKey="apps:integrations.fieldmark.usage" />}
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.fieldmark.setup.obtainToken")}</li>
-              <li>{t("integrations.fieldmark.setup.copyToken")}</li>
-              <li>{t("integrations.fieldmark.setup.enable")}</li>
-              <li>{t("integrations.fieldmark.setup.importButton")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.fieldmark.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {

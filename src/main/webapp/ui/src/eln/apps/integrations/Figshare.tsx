@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
 import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -96,11 +97,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
         docLink="figshare"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.figshare.setup.connect")}</li>
-              <li>{t("integrations.figshare.setup.enable")}</li>
-              <li>{t("integrations.figshare.setup.exportDialog")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.figshare.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

@@ -14,6 +14,7 @@ import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/github";
 import GitHubIcon from "../../../assets/branding/github/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -335,12 +336,7 @@ function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
         docLink="github"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.github.setup.authorise")}</li>
-              <li>{t("integrations.github.setup.select")}</li>
-              <li>{t("integrations.github.setup.enable")}</li>
-              <li>{t("integrations.github.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.github.setup.instructions" />
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedRepos) => (
                 <DialogContent key={null} linkedRepos={linkedRepos} integrationState={integrationState} />

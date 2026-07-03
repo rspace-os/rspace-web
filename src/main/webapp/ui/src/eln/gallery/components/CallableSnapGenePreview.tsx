@@ -51,8 +51,7 @@ function DnaPreview({
   file: GalleryFile;
   idOfDnaPreviewTab: string;
 }) {
-  const { t } = useTranslation("apps");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["apps", "common"]);
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
@@ -109,13 +108,13 @@ function DnaPreview({
         />
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup>
-          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label={tCommon("actions.zoomIn")}>
+          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label={t("common:actions.zoomIn")}>
             <ZoomInIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label={tCommon("actions.zoomOut")}>
+          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label={t("common:actions.zoomOut")}>
             <ZoomOutIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom(1)} aria-label={tCommon("actions.resetZoom")}>
+          <IconButton onClick={() => setZoom(1)} aria-label={t("common:actions.resetZoom")}>
             <ResetZoomIcon />
           </IconButton>
         </ButtonGroup>
@@ -670,8 +669,7 @@ export function useSnapGenePreview(): {
 export function CallableSnapGenePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
-  const { t } = useTranslation("apps");
-  const { t: tCommon } = useTranslation("common");
+  const { t } = useTranslation(["apps", "common"]);
   const idOfDnaPreviewTab = React.useId();
   const idOfRestrictionSitesTab = React.useId();
   const idOfViewAsFastaTab = React.useId();
@@ -780,7 +778,7 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                   <OrfTable show={tab === "ORF table"} file={file} idOfOrfTableTab={idOfOrfTableTab} />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setFile(null)}>{tCommon("actions.close")}</Button>
+                  <Button onClick={() => setFile(null)}>{t("common:actions.close")}</Button>
                 </DialogActions>
               </Stack>
             </Stack>

@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -75,11 +76,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
         usageText={t("integrations.digitalCommonsData.usage")}
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.digitalCommonsData.setup.connect")}</li>
-              <li>{t("integrations.digitalCommonsData.setup.enable")}</li>
-              <li>{t("integrations.digitalCommonsData.setup.exportDialog")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.digitalCommonsData.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

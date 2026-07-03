@@ -41,8 +41,7 @@ const MoveDialog = observer(
   ({ open, onClose, section, selectedFiles, refreshListing }: MoveDialogArgs): React.ReactNode => {
     const { isViewportVerySmall } = useViewportDimensions();
     const { trackEvent } = React.useContext(AnalyticsContext);
-    const { t } = useTranslation("gallery");
-    const { t: tCommon } = useTranslation("common");
+    const { t } = useTranslation(["gallery", "common"]);
 
     const listingOf = React.useMemo(
       () => ({
@@ -101,7 +100,7 @@ const MoveDialog = observer(
         <DialogContent sx={{ pt: 0 }}>
           <Box sx={{ overflowY: "auto" }}>
             {FetchingData.match(galleryListing, {
-              loading: () => <PlaceholderLabel>{tCommon("folderTree.loading")}</PlaceholderLabel>,
+              loading: () => <PlaceholderLabel>{t("common:folderTree.loading")}</PlaceholderLabel>,
               error: (error) => <PlaceholderLabel>{error}</PlaceholderLabel>,
               success: (listing) => (
                 <TreeView
@@ -147,7 +146,7 @@ const MoveDialog = observer(
                 onClose();
               }}
             >
-              {tCommon("actions.cancel")}
+              {t("common:actions.cancel")}
             </Button>
             <ValidatingSubmitButton
               loading={submitLoading}

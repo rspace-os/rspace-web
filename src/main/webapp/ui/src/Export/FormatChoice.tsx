@@ -60,12 +60,6 @@ function FormatChoice({
   updateFileStores,
 }: FormatChoiceArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  const wordErrors = [
-    t("export.format.chooser.wordErrors.multiple"),
-    t("export.format.chooser.wordErrors.folder"),
-    t("export.format.chooser.wordErrors.notebook"),
-    t("export.format.chooser.wordErrors.allMedia"),
-  ];
   const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState<Optional<string>>(
     Optional.present(t("export.format.chooser.loading")),
   );
@@ -186,10 +180,10 @@ function FormatChoice({
 
     setWordAvailable(wordExportAllowed);
 
-    if (disabledBecauseMultiple) setWordAvailabilityMessage(wordErrors[0]);
-    if (disabledBecauseFolder) setWordAvailabilityMessage(wordErrors[1]);
-    if (disabledBecauseNotebook) setWordAvailabilityMessage(wordErrors[2]);
-    if (disabledBecauseAllMedia) setWordAvailabilityMessage(wordErrors[3]);
+    if (disabledBecauseMultiple) setWordAvailabilityMessage(t("export.format.chooser.wordErrors.multiple"));
+    if (disabledBecauseFolder) setWordAvailabilityMessage(t("export.format.chooser.wordErrors.folder"));
+    if (disabledBecauseNotebook) setWordAvailabilityMessage(t("export.format.chooser.wordErrors.notebook"));
+    if (disabledBecauseAllMedia) setWordAvailabilityMessage(t("export.format.chooser.wordErrors.allMedia"));
   };
 
   useEffect(() => {

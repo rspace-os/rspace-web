@@ -13,6 +13,7 @@ import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -59,13 +60,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
         docLink="pyrat"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.pyrat.setup.requestToken")}</li>
-              <li>{t("integrations.pyrat.setup.chooseServer")}</li>
-              <li>{t("integrations.pyrat.setup.enterToken")}</li>
-              <li>{t("integrations.pyrat.setup.enable")}</li>
-              <li>{t("integrations.pyrat.setup.toolbar")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.pyrat.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>

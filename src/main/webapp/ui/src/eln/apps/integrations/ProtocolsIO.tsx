@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/protocolsio";
 import ProtocolsIOIcon from "../../../assets/branding/protocolsio/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -96,12 +97,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
         docLink="protocolsio"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.protocolsIo.setup.register")}</li>
-              <li>{t("integrations.protocolsIo.setup.connect")}</li>
-              <li>{t("integrations.protocolsIo.setup.enable")}</li>
-              <li>{t("integrations.protocolsIo.setup.import")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.protocolsIo.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

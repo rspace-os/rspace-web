@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/argos";
 import ArgosIcon from "../../../assets/branding/argos/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -35,12 +36,7 @@ function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
         helpLinkText={t("integrations.argos.helpLink")}
         website="argos.openaire.eu"
         docLink="argos"
-        setupSection={
-          <ol>
-            <li>{t("integrations.argos.setup.enable")}</li>
-            <li>{t("integrations.argos.setup.imported")}</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.argos.setup.instructions" />}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         integrationState={integrationState}
       />

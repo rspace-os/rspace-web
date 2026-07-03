@@ -113,11 +113,9 @@ const renderDialog = () =>
     </ThemeProvider>,
   );
 
-const PLAN_CHECKBOX_LABEL = "apps:dmpIntegrations.dialog.selectPlanLabel";
-
 const checkboxForPlan = async (title: string): Promise<HTMLElement> =>
   within(await screen.findByRole("row", { name: (name) => name.includes(title) })).getByRole("checkbox", {
-    name: PLAN_CHECKBOX_LABEL,
+    name: "apps:dmpIntegrations.dialog.selectPlanLabel",
   });
 
 beforeEach(() => {

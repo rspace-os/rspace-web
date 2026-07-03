@@ -1,8 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
+import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@/__tests__/customQueries";
+import { cleanup, render, screen, waitFor, within } from "@/__tests__/customQueries";
+import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "../../../../../theme";
 
 // The per-type bodies are exercised by their own tests; here we only assert that
@@ -57,6 +60,23 @@ function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDi
           <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} {...props} />
         </ThemeProvider>
       </QueryClientProvider>,
+    ),
+    queryClient,
+  };
+}
+
+async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
+  const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
+  const queryClient = new QueryClient();
+  return {
+    ...render(
+      <I18nextProvider i18n={i18n}>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider theme={materialTheme}>
+            <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} {...props} />
+          </ThemeProvider>
+        </QueryClientProvider>
+      </I18nextProvider>,
     ),
     queryClient,
   };
@@ -181,9 +201,12 @@ describe("ElnRecordInfoDialog", () => {
       { status: 404, statusText: "Not Found" },
     );
 
-    renderDialog({ globalId: "SD599", versionPin: 4 });
+    await renderDialogWithRealI18n({ globalId: "SD599", versionPin: 4 });
 
-    expect(await screen.findByText("inventory:fields.link.elnInfoDialog.versionUnavailable")).toBeInTheDocument();
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Version 4 of SD599 is no longer available.");
+    const latestLink = within(alert).getByRole("link", { name: /view the latest version/i });
+    expect(latestLink).toHaveAttribute("href", "/globalId/SD599");
   });
 
   it("links the Open button to /globalId/<globalId> in a new tab", async () => {

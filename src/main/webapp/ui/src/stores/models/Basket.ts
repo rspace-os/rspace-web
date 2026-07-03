@@ -196,11 +196,17 @@ export default class BasketModel implements Basket {
   }
 }
 
-export const NEW_BASKET: Basket = new BasketModel({
-  name: i18n.t("inventory:baskets.newBasket"),
-  id: null,
-  globalId: "",
-  items: [],
-  itemCount: 0,
-  _links: [],
-});
+/*
+ * A factory rather than a shared const so the localized name resolves when a
+ * dialog mounts (after i18n has initialised and the inventory namespace has
+ * loaded) instead of being frozen to whatever was available at import time.
+ */
+export const getNewBasket = (): Basket =>
+  new BasketModel({
+    name: i18n.t("inventory:baskets.newBasket"),
+    id: null,
+    globalId: "",
+    items: [],
+    itemCount: 0,
+    _links: [],
+  });

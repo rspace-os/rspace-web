@@ -47,7 +47,6 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation("inventory");
-  const REQUIRED_PERMISSIONS_TOOLTIP = t("detailedListing.card.requiredPermissions");
 
   const activateResult = (r: InventoryRecord) => {
     differentSearchForSettingActiveResult
@@ -97,13 +96,13 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const hasPermission = hasRequiredPermissions(record.permittedActions, search.uiConfig?.requiredPermissions);
   const cardIsGreyedOut = isFilteredOut || !hasPermission;
   const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
-  const tooltipText = filteredOutReason ?? (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const tooltipText = filteredOutReason ?? (!hasPermission ? t("detailedListing.card.requiredPermissions") : undefined);
 
   const menuItems = contextActions({
     selectedResults: [record],
     menuID: menuIDs.CARD,
     closeMenu: () => setAnchorEl(null),
-    forceDisabled: search.processingContextActions ? "Action in Progress" : "",
+    forceDisabled: search.processingContextActions ? t("contextMenu.actionInProgress") : "",
     basketSearch: search.fetcher.basketSearch,
   })("menuitem");
 
@@ -230,12 +229,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
               i18nKey="inventory:detailedListing.card.modifiedBy"
               values={{ name: record.modifiedByFullName }}
               components={{
-                timeAgo: (
-                  <TimeAgoCustom
-                    time={record.lastModified}
-                    formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
-                  />
-                ),
+                timeAgo: <TimeAgoCustom time={record.lastModified} compact />,
               }}
             />
           </Box>

@@ -17,6 +17,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
 import docLinks from "../../../assets/DocLinks";
@@ -65,10 +66,12 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
         setupSection={
           <>
             <Typography variant="body2">
-              {t("integrations.msteams.setup.article")}{" "}
-              <Link href={docLinks.teams} target="_blank" rel="noreferrer">
-                {t("integrations.msteams.setup.articleLink")}
-              </Link>
+              <TransRichText
+                i18nKey="apps:integrations.msteams.setup.instructions"
+                components={{
+                  articleLink: <Link href={docLinks.teams} target="_blank" rel="noreferrer" />,
+                }}
+              />
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((channels) => (

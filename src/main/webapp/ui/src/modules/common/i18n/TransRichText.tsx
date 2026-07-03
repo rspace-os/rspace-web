@@ -9,7 +9,10 @@ const muiRichTextComponents: RichTextComponents = {
   a: createElement(Link),
   br: <br />,
   code: <code />,
+  li: <li />,
+  ol: <ol />,
   strong: <strong />,
+  ul: <ul />,
 };
 
 export const RichTextComponentsContext = createContext<RichTextComponents>(muiRichTextComponents);

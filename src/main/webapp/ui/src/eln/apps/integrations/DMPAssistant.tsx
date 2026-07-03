@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -71,11 +72,7 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
         docLink="dmpassistant"
         setupSection={
           <>
-            <ol>
-              <li>{t("integrations.dmpAssistant.setup.connect")}</li>
-              <li>{t("integrations.dmpAssistant.setup.enable")}</li>
-              <li>{t("integrations.dmpAssistant.setup.gallery")}</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dmpAssistant.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
