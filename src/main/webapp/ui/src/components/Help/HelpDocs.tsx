@@ -1,4 +1,4 @@
-import Intercom from "@intercom/messenger-js-sdk";
+import { Intercom } from "@intercom/messenger-js-sdk";
 import HelpIcon from "@mui/icons-material/Help";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
