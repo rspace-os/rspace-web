@@ -289,16 +289,10 @@ const OrcidIcon = () => (
  * to mark the active tab; the AppBar maps each key to its translated label
  * (`appBar.sections.<key>.title`/`.subheader`).
  */
-export type TabKey = "workspace" | "gallery" | "inventory" | "system" | "myRSpace";
-const TAB_KEYS: ReadonlyArray<TabKey> = ["workspace", "gallery", "inventory", "system", "myRSpace"];
+const TAB_KEYS = ["workspace", "gallery", "inventory", "system", "myRSpace"] as const;
+export type TabKey = (typeof TAB_KEYS)[number];
 
-/**
- * Gives editors autocomplete for the known `TabKey` literals while still
- * accepting any other string (dialog titles, non-tab pages like "Apps").
- * The `Record<never, never>` intersection preserves the literal suggestions
- * that a bare `TabKey | string` would collapse away.
- */
-type TabKeyHint = TabKey | (string & Record<never, never>);
+const isTabKey = (page: string): page is TabKey => TAB_KEYS.some((key) => key === page);
 
 type GalleryAppBarArgs = {
   /**
@@ -314,7 +308,7 @@ type GalleryAppBarArgs = {
    * "dialog" variant this is only shown as a heading, so any (already
    * translated) string may be passed.
    */
-  currentPage: TabKeyHint;
+  currentPage: string;
 
   /**
    * Some pages have a sidebar that needs a toggle for opening and closing.
@@ -382,7 +376,7 @@ function GalleryAppBar({
       showMyLabGroups: false,
     });
 
-  const isTabbedPage = (TAB_KEYS as ReadonlyArray<string>).includes(currentPage);
+  const isTabbedPage = isTabKey(currentPage);
 
   const sectionLabels: Record<TabKey, { title: string; subheader: string }> = {
     workspace: { title: t("appBar.sections.workspace.title"), subheader: t("appBar.sections.workspace.subheader") },
@@ -392,8 +386,7 @@ function GalleryAppBar({
     system: { title: t("appBar.sections.system.title"), subheader: t("appBar.sections.system.subheader") },
   };
 
-  const displayPage = (page: string): string =>
-    (sectionLabels as Record<string, { title: string; subheader: string }>)[page]?.title ?? page;
+  const displayPage = (page: string): string => (isTabKey(page) ? sectionLabels[page].title : page);
 
   return (
     <I18nRoot namespaces={["common", "about"]}>
