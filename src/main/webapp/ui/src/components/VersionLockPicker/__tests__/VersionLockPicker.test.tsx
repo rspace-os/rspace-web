@@ -40,7 +40,7 @@ describe("VersionLockPicker", () => {
     versionRows.forEach((row) => {
       expect(row).toBeInTheDocument();
     });
-    expect(screen.getByText(/latest/i)).toBeInTheDocument();
+    expect(screen.getByText("common:versionLockPicker.latest")).toBeInTheDocument();
   });
 
   it("calls onChange with the version number when a row is selected", async () => {
@@ -59,7 +59,7 @@ describe("VersionLockPicker", () => {
     const user = userEvent.setup();
     renderComponent({ currentSelection: 1, onChange });
 
-    const latestRow = await screen.findByText(/latest/i);
+    const latestRow = await screen.findByText("common:versionLockPicker.latest");
     await user.click(latestRow);
 
     expect(onChange).toHaveBeenCalledWith(LATEST_SELECTION);
@@ -96,7 +96,7 @@ describe("VersionLockPicker", () => {
         </ThemeProvider>,
       );
 
-      expect(await screen.findByText(/latest/i)).toBeInTheDocument();
+      expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
       // let the rejection cross a macrotask boundary so node's
       // unhandled-rejection detection has run
       await new Promise((resolve) => setTimeout(resolve, 0));

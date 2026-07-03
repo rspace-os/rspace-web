@@ -115,7 +115,7 @@ describe("AddFilestoreDialog", () => {
 
     // the user selects a filesystem
     await user.click(screen.getByRole("radio", { name: "irods test" }));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFilesystem" }));
 
     // the folder tree is rendered once the browse request resolves
     await screen.findByRole("treeitem", { name: "test" });
@@ -128,7 +128,7 @@ describe("AddFilestoreDialog", () => {
     const testTreeItem = screen.getByRole("treeitem", { name: "test" });
     const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFolder" }));
 
     // wait for the name step to become active
     await screen.findByRole("textbox", { name: "gallery:addFilestoreDialog.nameLabel" });
@@ -142,10 +142,10 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFilesystem" }));
 
     expect(await screen.findByRole("treeitem", { name: "test" })).toBeVisible();
-    expect(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFolder" })).toBeInTheDocument();
   });
 
   test("Selecting a folder advances to the name step", async () => {
@@ -153,14 +153,14 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFilesystem" }));
 
     const testTreeItem = await screen.findByRole("treeitem", {
       name: "test",
     });
     const content = testTreeItem.querySelector<HTMLElement>(":scope > div") ?? testTreeItem;
     await user.click(content);
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFolder" }));
 
     expect(await screen.findByRole("textbox", { name: "gallery:addFilestoreDialog.nameLabel" })).toBeVisible();
   });
@@ -176,16 +176,16 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "s3 test" }));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFilesystem" }));
 
     // S3 offers a selectable "(bucket top level)" entry (no subfolder needed); clicking its label
     // selects it (the click bubbles to the tree-item content handler).
     await user.click(await screen.findByText("gallery:addFilestoreDialog.bucketTopLevel"));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFolder/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFolder" }));
 
     const nameField = await screen.findByRole("textbox", { name: "gallery:addFilestoreDialog.nameLabel" });
     await user.type(nameField, "Root Filestore");
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.addFilestore/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.addFilestore" }));
 
     // the filestore is created with an empty path (the bucket top level)
     await waitFor(() => {
@@ -198,9 +198,9 @@ describe("AddFilestoreDialog", () => {
     render(<AddFilestoreDialogStory />);
 
     await user.click(await screen.findByRole("radio", { name: "irods test" }));
-    await user.click(screen.getByRole("button", { name: /addFilestoreDialog.chooseFilesystem/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:addFilestoreDialog.chooseFilesystem" }));
 
     await screen.findByRole("treeitem", { name: "test" });
-    expect(screen.queryByRole("treeitem", { name: /bucket top level/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("gallery:addFilestoreDialog.bucketTopLevel")).not.toBeInTheDocument();
   });
 });

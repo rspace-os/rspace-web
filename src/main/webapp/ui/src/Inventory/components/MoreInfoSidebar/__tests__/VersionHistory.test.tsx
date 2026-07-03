@@ -96,7 +96,7 @@ describe("VersionHistory", () => {
     fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
-    const link = screen.getByRole("link", { name: /version 1/i });
+    const link = screen.getByRole("link", { name: "inventory:moreInfo.versionHistory.columns.version 1" });
     expect(link).toHaveAttribute("href", "/inventory/subsample/1?version=1");
   });
 
@@ -118,7 +118,7 @@ describe("VersionHistory", () => {
     render(<VersionHistory record={subsample} />);
     fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(/could not load version history/i);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Could not load version history.");
   });
 
   test("renders nothing for an unsaved record", () => {
@@ -149,7 +149,7 @@ describe("VersionHistory", () => {
     fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.versionHistory.view" }));
 
     await screen.findByRole("table");
-    const link = screen.getByRole("link", { name: /version 1/i });
+    const link = screen.getByRole("link", { name: "inventory:moreInfo.versionHistory.columns.version 1" });
     expect(link).toHaveAttribute("href", "/inventory/sampletemplate/1?version=1");
   });
 
@@ -199,7 +199,7 @@ describe("VersionHistory", () => {
     await screen.findByRole("table");
     const viewedRow = screen.getAllByRole("row").find((row) => /version 1/i.test(row.textContent ?? ""));
     expect(viewedRow).toHaveTextContent("inventory:moreInfo.versionHistory.viewing");
-    expect(screen.queryByText(/moreInfo.versionHistory.current/)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:moreInfo.versionHistory.current")).not.toBeInTheDocument();
   });
 
   test("the newest revision of a version wins regardless of response order", async () => {
@@ -279,8 +279,10 @@ describe("VersionHistory", () => {
     resolvers[0](revisionsResponse([{ revisionId: 1, version: 1 }]));
 
     await screen.findByRole("table");
-    expect(screen.getByRole("link", { name: /version 3/i })).toBeVisible();
-    expect(screen.queryByRole("link", { name: /version 1/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "inventory:moreInfo.versionHistory.columns.version 3" })).toBeVisible();
+    expect(
+      screen.queryByRole("link", { name: "inventory:moreInfo.versionHistory.columns.version 1" }),
+    ).not.toBeInTheDocument();
   });
 
   test("the dialog is accessible", async () => {

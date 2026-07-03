@@ -221,7 +221,9 @@ describe("LinkedDocuments", () => {
     const listOfMaterialsLink = await screen.findByRole("link", { name: "List of Materials" });
     expect(listOfMaterialsLink).toHaveAttribute("href", expect.stringContaining("list-of-materials"));
     expect(
-      await screen.findByText(/Other Inventory items that link to this item through a Link custom field/i),
+      await screen.findByText(
+        "Other Inventory items that link to this item through a Link custom field will also be listed here.",
+      ),
     ).toBeVisible();
   });
   test("Opening the dialog twice should trigger two network calls", async () => {

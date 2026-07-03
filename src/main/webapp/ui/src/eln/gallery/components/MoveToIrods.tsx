@@ -304,9 +304,9 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
                           <Stack spacing={1}>
                             <Typography variant="body2">
                               {t("moveToIrods.login.prompt", {
-                                serverUrl: `${selectedDestination?.filesystemName ?? ""}${
-                                  selectedDestination?.filesystemUrl ? ` (${selectedDestination.filesystemUrl})` : ""
-                                }`,
+                                serverName: selectedDestination?.filesystemName ?? "",
+                                serverUrl: selectedDestination?.filesystemUrl ?? "",
+                                hasServerUrl: selectedDestination?.filesystemUrl ? "yes" : "no",
                               })}
                             </Typography>
                             <FormField

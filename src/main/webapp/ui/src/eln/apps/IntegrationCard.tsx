@@ -17,7 +17,8 @@ import { svgIconClasses } from "@mui/material/SvgIcon";
 import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import React, { forwardRef, useContext, useState } from "react";
+import type React from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
 import type { DocLinkName } from "../../assets/DocLinks";
@@ -94,38 +95,18 @@ type IntegrationCardArgs<Credentials> = {
   // it is enabled or disable.
   update: (newState: IntegrationState<Credentials>["mode"]) => void;
 };
-const CustomGrow = forwardRef<typeof Grow, React.ComponentProps<typeof Grow>>((props, ref) => (
-  <Grow
-    {...props}
-    ref={ref}
-    timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
-    style={{
-      transformOrigin: "center 70%",
-    }}
-  />
-));
-CustomGrow.displayName = "CustomGrow";
-type NoopTransitionProps = {
-  in?: boolean;
-  children?: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-};
-const NoopTransition = React.forwardRef<HTMLElement, NoopTransitionProps>(
-  ({ in: inProp, children, className, style }, ref) => {
-    if (!inProp) return null;
-    if (React.isValidElement(children)) {
-      return React.cloneElement(children as React.ReactElement<Record<string, unknown>>, {
-        ref,
-        className,
-        style,
-        tabIndex: -1,
-      });
-    }
-    return children ?? null;
-  },
-);
-NoopTransition.displayName = "NoopTransition";
+function CustomGrow({ ref, ...props }: React.ComponentProps<typeof Grow>): React.ReactNode {
+  return (
+    <Grow
+      {...props}
+      ref={ref}
+      timeout={window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 200}
+      style={{
+        transformOrigin: "center 70%",
+      }}
+    />
+  );
+}
 function IntegrationCard<Credentials>({
   name,
   explanatoryText,

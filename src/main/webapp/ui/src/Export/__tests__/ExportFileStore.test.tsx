@@ -87,7 +87,7 @@ describe("ExportFileStore", () => {
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "/test.txt" }),
     ).toBeVisible();
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "common:actions.ok" }));
   });
   test("Filesystem login details dialog should show such info.", async () => {
     const user = userEvent.setup();
@@ -130,17 +130,17 @@ describe("ExportFileStore", () => {
     void (await waitFor(async () => {
       expect(
         await screen.findByRole("button", {
-          name: /export.fileStore.login.checkButton/i,
+          name: "workspace:export.fileStore.login.checkButton",
         }),
       ).toBeVisible();
     }));
-    await user.click(screen.getByRole("button", { name: /export.fileStore.login.checkButton/i }));
+    await user.click(screen.getByRole("button", { name: "workspace:export.fileStore.login.checkButton" }));
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("rowheader", { name: "samba-folder" }),
     ).toBeVisible();
     expect(
       within(within(screen.getByRole("dialog")).getByRole("table")).getByRole("cell", { name: "sambatest" }),
     ).toBeVisible();
-    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /OK/i }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "common:actions.ok" }));
   });
 });

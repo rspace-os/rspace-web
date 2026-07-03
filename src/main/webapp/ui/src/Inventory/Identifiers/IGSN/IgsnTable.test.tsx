@@ -192,7 +192,7 @@ describe("IGSN Table", () => {
 
     const row = screen.getAllByRole("row").find((r) => r.textContent?.includes("10.82316/khma-em96"));
     if (!row) throw new Error("Could not find row for DOI 10.82316/khma-em96");
-    const checkbox = within(row).getByRole("checkbox", { name: /Select row/ });
+    const checkbox = within(row).getByRole("checkbox", { name: "Select row" });
     await user.click(checkbox);
 
     /*
@@ -279,7 +279,7 @@ describe("IGSN Table", () => {
       }),
       "test",
     );
-    await user.click(screen.getByRole("button", { name: new RegExp(IGSN_TABLE.searchButtonPrefix) }));
+    await user.click(screen.getByRole("button", { name: IGSN_TABLE.searchButtonPrefix }));
 
     await waitFor(() => {
       expect(identifiersRequestParams().some((params) => params.get("identifier") === "test")).toBe(true);

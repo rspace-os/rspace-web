@@ -67,7 +67,7 @@ describe("ElnRecordPicker", () => {
     const user = userEvent.setup();
     renderPicker({ onPick });
 
-    await user.click(screen.getByRole("button", { name: /select doc/i }));
+    await user.click(screen.getByRole("button", { name: "select doc" }));
     // selection alone must not close the dialog or report a pick
     expect(onPick).not.toHaveBeenCalled();
 
@@ -83,10 +83,10 @@ describe("ElnRecordPicker", () => {
     const user = userEvent.setup();
     renderPicker();
 
-    await user.click(screen.getByRole("button", { name: /select doc/i }));
+    await user.click(screen.getByRole("button", { name: "select doc" }));
     expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeEnabled();
 
-    await user.click(screen.getByRole("button", { name: /select folder/i }));
+    await user.click(screen.getByRole("button", { name: "select folder" }));
     expect(screen.getByRole("button", { name: "inventory:fields.link.elnPicker.choose" })).toBeDisabled();
   });
 
@@ -100,7 +100,7 @@ describe("ElnRecordPicker", () => {
       </ThemeProvider>,
     );
 
-    await user.click(screen.getByRole("button", { name: /select doc/i }));
+    await user.click(screen.getByRole("button", { name: "select doc" }));
     rerender(
       <ThemeProvider theme={materialTheme}>
         <ElnRecordPicker open={false} onPick={onPick} onCancel={onCancel} />

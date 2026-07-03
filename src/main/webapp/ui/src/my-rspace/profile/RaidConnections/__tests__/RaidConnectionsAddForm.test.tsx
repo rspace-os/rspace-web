@@ -416,7 +416,7 @@ describe("RaidConnectionsAddForm", () => {
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
-        expect(screen.getByText(/Failed to add RAiD/i)).toBeInTheDocument();
+        expect(screen.getByText("Failed to add RAiD")).toBeInTheDocument();
       });
     });
 

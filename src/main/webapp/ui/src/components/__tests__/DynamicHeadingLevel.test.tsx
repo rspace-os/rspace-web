@@ -7,7 +7,7 @@ import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 describe("DynamicHeadingLevel", () => {
   test("Should default to level 1", () => {
     render(<Heading>{"Test"}</Heading>);
-    expect(screen.getByRole("heading", { name: /Test/, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 1 })).toBeInTheDocument();
   });
   test("Using a HeadingContext should result in a level 2", () => {
     render(
@@ -15,7 +15,7 @@ describe("DynamicHeadingLevel", () => {
         <Heading>{"Test"}</Heading>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 2 })).toBeInTheDocument();
   });
   test("Nesting HeadingContexts should increment the level.", () => {
     render(
@@ -25,7 +25,7 @@ describe("DynamicHeadingLevel", () => {
         </HeadingContext>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 3 })).toBeInTheDocument();
   });
   test("Specifying level allows skipping levels.", () => {
     render(
@@ -36,7 +36,7 @@ describe("DynamicHeadingLevel", () => {
         </HeadingContext>
       </>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 2 })).toBeInTheDocument();
   });
   test("Specifying level on a nested HeadingContext is not allowed.", () => {
     const restoreConsole = silenceConsole(["error"], [/./]);
@@ -79,7 +79,7 @@ describe("DynamicHeadingLevel", () => {
         </HeadingContext>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 6 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 6 })).toBeInTheDocument();
   });
   test("Variant should change css styles but leave element type untouched.", () => {
     render(

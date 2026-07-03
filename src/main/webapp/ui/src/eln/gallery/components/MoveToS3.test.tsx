@@ -70,7 +70,7 @@ beforeEach(() => {
 
 async function selectMyS3Bucket(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "gallery:moveToS3.destination.placeholder" }));
-  await user.click(await screen.findByRole("menuitem", { name: /my s3 bucket/i }));
+  await user.click(await screen.findByRole("menuitem", { name: "My S3 Bucket" }));
 }
 
 describe("MoveToS3", () => {
@@ -108,12 +108,12 @@ describe("MoveToS3", () => {
       // filestore is selected surfaces a validation popover.
       await screen.findByRole("button", { name: "gallery:moveToS3.destination.placeholder" });
       await user.click(screen.getByRole("button", { name: "common:actions.move" }));
-      expect(await screen.findByText(/a destination filestore is required/i)).toBeVisible();
+      expect(await screen.findByText("A destination filestore is required.")).toBeVisible();
 
       // Dismiss the validation popover (the spec clicked its backdrop).
       await user.keyboard("{Escape}");
       await waitFor(() => {
-        expect(screen.queryByText(/a destination filestore is required/i)).not.toBeInTheDocument();
+        expect(screen.queryByText("A destination filestore is required.")).not.toBeInTheDocument();
       });
 
       // Selecting a filestore clears the validation error so submit succeeds.
@@ -216,12 +216,12 @@ describe("MoveToS3", () => {
       // popover.
       await screen.findByRole("button", { name: "gallery:moveToS3.destination.placeholder" });
       await user.click(screen.getByRole("button", { name: "common:actions.transfer" }));
-      expect(await screen.findByText(/a destination filestore is required/i)).toBeVisible();
+      expect(await screen.findByText("A destination filestore is required.")).toBeVisible();
 
       // Dismiss the validation popover (the spec clicked its backdrop).
       await user.keyboard("{Escape}");
       await waitFor(() => {
-        expect(screen.queryByText(/a destination filestore is required/i)).not.toBeInTheDocument();
+        expect(screen.queryByText("A destination filestore is required.")).not.toBeInTheDocument();
       });
 
       await selectMyS3Bucket(user);

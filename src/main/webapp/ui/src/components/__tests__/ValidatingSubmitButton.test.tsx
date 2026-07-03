@@ -20,7 +20,7 @@ describe("ValidatingSubmitButton", () => {
 
   test("The button should have type 'submit'", () => {
     render(<ProgressExample onClick={() => {}} />);
-    expect(screen.getByRole("button", { name: /Submit/ })).toHaveAttribute("type", "submit");
+    expect(screen.getByRole("button", { name: "Submit" })).toHaveAttribute("type", "submit");
   });
 
   test("When the button is loading, it should be disabled", async () => {
@@ -38,7 +38,7 @@ describe("ValidatingSubmitButton", () => {
   test("When validation fails, the validation error popover should be visible", async () => {
     const user = userEvent.setup();
     render(<SimpleExample onClick={() => {}} />);
-    await user.click(screen.getByRole("button", { name: /Set Invalid/ }));
+    await user.click(screen.getByRole("button", { name: "Set Invalid" }));
     await user.click(screen.getByRole("button", { name: "Submit" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
   });
@@ -62,7 +62,7 @@ describe("ValidatingSubmitButton", () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     render(<SimpleExample onClick={onClick} />);
-    await user.click(screen.getByRole("button", { name: /Set Invalid/ }));
+    await user.click(screen.getByRole("button", { name: "Set Invalid" }));
     await user.click(screen.getByRole("button", { name: "Submit" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(onClick).not.toHaveBeenCalled();
@@ -110,7 +110,7 @@ describe("ValidatingSubmitButton", () => {
     test("When validation fails, the validation error popover should contain a warning alert", async () => {
       const user = userEvent.setup();
       render(<SimpleExample onClick={() => {}} />);
-      await user.click(screen.getByRole("button", { name: /Set Invalid/ }));
+      await user.click(screen.getByRole("button", { name: "Set Invalid" }));
       await user.click(screen.getByRole("button", { name: "Submit" }));
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(await screen.findByRole("alert", { name: "common:alerts.warning" })).toBeVisible();

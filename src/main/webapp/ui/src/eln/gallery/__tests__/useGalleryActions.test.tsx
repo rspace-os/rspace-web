@@ -70,7 +70,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -90,7 +90,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -156,7 +156,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -176,7 +176,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -244,7 +244,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -264,7 +264,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("This is a test error message.");
@@ -330,7 +330,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("gallery:actions.description.updateSuccess");
@@ -350,7 +350,7 @@ describe("useGalleryActions", () => {
         </Alerts>,
       );
 
-      await user.click(screen.getByRole("button", { name: /click me/i }));
+      await user.click(screen.getByRole("button", { name: "click me" }));
 
       const toast = await screen.findByRole("alert");
       expect(toast).toHaveTextContent("gallery:actions.description.updateFailed");

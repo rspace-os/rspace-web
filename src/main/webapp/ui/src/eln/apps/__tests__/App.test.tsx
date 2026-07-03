@@ -7,8 +7,11 @@ import App from "../App";
 import "@/__tests__/assertSemanticHeadings";
 import { ThemeProvider } from "@mui/material/styles";
 import MockAdapter from "axios-mock-adapter";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import materialTheme from "../../../theme";
+import allIntegrationsAreDisabled from "./allIntegrationsAreDisabled.json";
 
 import "@/__tests__/__mocks__/matchMedia";
 
@@ -42,39 +45,43 @@ beforeEach(() => {
     livechatEnabled: false,
   });
 });
+
+function renderApp() {
+  return render(
+    <ThemeProvider theme={materialTheme}>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </ThemeProvider>,
+  );
+}
+
 describe("Apps page", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations.", async () => {
-      mockAxios.onPost("integration/allIntegrations").reply(200, {
-        success: false,
-        data: null,
-        error: "",
-      });
-      const { container } = render(
-        <ThemeProvider theme={materialTheme}>
-          <App />
-        </ThemeProvider>,
-      );
-      await screen.findAllByText("common:errorBoundary.message");
+      const restoreConsole = silenceConsole(["error"], [/.*/]);
+      try {
+        mockAxios.onGet("integration/allIntegrations").reply(200, {
+          success: false,
+          data: null,
+          error: "",
+        });
+        const { container } = renderApp();
+        await screen.findByText("common:errorBoundary.message");
 
-      // @ts-expect-error toBeAccessible is from @sa11y/vitest
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await expect(container).toBeAccessible();
+        // @ts-expect-error toBeAccessible is from @sa11y/vitest
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        await expect(container).toBeAccessible();
+      } finally {
+        restoreConsole();
+      }
     });
   });
   test("Has all of the correct headings.", async () => {
-    mockAxios.onPost("integration/allIntegrations").reply(200, {
-      success: false,
-      data: null,
-      error: "",
-    });
-    const { container } = render(
-      <ThemeProvider theme={materialTheme}>
-        <App />
-      </ThemeProvider>,
-    );
+    mockAxios.onGet("integration/allIntegrations").reply(200, allIntegrationsAreDisabled);
+    const { container } = renderApp();
 
-    await screen.findAllByText("common:errorBoundary.message");
+    await screen.findByText("apps:integrations.dataverse.name");
     // @ts-expect-error assertHeadings comes from assertSemanticHeadings
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     expect(container).assertHeadings([

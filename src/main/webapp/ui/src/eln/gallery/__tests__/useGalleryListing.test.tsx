@@ -48,9 +48,7 @@ function WrapperComponent() {
       }
       return (
         <div>
-          {"There are "}
-          {listing.list.length}
-          {" results.\n          "}
+          {`There are ${listing.list.length} results.`}
           {listing.loadMore
             .map((loadMore) => (
               // biome-ignore lint/a11y/useButtonType: initial biome migration
@@ -134,12 +132,12 @@ describe("useGalleryListing", () => {
 
     render(<WrapperComponent />);
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /load more/i })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Load more" })).toBeVisible();
     });
 
-    await user.click(screen.getByRole("button", { name: /load more/i }));
+    await user.click(screen.getByRole("button", { name: "Load more" }));
     await waitFor(() => {
-      expect(screen.queryByRole("button", { name: /load more/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Load more" })).not.toBeInTheDocument();
     });
     const getUploadedFilesCalls = mockAxios.history.get.filter(({ url }) => /getUploadedFiles/.test(url ?? ""));
     const firstPageParams = getUploadedFilesCalls[0].params as URLSearchParams;
@@ -219,6 +217,26 @@ function makeRemoteFile({ folder, path }: { folder: boolean; path: ReadonlyArray
     token: "",
   });
 }
+
+describe("RemoteFile owner fields", () => {
+  test("ownerName stays 'Unknown owner' and ownerUsername null", () => {
+    const folder = new RemoteFile({
+      nfsId: 1,
+      name: "common:toolbar.folder",
+      folder: true,
+      fileSize: 0,
+      modificationDate: undefined,
+      path: [],
+      logicPath: "1:folder",
+      token: "token",
+    });
+
+    // Filestore items have no RSpace owner; write provenance is shown separately
+    // in the info panel via an on-demand metadata fetch, not on the listing model.
+    expect(folder.ownerName).toBe("gallery:unknownOwner");
+    expect(folder.ownerUsername).toBeNull();
+  });
+});
 
 describe("RemoteFile.canMoveToS3", () => {
   test("returns Ok for a non-folder file in an S3 filestore", () => {

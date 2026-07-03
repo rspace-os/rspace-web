@@ -203,7 +203,7 @@ describe("ElnRecordInfoDialog", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Version 4 of SD599 is no longer available.");
-    const latestLink = within(alert).getByRole("link", { name: /view the latest version/i });
+    const latestLink = within(alert).getByRole("link", { name: "View the latest version" });
     expect(latestLink).toHaveAttribute("href", "/globalId/SD599");
   });
 

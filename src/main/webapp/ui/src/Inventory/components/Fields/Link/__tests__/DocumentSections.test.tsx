@@ -98,20 +98,20 @@ describe("DocumentSections (structured document)", () => {
     // signature status maps to a friendly label
     expect(screen.getByText("inventory:fields.link.documentSections.signatureLabels.unsigned")).toBeInTheDocument();
     // tags are comma-spaced
-    expect(screen.getByText(/alpha, beta/i)).toBeInTheDocument();
+    expect(screen.getByText("alpha, beta")).toBeInTheDocument();
   });
 
   it("renders the self link to /globalId/SD123", () => {
     renderDoc();
-    const selfLink = screen.getByRole("link", { name: /SD123/ });
+    const selfLink = screen.getByRole("link", { name: "SD123" });
     expect(selfLink).toHaveAttribute("href", "/globalId/SD123");
   });
 
   it("renders form id and template links", () => {
     renderDoc();
-    const formLink = screen.getByRole("link", { name: /FM7/ });
+    const formLink = screen.getByRole("link", { name: "FM7" });
     expect(formLink).toHaveAttribute("href", "/globalId/FM7");
-    const templateLink = screen.getByRole("link", { name: /my template/i });
+    const templateLink = screen.getByRole("link", { name: "My template" });
     expect(templateLink).toHaveAttribute("href", "/globalId/SD200");
   });
 
@@ -129,7 +129,7 @@ describe("DocumentSections (structured document)", () => {
     );
 
     expect(getLinkedByRecords).toHaveBeenCalledWith(123);
-    expect(await screen.findByRole("link", { name: /SD11/ })).toHaveAttribute("href", "/globalId/SD11");
+    expect(await screen.findByRole("link", { name: "SD11" })).toHaveAttribute("href", "/globalId/SD11");
     expect(screen.getByText("inventory:fields.link.documentSections.linkedBy.privateDocs")).toBeInTheDocument();
   });
 
@@ -150,7 +150,7 @@ describe("DocumentSections (structured document)", () => {
     });
     renderDoc();
     expect(useReferencingInventoryItems).toHaveBeenCalledWith("SD123");
-    const invLink = screen.getByRole("link", { name: /SA1/ });
+    const invLink = screen.getByRole("link", { name: "SA1" });
     expect(invLink).toHaveAttribute("href", "/globalId/SA1");
     expect(screen.getByText(/buffer/i)).toBeInTheDocument();
   });
@@ -247,7 +247,7 @@ describe("DocumentSections (notebook)", () => {
 
   it("does not render the form/template rows for notebooks", () => {
     renderNotebook();
-    expect(screen.queryByRole("link", { name: /FM7/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "FM7" })).not.toBeInTheDocument();
     expect(screen.queryByText(/form id/i)).not.toBeInTheDocument();
   });
 

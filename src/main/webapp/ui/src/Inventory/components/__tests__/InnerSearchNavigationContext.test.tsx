@@ -60,7 +60,7 @@ describe("InnerSearchNavigationContext", () => {
       </InnerSearchNavigationContext>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
     expect(querySpy).toHaveBeenLastCalledWith("search", expect.urlSearchParamContaining({ query: "foo" }));
   });
   describe("when the parent context is AlwaysNewWindowNavigationContext", () => {
@@ -84,7 +84,7 @@ describe("InnerSearchNavigationContext", () => {
         </AlwaysNewWindowNavigationContext>,
       );
 
-      fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
       expect(openSpy).toHaveBeenCalled();
     });
     test("navigate calls to permalink pages should always open in a new window.", () => {
@@ -107,7 +107,7 @@ describe("InnerSearchNavigationContext", () => {
         </AlwaysNewWindowNavigationContext>,
       );
 
-      fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
       expect(openSpy).toHaveBeenCalled();
     });
   });
@@ -140,7 +140,7 @@ describe("InnerSearchNavigationContext", () => {
       </SearchContext.Provider>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /Click me!/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Click me!" }));
     expect(querySpy).toHaveBeenLastCalledWith(
       "search",
       expect.urlSearchParamContaining({ query: "foo", parentGlobalId: "SA1" }),

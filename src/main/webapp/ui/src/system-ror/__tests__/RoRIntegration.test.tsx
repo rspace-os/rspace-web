@@ -61,9 +61,9 @@ async function searchForRoRDetails(term = "https://ror.org/02mhbdp94") {
   fireEvent.click(searchButton);
 }
 async function assertRoRDetailsText() {
-  await screen.findByText(/Universidad de Los Andes/);
-  await screen.findByText(/Bogotá, Colombia/);
-  await screen.findByText(/ror.statusLabel active/);
+  await screen.findByText("Universidad de Los Andes");
+  await screen.findByText("Bogotá, Colombia");
+  await screen.findByText("system:ror.statusLabel active");
   expect(screen.getAllByRole("link", { name: "https://ror.org/02mhbdp94" })[0]).toHaveAttribute(
     "href",
     "https://ror.org/02mhbdp94",
@@ -92,7 +92,7 @@ describe("Renders page with ROR data", () => {
 
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
-    expect(screen.queryByText(/A ROR ID is linked to this RSpace Instance./)).not.toBeInTheDocument();
+    expect(screen.queryByText("A ROR ID is linked to this RSpace Instance.")).not.toBeInTheDocument();
   });
   test("displays page with no searchbar, and with Unlink button when RoR is linked", async () => {
     mockAxios.resetHandlers();
@@ -102,7 +102,7 @@ describe("Renders page with ROR data", () => {
     await screen.findByText("system:ror.unlinkHelpText");
     expect(
       screen.getByRole("button", {
-        name: /ror.unlinkButton/,
+        name: "system:ror.unlinkButton",
       }),
     ).toBeInTheDocument();
     await assertRoRDetailsText();
@@ -122,7 +122,7 @@ describe("Renders page with ROR data", () => {
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp941");
-    await screen.findByText(/https:\/\/ror.org\/02mhbdp941 is not a valid ROR/);
+    await screen.findByText("https://ror.org/02mhbdp941 is not a valid ROR");
   });
 
   test("displays error when ROR details not found", async () => {
@@ -130,6 +130,6 @@ describe("Renders page with ROR data", () => {
     await screen.findByText("system:ror.heading");
     await screen.findByRole("textbox");
     await searchForRoRDetails("https://ror.org/02mhbdp92");
-    await screen.findByText(/ROR ID 'https:\/\/ror.org\/02mhbdp92' does not exist/);
+    await screen.findByText("ROR ID 'https://ror.org/02mhbdp92' does not exist");
   });
 });

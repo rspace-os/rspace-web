@@ -81,7 +81,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       const { baseElement } = renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -96,13 +96,13 @@ describe("RaidConnectionsDisassociateButton", () => {
     it("Should render the disassociate button", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByRole("button", { name: /disassociate/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" })).toBeInTheDocument();
     });
 
     it("Should render button with error color variant", () => {
       renderWithProviders(defaultProps);
 
-      const button = screen.getByRole("button", { name: /disassociate/i });
+      const button = screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" });
       expect(button).toHaveClass(buttonClasses.colorError);
     });
 
@@ -118,7 +118,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -129,7 +129,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       expect(await screen.findByText("common:profile.raidConnections.confirmDisassociateTitle")).toBeInTheDocument();
     });
@@ -138,7 +138,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -151,7 +151,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -164,7 +164,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       expect(mockReset).toHaveBeenCalledTimes(1);
     });
@@ -173,14 +173,14 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
       // Find and click cancel button (implementation depends on ConfirmationDialog)
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
       await user.click(cancelButton);
 
       await waitFor(() => {
@@ -195,13 +195,13 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      const confirmButton = screen.getByRole("button", { name: /confirm/i });
+      const confirmButton = screen.getByRole("button", { name: "common:actions.confirm" });
       await user.click(confirmButton);
 
       await waitFor(() => {
@@ -214,13 +214,13 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
       });
 
-      const confirmButton = screen.getByRole("button", { name: /confirm/i });
+      const confirmButton = screen.getByRole("button", { name: "common:actions.confirm" });
       await user.click(confirmButton);
 
       await waitFor(() => {
@@ -234,15 +234,15 @@ describe("RaidConnectionsDisassociateButton", () => {
       const user = userEvent.setup();
 
       // First cycle
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
       await waitFor(() => expect(screen.getByRole("dialog")).toBeVisible());
 
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
+      const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
       await user.click(cancelButton);
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 
       // Second cycle
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
       await waitFor(() => expect(screen.getByRole("dialog")).toBeVisible());
 
       expect(mockReset).toHaveBeenCalledTimes(2);
@@ -254,7 +254,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -269,7 +269,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
         expect(screen.getByText("common:profile.raidConnections.errorPrefix")).toBeInTheDocument();
@@ -284,7 +284,7 @@ describe("RaidConnectionsDisassociateButton", () => {
         groupId: "67890",
       });
 
-      expect(screen.getByRole("button", { name: /disassociate/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" })).toBeInTheDocument();
     });
 
     it("Should handle different raidIdentifier values", async () => {
@@ -295,7 +295,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       });
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -312,7 +312,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       });
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();
@@ -329,7 +329,7 @@ describe("RaidConnectionsDisassociateButton", () => {
       });
       const user = userEvent.setup();
 
-      await user.click(screen.getByRole("button", { name: /disassociate/i }));
+      await user.click(screen.getByRole("button", { name: "common:profile.raidConnections.disassociate" }));
 
       await waitFor(() => {
         expect(screen.getByRole("dialog")).toBeVisible();

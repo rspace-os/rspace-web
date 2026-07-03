@@ -1,8 +1,6 @@
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -16,7 +14,6 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
@@ -69,14 +66,6 @@ function LoadingSkeleton() {
   );
 }
 
-function ErrorMessage() {
-  return (
-    <Alert severity="error">
-      <TransRichText i18nKey="common:errorBoundary.message" />
-    </Alert>
-  );
-}
-
 type AppsSectionArgs = {
   id: string;
   title: string;
@@ -118,7 +107,9 @@ function AppsSection({ id, title, description, mode, allStates }: AppsSectionArg
         {FetchingData.match(allStates, {
           success: (integrationStates) => <CardListing mode={mode} integrationStates={integrationStates} />,
           loading: () => <LoadingSkeleton />,
-          error: () => <ErrorMessage />,
+          error: (error) => {
+            throw new Error(error);
+          },
         })}
       </Box>
     </Box>
@@ -193,10 +184,7 @@ function App(): React.ReactNode {
               <Box sx={{ my: 4 }}>
                 <Typography variant="h1">{t("page.title")}</Typography>
                 <Typography variant="body1">
-                  {t("page.introText")}{" "}
-                  <Link href={docLinks.appsIntroduction} target="_blank" rel="noreferrer">
-                    {t("page.introLink")}
-                  </Link>
+                  <TransRichText i18nKey="apps:page.introText" />
                 </Typography>
                 <Stack spacing={6} sx={{ mt: 1 }}>
                   <AppsSection

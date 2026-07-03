@@ -478,7 +478,7 @@ describe("Gallery", () => {
 
       // open the actions menu and choose Share
       await user.click(screen.getByRole("button", { name: "gallery:actionsMenu.actions" }));
-      await user.click(await screen.findByRole("menuitem", { name: /share/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "common:actions.share" }));
 
       // the share dialog for the selected snippet is shown
       const shareDialog = await screen.findByRole("dialog", {
@@ -494,7 +494,7 @@ describe("Gallery", () => {
       await user.click(await screen.findByRole("option", { name: /^Bob/ }));
 
       // save the share
-      await user.click(within(shareDialog).getByRole("button", { name: /Save/i }));
+      await user.click(within(shareDialog).getByRole("button", { name: "common:actions.save" }));
 
       // the success toast appears
       expect(await screen.findByText("common:shareDialog.updatedSuccessfully")).toBeVisible();

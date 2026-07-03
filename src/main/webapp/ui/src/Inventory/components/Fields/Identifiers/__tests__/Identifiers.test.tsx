@@ -49,7 +49,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={historicalSample} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: /preview/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.preview" })).toBeDisabled();
       expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
       expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
     });

@@ -166,7 +166,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
@@ -220,7 +220,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
@@ -257,7 +257,7 @@ describe("ImageEditingDialog", () => {
     );
 
     (await screen.findByRole("img")) as HTMLImageElement;
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
@@ -319,7 +319,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });

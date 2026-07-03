@@ -52,7 +52,7 @@ describe("LinkTargetBrowser", () => {
     const user = userEvent.setup();
     render(<LinkTargetBrowser open onPick={onPick} onCancel={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: /pick sa42/i }));
+    await user.click(screen.getByRole("button", { name: "pick SA42" }));
 
     expect(onPick).toHaveBeenCalledWith({
       globalId: "SA42",
@@ -100,7 +100,7 @@ describe("LinkTargetBrowser", () => {
     const user = userEvent.setup();
     render(<LinkTargetBrowser open onPick={() => {}} onCancel={onCancel} />);
 
-    await user.click(screen.getByRole("button", { name: /cancel picker/i }));
+    await user.click(screen.getByRole("button", { name: "cancel picker" }));
 
     expect(onCancel).toHaveBeenCalled();
   });

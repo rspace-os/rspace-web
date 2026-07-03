@@ -246,14 +246,16 @@ describe("ImportDialog", () => {
     await performSearch(user, "error");
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
-    expect(alert).toHaveTextContent(/There was an error/);
+    expect(alert).toHaveTextContent("There was an error");
   });
 
   test("Should reset state when dialog is closed and reopened", async () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await user.click((await screen.findAllByRole("checkbox", { name: /select/i }))[0]);
+    await user.click(
+      (await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }))[0],
+    );
 
     // close the dialog
     const dialog = screen.getByRole("dialog");
@@ -263,7 +265,7 @@ describe("ImportDialog", () => {
     });
 
     // reopen the dialog via the story's Open button
-    await user.click(screen.getByRole("button", { name: /open/i }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
     await screen.findByRole("dialog");
 
     // search input should be present and empty, with no results
@@ -275,7 +277,9 @@ describe("ImportDialog", () => {
       name: "apps:tinyMce.pubchem.dialog.searchResults",
     });
     expect(resultsSection).toBeVisible();
-    expect(screen.queryAllByRole("checkbox", { name: /select/i })).toHaveLength(0);
+    expect(screen.queryAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" })).toHaveLength(
+      0,
+    );
   });
 
   test("Should not display CAS Number when it is empty", async () => {

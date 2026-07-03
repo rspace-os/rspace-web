@@ -130,12 +130,12 @@ describe("Sidebar", () => {
       await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(within(dialog).getByRole("heading", { name: /sidebar.createFolder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFolder" })).toBeVisible();
 
       // the user types a folder name
       await user.type(within(dialog).getByRole("textbox"), "test");
@@ -159,11 +159,11 @@ describe("Sidebar", () => {
       render(<S3FilestoreSidebar />);
 
       await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
-      await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       const dialog = await screen.findByRole("dialog");
       // S3 gets the filestore-specific title and the "no native folders" note
-      expect(within(dialog).getByRole("heading", { name: /sidebar.createFilestoreFolder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFilestoreFolder" })).toBeVisible();
       expect(within(dialog).getByText("gallery:sidebar.s3FolderNote")).toBeVisible();
       await user.type(within(dialog).getByRole("textbox"), "test");
       await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
@@ -189,12 +189,12 @@ describe("Sidebar", () => {
       await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(await screen.findByRole("menuitem", { name: /sidebar.createFolder/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(within(dialog).getByRole("heading", { name: /sidebar.createFolder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFolder" })).toBeVisible();
 
       // the user types a folder name and presses Enter
       const textbox = within(dialog).getByRole("textbox");

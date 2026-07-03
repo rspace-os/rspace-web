@@ -200,18 +200,18 @@ describe("FolderTree", () => {
   test("Initially displays root folder listing", async () => {
     render(<TestFolderTreeExample />);
 
-    expect(await screen.findByRole("treeitem", { name: /Research Projects/ })).toBeVisible();
-    expect(screen.getByRole("treeitem", { name: /Lab Notebooks/ })).toBeVisible();
+    expect(await screen.findByRole("treeitem", { name: "Research Projects" })).toBeVisible();
+    expect(screen.getByRole("treeitem", { name: "Lab Notebooks" })).toBeVisible();
   });
 
   test("Allows selecting folders", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
-    const researchProjects = getTreeItem(/Research Projects/);
+    const researchProjects = getTreeItem("Research Projects");
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     // the folder should be selected
     expect(researchProjects).toHaveAttribute("aria-checked", "true");
@@ -225,13 +225,13 @@ describe("FolderTree", () => {
   test("Allows expanding folder nodes to show subfolders", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     // Capture the node up front: once expanded, the treeitem's accessible name
     // absorbs its children's text, so a name-based re-query would fail.
-    const researchProjects = getTreeItem(/Research Projects/);
+    const researchProjects = getTreeItem("Research Projects");
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     await waitFor(() => {
       expect(researchProjects).toHaveAttribute("aria-expanded", "true");
@@ -243,10 +243,10 @@ describe("FolderTree", () => {
   test("Shows Load More button for folders with more than 20 items", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     // 20 of 25 subfolders loaded -> a Load More button should be visible
     expect((await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0]).toBeVisible();
@@ -255,10 +255,10 @@ describe("FolderTree", () => {
   test("Loads additional folders when Load More is clicked", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     const loadMore = (await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0];
     await user.click(loadMore);
@@ -273,7 +273,7 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
@@ -289,7 +289,7 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const notebook = await screen.findByRole("treeitem", {
-      name: /A Notebook/,
+      name: "A Notebook",
     });
 
     const user = userEvent.setup();
@@ -306,7 +306,7 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
@@ -345,7 +345,7 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
@@ -372,7 +372,7 @@ describe("FolderTree", () => {
   test("Should have no axe violations", async () => {
     const { baseElement } = render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     await expectAccessible(baseElement);
   });

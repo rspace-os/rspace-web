@@ -301,7 +301,7 @@ describe("ExportDialog", () => {
       await user.click(screen.getByRole("button", { name: "common:actions.next" }));
       await screen.findByRole("textbox", { name: "workspace:export.format.pdf.name" });
       await user.click(screen.getByRole("button", { name: "common:actions.next" }));
-      await screen.findByRole("radio", { name: /Zenodo/ });
+      await screen.findByRole("radio", { name: "Zenodo" });
       expect(await screen.findByRole("button", { name: /BT-20/ })).toBeVisible();
     });
   });
@@ -339,7 +339,7 @@ describe("ExportDialog", () => {
           if (setAllVersionsSwitch) {
             await user.click(
               await screen.findByRole("checkbox", {
-                name: /^workspace:export.format.chooser.includeAllVersions/,
+                name: "workspace:export.format.chooser.includeAllVersions",
               }),
             );
           }

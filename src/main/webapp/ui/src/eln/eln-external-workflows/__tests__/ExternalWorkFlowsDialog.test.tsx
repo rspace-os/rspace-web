@@ -31,7 +31,7 @@ describe("Renders with table of  data", () => {
   test("displays WorkFlow Data table headers", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
-      name: /externalWorkflows.showWorkflowsLabel/i,
+      name: "apps:externalWorkflows.showWorkflowsLabel",
     });
     expect(toggleButton).toBeEnabled();
     fireEvent.click(toggleButton);
@@ -45,7 +45,7 @@ describe("Renders with table of  data", () => {
   test("displays WorkFlow Data", async () => {
     render(<ExternalWorkflowInvocations fieldId={"1"} isForNotebookPage={false} />);
     const toggleButton = await screen.findByRole("button", {
-      name: /externalWorkflows.showWorkflowsLabel/i,
+      name: "apps:externalWorkflows.showWorkflowsLabel",
     });
     expect(toggleButton).toBeEnabled();
     expect(toggleButton).toBeInTheDocument();

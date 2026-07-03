@@ -48,7 +48,7 @@ describe("HistoricalVersionAlert rich i18n", () => {
       );
 
       expect(screen.getByText("This is version 2 of the subsample.")).toBeVisible();
-      const link = screen.getByRole("link", { name: /view the latest version/i });
+      const link = screen.getByRole("link", { name: "View the latest version" });
       expect(link).toHaveAttribute("href", "/inventory/subsample/1");
     } finally {
       await appI18n.changeLanguage("cimode");

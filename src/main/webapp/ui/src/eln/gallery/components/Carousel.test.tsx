@@ -58,7 +58,7 @@ describe("Carousel", () => {
 
     expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("1 / 8");
 
-    await user.click(screen.getByRole("button", { name: /carousel.next/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
     expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("2 / 8");
   });
@@ -68,7 +68,7 @@ describe("Carousel", () => {
     render(<SimpleCarousel />);
 
     await user.click(screen.getByRole("button", { name: "common:actions.zoomIn" }));
-    await user.click(screen.getByRole("button", { name: /carousel.next/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
     expect(screen.getByRole("button", { name: "common:actions.resetZoom" })).toBeDisabled();
   });

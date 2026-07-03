@@ -299,7 +299,7 @@
     "login": {
       "legend": "iRODS login",
       "password": "Password",
-      "prompt": "Please provide your login credentials for {serverUrl}",
+      "prompt": "Please provide your login credentials for {serverName}{hasServerUrl, select, yes { ({serverUrl})} other {}}",
       "username": "Username"
     },
     "retainCopy": "Retain a copy in RSpace",

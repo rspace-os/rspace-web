@@ -140,7 +140,7 @@ async function renderAndWaitForNotebooks(ui = <FieldmarkImportDialogStory />) {
  * rows), so we cannot rely on aria-label to disambiguate rows.
  */
 function getRadioForNotebook(notebookName: string): HTMLElement {
-  const nameCell = screen.getByRole("gridcell", { name: new RegExp(`^${notebookName}$`) });
+  const nameCell = screen.getByRole("gridcell", { name: notebookName });
   const row = nameCell.closest('[role="row"]') as HTMLElement;
   return within(row).getByRole("radio");
 }
@@ -326,7 +326,7 @@ describe("FieldmarkImportDialog", () => {
 
         await user.click(getRadioForNotebook("Notebook IGSN Error"));
 
-        const integrationLink = await screen.findByRole("link", { name: /DataCite IGSN ID integration/i });
+        const integrationLink = await screen.findByRole("link", { name: "DataCite IGSN ID integration" });
         expect(integrationLink).toHaveAttribute(
           "href",
           expect.stringContaining("add-igsn-identifiers-to-your-samples"),

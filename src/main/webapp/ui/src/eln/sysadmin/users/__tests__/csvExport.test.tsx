@@ -61,7 +61,7 @@ describe("CSV Export", () => {
         </StyledEngineProvider>,
       );
 
-      await user.click(await screen.findByRole("button", { name: /Export/ }));
+      await user.click(await screen.findByRole("button", { name: "Export" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: "system:usersPage.export.visibleRows",
@@ -98,12 +98,12 @@ describe("CSV Export", () => {
         </StyledEngineProvider>,
       );
       const checkboxes = await screen.findAllByRole("checkbox", {
-        name: /Select row/,
+        name: "Select row",
       });
       expect(checkboxes.length).toBe(10);
 
       await user.click(checkboxes[0]);
-      await user.click(screen.getByRole("button", { name: /Export/ }));
+      await user.click(screen.getByRole("button", { name: "Export" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: "system:usersPage.export.visibleRows",
@@ -139,7 +139,7 @@ describe("CSV Export", () => {
         </StyledEngineProvider>,
       );
 
-      await user.click(await screen.findByRole("button", { name: /Select columns/ }));
+      await user.click(await screen.findByRole("button", { name: "Select columns" }));
 
       const numberOfColumns = (
         await screen.findAllByRole("checkbox", {
@@ -153,7 +153,7 @@ describe("CSV Export", () => {
           },
         })
       ).length;
-      await user.click(screen.getByRole("button", { name: /Export/ }));
+      await user.click(screen.getByRole("button", { name: "Export" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: "system:usersPage.export.visibleRows",
@@ -188,7 +188,7 @@ describe("CSV Export", () => {
           </ThemeProvider>
         </StyledEngineProvider>,
       );
-      await user.click(await screen.findByRole("button", { name: /Export/ }));
+      await user.click(await screen.findByRole("button", { name: "Export" }));
       await user.click(
         await screen.findByRole("menuitem", {
           name: "system:usersPage.export.visibleRows",

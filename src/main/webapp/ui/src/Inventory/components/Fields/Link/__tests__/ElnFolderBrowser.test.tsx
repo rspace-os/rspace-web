@@ -69,16 +69,16 @@ describe("ElnFolderBrowser", () => {
 
   it("renders documents, notebooks and folders at the root", async () => {
     renderBrowser(vi.fn());
-    expect(await screen.findByRole("treeitem", { name: /protocol doc/i })).toBeInTheDocument();
-    expect(screen.getByRole("treeitem", { name: /lab nb/i })).toBeInTheDocument();
-    expect(screen.getByRole("treeitem", { name: /projects/i })).toBeInTheDocument();
+    expect(await screen.findByRole("treeitem", { name: "Protocol doc" })).toBeInTheDocument();
+    expect(screen.getByRole("treeitem", { name: "Lab NB" })).toBeInTheDocument();
+    expect(screen.getByRole("treeitem", { name: "Projects" })).toBeInTheDocument();
   });
 
   it("reports a document selection when its label is clicked", async () => {
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);
     const user = userEvent.setup();
-    await user.click(await screen.findByText(/protocol doc/i));
+    await user.click(await screen.findByText("Protocol doc"));
     expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "SD300",
       name: "Protocol doc",
@@ -90,7 +90,7 @@ describe("ElnFolderBrowser", () => {
     const onSelectionChange = vi.fn();
     renderBrowser(onSelectionChange);
     const user = userEvent.setup();
-    await user.click(await screen.findByText(/lab nb/i));
+    await user.click(await screen.findByText("Lab NB"));
     expect(onSelectionChange).toHaveBeenCalledWith({
       globalId: "NB200",
       name: "Lab NB",
@@ -104,8 +104,8 @@ describe("ElnFolderBrowser", () => {
     const user = userEvent.setup();
 
     // clicking the notebook selects it and expands it to reveal its entries
-    await user.click(await screen.findByText(/lab nb/i));
-    const entry = await screen.findByText(/nb entry/i);
+    await user.click(await screen.findByText("Lab NB"));
+    const entry = await screen.findByText("NB entry");
 
     await user.click(entry);
     expect(onSelectionChange).toHaveBeenLastCalledWith({
@@ -146,9 +146,9 @@ describe("ElnFolderBrowser selection highlight", () => {
   it("obviously highlights the selected item with the theme primary colour", async () => {
     renderBrowser(vi.fn());
     const user = userEvent.setup();
-    await user.click(await screen.findByText(/protocol doc/i));
+    await user.click(await screen.findByText("Protocol doc"));
 
-    const item = screen.getByRole("treeitem", { name: /protocol doc/i });
+    const item = screen.getByRole("treeitem", { name: "Protocol doc" });
 
     /* eslint-disable testing-library/no-node-access, testing-library/no-container -- inspecting the MUI content row that carries the selection styling, and the emotion style tags that define it */
     // x-tree-view 9 marks selection with a data-selected attribute on the

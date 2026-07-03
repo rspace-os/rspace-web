@@ -731,8 +731,7 @@ export default interface Resources {
       "updateSuccess": "Update successful."
     },
     "page": {
-      "introLink": "See Apps Introduction to learn more.",
-      "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
+      "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <a href=\"https://researchspace.helpdocs.io/article/08ky7o0l1y-apps-introduction\" target=\"_blank\" rel=\"noreferrer\">See Apps Introduction to learn more.</a>",
       "nothingHere": "Nothing here!",
       "sections": {
         "disabled": {
@@ -2263,7 +2262,7 @@ export default interface Resources {
       "login": {
         "legend": "iRODS login",
         "password": "Password",
-        "prompt": "Please provide your login credentials for {serverUrl}",
+        "prompt": "Please provide your login credentials for {serverName}{hasServerUrl, select, yes { ({serverUrl})} other {}}",
         "username": "Username"
       },
       "retainCopy": "Retain a copy in RSpace",
@@ -3293,13 +3292,12 @@ export default interface Resources {
           },
           "sharing": {
             "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{nb}</a> (shared with: {owner})",
-            "inPublishedNotebook": "This document is in a published notebook:",
+            "inPublishedNotebook": "This document is in a published notebook: <a>public link</a>",
             "intoNotebook": "into Notebook <a>{nb}</a> (owner: {owner})",
-            "isPublished": "This {recordTypeName} is published:",
+            "isPublished": "This {recordTypeName} is published: <a>public link</a>",
             "isShared": "This {recordTypeName} is shared:",
             "notPublished": "This {recordTypeName} is not published.",
             "notShared": "This {recordTypeName} is not shared.",
-            "publicLink": "public link",
             "title": "Sharing",
             "withGroup": "with {group} (group) for {access}",
             "withUser": "with {user} (user) for {access}"

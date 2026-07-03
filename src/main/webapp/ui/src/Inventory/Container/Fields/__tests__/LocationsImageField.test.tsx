@@ -105,7 +105,7 @@ describe("LocationImageField", () => {
       );
       expect(
         screen.getByRole("button", {
-          name: /container.fields.locationsImage.editLocations/,
+          name: "inventory:container.fields.locationsImage.editLocations",
         }),
       ).toBeDisabled();
     });
@@ -215,7 +215,7 @@ describe("LocationImageField", () => {
       );
       expect(
         screen.getByRole("button", {
-          name: /container.fields.locationsImage.editLocations/,
+          name: "inventory:container.fields.locationsImage.editLocations",
         }),
       ).toBeEnabled();
     });

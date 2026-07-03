@@ -705,8 +705,7 @@
     "updateSuccess": "Update successful."
   },
   "page": {
-    "introLink": "See Apps Introduction to learn more.",
-    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication.",
+    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <a href=\"https://researchspace.helpdocs.io/article/08ky7o0l1y-apps-introduction\" target=\"_blank\" rel=\"noreferrer\">See Apps Introduction to learn more.</a>",
     "nothingHere": "Nothing here!",
     "sections": {
       "disabled": {

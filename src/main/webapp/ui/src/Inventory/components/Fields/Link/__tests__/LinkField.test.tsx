@@ -59,9 +59,9 @@ describe("LinkField", () => {
 
   it("renders relation type, target global id, and name", () => {
     renderField();
-    expect(screen.getByText(/calibration cert/i)).toBeInTheDocument();
-    expect(screen.getByText(/iscalibratedby/i)).toBeInTheDocument();
-    expect(screen.getByText(/sa42/i)).toBeInTheDocument();
+    expect(screen.getByText("Calibration cert")).toBeInTheDocument();
+    expect(screen.getByText("IsCalibratedBy")).toBeInTheDocument();
+    expect(screen.getByText("SA42")).toBeInTheDocument();
   });
 
   it("shows a bold inline field name and no 'Link' heading", () => {

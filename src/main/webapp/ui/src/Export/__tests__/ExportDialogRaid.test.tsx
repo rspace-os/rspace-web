@@ -191,7 +191,7 @@ describe("ExportDialogRaid", () => {
     expect(alert).toHaveTextContent("raid-5");
 
     const user = userEvent.setup();
-    const toggle = screen.getByRole("checkbox", { name: /report to raid/i });
+    const toggle = screen.getByRole("checkbox", { name: "Report to RAiD" });
     await user.click(toggle);
 
     expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));

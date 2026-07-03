@@ -434,17 +434,17 @@ describe("StoichiometryTable", () => {
 
       expect(
         await screen.findByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.pubChem\.title.*common:stoichiometry\.addReagent\.sources\.pubChem\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.pubChem.title common:stoichiometry.addReagent.sources.pubChem.subheader",
         }),
       ).toBeVisible();
       expect(
         screen.getByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.gallery\.title.*common:stoichiometry\.addReagent\.sources\.gallery\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.gallery.title common:stoichiometry.addReagent.sources.gallery.subheader",
         }),
       ).toBeVisible();
       expect(
         screen.getByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.manual\.title.*common:stoichiometry\.addReagent\.sources\.manual\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.manual.title common:stoichiometry.addReagent.sources.manual.subheader",
         }),
       ).toBeVisible();
     });
@@ -455,7 +455,7 @@ describe("StoichiometryTable", () => {
       await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.pubChem\.title.*common:stoichiometry\.addReagent\.sources\.pubChem\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.pubChem.title common:stoichiometry.addReagent.sources.pubChem.subheader",
         }),
       );
 
@@ -468,7 +468,7 @@ describe("StoichiometryTable", () => {
       await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.manual\.title.*common:stoichiometry\.addReagent\.sources\.manual\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.manual.title common:stoichiometry.addReagent.sources.manual.subheader",
         }),
       );
 
@@ -481,7 +481,7 @@ describe("StoichiometryTable", () => {
       await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /common:stoichiometry\.addReagent\.sources\.gallery\.title.*common:stoichiometry\.addReagent\.sources\.gallery\.subheader/i,
+          name: "common:stoichiometry.addReagent.sources.gallery.title common:stoichiometry.addReagent.sources.gallery.subheader",
         }),
       );
 
@@ -501,7 +501,7 @@ describe("StoichiometryTable", () => {
       );
 
       const dialog = await screen.findByRole("dialog", {
-        name: /stoichiometry.inventoryUpdate.dialogTitle/i,
+        name: "common:stoichiometry.inventoryUpdate.dialogTitle",
       });
       expect(dialog).toBeVisible();
       expect(within(dialog).getByText("Benzene")).toBeVisible();

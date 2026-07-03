@@ -72,7 +72,7 @@ describe("CallableSnippetPreview", () => {
       expect(await screen.findByRole("dialog")).toBeVisible();
       expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: /close/i }));
+      await user.click(screen.getByRole("button", { name: "common:actions.close" }));
 
       await waitFor(() => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/test snippet content/i)).toBeVisible();
+      expect(await screen.findByText("Test snippet content")).toBeVisible();
     });
 
     test("Should render HTML tables correctly", async () => {
@@ -157,7 +157,7 @@ describe("CallableSnippetPreview", () => {
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
       expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
-      expect(screen.getByRole("button", { name: /close/i })).toBeVisible();
+      expect(screen.getByRole("button", { name: "common:actions.close" })).toBeVisible();
     });
 
     test("Should have no axe violations", async () => {
@@ -168,7 +168,7 @@ describe("CallableSnippetPreview", () => {
 
       await screen.findByRole("dialog");
       // Wait for content to load so the rendered tree is stable.
-      await screen.findByText(/test snippet content/i);
+      await screen.findByText("Test snippet content");
 
       await expectAccessible(baseElement);
     });

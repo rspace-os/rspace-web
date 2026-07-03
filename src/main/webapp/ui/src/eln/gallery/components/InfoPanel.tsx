@@ -13,6 +13,7 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import type { SxProps, Theme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import type { TFunction } from "i18next";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -397,17 +398,7 @@ const DescriptionField = observer(
     );
   },
 );
-const formatDmpSource = (
-  source: string,
-  t: (
-    key:
-      | "infoPanel.sources.unknown"
-      | "infoPanel.sources.dmpTool"
-      | "infoPanel.sources.dmpOnline"
-      | "infoPanel.sources.argos"
-      | "infoPanel.sources.dsw",
-  ) => string,
-): string => {
+const formatDmpSource = (source: string, t: TFunction<"gallery">): string => {
   switch (source) {
     case "UNKNOWN":
       return t("infoPanel.sources.unknown");
