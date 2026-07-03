@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
@@ -18,7 +19,7 @@ import { match } from "../../../util/Util";
 import RecordDetails from "../RecordDetails";
 
 function MoveInstructions(): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const { scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
@@ -31,7 +32,10 @@ function MoveInstructions(): React.ReactNode {
     const numOfSelectedLocations = moveStore.targetLocations?.length ?? 0;
     const infiniteContainer = container.cType === "LIST" || container.cType === "WORKBENCH";
     const moreToSelect = numOfSelectedResults - numOfSelectedLocations;
-    const canStoreLabel = (container.isWorkbench ? ["samples", "containers"] : container.canStore).join(" and ");
+    const canStoreLabel = formatList(
+      container.isWorkbench ? ["samples", "containers"] : container.canStore,
+      i18n.resolvedLanguage ?? i18n.language,
+    );
     const {
       message,
       severity,

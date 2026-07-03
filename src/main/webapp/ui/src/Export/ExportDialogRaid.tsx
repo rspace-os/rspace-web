@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { DEFAULT_STATE } from "@/Export/constants";
 import type { RepoDetails } from "@/Export/repositories/common";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
@@ -22,7 +23,8 @@ interface ExportDialogRaidProps {
 }
 
 const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) => {
-  const { t } = useTranslation("workspace");
+  const { t, i18n } = useTranslation("workspace");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { data: token } = useOauthTokenQuery();
   const sharedItemIds = state.exportSelection.exportIds as string[];
   const { data, error } = useCommonGroupsShareListingQuery({
@@ -51,17 +53,23 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
     switch (raidExportStatus.reason) {
       case "MISSING_GROUPS":
         return t("export.raid.ineligible.missingGroups", {
-          groupIds: raidExportStatus.missingGroupIds.join(", "),
+          groupIds: formatList(raidExportStatus.missingGroupIds, language),
         });
       case "NO_PROJECT_GROUPS":
         return t("export.raid.ineligible.noProjectGroups");
       case "NO_RAID_ASSOCIATION_FOUND":
         return t("export.raid.ineligible.noRaidAssociation", {
-          groups: raidExportStatus.projectGroups.map((group) => group.name).join(", "),
+          groups: formatList(
+            raidExportStatus.projectGroups.map((group) => group.name),
+            language,
+          ),
         });
       case "MULTIPLE_RAIDS_FOUND":
         return t("export.raid.ineligible.multipleRaids", {
-          groups: raidExportStatus.projectGroups.map((group) => group.name).join(", "),
+          groups: formatList(
+            raidExportStatus.projectGroups.map((group) => group.name),
+            language,
+          ),
         });
       default:
         return t("export.raid.ineligible.unknown");

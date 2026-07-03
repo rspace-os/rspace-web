@@ -12,6 +12,7 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type { ApiRecordType, InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import type { ExportFileType, ExportMode, ExportOptions, OptionalContent } from "@/stores/definitions/Search";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
@@ -66,7 +67,7 @@ export const ExportOptionsWrapper = ({
   selectedResults,
   exportType,
 }: OptionsWrapperArgs): React.ReactNode => {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const exportModeOptions: Array<RadioOption<ExportMode>> = [
     { value: "FULL", label: t("export.dialog.options.full") },
     { value: "COMPACT", label: t("export.dialog.options.compact") },
@@ -96,7 +97,10 @@ export const ExportOptionsWrapper = ({
     SAMPLE_TEMPLATE: t("recordTypes.sampleTemplate.plural"),
     SUBSAMPLE: t("recordTypes.subsample.plural"),
   };
-  const exportedTypesLabel = exportedRecordTypes.map((type) => recordTypePluralLabels[type]).join(", ");
+  const exportedTypesLabel = formatList(
+    exportedRecordTypes.map((type) => recordTypePluralLabels[type]),
+    i18n.resolvedLanguage ?? i18n.language,
+  );
   const exportSummary =
     exportType === "userData"
       ? t("export.dialog.exportingAll")

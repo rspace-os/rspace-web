@@ -1246,6 +1246,9 @@
     "selectIgsn": "Select IGSN"
   },
   "import": {
+    "actions": {
+      "importSelected": "Import {types}"
+    },
     "browserTitle": "Import CSV | RSpace Inventory",
     "cannotImport": {
       "message": "Some csv documents cannot be imported: check Settings in the",

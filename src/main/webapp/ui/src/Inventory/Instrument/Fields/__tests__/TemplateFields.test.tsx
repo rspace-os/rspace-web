@@ -69,7 +69,7 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.templateFields.unknownFieldType")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "inventory:sample.fields.linkFieldValue.applyLabel" }),
     ).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.templateFields.unknownFieldType")).not.toBeInTheDocument();
     expect(screen.getByText("inventory:sample.fields.linkFieldValue.none")).toBeInTheDocument();
   });
 
@@ -98,7 +98,7 @@ describe("TemplateFields -- link field", () => {
 
     renderTemplateFields(instrument);
 
-    expect(screen.queryByText(/unknownFieldType/)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:instrument.templateFields.unknownFieldType")).not.toBeInTheDocument();
     expect(screen.getByTestId("link-field-display")).toBeInTheDocument();
     expect(screen.getByText("References")).toBeInTheDocument();
     expect(screen.getByText("SA20")).toBeInTheDocument();

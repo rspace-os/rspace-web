@@ -345,9 +345,7 @@ export default interface Resources {
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your Dryad account.",
           "exportDialog": "Dryad will now be available as an option in the export dialog.",
-          "instructions": "<ol><li>Dryad uses ORCID iD for authentication; if you don't have an ORCID iD, you can create one at <orcidLink>orcid.org/register</orcidLink></li><li>Click on Connect to authorise RSpace to access your Dryad account.</li><li>Dryad will now be available as an option in the export dialog.</li></ol>",
-          "orcid": "Dryad uses ORCID iD for authentication; if you don't have an ORCID iD, you can create one at",
-          "orcidLink": "orcid.org/register"
+          "instructions": "<ol><li>Dryad uses ORCID iD for authentication; if you don't have an ORCID iD, you can create one at <a href=\"https://orcid.org/register\" target=\"_blank\" rel=\"noreferrer\">orcid.org/register</a></li><li>Click on Connect to authorise RSpace to access your Dryad account.</li><li>Dryad will now be available as an option in the export dialog.</li></ol>"
         },
         "usage": "You can export your files and data directly from RSpace to Dryad, and provide metadata for the deposit."
       },
@@ -514,11 +512,8 @@ export default interface Resources {
         "helpLink": "Video integration docs",
         "name": "JoVE",
         "setup": {
-          "instructions": "<ol><li>Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.</li><li>Paste a full JoVE URL from a supported <code>{domain}</code> page, for example <code>{exampleUrl}</code> or <code>{appExampleUrl}</code>.</li><li>Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position.</li></ol>",
-          "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed.",
-          "pasteUrlStep": "Paste a full JoVE URL from a supported <code>{domain}</code> page, for example <code>{exampleUrl}</code> or <code>{appExampleUrl}</code>.",
-          "step1": "Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.",
-          "step2": "Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position."
+          "instructions": "<ol><li>Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.</li><li>Paste a full JoVE URL from a supported <code>jove.com</code> page, for example <code>https://www.jove.com/v/60908/...</code> or <code>https://app.jove.com/v/60908/...</code>.</li><li>Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position.</li></ol>",
+          "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed."
         },
         "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
       },
@@ -527,24 +522,7 @@ export default interface Resources {
         "helpLink": "RSpace Jupyter Notebook documentation",
         "name": "Jupyter Notebook Synchronisation",
         "setup": {
-          "configureJupyter": "Configure Jupyter instance for all notebooks:",
-          "configureJupyterDesc": "Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:",
-          "configureNotebook": "Configure notebook:",
-          "configureNotebookDesc": "Follow the instructions in RSpace help docs to import the sync_notebook script.",
-          "doOncePerNotebook": "Do this step once per notebook:",
-          "installStep": "One time install step:",
-          "instructions": "<ol><li><strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.</li><li><strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:<strong>One time install step:</strong><installCommand/>Run the cell then <strong>restart the kernel and</strong> <strong>refresh the browser</strong> tab running Jupyter.</li><li><strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the sync_notebook script.<strong>Do this step once per notebook:</strong><notebookCommand/>Run the cell, <strong>restart the kernel and</strong> and then run the cell one more time <strong>without a kernel restart. Save the Notebook.</strong></li><li><strong>Run the code:</strong> Paste this code into <strong>the last cell in the notebook:</strong><syncCommand/></li></ol>",
-          "lastCell": "the last cell in the notebook:",
-          "pasteCode": "Paste this code into",
-          "refreshTab": "refresh the browser",
-          "restartKernel": "restart the kernel and",
-          "runCellAgain": "without a kernel restart. Save the Notebook.",
-          "runCellFirst": "Run the cell then",
-          "runCellSecond": "Run the cell,",
-          "runCode": "Run the code:",
-          "step1": "<strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.",
-          "tab": "tab running Jupyter.",
-          "thenRunAgain": "and then run the cell one more time"
+          "instructions": "<ol><li><strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.</li><li><strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:<strong>One time install step:</strong><installCommand/>Run the cell then <strong>restart the kernel and</strong> <strong>refresh the browser</strong> tab running Jupyter.</li><li><strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the sync_notebook script.<strong>Do this step once per notebook:</strong><notebookCommand/>Run the cell, <strong>restart the kernel and</strong> and then run the cell one more time <strong>without a kernel restart. Save the Notebook.</strong></li><li><strong>Run the code:</strong> Paste this code into <strong>the last cell in the notebook:</strong><syncCommand/></li></ol>"
         },
         "usage": "Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
       },
@@ -573,17 +551,14 @@ export default interface Resources {
       },
       "nextCloud": {
         "alerts": {
-          "connectError": "Could not connect to NextCloud",
-          "connectSuccess": "Successfully connected to NextCloud."
+          "connectError": "Could not connect to Nextcloud",
+          "connectSuccess": "Successfully connected to Nextcloud."
         },
         "description": "Create, organise, and share your files through an open-source file hosting system.",
-        "helpLink": "NextCloud integration docs",
+        "helpLink": "Nextcloud integration docs",
         "name": "Nextcloud",
         "setup": {
-          "connect": "Click on Connect to authorise RSpace to access your Nextcloud account.",
-          "enable": "integrations.nextCloud.setup.enable",
-          "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Nextcloud account.</li><li>integrations.nextCloud.setup.enable</li><li>When editing a document, click on the Nextcloud icon in the text editor toolbar.</li></ol>",
-          "toolbar": "When editing a document, click on the Nextcloud icon in the text editor toolbar."
+          "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Nextcloud account.</li><li>When editing a document, click on the Nextcloud icon in the text editor toolbar.</li></ol>"
         },
         "usage": "You can make links to Nextcloud documents directly from RSpace."
       },
@@ -628,10 +603,7 @@ export default interface Resources {
         "helpLink": "OwnCloud integration docs",
         "name": "ownCloud",
         "setup": {
-          "connect": "Click on Connect to authorise RSpace to access your ownCloud account.",
-          "enable": "integrations.ownCloud.setup.enable",
-          "instructions": "<ol><li>Click on Connect to authorise RSpace to access your ownCloud account.</li><li>integrations.ownCloud.setup.enable</li><li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li></ol>",
-          "toolbar": "When editing a document, click on the ownCloud icon in the text editor toolbar."
+          "instructions": "<ol><li>Click on Connect to authorise RSpace to access your ownCloud account.</li><li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li></ol>"
         },
         "usage": "You can make links to ownCloud documents directly from RSpace."
       },
@@ -3740,6 +3712,9 @@ export default interface Resources {
       "selectIgsn": "Select IGSN"
     },
     "import": {
+      "actions": {
+        "importSelected": "Import {types}"
+      },
       "browserTitle": "Import CSV | RSpace Inventory",
       "cannotImport": {
         "message": "Some csv documents cannot be imported: check Settings in the",

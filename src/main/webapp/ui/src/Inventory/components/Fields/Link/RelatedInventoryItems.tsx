@@ -19,7 +19,7 @@ export default function RelatedInventoryItems({
   recordTypeName,
 }: {
   globalId: string;
-  /** Lower-case noun for the empty message, e.g. "document", "notebook", "file". */
+  /** Lower-case noun for the empty message, e.g. "document", "notebook", "gallery file". */
   recordTypeName: string;
 }): React.ReactElement {
   const { t } = useTranslation("inventory");

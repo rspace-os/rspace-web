@@ -90,6 +90,7 @@
     "@mui/material": "9.0.1",
     "@mui/styled-engine": "9.0.0",
     "@mui/system": "9.0.1",
+    "@mui/x-chat": "9.0.0-alpha.11",
     "@mui/x-data-grid": "9.5.0",
     "@mui/x-date-pickers": "9.5.0",
     "@mui/x-tree-view": "9.4.0",

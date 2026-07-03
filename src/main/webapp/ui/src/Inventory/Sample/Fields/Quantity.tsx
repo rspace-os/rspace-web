@@ -16,6 +16,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import type SampleModel from "../../../stores/models/SampleModel";
 import useStores from "../../../stores/use-stores";
 import { Optional } from "../../../util/optional";
+import { isPlainLeftClick } from "../../../util/Util";
 import FormField from "../../components/Inputs/FormField";
 
 type QuantityArgs = {
@@ -189,6 +190,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
                           : "#"
                       }
                       onClick={(e) => {
+                        if (!isPlainLeftClick(e)) return;
                         e.preventDefault();
                         if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
                       }}

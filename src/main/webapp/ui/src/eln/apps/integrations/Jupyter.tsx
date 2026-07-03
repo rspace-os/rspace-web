@@ -1,5 +1,5 @@
-import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
+import { ChatCodeBlock } from "@mui/x-chat";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -7,12 +7,6 @@ import { LOGO_COLOR } from "@/assets/branding/Jupyter";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import IntegrationCard from "../IntegrationCard";
-
-const codeBlockSx = {
-  background: "#f5f5f5",
-  padding: "8px",
-  overflowX: "auto",
-} as const;
 
 function Jupyter(): React.ReactNode {
   const { t } = useTranslation("apps");
@@ -37,16 +31,18 @@ function Jupyter(): React.ReactNode {
           <TransRichText
             i18nKey="apps:integrations.jupyter.setup.instructions"
             components={{
-              installCommand: <Box component="pre" sx={codeBlockSx}>{`%pip install rspace-client==2.6.2`}</Box>,
+              installCommand: <ChatCodeBlock language="bash">{"%pip install rspace-client==2.6.2"}</ChatCodeBlock>,
               notebookCommand: (
-                <Box component="pre" sx={codeBlockSx}>{`from rspace_client.notebook_sync import sync_notebook`}</Box>
+                <ChatCodeBlock language="python">
+                  {"from rspace_client.notebook_sync import sync_notebook"}
+                </ChatCodeBlock>
               ),
               syncCommand: (
-                <Box component="pre" sx={codeBlockSx}>
+                <ChatCodeBlock language="python">
                   {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
 rspace_username="user1a")`}
-                </Box>
+                </ChatCodeBlock>
               ),
             }}
           />

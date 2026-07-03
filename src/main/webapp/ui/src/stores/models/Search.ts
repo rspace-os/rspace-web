@@ -1,6 +1,7 @@
 import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type { Instrument } from "@/stores/definitions/Instrument";
 import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
@@ -759,7 +760,9 @@ export default class Search implements SearchInterface {
         "duplicated",
         () => "created",
         newBenchItems.length > 0
-          ? i18n.t("inventory:search.actions.duplicate.newBenchItems", { items: newBenchItems.join(" and ") })
+          ? i18n.t("inventory:search.actions.duplicate.newBenchItems", {
+              items: formatList(newBenchItems, i18n.resolvedLanguage ?? i18n.language),
+            })
           : null,
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();

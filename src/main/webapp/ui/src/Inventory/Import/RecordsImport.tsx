@@ -9,6 +9,7 @@ import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
+import { makeListFormatter } from "@/modules/common/i18n/listFormat";
 import docLinks from "../../assets/DocLinks";
 import CustomTooltip from "../../components/CustomTooltip";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -18,13 +19,14 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import type { ImportRecordType } from "../../stores/stores/ImportStore";
 import useStores from "../../stores/use-stores";
 import type { URL } from "../../util/types";
-import { capitaliseJustFirstChar } from "../../util/Util";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import FileForImport from "./Fields/File";
 import TemplateDetails from "./Fields/TemplateDetails";
 
+const IMPORT_RECORD_TYPES = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"] as const satisfies readonly ImportRecordType[];
+
 function RecordsImport(): React.ReactNode {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t, i18n } = useTranslation("inventory");
   const { importStore } = useStores();
   const importData = importStore.importData;
 
@@ -45,25 +47,37 @@ function RecordsImport(): React.ReactNode {
     Boolean(importData?.samplesFile && !importData.samplesSubmittable) ||
     Boolean(importData?.subSamplesFile && !importData.subSamplesSubmittable);
 
-  const notImportable = () => {
-    const types: Array<{ route: ImportRecordType; label: string }> = [];
-    if (importData?.containersFile && !importData.containersSubmittable)
-      types.push({ route: "CONTAINERS", label: t("recordTypes.container.plural") });
-    if (importData?.samplesFile && !importData.samplesSubmittable)
-      types.push({ route: "SAMPLES", label: t("recordTypes.sample.plural") });
-    if (importData?.subSamplesFile && !importData.subSamplesSubmittable)
-      types.push({ route: "SUBSAMPLES", label: t("recordTypes.subsample.plural") });
-    return types;
+  const recordTypeLabels: Record<ImportRecordType, string> = {
+    CONTAINERS: t("recordTypes.container.plural"),
+    SAMPLES: t("recordTypes.sample.plural"),
+    SUBSAMPLES: t("recordTypes.subsample.plural"),
   };
+  const listFormatter = makeListFormatter(i18n.resolvedLanguage ?? i18n.language);
 
-  const importButtonLabel = `${t("common:actions.import")} ${[
-    ...(importData?.containersSubmittable ? [t("recordTypes.container.plural")] : []),
-    ...(importData?.samplesSubmittable ? [t("recordTypes.sample.plural")] : []),
-    ...(importData?.subSamplesSubmittable ? [t("recordTypes.subsample.plural")] : []),
-  ].join(" + ")}`;
+  const notImportableTypes: Array<{ route: ImportRecordType; label: string }> = [
+    ...(importData?.containersFile && !importData.containersSubmittable
+      ? [{ route: "CONTAINERS" as const, label: recordTypeLabels.CONTAINERS }]
+      : []),
+    ...(importData?.samplesFile && !importData.samplesSubmittable
+      ? [{ route: "SAMPLES" as const, label: recordTypeLabels.SAMPLES }]
+      : []),
+    ...(importData?.subSamplesFile && !importData.subSamplesSubmittable
+      ? [{ route: "SUBSAMPLES" as const, label: recordTypeLabels.SUBSAMPLES }]
+      : []),
+  ];
+
+  const importButtonLabel = t("import.actions.importSelected", {
+    types: listFormatter.format([
+      ...(importData?.containersSubmittable ? [recordTypeLabels.CONTAINERS] : []),
+      ...(importData?.samplesSubmittable ? [recordTypeLabels.SAMPLES] : []),
+      ...(importData?.subSamplesSubmittable ? [recordTypeLabels.SUBSAMPLES] : []),
+    ]),
+  });
+
+  const formattedNotImportableTypes = listFormatter.formatToParts(notImportableTypes.map(({ label }) => label));
+  let formattedNotImportableTypeIndex = 0;
 
   function ImportTabs(_: Record<string, never>) {
-    const importRecordTypes = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"];
     const { useNavigate } = useContext(NavigateContext);
     const navigate = useNavigate();
 
@@ -92,13 +106,13 @@ function RecordsImport(): React.ReactNode {
           variant="scrollable"
           scrollButtons="auto"
         >
-          {importRecordTypes.map((value) => (
+          {IMPORT_RECORD_TYPES.map((value) => (
             <Tab
               sx={{ fontWeight: "bold" }}
               key={value}
-              label={value}
+              label={recordTypeLabels[value]}
               value={value}
-              data-test-id={`${capitaliseJustFirstChar(value)}ImportTab`}
+              data-test-id={`${value}ImportTab`}
             />
           ))}
         </Tabs>
@@ -152,13 +166,17 @@ function RecordsImport(): React.ReactNode {
             {showFooterAlert ? (
               <Alert severity="warning">
                 {t("import.cannotImport.message")}{" "}
-                {notImportable().map(({ route, label }, i) => (
-                  <span key={i}>
-                    {i > 0 && ", "}
-                    {route !== recordType ? <Link to={onTypeSelect(route)}>{label}</Link> : label}
-                  </span>
-                ))}{" "}
-                {t("import.cannotImport.tabSuffix", { count: notImportable().length })}
+                {formattedNotImportableTypes.map((part, i) => {
+                  if (part.type === "literal") return <span key={i}>{part.value}</span>;
+                  const item = notImportableTypes[formattedNotImportableTypeIndex++];
+                  if (!item) return <span key={i}>{part.value}</span>;
+                  return (
+                    <span key={i}>
+                      {item.route !== recordType ? <Link to={onTypeSelect(item.route)}>{item.label}</Link> : item.label}
+                    </span>
+                  );
+                })}{" "}
+                {t("import.cannotImport.tabSuffix", { count: notImportableTypes.length })}
               </Alert>
             ) : null}
           </Grid>

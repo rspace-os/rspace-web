@@ -88,7 +88,7 @@ describe("Template", () => {
       );
       expect(
         screen.getByRole("button", {
-          name: /template.fields.versionInfo.update/,
+          name: "inventory:template.fields.versionInfo.update",
         }),
       ).toBeDisabled();
     });

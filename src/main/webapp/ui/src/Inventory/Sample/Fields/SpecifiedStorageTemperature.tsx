@@ -1,7 +1,6 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { FormLabel } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";
@@ -34,7 +33,6 @@ type LabelArgs = {
 
 const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
   const { t } = useTranslation("inventory");
-  // prettier-ignore
   const render = (x: number) =>
     unitId === CELSIUS ? `${x}°C` : unitId === KELVIN ? `${x}K` : /* else FAHRENHEIT */ `${x}°F`;
 

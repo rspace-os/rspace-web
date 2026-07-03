@@ -1,6 +1,6 @@
 import { chipClasses } from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
@@ -120,6 +120,17 @@ describe("RecordLink", () => {
     });
 
     await user.click(screen.getByRole("link"));
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(trackEventSpy).not.toHaveBeenCalled();
+    expect(setVisiblePanelSpy).not.toHaveBeenCalled();
+  });
+
+  test("does not intercept a Ctrl-click, leaving the browser to open a new tab.", () => {
+    const container = makeMockContainer();
+    const { setVisiblePanelSpy, trackEventSpy } = renderRecordLink(container);
+
+    fireEvent.click(screen.getByRole("link"), { ctrlKey: true });
 
     expect(navigate).not.toHaveBeenCalled();
     expect(trackEventSpy).not.toHaveBeenCalled();

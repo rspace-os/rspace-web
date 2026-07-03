@@ -29,7 +29,6 @@ export default class AlwaysNewFactory implements Factory {
     if (params instanceof InventoryBaseRecord) throw new Error("Cannot instantiate Record from InventoryBaseRecord");
     const g = params.globalId ?? "";
     const patterns = globalIdPatterns;
-    // prettier-ignore
     const record = patterns.sample.test(g)
       ? new SampleModel(this, params as SampleAttrs)
       : patterns.subsample.test(g)

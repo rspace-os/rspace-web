@@ -5,6 +5,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
 import { raidQueryKeys, useGetAvailableRaidIdentifiersAjaxQuery } from "@/modules/raid/queries";
 
@@ -46,7 +47,7 @@ const defaultValues: RaidConnectionsAddFormValues = {
 };
 
 const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAddFormProps) => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
   const { data } = useGetAvailableRaidIdentifiersAjaxQuery();
   const queryClient = useQueryClient();
   const mutation = useAddRaidIdentifierMutation({ groupId });
@@ -119,7 +120,10 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
                   label={t("profile.raidConnections.identifier")}
                   required
                   error={field.state.meta.errors.length > 0 || mutation.isError}
-                  helperText={field.state.meta.errors.map(String).join(", ") || mutation.error?.message}
+                  helperText={
+                    formatList(field.state.meta.errors.map(String), i18n.resolvedLanguage ?? i18n.language) ||
+                    mutation.error?.message
+                  }
                 />
               )}
             />

@@ -57,7 +57,7 @@ describe("Quantity", () => {
               <Quantity onErrorStateChange={() => {}} sample={sample} />
             </storesContext.Provider>,
           );
-          expect(container).not.toHaveTextContent(/inventory:fields\.quantity\.perAlias/);
+          expect(container).not.toHaveTextContent("inventory:fields.quantity.perAlias");
         }),
       );
     });
@@ -87,7 +87,7 @@ describe("Quantity", () => {
               <Quantity onErrorStateChange={() => {}} sample={sample} />
             </storesContext.Provider>,
           );
-          expect(container).toHaveTextContent(/inventory:fields\.quantity\.perAlias/);
+          expect(container).toHaveTextContent("inventory:fields.quantity.perAlias");
         }),
       );
     });
@@ -119,7 +119,7 @@ describe("Quantity", () => {
               <Quantity onErrorStateChange={() => {}} sample={sample} />
             </storesContext.Provider>,
           );
-          expect(container).toHaveTextContent(/inventory:sample\.fields\.quantity\.total/);
+          expect(container).toHaveTextContent("inventory:sample.fields.quantity.total");
         }),
       );
     });
@@ -149,7 +149,7 @@ describe("Quantity", () => {
               <Quantity onErrorStateChange={() => {}} sample={sample} />
             </storesContext.Provider>,
           );
-          expect(container).toHaveTextContent(/inventory:sample\.fields\.quantity\.total/);
+          expect(container).toHaveTextContent("inventory:sample.fields.quantity.total");
         }),
       );
     });

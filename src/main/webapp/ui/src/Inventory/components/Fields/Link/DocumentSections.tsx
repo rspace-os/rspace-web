@@ -105,12 +105,13 @@ function LinkedByDocs({
 function SharingAndPublication({
   info,
   isNotebook,
+  recordTypeName,
 }: {
   info: WorkspaceRecordInformation;
   isNotebook: boolean;
+  recordTypeName: string;
 }): React.ReactElement {
   const { t } = useTranslation("inventory");
-  const recordTypeName = isNotebook ? "notebook" : "document";
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [publicChecked, setPublicChecked] = useState(false);
 
@@ -213,8 +214,8 @@ export default function DocumentSections({
   isNotebook,
   pinnedVersion,
 }: DocumentSectionsProps): React.ReactElement {
-  const { t } = useTranslation("inventory");
-  const recordTypeName = isNotebook ? "notebook" : "document";
+  const { t } = useTranslation(["inventory", "common"]);
+  const recordTypeName = isNotebook ? t("common:recordTypes.notebook.lower") : t("common:recordTypes.document.lower");
   const isStructuredDocument = !isNotebook;
   const isVersionView = pinnedVersion != null;
   // The version-stripped global id, used for the "latest" link in the version header.
@@ -315,7 +316,7 @@ export default function DocumentSections({
 
       <RelatedInventoryItems globalId={info.oid.idString} recordTypeName={recordTypeName} />
 
-      <SharingAndPublication info={info} isNotebook={isNotebook} />
+      <SharingAndPublication info={info} isNotebook={isNotebook} recordTypeName={recordTypeName} />
     </Stack>
   );
 }

@@ -1,6 +1,5 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import React, { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
@@ -95,12 +94,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
         docLink="dryad"
         setupSection={
           <>
-            <TransRichText
-              i18nKey="apps:integrations.dryad.setup.instructions"
-              components={{
-                orcidLink: <Link href="https://orcid.org/register" target="_blank" rel="noreferrer" />,
-              }}
-            />
+            <TransRichText i18nKey="apps:integrations.dryad.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {

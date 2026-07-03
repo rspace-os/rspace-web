@@ -33,6 +33,7 @@ import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import IGSNlogo from "../../assets/graphics/IGSNlogo.jpg";
 import { decodeTagString } from "../../components/Tags/ParseEncodedTagStrings";
 import Description from "../../Inventory/components/Fields/Description";
@@ -165,7 +166,8 @@ type IdentifierDataGridArgs = {
 };
 
 export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArgs): ReactNode => {
-  const { t } = useTranslation("public");
+  const { t, i18n } = useTranslation("public");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const institutionName: string = identifier.publisher.split(" (")[0];
 
   const anyRecommendedGiven: boolean = [
@@ -578,9 +580,9 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
                             <TableRow key={f.id}>
                               <TableCell>{f.name}</TableCell>
                               <TableCell>
-                                {(f.selectedOptions?.join(", ") ?? f.content?.toString()) || (
-                                  <NoValue label={t("values.none")} />
-                                )}
+                                {(f.selectedOptions
+                                  ? formatList(f.selectedOptions, language)
+                                  : f.content?.toString()) || <NoValue label={t("values.none")} />}
                               </TableCell>
                             </TableRow>
                           ))}

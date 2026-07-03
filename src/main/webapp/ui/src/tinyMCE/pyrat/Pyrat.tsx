@@ -24,6 +24,7 @@ import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -327,15 +328,23 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           animals.forEach((animal: any) => {
             // projects contain a lot of metadata that should not be displayed
             if (animal.projects) {
-              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-              animal.projects = animal.projects.map((project: any) => project.project_label).join(", ");
+              animal.projects = formatList(
+                animal.projects.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (project: any) => project.project_label,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
             }
 
             if (animal.mutations) {
-              animal.mutations = animal.mutations
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                .map((mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`)
-                .join(", ");
+              animal.mutations = formatList(
+                animal.mutations.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
             }
           });
 

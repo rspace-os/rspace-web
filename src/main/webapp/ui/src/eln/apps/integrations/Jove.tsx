@@ -10,9 +10,6 @@ import IntegrationCard from "../IntegrationCard";
 
 function Jove(): React.ReactNode {
   const { t } = useTranslation("apps");
-  const exampleDomain = "jove.com";
-  const exampleUrl = "https://www.jove.com/v/60908/...";
-  const appExampleUrl = "https://app.jove.com/v/60908/...";
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -37,10 +34,7 @@ function Jove(): React.ReactNode {
         docLink="videoIntegration"
         setupSection={
           <Stack direction="column" sx={{ gap: 2 }}>
-            <TransRichText
-              i18nKey="apps:integrations.jove.setup.instructions"
-              values={{ domain: exampleDomain, exampleUrl, appExampleUrl }}
-            />
+            <TransRichText i18nKey="apps:integrations.jove.setup.instructions" />
             <Typography variant="body2">
               <TransRichText i18nKey="apps:integrations.jove.setup.noteFull" />
             </Typography>

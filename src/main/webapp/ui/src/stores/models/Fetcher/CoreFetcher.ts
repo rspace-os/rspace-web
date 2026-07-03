@@ -82,7 +82,6 @@ export const parseCoreFetcherArgsFromUrl = (searchParams: URLSearchParams): Core
     searchParams.get("deletedItems"),
     new Error(`Search parameter "deletedItems" is missing`),
   ).flatMap(parseDeletedItems);
-  // prettier-ignore
   return {
     ...(query ? { query } : {}),
     ...(orderBy ? { orderBy } : {}),

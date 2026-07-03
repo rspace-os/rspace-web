@@ -45,7 +45,6 @@ export async function fetchPlanSummaries({
   page,
   pageSize,
 }: SearchParameters): Promise<Plans> {
-  // prettier-ignore
   const urlArgs = new URLSearchParams({
     ...(like ? { like } : {}),
     ...(grantsLike ? { grantsLike } : {}),

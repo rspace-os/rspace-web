@@ -65,6 +65,7 @@ import { delay } from "es-toolkit";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
@@ -1424,7 +1425,9 @@ const UsersToolbar = ({ userListing, selectedCount }: GridSlotProps["toolbar"]) 
   );
 };
 export const UsersPage = (): React.ReactNode => {
-  const { t } = useTranslation("system");
+  const { t, i18n } = useTranslation("system");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const formatDisplayList = (items: Iterable<string>) => formatList(items, language);
   const { userListing } = useUserListing();
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
@@ -1495,7 +1498,7 @@ export const UsersPage = (): React.ReactNode => {
         if (roles.includes("ROLE_PI")) labels.push(t("usersPage.roleLabels.pi"));
         if (roles.includes("ROLE_SYSADMIN")) labels.push(t("usersPage.roleLabels.sysadmin"));
         if (roles.includes("ROLE_USER")) labels.push(t("usersPage.roleLabels.user"));
-        return labels.join(", ");
+        return formatDisplayList(labels);
       },
       {
         headerName: t("usersPage.columns.role"),
@@ -1550,7 +1553,7 @@ export const UsersPage = (): React.ReactNode => {
       headerName: t("usersPage.columns.groupMembership"),
       flex: 1,
       sortable: false,
-      valueFormatter: (value: Array<string>) => value.join(", "),
+      valueFormatter: (value: Array<string>) => formatDisplayList(value),
       renderCell: (params: { value?: Array<string>; tabIndex: number }): React.ReactNode => {
         if (!params.value) return <>{"—"}</>;
         const value = params.value;
@@ -1596,7 +1599,7 @@ export const UsersPage = (): React.ReactNode => {
       headerName: t("usersPage.columns.tags"),
       flex: 1,
       sortable: false,
-      valueFormatter: (value: Array<string>) => value.join(", "),
+      valueFormatter: (value: Array<string>) => formatDisplayList(value),
       renderCell: (params: { value?: Array<string>; tabIndex: number }) => {
         if (!params.value) return <>{"—"}</>;
         const value = params.value;

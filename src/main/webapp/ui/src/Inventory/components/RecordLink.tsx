@@ -8,6 +8,7 @@ import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import NavigateContext from "../../stores/contexts/Navigate";
 import useStores from "../../stores/use-stores";
+import { isPlainLeftClick } from "../../util/Util";
 
 type OverflowProps = {
   overflow?: boolean;
@@ -144,6 +145,10 @@ export const RecordLink = observer(
       }
 
       if (disableNavigationContext) {
+        return;
+      }
+
+      if (!isPlainLeftClick(event)) {
         return;
       }
 

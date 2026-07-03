@@ -1,4 +1,17 @@
+import type { MouseEvent } from "react";
 import type { AllSettled } from "./types";
+
+/**
+ * Whether a click on an anchor is a plain, unmodified left-click that a
+ * client-side router should intercept and turn into an in-page navigation.
+ * Ctrl/Cmd-click (open in new tab), Shift-click (open in new window), and
+ * non-primary-button clicks should be left alone so the browser's native
+ * anchor behaviour applies, since the `href` is only real for those cases.
+ * Mirrors the check React Router's own `Link` makes before calling
+ * `preventDefault()`.
+ */
+export const isPlainLeftClick = (event: MouseEvent): boolean =>
+  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
 
 /**
  * Wrap an event handler function to prevent the event from bubbling up the

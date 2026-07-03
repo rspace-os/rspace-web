@@ -1,6 +1,7 @@
 import { isNotNil, pick, pickBy, zipWith } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
@@ -1016,10 +1017,10 @@ export default class Import {
       fieldName,
     ]);
     if (namePairs.some(([c, f]) => c !== f)) {
-      const help = namePairs
-        .filter(([c, f]) => c !== f)
-        .map(([c, f]) => `"${c}" is not the same as "${f}"`)
-        .join(", ");
+      const help = formatList(
+        namePairs.filter(([c, f]) => c !== f).map(([c, f]) => `"${c}" is not the same as "${f}"`),
+        i18n.resolvedLanguage ?? i18n.language,
+      );
       return { matches: false, reason: `The names don't match: ${help}.` };
     }
 
@@ -1030,7 +1031,10 @@ export default class Import {
     );
     notMatchingByType.delete(null);
     if (notMatchingByType.size > 0) {
-      const help = [...notMatchingByType].join(", ");
+      const help = formatList(
+        [...notMatchingByType].filter((columnName): columnName is string => columnName !== null),
+        i18n.resolvedLanguage ?? i18n.language,
+      );
       return {
         matches: false,
         reason: `Some of the data in some  columns does not match the type of the respective template field. Please check the values in these columns: ${help}`,

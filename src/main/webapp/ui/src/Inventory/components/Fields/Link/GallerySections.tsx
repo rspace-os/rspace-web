@@ -190,7 +190,10 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
       {showRelatedInventory ? (
         <Box sx={{ mt: 1 }}>
-          <RelatedInventoryItems globalId={info.oid.idString} recordTypeName="file" />
+          <RelatedInventoryItems
+            globalId={info.oid.idString}
+            recordTypeName={t("common:recordTypes.galleryFile.lower")}
+          />
         </Box>
       ) : null}
     </Box>

@@ -2,6 +2,7 @@ import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import DoubleEditIcon from "../../../assets/graphics/DoubleEditIcon";
 import SingleEditIcon from "../../../assets/graphics/SingleEditIcon";
 import { mkAlert } from "../../../stores/contexts/Alert";
@@ -23,7 +24,8 @@ type EditActionArgs = {
 
 const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: EditActionArgs, ref) => {
-    const { t } = useTranslation(["inventory", "common"]);
+    const { t, i18n } = useTranslation(["inventory", "common"]);
+    const language = i18n.resolvedLanguage ?? i18n.language;
     const { searchStore, uiStore } = useStores();
 
     const displayErrorIfAllLocksCouldNotBeAcquired = (error: Error): boolean => {
@@ -163,10 +165,10 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
       [
         () => selectedResults.length > 1 && selectedResults.some((r) => !r.supportsBatchEditing),
         t("contextMenu.edit.batchUnsupported", {
-          globalIds: selectedResults
-            .filter((r) => !r.supportsBatchEditing)
-            .map((r) => r.globalId)
-            .join(", "),
+          globalIds: formatList(
+            selectedResults.filter((r) => !r.supportsBatchEditing).flatMap((r) => (r.globalId ? [r.globalId] : [])),
+            language,
+          ),
         }),
       ],
       [() => selectedResults.length === 0, t("contextMenu.edit.nothingSelected")],
