@@ -304,26 +304,27 @@ export default class InstrumentModel
 
     if (!this.id) {
       this.overrideFields(template.fields);
-      this.setAttributes({
-        extraFields: template.extraFields
-          .filter((ef) => !ef.deleteFieldRequest)
-          .map(
-            (ef) =>
-              new ExtraFieldModel(
-                {
-                  id: null,
-                  globalId: null,
-                  parentGlobalId: null,
-                  name: ef.name,
-                  type: ef.type.toLowerCase() as "text" | "number" | "link",
-                  content: ef.content ?? "",
-                  lastModified: null,
-                  newFieldRequest: true,
-                },
-                this,
-              ),
-          ),
-      });
+      const userAddedFields = this.extraFields.filter((ef) => !ef.fromTemplate);
+      const templateFields = template.extraFields
+        .filter((ef) => !ef.deleteFieldRequest)
+        .map((ef) => {
+          const field = new ExtraFieldModel(
+            {
+              id: null,
+              globalId: null,
+              parentGlobalId: null,
+              name: ef.name,
+              type: ef.type.toLowerCase() as "text" | "number" | "link",
+              content: ef.content ?? "",
+              lastModified: null,
+              newFieldRequest: true,
+            },
+            this,
+          );
+          field.fromTemplate = true;
+          return field;
+        });
+      this.setAttributes({ extraFields: [...userAddedFields, ...templateFields] });
       if (!this.name) this.setAttributes({ name: template.name });
       if (!this.description) this.setAttributes({ description: template.description });
       this.setAttributes({
