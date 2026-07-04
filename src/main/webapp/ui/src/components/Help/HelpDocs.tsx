@@ -1,4 +1,4 @@
-import Intercom from "@intercom/messenger-js-sdk";
+import { Intercom } from "@intercom/messenger-js-sdk";
 import HelpIcon from "@mui/icons-material/Help";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -46,6 +46,9 @@ declare global {
 }
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
+
+// Fallback destination when the external Lighthouse help widget fails to load.
+const RSPACE_DOCS_URL = "https://researchspace.helpdocs.io";
 
 function loadScript(url: string): void {
   const s = document.createElement("script");
@@ -141,18 +144,24 @@ function HelpDocs() {
         suggested_articles: t("helpDocs.suggestedArticles"),
       },
       onReady() {
-        if (typeof window.Intercom !== "undefined") {
-          const intercom = window.Intercom;
-          (intercom as unknown as (event: "onShow", cb: () => void) => void)("onShow", () => {
-            window.Lighthouse.hide();
-            window.Lighthouse.showButton();
-          });
-          (intercom as unknown as (event: "onHide", cb: () => void) => void)("onHide", () => {
-            window.Lighthouse.show();
-          });
-          if (document.getElementById("intercom-container")) {
-            window.Lighthouse.showButton();
+        try {
+          if (typeof window.Intercom !== "undefined") {
+            const intercom = window.Intercom;
+            (intercom as unknown as (event: "onShow", cb: () => void) => void)("onShow", () => {
+              window.Lighthouse.hide();
+              window.Lighthouse.showButton();
+            });
+            (intercom as unknown as (event: "onHide", cb: () => void) => void)("onHide", () => {
+              window.Lighthouse.show();
+            });
+            if (document.getElementById("intercom-container")) {
+              window.Lighthouse.showButton();
+            }
           }
+        } catch (e) {
+          // Wiring up the optional Intercom live-chat integration must never
+          // block the help button from becoming usable.
+          console.warn("Failed to wire up Intercom with the help widget", e);
         }
         setLighthouseIsLoaded(true);
       },
@@ -172,10 +181,18 @@ function HelpDocs() {
   }, []);
 
   const _showLighthouse = () => {
+    trackEvent("NeedHelpClicked");
+    // The Lighthouse widget is loaded from an external script that can fail to
+    // initialise on some deployments (e.g. a blocked third-party script). When
+    // it isn't available, fall back to opening the documentation site directly
+    // so the help link still works.
+    if (!window.Lighthouse) {
+      window.open(RSPACE_DOCS_URL, "_blank", "noopener,noreferrer");
+      return;
+    }
     // To show Lighthouse panel, Lighthouse button must be shown first
     window.Lighthouse.showButton();
     window.Lighthouse.show();
-    trackEvent("NeedHelpClicked");
   };
 
   const handleMenuButtonClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -205,7 +222,6 @@ function HelpDocs() {
         onClick={handleMenuButtonClick}
         icon={<HelpIcon />}
         title={t("helpDocs.openHelp")}
-        disabled={!window.Lighthouse}
         aria-controls={open ? menuId : undefined}
         aria-haspopup={hasExtraHelpLinks ? "menu" : undefined}
         aria-expanded={open ? "true" : undefined}

@@ -32,7 +32,7 @@ pre-commit:
     # under a second, so we run it project-wide like tsc rather than per-file.
     biome:
       glob: "src/main/webapp/ui/**/*.{ts,tsx,css}"
-      run: pnpm run lint:ci
+      run: pnpm run lint:ci --colors=off
     # Keep the i18n catalogs in sync with the code: i18n:check (extract --ci)
     # fails if a key was added/removed/reordered without regenerating the
     # catalogs, and i18n:lint enforces the i18next lint rules. Triggered by any
