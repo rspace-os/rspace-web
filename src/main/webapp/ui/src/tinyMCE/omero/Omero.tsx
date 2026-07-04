@@ -33,8 +33,8 @@ import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable from "./ResultsTable";
 
 const makeTableHeaderCells = (): Array<Cell<string>> => [
-  { id: "path", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.path") },
-  { id: "description", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.description") },
+  { id: "path", numeric: false, label: i18n.t("workspace:tinymce.omero.columns.path") },
+  { id: "description", numeric: false, label: i18n.t("workspace:tinymce.omero.columns.description") },
 ];
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];
@@ -51,7 +51,7 @@ const DEFAULT_ORDERBY = "name";
 export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAULT_ORDER).replace(/['"]+/g, "");
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   VISIBLE_HEADER_CELLS = makeTableHeaderCells();
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
@@ -541,8 +541,8 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const makeEmptyThumbNail = () => {
     return (
       <img
-        alt={t("tinyMce.omero.unavailableAlt")}
-        title={t("tinyMce.omero.noImage")}
+        alt={t("tinymce.omero.unavailableAlt")}
+        title={t("tinymce.omero.noImage")}
         style={{ padding: "4px" }}
         src={"/images/White_square.png"}
       />
@@ -649,7 +649,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
       <ThemeProvider theme={materialTheme}>
         <RadioGroup
           row
-          aria-label={t("tinyMce.omero.dataTypeChoiceLabel")}
+          aria-label={t("tinymce.omero.dataTypeChoiceLabel")}
           name="data type choice"
           defaultValue={dataTypeChoice}
           onChange={handleDataTypeChange}
@@ -657,20 +657,20 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
           <FormControlLabel
             value={OMERO_DATA_TYPE_ALL}
             control={<Radio color="primary" />}
-            label={t("tinyMce.omero.dataTypes.all")}
+            label={t("tinymce.omero.dataTypes.all")}
           />
           <FormControlLabel
             value={OMERO_DATA_TYPE_PROJECTS}
             control={<Radio color="primary" />}
-            label={t("tinyMce.omero.dataTypes.projects")}
+            label={t("tinymce.omero.dataTypes.projects")}
           />
           <FormControlLabel
             value={OMERO_DATA_TYPE_SCREENS}
             control={<Radio color="primary" />}
-            label={t("tinyMce.omero.dataTypes.screens")}
+            label={t("tinymce.omero.dataTypes.screens")}
           />
         </RadioGroup>
-        <label htmlFor="omeroFilter">{t("tinyMce.omero.filterResults")}</label>
+        <label htmlFor="omeroFilter">{t("tinymce.omero.filterResults")}</label>
         <input id="omeroFilterID" type="text" name="omeroFilter" onKeyPress={filterDataAndDeselectHidden} />
         <Grid container spacing={1}>
           <Grid size={12}>
@@ -716,7 +716,7 @@ function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
                     p: 1,
                   }}
                 >
-                  {t("tinyMce.omero.loadingData")}
+                  {t("tinymce.omero.loadingData")}
                 </Typography>
               </Stack>
             )}

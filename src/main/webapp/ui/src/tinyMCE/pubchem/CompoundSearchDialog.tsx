@@ -82,7 +82,7 @@ type CompoundCardProps = {
 
 function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): React.ReactNode {
   const nameId = React.useId();
-  const { t } = useTranslation(["apps", "common"]);
+  const { t } = useTranslation(["workspace", "common"]);
   return (
     <Card
       aria-labelledby={nameId}
@@ -115,7 +115,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             onChange={(e) => onSelected(compound, e.target.checked)}
             slotProps={{
               input: {
-                "aria-label": t("tinyMce.pubchem.dialog.selectCompoundLabel"),
+                "aria-label": t("tinymce.pubchem.dialog.selectCompoundLabel"),
               },
             }}
           />
@@ -138,15 +138,15 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
               {compound.name}
             </Typography>
             <Dl>
-              <Dt>{t("tinyMce.pubchem.pubchemId")}</Dt>
+              <Dt>{t("tinymce.pubchem.pubchemId")}</Dt>
               <Dd>{compound.pubchemId}</Dd>
               {compound.cas !== "" && (
                 <>
-                  <Dt>{t("tinyMce.pubchem.casNumber")}</Dt>
+                  <Dt>{t("tinymce.pubchem.casNumber")}</Dt>
                   <Dd>{compound.cas}</Dd>
                 </>
               )}
-              <Dt>{t("tinyMce.pubchem.formula")}</Dt>
+              <Dt>{t("tinymce.pubchem.formula")}</Dt>
               <Dd>{compound.formula}</Dd>
             </Dl>
           </CardContent>
@@ -163,7 +163,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
                 e.stopPropagation();
               }}
             >
-              {t("tinyMce.pubchem.viewOnPubChem")}
+              {t("tinymce.pubchem.viewOnPubChem")}
             </Link>
           </CardActions>
         </Box>
@@ -177,7 +177,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             alignSelf: "flex-start",
           }}
           image={compound.pngImage}
-          alt={t("tinyMce.pubchem.dialog.chemicalStructureAlt", { name: compound.name })}
+          alt={t("tinymce.pubchem.dialog.chemicalStructureAlt", { name: compound.name })}
         />
       </CardActionArea>
     </Card>
@@ -209,7 +209,7 @@ export default function CompoundSearchDialog({
 }: CompoundSearchDialogProps): React.ReactNode {
   const titleId = React.useId();
   const resultsId = React.useId();
-  const { t } = useTranslation(["apps", "common"]);
+  const { t } = useTranslation(["workspace", "common"]);
   const { search } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
@@ -220,7 +220,7 @@ export default function CompoundSearchDialog({
   const validationResult = React.useMemo(() => {
     return Object.values(selectedCompounds).some(Boolean)
       ? IsValid()
-      : IsInvalid(t("tinyMce.pubchem.dialog.validation.selectCompound"));
+      : IsInvalid(t("tinymce.pubchem.dialog.validation.selectCompound"));
   }, [selectedCompounds]);
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -272,9 +272,9 @@ export default function CompoundSearchDialog({
   }
   return (
     <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="sm" fullWidth>
-      <AppBar variant="dialog" currentPage={t("tinyMce.pubchem.dialog.title")} accessibilityTips={{}} />
+      <AppBar variant="dialog" currentPage={t("tinymce.pubchem.dialog.title")} accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
-        {title ?? t("tinyMce.pubchem.dialog.title")}
+        {title ?? t("tinymce.pubchem.dialog.title")}
       </DialogTitle>
       <DialogContent>
         <Stack
@@ -285,15 +285,15 @@ export default function CompoundSearchDialog({
         >
           {showPubChemInfo && (
             <Box>
-              <Typography variant="body2">{t("tinyMce.pubchem.dialog.intro.searchDescription")}</Typography>
+              <Typography variant="body2">{t("tinymce.pubchem.dialog.intro.searchDescription")}</Typography>
               <Typography variant="body2">
-                {t("tinyMce.pubchem.dialog.intro.moreInfoPrefix")}{" "}
+                {t("tinymce.pubchem.dialog.intro.moreInfoPrefix")}{" "}
                 <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
                   {"https://pubchem.ncbi.nlm.nih.gov/"}
                 </Link>{" "}
-                {t("tinyMce.pubchem.dialog.intro.moreInfoMiddle")}{" "}
-                <Link href={docLinks.pubchem}>{t("tinyMce.pubchem.dialog.intro.docsLink")}</Link>{" "}
-                {t("tinyMce.pubchem.dialog.intro.moreInfoSuffix")}
+                {t("tinymce.pubchem.dialog.intro.moreInfoMiddle")}{" "}
+                <Link href={docLinks.pubchem}>{t("tinymce.pubchem.dialog.intro.docsLink")}</Link>{" "}
+                {t("tinymce.pubchem.dialog.intro.moreInfoSuffix")}
               </Typography>
             </Box>
           )}
@@ -316,8 +316,8 @@ export default function CompoundSearchDialog({
                   fullWidth
                   placeholder={
                     searchType === "NAME"
-                      ? t("tinyMce.pubchem.dialog.searchPlaceholders.nameCas")
-                      : t("tinyMce.pubchem.dialog.searchPlaceholders.smiles")
+                      ? t("tinymce.pubchem.dialog.searchPlaceholders.nameCas")
+                      : t("tinymce.pubchem.dialog.searchPlaceholders.smiles")
                   }
                   slotProps={{
                     input: {
@@ -326,7 +326,7 @@ export default function CompoundSearchDialog({
                           <FormControl variant="standard" size="small">
                             <Select
                               inputProps={{
-                                "aria-label": t("tinyMce.pubchem.dialog.searchTypeLabel"),
+                                "aria-label": t("tinymce.pubchem.dialog.searchTypeLabel"),
                                 name: "search-type",
                               }}
                               value={searchType}
@@ -340,8 +340,8 @@ export default function CompoundSearchDialog({
                                 },
                               }}
                             >
-                              <MenuItem value="NAME">{t("tinyMce.pubchem.dialog.searchTypes.nameCas")}</MenuItem>
-                              <MenuItem value="SMILES">{t("tinyMce.pubchem.dialog.searchTypes.smiles")}</MenuItem>
+                              <MenuItem value="NAME">{t("tinymce.pubchem.dialog.searchTypes.nameCas")}</MenuItem>
+                              <MenuItem value="SMILES">{t("tinymce.pubchem.dialog.searchTypes.smiles")}</MenuItem>
                             </Select>
                           </FormControl>
                         </InputAdornment>
@@ -357,20 +357,20 @@ export default function CompoundSearchDialog({
           </form>
           <section aria-labelledby={resultsId} aria-live="polite">
             <Typography id={resultsId} variant="h6" component="h4">
-              {t("tinyMce.pubchem.dialog.searchResults")}
+              {t("tinymce.pubchem.dialog.searchResults")}
             </Typography>
             <Grid container spacing={2}>
               {!hasSearched && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    {t("tinyMce.pubchem.dialog.emptyState.initial")}
+                    {t("tinymce.pubchem.dialog.emptyState.initial")}
                   </Typography>
                 </Grid>
               )}
               {hasSearched && results.length === 0 && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    {t("tinyMce.pubchem.dialog.emptyState.noneFound", { searchTerm: displayedSearchTerm })}
+                    {t("tinymce.pubchem.dialog.emptyState.noneFound", { searchTerm: displayedSearchTerm })}
                   </Typography>
                 </Grid>
               )}
@@ -390,7 +390,7 @@ export default function CompoundSearchDialog({
       <DialogActions>
         <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
         <ValidatingSubmitButton validationResult={validationResult} loading={false} onClick={handleSubmit}>
-          {submitButtonText ?? t("tinyMce.pubchem.dialog.submitButton")}
+          {submitButtonText ?? t("tinymce.pubchem.dialog.submitButton")}
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>

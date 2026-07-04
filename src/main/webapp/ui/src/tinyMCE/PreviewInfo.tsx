@@ -221,7 +221,7 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 function render(attributes: PreviewInfoItem, element: Element) {
   const root = getPreviewInfoRoot(element);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["apps", "common", "workspace"]}>
       <PreviewInfo item={{ ...attributes }} />
     </I18nRoot>,
   );
@@ -241,7 +241,7 @@ function renderChemPreview(domContainer: HTMLImageElement) {
 
   const root = getPreviewInfoRoot(parent);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["apps", "common", "workspace"]}>
       <PreviewInfo item={{ ...attributes }} />
     </I18nRoot>,
   );

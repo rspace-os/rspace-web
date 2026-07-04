@@ -1,8 +1,8 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
 const SEARCH_BUTTON = /^(common:)?actions\.search$/;
-const SELECT_COMPOUND = /^(apps:)?tinyMce\.pubchem\.dialog\.selectCompoundLabel$/;
-const VIEW_ON_PUBCHEM = /^(apps:)?tinyMce\.pubchem\.viewOnPubChem$/;
+const SELECT_COMPOUND = /^(workspace:)?tinymce\.pubchem\.dialog\.selectCompoundLabel$/;
+const VIEW_ON_PUBCHEM = /^(workspace:)?tinymce\.pubchem\.viewOnPubChem$/;
 
 /**
  * Page object for the PubChem ImportDialog, as mounted by ImportDialogStory.

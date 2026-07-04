@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["workspace", "common"]}>
       {/* biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
       <Omero omero_web_url={(parent.tinymce.activeEditor as any)?.settings.omero_web_url} />
     </I18nRoot>,
@@ -25,7 +25,10 @@ function createTinyMceTable() {
   const headers = getHeaders();
   const headersWithNotes = headers
     .slice(0, 4)
-    .concat([{ id: "notes", numeric: false, label: i18n.t("apps:tinyMce.omero.columns.notes") }], headers.slice(4));
+    .concat(
+      [{ id: "notes", numeric: false, label: i18n.t("workspace:tinymce.omero.columns.notes") }],
+      headers.slice(4),
+    );
   headersWithNotes.forEach((cell) => {
     const columnName = document.createElement("th");
     columnName.textContent = cell.label;

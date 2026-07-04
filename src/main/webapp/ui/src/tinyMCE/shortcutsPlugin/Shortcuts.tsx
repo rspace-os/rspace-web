@@ -345,10 +345,10 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             severity="info"
           >
             <AlertTitle>
-              {i18n.t("apps:tinyMce.shortcuts.instructionsTitle")}
+              {i18n.t("workspace:tinymce.shortcuts.instructionsTitle")}
               <Tooltip
-                title={i18n.t("apps:tinyMce.shortcuts.toggleInstructions")}
-                aria-label={i18n.t("apps:tinyMce.shortcuts.toggleInstructions")}
+                title={i18n.t("workspace:tinymce.shortcuts.toggleInstructions")}
+                aria-label={i18n.t("workspace:tinymce.shortcuts.toggleInstructions")}
               >
                 <IconButton onClick={() => this.toggleInstructions()}>
                   {this.state.instructions && <FontAwesomeIcon icon={faChevronUp} />}
@@ -358,23 +358,23 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             </AlertTitle>
             {this.state.tab === 0 && this.state.instructions && (
               <ul>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.actions.clickInput")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.actions.pressKey")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.actions.clickSave")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.clickInput")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.pressKey")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.clickSave")}</li>
               </ul>
             )}
             {this.state.tab === 1 && this.state.instructions && (
               <ul>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.symbols.sectionsHint")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.symbols.clickSymbol")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.symbols.clickInput")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.symbols.pressKey")}</li>
-                <li>{i18n.t("apps:tinyMce.shortcuts.instructions.symbols.clickSave")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.sectionsHint")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickSymbol")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickInput")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.pressKey")}</li>
+                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickSave")}</li>
               </ul>
             )}
             {this.state.instructions && (
               <p>
-                <TransRichText i18nKey="apps:tinyMce.shortcuts.reservedShortcutsNote" />
+                <TransRichText i18nKey="workspace:tinymce.shortcuts.reservedShortcutsNote" />
               </p>
             )}
           </Alert>
@@ -388,8 +388,8 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             sx={{ marginBottom: "15px" }}
             centered
           >
-            <Tab label={i18n.t("apps:tinyMce.shortcuts.tabActions")} />
-            <Tab label={i18n.t("apps:tinyMce.shortcuts.tabSymbols")} />
+            <Tab label={i18n.t("workspace:tinymce.shortcuts.tabActions")} />
+            <Tab label={i18n.t("workspace:tinymce.shortcuts.tabSymbols")} />
           </Tabs>
         </Grid>
         {this.state.tab === 0 && (
@@ -424,7 +424,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-shortcuts");
   const root = createRoot(domContainer as HTMLElement);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["workspace", "common"]}>
       <MuiCssLayerProvider>
         <Shortcuts />
       </MuiCssLayerProvider>

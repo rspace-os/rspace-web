@@ -20,7 +20,7 @@ type FastaViewProps = {
  * Displays the FASTA sequence for a SnapGene file and lets the user copy it.
  */
 export default function FastaView({ id, setDisabled }: FastaViewProps) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   const [loading, setLoading] = React.useState(true);
   const [sequence, setSequence] = React.useState("");
 
@@ -50,9 +50,9 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
     el?.select(); // Select the <textarea> content
     try {
       document.execCommand("copy");
-      RS.confirm(t("tinyMce.snapGene.copySuccess"), "notice", 3000);
+      RS.confirm(t("tinymce.snapGene.copySuccess"), "notice", 3000);
     } catch {
-      RS.confirm(t("tinyMce.snapGene.copyFailed"), "warning", 5000);
+      RS.confirm(t("tinymce.snapGene.copyFailed"), "warning", 5000);
     }
     if (el) {
       document.body.removeChild(el); // Remove the <textarea> element
@@ -102,7 +102,7 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
       </Grid>
       <Grid sx={{ textAlign: "right" }} size={2}>
         <Button onClick={copyToClipboard} color="primary" variant="outlined" disabled={loading}>
-          {t("tinyMce.snapGene.copyToClipboard")}
+          {t("tinymce.snapGene.copyToClipboard")}
         </Button>
       </Grid>
     </>

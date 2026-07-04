@@ -33,7 +33,7 @@ export default function ResultsTable({
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   [key: string]: any;
 }) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function onRowClick(eartag: any) {
     setSelectedAnimalIds(
@@ -66,7 +66,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label={t("tinyMce.pyrat.tableLabel")}>
+        <Table aria-label={t("tinymce.pyrat.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -143,7 +143,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          {t("tinyMce.pyrat.selectedCount", { count: selectedAnimalIds.length })}
+          {t("tinymce.pyrat.selectedCount", { count: selectedAnimalIds.length })}
         </Typography>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50].filter((c) => c <= count)}

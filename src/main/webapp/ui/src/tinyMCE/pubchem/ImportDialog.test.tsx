@@ -104,7 +104,7 @@ describe("ImportDialog", () => {
       name: "common:appBar.dialogHeader",
     });
     expect(dialogHeader).toBeVisible();
-    expect(dialogHeader).toHaveTextContent("apps:tinyMce.pubchem.dialog.title");
+    expect(dialogHeader).toHaveTextContent("workspace:tinymce.pubchem.dialog.title");
   });
 
   test("Should have a title", () => {
@@ -133,7 +133,7 @@ describe("ImportDialog", () => {
 
   test("Should have a search type selector", () => {
     render(<ImportDialogStory />);
-    expect(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeLabel" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "workspace:tinymce.pubchem.dialog.searchTypeLabel" })).toBeVisible();
   });
 
   test("The API endpoint is called when a search is performed", async () => {
@@ -141,7 +141,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "aspirin");
     const searchResults = await screen.findByRole("region", {
-      name: "apps:tinyMce.pubchem.dialog.searchResults",
+      name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     await waitFor(() => {
       expect(searchResults).toHaveTextContent(/Aspirin/);
@@ -152,8 +152,8 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     // choose SMILES as the search type
-    await user.click(screen.getByRole("combobox", { name: "apps:tinyMce.pubchem.dialog.searchTypeLabel" }));
-    await user.click(screen.getByRole("option", { name: "apps:tinyMce.pubchem.dialog.searchTypes.smiles" }));
+    await user.click(screen.getByRole("combobox", { name: "workspace:tinymce.pubchem.dialog.searchTypeLabel" }));
+    await user.click(screen.getByRole("option", { name: "workspace:tinymce.pubchem.dialog.searchTypes.smiles" }));
     await performSearch(user, "aspirin");
     await waitFor(() => {
       const searchRequest = mockAxios.history.post.find(
@@ -169,7 +169,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "aspirin");
     const checkbox = await screen.findByRole("checkbox", {
-      name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
+      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
     });
     expect(checkbox).toBeChecked();
     /*
@@ -185,12 +185,12 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
     await waitFor(() => {
-      expect(screen.getAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }).length).toBe(
-        2,
-      );
+      expect(
+        screen.getAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }).length,
+      ).toBe(2);
     });
     const checkboxes = screen.getAllByRole("checkbox", {
-      name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
+      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
     });
     for (const checkbox of checkboxes) {
       expect(checkbox).not.toBeChecked();
@@ -203,7 +203,7 @@ describe("ImportDialog", () => {
     await performSearch(user, "multiple");
     const firstCheckbox = (
       await screen.findAllByRole("checkbox", {
-        name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel",
+        name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
       })
     )[0];
     await user.click(firstCheckbox);
@@ -220,20 +220,20 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" });
+    await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" });
 
     // clicking import without selecting any compounds shows a validation warning
     await user.click(screen.getByRole("button", { name: "common:pubchemImport.importSelected" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
-    expect(alert).toHaveTextContent("apps:tinyMce.pubchem.dialog.validation.selectCompound");
+    expect(alert).toHaveTextContent("workspace:tinymce.pubchem.dialog.validation.selectCompound");
 
     // pressing escape dismisses the validation warning
     await user.keyboard("{Escape}");
 
     // selecting a compound clears the warning
     await user.click(
-      (await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }))[0],
+      (await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }))[0],
     );
     await waitFor(() => {
       expect(screen.queryByRole("alert")).toBe(null);
@@ -254,7 +254,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
     await user.click(
-      (await screen.findAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" }))[0],
+      (await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }))[0],
     );
 
     // close the dialog
@@ -274,12 +274,12 @@ describe("ImportDialog", () => {
     expect(searchInput).toHaveValue("");
 
     const resultsSection = screen.getByRole("region", {
-      name: "apps:tinyMce.pubchem.dialog.searchResults",
+      name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     expect(resultsSection).toBeVisible();
-    expect(screen.queryAllByRole("checkbox", { name: "apps:tinyMce.pubchem.dialog.selectCompoundLabel" })).toHaveLength(
-      0,
-    );
+    expect(
+      screen.queryAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }),
+    ).toHaveLength(0);
   });
 
   test("Should not display CAS Number when it is empty", async () => {
@@ -293,21 +293,21 @@ describe("ImportDialog", () => {
     expect(compoundCard).toBeVisible();
 
     const terms = within(compoundCard).getAllByRole("term");
-    expect(terms.some((t) => (t.textContent ?? "") === "apps:tinyMce.pubchem.pubchemId")).toBe(true);
-    expect(terms.some((t) => (t.textContent ?? "") === "apps:tinyMce.pubchem.formula")).toBe(true);
-    expect(terms.some((t) => (t.textContent ?? "") === "apps:tinyMce.pubchem.casNumber")).toBe(false);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.pubchemId")).toBe(true);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.formula")).toBe(true);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.casNumber")).toBe(false);
   });
 
   test("Should hide error message when typing after a no-results search", async () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "noresults");
-    expect(await screen.findByText("apps:tinyMce.pubchem.dialog.emptyState.noneFound")).toBeVisible();
+    expect(await screen.findByText("workspace:tinymce.pubchem.dialog.emptyState.noneFound")).toBeVisible();
 
     // modifying the search term hides the no-results message
     await user.type(screen.getByRole("textbox"), "modified");
     await waitFor(() => {
-      expect(screen.queryByText("apps:tinyMce.pubchem.dialog.emptyState.noneFound")).toBe(null);
+      expect(screen.queryByText("workspace:tinymce.pubchem.dialog.emptyState.noneFound")).toBe(null);
     });
   });
 });

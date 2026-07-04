@@ -459,7 +459,7 @@ describe("StoichiometryTable", () => {
         }),
       );
 
-      expect(await screen.findByText("apps:tinyMce.pubchem.dialog.title")).toBeVisible();
+      expect(await screen.findByText("workspace:tinymce.pubchem.dialog.title")).toBeVisible();
     });
 
     it("opens the manual SMILES dialog from the Add Chemical menu", async () => {

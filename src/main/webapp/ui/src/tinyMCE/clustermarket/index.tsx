@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // biome-ignore lint/style/noNonNullAssertion: initial biome migration
   const root = createRoot(domContainer!);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["workspace", "common"]}>
       <Analytics>
         <Clustermarket
           {...({
@@ -36,7 +36,7 @@ function createTinyMceTable() {
     .slice(0, 4)
     .concat(
       [
-        { id: "notes", numeric: false, label: i18n.t("apps:tinyMce.clustermarket.columns.notes") },
+        { id: "notes", numeric: false, label: i18n.t("workspace:tinymce.clustermarket.columns.notes") },
       ] as unknown as typeof headers,
       headers.slice(4),
     );

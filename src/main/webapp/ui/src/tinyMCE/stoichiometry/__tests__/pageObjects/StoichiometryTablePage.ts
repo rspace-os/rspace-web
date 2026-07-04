@@ -10,10 +10,10 @@ const GALLERY_MENU_ITEM =
   /common:stoichiometry\.addReagent\.sources\.gallery\.title.*common:stoichiometry\.addReagent\.sources\.gallery\.subheader/i;
 const MANUAL_MENU_ITEM =
   /common:stoichiometry\.addReagent\.sources\.manual\.title.*common:stoichiometry\.addReagent\.sources\.manual\.subheader/i;
-const PUBCHEM_DIALOG = "apps:tinyMce.pubchem.dialog.title";
+const PUBCHEM_DIALOG = "workspace:tinymce.pubchem.dialog.title";
 const GALLERY_DIALOG = "common:appBar.sections.gallery.title";
 const MANUAL_DIALOG = "common:stoichiometry.addReagent.title";
-const PUBCHEM_NAME_CAS_PLACEHOLDER = "apps:tinyMce.pubchem.dialog.searchPlaceholders.nameCas";
+const PUBCHEM_NAME_CAS_PLACEHOLDER = "workspace:tinymce.pubchem.dialog.searchPlaceholders.nameCas";
 const INSERT = "common:actions.insert";
 const UPDATE_INVENTORY_STOCK = "common:stoichiometry.inventoryUpdate.updateInventoryStock";
 const INVENTORY_UPDATE_DIALOG = "common:stoichiometry.inventoryUpdate.dialogTitle";

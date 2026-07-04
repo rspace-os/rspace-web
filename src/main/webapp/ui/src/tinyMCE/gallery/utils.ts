@@ -245,6 +245,6 @@ async function insertSnippetFromGallery(data: WorkspaceRecordInformation) {
       getRS().tinymceInsertContent(result);
     }
   } catch {
-    alert(i18n.t("gallery:tinyMce.insertSnippetFailed", { id: data.id }));
+    alert(i18n.t("workspace:tinymce.gallery.insertSnippetFailed", { id: data.id }));
   }
 }

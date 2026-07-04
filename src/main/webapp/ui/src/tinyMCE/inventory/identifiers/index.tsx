@@ -48,7 +48,7 @@ type Editor = {
 };
 
 function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: () => void; editor: Editor }) {
-  const { t } = useTranslation(["inventory", "common"]);
+  const { t } = useTranslation(["workspace", "common"]);
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   const { getToken } = useOauthToken();
 
@@ -83,10 +83,10 @@ function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: 
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-      <AppBar variant="dialog" currentPage={t("tinyMceIdentifiers.pageTitle")} accessibilityTips={{}} />
-      <DialogTitle>{t("tinyMceIdentifiers.dialogTitle")}</DialogTitle>
+      <AppBar variant="dialog" currentPage={t("tinymce.identifiers.pageTitle")} accessibilityTips={{}} />
+      <DialogTitle>{t("tinymce.identifiers.dialogTitle")}</DialogTitle>
       <DialogContent>
-        <Typography variant="body1">{t("tinyMceIdentifiers.instructions")}</Typography>
+        <Typography variant="body1">{t("tinymce.identifiers.instructions")}</Typography>
         <IdentifiersRefreshProvider>
           <IgsnManagementPage selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} />
         </IdentifiersRefreshProvider>
@@ -116,7 +116,7 @@ function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: 
             onClose();
           }}
         >
-          {t("tinyMceIdentifiers.insertBarcodeTable")}
+          {t("tinymce.identifiers.insertBarcodeTable")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -141,7 +141,7 @@ class IdentifiersPlugin {
       while (true) {
         newProps = yield newProps;
         root.render(
-          <I18nRoot namespaces={["inventory", "common"]}>
+          <I18nRoot namespaces={["workspace", "common"]}>
             <StyledEngineProvider injectFirst enableCssLayer>
               <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
                 <Alerts>
@@ -164,7 +164,7 @@ class IdentifiersPlugin {
     identifiersRenderer.next({ open: false });
 
     editor.ui.registry.addMenuItem("optIdentifiers", {
-      text: i18n.t("inventory:tinyMceIdentifiers.pageTitle"),
+      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
@@ -176,7 +176,7 @@ class IdentifiersPlugin {
       },
     });
     editor.ui.registry.addButton("identifiers", {
-      tooltip: i18n.t("inventory:tinyMceIdentifiers.pageTitle"),
+      tooltip: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
@@ -189,7 +189,7 @@ class IdentifiersPlugin {
     });
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optIdentifiers", {
-      text: i18n.t("inventory:tinyMceIdentifiers.pageTitle"),
+      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       aliases: ["IGSN"],
       icon: "inventory_identifiers",
       action: () => {

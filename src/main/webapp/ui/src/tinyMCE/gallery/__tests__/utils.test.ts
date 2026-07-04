@@ -127,7 +127,7 @@ describe("addFromGallery", () => {
     addFromGallery(makeRecord({ type: "Snippet" }));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith("gallery:tinyMce.insertSnippetFailed");
+      expect(window.alert).toHaveBeenCalledWith("workspace:tinymce.gallery.insertSnippetFailed");
     });
     expect(RS.tinymceInsertContent).not.toHaveBeenCalled();
   });

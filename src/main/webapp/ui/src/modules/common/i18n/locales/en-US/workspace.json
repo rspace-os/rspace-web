@@ -242,6 +242,265 @@
       }
     }
   },
+  "tinymce": {
+    "chemCard": {
+      "atoms": "Atoms",
+      "bonds": "Bonds",
+      "charge": "Charge",
+      "formula": "Formula",
+      "mass": "Mass",
+      "monoisotopicMassSubscript": "mi",
+      "name": "Name",
+      "structureAlt": "Chemical structure"
+    },
+    "clustermarket": {
+      "bookingTypes": {
+        "all": "Booked and Completed",
+        "booked": "Booked",
+        "equipment": "Booked Equipment"
+      },
+      "columns": {
+        "bookedBy": "Booked by",
+        "bookingId": "Booking ID",
+        "bookingType": "Booking Type",
+        "durationMins": "Duration (mins)",
+        "equipmentId": "Equipment ID",
+        "equipmentName": "Equipment Name",
+        "lastUse": "Last use",
+        "maintenanceNotes": "Maintenance notes",
+        "manufacturer": "Manufacturer",
+        "model": "Model",
+        "notes": "Notes",
+        "onDate": "On date",
+        "startTime": "Start Time",
+        "status": "Status"
+      },
+      "maintenanceLabel": "maintenance",
+      "maintenanceOnly": "maintenance only",
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "booking search results"
+    },
+    "galaxy": {
+      "allSelectedFilesCombined": "All selected files will be combined into a 'list dataset', which will be available for immediate use. The list dataset will be named after this RSpace document, using the format:",
+      "annotationMetadata": "The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.",
+      "chooseAttachedFiles": "Choose attached files to be uploaded to Galaxy.",
+      "chooseDataTitle": "Choose Data",
+      "chooseGalaxyServer": "Choose a Galaxy Server",
+      "columns": {
+        "file": "File"
+      },
+      "datasetNameFormat": "\"RSPACE_\" + document name + \"_\" + global ID of document + \"_\" + name of field data was attached to + \"_\" + global ID of that field.",
+      "historyViewedHere": "Your new history can be viewed here:",
+      "opensInNewTab": "(Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History')",
+      "rspaceWillStoreDetails": "RSpace will store the details of the files you have uploaded and also any use of these files on Galaxy in Invocations will be tracked.",
+      "uploadInProgressLabel": "Please wait, uploading data to Galaxy is in progress",
+      "uploadInProgressTitle": "Galaxy Upload In Progress",
+      "uploadToGalaxyNote": "When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace document with the same name as the 'list dataset' described above. Your chosen data will be uploaded to this new history. You can make this history active in Galaxy by switching to it.",
+      "viewWorkflowTitle": "View Workflow in Galaxy",
+      "workflowIconNote": "Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon indicates how many Galaxy Invocations are using the uploaded data."
+    },
+    "gallery": {
+      "fromGallery": "From Gallery",
+      "insertFromGallery": "Insert from Gallery",
+      "insertSnippetFailed": "An error occurred while inserting the snippet {id}",
+      "pluginName": "Gallery"
+    },
+    "identifiers": {
+      "dialogTitle": "Insert Barcodes Table",
+      "insertBarcodeTable": "Insert Barcode Table",
+      "instructions": "Select from newly registered IGSN IDs or those already with linked items, and insert a table into your document, each with a QR code.",
+      "pageTitle": "Inventory Identifiers"
+    },
+    "internalLink": {
+      "alwaysLatest": "Always automatically update link to latest version",
+      "chooseVersion": "Or choose a version that the link should always point at:",
+      "columns": {
+        "modified": "Modified",
+        "modifiedBy": "Modified by",
+        "name": "Name",
+        "version": "Version"
+      },
+      "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
+      "dialogTitle": "Internal link version options",
+      "selectRevision": "Select revision",
+      "updateRevisionLink": "Update revision link",
+      "versionTableLabel": "internal link revision table"
+    },
+    "omero": {
+      "columns": {
+        "description": "Description",
+        "notes": "Notes",
+        "path": "Path"
+      },
+      "dataTypeChoiceLabel": "Display all data, only project data, or only screen data",
+      "dataTypes": {
+        "all": "Projects And Screens",
+        "projects": "Projects",
+        "screens": "Screens"
+      },
+      "detailsFetched": "details fetched",
+      "fetchDetails": "fetch details",
+      "filterResults": "Filter results",
+      "getLargeThumbnailLabel": "get large thumbnail",
+      "hideImageGrid": "hide image grid",
+      "itemSearchResultsLabel": "item search results",
+      "largeThumbnail": "large thumbnail",
+      "loadingData": "Data is loading...",
+      "noImage": "no image",
+      "redrawImage": "re-draw image",
+      "seeInOmero": "see in omero",
+      "selectedCount": "Selected: {count}",
+      "showGridOfWellsForField": "show grid of wells for field {field}",
+      "showImageGrid": "show image grid",
+      "unavailableAlt": "Unavailable"
+    },
+    "pubchem": {
+      "casNumber": "CAS Number",
+      "dialog": {
+        "chemicalStructureAlt": "Chemical structure of {name}",
+        "emptyState": {
+          "initial": "Enter a search term and click Search to find chemical compounds.",
+          "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
+        },
+        "intro": {
+          "docsLink": "PubChem integration docs",
+          "moreInfoMiddle": "and our",
+          "moreInfoPrefix": "See",
+          "moreInfoSuffix": "for more.",
+          "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
+        },
+        "searchPlaceholders": {
+          "nameCas": "Enter a compound name or CAS number",
+          "smiles": "Enter a SMILES string"
+        },
+        "searchResults": "Search Results",
+        "searchTypeLabel": "Search type",
+        "searchTypes": {
+          "nameCas": "Name/CAS",
+          "smiles": "SMILES"
+        },
+        "selectCompoundLabel": "Select compound",
+        "submitButton": "Select Compounds",
+        "title": "Search PubChem",
+        "validation": {
+          "selectCompound": "Please select at least one compound."
+        }
+      },
+      "formula": "Formula",
+      "pubchemId": "PubChem ID",
+      "viewOnPubChem": "View on PubChem"
+    },
+    "pyrat": {
+      "chooseServer": "Pick one of your authenticated servers",
+      "columns": {
+        "ageDays": "Age (Days)",
+        "building": "Building",
+        "classification": "Classification",
+        "dob": "DOB",
+        "id": "ID",
+        "labId": "Lab ID",
+        "license": "License",
+        "mutations": "Mutations",
+        "project": "Project",
+        "responsible": "Responsible",
+        "sacrificedOn": "Sacrificed On",
+        "sex": "Sex",
+        "strain": "Strain"
+      },
+      "dialogTitle": "Insert from PyRAT",
+      "filters": {
+        "ageDaysFrom": "Age days from",
+        "ageDaysTo": "Age days to",
+        "animalState": "Animal State",
+        "animalType": "Animal Type",
+        "birthDateFrom": "Birth date from",
+        "birthDateTo": "Birth date to",
+        "sacrificedFrom": "Sacrificed from",
+        "sacrificedTo": "Sacrificed to"
+      },
+      "fromPyrat": "From PyRAT",
+      "helpTitle": "PyRAT help",
+      "linkTooltip": "Link to PyRAT",
+      "selectedCount": "Selected: {count}",
+      "tableLabel": "animal search results"
+    },
+    "shortcuts": {
+      "instructions": {
+        "actions": {
+          "clickInput": "Click on the input field next to the command you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that command."
+        },
+        "symbols": {
+          "clickInput": "Click on the input field next to the symbol you would like to configure.",
+          "clickSave": "Click on 'Save'.",
+          "clickSymbol": "Click on the symbol to configure its shortcut.",
+          "pressKey": "On your keyboard, press the key combination you would like to use for that symbol.",
+          "sectionsHint": "All configurable symbols are divided into sections. Click on a section to find the desired symbol. For example, Greek characters are in the 'Extended Latin' section."
+        }
+      },
+      "instructionsTitle": "Instructions",
+      "reservedShortcutsNote": "Here's <a href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\" target=\"_blank\" rel=\"noreferrer\">a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "tabActions": "Actions",
+      "tabSymbols": "Symbols",
+      "toggleInstructions": "Toggle instructions"
+    },
+    "sidebarInfo": {
+      "closeAll": "Close All"
+    },
+    "snapGene": {
+      "applySettings": "Apply Settings",
+      "circular": "Circular",
+      "columns": {
+        "bottomCutPosition": "Bottom cut position",
+        "enzyme": "Enzyme",
+        "fullRangeBegin": "Full Range Begin",
+        "fullRangeEnd": "Full Range End",
+        "molecularWeight": "Molecular Weight",
+        "readingFrame": "Reading Frame",
+        "topCutPosition": "Top cut position",
+        "translation": "Translation"
+      },
+      "copyFailed": "Couldn't copy to clipboard. Try again manually.",
+      "copySuccess": "Copied to clipboard",
+      "copyToClipboard": "Copy to Clipboard",
+      "couldNotLoadDnaPreviewImage": "Could not load DNA preview image.",
+      "dialogTitle": "SnapGene",
+      "dnaPreviewAlt": "DNA preview",
+      "dnaPreviewError": "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
+      "enzymeSetOptions": {
+        "commercialNonredundant": "Commercial nonredundant",
+        "sixPlus": "Six plus",
+        "unique": "Unique",
+        "uniqueAndDual": "Unique and dual",
+        "uniqueSixPlus": "Unique six plus"
+      },
+      "enzymeSets": "Enzyme Sets",
+      "enzymeSites": "Enzyme sites",
+      "enzymeTableLabel": "Enzyme table",
+      "enzymeTypeLabel": "Enzyme type",
+      "imageType": "Image type",
+      "linear": "Linear",
+      "linearChoiceLabel": "Linear choice",
+      "openReadingFrames": "Open Reading Frames",
+      "orfTable": "ORF table",
+      "readingFrames": {
+        "all": "All",
+        "firstForward": "First forward",
+        "firstReverse": "First reverse",
+        "forward": "Forward",
+        "label": "Reading frame",
+        "reverse": "Reverse"
+      },
+      "reset": "Reset",
+      "showEnzymes": "Show enzymes",
+      "showORFs": "Show ORFs",
+      "showRestrictionSites": "Show restriction sites",
+      "tabDnaPreview": "DNA preview",
+      "viewAsFasta": "View as FASTA",
+      "zoomControlsLabel": "Zoom controls"
+    }
+  },
   "toolbar": {
     "advancedSearch": {
       "addCondition": "Add new condition",

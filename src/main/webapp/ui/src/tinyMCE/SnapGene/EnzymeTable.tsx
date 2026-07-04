@@ -23,23 +23,23 @@ declare const RS: any;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function EnzymeTable(props: any) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   const enzymeSetOptions = {
-    UNIQUE_SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.uniqueSixPlus"),
-    UNIQUE: t("tinyMce.snapGene.enzymeSetOptions.unique"),
-    SIX_PLUS: t("tinyMce.snapGene.enzymeSetOptions.sixPlus"),
-    UNIQUE_AND_DUAL: t("tinyMce.snapGene.enzymeSetOptions.uniqueAndDual"),
-    COMMERCIAL_NONREDUNDANT: t("tinyMce.snapGene.enzymeSetOptions.commercialNonredundant"),
+    UNIQUE_SIX_PLUS: t("tinymce.snapGene.enzymeSetOptions.uniqueSixPlus"),
+    UNIQUE: t("tinymce.snapGene.enzymeSetOptions.unique"),
+    SIX_PLUS: t("tinymce.snapGene.enzymeSetOptions.sixPlus"),
+    UNIQUE_AND_DUAL: t("tinymce.snapGene.enzymeSetOptions.uniqueAndDual"),
+    COMMERCIAL_NONREDUNDANT: t("tinymce.snapGene.enzymeSetOptions.commercialNonredundant"),
   };
   const headCells = [
-    { id: "name", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.enzyme") },
+    { id: "name", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.enzyme") },
     {
       id: "bottomCutPosition",
       numeric: true,
       disablePadding: false,
-      label: t("tinyMce.snapGene.columns.bottomCutPosition"),
+      label: t("tinymce.snapGene.columns.bottomCutPosition"),
     },
-    { id: "topCutPosition", numeric: true, disablePadding: false, label: t("tinyMce.snapGene.columns.topCutPosition") },
+    { id: "topCutPosition", numeric: true, disablePadding: false, label: t("tinymce.snapGene.columns.topCutPosition") },
   ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
@@ -130,7 +130,7 @@ export default function EnzymeTable(props: any) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.enzymeTableLabel")}>
+              <Table stickyHeader size="small" aria-label={t("tinymce.snapGene.enzymeTableLabel")}>
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
@@ -177,10 +177,10 @@ export default function EnzymeTable(props: any) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            {t("tinyMce.snapGene.enzymeSets")}
+            {t("tinymce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.enzymeTypeLabel")}
+            aria-label={t("tinymce.snapGene.enzymeTypeLabel")}
             name="enzymeSet"
             value={enzymeSet}
             onChange={(event) => handleChange(event.target.value)}

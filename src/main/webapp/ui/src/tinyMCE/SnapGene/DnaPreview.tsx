@@ -33,7 +33,7 @@ type DnaPreviewState = {
  * Preview pane for SnapGene DNA images.
  */
 export default function DnaPreview(props: DnaPreviewProps) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   const { clicked, id, setDisabled } = props;
   const [state, setState] = React.useState<DnaPreviewState>({
     linear: false,
@@ -65,7 +65,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
   }, [appliedState, setDisabled, state]);
 
   const onImageError = () => {
-    RS.confirm(t("tinyMce.snapGene.dnaPreviewError"), "warning", "infinite");
+    RS.confirm(t("tinymce.snapGene.dnaPreviewError"), "warning", "infinite");
     setLoadedImage(image);
   };
 
@@ -96,16 +96,16 @@ export default function DnaPreview(props: DnaPreviewProps) {
                   zIndex: 100,
                 }}
                 size="small"
-                aria-label={t("tinyMce.snapGene.zoomControlsLabel")}
+                aria-label={t("tinymce.snapGene.zoomControlsLabel")}
               >
                 <Button onClick={() => zoomIn()}>{"+"}</Button>
                 <Button onClick={() => zoomOut()}>{"-"}</Button>
-                <Button onClick={() => resetTransform()}>{t("tinyMce.snapGene.reset")}</Button>
+                <Button onClick={() => resetTransform()}>{t("tinymce.snapGene.reset")}</Button>
               </ButtonGroup>
               <TransformComponent wrapperStyle={{ width: "100%" }}>
                 <img
                   src={image}
-                  alt={t("tinyMce.snapGene.dnaPreviewAlt")}
+                  alt={t("tinymce.snapGene.dnaPreviewAlt")}
                   style={{
                     display: "block",
                     maxWidth: "100%",
@@ -125,10 +125,10 @@ export default function DnaPreview(props: DnaPreviewProps) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            {t("tinyMce.snapGene.imageType")}
+            {t("tinymce.snapGene.imageType")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.linearChoiceLabel")}
+            aria-label={t("tinymce.snapGene.linearChoiceLabel")}
             name="linear"
             value={state.linear.toString()}
             onChange={(event) => handleChange(event.target.name as keyof DnaPreviewState, event.target.value)}
@@ -136,13 +136,13 @@ export default function DnaPreview(props: DnaPreviewProps) {
             <FormControlLabel
               value="true"
               control={<Radio color="primary" />}
-              label={t("tinyMce.snapGene.linear")}
+              label={t("tinymce.snapGene.linear")}
               labelPlacement="start"
             />
             <FormControlLabel
               value="false"
               control={<Radio color="primary" />}
-              label={t("tinyMce.snapGene.circular")}
+              label={t("tinymce.snapGene.circular")}
               labelPlacement="start"
             />
           </RadioGroup>
@@ -160,7 +160,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                 color="primary"
               />
             }
-            label={t("tinyMce.snapGene.showEnzymes")}
+            label={t("tinymce.snapGene.showEnzymes")}
             labelPlacement="start"
           />
         </FormControl>
@@ -177,7 +177,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                 color="primary"
               />
             }
-            label={t("tinyMce.snapGene.showORFs")}
+            label={t("tinymce.snapGene.showORFs")}
             labelPlacement="start"
           />
         </FormControl>

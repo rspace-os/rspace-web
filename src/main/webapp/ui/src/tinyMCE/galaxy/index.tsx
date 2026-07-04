@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (domContainer) {
     const root = createRoot(domContainer);
     root.render(
-      <I18nRoot namespaces={["apps", "common"]}>
+      <I18nRoot namespaces={["workspace", "common"]}>
         <Galaxy
           fieldId={parent.tinymce.activeEditor?.id.substring(4)}
           recordId={

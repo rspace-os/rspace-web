@@ -71,7 +71,7 @@ function findSidebarContainer(iframe: HTMLIFrameElement): HTMLElement | null {
 export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   const [items, setItems] = React.useState<SidebarItem[]>([]);
   const [open, setOpen] = React.useState(false);
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
 
   const addItem = useCallback((element: HTMLImageElement): void => {
     if (!element.id) {
@@ -183,7 +183,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
       {items.length > 1 && (
         <Box sx={{ textAlign: "right" }}>
           <Button sx={{ p: "10px" }} onClick={closeAll}>
-            {t("tinyMce.sidebarInfo.closeAll")}
+            {t("tinymce.sidebarInfo.closeAll")}
           </Button>
         </Box>
       )}
@@ -210,7 +210,7 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   const root = sidebarRoots.get(container) ?? createRoot(container);
   sidebarRoots.set(container, root);
   root.render(
-    <I18nRoot namespaces={["apps", "common"]}>
+    <I18nRoot namespaces={["workspace", "common"]}>
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
           <SidebarInfo iframe={iframe} />

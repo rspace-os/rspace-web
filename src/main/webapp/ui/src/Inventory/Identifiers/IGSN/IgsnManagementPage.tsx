@@ -81,12 +81,7 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                <TransRichText
-                  i18nKey="inventory:igsnManagement.registerDescription"
-                  components={{
-                    cite: <cite />,
-                  }}
-                />
+                <TransRichText i18nKey="inventory:igsnManagement.registerDescription" />
               </Typography>
               <Typography>{t("igsnManagement.bulkRegister.summary")}</Typography>
               <Button
@@ -154,13 +149,7 @@ export default function IgsnManagementPage({
               }}
             >
               <Typography>
-                <TransRichText
-                  i18nKey="inventory:igsnManagement.manageDescription"
-                  components={{
-                    cite: <cite />,
-                    strong: <strong />,
-                  }}
-                />
+                <TransRichText i18nKey="inventory:igsnManagement.manageDescription" />
               </Typography>
               <Box
                 sx={{

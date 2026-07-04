@@ -34,8 +34,8 @@
     "subjects": "Subjects"
   },
   "images": {
-    "igsnLogoAlt": "IGSN Logo",
-    "institutionLogoAlt": "Institution Logo"
+    "igsnLogo": "IGSN Logo",
+    "institutionLogo": "Institution Logo"
   },
   "labels": {
     "alternateIdentifiers": "alternate identifiers",

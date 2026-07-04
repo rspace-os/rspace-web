@@ -138,7 +138,7 @@ export default function ChemCard(props: ChemCardProps) {
   const chemId = props.item.id !== undefined ? Number.parseInt(props.item.id, 10) : Number.NaN;
   const additionalMetadata = getAdditionalMetadata(chem.additionalMetadata);
   const inlineHeight = Number(props.height) < 200 ? "200px" : `${Number.parseInt(String(props.height), 10) + 6}px`;
-  const { t } = useTranslation(["apps", "common"]);
+  const { t } = useTranslation(["workspace", "common"]);
 
   // fetch chem details
   useEffect(() => {
@@ -170,21 +170,21 @@ export default function ChemCard(props: ChemCardProps) {
       label: React.ReactNode;
       value: React.ReactNode;
     }> = [
-      { label: t("tinyMce.chemCard.formula"), value: renderFormattedFormula(chemical.formula) },
-      { label: t("tinyMce.chemCard.mass"), value: chemical.mass },
+      { label: t("tinymce.chemCard.formula"), value: renderFormattedFormula(chemical.formula) },
+      { label: t("tinymce.chemCard.mass"), value: chemical.mass },
       // Monoisotopic mass symbol = Exact mass
       {
         label: (
           <>
             {"M"}
-            <sub>{t("tinyMce.chemCard.monoisotopicMassSubscript")}</sub>
+            <sub>{t("tinymce.chemCard.monoisotopicMassSubscript")}</sub>
           </>
         ),
         value: chemical.exactMass,
       },
-      { label: t("tinyMce.chemCard.charge"), value: chemical.formalCharge },
-      { label: t("tinyMce.chemCard.bonds"), value: chemical.bondCount },
-      { label: t("tinyMce.chemCard.atoms"), value: chemical.atomCount },
+      { label: t("tinymce.chemCard.charge"), value: chemical.formalCharge },
+      { label: t("tinymce.chemCard.bonds"), value: chemical.bondCount },
+      { label: t("tinymce.chemCard.atoms"), value: chemical.atomCount },
     ];
 
     return (
@@ -195,7 +195,7 @@ export default function ChemCard(props: ChemCardProps) {
             {chemical.role}
           </TableCell>
         </TableRow>
-        {chemical.name !== "" && <PropertyRow label={t("tinyMce.chemCard.name")} value={chemical.name} />}
+        {chemical.name !== "" && <PropertyRow label={t("tinymce.chemCard.name")} value={chemical.name} />}
         {properties.map((property, index) => (
           <PropertyRow key={`${keyPrefix}-prop-${index}`} label={property.label} value={property.value} />
         ))}
@@ -250,7 +250,7 @@ export default function ChemCard(props: ChemCardProps) {
                 height: "auto",
               }}
               src={props.item.imageSrc}
-              alt={t("tinyMce.chemCard.structureAlt")}
+              alt={t("tinymce.chemCard.structureAlt")}
               height="48px"
             />
           }
@@ -281,7 +281,7 @@ export default function ChemCard(props: ChemCardProps) {
         >
           <TableBody>
             {chem.reaction && (
-              <PropertyRow label={t("tinyMce.chemCard.formula")} value={renderFormattedFormula(chem.formula)} />
+              <PropertyRow label={t("tinymce.chemCard.formula")} value={renderFormattedFormula(chem.formula)} />
             )}
             {chem.reactants.map((r) => chemInfoTable(r))}
             {chem.products.map((p) => chemInfoTable(p))}

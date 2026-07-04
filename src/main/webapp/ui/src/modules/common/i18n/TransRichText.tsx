@@ -9,6 +9,7 @@ export type RichTextComponents = Record<string, React.ReactElement>;
 const muiRichTextComponents: RichTextComponents = {
   a: createElement(Link),
   br: <br />,
+  cite: <cite />,
   code: <code />,
   kbd: <Typography component="kbd" variant="button" />,
   li: <li />,

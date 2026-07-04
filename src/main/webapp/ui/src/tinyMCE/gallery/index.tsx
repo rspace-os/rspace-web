@@ -116,7 +116,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   // Add a button to the toolbar
   editor.ui.registry.addButton("btnMediaGallery", {
-    tooltip: i18n.t("gallery:tinyMce.insertFromGallery"),
+    tooltip: i18n.t("workspace:tinymce.gallery.insertFromGallery"),
     icon: "image",
     //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
@@ -124,7 +124,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   // Adds a menu item to the insert menu
   editor.ui.registry.addMenuItem("optMediaGallery", {
-    text: i18n.t("gallery:tinyMce.fromGallery"),
+    text: i18n.t("workspace:tinymce.gallery.fromGallery"),
     icon: "image",
     //shortcut: 'ctrl+shift+1',
     onAction: openGalleryAction,
@@ -133,7 +133,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
   // Adds an option to the slash-menu
   if (!window.insertActions) window.insertActions = new Map();
   window.insertActions.set("optMediaGallery", {
-    text: i18n.t("gallery:tinyMce.fromGallery"),
+    text: i18n.t("workspace:tinymce.gallery.fromGallery"),
     icon: "image",
     action: openGalleryAction,
   });
@@ -142,7 +142,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
 
   return {
     getMetadata: () => ({
-      name: i18n.t("gallery:tinyMce.pluginName"),
+      name: i18n.t("workspace:tinymce.gallery.pluginName"),
       url: "https://www.researchspace.com/",
     }),
   };

@@ -23,30 +23,30 @@ declare const RS: any;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OrfTable(props: any) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   const readingFrameOptions = {
-    ALL: { label: t("tinyMce.snapGene.readingFrames.all"), filter: [-3, -2, -1, 1, 2, 3] },
-    FORWARD: { label: t("tinyMce.snapGene.readingFrames.forward"), filter: [1, 2, 3] },
-    REVERSE: { label: t("tinyMce.snapGene.readingFrames.reverse"), filter: [-1, -2, -3] },
-    FIRST_FORWARD: { label: t("tinyMce.snapGene.readingFrames.firstForward"), filter: [1] },
-    FIRST_REVERSE: { label: t("tinyMce.snapGene.readingFrames.firstReverse"), filter: [-1] },
+    ALL: { label: t("tinymce.snapGene.readingFrames.all"), filter: [-3, -2, -1, 1, 2, 3] },
+    FORWARD: { label: t("tinymce.snapGene.readingFrames.forward"), filter: [1, 2, 3] },
+    REVERSE: { label: t("tinymce.snapGene.readingFrames.reverse"), filter: [-1, -2, -3] },
+    FIRST_FORWARD: { label: t("tinymce.snapGene.readingFrames.firstForward"), filter: [1] },
+    FIRST_REVERSE: { label: t("tinymce.snapGene.readingFrames.firstReverse"), filter: [-1] },
   };
   const headCells = [
     {
       id: "fullRangeBegin",
       numeric: false,
       disablePadding: false,
-      label: t("tinyMce.snapGene.columns.fullRangeBegin"),
+      label: t("tinymce.snapGene.columns.fullRangeBegin"),
     },
-    { id: "fullRangeEnd", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.fullRangeEnd") },
+    { id: "fullRangeEnd", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.fullRangeEnd") },
     {
       id: "molecularWeight",
       numeric: false,
       disablePadding: false,
-      label: t("tinyMce.snapGene.columns.molecularWeight"),
+      label: t("tinymce.snapGene.columns.molecularWeight"),
     },
-    { id: "readingFrame", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.readingFrame") },
-    { id: "translation", numeric: false, disablePadding: false, label: t("tinyMce.snapGene.columns.translation") },
+    { id: "readingFrame", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.readingFrame") },
+    { id: "translation", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.translation") },
   ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
@@ -137,7 +137,7 @@ export default function OrfTable(props: any) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table stickyHeader size="small" aria-label={t("tinyMce.snapGene.orfTable")}>
+              <Table stickyHeader size="small" aria-label={t("tinymce.snapGene.orfTable")}>
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
@@ -182,10 +182,10 @@ export default function OrfTable(props: any) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            {t("tinyMce.snapGene.openReadingFrames")}
+            {t("tinymce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
-            aria-label={t("tinyMce.snapGene.readingFrames.label")}
+            aria-label={t("tinymce.snapGene.readingFrames.label")}
             name="enzymeSet"
             value={readingFrameOption}
             onChange={(event) => handleChange(event.target.value)}

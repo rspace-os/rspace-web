@@ -1250,8 +1250,7 @@
     },
     "browserTitle": "Import CSV | RSpace Inventory",
     "cannotImport": {
-      "message": "Some csv documents cannot be imported: check Settings in the",
-      "tabSuffix": "{count, plural, one {tab.} other {tabs.}}"
+      "message": "Some csv documents cannot be imported: check Settings in the affected {count, plural, one {tab} other {tabs}}:"
     },
     "columnMapping": {
       "columns": {
@@ -2151,11 +2150,5 @@
       "helpTitle": "Info on updating samples to latest template version.",
       "title": "Update all samples to latest template version?"
     }
-  },
-  "tinyMceIdentifiers": {
-    "dialogTitle": "Insert Barcodes Table",
-    "insertBarcodeTable": "Insert Barcode Table",
-    "instructions": "Select from newly registered IGSN IDs or those already with linked items, and insert a table into your document, each with a QR code.",
-    "pageTitle": "Inventory Identifiers"
   }
 }

@@ -90,7 +90,7 @@ describe("Galaxy Upload Data tests", () => {
         name: "galaxy eu server",
       });
       const columnHeadings = await screen.findAllByRole("columnheader");
-      expect(columnHeadings[1]).toHaveTextContent("apps:tinyMce.galaxy.columns.file");
+      expect(columnHeadings[1]).toHaveTextContent("workspace:tinymce.galaxy.columns.file");
     });
     test("displays attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
@@ -144,7 +144,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("apps:tinyMce.galaxy.historyViewedHere")).toBeInTheDocument();
+      expect(await screen.findByText("workspace:tinymce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(
         await screen.findByRole("link", { name: "RSPACE_Untitled document_SD375v4_Data_FD229379_1" }),
       ).toHaveAttribute("href", "https://usegalaxy.org/histories/view?id=f8e722da311b8793");
@@ -156,7 +156,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("apps:tinyMce.galaxy.historyViewedHere")).toBeInTheDocument();
+      expect(await screen.findByText("workspace:tinymce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "uploading-complete" }, "*");
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "enableClose" }, "*");
     });

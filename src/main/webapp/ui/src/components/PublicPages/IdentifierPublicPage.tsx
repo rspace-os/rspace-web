@@ -202,8 +202,8 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         >
           <img
             src={INSTITUTION_LOGO_ADDRESS}
-            alt={t("images.institutionLogoAlt")}
-            title={t("images.institutionLogoAlt")}
+            alt={t("images.institutionLogo")}
+            title={t("images.institutionLogo")}
             style={{ maxHeight: "78px", maxWidth: "255px" }}
           />
         </Grid>
@@ -249,8 +249,8 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
               <a href={IGSN_BASE_URL} title={t("links.igsnHomepage")} target="_blank" rel="noreferrer">
                 <img
                   src={IGSNlogo}
-                  alt={t("images.igsnLogoAlt")}
-                  title={t("images.igsnLogoAlt")}
+                  alt={t("images.igsnLogo")}
+                  title={t("images.igsnLogo")}
                   style={{ padding: "0 4px", width: "70px" }}
                 />
               </a>

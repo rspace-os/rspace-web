@@ -407,12 +407,6 @@
     "noContent": "No content available",
     "title": "Snippet Preview: {name}"
   },
-  "tinyMce": {
-    "fromGallery": "From Gallery",
-    "insertFromGallery": "Insert from Gallery",
-    "insertSnippetFailed": "An error occurred while inserting the snippet {id}",
-    "pluginName": "Gallery"
-  },
   "treeView": {
     "filesLabel": "tree view of files",
     "noFolders": "There are no folders.",

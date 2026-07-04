@@ -37,7 +37,7 @@ export type RSpaceErrorResponse = {
 export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   (parent as any).tinymce.activeEditor?.on("galaxy-used", () => {
     setDoUpload(true);
@@ -220,9 +220,9 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
       <ThemeProvider theme={materialTheme}>
         <HeadingContext level={3}>
           {historyId && (
-            <TitledBox title={t("tinyMce.galaxy.viewWorkflowTitle")} border>
+            <TitledBox title={t("tinymce.galaxy.viewWorkflowTitle")} border>
               <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-                <p>{t("tinyMce.galaxy.historyViewedHere")} </p>
+                <p>{t("tinymce.galaxy.historyViewedHere")} </p>
                 <p>
                   <a
                     href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
@@ -231,29 +231,29 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   >
                     {historyName}
                   </a>{" "}
-                  {t("tinyMce.galaxy.opensInNewTab")}{" "}
+                  {t("tinymce.galaxy.opensInNewTab")}{" "}
                 </p>
                 <p>
-                  <strong> {t("tinyMce.galaxy.annotationMetadata")}</strong>
+                  <strong> {t("tinymce.galaxy.annotationMetadata")}</strong>
                 </p>
                 <p>
-                  <strong> {t("tinyMce.galaxy.workflowIconNote")}</strong>
+                  <strong> {t("tinymce.galaxy.workflowIconNote")}</strong>
                 </p>
               </Stack>
             </TitledBox>
           )}
           {!historyId && (
             <>
-              <TitledBox title={t("tinyMce.galaxy.chooseDataTitle")} border>
+              <TitledBox title={t("tinymce.galaxy.chooseDataTitle")} border>
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
-                      <label htmlFor="serverChoice">{t("tinyMce.galaxy.chooseGalaxyServer")}</label>
+                      <label htmlFor="serverChoice">{t("tinymce.galaxy.chooseGalaxyServer")}</label>
                       <RadioGroup
                         id="serverChoice"
                         row
-                        aria-label={t("tinyMce.galaxy.chooseGalaxyServer")}
-                        name={t("tinyMce.galaxy.chooseGalaxyServer")}
+                        aria-label={t("tinymce.galaxy.chooseGalaxyServer")}
+                        name={t("tinymce.galaxy.chooseGalaxyServer")}
                         defaultValue={targetAlias}
                         value={targetAlias}
                         onChange={handleDataTypeChange}
@@ -270,22 +270,22 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       </RadioGroup>
                     </>
                   )}
-                  <p>{t("tinyMce.galaxy.chooseAttachedFiles")}</p>
-                  {t("tinyMce.galaxy.allSelectedFilesCombined")}
+                  <p>{t("tinymce.galaxy.chooseAttachedFiles")}</p>
+                  {t("tinymce.galaxy.allSelectedFilesCombined")}
                   <p>
-                    <strong>{t("tinyMce.galaxy.datasetNameFormat")}</strong>
+                    <strong>{t("tinymce.galaxy.datasetNameFormat")}</strong>
                   </p>
-                  {t("tinyMce.galaxy.uploadToGalaxyNote")}
+                  {t("tinymce.galaxy.uploadToGalaxyNote")}
                   <p>
-                    <strong>{t("tinyMce.galaxy.rspaceWillStoreDetails")}</strong>
+                    <strong>{t("tinymce.galaxy.rspaceWillStoreDetails")}</strong>
                   </p>
                   {errorMessage && (
                     <ErrorView errorReason={errorReason} errorMessage={errorMessage} WorkFlowIcon={WorkFlowIcon} />
                   )}
                   <Modal
                     open={uploading}
-                    aria-label={t("tinyMce.galaxy.uploadInProgressLabel")}
-                    title={t("tinyMce.galaxy.uploadInProgressTitle")}
+                    aria-label={t("tinymce.galaxy.uploadInProgressLabel")}
+                    title={t("tinymce.galaxy.uploadInProgressTitle")}
                   >
                     <Grid
                       container
@@ -315,7 +315,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>("html", {
                     maxWidth: 370,
-                    headerName: t("tinyMce.galaxy.columns.file"),
+                    headerName: t("tinymce.galaxy.columns.file"),
                     flex: 1,
                     sortable: false,
                     renderCell: ({ row }) => (

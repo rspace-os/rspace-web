@@ -46,7 +46,7 @@ export default function ResultsTable({
   setSelectedBookingIds: (newSelection: Array<BookingAndEquipmentDetails["bookingID"]>) => void;
   bookingType: string;
 }) {
-  const { t } = useTranslation("apps");
+  const { t } = useTranslation("workspace");
   function onRowClick(_event: unknown, item_id: BookingAndEquipmentDetails["bookingID"]) {
     const newSelected = selectedBookingIds.includes(item_id)
       ? selectedBookingIds.filter((id) => id !== item_id)
@@ -67,7 +67,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label={t("tinyMce.clustermarket.tableLabel")}>
+        <Table aria-label={t("tinymce.clustermarket.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -170,7 +170,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          {t("tinyMce.clustermarket.selectedCount", { count: selectedBookingIds.length })}
+          {t("tinymce.clustermarket.selectedCount", { count: selectedBookingIds.length })}
         </Typography>
       </Box>
     </>
