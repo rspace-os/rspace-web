@@ -94,7 +94,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
         usageText={t("integrations.nextCloud.usage")}
         helpLinkText={t("integrations.nextCloud.helpLink")}
         website="https://nextcloud.com"
-        docLink="na3hn8ilee-nextcloud-integration"
+        docLink="nextcloud"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.nextCloud.setup.instructions" />

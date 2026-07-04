@@ -486,10 +486,7 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
       >
         <DialogTitle>
           <TransRichText i18nKey="inventory:contextMenu.createDialog.title" values={{ name: existingRecord.name }} />
-          <HelpLinkIcon
-            link={helpDocsArticleUrl("x4y02hje72-edit-a-sample-or-container#create")}
-            title={t("contextMenu.createDialog.helpTitle")}
-          />
+          <HelpLinkIcon link={helpDocsArticleUrl("createDialog")} title={t("contextMenu.createDialog.helpTitle")} />
         </DialogTitle>
         <DialogContent>
           {loading ? (

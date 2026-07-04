@@ -57,7 +57,7 @@ function Galaxy({ integrationState, update }: GalaxyArgs): React.ReactNode {
         usageText={t("integrations.galaxy.usage")}
         helpLinkText={t("integrations.galaxy.helpLink")}
         website="https://galaxyproject.org"
-        docLink="zzsl46jo5y-galaxy-integration"
+        docLink="galaxy"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.galaxy.setup.instructions" />

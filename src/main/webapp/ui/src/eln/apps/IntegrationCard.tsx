@@ -22,7 +22,7 @@ import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
 import { Dialog } from "../../components/DialogBoundary";
-import TransRichText from "../../modules/common/i18n/TransRichText";
+import TransRichText, { type HelpDocsArticle } from "../../modules/common/i18n/TransRichText";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
@@ -71,9 +71,8 @@ type IntegrationCardArgs<Credentials> = {
   // Describe the behaviour of RSpace when the integration is enabled.
   usageText: React.ReactNode;
 
-  // The helpdocs article slug for this integration's user-facing documentation.
-  // Include any #anchor fragment directly in the slug when linking to a section.
-  docLink: string;
+  // The common:help key for this integration's user-facing documentation.
+  docLink: HelpDocsArticle;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in

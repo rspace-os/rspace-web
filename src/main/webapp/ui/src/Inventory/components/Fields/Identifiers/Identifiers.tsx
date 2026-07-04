@@ -456,13 +456,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a
-                href={helpDocsArticleUrl(
-                  "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-                )}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={helpDocsArticleUrl("igsnIdentifiers")} target="_blank" rel="noreferrer">
                 {t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>

@@ -94,7 +94,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
         usageText={t("integrations.figshare.usage")}
         helpLinkText={t("integrations.figshare.helpLink")}
         website="https://figshare.com"
-        docLink="ir4ybsamcn-figshare-integration"
+        docLink="figshare"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.figshare.setup.instructions" />

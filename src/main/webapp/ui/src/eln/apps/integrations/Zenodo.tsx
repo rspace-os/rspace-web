@@ -43,7 +43,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
         usageText={t("integrations.zenodo.usage")}
         helpLinkText={t("integrations.zenodo.helpLink")}
         website="https://zenodo.org"
-        docLink="8i37k8kjqz-zenodo-integration"
+        docLink="zenodo"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.zenodo.setup.instructions" />

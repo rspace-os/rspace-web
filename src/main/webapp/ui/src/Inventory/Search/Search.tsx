@@ -33,7 +33,7 @@ function MainSearch({
         <Box sx={{ flexGrow: 1 }}>
           <Searchbar handleSearch={handleSearch} />
         </Box>
-        <HelpLinkIcon link={helpDocsArticleUrl("e0fngo8a5s-search-inventory")} title={t("search.helpTitle")} />
+        <HelpLinkIcon link={helpDocsArticleUrl("search")} title={t("search.helpTitle")} />
         {size === "small" && <SearchDisplayControls TABS={TABS} />}
         {Boolean(searchbarAdornment) && searchbarAdornment}
       </Stack>

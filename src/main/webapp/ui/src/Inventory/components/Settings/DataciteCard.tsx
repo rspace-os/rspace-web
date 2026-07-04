@@ -74,12 +74,7 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
         <FormControl>
           <FormLabel>
             {t("settings.datacite.formLabel")}
-            <HelpLinkIcon
-              link={helpDocsArticleUrl(
-                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-              )}
-              title={t("settings.datacite.helpTitle")}
-            />
+            <HelpLinkIcon link={helpDocsArticleUrl("igsnIdentifiers")} title={t("settings.datacite.helpTitle")} />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
             <TransRichText i18nKey="inventory:settings.datacite.formHelperText" />

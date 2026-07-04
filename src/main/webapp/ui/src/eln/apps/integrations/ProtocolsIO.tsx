@@ -94,7 +94,7 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
         usageText={t("integrations.protocolsIo.usage")}
         helpLinkText={t("integrations.protocolsIo.helpLink")}
         website="https://protocols.io"
-        docLink="nid9q64pas-protocols-io-integration"
+        docLink="protocolsio"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.protocolsIo.setup.instructions" />

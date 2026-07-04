@@ -60,7 +60,7 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
         usageText={t("integrations.msteams.usage")}
         helpLinkText={t("integrations.msteams.helpLink")}
         website="https://teams.microsoft.com"
-        docLink="i95u9itfgu-microsoft-teams-integration"
+        docLink="teams"
         setupSection={
           <>
             <Typography variant="body2">

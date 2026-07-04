@@ -36,7 +36,7 @@ function Evernote({ integrationState, update }: EvernoteArgs): React.ReactNode {
         usageText={t("integrations.evernote.usage")}
         helpLinkText={t("integrations.evernote.helpLink")}
         website="https://evernote.com"
-        docLink="9ckpmfdq8m-evernote-integration"
+        docLink="evernote"
         setupSection={<TransRichText i18nKey="apps:integrations.evernote.setup.instructions" />}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
       />

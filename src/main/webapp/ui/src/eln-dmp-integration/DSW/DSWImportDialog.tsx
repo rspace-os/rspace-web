@@ -199,7 +199,7 @@ function DSWImportDialogContent({
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("6adimrmy9m-dsw-fair-wizard-integration"),
+          docLink: helpDocsArticleUrl("dsw"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dsw") }),
         }}
       />

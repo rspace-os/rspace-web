@@ -396,7 +396,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("vkd8mt2ffb-argos-integration"),
+          docLink: helpDocsArticleUrl("argos"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.argos") }),
         }}
       />

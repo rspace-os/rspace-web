@@ -134,7 +134,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
         }
         helpLinkText={t("integrations.box.helpLink")}
         website="https://box.com"
-        docLink="j2z5f5r90q-cloud-storage-integrations"
+        docLink="cloudstorage"
       />
     </Grid>
   );

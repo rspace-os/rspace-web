@@ -27,7 +27,7 @@ function ApiDirect(): React.ReactNode {
         usageText={t("integrations.apiDirect.usage")}
         helpLinkText={t("integrations.apiDirect.helpLink")}
         website="/public/apiDocs"
-        docLink="v0dxtfvj7u-api-direct-access"
+        docLink="apiDirect"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.apiDirect.setup.instructions" />

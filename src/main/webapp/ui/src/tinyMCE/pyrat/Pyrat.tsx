@@ -535,7 +535,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         variant="dialog"
         currentPage="PyRAT"
         helpPage={{
-          docLink: helpDocsArticleUrl("9kkeooveia-pyrat-integration"),
+          docLink: helpDocsArticleUrl("pyrat"),
           title: t("workspace:tinymce.pyrat.helpTitle"),
         }}
         accessibilityTips={{}}

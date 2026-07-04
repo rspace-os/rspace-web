@@ -35,7 +35,7 @@ function Chemistry({ integrationState, update }: ChemistryArgs): React.ReactNode
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText={t("integrations.chemistry.usage")}
         helpLinkText={t("integrations.chemistry.helpLink")}
-        docLink="wfxm4xwtio-chemistry-integration"
+        docLink="chemistry"
         setupSection={<TransRichText i18nKey="apps:integrations.chemistry.setup.instructions" />}
       />
     </Grid>

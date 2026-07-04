@@ -40,7 +40,7 @@ function LeftPanel(_: LeftPanelArgs) {
           header={
             <Typography variant="h6" component="h3">
               {t("moveToTarget.pickDestination")}{" "}
-              <HelpLinkIcon link={helpDocsArticleUrl("dncoti2i4t-moving-items")} title={t("moveToTarget.helpTitle")} />
+              <HelpLinkIcon link={helpDocsArticleUrl("moving")} title={t("moveToTarget.helpTitle")} />
             </Typography>
           }
           selectionHelpText={selectionHelpText()}

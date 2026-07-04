@@ -121,7 +121,7 @@ export function AboutRSpaceContent(): React.ReactElement {
             <Link href="https://researchspace.com" target="_blank" rel="noreferrer">
               {t("links.website")}
             </Link>
-            <Link href={helpDocsArticleUrl("mx11qvqg0i-changelog")} target="_blank" rel="noreferrer">
+            <Link href={helpDocsArticleUrl("changelog")} target="_blank" rel="noreferrer">
               {t("links.changelog")}
             </Link>
             <Link href="https://github.com/rspace-os" target="_blank" rel="noreferrer">

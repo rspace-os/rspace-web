@@ -12,7 +12,7 @@
   "dmpIntegrations": {
     "argos": "Argos",
     "dialog": {
-      "argosDocsLink": "See <externalLink href=\"https://argos.openaire.eu\">argos.openaire.eu</externalLink> and our <helpDocs slug=\"vkd8mt2ffb-argos-integration\">Argos integration docs</helpDocs> for more.",
+      "argosDocsLink": "See <externalLink href=\"https://argos.openaire.eu\">argos.openaire.eu</externalLink> and our <helpDocs docLink=\"argos\">Argos integration docs</helpDocs> for more.",
       "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
       "columns": {
         "contactAffiliation": "Contact Affiliation",
@@ -30,12 +30,12 @@
         "title": "Title",
         "updatedAt": "Updated At"
       },
-      "dmpassistantDocsLink": "See <externalLink href=\"https://dmp-pgd.ca\">dmp-pgd.ca</externalLink> and our <helpDocs slug=\"n88a3g86e0-dmp-assistant-integration\">DMP Assistant integration docs</helpDocs> for more.",
+      "dmpassistantDocsLink": "See <externalLink href=\"https://dmp-pgd.ca\">dmp-pgd.ca</externalLink> and our <helpDocs docLink=\"dmpassistant\">DMP Assistant integration docs</helpDocs> for more.",
       "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
-      "dmponlineDocsLink": "See <externalLink href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</externalLink> and our <helpDocs slug=\"pd84qoylzy-dmponline-integration\">DMPonline integration docs</helpDocs> for more.",
+      "dmponlineDocsLink": "See <externalLink href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</externalLink> and our <helpDocs docLink=\"dmponline\">DMPonline integration docs</helpDocs> for more.",
       "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-      "dmptoolImportDescAndDocsLink": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace. See <externalLink href=\"https://dmptool.org\">dmptool.org</externalLink> and our <helpDocs slug=\"o0wlhlgxnr-dmptool-integration\">DMPTool integration docs</helpDocs> for more.",
-      "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <externalLink href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</externalLink> and our <helpDocs slug=\"6adimrmy9m-dsw-fair-wizard-integration\">DSW / FAIR Wizard integration docs</helpDocs> for more.",
+      "dmptoolImportDescAndDocsLink": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace. See <externalLink href=\"https://dmptool.org\">dmptool.org</externalLink> and our <helpDocs docLink=\"dmptool\">DMPTool integration docs</helpDocs> for more.",
+      "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <externalLink href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</externalLink> and our <helpDocs docLink=\"dsw\">DSW / FAIR Wizard integration docs</helpDocs> for more.",
       "error": {
         "couldNotGet": "Could not get DMPs: {message}",
         "couldNotImport": "Could not import DMP",
@@ -44,9 +44,9 @@
         "loadFailed": "Failed to load listing of DMPs. Please try refreshing.",
         "unableToLoad": "Unable to load DMPs.",
         "unableToLoadProjects": "Unable to load projects.",
-        "unableToLoadProjectsMessage": "<errorMsg/><br/>For more information <helpDocs slug=\"6adimrmy9m-dsw-fair-wizard-integration\">visit our docs</helpDocs>."
+        "unableToLoadProjectsMessage": "<errorMsg/><br/>For more information <helpDocs docLink=\"dsw\">visit our docs</helpDocs>."
       },
-      "forMoreInfo": "For more information <helpDocs slug=\"o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace\">visit our docs</helpDocs>.",
+      "forMoreInfo": "For more information <helpDocs docLink=\"dmptoolImportingDmps\">visit our docs</helpDocs>.",
       "helpTitle": "{name} help",
       "importButton": "Import{count, plural, =0 {} =1 {} other { (#)}}",
       "importButtonCount": "Import ({count})",
@@ -117,8 +117,8 @@
     "disable": "DISABLE",
     "enable": "ENABLE",
     "moreInfo": {
-      "docsOnly": "See our <helpDocs slug=\"{docLink}\">{helpLinkText}</helpDocs> for more.",
-      "withWebsite": "See our <website>website</website> and our <helpDocs slug=\"{docLink}\">{helpLinkText}</helpDocs> for more."
+      "docsOnly": "See our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more.",
+      "withWebsite": "See our <website>website</website> and our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more."
     },
     "setup": "Setup"
   },
@@ -514,7 +514,7 @@
       "name": "Teams",
       "orElse": "Error getting configured channels.",
       "setup": {
-        "instructions": "The steps to setting up this integration are documented in <helpDocs slug=\"i95u9itfgu-microsoft-teams-integration\">the Microsoft Teams Integration article.</helpDocs>"
+        "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"teams\">the Microsoft Teams Integration article.</helpDocs>"
       },
       "tableHeader": "Channel Connector Name",
       "usage": "You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
@@ -638,9 +638,9 @@
       "noServers": "No authenticated servers.",
       "setup": {
         "configure": "Configure your RAiD service point to enable authentication and project association:",
-        "instructions": "<ol><li>Ask your system administrator to set up RAiD server connections. See <helpDocs slug=\"zb4c2c8a4b-raid-integration\">our documentation for system administrators</helpDocs> for more information.</li><li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li><li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li><li>Start associating RAiDs with your project groups.</li></ol>",
+        "instructions": "<ol><li>Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.</li><li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li><li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li><li>Start associating RAiDs with your project groups.</li></ol>",
         "startAssociating": "Start associating RAiDs with your project groups.",
-        "step1": "Ask your system administrator to set up RAiD server connections. See <helpDocs slug=\"zb4c2c8a4b-raid-integration\">our documentation for system administrators</helpDocs> for more information.",
+        "step1": "Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.",
         "step2": "Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.",
         "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
       },
@@ -672,7 +672,7 @@
       "name": "Slack",
       "orElse": "Error getting configured repositories",
       "setup": {
-        "instructions": "The steps to setting up this integration are documented in <helpDocs slug=\"74r6scvv8g-slack-integration\">the Slack Integration article.</helpDocs>"
+        "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"slack\">the Slack Integration article.</helpDocs>"
       },
       "usage": "You can send messages or forward notifications to your chosen Slack channels. You can also post links to RSpace documents directly into Slack channels or private messages."
     },
@@ -699,7 +699,7 @@
     "updateSuccess": "Update successful."
   },
   "page": {
-    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <helpDocs slug=\"08ky7o0l1y-apps-introduction\">See Apps Introduction to learn more.</helpDocs>",
+    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <helpDocs docLink=\"appsIntroduction\">See Apps Introduction to learn more.</helpDocs>",
     "nothingHere": "Nothing here!",
     "sections": {
       "disabled": {

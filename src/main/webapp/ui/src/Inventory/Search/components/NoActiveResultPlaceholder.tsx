@@ -28,7 +28,7 @@ export default function NoActiveResultPlaceholder(): React.ReactNode {
         </Box>
         <Box sx={{ mb: 2 }}>
           <Link
-            href={helpDocsArticleUrl("tffkwcpizj-getting-started")}
+            href={helpDocsArticleUrl("gettingStarted")}
             target="_blank"
             rel="noreferrer"
             underline="always"

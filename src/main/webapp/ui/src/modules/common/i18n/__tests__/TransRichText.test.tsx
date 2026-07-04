@@ -25,6 +25,9 @@ const TestTrans = Trans as React.ComponentType<{
 
 const richTextResources = {
   common: {
+    help: {
+      centralArticle: "central-article#translated-section",
+    },
     richTextTranslationUrlProbe:
       'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
     richTextComponentUrlProbe:
@@ -37,6 +40,9 @@ const richTextResources = {
     richTextExternalLinkProbe: 'Visit <externalLink href="https://example.com">the example site</externalLink>.',
     richTextHelpDocsProbe:
       'See <helpDocs slug="abc123-some-article#important-section" section="ignored-section">the help article</helpDocs>.',
+    richTextHelpDocsDocLinkProbe: 'See <helpDocs docLink="centralArticle">the central help article</helpDocs>.',
+    richTextInterpolatedHelpDocsDocLinkProbe:
+      'See <helpDocs docLink="{docLink}">the dynamic central help article</helpDocs>.',
     richTextInterpolatedHelpDocsProbe: 'See <helpDocs slug="{slug}">the dynamic help article</helpDocs>.',
     richTextInternalLinkProbe: 'Go to the <internalLink to="/apps">Apps page</internalLink>.',
   },
@@ -142,6 +148,12 @@ describe("TransRichText default vocabulary", () => {
           <TransRichText i18nKey="richTextHelpDocsProbe" />
         </p>
         <p>
+          <TransRichText i18nKey="richTextHelpDocsDocLinkProbe" />
+        </p>
+        <p>
+          <TransRichText i18nKey="richTextInterpolatedHelpDocsDocLinkProbe" values={{ docLink: "centralArticle" }} />
+        </p>
+        <p>
           <TransRichText
             i18nKey="richTextInterpolatedHelpDocsProbe"
             values={{ slug: "abc123-some-article#dynamic-section" }}
@@ -163,6 +175,22 @@ describe("TransRichText default vocabulary", () => {
     );
     expect(helpDocs).toHaveAttribute("target", "_blank");
     expect(helpDocs).toHaveAttribute("rel", "noreferrer");
+
+    const centralHelpDocs = screen.getByRole("link", { name: "the central help article" });
+    expect(centralHelpDocs).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/central-article#translated-section",
+    );
+    expect(centralHelpDocs).toHaveAttribute("target", "_blank");
+    expect(centralHelpDocs).toHaveAttribute("rel", "noreferrer");
+
+    const interpolatedCentralHelpDocs = screen.getByRole("link", { name: "the dynamic central help article" });
+    expect(interpolatedCentralHelpDocs).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/central-article#translated-section",
+    );
+    expect(interpolatedCentralHelpDocs).toHaveAttribute("target", "_blank");
+    expect(interpolatedCentralHelpDocs).toHaveAttribute("rel", "noreferrer");
 
     const dynamicHelpDocs = screen.getByRole("link", { name: "the dynamic help article" });
     expect(dynamicHelpDocs).toHaveAttribute(

@@ -75,9 +75,7 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
           </Grid>
           <Grid>
             <HelpLinkIcon
-              link={helpDocsArticleUrl(
-                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-              )}
+              link={helpDocsArticleUrl("igsnIdentifiers")}
               title={t("fields.identifiers.publicPreviewDialog.helpTitle")}
             />
           </Grid>

@@ -69,7 +69,7 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
         usageText={t("integrations.dmpAssistant.usage")}
         helpLinkText={t("integrations.dmpAssistant.helpLink")}
         website="https://dmp-pgd.ca"
-        docLink="n88a3g86e0-dmp-assistant-integration"
+        docLink="dmpassistant"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.dmpAssistant.setup.instructions" />

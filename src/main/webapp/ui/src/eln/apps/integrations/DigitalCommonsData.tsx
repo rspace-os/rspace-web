@@ -72,7 +72,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.digitalCommonsData.helpLink")}
         website="https://elsevier.digitalcommonsdata.com"
-        docLink="jj6grnzbdl-digital-commons-data-integration"
+        docLink="dcd"
         usageText={t("integrations.digitalCommonsData.usage")}
         setupSection={
           <>

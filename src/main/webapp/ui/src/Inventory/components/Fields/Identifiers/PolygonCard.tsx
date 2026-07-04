@@ -300,9 +300,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
               ? t("fields.identifiers.polygonCard.editorTitle")
               : t("fields.identifiers.polygonCard.configurationTitle")}
             <HelpLinkIcon
-              link={helpDocsArticleUrl(
-                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-              )}
+              link={helpDocsArticleUrl("igsnIdentifiers")}
               title={t("fields.identifiers.polygonCard.helpTitle")}
             />
           </FormLabel>

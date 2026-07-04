@@ -106,7 +106,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("pd84qoylzy-dmponline-integration"),
+          docLink: helpDocsArticleUrl("dmponline"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmponline") }),
         }}
       />

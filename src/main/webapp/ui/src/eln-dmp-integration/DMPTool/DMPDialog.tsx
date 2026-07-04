@@ -184,7 +184,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("o0wlhlgxnr-dmptool-integration"),
+          docLink: helpDocsArticleUrl("dmptool"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmptool") }),
         }}
       />

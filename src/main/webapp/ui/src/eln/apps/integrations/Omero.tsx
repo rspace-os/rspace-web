@@ -70,7 +70,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
         usageText={t("integrations.omero.usage")}
         helpLinkText={t("integrations.omero.helpLink")}
         website="https://openmicroscopy.org/omero"
-        docLink="bwwbpkll90-omero-integration"
+        docLink="omero"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.omero.setup.instructions" />

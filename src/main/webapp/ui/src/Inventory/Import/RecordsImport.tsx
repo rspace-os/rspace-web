@@ -127,7 +127,7 @@ function RecordsImport(): React.ReactNode {
             }}
           >
             <CustomTooltip title={t("import.importDocumentation")} enterDelay={200}>
-              <HelpLinkIcon link={helpDocsArticleUrl("a5zm2c3vtw-import-records")} title={t("import.helpTitle")} />
+              <HelpLinkIcon link={helpDocsArticleUrl("import")} title={t("import.helpTitle")} />
             </CustomTooltip>
           </Box>
         </Box>

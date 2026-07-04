@@ -42,7 +42,7 @@ function Dropbox({ integrationState, update }: DropboxArgs): React.ReactNode {
         usageText={t("integrations.dropbox.usage")}
         helpLinkText={t("integrations.dropbox.helpLink")}
         website="https://dropbox.com"
-        docLink="j2z5f5r90q-cloud-storage-integrations"
+        docLink="cloudstorage"
         setupSection={<TransRichText i18nKey="apps:integrations.dropbox.setup.instructions" />}
       />
     </Grid>

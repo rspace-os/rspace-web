@@ -38,7 +38,7 @@ export default interface Resources {
     "dmpIntegrations": {
       "argos": "Argos",
       "dialog": {
-        "argosDocsLink": "See <externalLink href=\"https://argos.openaire.eu\">argos.openaire.eu</externalLink> and our <helpDocs slug=\"vkd8mt2ffb-argos-integration\">Argos integration docs</helpDocs> for more.",
+        "argosDocsLink": "See <externalLink href=\"https://argos.openaire.eu\">argos.openaire.eu</externalLink> and our <helpDocs docLink=\"argos\">Argos integration docs</helpDocs> for more.",
         "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
         "columns": {
           "contactAffiliation": "Contact Affiliation",
@@ -56,12 +56,12 @@ export default interface Resources {
           "title": "Title",
           "updatedAt": "Updated At"
         },
-        "dmpassistantDocsLink": "See <externalLink href=\"https://dmp-pgd.ca\">dmp-pgd.ca</externalLink> and our <helpDocs slug=\"n88a3g86e0-dmp-assistant-integration\">DMP Assistant integration docs</helpDocs> for more.",
+        "dmpassistantDocsLink": "See <externalLink href=\"https://dmp-pgd.ca\">dmp-pgd.ca</externalLink> and our <helpDocs docLink=\"dmpassistant\">DMP Assistant integration docs</helpDocs> for more.",
         "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
-        "dmponlineDocsLink": "See <externalLink href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</externalLink> and our <helpDocs slug=\"pd84qoylzy-dmponline-integration\">DMPonline integration docs</helpDocs> for more.",
+        "dmponlineDocsLink": "See <externalLink href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</externalLink> and our <helpDocs docLink=\"dmponline\">DMPonline integration docs</helpDocs> for more.",
         "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
-        "dmptoolImportDescAndDocsLink": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace. See <externalLink href=\"https://dmptool.org\">dmptool.org</externalLink> and our <helpDocs slug=\"o0wlhlgxnr-dmptool-integration\">DMPTool integration docs</helpDocs> for more.",
-        "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <externalLink href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</externalLink> and our <helpDocs slug=\"6adimrmy9m-dsw-fair-wizard-integration\">DSW / FAIR Wizard integration docs</helpDocs> for more.",
+        "dmptoolImportDescAndDocsLink": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace. See <externalLink href=\"https://dmptool.org\">dmptool.org</externalLink> and our <helpDocs docLink=\"dmptool\">DMPTool integration docs</helpDocs> for more.",
+        "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <externalLink href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</externalLink> and our <helpDocs docLink=\"dsw\">DSW / FAIR Wizard integration docs</helpDocs> for more.",
         "error": {
           "couldNotGet": "Could not get DMPs: {message}",
           "couldNotImport": "Could not import DMP",
@@ -70,9 +70,9 @@ export default interface Resources {
           "loadFailed": "Failed to load listing of DMPs. Please try refreshing.",
           "unableToLoad": "Unable to load DMPs.",
           "unableToLoadProjects": "Unable to load projects.",
-          "unableToLoadProjectsMessage": "<errorMsg/><br/>For more information <helpDocs slug=\"6adimrmy9m-dsw-fair-wizard-integration\">visit our docs</helpDocs>."
+          "unableToLoadProjectsMessage": "<errorMsg/><br/>For more information <helpDocs docLink=\"dsw\">visit our docs</helpDocs>."
         },
-        "forMoreInfo": "For more information <helpDocs slug=\"o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace\">visit our docs</helpDocs>.",
+        "forMoreInfo": "For more information <helpDocs docLink=\"dmptoolImportingDmps\">visit our docs</helpDocs>.",
         "helpTitle": "{name} help",
         "importButton": "Import{count, plural, =0 {} =1 {} other { (#)}}",
         "importButtonCount": "Import ({count})",
@@ -143,8 +143,8 @@ export default interface Resources {
       "disable": "DISABLE",
       "enable": "ENABLE",
       "moreInfo": {
-        "docsOnly": "See our <helpDocs slug=\"{docLink}\">{helpLinkText}</helpDocs> for more.",
-        "withWebsite": "See our <website>website</website> and our <helpDocs slug=\"{docLink}\">{helpLinkText}</helpDocs> for more."
+        "docsOnly": "See our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more.",
+        "withWebsite": "See our <website>website</website> and our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more."
       },
       "setup": "Setup"
     },
@@ -540,7 +540,7 @@ export default interface Resources {
         "name": "Teams",
         "orElse": "Error getting configured channels.",
         "setup": {
-          "instructions": "The steps to setting up this integration are documented in <helpDocs slug=\"i95u9itfgu-microsoft-teams-integration\">the Microsoft Teams Integration article.</helpDocs>"
+          "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"teams\">the Microsoft Teams Integration article.</helpDocs>"
         },
         "tableHeader": "Channel Connector Name",
         "usage": "You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
@@ -664,9 +664,9 @@ export default interface Resources {
         "noServers": "No authenticated servers.",
         "setup": {
           "configure": "Configure your RAiD service point to enable authentication and project association:",
-          "instructions": "<ol><li>Ask your system administrator to set up RAiD server connections. See <helpDocs slug=\"zb4c2c8a4b-raid-integration\">our documentation for system administrators</helpDocs> for more information.</li><li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li><li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li><li>Start associating RAiDs with your project groups.</li></ol>",
+          "instructions": "<ol><li>Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.</li><li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li><li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li><li>Start associating RAiDs with your project groups.</li></ol>",
           "startAssociating": "Start associating RAiDs with your project groups.",
-          "step1": "Ask your system administrator to set up RAiD server connections. See <helpDocs slug=\"zb4c2c8a4b-raid-integration\">our documentation for system administrators</helpDocs> for more information.",
+          "step1": "Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.",
           "step2": "Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.",
           "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
         },
@@ -698,7 +698,7 @@ export default interface Resources {
         "name": "Slack",
         "orElse": "Error getting configured repositories",
         "setup": {
-          "instructions": "The steps to setting up this integration are documented in <helpDocs slug=\"74r6scvv8g-slack-integration\">the Slack Integration article.</helpDocs>"
+          "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"slack\">the Slack Integration article.</helpDocs>"
         },
         "usage": "You can send messages or forward notifications to your chosen Slack channels. You can also post links to RSpace documents directly into Slack channels or private messages."
       },
@@ -725,7 +725,7 @@ export default interface Resources {
       "updateSuccess": "Update successful."
     },
     "page": {
-      "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <helpDocs slug=\"08ky7o0l1y-apps-introduction\">See Apps Introduction to learn more.</helpDocs>",
+      "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <helpDocs docLink=\"appsIntroduction\">See Apps Introduction to learn more.</helpDocs>",
       "nothingHere": "Nothing here!",
       "sections": {
         "disabled": {
@@ -1001,6 +1001,69 @@ export default interface Resources {
       "principalInvestigators": "Principal Investigators",
       "users": "Users",
       "viewGroup": "View Group"
+    },
+    "help": {
+      "apiDirect": "v0dxtfvj7u-api-direct-access",
+      "appsIntroduction": "08ky7o0l1y-apps-introduction",
+      "argos": "vkd8mt2ffb-argos-integration",
+      "attachments": "ory7fu1uw9-attachments",
+      "barcodes": "nr29uf0fdr-scan-and-use-barcodes",
+      "barcodesPrinting": "nr29uf0fdr-scan-and-use-barcodes#barcode_printing",
+      "changelog": "mx11qvqg0i-changelog",
+      "chemistry": "wfxm4xwtio-chemistry-integration",
+      "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
+      "clustermarket": "e6pb7y8ak1-calira-integration",
+      "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
+      "createContainer": "e5v4bvcl61-create-a-container",
+      "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
+      "createInstrument": "ct15xwb13m-create-an-instrument",
+      "createInstrumentTemplate": "5f0lakn5nl-create-an-instrument-template",
+      "createSample": "gb3r1lgm5g-create-a-sample",
+      "createTemplate": "c8sxesdqpy-create-a-template",
+      "createTemplateFromSample": "c8sxesdqpy-create-a-template#create_a_template_from_a_sample",
+      "dataverse": "h14qd5tvjj-dataverse-integration",
+      "dcd": "jj6grnzbdl-digital-commons-data-integration",
+      "dmpassistant": "n88a3g86e0-dmp-assistant-integration",
+      "dmponline": "pd84qoylzy-dmponline-integration",
+      "dmptool": "o0wlhlgxnr-dmptool-integration",
+      "dmptoolImportingDmps": "o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace",
+      "dryad": "i1xvubndhm-dryad-integration",
+      "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
+      "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
+      "evernote": "9ckpmfdq8m-evernote-integration",
+      "fieldmark": "idbaaggghu-fieldmark-integration",
+      "figshare": "ir4ybsamcn-figshare-integration",
+      "galaxy": "zzsl46jo5y-galaxy-integration",
+      "gallery": "sl6mo1i9do-gallery",
+      "gettingStarted": "tffkwcpizj-getting-started",
+      "github": "y2080yw30x-github-integration",
+      "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+      "import": "a5zm2c3vtw-import-records",
+      "irods": "xt21074dln-irods-integration",
+      "jupyter": "gg0ao0rqpt-jupyter-integration",
+      "listOfMaterials": "cdrc4ed67l-list-of-materials",
+      "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
+      "moving": "dncoti2i4t-moving-items",
+      "nextcloud": "na3hn8ilee-nextcloud-integration",
+      "omero": "bwwbpkll90-omero-integration",
+      "orcid": "yhkbtnj61a-orcid-integration",
+      "owncloud": "v8ss2uso0a-owncloud-integration",
+      "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
+      "permissions": "n09nmg4ax7-permissions",
+      "protocolsio": "nid9q64pas-protocols-io-integration",
+      "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
+      "pyrat": "9kkeooveia-pyrat-integration",
+      "pyratCors": "9kkeooveia-pyrat-integration#cors",
+      "raid": "zb4c2c8a4b-raid-integration",
+      "search": "e0fngo8a5s-search-inventory",
+      "slack": "74r6scvv8g-slack-integration",
+      "taggingUsers": "zw6o5uh4qv-tagging-users",
+      "tags": "8ujmvpa1no-controlled-vocabularies",
+      "teams": "i95u9itfgu-microsoft-teams-integration",
+      "updateAllSamplesOfTemplate": "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
+      "videoIntegration": "cdzdub1ykw-video-integrations",
+      "zebraPrinter": "nr29uf0fdr-scan-and-use-barcodes#using_a_zebra_printer",
+      "zenodo": "8i37k8kjqz-zenodo-integration"
     },
     "helpDocs": {
       "chatWithUs": "Chat with us",
@@ -1333,7 +1396,7 @@ export default interface Resources {
       "apachePage": "Apache page",
       "expandField": "Expand field",
       "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
-      "moreInfo": "For more information, see <helpDocs slug=\"k919di8naq-search-inventory#expert_lucene_query_syntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
+      "moreInfo": "For more information, see <helpDocs docLink=\"luceneSyntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
       "query": "Search query"
     },
     "sections": {
@@ -2339,7 +2402,7 @@ export default interface Resources {
         "zoom": {
           "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
           "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
-          "panelAdjuster": "The <helpDocs slug=\"bt6kx098eq-more-info-sidebar#panel_adjuster\">Panel Adjuster</helpDocs> can also be used to provide more room to fully display the image."
+          "panelAdjuster": "The <helpDocs docLink=\"panelAdjuster\">Panel Adjuster</helpDocs> can also be used to provide more room to fully display the image."
         }
       },
       "contextMenu": {
@@ -2400,7 +2463,7 @@ export default interface Resources {
           "alt": "The marked locations of {name}",
           "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
           "editLocations": "Edit Locations",
-          "explanation": "See the documentation for information on <helpDocs slug=\"jya8j336dt-edit-locations-in-visual-containers\">choosing an image and marking locations</helpDocs>.",
+          "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
           "label": "Locations Image",
           "noMarkers": "No marked locations yet; click on the image to add a location marker.",
           "setPreviewImage": "Set preview image too?",
@@ -2603,7 +2666,7 @@ export default interface Resources {
         "status": "Status"
       },
       "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-      "descriptionLinks": "See <externalLink href=\"https://docs.fieldmark.au\">docs.fieldmark.au</externalLink> and our <helpDocs slug=\"idbaaggghu-fieldmark-integration\">Fieldmark integration docs</helpDocs> for more.",
+      "descriptionLinks": "See <externalLink href=\"https://docs.fieldmark.au\">docs.fieldmark.au</externalLink> and our <helpDocs docLink=\"fieldmark\">Fieldmark integration docs</helpDocs> for more.",
       "fetchError": "Could not get notebooks from Fieldmark",
       "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
       "helpTitle": "Fieldmark help",
@@ -2613,7 +2676,7 @@ export default interface Resources {
         "loading": "Loading available IGSN ID fields...",
         "noIgsn": "Do not use IGSN IDs"
       },
-      "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">DataCite IGSN ID integration</helpDocs> to be enabled.",
+      "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <helpDocs docLink=\"igsnIdentifiers\">DataCite IGSN ID integration</helpDocs> to be enabled.",
       "importError": "Could not import notebook.",
       "importNotebook": {
         "message": "Importing notebook \"{name}\" from Fieldmark.",
@@ -2629,7 +2692,7 @@ export default interface Resources {
       "accessPermissions": {
         "addGroup": "Add group",
         "editFirst": "You need to be in Edit mode to edit permissions.",
-        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs slug=\"n09nmg4ax7-permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
+        "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
         "explicitAccess": {
           "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
           "title": "Explicit access list"
@@ -2667,7 +2730,7 @@ export default interface Resources {
           "unableToSetPreviewImage": "Unable to set preview image."
         },
         "formField": {
-          "explanation": "See the documentation for information on <helpDocs slug=\"ory7fu1uw9-attachments\">adding attachments</helpDocs>."
+          "explanation": "See the documentation for information on <helpDocs docLink=\"attachments\">adding attachments</helpDocs>."
         },
         "linkGalleryItems": "Link to existing items in the Gallery.",
         "noDescription": "No description",
@@ -2726,7 +2789,7 @@ export default interface Resources {
           "description": "Description"
         },
         "formField": {
-          "addingBarcodes": "See the documentation for information on <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes\">adding barcodes</helpDocs>."
+          "addingBarcodes": "See the documentation for information on <helpDocs docLink=\"barcodes\">adding barcodes</helpDocs>."
         },
         "noDescription": "No description",
         "printContents": {
@@ -2814,7 +2877,7 @@ export default interface Resources {
           "pidinst": "PIDINST"
         },
         "formField": {
-          "explanation": "See the Documentation for information on <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">adding and publishing identifiers</helpDocs>."
+          "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
         },
         "geoLocationField": {
           "addValueToPublish": "Add value to enable publishing.",
@@ -3358,7 +3421,7 @@ export default interface Resources {
         "register": "Register",
         "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
       },
-      "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">see the IGSN ID documentation</helpDocs>.",
+      "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <helpDocs docLink=\"igsnIdentifiers\">see the IGSN ID documentation</helpDocs>.",
       "landmark": "IGSN management main content",
       "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
       "pageTitle": "IGSN Management Page",
@@ -3671,7 +3734,7 @@ export default interface Resources {
       },
       "linkedDocumentsHelp": {
         "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
-        "listOfMaterials": "Adding this item to a document's <helpDocs slug=\"cdrc4ed67l-list-of-materials\">List of Materials</helpDocs> will add an entry for the document in this panel."
+        "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
       },
       "updateSamples": "Update Samples",
       "versionHistory": {
@@ -3783,7 +3846,7 @@ export default interface Resources {
         "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
         "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
         "labelPrinterHint": "Print one label per sticker (Zebra printer).",
-        "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes#barcode_printing\">documentation</helpDocs>.",
+        "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <helpDocs docLink=\"barcodesPrinting\">documentation</helpDocs>.",
         "large": "Large",
         "printCopies": "Print Copies",
         "printLayout": "Print Layout",
@@ -3983,8 +4046,8 @@ export default interface Resources {
           "alertExpand": "Expand to select a template.",
           "alertSelect": "Select a template from the list below.",
           "couldNotFetchError": "Could not fetch template details.",
-          "explanationCreate": "See the documentation for information on <helpDocs slug=\"c8sxesdqpy-create-a-template\">how to create custom templates</helpDocs>.",
-          "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<helpDocs slug=\"c8sxesdqpy-create-a-template\">(Learn more about sample templates)</helpDocs>",
+          "explanationCreate": "See the documentation for information on <helpDocs docLink=\"createTemplate\">how to create custom templates</helpDocs>.",
+          "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<helpDocs docLink=\"createTemplate\">(Learn more about sample templates)</helpDocs>",
           "label": "Sample Template",
           "noTemplate": "No template"
         },
@@ -4145,7 +4208,7 @@ export default interface Resources {
         "title": "Welcome to RSpace Inventory!"
       },
       "noResults": {
-        "luceneInfo": "For more information on using Lucene queries, see <helpDocs slug=\"k919di8naq-search-inventory#expert_lucene_query_syntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
+        "luceneInfo": "For more information on using Lucene queries, see <helpDocs docLink=\"luceneSyntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
         "title": "No results.",
         "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
       },
@@ -4514,7 +4577,7 @@ export default interface Resources {
         "showList": "Show list of groups",
         "showListLabel": "{count} group(s). Show list of groups."
       },
-      "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <helpDocs slug=\"zw6o5uh4qv-tagging-users\">Tagging docs</helpDocs> for more.",
+      "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <helpDocs docLink=\"taggingUsers\">Tagging docs</helpDocs> for more.",
       "loadingError": "Failed to load listing of users. Please try refreshing.",
       "loadingListing": "Loading listing of users.",
       "piRoleDialog": {
@@ -4556,7 +4619,7 @@ export default interface Resources {
       "tableActionsLabel": "Users table actions",
       "tableLabel": "users",
       "tagDialog": {
-        "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <helpDocs slug=\"zw6o5uh4qv-tagging-users\">Read more about tagging users here.</helpDocs>",
+        "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <helpDocs docLink=\"taggingUsers\">Read more about tagging users here.</helpDocs>",
         "menuItem": "Add/Remove Tags",
         "title": "Tagging {count} {count, plural, one {user} other {users}}"
       },
@@ -4805,7 +4868,7 @@ export default interface Resources {
         },
         "tags": {
           "clearButton": "Clear Tags",
-          "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <helpDocs slug=\"8ujmvpa1no-controlled-vocabularies\">Tagging Documents and using Controlled Vocabularies</helpDocs>.",
+          "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <helpDocs docLink=\"tags\">Tagging Documents and using Controlled Vocabularies</helpDocs>.",
           "label": "Tags and Controlled Vocabulary Terms"
         },
         "user": {
@@ -4949,7 +5012,7 @@ export default interface Resources {
             "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
           },
           "intro": {
-            "moreInfo": "See <externalLink href=\"https://pubchem.ncbi.nlm.nih.gov/\">https://pubchem.ncbi.nlm.nih.gov/</externalLink> and our <helpDocs slug=\"wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases\">PubChem integration docs</helpDocs> for more.",
+            "moreInfo": "See <externalLink href=\"https://pubchem.ncbi.nlm.nih.gov/\">https://pubchem.ncbi.nlm.nih.gov/</externalLink> and our <helpDocs docLink=\"pubchem\">PubChem integration docs</helpDocs> for more.",
             "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
           },
           "searchPlaceholders": {
@@ -5213,7 +5276,7 @@ export default interface Resources {
         "placeholder": "Select tag(s)"
       },
       "tags": {
-        "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <helpDocs slug=\"8ujmvpa1no-controlled-vocabularies\">Read more about creating, importing, and using Tags here.</helpDocs>",
+        "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <helpDocs docLink=\"tags\">Read more about creating, importing, and using Tags here.</helpDocs>",
         "getTagsError": "Could not get tags.",
         "invalidTags": "Some tags are invalid",
         "multipleErrors": "There are multiple errors.",

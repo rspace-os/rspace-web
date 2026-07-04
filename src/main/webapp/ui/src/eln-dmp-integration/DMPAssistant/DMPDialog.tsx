@@ -196,7 +196,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("n88a3g86e0-dmp-assistant-integration"),
+          docLink: helpDocsArticleUrl("dmpassistant"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmpAssistant") }),
         }}
       />

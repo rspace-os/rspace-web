@@ -73,7 +73,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
         usageText={t("integrations.dmponline.usage")}
         helpLinkText={t("integrations.dmponline.helpLink")}
         website="https://dmponline.dcc.ac.uk"
-        docLink="pd84qoylzy-dmponline-integration"
+        docLink="dmponline"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.dmponline.setup.instructions" />

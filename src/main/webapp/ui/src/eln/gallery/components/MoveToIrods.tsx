@@ -161,7 +161,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: helpDocsArticleUrl("xt21074dln-irods-integration"),
+          docLink: helpDocsArticleUrl("irods"),
           title: t("moveToIrods.helpTitle"),
         }}
       />

@@ -360,7 +360,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
             supportsHighContrastMode: true,
           }}
           helpPage={{
-            docLink: helpDocsArticleUrl("idbaaggghu-fieldmark-integration"),
+            docLink: helpDocsArticleUrl("fieldmark"),
             title: t("fieldmarkImport.helpTitle"),
           }}
         />

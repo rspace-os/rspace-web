@@ -362,9 +362,7 @@ export default class TemplateModel extends SampleModel implements Template {
         <>
           {i18n.t("inventory:template.updateSamplesConfirm.title")}
           <HelpLinkIcon
-            link={helpDocsArticleUrl(
-              "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
-            )}
+            link={helpDocsArticleUrl("updateAllSamplesOfTemplate")}
             title={i18n.t("inventory:template.updateSamplesConfirm.helpTitle")}
             size="small"
           />

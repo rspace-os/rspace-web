@@ -48,7 +48,7 @@ function Egnyte({ integrationState, update }: EgnyteArgs): React.ReactNode {
         usageText={t("integrations.egnyte.usage")}
         helpLinkText={t("integrations.egnyte.helpLink")}
         website="https://egnyte.com"
-        docLink="j2z5f5r90q-cloud-storage-integrations"
+        docLink="cloudstorage"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.egnyte.setup.instructions" />

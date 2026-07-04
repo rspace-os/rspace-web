@@ -96,10 +96,7 @@ export default function BarcodeScannerSkeleton({
             t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
           )}
         </Alert>
-        <HelpLinkIcon
-          link={helpDocsArticleUrl("nr29uf0fdr-scan-and-use-barcodes")}
-          title={t("barcodeScanner.helpTitle")}
-        />
+        <HelpLinkIcon link={helpDocsArticleUrl("barcodes")} title={t("barcodeScanner.helpTitle")} />
       </Stack>
       <CardActions>
         <Button

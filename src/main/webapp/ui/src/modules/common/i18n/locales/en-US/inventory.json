@@ -191,7 +191,7 @@
       "zoom": {
         "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
         "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
-        "panelAdjuster": "The <helpDocs slug=\"bt6kx098eq-more-info-sidebar#panel_adjuster\">Panel Adjuster</helpDocs> can also be used to provide more room to fully display the image."
+        "panelAdjuster": "The <helpDocs docLink=\"panelAdjuster\">Panel Adjuster</helpDocs> can also be used to provide more room to fully display the image."
       }
     },
     "contextMenu": {
@@ -252,7 +252,7 @@
         "alt": "The marked locations of {name}",
         "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
         "editLocations": "Edit Locations",
-        "explanation": "See the documentation for information on <helpDocs slug=\"jya8j336dt-edit-locations-in-visual-containers\">choosing an image and marking locations</helpDocs>.",
+        "explanation": "See the documentation for information on <helpDocs docLink=\"editLocationsInVisualContainers\">choosing an image and marking locations</helpDocs>.",
         "label": "Locations Image",
         "noMarkers": "No marked locations yet; click on the image to add a location marker.",
         "setPreviewImage": "Set preview image too?",
@@ -455,7 +455,7 @@
       "status": "Status"
     },
     "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-    "descriptionLinks": "See <externalLink href=\"https://docs.fieldmark.au\">docs.fieldmark.au</externalLink> and our <helpDocs slug=\"idbaaggghu-fieldmark-integration\">Fieldmark integration docs</helpDocs> for more.",
+    "descriptionLinks": "See <externalLink href=\"https://docs.fieldmark.au\">docs.fieldmark.au</externalLink> and our <helpDocs docLink=\"fieldmark\">Fieldmark integration docs</helpDocs> for more.",
     "fetchError": "Could not get notebooks from Fieldmark",
     "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
     "helpTitle": "Fieldmark help",
@@ -465,7 +465,7 @@
       "loading": "Loading available IGSN ID fields...",
       "noIgsn": "Do not use IGSN IDs"
     },
-    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">DataCite IGSN ID integration</helpDocs> to be enabled.",
+    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <helpDocs docLink=\"igsnIdentifiers\">DataCite IGSN ID integration</helpDocs> to be enabled.",
     "importError": "Could not import notebook.",
     "importNotebook": {
       "message": "Importing notebook \"{name}\" from Fieldmark.",
@@ -481,7 +481,7 @@
     "accessPermissions": {
       "addGroup": "Add group",
       "editFirst": "You need to be in Edit mode to edit permissions.",
-      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs slug=\"n09nmg4ax7-permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
+      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs docLink=\"permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
       "explicitAccess": {
         "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
         "title": "Explicit access list"
@@ -519,7 +519,7 @@
         "unableToSetPreviewImage": "Unable to set preview image."
       },
       "formField": {
-        "explanation": "See the documentation for information on <helpDocs slug=\"ory7fu1uw9-attachments\">adding attachments</helpDocs>."
+        "explanation": "See the documentation for information on <helpDocs docLink=\"attachments\">adding attachments</helpDocs>."
       },
       "linkGalleryItems": "Link to existing items in the Gallery.",
       "noDescription": "No description",
@@ -578,7 +578,7 @@
         "description": "Description"
       },
       "formField": {
-        "addingBarcodes": "See the documentation for information on <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes\">adding barcodes</helpDocs>."
+        "addingBarcodes": "See the documentation for information on <helpDocs docLink=\"barcodes\">adding barcodes</helpDocs>."
       },
       "noDescription": "No description",
       "printContents": {
@@ -666,7 +666,7 @@
         "pidinst": "PIDINST"
       },
       "formField": {
-        "explanation": "See the Documentation for information on <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">adding and publishing identifiers</helpDocs>."
+        "explanation": "See the Documentation for information on <helpDocs docLink=\"igsnIdentifiers\">adding and publishing identifiers</helpDocs>."
       },
       "geoLocationField": {
         "addValueToPublish": "Add value to enable publishing.",
@@ -1210,7 +1210,7 @@
       "register": "Register",
       "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
     },
-    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">see the IGSN ID documentation</helpDocs>.",
+    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <helpDocs docLink=\"igsnIdentifiers\">see the IGSN ID documentation</helpDocs>.",
     "landmark": "IGSN management main content",
     "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
     "pageTitle": "IGSN Management Page",
@@ -1523,7 +1523,7 @@
     },
     "linkedDocumentsHelp": {
       "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
-      "listOfMaterials": "Adding this item to a document's <helpDocs slug=\"cdrc4ed67l-list-of-materials\">List of Materials</helpDocs> will add an entry for the document in this panel."
+      "listOfMaterials": "Adding this item to a document's <helpDocs docLink=\"listOfMaterials\">List of Materials</helpDocs> will add an entry for the document in this panel."
     },
     "updateSamples": "Update Samples",
     "versionHistory": {
@@ -1635,7 +1635,7 @@
       "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
       "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
       "labelPrinterHint": "Print one label per sticker (Zebra printer).",
-      "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes#barcode_printing\">documentation</helpDocs>.",
+      "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <helpDocs docLink=\"barcodesPrinting\">documentation</helpDocs>.",
       "large": "Large",
       "printCopies": "Print Copies",
       "printerType": "Printer Type",
@@ -1835,8 +1835,8 @@
         "alertExpand": "Expand to select a template.",
         "alertSelect": "Select a template from the list below.",
         "couldNotFetchError": "Could not fetch template details.",
-        "explanationCreate": "See the documentation for information on <helpDocs slug=\"c8sxesdqpy-create-a-template\">how to create custom templates</helpDocs>.",
-        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<helpDocs slug=\"c8sxesdqpy-create-a-template\">(Learn more about sample templates)</helpDocs>",
+        "explanationCreate": "See the documentation for information on <helpDocs docLink=\"createTemplate\">how to create custom templates</helpDocs>.",
+        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<helpDocs docLink=\"createTemplate\">(Learn more about sample templates)</helpDocs>",
         "label": "Sample Template",
         "noTemplate": "No template"
       },
@@ -1997,7 +1997,7 @@
       "title": "Welcome to RSpace Inventory!"
     },
     "noResults": {
-      "luceneInfo": "For more information on using Lucene queries, see <helpDocs slug=\"k919di8naq-search-inventory#expert_lucene_query_syntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
+      "luceneInfo": "For more information on using Lucene queries, see <helpDocs docLink=\"luceneSyntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },

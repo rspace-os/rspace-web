@@ -91,7 +91,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
         usageText={t("integrations.dryad.usage")}
         helpLinkText={t("integrations.dryad.helpLink")}
         website="https://datadryad.org"
-        docLink="i1xvubndhm-dryad-integration"
+        docLink="dryad"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.dryad.setup.instructions" />

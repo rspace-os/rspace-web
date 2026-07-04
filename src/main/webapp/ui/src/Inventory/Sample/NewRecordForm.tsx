@@ -185,7 +185,7 @@ function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: helpDocsArticleUrl("gb3r1lgm5g-create-a-sample"),
+          link: helpDocsArticleUrl("createSample"),
           title: t("createNew.helpTitles.sample"),
         }}
         titleText={t("createNew.newSample")}

@@ -2,15 +2,27 @@ import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { createContext, useContext } from "react";
-import { Trans } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { Link as RouterLink, useInRouterContext } from "react-router";
+import i18n from "@/modules/common/i18n";
+import type Resources from "@/modules/common/i18n/resources";
 
 export type RichTextComponents = Record<string, React.ReactElement>;
 
+export type HelpDocsArticle = keyof Resources["common"]["help"];
+
 export const HELP_DOCS_ARTICLE_BASE = "https://researchspace.helpdocs.io/article";
 
-export function helpDocsArticleUrl(slug: string): string {
+function helpDocsArticleUrlFromSlug(slug: string): string {
   return `${HELP_DOCS_ARTICLE_BASE}/${slug}`;
+}
+
+export function helpDocsArticleSlug(docLink: HelpDocsArticle): string {
+  return i18n.t(`common:help.${docLink}`);
+}
+
+export function helpDocsArticleUrl(docLink: HelpDocsArticle): string {
+  return helpDocsArticleUrlFromSlug(helpDocsArticleSlug(docLink));
 }
 
 type LinkProps = React.ComponentProps<typeof Link>;
@@ -35,11 +47,19 @@ function ExternalLink(props: LinkProps): React.ReactNode {
 }
 
 /**
- * Renders `<helpDocs slug="...">` in a message as a link to the RSpace help
- * documentation, opened in a new tab.
+ * Renders `<helpDocs docLink="...">` in a message as a link to the RSpace
+ * help documentation, opened in a new tab. The docLink value resolves through
+ * `common:help`. A raw `slug` still works as a narrow fallback for tests and
+ * exceptional one-off links.
  */
-function HelpDocsLink({ slug, ...rest }: LinkProps & { slug?: string }): React.ReactNode {
-  return <Link {...rest} href={helpDocsArticleUrl(slug ?? "")} target="_blank" rel="noreferrer" />;
+function HelpDocsLink({
+  docLink,
+  slug,
+  ...rest
+}: LinkProps & { docLink?: HelpDocsArticle; slug?: string }): React.ReactNode {
+  const { t } = useTranslation("common");
+  const resolvedSlug = docLink ? t(`help.${docLink}`) : (slug ?? "");
+  return <Link {...rest} href={helpDocsArticleUrlFromSlug(resolvedSlug)} target="_blank" rel="noreferrer" />;
 }
 
 const muiRichTextComponents: RichTextComponents = {

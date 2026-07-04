@@ -212,7 +212,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         usageText={t("integrations.raid.usage")}
         helpLinkText={t("integrations.raid.helpLink")}
         website="https://raid.org"
-        docLink="zb4c2c8a4b-raid-integration"
+        docLink="raid"
         setupSection={
           <>
             <Typography variant="body1">{t("integrations.raid.setup.configure")}</Typography>

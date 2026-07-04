@@ -385,7 +385,7 @@ function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
         usageText={t("integrations.slack.usage")}
         helpLinkText={t("integrations.slack.helpLink")}
         website="https://slack.com"
-        docLink="74r6scvv8g-slack-integration"
+        docLink="slack"
         setupSection={
           <>
             <Typography variant="body2">

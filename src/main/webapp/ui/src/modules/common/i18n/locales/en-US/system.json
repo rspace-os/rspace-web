@@ -108,7 +108,7 @@
       "showList": "Show list of groups",
       "showListLabel": "{count} group(s). Show list of groups."
     },
-    "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <helpDocs slug=\"zw6o5uh4qv-tagging-users\">Tagging docs</helpDocs> for more.",
+    "intro": "You can search, filter, and tag user accounts, as well as export summary information about the users on this server. See our <helpDocs docLink=\"taggingUsers\">Tagging docs</helpDocs> for more.",
     "loadingError": "Failed to load listing of users. Please try refreshing.",
     "loadingListing": "Loading listing of users.",
     "piRoleDialog": {
@@ -150,7 +150,7 @@
     "tableActionsLabel": "Users table actions",
     "tableLabel": "users",
     "tagDialog": {
-      "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <helpDocs slug=\"zw6o5uh4qv-tagging-users\">Read more about tagging users here.</helpDocs>",
+      "description": "You can tag users to categorise them, and filter users by tag. These tags are only visible to System Admins and Community Admins. If you’ve selected several users, only shared tags will be shown. <helpDocs docLink=\"taggingUsers\">Read more about tagging users here.</helpDocs>",
       "menuItem": "Add/Remove Tags",
       "title": "Tagging {count} {count, plural, one {user} other {users}}"
     },

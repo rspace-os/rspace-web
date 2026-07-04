@@ -417,7 +417,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                     ? t("materialsListing.dialog.newTitle")
                     : t("materialsListing.dialog.title")}{" "}
                   <HelpLinkIcon
-                    link={helpDocsArticleUrl("cdrc4ed67l-list-of-materials")}
+                    link={helpDocsArticleUrl("listOfMaterials")}
                     title={t("materialsListing.dialog.helpTitle")}
                   />
                   {!isSingleColumn && (

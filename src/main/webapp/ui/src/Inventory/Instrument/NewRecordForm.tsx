@@ -108,7 +108,7 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: helpDocsArticleUrl("ct15xwb13m-create-an-instrument"),
+          link: helpDocsArticleUrl("createInstrument"),
           title: t("createNew.helpTitles.instrument"),
         }}
         titleText={t("createNew.newInstrument")}

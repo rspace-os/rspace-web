@@ -44,7 +44,7 @@ function Fieldmark({ integrationState, update }: FieldmarkArgs): React.ReactNode
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.fieldmark.helpLink")}
         website="https://fieldnote.au/fieldmark"
-        docLink="idbaaggghu-fieldmark-integration"
+        docLink="fieldmark"
         usageText={<TransRichText i18nKey="apps:integrations.fieldmark.usage" />}
         setupSection={
           <>

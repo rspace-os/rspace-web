@@ -93,7 +93,7 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.calira.helpLink")}
         website="https://calira.co"
-        docLink="e6pb7y8ak1-calira-integration"
+        docLink="clustermarket"
         usageText={t("integrations.calira.usage")}
         setupSection={
           <>
