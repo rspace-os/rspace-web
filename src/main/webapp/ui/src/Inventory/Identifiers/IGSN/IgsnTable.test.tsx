@@ -145,8 +145,14 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    await user.click(screen.getByRole("button", { name: /inventory:igsnTable.filters.state/ }));
-    await user.click(screen.getByRole("menuitem", { name: /inventory:igsnTable.filters.stateOptions.draft.title/ }));
+    await user.click(
+      screen.getByRole("button", { name: (name) => name.startsWith("inventory:igsnTable.filters.state") }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: (name) => name.startsWith("inventory:igsnTable.filters.stateOptions.draft.title"),
+      }),
+    );
 
     await waitFor(() => {
       expect(identifiersRequestParams().some((params) => params.get("state") === "draft")).toBe(true);
@@ -158,7 +164,9 @@ describe("IGSN Table", () => {
     render(<SimpleIgsnTable />);
     await waitForTableLoaded();
 
-    await user.click(screen.getByRole("button", { name: /inventory:igsnTable.filters.linkedItem/ }));
+    await user.click(
+      screen.getByRole("button", { name: (name) => name.startsWith("inventory:igsnTable.filters.linkedItem") }),
+    );
     await user.click(screen.getByRole("menuitem", { name: "inventory:igsnTable.filters.noLinkedItem" }));
 
     await waitFor(() => {
@@ -276,8 +284,10 @@ describe("IGSN Table", () => {
 
     const search = screen.getByRole("searchbox");
     const scan = screen.getByRole("button", { name: "inventory:igsnTable.scan" });
-    const state = screen.getByRole("button", { name: /inventory:igsnTable.filters.state/ });
-    const linkedItem = screen.getByRole("button", { name: /inventory:igsnTable.filters.linkedItem/ });
+    const state = screen.getByRole("button", { name: (name) => name.startsWith("inventory:igsnTable.filters.state") });
+    const linkedItem = screen.getByRole("button", {
+      name: (name) => name.startsWith("inventory:igsnTable.filters.linkedItem"),
+    });
 
     expect(search).toBeVisible();
     expect(scan).toBeVisible();

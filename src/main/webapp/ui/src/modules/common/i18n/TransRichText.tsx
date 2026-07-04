@@ -1,4 +1,5 @@
 import Link from "@mui/material/Link";
+import Typography from "@mui/material/Typography";
 import type React from "react";
 import { createContext, createElement, useContext } from "react";
 import { Trans } from "react-i18next";
@@ -9,6 +10,7 @@ const muiRichTextComponents: RichTextComponents = {
   a: createElement(Link),
   br: <br />,
   code: <code />,
+  kbd: <Typography component="kbd" variant="button" />,
   li: <li />,
   ol: <ol />,
   strong: <strong />,

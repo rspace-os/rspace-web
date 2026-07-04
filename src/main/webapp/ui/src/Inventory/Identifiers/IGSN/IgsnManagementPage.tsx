@@ -84,7 +84,6 @@ export default function IgsnManagementPage({
                 <TransRichText
                   i18nKey="inventory:igsnManagement.registerDescription"
                   components={{
-                    kbd: <Typography variant="button" component="kbd" />,
                     cite: <cite />,
                   }}
                 />

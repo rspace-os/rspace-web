@@ -169,8 +169,8 @@
       },
       "previewAlt": "Preview of {name}",
       "zoom": {
-        "ctrlTip": "Tip: Use Ctrl and the - key to zoom the page out to view more of the image.",
-        "macTip": "Tip: Use Command and the - key to zoom the page out to view more of the image.",
+        "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
+        "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
         "panelAdjuster": "The <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Panel Adjuster</a> can also be used to provide more room to fully display the image."
       }
     },

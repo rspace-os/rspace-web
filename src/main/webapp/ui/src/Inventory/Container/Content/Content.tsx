@@ -18,7 +18,6 @@ import SearchViewComponent from "../../Search/SearchView";
 import ContentContextMenu from "./ContentContextMenu";
 
 function ImageContainerZoomHelpText() {
-  const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -29,27 +28,22 @@ function ImageContainerZoomHelpText() {
    */
   if (uiStore.isTouchDevice && isSingleColumnLayout) return null;
 
-  let zoomText: string = t("container.content.zoom.ctrlTip");
-  try {
-    // isMac relies on a deprecated browser API so the call may fail
-    if (isMac()) zoomText = t("container.content.zoom.macTip");
-  } catch (_) {
-    return null;
-  }
-
-  const helpText = isSingleColumnLayout ? (
-    zoomText
-  ) : (
-    <>
-      {zoomText}{" "}
+  return (
+    <Alert severity="info">
       <TransRichText
-        i18nKey="inventory:container.content.zoom.panelAdjuster"
-        values={{ link: docLinks.panelAdjuster }}
+        i18nKey={isMac() ? "inventory:container.content.zoom.macTip" : "inventory:container.content.zoom.ctrlTip"}
       />
-    </>
+      {!isSingleColumnLayout && (
+        <>
+          {" "}
+          <TransRichText
+            i18nKey="inventory:container.content.zoom.panelAdjuster"
+            values={{ link: docLinks.panelAdjuster }}
+          />
+        </>
+      )}
+    </Alert>
   );
-
-  return <Alert severity="info">{helpText}</Alert>;
 }
 
 function _Content() {
