@@ -10,15 +10,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions } from "../../util/table";
 import type { Order } from "../../util/types";
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 const enzymeSetOptions = {
   UNIQUE_SIX_PLUS: "Unique six plus",
@@ -55,6 +53,7 @@ export default function EnzymeTable(props: any) {
   const [oldEnzymeSet, setOldEnzymeSet] = React.useState("UNIQUE_SIX_PLUS");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [enzymeList, setEnzymeList] = React.useState<Array<any>>([]);
+  const { addAlert } = useContext(AlertContext);
 
   const fetchEnzymes = () => {
     setLoading(true);
@@ -66,7 +65,7 @@ export default function EnzymeTable(props: any) {
         generateEnzymeList(response.data.enzymes);
       })
       .catch((error) => {
-        RS.confirm(error.response.data, "warning", "infinite");
+        addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
       })
       .finally(() => {
         setLoading(false);

@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import Alerts from "@/components/Alerts/Alerts";
 import materialTheme from "../../theme";
 import OAuthTable from "./OAuthTable";
 
@@ -18,14 +19,16 @@ export default function OAuthTrigger(_props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        {!open && (
-          <Box sx={{ width: "690px", padding: "0px 15px" }}>
-            <Button color="primary" onClick={handleOpen}>
-              Show Created OAuth Apps
-            </Button>
-          </Box>
-        )}
-        {open && <OAuthTable />}
+        <Alerts>
+          {!open && (
+            <Box sx={{ width: "690px", padding: "0px 15px" }}>
+              <Button color="primary" onClick={handleOpen}>
+                Show Created OAuth Apps
+              </Button>
+            </Box>
+          )}
+          {open && <OAuthTable />}
+        </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
   );

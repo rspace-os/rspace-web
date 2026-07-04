@@ -11,12 +11,6 @@ import { getSorting } from "@/util/table";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import UserDetails from "./../../../components/UserDetails";
 
-const headCells = [
-  { id: "userFullName", numeric: false, label: "User" },
-  { id: "eventType", numeric: false, label: "Action" },
-  { id: "timestamp", numeric: true, label: "Time" },
-];
-
 type GroupActivityProps = {
   groupId: string;
 };
@@ -29,12 +23,16 @@ type ActivityRow = {
   timestamp: number | string | Date;
 };
 
-/**
- */
 function GroupActivity({ groupId }: GroupActivityProps) {
   const [activities, setActivities] = React.useState<Array<ActivityRow>>([]);
   const [order, setOrder] = React.useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
+
+  const headCells = [
+    { id: "userFullName", numeric: false, label: "User" },
+    { id: "eventType", numeric: false, label: "Action" },
+    { id: "timestamp", numeric: true, label: "Time" },
+  ];
 
   useEffect(() => {
     const url = `/groups/ajax/membershipEventsByGroup/${groupId}`;

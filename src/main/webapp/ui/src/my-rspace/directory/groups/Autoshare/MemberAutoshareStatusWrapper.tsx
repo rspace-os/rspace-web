@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import Alerts from "@/components/Alerts/Alerts";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -52,16 +53,18 @@ function MemberAutoshareStatusWrapper(props: any) {
     return <> n/a </>;
   }
   return (
-    <AutoshareStatus
-      group={group}
-      username={props.username}
-      userId={props.userId}
-      isCurrentlySharing={isCurrentlySharing}
-      callback={fetchShareStatus}
-      isSwitch={true}
-      isSwitchDisabled={isSwitchDisabled}
-      switchDisabledReason={switchDisabledReason}
-    />
+    <Alerts>
+      <AutoshareStatus
+        group={group}
+        username={props.username}
+        userId={props.userId}
+        isCurrentlySharing={isCurrentlySharing}
+        callback={fetchShareStatus}
+        isSwitch={true}
+        isSwitchDisabled={isSwitchDisabled}
+        switchDisabledReason={switchDisabledReason}
+      />
+    </Alerts>
   );
 }
 

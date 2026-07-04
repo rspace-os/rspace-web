@@ -8,13 +8,10 @@ import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import LoadingCircular from "../../components/LoadingCircular";
-
-declare const RS: {
-  confirm: (message: string, level: "warning" | "notice", timeout: string | number) => void;
-};
 
 type DnaPreviewProps = {
   clicked: unknown;
@@ -39,6 +36,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
     showORFs: true,
   });
   const [loadedImage, setLoadedImage] = React.useState<string | null>(null);
+  const { addAlert } = useContext(AlertContext);
 
   const appliedState = React.useMemo(() => ({ ...state }), [clicked]);
 
@@ -63,10 +61,13 @@ export default function DnaPreview(props: DnaPreviewProps) {
   }, [appliedState, setDisabled, state]);
 
   const onImageError = () => {
-    RS.confirm(
-      "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
-      "warning",
-      "infinite",
+    addAlert(
+      mkAlert({
+        message:
+          "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
+        variant: "warning",
+        isInfinite: true,
+      }),
     );
     setLoadedImage(image);
   };

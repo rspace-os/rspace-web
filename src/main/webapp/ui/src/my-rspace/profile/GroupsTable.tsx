@@ -9,6 +9,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import Alerts from "@/components/Alerts/Alerts";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 
 import materialTheme from "../../theme";
@@ -89,56 +90,58 @@ export default function GroupsTable(props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <Box sx={{ width: "690px", padding: "0px 15px" }}>
-          <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
-            <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Groups</Box>
-          </Box>
-          <br />
-          {groups.length > 0 && fetchSuccess && (
-            <TableContainer>
-              <Table size="small" aria-label="enhanced table">
-                <EnhancedTableHead
-                  headCells={tableHeaders()}
-                  order={order}
-                  orderBy={orderBy}
-                  onRequestSort={handleRequestSort}
-                  rowCount={0}
-                />
-                <TableBody>
-                  {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
-                  {groups.toSorted(getSorting(order, orderBy)).map((group: any) => (
-                    <TableRow hover tabIndex={-1} key={group.groupDisplayName}>
-                      <TableCell align="left">
-                        <a href={`/groups/view/${group.groupId}`}>{group.groupDisplayName}</a>
-                      </TableCell>
-                      {!group.privateGroup && (
-                        <>
-                          <TableCell align="left">{group.roleInGroup}</TableCell>
-                          <TableCell align="left">
-                            {group.autoshareEnabled ? "Enabled" : group.labGroup ? "Disabled" : "n/a"}
-                          </TableCell>
-                        </>
-                      )}
-                      {props.canEdit && (
-                        <TableCell>
-                          <AutoshareStatus
-                            group={group}
-                            username={props.username}
-                            userId={props.userId}
-                            isCurrentlySharing={isCurrentlySharing}
-                            callback={() => fetchGroups()}
-                            isSwitch={false}
-                            isSwitchDisabled={false}
-                          />
+        <Alerts>
+          <Box sx={{ width: "690px", padding: "0px 15px" }}>
+            <Box className="api-menu__header" sx={{ marginTop: "15px", display: "flex" }}>
+              <Box sx={{ flexGrow: "1", lineHeight: "42px" }}>Groups</Box>
+            </Box>
+            <br />
+            {groups.length > 0 && fetchSuccess && (
+              <TableContainer>
+                <Table size="small" aria-label="enhanced table">
+                  <EnhancedTableHead
+                    headCells={tableHeaders()}
+                    order={order}
+                    orderBy={orderBy}
+                    onRequestSort={handleRequestSort}
+                    rowCount={0}
+                  />
+                  <TableBody>
+                    {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
+                    {groups.toSorted(getSorting(order, orderBy)).map((group: any) => (
+                      <TableRow hover tabIndex={-1} key={group.groupDisplayName}>
+                        <TableCell align="left">
+                          <a href={`/groups/view/${group.groupId}`}>{group.groupDisplayName}</a>
                         </TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
+                        {!group.privateGroup && (
+                          <>
+                            <TableCell align="left">{group.roleInGroup}</TableCell>
+                            <TableCell align="left">
+                              {group.autoshareEnabled ? "Enabled" : group.labGroup ? "Disabled" : "n/a"}
+                            </TableCell>
+                          </>
+                        )}
+                        {props.canEdit && (
+                          <TableCell>
+                            <AutoshareStatus
+                              group={group}
+                              username={props.username}
+                              userId={props.userId}
+                              isCurrentlySharing={isCurrentlySharing}
+                              callback={() => fetchGroups()}
+                              isSwitch={false}
+                              isSwitchDisabled={false}
+                            />
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </Box>
+        </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
   );
