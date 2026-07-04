@@ -1,5 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Radio } from "@mui/material";
+import Radio from "@mui/material/Radio";
 import {
   DataGrid,
   type DataGridProps,
