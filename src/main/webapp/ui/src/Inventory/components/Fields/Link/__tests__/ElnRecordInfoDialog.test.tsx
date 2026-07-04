@@ -1,10 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type React from "react";
-import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@/__tests__/customQueries";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "../../../../../theme";
 
@@ -66,16 +65,16 @@ function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDi
 }
 
 async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
-  const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
   const queryClient = new QueryClient();
   render(
-    <I18nextProvider i18n={i18n}>
+    await wrapWithRealI18n(
       <QueryClientProvider client={queryClient}>
         <ThemeProvider theme={materialTheme}>
           <ElnRecordInfoDialog open globalId="SD123" onClose={vi.fn()} {...props} />
         </ThemeProvider>
-      </QueryClientProvider>
-    </I18nextProvider>,
+      </QueryClientProvider>,
+      { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
+    ),
   );
   return { queryClient };
 }

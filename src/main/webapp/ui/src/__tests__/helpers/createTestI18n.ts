@@ -1,7 +1,7 @@
 import { createInstance, type i18n as I18nInstance, type ResourceLanguage } from "i18next";
 import ICU from "i18next-icu";
 
-type TestI18nResources = Record<string, ResourceLanguage>;
+export type TestI18nResources = Record<string, ResourceLanguage>;
 
 export async function createTestI18n(resources: TestI18nResources, defaultNS: string): Promise<I18nInstance> {
   const i18n = createInstance();

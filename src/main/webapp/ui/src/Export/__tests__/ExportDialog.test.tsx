@@ -5,9 +5,9 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
+import type React from "react";
 import { useState } from "react";
-import { I18nextProvider } from "react-i18next";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import axios from "@/common/axios";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
@@ -84,10 +84,10 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
   );
 type RenderExportDialogArgs = {
   allowFileStores?: boolean;
-  i18n?: Awaited<ReturnType<typeof createTestI18n>>;
+  RealI18nWrapper?: React.ComponentType<{ children: React.ReactNode }>;
 };
 
-function renderExportDialog({ allowFileStores, i18n }: RenderExportDialogArgs = {}): {
+function renderExportDialog({ allowFileStores, RealI18nWrapper }: RenderExportDialogArgs = {}): {
   setProps: (props: { selection: ExportSelection; open: boolean }) => void;
 } {
   // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
@@ -109,7 +109,7 @@ function renderExportDialog({ allowFileStores, i18n }: RenderExportDialogArgs = 
         <ExportDialog exportSelection={selection} open={open} allowFileStores={allowFileStores ?? false} />
       </Alerts>
     );
-    return i18n ? <I18nextProvider i18n={i18n}>{dialog}</I18nextProvider> : dialog;
+    return RealI18nWrapper ? <RealI18nWrapper>{dialog}</RealI18nWrapper> : dialog;
   };
   render(<Wrapper />);
   if (!setProps) throw new Error("setProps is not initialised");
@@ -117,8 +117,11 @@ function renderExportDialog({ allowFileStores, i18n }: RenderExportDialogArgs = 
 }
 
 async function renderExportDialogWithRealI18n({ allowFileStores }: { allowFileStores?: boolean } = {}) {
-  const i18n = await createTestI18n({ common: commonEn, workspace: workspaceEn }, "workspace");
-  return renderExportDialog({ allowFileStores, i18n });
+  const RealI18nWrapper = await createRealI18nWrapper({
+    resources: { common: commonEn, workspace: workspaceEn },
+    defaultNS: "workspace",
+  });
+  return renderExportDialog({ allowFileStores, RealI18nWrapper });
 }
 
 describe("ExportDialog", () => {

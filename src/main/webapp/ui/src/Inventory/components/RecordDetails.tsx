@@ -5,6 +5,7 @@ import { observer } from "mobx-react-lite";
 import { type ReactNode, useContext } from "react";
 import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import DescriptionList from "../../components/DescriptionList";
 import GlobalId from "../../components/GlobalId";
 import TableCellBlank from "../../components/TableCellBlank";
@@ -155,10 +156,13 @@ function RecordDetails({ record, hideName = false }: RecordDetailsArgs): ReactNo
                   {
                     label: t("recordDetails.labels.modified"),
                     value: (
-                      <>
-                        <TimeAgoCustom time={record.recordDetails.modified[0]} compact />{" "}
-                        {t("recordDetails.modifiedBy", { user: record.recordDetails.modified[1] })}
-                      </>
+                      <TransRichText
+                        i18nKey="inventory:recordDetails.modifiedBy"
+                        values={{ user: record.recordDetails.modified[1] }}
+                        components={{
+                          timeAgo: <TimeAgoCustom time={record.recordDetails.modified[0]} compact />,
+                        }}
+                      />
                     ),
                   },
                 ]

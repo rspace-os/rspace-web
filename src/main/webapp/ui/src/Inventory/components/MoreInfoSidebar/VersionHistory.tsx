@@ -86,6 +86,8 @@ function DialogContents({
   onNavigate: (url: string) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
+  const versionLabel = (version: number | "none") =>
+    t("moreInfo.versionHistory.columns.version", { version: String(version) });
   if (state.state === "loading") return <Skeleton variant="rectangular" width="100%" height={118} />;
   if (state.state === "fail") return <Alert severity="error">{state.error.message}</Alert>;
   if (state.state === "success") {
@@ -94,7 +96,7 @@ function DialogContents({
       <Table size="small">
         <TableHead>
           <TableRow>
-            <TableCell>{t("moreInfo.versionHistory.columns.version")}</TableCell>
+            <TableCell>{versionLabel("none")}</TableCell>
             <TableCell>{t("moreInfo.versionHistory.columns.modified")}</TableCell>
             <TableCell>{t("moreInfo.versionHistory.columns.by")}</TableCell>
           </TableRow>
@@ -110,7 +112,7 @@ function DialogContents({
                     onNavigate(versionUrl(row.version));
                   }}
                 >
-                  {t("moreInfo.versionHistory.columns.version")} {row.version}
+                  {versionLabel(row.version)}
                 </Link>
                 {/* on a historical view, record.version is the pinned version, not the live one */}
                 {row.version === currentVersion &&
@@ -137,6 +139,7 @@ type VersionHistoryArgs = {
  */
 function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
+  const versionLabel = t("moreInfo.versionHistory.columns.version", { version: "none" });
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -181,7 +184,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
 
   return (
     <FormControl component="fieldset" sx={{ alignItems: "flex-start" }}>
-      <FormLabel component="legend">{t("moreInfo.versionHistory.columns.version")}</FormLabel>
+      <FormLabel component="legend">{versionLabel}</FormLabel>
       <FormGroup>
         {record.version ?? "—"}
         <Button

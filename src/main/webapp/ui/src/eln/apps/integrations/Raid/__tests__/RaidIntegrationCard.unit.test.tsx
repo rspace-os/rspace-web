@@ -1,10 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { i18n as I18nInstance } from "i18next";
-import { I18nextProvider } from "react-i18next";
+import type React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
@@ -33,7 +32,7 @@ vi.mock("@/modules/common/hooks/broadcast", () => ({
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],
   update: (s: IntegrationStates["RAID"]) => void = () => {},
-  i18n?: I18nInstance,
+  RealI18nWrapper?: React.ComponentType<{ children: React.ReactNode }>,
 ) => {
   const addAlert = vi.fn();
   const removeAlert = vi.fn();
@@ -48,13 +47,18 @@ const renderWithProviders = (
       </AlertContext.Provider>
     </ThemeProvider>
   );
-  const view = render(i18n ? <I18nextProvider i18n={i18n}>{tree}</I18nextProvider> : tree);
+  const view = render(RealI18nWrapper ? <RealI18nWrapper>{tree}</RealI18nWrapper> : tree);
   return { ...view, addAlert };
 };
 const renderWithRealI18n = async (
   integrationState: IntegrationStates["RAID"],
   update: (s: IntegrationStates["RAID"]) => void = () => {},
-) => renderWithProviders(integrationState, update, await createTestI18n({ apps: appsEn, common: commonEn }, "apps"));
+) =>
+  renderWithProviders(
+    integrationState,
+    update,
+    await createRealI18nWrapper({ resources: { apps: appsEn, common: commonEn }, defaultNS: "apps" }),
+  );
 const openCard = (name = "apps:integrations.raid.name") => screen.getByRole("button", { name });
 const connectButton = (name = "apps:actions.connect") => screen.getByRole("button", { name });
 const disconnectButton = (name = "apps:actions.disconnect") => screen.getByRole("button", { name });

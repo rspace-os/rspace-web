@@ -1,10 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
-import { I18nextProvider } from "react-i18next";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, within } from "@/__tests__/customQueries";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import materialTheme from "../../../../../theme";
@@ -75,13 +74,11 @@ function renderDoc(props: Partial<React.ComponentProps<typeof DocumentSections>>
 // translated copy; cimode returns the raw key with no <a> tag to embed, so these
 // two tests render against the real English bundle instead.
 async function renderDocWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
-  const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
-  return render(
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider theme={materialTheme}>
-        <DocumentSections info={baseInfo} isNotebook={false} {...props} />
-      </ThemeProvider>
-    </I18nextProvider>,
+  return renderWithRealI18n(
+    <ThemeProvider theme={materialTheme}>
+      <DocumentSections info={baseInfo} isNotebook={false} {...props} />
+    </ThemeProvider>,
+    { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
   );
 }
 

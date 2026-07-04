@@ -1,4 +1,9 @@
+import type Resources from "@/modules/common/i18n/resources";
 import type { AdjustableTableRowLabel } from "@/stores/definitions/Tables";
+
+type ColumnTranslationKey =
+  | `sortProperties.${keyof Resources["inventory"]["sortProperties"]}`
+  | `tableColumns.${keyof Resources["inventory"]["tableColumns"]}`;
 
 const columnLabelKeys = {
   containerType: "tableColumns.containerType",
@@ -20,10 +25,9 @@ const columnLabelKeys = {
   tags: "tableColumns.tags",
   type: "sortProperties.type",
   version: "tableColumns.version",
-} as const;
+} satisfies Record<string, ColumnTranslationKey>;
 
 type ColumnLabel = keyof typeof columnLabelKeys;
-type ColumnTranslationKey = (typeof columnLabelKeys)[ColumnLabel];
 
 const hasTranslatedColumnLabel = (label: AdjustableTableRowLabel): label is ColumnLabel => label in columnLabelKeys;
 

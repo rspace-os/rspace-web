@@ -7,12 +7,9 @@
 
 import { ThemeProvider } from "@mui/material/styles";
 import { screen } from "@testing-library/react";
-import { I18nextProvider } from "react-i18next";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
+import { describe, expect, test, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
-import appI18n from "@/modules/common/i18n";
+import { renderWithRealI18n, setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "@/theme";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
@@ -30,13 +27,7 @@ vi.mock("../../../stores/stores/getRootStore", () => ({
 }));
 
 describe("HistoricalVersionAlert rich i18n", () => {
-  beforeAll(async () => {
-    await appI18n.changeLanguage("en-US");
-  });
-
-  afterAll(async () => {
-    await appI18n.changeLanguage("cimode");
-  });
+  setupRealAppI18n();
 
   test("renders the interpolated title and latest-version link", async () => {
     const subsample = makeMockSubSample({
@@ -44,14 +35,12 @@ describe("HistoricalVersionAlert rich i18n", () => {
       historicalVersion: true,
       globalId: "SS1v2",
     });
-    const i18n = await createTestI18n({ inventory: inventoryEn }, "inventory");
 
-    render(
+    await renderWithRealI18n(
       <ThemeProvider theme={materialTheme}>
-        <I18nextProvider i18n={i18n}>
-          <HistoricalVersionAlert record={subsample} />
-        </I18nextProvider>
+        <HistoricalVersionAlert record={subsample} />
       </ThemeProvider>,
+      { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
     );
 
     expect(screen.getByText("This is version 2 of the subsample.")).toBeVisible();

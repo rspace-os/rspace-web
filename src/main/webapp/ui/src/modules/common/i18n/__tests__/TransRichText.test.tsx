@@ -1,5 +1,4 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { createInstance, type i18n as I18nInstance } from "i18next";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@/__tests__/customQueries";
@@ -7,7 +6,8 @@ import materialTheme from "@/theme";
 
 vi.unmock("react-i18next");
 
-const { I18nextProvider, Trans, initReactI18next } = await import("react-i18next");
+const { Trans } = await import("react-i18next");
+const { wrapWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { default: TransRichTextComponent } = await import("@/modules/common/i18n/TransRichText");
 const TransRichText = TransRichTextComponent as React.ComponentType<{ i18nKey: string }>;
 const TestTrans = Trans as React.ComponentType<{
@@ -17,59 +17,44 @@ const TestTrans = Trans as React.ComponentType<{
   };
 }>;
 
-async function createTestI18n(): Promise<I18nInstance> {
-  const i18n = createInstance();
-  await i18n.use(initReactI18next).init({
-    lng: "en-US",
-    fallbackLng: "en-US",
-    resources: {
-      "en-US": {
-        common: {
-          richTextTranslationUrlProbe:
-            'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
-          richTextComponentUrlProbe:
-            "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
-          richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
-          richTextDefaultOrderedListProbe: "<ol><li>First item</li><li>Second item</li></ol>",
-          richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
-        },
-      },
-    },
-    defaultNS: "common",
-    interpolation: { escapeValue: false },
-    react: { useSuspense: false },
-  });
-  return i18n;
-}
+const richTextResources = {
+  common: {
+    richTextTranslationUrlProbe:
+      'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
+    richTextComponentUrlProbe:
+      "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
+    richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
+    richTextDefaultOrderedListProbe: "<ol><li>First item</li><li>Second item</li></ol>",
+    richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
+  },
+};
 
-function RichTextProbe({ i18n }: { i18n: I18nInstance }): React.ReactNode {
+function RichTextProbe(): React.ReactNode {
   return (
     <ThemeProvider theme={materialTheme}>
-      <I18nextProvider i18n={i18n}>
-        <p>
-          <TestTrans
-            i18nKey="richTextTranslationUrlProbe"
-            components={{
-              docsLink: <a href="/docs/fallback">{"fallback docs text"}</a>,
-            }}
-          />
-        </p>
-        <p>
-          <TestTrans
-            i18nKey="richTextComponentUrlProbe"
-            components={{
-              docsLink: <a href="/docs/from-component">{"fallback docs text"}</a>,
-            }}
-          />
-        </p>
-      </I18nextProvider>
+      <p>
+        <TestTrans
+          i18nKey="richTextTranslationUrlProbe"
+          components={{
+            docsLink: <a href="/docs/fallback">{"fallback docs text"}</a>,
+          }}
+        />
+      </p>
+      <p>
+        <TestTrans
+          i18nKey="richTextComponentUrlProbe"
+          components={{
+            docsLink: <a href="/docs/from-component">{"fallback docs text"}</a>,
+          }}
+        />
+      </p>
     </ThemeProvider>
   );
 }
 
 describe("Trans rich text rendering", () => {
   it("renders basic rich text and supplied components without a compiler opt-out wrapper", async () => {
-    render(<RichTextProbe i18n={await createTestI18n()} />);
+    render(await wrapWithRealI18n(<RichTextProbe />, { resources: richTextResources, defaultNS: "common" }));
 
     expect(screen.getAllByText("important note").map(({ tagName }) => tagName)).toEqual(["STRONG", "STRONG"]);
     expect(screen.getByRole("link", { name: "open the translated docs" })).toHaveAttribute(
@@ -95,10 +80,9 @@ describe("Trans rich text rendering", () => {
 
 describe("TransRichText default vocabulary", () => {
   it("renders the <link> tag via the default (MUI) map with no provider wiring", async () => {
-    const i18n = await createTestI18n();
     render(
-      <ThemeProvider theme={materialTheme}>
-        <I18nextProvider i18n={i18n}>
+      await wrapWithRealI18n(
+        <ThemeProvider theme={materialTheme}>
           <p>
             <TransRichText i18nKey="richTextDefaultMapProbe" />
           </p>
@@ -106,8 +90,9 @@ describe("TransRichText default vocabulary", () => {
             <TransRichText i18nKey="richTextDefaultStrongProbe" />
           </p>
           <TransRichText i18nKey="richTextDefaultOrderedListProbe" />
-        </I18nextProvider>
-      </ThemeProvider>,
+        </ThemeProvider>,
+        { resources: richTextResources, defaultNS: "common" },
+      ),
     );
 
     expect(screen.getByRole("link", { name: "docs" })).toHaveAttribute("href", "/docs");

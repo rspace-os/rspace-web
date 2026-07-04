@@ -1,9 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { I18nextProvider } from "react-i18next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createTestI18n } from "@/__tests__/helpers/createTestI18n";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
@@ -54,13 +53,11 @@ const renderExportDialogRaidWithRealI18n = async (
   stateOverrides: Partial<typeof DEFAULT_STATE> = {},
   updateRepoConfig = vi.fn(),
 ) => {
-  const i18n = await createTestI18n({ workspace: workspaceEn }, "workspace");
-  return render(
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider theme={materialTheme}>
-        <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
-      </ThemeProvider>
-    </I18nextProvider>,
+  return renderWithRealI18n(
+    <ThemeProvider theme={materialTheme}>
+      <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
+    </ThemeProvider>,
+    { resources: { workspace: workspaceEn }, defaultNS: "workspace" },
   );
 };
 

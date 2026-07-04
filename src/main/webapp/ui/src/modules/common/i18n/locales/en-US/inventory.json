@@ -1503,7 +1503,7 @@
       "columns": {
         "by": "By",
         "modified": "Modified",
-        "version": "Version"
+        "version": "Version{version, select, none {} other { {version}}}"
       },
       "current": " (current)",
       "none": "No version history is available for this item yet.",
@@ -1635,7 +1635,7 @@
       "tags": "Tags",
       "version": "Version"
     },
-    "modifiedBy": "by {user}"
+    "modifiedBy": "<timeAgo></timeAgo> by {user}"
   },
   "recordInfo": {
     "barcodes": {

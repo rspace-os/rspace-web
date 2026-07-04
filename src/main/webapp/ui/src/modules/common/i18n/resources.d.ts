@@ -848,7 +848,7 @@ export default interface Resources {
           "modified": "Modified",
           "modifiedBy": "Modified by",
           "name": "Name",
-          "version": "Version"
+          "version": "Version{version, select, none {} other { {version}}}"
         },
         "currentTarget": "The link currently points at {version, select, null {latest version.} other {version {version}.}}",
         "dialogTitle": "Internal link version options",
