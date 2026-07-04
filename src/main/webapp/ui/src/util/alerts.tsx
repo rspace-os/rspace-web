@@ -10,15 +10,35 @@ import { toTitleCase } from "./Util";
 
 type Operation = "trashed" | "restored" | "duplicated" | "split" | "moved" | "updated" | "transferred";
 
+// ponytail: "created" isn't an Operation but is a recordAltOperation override
+// (Search.ts's duplicate flow); keyed loosely so unrecognised words still translate
+const OPERATION_LABEL_KEYS = {
+  trashed: "inventory:bulkAlerts.operations.trashed",
+  restored: "inventory:bulkAlerts.operations.restored",
+  duplicated: "inventory:bulkAlerts.operations.duplicated",
+  split: "inventory:bulkAlerts.operations.split",
+  moved: "inventory:bulkAlerts.operations.moved",
+  updated: "inventory:bulkAlerts.operations.updated",
+  transferred: "inventory:bulkAlerts.operations.transferred",
+  created: "inventory:bulkAlerts.operations.created",
+} as const;
+const translateOperation = (operation: string): string => {
+  const key = OPERATION_LABEL_KEYS[operation as keyof typeof OPERATION_LABEL_KEYS];
+  return key ? i18n.t(key) : operation;
+};
+
 const bulkSuccessAlert = (records: Array<InventoryRecord>, suffix: string): string => {
   if (records.length === 0) {
     return i18n.t("inventory:bulkAlerts.success.noChanges");
   }
   const prefix =
     new Set(records.map((r) => r.type)).size === 1
-      ? `${records[0].recordTypeLabel}${records.length === 1 ? "" : "s"}`
+      ? i18n.t("inventory:bulkAlerts.success.prefixSingleType", {
+          count: records.length,
+          label: records[0].recordTypeLabel,
+        })
       : i18n.t("inventory:bulkAlerts.success.items");
-  return i18n.t("inventory:bulkAlerts.success.message", { prefix, operation: suffix });
+  return i18n.t("inventory:bulkAlerts.success.message", { prefix, operation: translateOperation(suffix) });
 };
 
 /**
@@ -39,7 +59,7 @@ export const handleDetailedSuccesses = (
       variant,
       details: records.map((record) => ({
         title: i18n.t("inventory:bulkAlerts.success.detail", {
-          operation: toTitleCase(recordAltOperation(record)),
+          operation: toTitleCase(translateOperation(recordAltOperation(record))),
           name: record.name,
         }),
         variant,

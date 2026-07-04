@@ -10,7 +10,7 @@ import RsSet from "../../../util/set";
 import { type Order, parseOrder } from "../../../util/types";
 import { match } from "../../../util/Util";
 import { mkAlert } from "../../contexts/Alert";
-import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
+import { type GlobalId, globalIdDefinitions } from "../../definitions/BaseRecord";
 import type { Factory } from "../../definitions/Factory";
 import type { InventoryRecord } from "../../definitions/InventoryRecord";
 import type { Person, Username } from "../../definitions/Person";
@@ -597,13 +597,13 @@ export default class CoreFetcher {
 
   get parentGlobalIdType(): ParentGlobalIdType | null {
     return match<GlobalId | null, ParentGlobalIdType | null>([
-      [(id) => globalIdPatterns.sample.test(id ?? ""), "SAMPLE"],
-      [(id) => globalIdPatterns.subsample.test(id ?? ""), "SUBSAMPLE"],
-      [(id) => globalIdPatterns.container.test(id ?? ""), "CONTAINER"],
-      [(id) => globalIdPatterns.sampleTemplate.test(id ?? ""), "TEMPLATE"],
-      [(id) => globalIdPatterns.instrumentTemplate.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
-      [(id) => globalIdPatterns.bench.test(id ?? ""), "BENCH"],
-      [(id) => globalIdPatterns.basket.test(id ?? ""), "BASKET"],
+      [(id) => globalIdDefinitions.sample.pattern.test(id ?? ""), "SAMPLE"],
+      [(id) => globalIdDefinitions.subsample.pattern.test(id ?? ""), "SUBSAMPLE"],
+      [(id) => globalIdDefinitions.container.pattern.test(id ?? ""), "CONTAINER"],
+      [(id) => globalIdDefinitions.sampleTemplate.pattern.test(id ?? ""), "TEMPLATE"],
+      [(id) => globalIdDefinitions.instrumentTemplate.pattern.test(id ?? ""), "INSTRUMENT_TEMPLATE"],
+      [(id) => globalIdDefinitions.bench.pattern.test(id ?? ""), "BENCH"],
+      [(id) => globalIdDefinitions.basket.pattern.test(id ?? ""), "BASKET"],
       [(id) => !id, null],
     ])(this.parentGlobalId);
   }
@@ -653,23 +653,23 @@ export default class CoreFetcher {
   /* context-related */
 
   get parentIsContainer(): boolean {
-    return globalIdPatterns.container.test(this.parentGlobalId ?? "");
+    return globalIdDefinitions.container.pattern.test(this.parentGlobalId ?? "");
   }
 
   get parentIsSample(): boolean {
-    return globalIdPatterns.sample.test(this.parentGlobalId ?? "");
+    return globalIdDefinitions.sample.pattern.test(this.parentGlobalId ?? "");
   }
 
   get parentIsTemplate(): boolean {
-    return globalIdPatterns.sampleTemplate.test(this.parentGlobalId ?? "");
+    return globalIdDefinitions.sampleTemplate.pattern.test(this.parentGlobalId ?? "");
   }
 
   get parentIsBench(): boolean {
-    return globalIdPatterns.bench.test(this.parentGlobalId ?? "");
+    return globalIdDefinitions.bench.pattern.test(this.parentGlobalId ?? "");
   }
 
   get basketSearch(): boolean {
-    return globalIdPatterns.basket.test(this.parentGlobalId ?? "");
+    return globalIdDefinitions.basket.pattern.test(this.parentGlobalId ?? "");
   }
 
   get allTypesAllowed(): boolean {

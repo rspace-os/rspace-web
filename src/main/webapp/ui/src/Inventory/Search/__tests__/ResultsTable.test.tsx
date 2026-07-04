@@ -18,8 +18,6 @@ import materialTheme from "../../../theme";
 import { menuIDs } from "../../../util/menuIDs";
 import ResultsTable from "../ResultsTable";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "inventory:detailedListing.card.requiredPermissions";
-
 const renderResultsTable = (search: Search) => {
   const rootStore = makeMockRootStore({
     uiStore: {
@@ -153,7 +151,7 @@ describe("Results Table", () => {
       if (!row) throw new Error("Could not find table row for result");
 
       await user.hover(row);
-      expect(await screen.findByText(REQUIRED_PERMISSIONS_TOOLTIP)).toBeInTheDocument();
+      expect(await screen.findByText("inventory:detailedListing.card.requiredPermissions")).toBeInTheDocument();
     });
 
     test("select all skips results that lack the required permissions", async () => {
@@ -246,7 +244,7 @@ describe("Results Table", () => {
 
       await user.hover(row);
       expect(await screen.findByText("This item is already linked.")).toBeInTheDocument();
-      expect(screen.queryByText(REQUIRED_PERMISSIONS_TOOLTIP)).not.toBeInTheDocument();
+      expect(screen.queryByText("inventory:detailedListing.card.requiredPermissions")).not.toBeInTheDocument();
     });
   });
 });

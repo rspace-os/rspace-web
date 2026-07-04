@@ -15,6 +15,7 @@ const muiRichTextComponents: RichTextComponents = {
   li: <li />,
   ol: <ol />,
   strong: <strong />,
+  sub: <sub />,
   ul: <ul />,
 };
 

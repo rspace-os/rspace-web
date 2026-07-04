@@ -28,40 +28,28 @@ export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "S
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
- * a given class of record. This object provides a pattern for various classes
- * of record supported by the frontend code.
+ * a given class of record, paired with the two-character prefix used to build
+ * one from an id (see `globalId` below). Keeping the pattern and prefix
+ * together, rather than in two separate maps, is what makes "type + id <->
+ * Global ID" an isomorphism: there is only one place where a record class can
+ * fall out of sync with its own Global ID format.
  */
-export const globalIdPatterns: Record<string, RegExp> = {
+export const globalIdDefinitions = {
   // samples, subsamples, containers, and templates support an optional
   // version suffix (e.g. SS4v1), identifying a historical version
-  sample: /^sa\d+(v\d+)?$/i,
-  subsample: /^ss\d+(v\d+)?$/i,
-  container: /^ic\d+(v\d+)?$/i,
-  sampleTemplate: /^it\d+(v\d+)?$/i,
-  bench: /^be\d+$/i,
-  basket: /^ba\d+$/i,
-  attachment: /^if\d+$/i,
-  field: /^sf\d+$/i,
-  document: /^sd\d+$/i,
-  group: /^gp\d+$/i,
-  instrument: /^in\d+$/i,
-  instrumentTemplate: /^nt\d+(v\d+)?$/i,
-};
-
-export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
-  sample: "SA",
-  subsample: "SS",
-  container: "IC",
-  sampleTemplate: "IT",
-  bench: "BE",
-  basket: "BA",
-  attachment: "IF",
-  field: "SF",
-  document: "SD",
-  group: "GP",
-  instrument: "IN",
-  instrumentTemplate: "NT",
-};
+  sample: { pattern: /^sa\d+(v\d+)?$/i, prefix: "SA" },
+  subsample: { pattern: /^ss\d+(v\d+)?$/i, prefix: "SS" },
+  container: { pattern: /^ic\d+(v\d+)?$/i, prefix: "IC" },
+  sampleTemplate: { pattern: /^it\d+(v\d+)?$/i, prefix: "IT" },
+  bench: { pattern: /^be\d+$/i, prefix: "BE" },
+  basket: { pattern: /^ba\d+$/i, prefix: "BA" },
+  attachment: { pattern: /^if\d+$/i, prefix: "IF" },
+  field: { pattern: /^sf\d+$/i, prefix: "SF" },
+  document: { pattern: /^sd\d+$/i, prefix: "SD" },
+  group: { pattern: /^gp\d+$/i, prefix: "GP" },
+  instrument: { pattern: /^in\d+$/i, prefix: "IN" },
+  instrumentTemplate: { pattern: /^nt\d+(v\d+)?$/i, prefix: "NT" },
+} satisfies Record<string, { pattern: RegExp; prefix: GlobalIdPrefix }>;
 
 /*
  * The corresponding label, as should be rendered by the UI, for each Inventory
@@ -101,24 +89,18 @@ export const inventoryRecordTypeLabels = {
 export const globalIdToInventoryRecordTypeLabel = (
   globalId: GlobalId,
 ): (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] => {
-  if (globalIdPatterns.sample.test(globalId)) return inventoryRecordTypeLabels.sample;
-  if (globalIdPatterns.subsample.test(globalId)) return inventoryRecordTypeLabels.subsample;
-  if (globalIdPatterns.container.test(globalId)) return inventoryRecordTypeLabels.container;
-  if (globalIdPatterns.sampleTemplate.test(globalId)) return inventoryRecordTypeLabels.sampleTemplate;
-  if (globalIdPatterns.bench.test(globalId)) return inventoryRecordTypeLabels.bench;
-  if (globalIdPatterns.basket.test(globalId)) return inventoryRecordTypeLabels.basket;
-  if (globalIdPatterns.instrument.test(globalId)) return inventoryRecordTypeLabels.instrument;
-  if (globalIdPatterns.instrumentTemplate.test(globalId)) return inventoryRecordTypeLabels.instrumentTemplate;
-  throw new Error("No pattern matches");
+  const type = (Object.keys(inventoryRecordTypeLabels) as Array<keyof typeof inventoryRecordTypeLabels>).find((t) =>
+    globalIdDefinitions[t].pattern.test(globalId),
+  );
+  if (!type) throw new Error("No pattern matches");
+  return inventoryRecordTypeLabels[type];
 };
 
 /**
  * Creates the Global ID string for a given record type and ID.
- * This works because "type + id <-> Global ID" is an isomorphism
  */
-export function globalId({ type, id }: { type: keyof typeof globalIdPatterns; id: number }): GlobalId {
-  const prefix = globalIdPrefixes[type];
-  return `${prefix}${id}`;
+export function globalId({ type, id }: { type: keyof typeof globalIdDefinitions; id: number }): GlobalId {
+  return `${globalIdDefinitions[type].prefix}${id}`;
 }
 
 /**

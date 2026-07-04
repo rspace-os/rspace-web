@@ -579,7 +579,7 @@ describe("Renders page with results data", () => {
     const parentLinks = screen.queryAllByTestId("dataset_link_parent_51");
     const parentLink = parentLinks[0];
     if (!parentLink) return;
-    expect(parentLink).toHaveTextContent("parent_project");
+    expect(parentLink).toHaveTextContent("workspace:tinymce.omero.parentLink");
     const parentProjects = screen.queryAllByTestId("project_name_display_51");
     const parentProject = parentProjects[0];
     if (!parentProject) return;

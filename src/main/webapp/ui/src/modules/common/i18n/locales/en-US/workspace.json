@@ -249,7 +249,7 @@
       "charge": "Charge",
       "formula": "Formula",
       "mass": "Mass",
-      "monoisotopicMassSubscript": "mi",
+      "monoisotopicMass": "M<sub>mi</sub>",
       "name": "Name",
       "structureAlt": "Chemical structure"
     },
@@ -342,16 +342,23 @@
       "fetchDetails": "fetch details",
       "filterResults": "Filter results",
       "getLargeThumbnailLabel": "get large thumbnail",
-      "hideImageGrid": "hide image grid",
+      "hideChildren": "hide children [{count}]",
+      "hideImageGrid": "hide image grid{hasOtherFields, select, yes { (there are other fields)} other {}}",
       "itemSearchResultsLabel": "item search results",
       "largeThumbnail": "large thumbnail",
       "loadingData": "Data is loading...",
       "noImage": "no image",
+      "parentLink": " -> parent_{parentType}",
       "redrawImage": "re-draw image",
       "seeInOmero": "see in omero",
       "selectedCount": "Selected: {count}",
+      "showChildren": "show children [{count}]",
+      "showDatasets": "show datasets [{count}]",
+      "showGridOfWells": "show grid of wells [{count}]",
       "showGridOfWellsForField": "show grid of wells for field {field}",
-      "showImageGrid": "show image grid",
+      "showImageGrid": "show image grid [{count}]",
+      "showPlateAcquisitions": "show plateAcquisitions [{count}]",
+      "showPlates": "show plates [{count}]",
       "unavailableAlt": "Unavailable"
     },
     "pubchem": {
@@ -363,10 +370,7 @@
           "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
         },
         "intro": {
-          "docsLink": "PubChem integration docs",
-          "moreInfoMiddle": "and our",
-          "moreInfoPrefix": "See",
-          "moreInfoSuffix": "for more.",
+          "moreInfo": "See <pubchemLink>https://pubchem.ncbi.nlm.nih.gov/</pubchemLink> and our <docsLink>PubChem integration docs</docsLink> for more.",
           "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
         },
         "searchPlaceholders": {
@@ -427,16 +431,10 @@
     "shortcuts": {
       "instructions": {
         "actions": {
-          "clickInput": "Click on the input field next to the command you would like to configure.",
-          "clickSave": "Click on 'Save'.",
-          "pressKey": "On your keyboard, press the key combination you would like to use for that command."
+          "list": "<ul><li>Click on the input field next to the command you would like to configure.</li><li>On your keyboard, press the key combination you would like to use for that command.</li><li>Click on 'Save'.</li></ul>"
         },
         "symbols": {
-          "clickInput": "Click on the input field next to the symbol you would like to configure.",
-          "clickSave": "Click on 'Save'.",
-          "clickSymbol": "Click on the symbol to configure its shortcut.",
-          "pressKey": "On your keyboard, press the key combination you would like to use for that symbol.",
-          "sectionsHint": "All configurable symbols are divided into sections. Click on a section to find the desired symbol. For example, Greek characters are in the 'Extended Latin' section."
+          "list": "<ul><li>All configurable symbols are divided into sections. Click on a section to find the desired symbol. For example, Greek characters are in the 'Extended Latin' section.</li><li>Click on the symbol to configure its shortcut.</li><li>Click on the input field next to the symbol you would like to configure.</li><li>On your keyboard, press the key combination you would like to use for that symbol.</li><li>Click on 'Save'.</li></ul>"
         }
       },
       "instructionsTitle": "Instructions",

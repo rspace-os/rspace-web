@@ -20,6 +20,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "@/components/DialogBoundary";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
+import { resolveStoichiometryErrorMessage } from "@/modules/stoichiometry/utils";
 import StoichiometryInventoryUpdateMoleculeRow from "@/tinyMCE/stoichiometry/StoichiometryInventoryUpdateMoleculeRow";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
 import { getInventoryUpdateEligibility } from "@/tinyMCE/stoichiometry/utils";
@@ -79,7 +80,7 @@ export default function StoichiometryInventoryUpdateDialog({
     saveMutation.isSuccess && failedResults.length > 0 ? t("stoichiometry.inventoryUpdate.saveFeedback") : null;
   const saveError = (() => {
     if (saveMutation.isError) {
-      const message = saveMutation.error.message;
+      const message = resolveStoichiometryErrorMessage(saveMutation.error, t, saveMutation.error.message);
       return t("stoichiometry.inventoryUpdate.saveError", { message });
     }
     if (failedResults.length === 0) {

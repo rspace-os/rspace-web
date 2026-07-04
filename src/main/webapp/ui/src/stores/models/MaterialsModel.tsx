@@ -752,9 +752,10 @@ export class ListOfMaterials {
         <>
           {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.itemsLabel")}
           <ul>
-            {parentIsOnBench.map(({ name, globalId }) => (
-              <li key={globalId}>{`${name} (${globalId})`}</li>
-            ))}
+            {parentIsOnBench.map(({ name, globalId }) => {
+              const title = name.trim();
+              return <li key={globalId}>{title ? `${title} (${globalId})` : `(${globalId})`}</li>;
+            })}
           </ul>
           {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.prompt")}
         </>,

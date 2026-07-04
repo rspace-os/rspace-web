@@ -145,7 +145,7 @@ function CustomField({
                         <RemoveMenu
                           deleteOptions={deleteOptions}
                           onClick={(b) => onRemove(b)}
-                          tooltipTitle={t("fields.templateFields.customField.deleteField")}
+                          tooltipTitle={t("fields.templateFields.customField.deleteField", { fieldName: field.name })}
                         />
                       )}
                     </Box>

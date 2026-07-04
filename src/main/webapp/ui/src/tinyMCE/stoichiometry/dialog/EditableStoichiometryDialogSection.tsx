@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { resolveStoichiometryErrorMessage } from "@/modules/stoichiometry/utils";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import ValidatingSubmitButton, { IsValid } from "../../../components/ValidatingSubmitButton";
 import StoichiometryTable from "../StoichiometryTable";
@@ -19,10 +20,6 @@ import {
   type SetCurrentStoichiometry,
   STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX,
 } from "./shared";
-
-function getMutationErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 export default function EditableStoichiometryDialogSection({
   currentStoichiometry,
@@ -97,7 +94,7 @@ export default function EditableStoichiometryDialogSection({
         onSave?.(updatedStoichiometry.id, updatedStoichiometry.revision);
         console.log("Stoichiometry data saved successfully");
       } catch (error) {
-        setMutationError(getMutationErrorMessage(error, t("stoichiometry.dialog.saveError")));
+        setMutationError(resolveStoichiometryErrorMessage(error, t, t("stoichiometry.dialog.saveError")));
         console.error("Save failed", error);
       }
     })();
@@ -126,7 +123,7 @@ export default function EditableStoichiometryDialogSection({
       onDelete?.();
       setCurrentStoichiometry(null);
     } catch (error) {
-      setMutationError(getMutationErrorMessage(error, t("stoichiometry.dialog.deleteError")));
+      setMutationError(resolveStoichiometryErrorMessage(error, t, t("stoichiometry.dialog.deleteError")));
       console.error("Delete failed", error);
     }
   };

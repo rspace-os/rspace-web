@@ -7,7 +7,7 @@ import { UiPreferences } from "../../hooks/api/useUiPreference";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext, { type UseLocation } from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
-import type { CoreFetcherArgs } from "../../stores/definitions/Search";
+import type { CoreFetcherArgs, PermalinkType } from "../../stores/definitions/Search";
 import { parseCoreFetcherArgsFromUrl } from "../../stores/models/Fetcher/CoreFetcher";
 import useStores from "../../stores/use-stores";
 import { getErrorMessage, UserCancelledAction } from "../../util/error";
@@ -23,6 +23,16 @@ type SearchRouterArgs = {
   paramsOverride?: CoreFetcherArgs;
 };
 
+// PermalinkType uses URL-lowercase names; globalId expects camelCase keys
+const permalinkTypeToGlobalIdType = {
+  sample: "sample",
+  container: "container",
+  subsample: "subsample",
+  sampletemplate: "sampleTemplate",
+  instrument: "instrument",
+  instrumenttemplate: "instrumentTemplate",
+} as const satisfies Record<PermalinkType, Parameters<typeof globalId>[0]["type"]>;
+
 const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   const { t } = useTranslation("inventory");
   const { searchStore, uiStore } = useStores();
@@ -35,7 +45,7 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
   useEffect(() => {
     if (paramsOverride?.permalink) {
       document.title = `${globalId({
-        type: paramsOverride.permalink.type,
+        type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
         id: paramsOverride.permalink.id,
       })} | RSpace Inventory`;
     } else {

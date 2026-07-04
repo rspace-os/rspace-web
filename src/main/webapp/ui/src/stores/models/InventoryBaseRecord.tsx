@@ -19,7 +19,7 @@ import { isoToLocale, match } from "../../util/Util";
 import { type Alert, mkAlert } from "../contexts/Alert";
 import type { Attachment } from "../definitions/Attachment";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../definitions/Barcode";
-import { type GlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
+import { type GlobalId, globalIdDefinitions, type Id } from "../definitions/BaseRecord";
 import type { Location } from "../definitions/Container";
 import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
 import type { ExtraField, ExtraFieldAttrs } from "../definitions/ExtraField";
@@ -1537,11 +1537,11 @@ export default class InventoryBaseRecord
   }
 
   get isWorkbench(): boolean {
-    return globalIdPatterns.bench.test(this.globalId ?? "");
+    return globalIdDefinitions.bench.pattern.test(this.globalId ?? "");
   }
 
   get isTemplate(): boolean {
-    return globalIdPatterns.sampleTemplate.test(this.globalId ?? "");
+    return globalIdDefinitions.sampleTemplate.pattern.test(this.globalId ?? "");
   }
 
   get fieldNamesInUse(): Array<string> {

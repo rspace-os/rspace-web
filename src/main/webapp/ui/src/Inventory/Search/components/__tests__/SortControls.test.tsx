@@ -35,12 +35,12 @@ describe("SortControls", () => {
 
     const selectedOption = selectedOptions[0];
     const selectedLabel = translateAdjustableTableLabel(selectedOption.label, (key) => `inventory:${key}`);
-    expect(
-      screen.getByRole("menuitem", {
-        name: new RegExp(
-          `${selectedLabel} (inventory:search\\.controls\\.sort\\.ascending|inventory:search\\.controls\\.sort\\.descending)`,
-        ),
-      }),
-    ).toHaveAttribute("aria-current", "true");
+    const sortDirectionLabel = search.fetcher.isOrderDesc
+      ? "inventory:search.controls.sort.ascending"
+      : "inventory:search.controls.sort.descending";
+    expect(screen.getByRole("menuitem", { name: `${selectedLabel} ${sortDirectionLabel}` })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
   });
 });

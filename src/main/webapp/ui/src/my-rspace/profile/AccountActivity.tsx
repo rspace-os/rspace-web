@@ -6,7 +6,6 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import type { TFunction } from "i18next";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
@@ -18,17 +17,13 @@ import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 
-function getHeadCells(t: TFunction) {
-  return [
-    { id: "eventType", numeric: false, label: t("profile.accountActivity.action") },
-    { id: "timestamp", numeric: true, label: t("profile.accountActivity.time") },
-  ];
-}
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function AccountActivity(props: any) {
   const { t } = useTranslation("common");
-  const headCells = getHeadCells(t);
+  const headCells = [
+    { id: "eventType", numeric: false, label: t("profile.accountActivity.action") },
+    { id: "timestamp", numeric: true, label: t("profile.accountActivity.time") },
+  ];
   const [fetched, setFetched] = React.useState(false);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [activities, setActivities] = React.useState<any[] | null>([]);

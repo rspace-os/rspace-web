@@ -6,10 +6,10 @@ import FormControl from "@mui/material/FormControl";
 import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import type { TFunction } from "i18next";
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
-import i18n from "../../modules/common/i18n";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
 import type { UseState } from "../../util/types";
@@ -27,108 +27,107 @@ import { BookingType, ErrorReason, Order } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 
-const makeBookingHeaderCells = () => [
+const makeBookingHeaderCells = (t: TFunction<"workspace">) => [
   {
     id: "bookingID" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.bookingId"),
+    label: t("tinymce.clustermarket.columns.bookingId"),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.equipmentName"),
+    label: t("tinymce.clustermarket.columns.equipmentName"),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.manufacturer"),
+    label: t("tinymce.clustermarket.columns.manufacturer"),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.model"),
+    label: t("tinymce.clustermarket.columns.model"),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.bookedBy"),
+    label: t("tinymce.clustermarket.columns.bookedBy"),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.startTime"),
+    label: t("tinymce.clustermarket.columns.startTime"),
   },
   {
     id: "duration" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.durationMins"),
+    label: t("tinymce.clustermarket.columns.durationMins"),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.bookingType"),
+    label: t("tinymce.clustermarket.columns.bookingType"),
   },
   {
     id: "status" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.status"),
+    label: t("tinymce.clustermarket.columns.status"),
   },
 ];
 // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
 // therefore its OK to just cache notes in the DB along with the other booking details
-const makeMaintenanceNotesHeader = () => ({
+const makeMaintenanceNotesHeader = (t: TFunction<"workspace">) => ({
   id: "maintenance_notes",
   numeric: false,
-  label: i18n.t("workspace:tinymce.clustermarket.columns.maintenanceNotes"),
+  label: t("tinymce.clustermarket.columns.maintenanceNotes"),
 });
-const makeEquipmentHeaderCells = () => [
+const makeEquipmentHeaderCells = (t: TFunction<"workspace">) => [
   {
     id: "equipmentID" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.equipmentId"),
+    label: t("tinymce.clustermarket.columns.equipmentId"),
   },
   {
     id: "equipmentName" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.equipmentName"),
+    label: t("tinymce.clustermarket.columns.equipmentName"),
   },
   {
     id: "manufacturer" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.manufacturer"),
+    label: t("tinymce.clustermarket.columns.manufacturer"),
   },
   {
     id: "model" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.model"),
+    label: t("tinymce.clustermarket.columns.model"),
   },
   {
     id: "bookingType" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.bookingType"),
+    label: t("tinymce.clustermarket.columns.bookingType"),
   },
   {
     id: "bookingID" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.lastUse"),
+    label: t("tinymce.clustermarket.columns.lastUse"),
   },
   {
     id: "start_time" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.onDate"),
+    label: t("tinymce.clustermarket.columns.onDate"),
   },
   {
     id: "requesterName" as const,
     numeric: false,
-    label: i18n.t("workspace:tinymce.clustermarket.columns.bookedBy"),
+    label: t("tinymce.clustermarket.columns.bookedBy"),
   },
 ];
 type ClustermarketArgs = {
   defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
-let VISIBLE_HEADER_CELLS: ReturnType<typeof makeBookingHeaderCells> | ReturnType<typeof makeEquipmentHeaderCells> =
-  makeBookingHeaderCells();
+let VISIBLE_HEADER_CELLS: ReturnType<typeof makeBookingHeaderCells> | ReturnType<typeof makeEquipmentHeaderCells> = [];
 let SELECTED_BOOKINGS: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = [];
 export const getSelectedBookings = (): ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =>
   SELECTED_BOOKINGS;
@@ -145,9 +144,9 @@ function Clustermarket({
 }: ClustermarketArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
   const { trackEvent } = React.useContext(AnalyticsContext);
-  const bookingHeaderCells = makeBookingHeaderCells();
-  const equipmentHeaderCells = makeEquipmentHeaderCells();
-  const maintenanceNotes = makeMaintenanceNotesHeader();
+  const bookingHeaderCells = makeBookingHeaderCells(t);
+  const equipmentHeaderCells = makeEquipmentHeaderCells(t);
+  const maintenanceNotes = makeMaintenanceNotesHeader(t);
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> = useState(
     [] as Array<BookingAndEquipmentDetails>,
   );

@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Route, Routes } from "react-router";
 import { useLandmark } from "../../components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
-import { getSavedGlobalId, globalIdPatterns } from "../../stores/definitions/BaseRecord";
+import { getSavedGlobalId, globalIdDefinitions } from "../../stores/definitions/BaseRecord";
 import type { CoreFetcherArgs } from "../../stores/definitions/Search";
 import { hasLocation } from "../../stores/models/HasLocation";
 import SubSampleModel from "../../stores/models/SubSampleModel";
@@ -54,7 +54,7 @@ function LeftPanelView(): React.ReactNode {
   React.useEffect(() => {
     const inContainer =
       typeof searchStore.search.fetcher.parentGlobalId === "string"
-        ? globalIdPatterns.container.test(searchStore.search.fetcher.parentGlobalId)
+        ? globalIdDefinitions.container.pattern.test(searchStore.search.fetcher.parentGlobalId)
         : false;
     setInContainerSearch(inContainer);
   }, [searchStore.search.searchView, searchStore.search.fetcher.parentGlobalId]);

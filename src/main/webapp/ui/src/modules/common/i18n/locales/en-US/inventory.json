@@ -93,8 +93,7 @@
       "updateDetailsFailed": "Error updating Basket details."
     },
     "delete": {
-      "bodyPrefix": "You are about to delete {name}.",
-      "bodySuffix": "The contents of the Basket will not be affected.",
+      "body": "You are about to delete {name}.<br />The contents of the Basket will not be affected.",
       "title": "Deleting Basket"
     },
     "fallbackName": "The Basket",
@@ -128,11 +127,22 @@
       }
     },
     "largeImageWarning": "Please note, on slower network connections uploading large images may trigger an error.",
+    "operations": {
+      "created": "created",
+      "duplicated": "duplicated",
+      "moved": "moved",
+      "restored": "restored",
+      "split": "split",
+      "transferred": "transferred",
+      "trashed": "trashed",
+      "updated": "updated"
+    },
     "success": {
       "detail": "{operation} \"{name}\".",
       "items": "Items",
       "message": "{prefix} successfully {operation}.",
-      "noChanges": "No changes."
+      "noChanges": "No changes.",
+      "prefixSingleType": "{label}{count, plural, one {} other {s}}"
     }
   },
   "container": {
@@ -692,20 +702,15 @@
         }
       },
       "list": {
-        "columns": {
-          "identifier": "Identifier",
-          "state": "State",
-          "type": "Type"
-        },
         "deleteOrRetract": {
           "delete": "Delete",
           "retract": "Retract"
         },
         "editFirst": "To update any details, press Edit first.",
         "headers": {
-          "identifier": "fields.identifiers.list.headers.identifier",
-          "state": "fields.identifiers.list.headers.state",
-          "type": "fields.identifiers.list.headers.type"
+          "identifier": "Identifier",
+          "state": "State",
+          "type": "Type"
         },
         "hide": "Hide",
         "igsnDocLink": "See IGSN Documentation for details",
@@ -1027,7 +1032,7 @@
       "customField": {
         "defaultDescription": "Default Description",
         "defaultValue": "Default Value",
-        "deleteField": "Delete field",
+        "deleteField": "Delete field {fieldName}",
         "deleteNewField": "Delete new field",
         "deleteOptions": {
           "keep": "Keep field in existing samples",
@@ -1272,6 +1277,8 @@
     "customFieldName": "Custom Field Name",
     "fields": {
       "customFieldType": "Custom field type",
+      "defaultTemplateName": "New template",
+      "defaultTemplateNameFromFile": "New template from {fileName}",
       "fieldNameValidation": "You either already have a field with that name or that name is not permitted.",
       "templateName": "Template Name",
       "templateNameValidation": "Template name is required."

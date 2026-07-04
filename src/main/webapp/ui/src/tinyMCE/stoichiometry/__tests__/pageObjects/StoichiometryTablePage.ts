@@ -2,22 +2,7 @@ import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 
 const LOADING_MOLECULE_INFO = "common:stoichiometry.dialog.loadingMoleculeInformation";
-const EXPORT_TO_CSV = "common:stoichiometry.tableToolbar.exportToCsv";
 const ADD_CHEMICAL = "common:stoichiometry.addReagent.addChemical";
-const PUBCHEM_MENU_ITEM =
-  /common:stoichiometry\.addReagent\.sources\.pubChem\.title.*common:stoichiometry\.addReagent\.sources\.pubChem\.subheader/i;
-const GALLERY_MENU_ITEM =
-  /common:stoichiometry\.addReagent\.sources\.gallery\.title.*common:stoichiometry\.addReagent\.sources\.gallery\.subheader/i;
-const MANUAL_MENU_ITEM =
-  /common:stoichiometry\.addReagent\.sources\.manual\.title.*common:stoichiometry\.addReagent\.sources\.manual\.subheader/i;
-const PUBCHEM_DIALOG = "workspace:tinymce.pubchem.dialog.title";
-const GALLERY_DIALOG = "common:appBar.sections.gallery.title";
-const MANUAL_DIALOG = "common:stoichiometry.addReagent.title";
-const PUBCHEM_NAME_CAS_PLACEHOLDER = "workspace:tinymce.pubchem.dialog.searchPlaceholders.nameCas";
-const INSERT = "common:actions.insert";
-const UPDATE_INVENTORY_STOCK = "common:stoichiometry.inventoryUpdate.updateInventoryStock";
-const INVENTORY_UPDATE_DIALOG = "common:stoichiometry.inventoryUpdate.dialogTitle";
-const YIELD_EXCESS = "common:stoichiometry.table.columns.yieldExcess";
 
 /**
  * Retriable locator for a raw CSS selector scoped within `root`. CSS is a
@@ -117,7 +102,7 @@ export class StoichiometryTablePage {
   }
 
   yieldCell(rowIndex: number): Locator {
-    const field = this.columnField(YIELD_EXCESS);
+    const field = this.columnField("common:stoichiometry.table.columns.yieldExcess");
     return this.cellByField(this.dataRows().nth(rowIndex), field);
   }
 
@@ -177,7 +162,7 @@ export class StoichiometryTablePage {
     HTMLAnchorElement.prototype.click = function noop() {};
 
     try {
-      await page.getByRole("menuitem", { name: EXPORT_TO_CSV }).click();
+      await page.getByRole("menuitem", { name: "common:stoichiometry.tableToolbar.exportToCsv" }).click();
     } finally {
       URL.createObjectURL = originalCreate;
       URL.revokeObjectURL = originalRevoke;
@@ -197,19 +182,19 @@ export class StoichiometryTablePage {
 
   get pubChemMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: PUBCHEM_MENU_ITEM,
+      name: "common:stoichiometry.addReagent.sources.pubChem.title common:stoichiometry.addReagent.sources.pubChem.subheader",
     });
   }
 
   get galleryMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: GALLERY_MENU_ITEM,
+      name: "common:stoichiometry.addReagent.sources.gallery.title common:stoichiometry.addReagent.sources.gallery.subheader",
     });
   }
 
   get manualEntryMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: MANUAL_MENU_ITEM,
+      name: "common:stoichiometry.addReagent.sources.manual.title common:stoichiometry.addReagent.sources.manual.subheader",
     });
   }
 
@@ -218,19 +203,19 @@ export class StoichiometryTablePage {
   }
 
   get pubChemDialog(): Locator {
-    return page.getByText(PUBCHEM_DIALOG);
+    return page.getByText("workspace:tinymce.pubchem.dialog.title");
   }
 
   get galleryDialog(): Locator {
-    return page.getByRole("dialog", { name: GALLERY_DIALOG });
+    return page.getByRole("dialog", { name: "common:appBar.sections.gallery.title" });
   }
 
   get manualSmilesDialog(): Locator {
-    return page.getByRole("dialog", { name: MANUAL_DIALOG });
+    return page.getByRole("dialog", { name: "common:stoichiometry.addReagent.title" });
   }
 
   async searchPubChem(compound: string): Promise<void> {
-    await page.getByPlaceholder(PUBCHEM_NAME_CAS_PLACEHOLDER).fill(compound);
+    await page.getByPlaceholder("workspace:tinymce.pubchem.dialog.searchPlaceholders.nameCas").fill(compound);
     await page.getByRole("button", { name: "common:actions.search" }).click();
   }
 
@@ -247,7 +232,7 @@ export class StoichiometryTablePage {
   }
 
   async insertPubChemResult(): Promise<void> {
-    await page.getByRole("button", { name: INSERT }).click();
+    await page.getByRole("button", { name: "common:actions.insert" }).click();
   }
 
   async enterManualSmiles({ smiles, name }: { smiles: string; name: string }): Promise<void> {
@@ -268,7 +253,7 @@ export class StoichiometryTablePage {
   }
 
   get updateInventoryStockButton(): Locator {
-    return page.getByRole("button", { name: UPDATE_INVENTORY_STOCK });
+    return page.getByRole("button", { name: "common:stoichiometry.inventoryUpdate.updateInventoryStock" });
   }
 
   async clickUpdateInventoryStock(): Promise<void> {
@@ -318,7 +303,7 @@ export class StoichiometryTablePage {
  */
 export class InventoryUpdateDialogPage {
   readonly dialog: Locator = page.getByRole("dialog", {
-    name: INVENTORY_UPDATE_DIALOG,
+    name: "common:stoichiometry.inventoryUpdate.dialogTitle",
   });
 
   columnHeader(name: string): Locator {

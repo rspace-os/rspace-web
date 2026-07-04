@@ -90,8 +90,6 @@ const transitionMapping = {
 };
 export type State = keyof typeof transitionMapping;
 
-const DEFAULT_NEW_TEMPLATE_NAME = "New template";
-
 const invalidFieldNames = [
   "",
   "Description",
@@ -371,7 +369,7 @@ export default class Import {
       fileByRecordTypeLoaded: computed,
     });
     this.recordType = recordType;
-    this.templateName = DEFAULT_NEW_TEMPLATE_NAME;
+    this.templateName = i18n.t("inventory:import.fields.defaultTemplateName");
     this.templateInfo = null;
     this.state = new StateMachine(transitionMapping, "initial", (x) => x, null);
     this.createNewTemplate = true;
@@ -404,7 +402,11 @@ export default class Import {
     }
 
     if (this.isSamplesImport && this.samplesFile) {
-      this.setTemplateName(`New template from ${filenameExceptExtension(this.samplesFile.name)}`);
+      this.setTemplateName(
+        i18n.t("inventory:import.fields.defaultTemplateNameFromFile", {
+          fileName: filenameExceptExtension(this.samplesFile.name),
+        }),
+      );
     }
 
     getRootStore().uiStore.setDirty(() => {
@@ -441,7 +443,7 @@ export default class Import {
     this.setFile(null);
     this.resetMappingsByRecordType();
     if (this.isSamplesImport) {
-      this.setTemplateName(DEFAULT_NEW_TEMPLATE_NAME);
+      this.setTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
     }
     this.state.transitionTo("initial");
   }
@@ -965,7 +967,7 @@ export default class Import {
         if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
         this.resetAllLoadedFiles();
         this.resetAllMappings();
-        this.setTemplateName(DEFAULT_NEW_TEMPLATE_NAME);
+        this.setTemplateName(i18n.t("inventory:import.fields.defaultTemplateName"));
       }
     } catch (error) {
       const gatewayTimeout =

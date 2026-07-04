@@ -227,7 +227,7 @@ export function HasLocationMixin<TBase extends new (...args: any[]) => Inventory
         }
         options.set("lastMoved", () => ({
           renderOption: "node",
-          data: this.lastMoveDate ? this.lastMoveDate.toLocaleString() : "\u2014",
+          data: this.lastMoveDate ? this.lastMoveDate.toLocaleString() : "—",
         }));
       } else {
         options.set("previousLocation", () => ({

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Navigate, useParams } from "react-router";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
 import NavigateContext from "../stores/contexts/Navigate";
-import { globalIdPatterns, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
+import { globalIdDefinitions, inventoryRecordTypeLabels } from "../stores/definitions/BaseRecord";
 import type { PermalinkType } from "../stores/definitions/Search";
 import { match } from "../util/Util";
 import SearchRouter from "./Search/SearchRouter";
@@ -47,7 +47,7 @@ function PermalinkRouter({ type }: PermalinkRouterArgs): React.ReactNode {
      * its suffix; surface it as the `version` search param rather than
      * dropping it.
      */
-    if (globalIdPatterns[recordType].test(id)) {
+    if (globalIdDefinitions[recordType].pattern.test(id)) {
       const versionSuffix = /v(\d+)$/i.exec(id);
       if (versionSuffix) urlSearchParams.set("version", versionSuffix[1]);
       return (

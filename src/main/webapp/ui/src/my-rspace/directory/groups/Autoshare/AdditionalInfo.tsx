@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import TransRichText from "../../../../modules/common/i18n/TransRichText";
 
 function AdditionalInfo() {
   const { t } = useTranslation("common");
@@ -31,11 +32,7 @@ function AdditionalInfo() {
         </Tooltip>
       </AlertTitle>
       {showInfo && (
-        <>
-          <p>{t("profile.groups.autosharing.additionalInfo.p1")}</p>
-          <p>{t("profile.groups.autosharing.additionalInfo.p2")}</p>
-          <p>{t("profile.groups.autosharing.additionalInfo.p3")}</p>
-        </>
+        <TransRichText i18nKey="common:profile.groups.autosharing.additionalInfo.body" components={{ p: <p /> }} />
       )}
     </Alert>
   );

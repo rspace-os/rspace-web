@@ -24,6 +24,7 @@ import type { Hsl } from "../../accentedTheme";
 import type { DocLinkName } from "../../assets/DocLinks";
 import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
+import TransRichText from "../../modules/common/i18n/TransRichText";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
@@ -457,15 +458,22 @@ function IntegrationCard<Credentials>({
               <Typography variant="body2">{usageText}</Typography>
               {typeof website === "string" ? (
                 <Typography variant="body2">
-                  {t("integrationCard.moreInfo.websitePrefix")}{" "}
-                  <Link href={website.startsWith("/") ? website : `https://${website}`}>{website}</Link>{" "}
-                  {t("integrationCard.moreInfo.websiteMiddle")} <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
-                  {t("integrationCard.moreInfo.suffix")}
+                  <TransRichText
+                    i18nKey="apps:integrationCard.moreInfo.withWebsite"
+                    values={{ website, helpLinkText }}
+                    components={{
+                      website: <Link href={website.startsWith("/") ? website : `https://${website}`} />,
+                      docs: <Link href={docLinks[docLink]} />,
+                    }}
+                  />
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  {t("integrationCard.moreInfo.docsOnlyPrefix")} <Link href={docLinks[docLink]}>{helpLinkText}</Link>{" "}
-                  {t("integrationCard.moreInfo.suffix")}
+                  <TransRichText
+                    i18nKey="apps:integrationCard.moreInfo.docsOnly"
+                    values={{ helpLinkText }}
+                    components={{ docs: <Link href={docLinks[docLink]} /> }}
+                  />
                 </Typography>
               )}
             </section>

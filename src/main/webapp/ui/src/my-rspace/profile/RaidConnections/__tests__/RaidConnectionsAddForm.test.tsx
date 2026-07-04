@@ -432,6 +432,29 @@ describe("RaidConnectionsAddForm", () => {
         expect(autocomplete).toHaveAttribute("aria-invalid", "true");
       });
     });
+
+    it("Should handle network error during submission", async () => {
+      givenMockQueryData();
+      mockMutateAsync.mockRejectedValueOnce(new Error("Network error"));
+
+      renderWithProviders(defaultProps);
+      const user = userEvent.setup();
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
+
+      await user.click(autocomplete);
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
+
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalled();
+      });
+
+      // The rejection is thrown from within the submit handler, so the code
+      // after mutateAsync (invalidateQueries, handleCloseForm) never runs.
+      expect(mockHandleCloseForm).not.toHaveBeenCalled();
+    });
   });
 
   describe("Props Handling", () => {
@@ -509,7 +532,7 @@ describe("RaidConnectionsAddForm", () => {
       await user.click(autocomplete);
 
       await waitFor(() => {
-        // When title is empty, the label will be " (raid-123)" with leading space
+        // When title is empty, the label should not include a leading space.
         expect(screen.getByText("(raid-123)")).toBeInTheDocument();
       });
     });

@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Radio from "@mui/material/Radio";
 import { DataGrid, type GridCellParams, type GridColDef } from "@mui/x-data-grid";
+import type { TFunction } from "i18next";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
@@ -20,28 +21,15 @@ const STOICHIOMETRY_TABLE_SLOTS = {
 const getMoleculeRowId = (row: EditableMolecule) => row.id;
 const getInventoryLinkExportValue = (row: EditableMolecule): string =>
   row.inventoryLink?.inventoryItemGlobalId ?? row.deletedInventoryLink?.inventoryItemGlobalId ?? "";
-const getRoleExportValue = (
-  role: string | null | undefined,
-  translateRole: (
-    key:
-      | "stoichiometry.table.roles.reactant"
-      | "stoichiometry.table.roles.product"
-      | "stoichiometry.table.roles.reagent",
-  ) => string,
-): string => {
-  if (!role) {
-    return "";
-  }
-  switch (role.toUpperCase()) {
-    case "AGENT":
-      return translateRole("stoichiometry.table.roles.reagent");
-    case "REACTANT":
-      return translateRole("stoichiometry.table.roles.reactant");
-    case "PRODUCT":
-      return translateRole("stoichiometry.table.roles.product");
-    default:
-      return `${role.slice(0, 1)}${role.slice(1).toLowerCase()}`;
-  }
+const ROLE_LABEL_KEYS = {
+  AGENT: "stoichiometry.table.roles.reagent",
+  REACTANT: "stoichiometry.table.roles.reactant",
+  PRODUCT: "stoichiometry.table.roles.product",
+} as const;
+const getRoleExportValue = (role: string | null | undefined, t: TFunction<"common">): string => {
+  const key = role && ROLE_LABEL_KEYS[role.toUpperCase() as keyof typeof ROLE_LABEL_KEYS];
+  // ponytail: unknown roles export as their raw code — no fake title-casing of untranslatable data
+  return key ? t(key) : (role ?? "");
 };
 export default function StoichiometryTableGrid({
   editable,
@@ -146,7 +134,7 @@ export default function StoichiometryTableGrid({
         headerName: t("stoichiometry.table.columns.type"),
         sortable: false,
         minWidth: 160,
-        valueFormatter: (value) => getRoleExportValue(value, (key) => t(key)),
+        valueFormatter: (value) => getRoleExportValue(value, t),
         renderCell: ({ row }) => {
           if (!roleColumnEditable) {
             return <StoichiometryTableRoleChip role={row.role || ""} />;

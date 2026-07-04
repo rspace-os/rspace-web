@@ -357,20 +357,10 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
               </Tooltip>
             </AlertTitle>
             {this.state.tab === 0 && this.state.instructions && (
-              <ul>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.clickInput")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.pressKey")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.actions.clickSave")}</li>
-              </ul>
+              <TransRichText i18nKey="workspace:tinymce.shortcuts.instructions.actions.list" />
             )}
             {this.state.tab === 1 && this.state.instructions && (
-              <ul>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.sectionsHint")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickSymbol")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickInput")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.pressKey")}</li>
-                <li>{i18n.t("workspace:tinymce.shortcuts.instructions.symbols.clickSave")}</li>
-              </ul>
+              <TransRichText i18nKey="workspace:tinymce.shortcuts.instructions.symbols.list" />
             )}
             {this.state.instructions && (
               <p>

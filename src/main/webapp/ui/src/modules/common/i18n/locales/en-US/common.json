@@ -375,9 +375,7 @@
       },
       "autosharing": {
         "additionalInfo": {
-          "p1": "Enabling autosharing for a member will ensure that all their current and future documents and notebooks will be shared automatically with the \"read\" permission with this group.",
-          "p2": "Edit permission can be granted or items can be unshared through the \"Manage Shared Documents\" section as usual.",
-          "p3": "This setting is revertible and you can always manually change the autoshare status of any non-PI member in your lab group.",
+          "body": "<p>Enabling autosharing for a member will ensure that all their current and future documents and notebooks will be shared automatically with the \"read\" permission with this group.</p><p>Edit permission can be granted or items can be unshared through the \"Manage Shared Documents\" section as usual.</p><p>This setting is revertible and you can always manually change the autoshare status of any non-PI member in your lab group.</p>",
           "title": "Additional Information",
           "toggle": "Toggle additional information"
         },
@@ -559,8 +557,7 @@
       "adding": "Adding...",
       "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
       "confirmDisassociateTitle": "Confirm Disassociation",
-      "connectedTo": "connected to:",
-      "currently": "Currently",
+      "currentlyConnectedTo": "<strong>Currently connected to:</strong> {{raid}}",
       "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
       "disassociate": "Disassociate",
       "errorLoadingGroupInfo": "Error loading group info: {error}",
@@ -574,7 +571,7 @@
       "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
       "notConnected": "Not connected",
       "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <a href=\"/apps\">Apps page</a> and enable RAiD.",
-      "previously": "Previously",
+      "previouslyConnectedTo": "<strong>Previously connected to:</strong> {{raid}}",
       "title": "RAiD Connections",
       "validation": {
         "identifierMinLength": "RAiD identifier must be at least 3 characters",
@@ -622,16 +619,16 @@
     "query": "Search query"
   },
   "sections": {
-    "audios": "sections.audios",
-    "chemistry": "sections.chemistry",
-    "dmps": "sections.dmps",
-    "documents": "sections.documents",
-    "images": "sections.images",
-    "miscellaneous": "sections.miscellaneous",
-    "networkFiles": "sections.networkFiles",
-    "pdfDocuments": "sections.pdfDocuments",
-    "snippets": "sections.snippets",
-    "videos": "sections.videos"
+    "audios": "Audio",
+    "chemistry": "Chemistry",
+    "dmps": "DMPs",
+    "documents": "Documents",
+    "images": "Images",
+    "miscellaneous": "Miscellaneous",
+    "networkFiles": "Filestores",
+    "pdfDocuments": "Exports",
+    "snippets": "Snippets",
+    "videos": "Videos"
   },
   "shareDialog": {
     "addUsersOrGroups": "Add users or groups to share with",
@@ -727,6 +724,14 @@
       "reactionTable": "Reaction Table",
       "saveChanges": "Save Changes",
       "saveError": "Failed to save stoichiometry changes. Please try again."
+    },
+    "errors": {
+      "calculateFailed": "Failed to calculate stoichiometry: {status}",
+      "deductStockFailed": "Failed to deduct stock: {status}",
+      "deleteFailed": "Failed to delete stoichiometry: {status}",
+      "fetchFailed": "Failed to fetch stoichiometry: {status}",
+      "moleculeInfoFailed": "Failed to retrieve molecule information: {status}",
+      "updateFailed": "Failed to update stoichiometry: {status}"
     },
     "gallery": {
       "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",

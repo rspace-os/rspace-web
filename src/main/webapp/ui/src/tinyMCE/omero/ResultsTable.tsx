@@ -180,12 +180,18 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
     };
     const isDataSetOrPlateAcquistion = (item: OmeroItem): boolean =>
       item.type === "dataset" || item.type === "plateAcquisition";
+    const childCountFor = (item: OmeroItem): number =>
+      isDataSetOrPlateAcquistion(item) ? item.addedChildren.length : item.childCounts !== 0 ? item.childCounts : 1;
     const getFetchText = (item: OmeroItem): string => {
-      if (item.showingChildren) return "hide children";
-      if (isDataSetOrPlateAcquistion(item)) return "show children";
-      if (item.type === "plate") return item.childCounts > 1 ? "show plateAcquisitions " : " show grid of wells  ";
-      if (item.type === "project") return "show datasets";
-      if (item.type === "screen") return "show plates";
+      const count = childCountFor(item);
+      if (item.showingChildren) return t("tinymce.omero.hideChildren", { count });
+      if (isDataSetOrPlateAcquistion(item)) return t("tinymce.omero.showChildren", { count });
+      if (item.type === "plate")
+        return item.childCounts > 1
+          ? t("tinymce.omero.showPlateAcquisitions", { count })
+          : t("tinymce.omero.showGridOfWells", { count });
+      if (item.type === "project") return t("tinymce.omero.showDatasets", { count });
+      if (item.type === "screen") return t("tinymce.omero.showPlates", { count });
       return "";
     };
     const toggleSelected = (item: OmeroItem): void => {
@@ -342,8 +348,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       hideChildren(item, true);
                                     }}
                                   >
-                                    {t("tinymce.omero.hideImageGrid")}{" "}
-                                    {item.samplesUrls && item.samplesUrls.length > 1 ? " (there are other fields)" : ""}
+                                    {t("tinymce.omero.hideImageGrid", {
+                                      hasOtherFields: item.samplesUrls && item.samplesUrls.length > 1 ? "yes" : "other",
+                                    })}
                                   </a>
                                 ) : item.type === "plateAcquisition" ? (
                                   <div>
@@ -381,8 +388,9 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                         data-testid={`${item.type}_show_grid_${item.id}`}
                                         sx={{ fontWeight: "bold" }}
                                       >
-                                        {t("tinymce.omero.showImageGrid")}
-                                        {item.childCounts !== 0 ? ` [${item.childCounts}] ` : " [1]"}
+                                        {t("tinymce.omero.showImageGrid", {
+                                          count: item.childCounts !== 0 ? item.childCounts : 1,
+                                        })}
                                       </Box>
                                     </a>
                                   </div>
@@ -445,12 +453,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                       }
                                     }}
                                   >
-                                    {getFetchText(item)}{" "}
-                                    {isDataSetOrPlateAcquistion(item)
-                                      ? `[${item.addedChildren.length}]`
-                                      : item.childCounts !== 0
-                                        ? `[${item.childCounts}]`
-                                        : "[1]"}
+                                    {getFetchText(item)}
                                   </a>
                                 )}
                               </div>
@@ -461,7 +464,7 @@ const ResultsTable = forwardRef<HTMLDivElement, ResultsTableArgs>(
                                   sx={{ fontWeight: "bold" }}
                                 >
                                   <a href={`#${item.parentType}_name_display_${item.parentId}`}>
-                                    {` -> parent_${item.parentType}`}
+                                    {t("tinymce.omero.parentLink", { parentType: item.parentType })}
                                   </a>
                                 </Box>
                               )}

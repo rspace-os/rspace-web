@@ -5,37 +5,35 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import * as v from "valibot";
+import { lazyT } from "@/modules/common/i18n/lazyT";
 import { formatList } from "@/modules/common/i18n/listFormat";
 import { useAddRaidIdentifierMutation } from "@/modules/raid/mutations";
 import { raidQueryKeys, useGetAvailableRaidIdentifiersAjaxQuery } from "@/modules/raid/queries";
+import { formatRaidConnectionLabel } from "@/my-rspace/profile/RaidConnections/formatRaidConnectionLabel";
 
 // Schema for a RAiD option
-const createRaidOptionSchema = ({
-  identifierMinLength,
-  identifierRequired,
-}: {
-  identifierMinLength: string;
-  identifierRequired: string;
-}) =>
-  v.object({
-    label: v.string(),
-    raidServerAlias: v.string(),
-    raidIdentifier: v.pipe(v.string(), v.nonEmpty(identifierRequired), v.minLength(3, identifierMinLength)),
-  });
+const raidOptionSchema = v.object({
+  label: v.string(),
+  raidServerAlias: v.string(),
+  raidIdentifier: v.pipe(
+    v.string(),
+    v.nonEmpty(lazyT("common:profile.raidConnections.validation.identifierRequired")),
+    v.minLength(3, lazyT("common:profile.raidConnections.validation.identifierMinLength")),
+  ),
+});
 
-const createRaidConnectionsFormSchema = (messages: { identifierMinLength: string; identifierRequired: string }) =>
-  v.object({
-    raidOption: v.pipe(
-      v.nullable(createRaidOptionSchema(messages)),
-      v.check((val) => val !== null, messages.identifierRequired),
-    ),
-  });
+const raidConnectionsFormSchema = v.object({
+  raidOption: v.pipe(
+    v.nullable(raidOptionSchema),
+    v.check((val) => val !== null, lazyT("common:profile.raidConnections.validation.identifierRequired")),
+  ),
+});
 
 type RaidConnectionsAddFormValues = {
   raidOption: RaidOption | null;
 };
 
-type RaidOption = v.InferOutput<ReturnType<typeof createRaidOptionSchema>>;
+type RaidOption = v.InferOutput<typeof raidOptionSchema>;
 
 interface RaidConnectionsAddFormProps {
   groupId: string;
@@ -51,10 +49,6 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
   const { data } = useGetAvailableRaidIdentifiersAjaxQuery();
   const queryClient = useQueryClient();
   const mutation = useAddRaidIdentifierMutation({ groupId });
-  const raidConnectionsFormSchema = createRaidConnectionsFormSchema({
-    identifierMinLength: t("profile.raidConnections.validation.identifierMinLength"),
-    identifierRequired: t("profile.raidConnections.validation.identifierRequired"),
-  });
 
   const form = useForm({
     defaultValues,
@@ -66,10 +60,16 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
         throw new Error("RAiD option is required");
       }
 
-      await mutation.mutateAsync({
-        raidServerAlias: value.raidOption.raidServerAlias,
-        raidIdentifier: value.raidOption.raidIdentifier,
-      });
+      try {
+        await mutation.mutateAsync({
+          raidServerAlias: value.raidOption.raidServerAlias,
+          raidIdentifier: value.raidOption.raidIdentifier,
+        });
+      } catch {
+        // mutation.isError/error already drive the error UI below; stop the
+        // submit flow here instead of invalidating queries and closing the form.
+        return;
+      }
 
       await queryClient.invalidateQueries({
         queryKey: raidQueryKeys.availableRaidIdentifiers(),
@@ -84,7 +84,7 @@ const RaidConnectionsAddForm = ({ groupId, handleCloseForm }: RaidConnectionsAdd
   }
 
   const options: Array<RaidOption> = data.data.map((option) => ({
-    label: `${option.raidTitle} (${option.raidIdentifier})`,
+    label: formatRaidConnectionLabel(option),
     raidServerAlias: option.raidServerAlias,
     raidIdentifier: option.raidIdentifier,
   }));

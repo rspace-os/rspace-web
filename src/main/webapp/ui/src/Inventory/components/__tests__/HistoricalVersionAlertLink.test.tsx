@@ -27,6 +27,8 @@ vi.mock("../../../stores/stores/getRootStore", () => ({
 }));
 
 describe("HistoricalVersionAlert rich i18n", () => {
+  // record.recordTypeLabel resolves via the global i18n singleton (MobX
+  // getter), not the isolated instance renderWithRealI18n provides.
   setupRealAppI18n();
 
   test("renders the interpolated title and latest-version link", async () => {

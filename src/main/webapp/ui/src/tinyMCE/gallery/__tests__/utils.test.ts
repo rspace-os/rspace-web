@@ -1,5 +1,6 @@
 import { waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
 
@@ -42,6 +43,8 @@ function makeRecord(overrides: Partial<WorkspaceRecordInformation> = {}): Worksp
 }
 
 describe("addFromGallery", () => {
+  setupRealAppI18n();
+
   let RS: MockedRS;
   let generateIconSrc: ReturnType<typeof vi.fn>;
   let isPlayableOnJWPlayer: ReturnType<typeof vi.fn>;
@@ -127,7 +130,7 @@ describe("addFromGallery", () => {
     addFromGallery(makeRecord({ type: "Snippet" }));
 
     await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith("workspace:tinymce.gallery.insertSnippetFailed");
+      expect(window.alert).toHaveBeenCalledWith("An error occurred while inserting the snippet 21");
     });
     expect(RS.tinymceInsertContent).not.toHaveBeenCalled();
   });

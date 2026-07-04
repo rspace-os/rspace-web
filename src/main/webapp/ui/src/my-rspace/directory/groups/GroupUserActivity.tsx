@@ -2,7 +2,6 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
-import type { TFunction } from "i18next";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
@@ -13,14 +12,6 @@ import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getSorting } from "@/util/table";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import UserDetails from "./../../../components/UserDetails";
-
-function getHeadCells(t: TFunction) {
-  return [
-    { id: "userFullName", numeric: false, label: t("profile.groups.groupActivity.user") },
-    { id: "eventType", numeric: false, label: t("profile.groups.activity.action") },
-    { id: "timestamp", numeric: true, label: t("profile.groups.activity.time") },
-  ];
-}
 
 type GroupActivityProps = {
   groupId: string;
@@ -38,7 +29,11 @@ type ActivityRow = {
  */
 function GroupActivity({ groupId }: GroupActivityProps) {
   const { t } = useTranslation("common");
-  const headCells = getHeadCells(t);
+  const headCells = [
+    { id: "userFullName", numeric: false, label: t("profile.groups.groupActivity.user") },
+    { id: "eventType", numeric: false, label: t("profile.groups.activity.action") },
+    { id: "timestamp", numeric: true, label: t("profile.groups.activity.time") },
+  ];
   const [activities, setActivities] = React.useState<Array<ActivityRow>>([]);
   const [order, setOrder] = React.useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");

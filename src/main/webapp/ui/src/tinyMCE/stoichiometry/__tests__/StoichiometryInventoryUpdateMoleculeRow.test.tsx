@@ -71,7 +71,7 @@ describe("StoichiometryInventoryUpdateMoleculeRow", () => {
     );
 
   const columnIndexes = {
-    Actions: 0,
+    "common:stoichiometry.inventoryUpdate.selectMoleculeLabel": 0,
     "common:stoichiometry.inventoryUpdate.molecule": 1,
     "common:stoichiometry.inventoryUpdate.inStock": 2,
     "common:stoichiometry.inventoryUpdate.willUse": 3,

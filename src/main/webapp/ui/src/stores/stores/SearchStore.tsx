@@ -1,5 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -237,11 +238,7 @@ export default class SearchStore {
         if (
           await uiStore.confirm(
             i18n.t("inventory:baskets.delete.title"),
-            <>
-              {i18n.t("inventory:baskets.delete.bodyPrefix", { name })}
-              <br />
-              {i18n.t("inventory:baskets.delete.bodySuffix")}
-            </>,
+            <TransRichText i18nKey="inventory:baskets.delete.body" values={{ name }} />,
             i18n.t("common:actions.ok"),
             i18n.t("common:actions.cancel"),
           )

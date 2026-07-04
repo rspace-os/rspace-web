@@ -2,7 +2,7 @@ import InstrumentModel, { type InstrumentAttrs } from "@/stores/models/Instrumen
 import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import type InvApiService from "../../../common/InvApiService";
 import type { BarcodeRecord, PersistedBarcodeAttrs } from "../../definitions/Barcode";
-import { type GlobalId, globalIdPatterns } from "../../definitions/BaseRecord";
+import { type GlobalId, globalIdDefinitions } from "../../definitions/BaseRecord";
 import type { Document, DocumentAttrs } from "../../definitions/Document";
 import type { Factory } from "../../definitions/Factory";
 import type { Identifier, IdentifierAttrs } from "../../definitions/Identifier";
@@ -28,20 +28,20 @@ export default class AlwaysNewFactory implements Factory {
   newRecord(params: Record<string, unknown> & { globalId: GlobalId }): InventoryRecord {
     if (params instanceof InventoryBaseRecord) throw new Error("Cannot instantiate Record from InventoryBaseRecord");
     const g = params.globalId ?? "";
-    const patterns = globalIdPatterns;
-    const record = patterns.sample.test(g)
+    const patterns = globalIdDefinitions;
+    const record = patterns.sample.pattern.test(g)
       ? new SampleModel(this, params as SampleAttrs)
-      : patterns.subsample.test(g)
+      : patterns.subsample.pattern.test(g)
         ? new SubSampleModel(this, params as SubSampleAttrs)
-        : patterns.container.test(g)
+        : patterns.container.pattern.test(g)
           ? new ContainerModel(this, params as ContainerAttrs)
-          : patterns.sampleTemplate.test(g)
+          : patterns.sampleTemplate.pattern.test(g)
             ? new TemplateModel(this, params as TemplateAttrs)
-            : patterns.bench.test(g)
+            : patterns.bench.pattern.test(g)
               ? new ContainerModel(this, params as ContainerAttrs)
-              : patterns.instrument.test(g)
+              : patterns.instrument.pattern.test(g)
                 ? new InstrumentModel(this, params as InstrumentAttrs)
-                : patterns.instrumentTemplate.test(g)
+                : patterns.instrumentTemplate.pattern.test(g)
                   ? new InstrumentTemplateModel(this, params as InstrumentTemplateAttrs)
                   : /* otherwise */ null;
     if (!record) throw new Error("Unknown Global ID");

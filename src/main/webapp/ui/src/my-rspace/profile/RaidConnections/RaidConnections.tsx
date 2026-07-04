@@ -9,6 +9,7 @@ import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
 import { useRaidIntegrationInfoAjaxQuery } from "@/modules/raid/queries";
+import { formatRaidConnectionLabel } from "@/my-rspace/profile/RaidConnections/formatRaidConnectionLabel";
 import RaidConnectionsEntry from "@/my-rspace/profile/RaidConnections/RaidConnectionsEntry";
 
 const RaidConnections = ({ groupId }: { groupId: string }) => {
@@ -84,16 +85,17 @@ const RaidConnections = ({ groupId }: { groupId: string }) => {
               <Typography variant="body2">{getUnavailableMessage()}</Typography>
               {raidIdentifier && (
                 <Typography variant="body2">
-                  <strong>
-                    {/* It shouldn't be possible for groups to change types
-                       (so a project group can never become a lab group),
-                        but handling it here just in case */}
-                    {!integrationData.data?.available || groupType !== "PROJECT_GROUP"
-                      ? t("profile.raidConnections.previously")
-                      : t("profile.raidConnections.currently")}{" "}
-                    {t("profile.raidConnections.connectedTo")}
-                  </strong>{" "}
-                  {`${raidTitle} (${raidIdentifier})`}
+                  {/* It shouldn't be possible for groups to change types
+                     (so a project group can never become a lab group),
+                      but handling it here just in case */}
+                  <TransRichText
+                    i18nKey={
+                      !integrationData.data?.available || groupType !== "PROJECT_GROUP"
+                        ? "common:profile.raidConnections.previouslyConnectedTo"
+                        : "common:profile.raidConnections.currentlyConnectedTo"
+                    }
+                    values={{ raid: formatRaidConnectionLabel({ raidIdentifier, raidTitle }) }}
+                  />
                 </Typography>
               )}
             </Stack>

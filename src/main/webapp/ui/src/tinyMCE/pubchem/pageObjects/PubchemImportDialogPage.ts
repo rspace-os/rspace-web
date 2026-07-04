@@ -1,9 +1,5 @@
 import { type Locator, page, userEvent } from "vitest/browser";
 
-const SEARCH_BUTTON = /^(common:)?actions\.search$/;
-const SELECT_COMPOUND = /^(workspace:)?tinymce\.pubchem\.dialog\.selectCompoundLabel$/;
-const VIEW_ON_PUBCHEM = /^(workspace:)?tinymce\.pubchem\.viewOnPubChem$/;
-
 /**
  * Page object for the PubChem ImportDialog, as mounted by ImportDialogStory.
  * Encapsulates locators and user interactions; assertions live in the tests.
@@ -14,7 +10,7 @@ export class PubchemImportDialogPage {
   }
 
   get searchButton(): Locator {
-    return page.getByRole("button", { name: SEARCH_BUTTON });
+    return page.getByRole("button", { name: "common:actions.search" });
   }
 
   get firstCompoundCard(): Locator {
@@ -22,11 +18,15 @@ export class PubchemImportDialogPage {
   }
 
   get firstCompoundCheckbox(): Locator {
-    return page.getByRole("checkbox", { name: SELECT_COMPOUND }).first();
+    return page
+      .getByRole("checkbox", {
+        name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
+      })
+      .first();
   }
 
   get firstViewOnPubchemLink(): Locator {
-    return page.getByRole("link", { name: VIEW_ON_PUBCHEM }).first();
+    return page.getByRole("link", { name: "workspace:tinymce.pubchem.viewOnPubChem" }).first();
   }
 
   compoundCard(name: string): Locator {
@@ -38,7 +38,9 @@ export class PubchemImportDialogPage {
   }
 
   compoundCardCheckbox(name: string): Locator {
-    return this.compoundCard(name).getByRole("checkbox", { name: SELECT_COMPOUND });
+    return this.compoundCard(name).getByRole("checkbox", {
+      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
+    });
   }
 
   /**

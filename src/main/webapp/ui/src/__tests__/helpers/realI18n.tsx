@@ -29,6 +29,15 @@ export async function renderWithRealI18n(ui: React.ReactElement, config: RealI18
   return render(await wrapWithRealI18n(ui, config));
 }
 
+/**
+ * Switches the global `i18n` singleton (not the isolated instance the other
+ * helpers here create) to real English for the suite's lifetime. Needed
+ * alongside `renderWithRealI18n`/`wrapWithRealI18n` only when the component
+ * under test renders text derived outside the React tree's i18n context -
+ * e.g. a MobX model getter (`recordTypeLabel`) that calls `i18n.t(...)` on
+ * the shared singleton directly, which an `I18nextProvider` override can't
+ * reach.
+ */
 export function setupRealAppI18n(): void {
   beforeAll(async () => {
     await appI18n.changeLanguage("en-US");

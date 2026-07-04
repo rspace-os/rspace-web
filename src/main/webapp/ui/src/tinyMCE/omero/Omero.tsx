@@ -8,11 +8,11 @@ import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
+import type { TFunction } from "i18next";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Cell } from "../../components/EnhancedTableHead";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
-import i18n from "../../modules/common/i18n";
 import materialTheme from "../../theme";
 import { ErrorReason, type ErrorReasonType, Order } from "./Enums";
 import ErrorView from "./ErrorView";
@@ -32,14 +32,12 @@ import {
 import { $PropertyExists, type OmeroArgs, type OmeroItem } from "./OmeroTypes";
 import ResultsTable from "./ResultsTable";
 
-const makeTableHeaderCells = (): Array<Cell<string>> => [
-  { id: "path", numeric: false, label: i18n.t("workspace:tinymce.omero.columns.path") },
-  { id: "description", numeric: false, label: i18n.t("workspace:tinymce.omero.columns.description") },
+const makeTableHeaderCells = (t: TFunction<"workspace">): Array<Cell<string>> => [
+  { id: "path", numeric: false, label: t("tinymce.omero.columns.path") },
+  { id: "description", numeric: false, label: t("tinymce.omero.columns.description") },
 ];
 
 let SELECTED_ITEMS: Array<OmeroItem> = [];
-// Left empty at module load so makeTableHeaderCells' i18n.t calls don't run
-// before the catalog loads; the component repopulates it on render.
 let VISIBLE_HEADER_CELLS: Array<Cell<string>> = [];
 
 export const getSelectedItems = (): Array<OmeroItem> => SELECTED_ITEMS;
@@ -52,7 +50,7 @@ export const getOrder = (): string => (localStorage.getItem(ORDER_KEY) || DEFAUL
 export const getOrderBy = (): string => (localStorage.getItem(ORDER_BY_KEY) || DEFAULT_ORDERBY).replace(/['"]+/g, "");
 function Omero({ omero_web_url }: OmeroArgs): React.ReactNode {
   const { t } = useTranslation("workspace");
-  VISIBLE_HEADER_CELLS = makeTableHeaderCells();
+  VISIBLE_HEADER_CELLS = makeTableHeaderCells(t);
   const [items, setItems] = useState<Array<OmeroItem>>([]);
   const [fetchDone, setFetchDone] = useState(false);
   const [errorReason, setErrorReason] = useState<ErrorReasonType>(ErrorReason.None);

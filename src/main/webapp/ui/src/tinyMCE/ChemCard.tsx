@@ -11,6 +11,7 @@ import TableRow from "@mui/material/TableRow";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 
 type MetadataMap = Record<string, string>;
 
@@ -174,12 +175,7 @@ export default function ChemCard(props: ChemCardProps) {
       { label: t("tinymce.chemCard.mass"), value: chemical.mass },
       // Monoisotopic mass symbol = Exact mass
       {
-        label: (
-          <>
-            {"M"}
-            <sub>{t("tinymce.chemCard.monoisotopicMassSubscript")}</sub>
-          </>
-        ),
+        label: <TransRichText i18nKey="workspace:tinymce.chemCard.monoisotopicMass" />,
         value: chemical.exactMass,
       },
       { label: t("tinymce.chemCard.charge"), value: chemical.formalCharge },

@@ -4,8 +4,11 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import type Resources from "@/modules/common/i18n/resources";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
+
+type RecordTypeLabelKey = `recordTypes.${keyof Resources["inventory"]["recordTypes"]}.lower`;
 
 const TYPE_LABEL_KEYS = {
   sample: "recordTypes.sample.lower",
@@ -14,7 +17,7 @@ const TYPE_LABEL_KEYS = {
   sampletemplate: "recordTypes.sampleTemplate.lower",
   instrument: "recordTypes.instrument.lower",
   instrumenttemplate: "recordTypes.instrumentTemplate.lower",
-} as const satisfies Record<PermalinkType, string>;
+} as const satisfies Record<PermalinkType, RecordTypeLabelKey>;
 
 type PermalinkNotFoundArgs = {
   permalink: Permalink;

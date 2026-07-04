@@ -12,6 +12,7 @@ import { Dialog } from "@/components/DialogBoundary";
 import { useIntegrationIsAllowedAndEnabled } from "@/hooks/api/integrationHelpers";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import { useCalculateStoichiometryMutation } from "@/modules/stoichiometry/mutations";
+import { resolveStoichiometryErrorMessage } from "@/modules/stoichiometry/utils";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import AppBar from "../../../components/AppBar";
@@ -222,7 +223,11 @@ export default function StoichiometryDialog({
               </Button>
               {hasCalculateError && calculateStoichiometryError && (
                 <Alert severity="error" sx={{ width: "100%", maxWidth: 480 }}>
-                  {calculateStoichiometryError.message}
+                  {resolveStoichiometryErrorMessage(
+                    calculateStoichiometryError,
+                    t,
+                    calculateStoichiometryError.message,
+                  )}
                 </Alert>
               )}
             </Box>

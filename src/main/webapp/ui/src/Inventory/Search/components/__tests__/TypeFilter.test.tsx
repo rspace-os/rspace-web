@@ -15,7 +15,7 @@ describe("TypeFilter", () => {
     );
     expect(
       screen.getByRole("menuitem", {
-        name: /search\.controls\.type\.all/,
+        name: "inventory:search.controls.type.all inventory:search.controls.type.enterQueryFirst",
       }),
     ).toHaveAttribute("aria-current", "true");
   });

@@ -17,7 +17,7 @@ import Result from "../../util/result";
 import RsSet from "../../util/set";
 import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
-import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
+import { type GlobalId, getSavedGlobalId, globalIdDefinitions, type Id } from "../definitions/BaseRecord";
 import type { Basket } from "../definitions/Basket";
 import type { Editable } from "../definitions/Editable";
 import type { Factory } from "../definitions/Factory";
@@ -1398,7 +1398,7 @@ export default class Search implements SearchInterface {
   }
 
   get benchSearch(): boolean {
-    return globalIdPatterns.bench.test(this.fetcher.parentGlobalId ?? "");
+    return globalIdDefinitions.bench.pattern.test(this.fetcher.parentGlobalId ?? "");
   }
 
   onUsersBench(user: Person): boolean {
