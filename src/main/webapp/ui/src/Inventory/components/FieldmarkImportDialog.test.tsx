@@ -7,14 +7,15 @@
  * FieldmarkImportDialog.spec.tsx because they need real layout / scroll
  * position. Everything else is converted here.
  */
+import "@/__tests__/__mocks__/muiTransitions";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible, render } from "@/__tests__/customQueries";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { stubAppChrome } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 
@@ -96,6 +97,7 @@ const IGSN_CANDIDATE_FIELDS: Record<string, ReadonlyArray<string>> = {
  * import endpoint resolves successfully; individual tests override it.
  */
 function stubEndpoints({ importResponder }: { importResponder?: (body: unknown) => [number, unknown] } = {}) {
+  stubAppChrome(mockAxios);
   mockAxios.onGet("/api/inventory/v1/fieldmark/notebooks").reply(200, NOTEBOOKS);
 
   mockAxios.onGet(/\/api\/inventory\/v1\/fieldmark\/notebooks\/igsnCandidateFields/).reply((config) => {
@@ -294,7 +296,9 @@ describe("FieldmarkImportDialog", () => {
 
       // Release the pending import so the test can clean up without dangling
       // promises.
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
 
     test("should show loading state on import button during import", async () => {
@@ -324,30 +328,26 @@ describe("FieldmarkImportDialog", () => {
         expect(screen.getByRole("button", { name: "Import" })).toBeDisabled();
       });
 
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
 
     test("should display IGSN message when igsnCandidateFields endpoint returns IGSN error", async () => {
-      // The component logs the rejected igsnCandidateFields request.
-      const restoreConsole = silenceConsole(["error"], [/.*/]);
-      try {
-        const user = userEvent.setup();
-        await renderAndWaitForNotebooks();
+      const user = userEvent.setup();
+      await renderAndWaitForNotebooks();
 
-        await user.click(
-          screen.getByRole("radio", {
-            name: "Select notebook: Notebook IGSN Error",
-          }),
-        );
+      await user.click(
+        screen.getByRole("radio", {
+          name: "Select notebook: Notebook IGSN Error",
+        }),
+      );
 
-        expect(
-          await screen.findByText("RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark.", {
-            exact: false,
-          }),
-        ).toBeVisible();
-      } finally {
-        restoreConsole();
-      }
+      expect(
+        await screen.findByText("RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark.", {
+          exact: false,
+        }),
+      ).toBeVisible();
     });
 
     test("should hide identifier parsing UI during import when identifier field is unselected", async () => {
@@ -386,7 +386,9 @@ describe("FieldmarkImportDialog", () => {
       expect(screen.queryByRole("combobox", { name: /IGSN ID Field/i })).not.toBeInTheDocument();
       expect(screen.queryByText("Loading available IGSN ID fields...")).not.toBeInTheDocument();
 
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
   });
 });

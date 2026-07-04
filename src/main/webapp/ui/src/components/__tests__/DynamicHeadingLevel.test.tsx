@@ -39,17 +39,23 @@ describe("DynamicHeadingLevel", () => {
     expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
   });
   test("Specifying level on a nested HeadingContext is not allowed.", () => {
-    const restoreConsole = silenceConsole(["error"], [/./]);
-    expect(() => {
-      render(
-        <HeadingContext>
-          <HeadingContext level={1}>
-            <Heading>Test</Heading>
-          </HeadingContext>
-        </HeadingContext>,
-      );
-    }).toThrow();
-    restoreConsole();
+    const restoreConsole = silenceConsole(
+      ["error"],
+      ["Only root HeadingContexts can specify a level", "The above error occurred in the <HeadingContext> component"],
+    );
+    try {
+      expect(() => {
+        render(
+          <HeadingContext>
+            <HeadingContext level={1}>
+              <Heading>Test</Heading>
+            </HeadingContext>
+          </HeadingContext>,
+        );
+      }).toThrow();
+    } finally {
+      restoreConsole();
+    }
   });
   test("Nesting should max out at 6.", () => {
     render(

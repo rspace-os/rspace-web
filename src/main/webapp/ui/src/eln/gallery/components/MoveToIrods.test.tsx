@@ -1,10 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import "@/__tests__/__mocks__/muiTransitions";
+import { beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { stubAppChrome } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import { MoveToIrodsDialogWithOneFile, MoveToIrodsDialogWithTwoFiles } from "./MoveToIrods.story";
 
@@ -55,27 +57,9 @@ const OPERATION_SUCCESS_RESPONSE = {
   fileInfoDetails: [{ recordId: 123, fileName: "test.jpg", succeeded: true }],
 };
 
-/*
- * The dialog's AppBar / analytics bootstrap fires a handful of background
- * requests on mount whose async state updates settle outside `act(...)`. The
- * resulting "not wrapped in act" warnings are irrelevant to the behaviour
- * under test, so console.error is muted for the duration of each test (using a
- * single, non-chaining spy to avoid recursion) and restored afterwards.
- */
-function createConsoleErrorSpy() {
-  return vi.spyOn(console, "error").mockImplementation(() => {});
-}
-
-let consoleErrorSpy: ReturnType<typeof createConsoleErrorSpy>;
-beforeEach(() => {
-  consoleErrorSpy = createConsoleErrorSpy();
-});
-afterEach(() => {
-  consoleErrorSpy.mockRestore();
-});
-
 beforeEach(() => {
   mockAxios.reset();
+  stubAppChrome(mockAxios);
 
   // Default: two iRODS filestores on two different filesystems, plus an S3 one
   // that must be filtered out.
@@ -99,6 +83,12 @@ async function selectDestination(user: ReturnType<typeof userEvent.setup>, name:
   await user.click(await screen.findByRole("menuitem", { name }));
 }
 
+async function waitForDialogTransitions() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+}
+
 describe("MoveToIrods", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations, including the visible login form", async () => {
@@ -110,6 +100,7 @@ describe("MoveToIrods", () => {
       // scanned for label-association violations too.
       await selectDestination(user, /lab data/i);
       expect(await screen.findByRole("textbox", { name: /username/i })).toBeVisible();
+      await waitForDialogTransitions();
       await expectAccessible(baseElement);
     });
   });

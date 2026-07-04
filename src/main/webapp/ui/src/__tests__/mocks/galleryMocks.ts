@@ -2,10 +2,10 @@ import { HttpResponse, http, type RequestHandler } from "msw";
 
 /*
  * Shared MSW handlers for the gallery-render endpoints that fire when any
- * gallery component is mounted. Register these per-suite via
- * `worker.use(...galleryAppShellHandlers())` in a `beforeEach` — they are NOT
- * global defaults because they are too gallery-specific to live in the app-shell
- * defaults in mswAppShellHandlers.ts.
+ * gallery component is mounted. Browser-mode setup registers these as defaults
+ * so late, fire-and-forget gallery requests remain mocked after resetHandlers().
+ * Suites can still register their own handlers with `worker.use(...)` when a
+ * test needs a more specific response.
  *
  * Note: `analyticsProperties` and `livechatProperties` are already covered by
  * the global app-shell defaults in mswAppShellHandlers.ts. Do not duplicate
@@ -16,6 +16,8 @@ export const galleryAppShellHandlers = (): RequestHandler[] => [
    * UiPreferences fetches one request per key — catch the whole path prefix
    * with a wildcard and return an empty object (the component's defaults apply).
    */
+  http.get("/userform/ajax/preference", () => HttpResponse.json({})),
+  http.post("/userform/ajax/preference", () => HttpResponse.json({})),
   http.get("/userform/ajax/preference*", () => HttpResponse.json({})),
 
   /*
@@ -66,6 +68,15 @@ export const galleryAppShellHandlers = (): RequestHandler[] => [
         },
         parentId: 0,
       },
+      error: null,
+      success: true,
+      errorMsg: null,
+    }),
+  ),
+
+  http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
+    HttpResponse.json({
+      data: [],
       error: null,
       success: true,
       errorMsg: null,

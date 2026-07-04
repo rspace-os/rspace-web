@@ -119,10 +119,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             }),
           );
         }
-      } else {
-        console.info(
-          "The response from this request is being discarded because a different listing of plans has been requested whilst this network call was in flight.",
-        );
       }
     } catch (e) {
       console.error("Could not get DMPs for scope", e);

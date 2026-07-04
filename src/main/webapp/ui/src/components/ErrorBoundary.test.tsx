@@ -13,7 +13,7 @@ describe("ErrorBoundary", () => {
   // expected here and would otherwise clutter the test output.
   let restoreConsole: () => void;
   beforeEach(() => {
-    restoreConsole = silenceConsole(["error"], [/.*/]);
+    restoreConsole = silenceConsole(["error"], ["Error: Error", "ErrorComponent"]);
   });
   afterEach(() => {
     restoreConsole();

@@ -1,12 +1,11 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import AlertContext, { type Alert } from "@/stores/contexts/Alert";
@@ -44,14 +43,16 @@ const renderWithProviders = (
   );
   return { ...view, addAlert };
 };
+
+async function waitForDialogTransitions() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+  });
+}
+
 describe("RaidIntegrationCard", () => {
-  let restoreConsole = () => {};
   beforeEach(() => {
     vi.clearAllMocks();
-    restoreConsole = silenceConsole(["log"], ["RaidIntegrationCard:"]);
-  });
-  afterEach(() => {
-    restoreConsole();
   });
   describe("Accessibility", () => {
     test("Should have no axe violations once dialog opened.", async () => {
@@ -65,6 +66,7 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
+      await waitForDialogTransitions();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();
