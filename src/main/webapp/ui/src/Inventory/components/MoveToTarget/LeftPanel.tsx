@@ -1,7 +1,7 @@
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
@@ -40,7 +40,7 @@ function LeftPanel(_: LeftPanelArgs) {
           header={
             <Typography variant="h6" component="h3">
               {t("moveToTarget.pickDestination")}{" "}
-              <HelpLinkIcon link={docLinks.moving} title={t("moveToTarget.helpTitle")} />
+              <HelpLinkIcon link={helpDocsArticleUrl("dncoti2i4t-moving-items")} title={t("moveToTarget.helpTitle")} />
             </Typography>
           }
           selectionHelpText={selectionHelpText()}

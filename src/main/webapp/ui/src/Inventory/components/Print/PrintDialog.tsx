@@ -19,8 +19,6 @@ import TransRichText from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import { Optional } from "@/util/optional";
-import { toTitleCase } from "@/util/Util";
-import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
@@ -145,10 +143,7 @@ export const PrintOptionsWrapper = ({ itemsToPrint, printOptions, setPrintOption
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              <TransRichText
-                i18nKey="inventory:print.options.labelShapeHint"
-                values={{ link: docLinks.barcodesPrinting }}
-              />
+              <TransRichText i18nKey="inventory:print.options.labelShapeHint" />
             </Alert>
           )}
         </FormControl>
@@ -350,7 +345,7 @@ function PrintDialog({
                           index={0}
                           printOptions={printOptions}
                           printLabelContents={{
-                            itemLabel: `${toTitleCase(inventoryRecord.type)} - ${inventoryRecord.name}`,
+                            itemLabel: `${inventoryRecord.recordTypeLabel} - ${inventoryRecord.name}`,
                             locationLabel:
                               inventoryRecord instanceof ContainerModel || inventoryRecord instanceof SubSampleModel
                                 ? (inventoryRecord.immediateParentContainer?.globalId ?? "-")
@@ -374,7 +369,7 @@ function PrintDialog({
                     ref={componentToPrint}
                     printOptions={printOptions}
                     itemsToPrint={itemsToPrint.map((record, index) => ({
-                      itemLabel: `${toTitleCase(record.type)} - ${record.name}`,
+                      itemLabel: `${record.recordTypeLabel} - ${record.name}`,
                       locationLabel:
                         record instanceof ContainerModel || record instanceof SubSampleModel
                           ? (record.immediateParentContainer?.globalId ?? "-")

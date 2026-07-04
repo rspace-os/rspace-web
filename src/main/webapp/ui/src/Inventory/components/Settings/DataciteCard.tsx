@@ -13,13 +13,12 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../../assets/DocLinks";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import ApiService from "../../../common/InvApiService";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import WarningBar from "../../../components/WarningBar";
-import TransRichText from "../../../modules/common/i18n/TransRichText";
 import type { DataCiteServerUrl, IntegrationState, SystemSettings } from "../../../stores/stores/AuthStore";
 import useStores from "../../../stores/use-stores";
 import { getErrorMessage } from "../../../util/error";
@@ -75,7 +74,12 @@ export default function DataciteCard({ currentSettings }: DataciteCardArgs): Rea
         <FormControl>
           <FormLabel>
             {t("settings.datacite.formLabel")}
-            <HelpLinkIcon link={docLinks.igsnIdentifiers} title={t("settings.datacite.helpTitle")} />
+            <HelpLinkIcon
+              link={helpDocsArticleUrl(
+                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+              )}
+              title={t("settings.datacite.helpTitle")}
+            />
           </FormLabel>
           <FormHelperText component="div" sx={{ m: 0 }}>
             <TransRichText i18nKey="inventory:settings.datacite.formHelperText" />

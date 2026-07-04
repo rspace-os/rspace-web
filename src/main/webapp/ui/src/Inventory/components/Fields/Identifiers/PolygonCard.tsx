@@ -10,7 +10,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AddButton from "../../../../components/AddButton";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -299,7 +299,12 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             {editable
               ? t("fields.identifiers.polygonCard.editorTitle")
               : t("fields.identifiers.polygonCard.configurationTitle")}
-            <HelpLinkIcon link={docLinks.igsnIdentifiers} title={t("fields.identifiers.polygonCard.helpTitle")} />
+            <HelpLinkIcon
+              link={helpDocsArticleUrl(
+                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+              )}
+              title={t("fields.identifiers.polygonCard.helpTitle")}
+            />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
             {t("fields.identifiers.polygonCard.polygonDescription")}

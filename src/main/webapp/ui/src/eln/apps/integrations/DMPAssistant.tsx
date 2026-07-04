@@ -68,8 +68,8 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
         color={LOGO_COLOR}
         usageText={t("integrations.dmpAssistant.usage")}
         helpLinkText={t("integrations.dmpAssistant.helpLink")}
-        website="dmp-pgd.ca"
-        docLink="dmpassistant"
+        website="https://dmp-pgd.ca"
+        docLink="n88a3g86e0-dmp-assistant-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.dmpAssistant.setup.instructions" />

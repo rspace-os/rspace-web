@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import { makeListFormatter } from "@/modules/common/i18n/listFormat";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import CustomTooltip from "../../components/CustomTooltip";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import SubmitSpinner from "../../components/SubmitSpinnerButton";
@@ -73,6 +73,8 @@ function RecordsImport(): React.ReactNode {
   ];
 
   const notImportableTypes = recordTypeStates.filter(({ file, submittable }) => file && !submittable);
+  const notImportableTypeParts = listFormatter.formatToParts(notImportableTypes.map(({ label }) => label));
+  let notImportableTypeIndex = 0;
 
   const importButtonLabel = t("import.actions.importSelected", {
     types: listFormatter.format(recordTypeStates.filter(({ submittable }) => submittable).map(({ label }) => label)),
@@ -125,7 +127,7 @@ function RecordsImport(): React.ReactNode {
             }}
           >
             <CustomTooltip title={t("import.importDocumentation")} enterDelay={200}>
-              <HelpLinkIcon link={docLinks.import} title={t("import.helpTitle")} />
+              <HelpLinkIcon link={helpDocsArticleUrl("a5zm2c3vtw-import-records")} title={t("import.helpTitle")} />
             </CustomTooltip>
           </Box>
         </Box>
@@ -158,12 +160,22 @@ function RecordsImport(): React.ReactNode {
             {notImportableTypes.length > 0 ? (
               <Alert severity="warning">
                 {t("import.cannotImport.message", { count: notImportableTypes.length })}{" "}
-                {notImportableTypes.map((item, i) => (
-                  <span key={item.route}>
-                    {i > 0 && ", "}
-                    {item.route !== recordType ? <Link to={onTypeSelect(item.route)}>{item.label}</Link> : item.label}
-                  </span>
-                ))}
+                {notImportableTypeParts.map((part, i) => {
+                  const item = part.type === "element" ? notImportableTypes[notImportableTypeIndex++] : undefined;
+                  return (
+                    <span key={i}>
+                      {item ? (
+                        item.route !== recordType ? (
+                          <Link to={onTypeSelect(item.route)}>{item.label}</Link>
+                        ) : (
+                          item.label
+                        )
+                      ) : (
+                        part.value
+                      )}
+                    </span>
+                  );
+                })}
               </Alert>
             ) : null}
           </Grid>

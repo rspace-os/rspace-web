@@ -21,10 +21,9 @@ import { observer } from "mobx-react-lite";
 import React, { type ComponentType, type ReactNode, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../../assets/branding/rspace/inventory";
-import docLinks from "../../../../assets/DocLinks";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -37,7 +36,7 @@ import type { Identifier, IdentifierField, IGSNPublishingState } from "../../../
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import useStores from "../../../../stores/use-stores";
 import RsSet from "../../../../util/set";
-import { capitaliseJustFirstChar, match } from "../../../../util/Util";
+import { match } from "../../../../util/Util";
 import IgsnTable from "../../../Identifiers/IGSN/IgsnTable";
 import { type Identifier as IdentifierInTable, useIdentifiers } from "../../../useIdentifiers";
 import MultipleInputHandler from "./MultipleInputHandler";
@@ -245,6 +244,12 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
   const { addAlert } = useContext(AlertContext);
   const { uiStore } = useStores();
   const { t } = useTranslation(["inventory", "common"]);
+  const identifierStateLabel = (state: IGSNPublishingState): string =>
+    match<IGSNPublishingState, string>([
+      [(s) => s === "draft", t("igsnTable.filters.stateOptions.draft.title")],
+      [(s) => s === "findable", t("igsnTable.filters.stateOptions.findable.title")],
+      [(s) => s === "registered", t("igsnTable.filters.stateOptions.registered.title")],
+    ])(state);
 
   const StateInfo = ({
     identifierState,
@@ -357,7 +362,7 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
                 data-testid="identifier-state"
                 size={2}
               >
-                {capitaliseJustFirstChar(id.state)}
+                {identifierStateLabel(id.state)}
               </Grid>
               <Grid size={2}>
                 <CustomTooltip
@@ -451,7 +456,13 @@ export const IdentifiersList: ComponentType<IdentifiersListArgs> = observer(({ a
             </Grid>
             <Alert severity="info" sx={{ width: "100%", mb: 1 }}>
               <StateInfo identifierState={id.state} identifierUrl={id.url} />{" "}
-              <a href={docLinks.igsnIdentifiers} target="_blank" rel="noreferrer">
+              <a
+                href={helpDocsArticleUrl(
+                  "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+                )}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {t("fields.identifiers.list.igsnDocLink")}
               </a>
             </Alert>
@@ -624,10 +635,7 @@ function Identifiers<
       error={false}
       explanation={
         fieldOwner.isFieldEditable("identifiers") ? (
-          <TransRichText
-            i18nKey="inventory:fields.identifiers.formField.explanation"
-            values={{ link: docLinks.igsnIdentifiers }}
-          />
+          <TransRichText i18nKey="inventory:fields.identifiers.formField.explanation" />
         ) : null
       }
     >

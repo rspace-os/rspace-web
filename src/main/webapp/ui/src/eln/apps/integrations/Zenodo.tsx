@@ -42,8 +42,8 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
         color={LOGO_COLOR}
         usageText={t("integrations.zenodo.usage")}
         helpLinkText={t("integrations.zenodo.helpLink")}
-        website="zenodo.org"
-        docLink="zenodo"
+        website="https://zenodo.org"
+        docLink="8i37k8kjqz-zenodo-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.zenodo.setup.instructions" />

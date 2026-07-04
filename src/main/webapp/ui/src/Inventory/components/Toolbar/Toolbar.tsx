@@ -94,7 +94,7 @@ function CustomToolbar({ title, record, recordType, batch, stickyAlert }: Custom
         {record && record.id !== null && (
           <Stack>
             <Typography variant="caption" component="span" sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25 }}>
-              {record.recordTypeLabel.toUpperCase()}
+              {record.recordTypeLabel}
             </Typography>
             <GlobalId record={record} />
           </Stack>

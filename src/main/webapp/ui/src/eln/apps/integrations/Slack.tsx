@@ -4,7 +4,6 @@ import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
@@ -16,7 +15,6 @@ import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/slack";
 import SlackIcon from "../../../assets/branding/slack/logo.svg";
-import docLinks from "../../../assets/DocLinks";
 import DescriptionList from "../../../components/DescriptionList";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
@@ -386,17 +384,12 @@ function Slack({ integrationState, update }: SlackArgs): React.ReactNode {
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText={t("integrations.slack.usage")}
         helpLinkText={t("integrations.slack.helpLink")}
-        website="slack.com"
-        docLink="slack"
+        website="https://slack.com"
+        docLink="74r6scvv8g-slack-integration"
         setupSection={
           <>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:integrations.slack.setup.instructions"
-                components={{
-                  articleLink: <Link href={docLinks.slack} target="_blank" rel="noreferrer" />,
-                }}
-              />
+              <TransRichText i18nKey="apps:integrations.slack.setup.instructions" />
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((linkedChannels) => (

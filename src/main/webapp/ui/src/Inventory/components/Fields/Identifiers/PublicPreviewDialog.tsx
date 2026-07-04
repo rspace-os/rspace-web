@@ -11,7 +11,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import type { Identifier } from "../../../../stores/definitions/Identifier";
@@ -75,7 +75,9 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
           </Grid>
           <Grid>
             <HelpLinkIcon
-              link={docLinks.igsnIdentifiers}
+              link={helpDocsArticleUrl(
+                "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+              )}
               title={t("fields.identifiers.publicPreviewDialog.helpTitle")}
             />
           </Grid>

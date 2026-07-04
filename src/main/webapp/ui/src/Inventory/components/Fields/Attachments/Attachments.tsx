@@ -17,7 +17,6 @@ import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../../assets/DocLinks";
 import BigIconButton from "../../../../components/BigIconButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
@@ -261,10 +260,7 @@ function Attachments<
       error={false}
       explanation={
         activeResult.isFieldEditable("attachments") ? (
-          <TransRichText
-            i18nKey="inventory:fields.attachments.formField.explanation"
-            values={{ link: docLinks.attachments }}
-          />
+          <TransRichText i18nKey="inventory:fields.attachments.formField.explanation" />
         ) : null
       }
     >

@@ -670,7 +670,7 @@ export default class InventoryBaseRecord
         getRootStore().uiStore.recentBatchEditExpiryCheck ??
         (await getRootStore().uiStore.confirm(
           i18n.t("inventory:baseRecord.editSessionExpiring.title"),
-          i18n.t("inventory:baseRecord.editSessionExpiring.body", { recordType: this.recordTypeLabel.toLowerCase() }),
+          i18n.t("inventory:baseRecord.editSessionExpiring.body"),
           i18n.t("inventory:baseRecord.editSessionExpiring.continue"),
         ))
       ) {
@@ -713,10 +713,7 @@ export default class InventoryBaseRecord
       }
       await getRootStore().uiStore.confirm(
         i18n.t("inventory:baseRecord.editSessionExpired.title"),
-        <TransRichText
-          i18nKey="inventory:baseRecord.editSessionExpired.body"
-          values={{ recordType: this.recordTypeLabel.toLowerCase() }}
-        />,
+        <TransRichText i18nKey="inventory:baseRecord.editSessionExpired.body" />,
         i18n.t("common:actions.ok"),
         "",
       );
@@ -839,9 +836,7 @@ export default class InventoryBaseRecord
               getRootStore().uiStore.addAlert(
                 mkAlert({
                   title: i18n.t("inventory:baseRecord.unsavedChanges.title"),
-                  message: i18n.t("inventory:baseRecord.unsavedChanges.message", {
-                    recordType: this.recordTypeLabel.toLowerCase(),
-                  }),
+                  message: i18n.t("inventory:baseRecord.unsavedChanges.message"),
                   variant: "warning",
                   isInfinite: true,
                 }),
@@ -1506,11 +1501,7 @@ export default class InventoryBaseRecord
   }
 
   contextMenuDisabled(): string | null {
-    return this.historicalVersion
-      ? i18n.t("inventory:contextMenu.historicalVersion", {
-          recordType: this.recordTypeLabel.toLowerCase() || i18n.t("common:recordTypes.record.lower"),
-        })
-      : null;
+    return this.historicalVersion ? i18n.t("inventory:contextMenu.historicalVersion") : null;
   }
 
   get permalinkURL(): URLType | null {

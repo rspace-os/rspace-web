@@ -18,13 +18,13 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
-import docLinks from "@/assets/DocLinks";
 import axios from "@/common/axios";
 import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { formatList } from "@/modules/common/i18n/listFormat";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -535,7 +535,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         variant="dialog"
         currentPage="PyRAT"
         helpPage={{
-          docLink: docLinks.pyrat,
+          docLink: helpDocsArticleUrl("9kkeooveia-pyrat-integration"),
           title: t("workspace:tinymce.pyrat.helpTitle"),
         }}
         accessibilityTips={{}}

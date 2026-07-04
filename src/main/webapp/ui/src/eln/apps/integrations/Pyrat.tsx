@@ -56,8 +56,8 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
         color={LOGO_COLOR}
         usageText={t("integrations.pyrat.usage")}
         helpLinkText={t("integrations.pyrat.helpLink")}
-        website="scionics.com/pyrat"
-        docLink="pyrat"
+        website="https://scionics.com/pyrat"
+        docLink="9kkeooveia-pyrat-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.pyrat.setup.instructions" />

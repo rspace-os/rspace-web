@@ -71,8 +71,8 @@ function DMPTool({ integrationState, update }: DMPToolArgs): React.ReactNode {
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.dmptool.helpLink")}
-        website="dmptool.org"
-        docLink="dmptool"
+        website="https://dmptool.org"
+        docLink="o0wlhlgxnr-dmptool-integration"
         usageText={t("integrations.dmptool.usage")}
         setupSection={
           <>

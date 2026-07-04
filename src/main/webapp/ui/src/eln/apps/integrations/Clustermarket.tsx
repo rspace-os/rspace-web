@@ -92,8 +92,8 @@ function Clustermarket({ integrationState, update }: ClustermarketArgs): React.R
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.calira.helpLink")}
-        website="calira.co"
-        docLink="clustermarket"
+        website="https://calira.co"
+        docLink="e6pb7y8ak1-calira-integration"
         usageText={t("integrations.calira.usage")}
         setupSection={
           <>

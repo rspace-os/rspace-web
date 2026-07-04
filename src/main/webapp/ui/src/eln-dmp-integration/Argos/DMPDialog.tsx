@@ -4,7 +4,6 @@ import Chip from "@mui/material/Chip";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Popover from "@mui/material/Popover";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
@@ -16,10 +15,9 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/argos";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -398,7 +396,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.argos,
+          docLink: helpDocsArticleUrl("vkd8mt2ffb-argos-integration"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.argos") }),
         }}
       />
@@ -418,12 +416,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               <TransRichText i18nKey="apps:dmpIntegrations.dialog.argosImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.argosDocsLink"
-                components={{
-                  helpLink: <Link href={docLinks.argos} />,
-                }}
-              />
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.argosDocsLink" />
             </Typography>
           </Box>
           <SearchControls

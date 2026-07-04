@@ -4,7 +4,7 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import type { SearchView } from "../../stores/definitions/Search";
 import Searchbar from "./components/Searchbar";
@@ -33,7 +33,7 @@ function MainSearch({
         <Box sx={{ flexGrow: 1 }}>
           <Searchbar handleSearch={handleSearch} />
         </Box>
-        <HelpLinkIcon link={docLinks.search} title={t("search.helpTitle")} />
+        <HelpLinkIcon link={helpDocsArticleUrl("e0fngo8a5s-search-inventory")} title={t("search.helpTitle")} />
         {size === "small" && <SearchDisplayControls TABS={TABS} />}
         {Boolean(searchbarAdornment) && searchbarAdornment}
       </Stack>

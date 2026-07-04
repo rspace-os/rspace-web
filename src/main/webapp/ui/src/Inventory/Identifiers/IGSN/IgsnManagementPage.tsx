@@ -7,7 +7,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Menu from "@mui/material/Menu";
 import Stack from "@mui/material/Stack";
 import { darken, lighten, useTheme } from "@mui/material/styles";
@@ -18,7 +17,6 @@ import { useTranslation } from "react-i18next";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import VisuallyHiddenHeading from "@/components/VisuallyHiddenHeading";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../assets/DocLinks";
 import AccentMenuItem from "../../../components/AccentMenuItem";
 import { useLandmark } from "../../../components/LandmarksContext";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
@@ -65,12 +63,7 @@ export default function IgsnManagementPage({
         <Stack spacing={2}>
           <TitledBox title={t("igsnManagement.sections.ids")} border>
             <Typography>
-              <TransRichText
-                i18nKey="inventory:igsnManagement.idsDescription"
-                components={{
-                  a: <Link target="_blank" rel="noreferrer" href={docLinks.igsnIdentifiers} />,
-                }}
-              />
+              <TransRichText i18nKey="inventory:igsnManagement.idsDescription" />
             </Typography>
           </TitledBox>
           <TitledBox title={t("igsnManagement.sections.register")} border>

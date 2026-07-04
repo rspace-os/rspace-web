@@ -6,7 +6,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { type Alert, mkAlert } from "@/stores/contexts/Alert";
-import docLinks from "../../../assets/DocLinks";
 import ImageField, { type ImageData } from "../../../components/Inputs/ImageField";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
@@ -47,12 +46,7 @@ function LocationsImageField(): React.ReactNode {
       <FormField
         label={t("container.fields.locationsImage.label")}
         value={activeResult.locationsImage}
-        explanation={
-          <TransRichText
-            i18nKey="inventory:container.fields.locationsImage.explanation"
-            values={{ link: docLinks.editLocationsInVisualContainers }}
-          />
-        }
+        explanation={<TransRichText i18nKey="inventory:container.fields.locationsImage.explanation" />}
         renderInput={({ id, value: locationsImage }) => (
           <>
             <ImageField

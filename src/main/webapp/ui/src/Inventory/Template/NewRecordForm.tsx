@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import TemplateModel from "../../stores/models/TemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -118,7 +118,7 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createTemplate,
+          link: helpDocsArticleUrl("c8sxesdqpy-create-a-template"),
           title: t("createNew.helpTitles.template"),
         }}
         titleText={t("createNew.newTemplate")}

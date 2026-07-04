@@ -34,8 +34,8 @@ function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
         color={LOGO_COLOR}
         usageText={t("integrations.argos.usage")}
         helpLinkText={t("integrations.argos.helpLink")}
-        website="argos.openaire.eu"
-        docLink="argos"
+        website="https://argos.openaire.eu"
+        docLink="vkd8mt2ffb-argos-integration"
         setupSection={<TransRichText i18nKey="apps:integrations.argos.setup.instructions" />}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         integrationState={integrationState}

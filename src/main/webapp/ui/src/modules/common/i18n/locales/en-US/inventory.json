@@ -38,16 +38,16 @@
       "updated": "{name} updated successfully."
     },
     "editSessionExpired": {
-      "body": "Another user may be editing this {recordType}. Please copy any information you need and then press <strong>Cancel</strong>.",
+      "body": "Another user may be editing this record. Please copy any information you need and then press <strong>Cancel</strong>.",
       "title": "Your editing session has expired"
     },
     "editSessionExpiring": {
-      "body": "This session will expire in one minute. Please confirm if you want to continue editing this {recordType}. If you cancel, your unsaved changes will be lost.",
+      "body": "This session will expire in one minute. Please confirm if you want to continue editing. If you cancel, your unsaved changes will be lost.",
       "continue": "CONTINUE",
       "title": "Your editing session is about to expire"
     },
     "unsavedChanges": {
-      "message": "It appears that you already started editing this {recordType} in another browser tab or on another device. We advise you cancel or save those changes first otherwise editing here could result in an error.",
+      "message": "It appears that you already started editing this record in another browser tab or on another device. We advise you cancel or save those changes first otherwise editing here could result in an error.",
       "title": "Unsaved changes?"
     },
     "validation": {
@@ -137,6 +137,16 @@
       "trashed": "trashed",
       "updated": "updated"
     },
+    "operationsForDetail": {
+      "created": "Created",
+      "duplicated": "Duplicated",
+      "moved": "Moved",
+      "restored": "Restored",
+      "split": "Split",
+      "transferred": "Transferred",
+      "trashed": "Trashed",
+      "updated": "Updated"
+    },
     "success": {
       "detail": "{operation} \"{name}\".",
       "items": "Items",
@@ -181,7 +191,7 @@
       "zoom": {
         "ctrlTip": "Tip: Use <kbd>Ctrl</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
         "macTip": "Tip: Use <kbd>Command</kbd> and the <kbd>-</kbd> key to zoom the page out to view more of the image.",
-        "panelAdjuster": "The <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Panel Adjuster</a> can also be used to provide more room to fully display the image."
+        "panelAdjuster": "The <helpDocs slug=\"bt6kx098eq-more-info-sidebar#panel_adjuster\">Panel Adjuster</helpDocs> can also be used to provide more room to fully display the image."
       }
     },
     "contextMenu": {
@@ -242,7 +252,7 @@
         "alt": "The marked locations of {name}",
         "dragInstruction": "Tap and hold on a marker, and then drag to adjust the marked location.",
         "editLocations": "Edit Locations",
-        "explanation": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">choosing an image and marking locations</a>.",
+        "explanation": "See the documentation for information on <helpDocs slug=\"jya8j336dt-edit-locations-in-visual-containers\">choosing an image and marking locations</helpDocs>.",
         "label": "Locations Image",
         "noMarkers": "No marked locations yet; click on the image to add a location marker.",
         "setPreviewImage": "Set preview image too?",
@@ -328,7 +338,7 @@
         "title": "Unsaved changes"
       }
     },
-    "historicalVersion": "Cannot modify a historical version of a {recordType}.",
+    "historicalVersion": "Cannot modify a historical version.",
     "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
     "splitButton": {
       "label": "More selection options",
@@ -445,7 +455,7 @@
       "status": "Status"
     },
     "description": "Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside the notebook. A new list container will be placed on your bench, containing a singular subsample for each sample.",
-    "descriptionLinks": "See <a href=\"https://docs.fieldmark.au\">docs.fieldmark.au</a> and our <docLink>Fieldmark integration docs</docLink> for more.",
+    "descriptionLinks": "See <externalLink href=\"https://docs.fieldmark.au\">docs.fieldmark.au</externalLink> and our <helpDocs slug=\"idbaaggghu-fieldmark-integration\">Fieldmark integration docs</helpDocs> for more.",
     "fetchError": "Could not get notebooks from Fieldmark",
     "fetchingNotebooks": "Fetching notebooks from Fieldmark…",
     "helpTitle": "Fieldmark help",
@@ -455,7 +465,7 @@
       "loading": "Loading available IGSN ID fields...",
       "noIgsn": "Do not use IGSN IDs"
     },
-    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <a href=\"{link}\">DataCite IGSN ID integration</a> to be enabled.",
+    "igsnMessage": "RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires the <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">DataCite IGSN ID integration</helpDocs> to be enabled.",
     "importError": "Could not import notebook.",
     "importNotebook": {
       "message": "Importing notebook \"{name}\" from Fieldmark.",
@@ -471,7 +481,7 @@
     "accessPermissions": {
       "addGroup": "Add group",
       "editFirst": "You need to be in Edit mode to edit permissions.",
-      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">access permissions</a>, including under what circumstances some infomation may be more widely shared.",
+      "explanation": "Specify who will have full view and edit access to this item using the options below. See the documentation for information on <helpDocs slug=\"n09nmg4ax7-permissions\">access permissions</helpDocs>, including under what circumstances some infomation may be more widely shared.",
       "explicitAccess": {
         "description": "Accessible to only those who are in a lab or collaboration group that is listed in the table below, which can be any group in the system.",
         "title": "Explicit access list"
@@ -509,7 +519,7 @@
         "unableToSetPreviewImage": "Unable to set preview image."
       },
       "formField": {
-        "explanation": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding attachments</a>."
+        "explanation": "See the documentation for information on <helpDocs slug=\"ory7fu1uw9-attachments\">adding attachments</helpDocs>."
       },
       "linkGalleryItems": "Link to existing items in the Gallery.",
       "noDescription": "No description",
@@ -568,7 +578,7 @@
         "description": "Description"
       },
       "formField": {
-        "addingBarcodes": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding barcodes</a>."
+        "addingBarcodes": "See the documentation for information on <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes\">adding barcodes</helpDocs>."
       },
       "noDescription": "No description",
       "printContents": {
@@ -656,7 +666,7 @@
         "pidinst": "PIDINST"
       },
       "formField": {
-        "explanation": "See the Documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">adding and publishing identifiers</a>."
+        "explanation": "See the Documentation for information on <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">adding and publishing identifiers</helpDocs>."
       },
       "geoLocationField": {
         "addValueToPublish": "Add value to enable publishing.",
@@ -719,8 +729,8 @@
         "show": "Show",
         "stateInfo": {
           "draft": "This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.",
-          "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">RSpace landing page</a>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-          "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">RSpace landing page</a>, DataCite Commons or the Public API, but is available through the Members API."
+          "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+          "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
         },
         "toggleId": {
           "hide": "Hide identifier's details",
@@ -831,10 +841,15 @@
           "version": "Version"
         },
         "sharing": {
-          "implicitlyInNotebook": "implicitly - is in shared Notebook <a>{nb}</a> (shared with: {owner})",
-          "inPublishedNotebook": "This document is in a published notebook: <a>public link</a>",
-          "intoNotebook": "into Notebook <a>{nb}</a> (owner: {owner})",
-          "isPublished": "This {recordTypeName} is published: <a>public link</a>",
+          "access": {
+            "edit": "edit",
+            "read": "read",
+            "write": "write"
+          },
+          "implicitlyInNotebook": "implicitly - is in shared Notebook <notebookLink>{nb}</notebookLink> (shared with: {owner})",
+          "inPublishedNotebook": "This document is in a published notebook: <externalLink href=\"{publicLink}\">public link</externalLink>",
+          "intoNotebook": "into Notebook <notebookLink>{nb}</notebookLink> (owner: {owner})",
+          "isPublished": "This {recordTypeName} is published: <externalLink href=\"{publicLink}\">public link</externalLink>",
           "isShared": "This {recordTypeName} is shared:",
           "notPublished": "This {recordTypeName} is not published.",
           "notShared": "This {recordTypeName} is not shared.",
@@ -878,7 +893,7 @@
       },
       "elnInfoDialog": {
         "unavailable": "This item is not available, or you do not have permission to view it.",
-        "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <a>View the latest version</a>."
+        "versionUnavailable": "Version {versionPin} of {globalId} is no longer available. <externalLink href=\"{latestLink}\">View the latest version</externalLink>."
       },
       "elnPicker": {
         "choose": "Choose",
@@ -909,7 +924,7 @@
       },
       "infoDialog": {
         "label": "Info for {globalId}",
-        "versionNote": "The information below describes <strong>version {versionPin}</strong> of a {recordTypeLabel} {globalId}, which may not be the latest version."
+        "versionNote": "The information below describes <strong>version {versionPin}</strong> of {globalId}, which may not be the latest version."
       },
       "linkField": {
         "editLink": "Edit link",
@@ -1101,8 +1116,8 @@
   },
   "historicalVersion": {
     "contentsNotShown": "Contents are not part of the historical snapshot, so they are not shown.",
-    "readOnlyWithLink": "It is read-only. <a>View the latest version</a>",
-    "title": "This is version {version} of the {type}."
+    "readOnlyWithLink": "It is read-only. <internalLink to=\"{link}\">View the latest version</internalLink>",
+    "title": "This is version {version}."
   },
   "identifierConfirm": {
     "create": {
@@ -1195,7 +1210,7 @@
       "register": "Register",
       "summary": "You can also bulk-register IGSN IDs to be used at a later date, such as a field collection trip:"
     },
-    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <a>see the IGSN ID documentation</a>.",
+    "idsDescription": "The RSpace IGSN ID integration enables researchers to create, publish and update IGSN ID metadata all within Inventory. IGSN IDs describe material samples and features-of-interest, and are provided through the DataCite DOI infrastructure. To learn more, <helpDocs slug=\"0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples\">see the IGSN ID documentation</helpDocs>.",
     "landmark": "IGSN management main content",
     "manageDescription": "To access actions such as editing metadata and publishing, please use the <cite>Identifiers</cite> section of the <strong>Linked Item</strong>.",
     "pageTitle": "IGSN Management Page",
@@ -1270,7 +1285,13 @@
       "parentSampleRequired": "You must select one column that refers to a Sample.",
       "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
       "selectMapping": "Select mapping for {fieldName}",
+      "templateColumnNameMismatchItem": "\"{csvColumnName}\" is not the same as \"{templateFieldName}\"",
+      "templateColumnNamesMismatch": "The names do not match: {mismatches}.",
+      "templateColumnTypeMismatch": "Some of the data in some columns does not match the type of the corresponding template field. Please check the values in these columns: {columns}.",
+      "templateCustomColumnCountMismatch": "The number of custom columns ({customCount}) does not equal the number of template fields ({templateCount}).",
       "templateMismatch": "The columns of the CSV file do not match the selected template. Please edit the fields of the template or the supplied CSV file.",
+      "templateNotSelected": "A template has not been selected.",
+      "templateRequiredValueMissing": "Some columns have missing required data where the template field requires a value. In the CSV file, please provide a value for every cell in these columns or modify the template fields so they no longer require a value. These columns are: {columns}.",
       "unconverted": "You have one or more columns selected without conversion. The columns' data will not be used."
     },
     "customDetails": "Custom details",
@@ -1502,7 +1523,7 @@
     },
     "linkedDocumentsHelp": {
       "linkField": "Other Inventory items that link to this item through a Link custom field will also be listed here.",
-      "listOfMaterials": "Adding this item to a document's <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">List of Materials</a> will add an entry for the document in this panel."
+      "listOfMaterials": "Adding this item to a document's <helpDocs slug=\"cdrc4ed67l-list-of-materials\">List of Materials</helpDocs> will add an entry for the document in this panel."
     },
     "updateSamples": "Update Samples",
     "versionHistory": {
@@ -1567,7 +1588,7 @@
   "permalinkNotFound": {
     "unversionedBody": "It may have been deleted, or you may not have permission to view it.",
     "unversionedTitle": "This {typeLabel} could not be found.",
-    "versionedBody": "The version may never have existed. <a href=\"{link}\">View the latest version</a>.",
+    "versionedBody": "The version may never have existed. <internalLink to=\"{link}\">View the latest version</internalLink>.",
     "versionedTitle": "Version {version} of this {typeLabel} could not be found."
   },
   "person": {
@@ -1614,7 +1635,7 @@
       "labelPrinterAutoSize": "For label printers size is set automatically (to match a range of label sizes).",
       "labelPrinterCopies": "For label printers, the number of copies is set to 1 per item.",
       "labelPrinterHint": "Print one label per sticker (Zebra printer).",
-      "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">documentation</a>.",
+      "labelShapeHint": "The label shape should match the selected layout. Also, you might have problems when using Safari. Please check barcodes <helpDocs slug=\"nr29uf0fdr-scan-and-use-barcodes#barcode_printing\">documentation</helpDocs>.",
       "large": "Large",
       "printCopies": "Print Copies",
       "printerType": "Printer Type",
@@ -1814,8 +1835,8 @@
         "alertExpand": "Expand to select a template.",
         "alertSelect": "Select a template from the list below.",
         "couldNotFetchError": "Could not fetch template details.",
-        "explanationCreate": "See the documentation for information on <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">how to create custom templates</a>.",
-        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">(Learn more about sample templates)</a>",
+        "explanationCreate": "See the documentation for information on <helpDocs slug=\"c8sxesdqpy-create-a-template\">how to create custom templates</helpDocs>.",
+        "explanationNew": "If you select a sample template below, initial metadata and custom fields will be automatically generated.<helpDocs slug=\"c8sxesdqpy-create-a-template\">(Learn more about sample templates)</helpDocs>",
         "label": "Sample Template",
         "noTemplate": "No template"
       },
@@ -1904,7 +1925,11 @@
         "ascending": "(A-Z)",
         "cannotSortView": "Cannot sort {view} view.",
         "descending": "(Z-A)",
-        "sortBy": "Sort by"
+        "sortBy": "Sort by",
+        "views": {
+          "grid": "Grid",
+          "image": "Image"
+        }
       },
       "status": {
         "current": "Current",
@@ -1972,7 +1997,7 @@
       "title": "Welcome to RSpace Inventory!"
     },
     "noResults": {
-      "luceneInfo": "For more information on using Lucene queries, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
+      "luceneInfo": "For more information on using Lucene queries, see <helpDocs slug=\"k919di8naq-search-inventory#expert_lucene_query_syntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
       "title": "No results.",
       "tryDifferentSearch": "Try searching for a different term, or use the advanced search to change search filters."
     },
@@ -2025,7 +2050,7 @@
       "connectionSucceeded": "Connection succeeded",
       "detailsLabel": "Details",
       "fieldRequiredError": "A valid value is required",
-      "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <a href=\"https://datacite.org/\" target=\"_blank\" rel=\"noreferrer\">DataCite</a> using your Repository account credentials.",
+      "formHelperText": "You can associate IGSN IDs with Inventory items by connecting to <externalLink href=\"https://datacite.org/\">DataCite</externalLink> using your Repository account credentials.",
       "formLabel": "DataCite IGSN Integration",
       "helpTitle": "DataCite help",
       "labels": {

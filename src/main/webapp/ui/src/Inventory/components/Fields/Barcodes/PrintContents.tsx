@@ -5,7 +5,6 @@ import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { BarcodeRecord } from "@/stores/definitions/Barcode";
 import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
-import { toTitleCase } from "@/util/Util";
 import ContainerModel from "../../../../stores/models/ContainerModel";
 import SubSampleModel from "../../../../stores/models/SubSampleModel";
 import type { PrintOptions } from "./PrintDialog";
@@ -59,7 +58,7 @@ export const PreviewPrintItem = ({
   const { t } = useTranslation("inventory");
   const { printerType, printLayout, printSize } = printOptions;
 
-  const recordString = `${toTitleCase(itemOwner.type)} - ${itemOwner.name}`;
+  const recordString = `${itemOwner.recordTypeLabel} - ${itemOwner.name}`;
 
   const now = new Date();
   const sizePerTarget = () =>

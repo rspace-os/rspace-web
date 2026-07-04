@@ -6,9 +6,9 @@ import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { type Barcode, barcodeFormatAsString } from "@/util/barcode";
-import docLinks from "../../../assets/DocLinks";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import FormField from "../../../components/Inputs/FormField";
 import StringField from "../../../components/Inputs/StringField";
@@ -96,7 +96,10 @@ export default function BarcodeScannerSkeleton({
             t("barcodeScanner.prompt", { helpText: beforeScanHelpText })
           )}
         </Alert>
-        <HelpLinkIcon link={docLinks.barcodes} title={t("barcodeScanner.helpTitle")} />
+        <HelpLinkIcon
+          link={helpDocsArticleUrl("nr29uf0fdr-scan-and-use-barcodes")}
+          title={t("barcodeScanner.helpTitle")}
+        />
       </Stack>
       <CardActions>
         <Button

@@ -12,7 +12,6 @@ import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../../assets/DocLinks";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -59,10 +58,7 @@ function Template(): React.ReactNode {
         data-test-id="ChooseTemplate"
         explanation={
           activeResult.isFieldEditable("template") ? (
-            <TransRichText
-              i18nKey="inventory:sample.fields.template.explanationNew"
-              values={{ link: docLinks.createTemplate }}
-            />
+            <TransRichText i18nKey="inventory:sample.fields.template.explanationNew" />
           ) : null
         }
       >
@@ -94,10 +90,7 @@ function Template(): React.ReactNode {
         disabled
         explanation={
           activeResult.isFieldEditable("template") ? (
-            <TransRichText
-              i18nKey="inventory:sample.fields.template.explanationCreate"
-              values={{ link: docLinks.createTemplate }}
-            />
+            <TransRichText i18nKey="inventory:sample.fields.template.explanationCreate" />
           ) : null
         }
       >

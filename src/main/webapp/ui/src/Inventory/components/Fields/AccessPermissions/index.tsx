@@ -8,7 +8,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../../assets/DocLinks";
 import ChooseToEdit from "../../../../components/Inputs/ChooseToEdit";
 import FormControl from "../../../../components/Inputs/FormControl";
 import { OptionExplanation, OptionHeading } from "../../../../components/Inputs/RadioField";
@@ -67,10 +66,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
         label=""
         explanation={
           <>
-            <TransRichText
-              i18nKey="inventory:fields.accessPermissions.explanation"
-              values={{ link: docLinks.permissions }}
-            />
+            <TransRichText i18nKey="inventory:fields.accessPermissions.explanation" />
             <br />
             <p>{additionalExplanation}</p>
           </>

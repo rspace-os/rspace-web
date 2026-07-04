@@ -7,7 +7,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
-import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
@@ -20,11 +19,10 @@ import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
 import i18n from "@/modules/common/i18n";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import Result from "@/util/result";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import { Dialog } from "../../components/DialogBoundary";
@@ -362,7 +360,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
             supportsHighContrastMode: true,
           }}
           helpPage={{
-            docLink: docLinks.fieldmark,
+            docLink: helpDocsArticleUrl("idbaaggghu-fieldmark-integration"),
             title: t("fieldmarkImport.helpTitle"),
           }}
         />
@@ -374,12 +372,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 {t("fieldmarkImport.description")}
               </Typography>
               <Typography variant="body2">
-                <TransRichText
-                  i18nKey="inventory:fieldmarkImport.descriptionLinks"
-                  components={{
-                    docLink: <Link href={docLinks.fieldmark} />,
-                  }}
-                />
+                <TransRichText i18nKey="inventory:fieldmarkImport.descriptionLinks" />
               </Typography>
             </Box>
             <Box>
@@ -481,10 +474,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 <>
                   {showIgsnMessage && (
                     <Typography variant="body2" sx={{ ml: 0.5 }}>
-                      <TransRichText
-                        i18nKey="inventory:fieldmarkImport.igsnMessage"
-                        values={{ link: docLinks.igsnIdentifiers }}
-                      />
+                      <TransRichText i18nKey="inventory:fieldmarkImport.igsnMessage" />
                     </Typography>
                   )}
                   {fetchingIdentifierFields ? (

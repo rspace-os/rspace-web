@@ -38,12 +38,12 @@ import { useTranslation } from "react-i18next";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Person } from "@/stores/definitions/Person";
+import type { URL } from "@/util/types";
 import { ACCENT_COLOR as GALLERY_COLOR } from "../../assets/branding/rspace/gallery";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import { ACCENT_COLOR as OTHER_COLOR } from "../../assets/branding/rspace/other";
 import { ACCENT_COLOR as SYSADMIN_COLOR } from "../../assets/branding/rspace/sysadmin";
 import { ACCENT_COLOR as WORKSPACE_COLOR } from "../../assets/branding/rspace/workspace";
-import type docLinks from "../../assets/DocLinks";
 import JwtService from "../../common/JwtService";
 import useWhoAmI from "../../hooks/api/useWhoAmI";
 import useSessionStorage from "../../hooks/browser/useSessionStorage";
@@ -334,7 +334,7 @@ type GalleryAppBarArgs = {
    * the documentation.
    */
   helpPage?: {
-    docLink: (typeof docLinks)[keyof typeof docLinks];
+    docLink: URL;
     title: string;
   };
 };

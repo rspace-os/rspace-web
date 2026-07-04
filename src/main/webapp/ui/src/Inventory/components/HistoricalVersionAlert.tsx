@@ -1,12 +1,9 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
-import Link from "@mui/material/Link";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
-import NavigateContext from "../../stores/contexts/Navigate";
+import TransRichText, { InternalLink } from "@/modules/common/i18n/TransRichText";
 import ContainerModel from "../../stores/models/ContainerModel";
 import type InventoryBaseRecord from "../../stores/models/InventoryBaseRecord";
 
@@ -20,26 +17,23 @@ type HistoricalVersionAlertArgs = {
  * being viewed and links back to the latest state of the record.
  */
 function HistoricalVersionAlert({ record }: HistoricalVersionAlertArgs): React.ReactNode {
-  const { useNavigate } = useContext(NavigateContext);
-  const navigate = useNavigate();
   const { t } = useTranslation("inventory");
 
   if (!record.historicalVersion) return null;
   if (!record.id) return null;
 
   const latestUrl = `/inventory/${record.recordType.toLowerCase()}/${record.id}`;
-  const typeLabel = record.recordTypeLabel.toLowerCase() || "record";
 
   return (
     <Alert severity="info">
-      <AlertTitle>{t("historicalVersion.title", { version: record.version, type: typeLabel })}</AlertTitle>
+      <AlertTitle>{t("historicalVersion.title", { version: record.version })}</AlertTitle>
       <div>
         <TransRichText
           i18nKey="inventory:historicalVersion.readOnlyWithLink"
+          values={{ link: latestUrl }}
           components={{
-            a: (
-              <Link
-                href={latestUrl}
+            internalLink: (
+              <InternalLink
                 underline="always"
                 // accentedTheme (which wraps the Inventory views) overrides links
                 // inside an info Alert: MuiAlert.standardInfo repaints all typography
@@ -56,10 +50,6 @@ function HistoricalVersionAlert({ record }: HistoricalVersionAlertArgs): React.R
                     textDecoration: "underline !important",
                   },
                 })}
-                onClick={(e: React.MouseEvent) => {
-                  e.preventDefault();
-                  navigate(latestUrl);
-                }}
               />
             ),
           }}

@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -97,7 +97,7 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createInstrumentTemplate,
+          link: helpDocsArticleUrl("5f0lakn5nl-create-an-instrument-template"),
           title: t("createNew.helpTitles.instrumentTemplate"),
         }}
         titleText={t("createNew.newInstrumentTemplate")}

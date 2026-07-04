@@ -92,8 +92,8 @@ function OwnCloud({ integrationState, update }: OwnCloudArgs): React.ReactNode {
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.ownCloud.helpLink")}
-        website="owncloud.com"
-        docLink="owncloud"
+        website="https://owncloud.com"
+        docLink="v8ss2uso0a-owncloud-integration"
         usageText={t("integrations.ownCloud.usage")}
         setupSection={
           <>

@@ -35,6 +35,12 @@ function formatTags(tags: string | null | undefined): string {
   return tags.replaceAll(",", ", ").replaceAll("__rspactags_forsl__", "/").replaceAll("__rspactags_comma__", ",");
 }
 
+const SHARING_ACCESS_LABEL_KEYS = {
+  EDIT: "fields.link.documentSections.sharing.access.edit",
+  READ: "fields.link.documentSections.sharing.access.read",
+  WRITE: "fields.link.documentSections.sharing.access.write",
+} as const;
+
 /** The lazy "linked by N docs" section (Link group 2). */
 function LinkedByDocs({
   info,
@@ -133,6 +139,10 @@ function SharingAndPublication({
   }, [info.oid.idString]);
 
   const isShared = Boolean(info.shared) || Boolean(info.implicitlyShared);
+  const sharingAccessLabel = (access: string): string => {
+    const key = SHARING_ACCESS_LABEL_KEYS[access as keyof typeof SHARING_ACCESS_LABEL_KEYS];
+    return key ? t(key) : access;
+  };
 
   return (
     <Box>
@@ -149,12 +159,12 @@ function SharingAndPublication({
           <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
             {Object.entries(info.sharedGroupsAndAccess ?? {}).map(([group, access]) => (
               <ListItem key={`g-${group}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                {t("fields.link.documentSections.sharing.withGroup", { group, access: access.toLowerCase() })}
+                {t("fields.link.documentSections.sharing.withGroup", { group, access: sharingAccessLabel(access) })}
               </ListItem>
             ))}
             {Object.entries(info.sharedUsersAndAccess ?? {}).map(([user, access]) => (
               <ListItem key={`u-${user}`} disableGutters sx={{ display: "list-item", py: 0 }}>
-                {t("fields.link.documentSections.sharing.withUser", { user, access: access.toLowerCase() })}
+                {t("fields.link.documentSections.sharing.withUser", { user, access: sharingAccessLabel(access) })}
               </ListItem>
             ))}
             {Object.entries(info.sharedNotebooksAndOwners ?? {}).map(([nb, owner]) => (
@@ -162,7 +172,9 @@ function SharingAndPublication({
                 <TransRichText
                   i18nKey="inventory:fields.link.documentSections.sharing.intoNotebook"
                   values={{ nb, owner }}
-                  components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
+                  components={{
+                    notebookLink: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" />,
+                  }}
                 />
               </ListItem>
             ))}
@@ -171,7 +183,9 @@ function SharingAndPublication({
                 <TransRichText
                   i18nKey="inventory:fields.link.documentSections.sharing.implicitlyInNotebook"
                   values={{ nb, owner }}
-                  components={{ a: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" /> }}
+                  components={{
+                    notebookLink: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" />,
+                  }}
                 />
               </ListItem>
             ))}
@@ -191,17 +205,11 @@ function SharingAndPublication({
                   ? "inventory:fields.link.documentSections.sharing.inPublishedNotebook"
                   : "inventory:fields.link.documentSections.sharing.isPublished"
               }
-              values={{ recordTypeName }}
-              components={{
-                a: (
-                  <Link
-                    href={`${window.location.origin}/public/publishedView/${
-                      publicLink.includes("initialRecordToDisplay") || isNotebook ? "notebook" : "document"
-                    }/${publicLink}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                ),
+              values={{
+                recordTypeName,
+                publicLink: `${window.location.origin}/public/publishedView/${
+                  publicLink.includes("initialRecordToDisplay") || isNotebook ? "notebook" : "document"
+                }/${publicLink}`,
               }}
             />
           </Typography>

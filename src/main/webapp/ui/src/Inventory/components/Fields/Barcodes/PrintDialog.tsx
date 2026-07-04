@@ -16,7 +16,6 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useReactToPrint } from "react-to-print";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../../assets/DocLinks";
 import { mkAlert } from "../../../../stores/contexts/Alert";
 import type { BarcodeRecord } from "../../../../stores/definitions/Barcode";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -104,10 +103,7 @@ export const PrintOptionsWrapper = ({ printOptions, setPrintOptions }: OptionsWr
           </RadioGroup>
           {printOptions.printerType === "LABEL" && (
             <Alert severity="info" sx={{ mt: 1 }}>
-              <TransRichText
-                i18nKey="inventory:print.options.labelShapeHint"
-                values={{ link: docLinks.barcodesPrinting }}
-              />
+              <TransRichText i18nKey="inventory:print.options.labelShapeHint" />
             </Alert>
           )}
         </FormControl>

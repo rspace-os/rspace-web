@@ -7,8 +7,8 @@
     },
     "highContrast": {
       "body": {
-        "disable": "To disable, turn off your device's high contrast setting:<br/><a href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</a>, <a href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</a>, <a href=\"https://support.apple.com/en-us/111773\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>",
-        "enable": "To enable, turn on your device's high contrast setting:<br/><a href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</a>, <a href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</a>, <a href=\"https://support.apple.com/en-us/111773\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>"
+        "disable": "To disable, turn off your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>",
+        "enable": "To enable, turn on your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
       },
       "enabled": "High contrast mode is enabled.",
       "supported": "This {elementType} supports a high contrast mode."
@@ -16,8 +16,8 @@
     "menuLabel": "Accessibility Tips",
     "reducedMotion": {
       "body": {
-        "disable": "To disable, turn off your device's reduced motion setting:<br/><a href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</a>, <a href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>",
-        "enable": "To enable, turn on your device's reduced motion setting:<br/><a href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</a>, <a href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</a>, <a href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</a>"
+        "disable": "To disable, turn off your device's reduced motion setting:<br/><externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>",
+        "enable": "To enable, turn on your device's reduced motion setting:<br/><externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
       },
       "enabled": "Reduced motion mode is enabled.",
       "supported": "This {elementType} supports a reduced motion mode."
@@ -30,7 +30,7 @@
     },
     "tip": "Tip",
     "zoom": {
-      "body": "To enable, adjust your browser's settings:<br/><a href=\"https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop\">Chrome</a>, <a href=\"https://support.apple.com/en-gb/guide/safari/ibrw1068/mac\">Safari</a>, <a href=\"https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a\">Edge</a>, <a href=\"https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages\">Firefox</a>",
+      "body": "To enable, adjust your browser's settings:<br/><externalLink href=\"https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop\">Chrome</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/safari/ibrw1068/mac\">Safari</externalLink>, <externalLink href=\"https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a\">Edge</externalLink>, <externalLink href=\"https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages\">Firefox</externalLink>",
       "supported": "This {elementType} supports up to 200% zoom magnification."
     }
   },
@@ -151,7 +151,7 @@
     "notificationsAndMessages": "notifications and messages",
     "openSidebar": "open sidebar",
     "operatingAs": "Operating as:",
-    "orcidAdd": "Add an ORCID iD to your <a href=\"/userform\">profile</a>.",
+    "orcidAdd": "Add an ORCID iD to your <internalLink to=\"/userform\">profile</internalLink>.",
     "pageHeader": "page header",
     "published": "Published",
     "release": "Release",
@@ -190,7 +190,7 @@
     "selectAllLabel": "select/deselect all"
   },
   "errorBoundary": {
-    "message": "Something went wrong! Please refresh the page. If this error persists, please contact <a href=\"mailto:support@researchspace.com\" rel=\"noreferrer\" target=\"_blank\">support@researchspace.com</a> with details of when the issue happens."
+    "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
   },
   "folderSelectionDialog": {
     "selectedFolder": "Selected folder",
@@ -223,69 +223,6 @@
   },
   "helpDocs": {
     "chatWithUs": "Chat with us",
-    "docLinks": {
-      "apiDirect": "v0dxtfvj7u-api-direct-access",
-      "appsIntroduction": "08ky7o0l1y-apps-introduction",
-      "argos": "vkd8mt2ffb-argos-integration",
-      "attachments": "ory7fu1uw9-attachments",
-      "barcodes": "nr29uf0fdr-scan-and-use-barcodes",
-      "barcodesPrinting": "nr29uf0fdr-scan-and-use-barcodes#barcode_printing",
-      "changelog": "mx11qvqg0i-changelog",
-      "chemistry": "wfxm4xwtio-chemistry-integration",
-      "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
-      "clustermarket": "e6pb7y8ak1-calira-integration",
-      "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
-      "createContainer": "e5v4bvcl61-create-a-container",
-      "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
-      "createInstrument": "ct15xwb13m-create-an-instrument",
-      "createInstrumentTemplate": "5f0lakn5nl-create-an-instrument-template",
-      "createSample": "gb3r1lgm5g-create-a-sample",
-      "createTemplate": "c8sxesdqpy-create-a-template",
-      "createTemplateFromSample": "c8sxesdqpy-create-a-template#create_a_template_from_a_sample",
-      "dataverse": "h14qd5tvjj-dataverse-integration",
-      "dcd": "jj6grnzbdl-digital-commons-data-integration",
-      "dmpassistant": "n88a3g86e0-dmp-assistant-integration",
-      "dmponline": "pd84qoylzy-dmponline-integration",
-      "dmptool": "o0wlhlgxnr-dmptool-integration",
-      "dmptoolImportingDmps": "o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace",
-      "dryad": "i1xvubndhm-dryad-integration",
-      "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
-      "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
-      "evernote": "9ckpmfdq8m-evernote-integration",
-      "fieldmark": "idbaaggghu-fieldmark-integration",
-      "figshare": "ir4ybsamcn-figshare-integration",
-      "galaxy": "zzsl46jo5y-galaxy-integration",
-      "gallery": "sl6mo1i9do-gallery",
-      "gettingStarted": "tffkwcpizj-getting-started",
-      "github": "y2080yw30x-github-integration",
-      "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
-      "import": "a5zm2c3vtw-import-records",
-      "irods": "xt21074dln-irods-integration",
-      "jupyter": "gg0ao0rqpt-jupyter-integration",
-      "listOfMaterials": "cdrc4ed67l-list-of-materials",
-      "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
-      "moving": "dncoti2i4t-moving-items",
-      "nextcloud": "na3hn8ilee-nextcloud-integration",
-      "omero": "bwwbpkll90-omero-integration",
-      "orcid": "yhkbtnj61a-orcid-integration",
-      "owncloud": "v8ss2uso0a-owncloud-integration",
-      "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
-      "permissions": "n09nmg4ax7-permissions",
-      "protocolsio": "nid9q64pas-protocols-io-integration",
-      "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
-      "pyrat": "9kkeooveia-pyrat-integration",
-      "pyratCors": "9kkeooveia-pyrat-integration#cors",
-      "raid": "zb4c2c8a4b-raid-integration",
-      "search": "e0fngo8a5s-search-inventory",
-      "slack": "74r6scvv8g-slack-integration",
-      "taggingUsers": "zw6o5uh4qv-tagging-users",
-      "tags": "8ujmvpa1no-controlled-vocabularies",
-      "teams": "i95u9itfgu-microsoft-teams-integration",
-      "updateAllSamplesOfTemplate": "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
-      "videoIntegration": "cdzdub1ykw-video-integrations",
-      "zebraPrinter": "nr29uf0fdr-scan-and-use-barcodes#using_a_zebra_printer",
-      "zenodo": "8i37k8kjqz-zenodo-integration"
-    },
     "documentation": "RSpace Documentation",
     "openHelp": "Open Help",
     "rspaceAlt": "RSpace",
@@ -413,13 +350,13 @@
         "allow": {
           "button": "allow BioPortal Ontologies",
           "citation": "Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced functionality via new Web services from the National Center for Biomedical Ontology to access and use ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun 14.",
-          "text": "Allowing BioPortal Ontologies for tags will query data from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> and use the values to generate tag suggestions",
+          "text": "Allowing BioPortal Ontologies for tags will query data from the <externalLink href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</externalLink> and use the values to generate tag suggestions",
           "title": "Allow BioPortal Ontologies to be used for tag suggestions"
         },
         "disabledButton": "disallow Ontologies",
         "disallow": {
           "button": "disallow BioPortal Ontologies",
-          "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <a href=\"https://bioportal.bioontology.org/ontologies\" target=\"_blank\" rel=\"noreferrer\"> BioPortal Ontologies Portal</a> will no longer be suggested.",
+          "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <externalLink href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</externalLink> will no longer be suggested.",
           "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
         }
       },
@@ -566,11 +503,11 @@
       "groupNotFound": "Group not found, or you may not have permission to view this group.",
       "identifier": "RAiD Identifier",
       "loadOptionsError": "Error loading RAiD identifier options: {error}",
-      "noConnectedServers": "RAiD has been enabled, but no RAiD servers have been connected yet. Please go to the <a href=\"/apps\">Apps page</a> and add a RAiD server.",
+      "noConnectedServers": "RAiD has been enabled, but no RAiD servers have been connected yet. Please go to the <internalLink to=\"/apps\">Apps page</internalLink> and add a RAiD server.",
       "noOptions": "No valid available RAiD found, or the RAiD has been used by another project group.",
       "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
       "notConnected": "Not connected",
-      "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <a href=\"/apps\">Apps page</a> and enable RAiD.",
+      "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <internalLink to=\"/apps\">Apps page</internalLink> and enable RAiD.",
       "previouslyConnectedTo": "<strong>Previously connected to:</strong> {{raid}}",
       "title": "RAiD Connections",
       "validation": {
@@ -615,7 +552,7 @@
     "apachePage": "Apache page",
     "expandField": "Expand field",
     "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
-    "moreInfo": "For more information, see <luceneLink>advanced search</luceneLink> and the related <a href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\" rel=\"noreferrer\" target=\"_blank\">Apache page</a>.",
+    "moreInfo": "For more information, see <helpDocs slug=\"k919di8naq-search-inventory#expert_lucene_query_syntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
     "query": "Search query"
   },
   "sections": {
@@ -649,7 +586,7 @@
     "locationLabel": "Location: {location}",
     "multipleSelection": {
       "allItems": "All {count} {itemType, select, snippet {snippets} other {documents}}",
-      "description": "Use the field above to add new shares. The share status of multiple {itemType, select, snippet {snippets} other {documents}} can be edited on the <a href=\"/record/share/manage\">shared {itemType, select, snippet {snippets} other {documents}} page</a>.",
+      "description": "Use the field above to add new shares. The share status of multiple {itemType, select, snippet {snippets} other {documents}} can be edited on the <internalLink to=\"/record/share/manage\">shared {itemType, select, snippet {snippets} other {documents}} page</internalLink>.",
       "heading": "Adding shares to {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
       "newSharesHeading": "New shares to be added:",
       "someItems": "{documentCount} of {totalCount} {itemType, select, snippet {snippets} other {documents}}"

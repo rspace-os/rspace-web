@@ -6,7 +6,6 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -92,8 +91,7 @@ function DialogBody({
         <Alert severity="error">
           <TransRichText
             i18nKey="inventory:fields.link.elnInfoDialog.versionUnavailable"
-            values={{ versionPin, globalId }}
-            components={{ a: <Link href={`/globalId/${globalId}`} target="_blank" rel="noopener noreferrer" /> }}
+            values={{ versionPin, globalId, latestLink: `/globalId/${globalId}` }}
           />
         </Alert>
       );

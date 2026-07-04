@@ -5,8 +5,8 @@ import { darken } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import HeroImage from "/src/assets/graphics/NoActiveResult.svg";
-import docLinks from "../../../assets/DocLinks";
 
 export default function NoActiveResultPlaceholder(): React.ReactNode {
   const { t } = useTranslation("inventory");
@@ -28,7 +28,7 @@ export default function NoActiveResultPlaceholder(): React.ReactNode {
         </Box>
         <Box sx={{ mb: 2 }}>
           <Link
-            href={docLinks.gettingStarted}
+            href={helpDocsArticleUrl("tffkwcpizj-getting-started")}
             target="_blank"
             rel="noreferrer"
             underline="always"

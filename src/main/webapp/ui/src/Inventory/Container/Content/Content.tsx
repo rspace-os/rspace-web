@@ -4,7 +4,6 @@ import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../assets/DocLinks";
 import SearchContext from "../../../stores/contexts/Search";
 import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -36,10 +35,7 @@ function ImageContainerZoomHelpText() {
       {!isSingleColumnLayout && (
         <>
           {" "}
-          <TransRichText
-            i18nKey="inventory:container.content.zoom.panelAdjuster"
-            values={{ link: docLinks.panelAdjuster }}
-          />
+          <TransRichText i18nKey="inventory:container.content.zoom.panelAdjuster" />
         </>
       )}
     </Alert>

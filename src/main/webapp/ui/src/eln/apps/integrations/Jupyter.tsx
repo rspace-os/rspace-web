@@ -25,8 +25,8 @@ function Jupyter(): React.ReactNode {
         color={LOGO_COLOR}
         usageText={t("integrations.jupyter.usage")}
         helpLinkText={t("integrations.jupyter.helpLink")}
-        website="docs.jupyter.org/en/latest/"
-        docLink="jupyter"
+        website="https://docs.jupyter.org/en/latest/"
+        docLink="gg0ao0rqpt-jupyter-integration"
         setupSection={
           <TransRichText
             i18nKey="apps:integrations.jupyter.setup.instructions"

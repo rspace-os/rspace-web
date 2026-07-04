@@ -14,7 +14,7 @@ import { Observer, observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import Analytics from "../../components/Analytics";
 import Confirm from "../../components/Confirm";
 import CustomTooltip from "../../components/CustomTooltip";
@@ -416,7 +416,10 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                   {currentList?.id === undefined
                     ? t("materialsListing.dialog.newTitle")
                     : t("materialsListing.dialog.title")}{" "}
-                  <HelpLinkIcon link={docLinks.listOfMaterials} title={t("materialsListing.dialog.helpTitle")} />
+                  <HelpLinkIcon
+                    link={helpDocsArticleUrl("cdrc4ed67l-list-of-materials")}
+                    title={t("materialsListing.dialog.helpTitle")}
+                  />
                   {!isSingleColumn && (
                     <MetadataBar currentList={currentList} canEdit={canEdit} isSingleColumn={false} />
                   )}

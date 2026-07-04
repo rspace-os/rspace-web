@@ -3,7 +3,6 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,10 +11,9 @@ import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from 
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import NoValue from "../../components/NoValue";
@@ -108,7 +106,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dmponline,
+          docLink: helpDocsArticleUrl("pd84qoylzy-dmponline-integration"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmponline") }),
         }}
       />
@@ -131,12 +129,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
               <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmponlineImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.dmponlineDocsLink"
-                components={{
-                  helpLink: <Link href={docLinks.dmponline} />,
-                }}
-              />
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmponlineDocsLink" />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>

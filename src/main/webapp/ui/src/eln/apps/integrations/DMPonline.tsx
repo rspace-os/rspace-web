@@ -72,8 +72,8 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
         color={LOGO_COLOR}
         usageText={t("integrations.dmponline.usage")}
         helpLinkText={t("integrations.dmponline.helpLink")}
-        website="dmponline.dcc.ac.uk"
-        docLink="dmponline"
+        website="https://dmponline.dcc.ac.uk"
+        docLink="pd84qoylzy-dmponline-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.dmponline.setup.instructions" />

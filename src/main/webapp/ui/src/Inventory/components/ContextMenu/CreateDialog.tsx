@@ -27,8 +27,7 @@ import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../assets/DocLinks";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import NumberField from "../../../components/Inputs/NumberField";
@@ -487,7 +486,10 @@ function CreateDialog({ existingRecord, open, onClose }: CreateDialogProps): Rea
       >
         <DialogTitle>
           <TransRichText i18nKey="inventory:contextMenu.createDialog.title" values={{ name: existingRecord.name }} />
-          <HelpLinkIcon link={docLinks.createDialog} title={t("contextMenu.createDialog.helpTitle")} />
+          <HelpLinkIcon
+            link={helpDocsArticleUrl("x4y02hje72-edit-a-sample-or-container#create")}
+            title={t("contextMenu.createDialog.helpTitle")}
+          />
         </DialogTitle>
         <DialogContent>
           {loading ? (

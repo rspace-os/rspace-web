@@ -30,8 +30,8 @@ function Jove(): React.ReactNode {
         update={() => {}}
         usageText={t("integrations.jove.usage")}
         helpLinkText={t("integrations.jove.helpLink")}
-        website="jove.com"
-        docLink="videoIntegration"
+        website="https://jove.com"
+        docLink="cdzdub1ykw-video-integrations"
         setupSection={
           <Stack direction="column" sx={{ gap: 2 }}>
             <TransRichText i18nKey="apps:integrations.jove.setup.instructions" />

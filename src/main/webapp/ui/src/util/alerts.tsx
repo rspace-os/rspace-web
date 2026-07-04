@@ -6,7 +6,6 @@ import type { InventoryRecord } from "../stores/definitions/InventoryRecord";
 import getRootStore from "../stores/stores/getRootStore";
 import * as ArrayUtils from "./ArrayUtils";
 import { Optional } from "./optional";
-import { toTitleCase } from "./Util";
 
 type Operation = "trashed" | "restored" | "duplicated" | "split" | "moved" | "updated" | "transferred";
 
@@ -22,9 +21,23 @@ const OPERATION_LABEL_KEYS = {
   transferred: "inventory:bulkAlerts.operations.transferred",
   created: "inventory:bulkAlerts.operations.created",
 } as const;
+const OPERATION_DETAIL_LABEL_KEYS = {
+  trashed: "inventory:bulkAlerts.operationsForDetail.trashed",
+  restored: "inventory:bulkAlerts.operationsForDetail.restored",
+  duplicated: "inventory:bulkAlerts.operationsForDetail.duplicated",
+  split: "inventory:bulkAlerts.operationsForDetail.split",
+  moved: "inventory:bulkAlerts.operationsForDetail.moved",
+  updated: "inventory:bulkAlerts.operationsForDetail.updated",
+  transferred: "inventory:bulkAlerts.operationsForDetail.transferred",
+  created: "inventory:bulkAlerts.operationsForDetail.created",
+} as const;
 const translateOperation = (operation: string): string => {
   const key = OPERATION_LABEL_KEYS[operation as keyof typeof OPERATION_LABEL_KEYS];
   return key ? i18n.t(key) : operation;
+};
+const translateOperationForDetail = (operation: string): string => {
+  const key = OPERATION_DETAIL_LABEL_KEYS[operation as keyof typeof OPERATION_DETAIL_LABEL_KEYS];
+  return key ? i18n.t(key) : translateOperation(operation);
 };
 
 const bulkSuccessAlert = (records: Array<InventoryRecord>, suffix: string): string => {
@@ -59,7 +72,7 @@ export const handleDetailedSuccesses = (
       variant,
       details: records.map((record) => ({
         title: i18n.t("inventory:bulkAlerts.success.detail", {
-          operation: toTitleCase(translateOperation(recordAltOperation(record))),
+          operation: translateOperationForDetail(recordAltOperation(record)),
           name: record.name,
         }),
         variant,

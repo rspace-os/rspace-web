@@ -11,7 +11,6 @@ import type React from "react";
 import BenchIcon from "../assets/graphics/RecordTypeGraphics/Icons/Bench";
 import TemplateIcon from "../assets/graphics/RecordTypeGraphics/Icons/Template";
 import type { RecordIconData } from "../stores/definitions/BaseRecord";
-import { toTitleCase } from "../util/Util";
 import CustomTooltip from "./CustomTooltip";
 
 type RecordTypeIconArgs = {
@@ -102,7 +101,7 @@ export default function RecordTypeIcon({
 
   if (disableTooltip || record.recordTypeLabel === "") return icon;
   return (
-    <CustomTooltip title={toTitleCase(record.recordTypeLabel)} aria-hidden={ariaHidden}>
+    <CustomTooltip title={record.recordTypeLabel} aria-hidden={ariaHidden}>
       {icon}
     </CustomTooltip>
   );

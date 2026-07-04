@@ -16,7 +16,6 @@ import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import AlwaysNewFactory from "../../../../stores/models/Factory/AlwaysNewFactory";
 import SidebarBody from "../../MoreInfoSidebar/SidebarBody";
-import { iconForInventoryGlobalId } from "./iconForGlobalId";
 
 export interface InventoryInfoDialogProps {
   open: boolean;
@@ -118,8 +117,6 @@ export default function InventoryInfoDialog(props: InventoryInfoDialogProps): Re
                     i18nKey="inventory:fields.link.infoDialog.versionNote"
                     values={{
                       versionPin: props.versionPin,
-                      recordTypeLabel:
-                        iconForInventoryGlobalId(props.globalId)?.recordTypeLabel.toLowerCase() ?? "record",
                       globalId: props.globalId.replace(/v\d+$/, ""),
                     }}
                   />

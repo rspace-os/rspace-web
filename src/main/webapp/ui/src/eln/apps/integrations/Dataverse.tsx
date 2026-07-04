@@ -434,8 +434,8 @@ function Dataverse({ integrationState, update }: DataverseArgs): React.ReactNode
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         integrationState={integrationState}
         helpLinkText={t("integrations.dataverse.helpLink")}
-        website="dataverse.org"
-        docLink="dataverse"
+        website="https://dataverse.org"
+        docLink="h14qd5tvjj-dataverse-integration"
         usageText={t("integrations.dataverse.usage")}
         setupSection={
           <>

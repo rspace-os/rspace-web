@@ -25,7 +25,6 @@ import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { Dialog } from "@/components/DialogBoundary";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 
@@ -288,13 +287,7 @@ export default function CompoundSearchDialog({
             <Box>
               <Typography variant="body2">{t("tinymce.pubchem.dialog.intro.searchDescription")}</Typography>
               <Typography variant="body2">
-                <TransRichText
-                  i18nKey="workspace:tinymce.pubchem.dialog.intro.moreInfo"
-                  components={{
-                    pubchemLink: <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer" />,
-                    docsLink: <Link href={docLinks.pubchem} />,
-                  }}
-                />
+                <TransRichText i18nKey="workspace:tinymce.pubchem.dialog.intro.moreInfo" />
               </Typography>
             </Box>
           )}

@@ -10,7 +10,7 @@ import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
-import { match, toTitleCase } from "../../../util/Util";
+import { match } from "../../../util/Util";
 import { translateAdjustableTableLabel } from "../../components/Tables/adjustableTableLabels";
 import type { SortProperty } from "../../components/Tables/SortableProperty";
 
@@ -64,6 +64,11 @@ function SortControls(): React.ReactNode {
       [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, t("search.controls.sort.ascending")],
       [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, t("search.controls.sort.descending")],
     ])(key)}`;
+  const searchViewLabel = match<string, string>([
+    [(view) => view === "GRID", t("search.controls.sort.views.grid")],
+    [(view) => view === "IMAGE", t("search.controls.sort.views.image")],
+    [() => true, search.searchView],
+  ]);
 
   const disabled = search.searchView === "IMAGE" || search.searchView === "GRID";
   return (
@@ -73,7 +78,7 @@ function SortControls(): React.ReactNode {
       disabled={disabled}
       title={
         disabled
-          ? t("search.controls.sort.cannotSortView", { view: toTitleCase(search.searchView) })
+          ? t("search.controls.sort.cannotSortView", { view: searchViewLabel(search.searchView) })
           : t("search.controls.sort.sortBy")
       }
     >

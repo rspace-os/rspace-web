@@ -425,8 +425,8 @@ function DSW({ integrationState, update }: DSWArgs): React.ReactNode {
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         helpLinkText={t("integrations.dsw.helpLink")}
-        website="guide.ds-wizard.org/en/latest/"
-        docLink="dsw"
+        website="https://guide.ds-wizard.org/en/latest/"
+        docLink="6adimrmy9m-dsw-fair-wizard-integration"
         usageText={t("integrations.dsw.usage")}
         setupSection={
           <>

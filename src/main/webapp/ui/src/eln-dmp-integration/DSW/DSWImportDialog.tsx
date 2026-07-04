@@ -3,7 +3,6 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -15,10 +14,9 @@ import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dsw";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -126,7 +124,6 @@ function DSWImportDialogContent({
             message: (
               <TransRichText
                 i18nKey="apps:dmpIntegrations.dialog.error.unableToLoadProjectsMessage"
-                values={{ link: docLinks.dsw }}
                 components={{ errorMsg: <>{errorMsg ?? ""}</> }}
               />
             ),
@@ -202,7 +199,7 @@ function DSWImportDialogContent({
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dsw,
+          docLink: helpDocsArticleUrl("6adimrmy9m-dsw-fair-wizard-integration"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dsw") }),
         }}
       />
@@ -225,9 +222,6 @@ function DSWImportDialogContent({
               <TransRichText
                 i18nKey="apps:dmpIntegrations.dialog.dswImportDescAndDocsLink"
                 values={{ serverAlias: connection.DSW_ALIAS }}
-                components={{
-                  helpLink: <Link href={docLinks.dsw} />,
-                }}
               />
             </Typography>
           </Box>

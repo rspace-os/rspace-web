@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import ContainerModel from "../../stores/models/ContainerModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -112,7 +112,7 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createContainer,
+          link: helpDocsArticleUrl("e5v4bvcl61-create-a-container"),
           title: t("createNew.helpTitles.container"),
         }}
         titleText={t("createNew.newContainer")}

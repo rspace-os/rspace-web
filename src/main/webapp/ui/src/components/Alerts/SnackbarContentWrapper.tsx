@@ -114,7 +114,7 @@ const SnackbarContentWrapper = forwardRef<HTMLDivElement, SnackbarContentWrapper
               variant="outlined"
               sx={{ color: "white", borderColor: "white" }}
             >
-              {alert.actionLabel.toUpperCase()}
+              {alert.actionLabel}
             </Button>
           )}
           {alert.retryFunction && <RetryButton retryFunction={alert.retryFunction} onClose={onClose} />}

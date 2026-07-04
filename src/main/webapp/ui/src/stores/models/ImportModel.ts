@@ -11,7 +11,7 @@ import { parseString } from "../../util/parsers";
 import Result from "../../util/result";
 import RsSet from "../../util/set";
 import StateMachine from "../../util/stateMachine";
-import { match, toTitleCase } from "../../util/Util";
+import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
 import type { GlobalId } from "../definitions/BaseRecord";
 import type { FieldModelAttrs as TemplateField } from "../models/FieldModel";
@@ -43,6 +43,26 @@ export const Fields: { [fieldName: string]: symbol } = {
   identifier: Symbol.for("IDENTIFIER"),
   custom: Symbol.for("CUSTOM"),
   none: Symbol.for("IGNORE"),
+};
+
+const IMPORT_RECORD_TYPE_LABEL_KEYS = {
+  CONTAINERS: "inventory:recordTypes.container.plural",
+  SAMPLES: "inventory:recordTypes.sample.plural",
+  SUBSAMPLES: "inventory:recordTypes.subsample.plural",
+} as const;
+
+const IMPORT_RESULT_TYPE_LABEL_KEYS = {
+  CONTAINER: "inventory:recordTypes.container.plural",
+  SAMPLE: "inventory:recordTypes.sample.plural",
+  SUBSAMPLE: "inventory:recordTypes.subsample.plural",
+} as const;
+
+const importRecordTypeLabel = (recordType: ImportRecordType): string =>
+  i18n.t(IMPORT_RECORD_TYPE_LABEL_KEYS[recordType]);
+
+const importResultTypeLabel = (recordType: string): string => {
+  const key = IMPORT_RESULT_TYPE_LABEL_KEYS[recordType as keyof typeof IMPORT_RESULT_TYPE_LABEL_KEYS];
+  return key ? i18n.t(key) : recordType;
 };
 
 type Field = (typeof Fields)[keyof typeof Fields];
@@ -553,7 +573,7 @@ export default class Import {
   }
 
   get labelByRecordType(): string {
-    return toTitleCase(this.recordType);
+    return importRecordTypeLabel(this.recordType);
   }
 
   get mappingsByRecordType(): Array<ColumnFieldMap> {
@@ -916,7 +936,7 @@ export default class Import {
 
       resultsGroups.forEach((group) => {
         const { results, type, status, templateResult } = group;
-        const labelByResultsType = `${toTitleCase(type)}s`;
+        const labelByResultsType = importResultTypeLabel(type);
 
         if (status !== "COMPLETED") {
           this.state.transitionTo("nameSelected");
@@ -1004,14 +1024,17 @@ export default class Import {
    */
   get importMatchesExistingTemplate(): { matches: false; reason: string } | { matches: true } | null {
     if (this.createNewTemplate) return null;
-    if (!this.template) return { matches: false, reason: "Template has not been selected" };
+    if (!this.template) return { matches: false, reason: i18n.t("inventory:import.columnMapping.templateNotSelected") };
     const template = this.template;
 
     const customFields = this.samplesMappings.filter(({ field, selected }) => field === Fields.custom && selected);
     if (customFields.length !== template.fields.length)
       return {
         matches: false,
-        reason: `Number of custom columns (${customFields.length}) does not equal the number of template fields (${template.fields.length}).`,
+        reason: i18n.t("inventory:import.columnMapping.templateCustomColumnCountMismatch", {
+          customCount: customFields.length,
+          templateCount: template.fields.length,
+        }),
       };
 
     const namePairs = zipWith(customFields, template.fields, ({ columnName }, { name: fieldName }) => [
@@ -1020,10 +1043,20 @@ export default class Import {
     ]);
     if (namePairs.some(([c, f]) => c !== f)) {
       const help = formatList(
-        namePairs.filter(([c, f]) => c !== f).map(([c, f]) => `"${c}" is not the same as "${f}"`),
+        namePairs
+          .filter(([c, f]) => c !== f)
+          .map(([c, f]) =>
+            i18n.t("inventory:import.columnMapping.templateColumnNameMismatchItem", {
+              csvColumnName: c,
+              templateFieldName: f,
+            }),
+          ),
         i18n.resolvedLanguage ?? i18n.language,
       );
-      return { matches: false, reason: `The names don't match: ${help}.` };
+      return {
+        matches: false,
+        reason: i18n.t("inventory:import.columnMapping.templateColumnNamesMismatch", { mismatches: help }),
+      };
     }
 
     const notMatchingByType = new Set(
@@ -1039,7 +1072,7 @@ export default class Import {
       );
       return {
         matches: false,
-        reason: `Some of the data in some  columns does not match the type of the respective template field. Please check the values in these columns: ${help}`,
+        reason: i18n.t("inventory:import.columnMapping.templateColumnTypeMismatch", { columns: help }),
       };
     }
 
@@ -1048,13 +1081,13 @@ export default class Import {
       template.fields,
       ({ columnsWithoutBlankValue, columnName }, { mandatory }) =>
         mandatory && !columnsWithoutBlankValue.includes(columnName) ? columnName : null,
-    ).filter(Boolean);
+    ).filter((columnName): columnName is string => columnName !== null);
     if (columnsWithMissingData.length) {
       return {
         matches: false,
-        reason: `Some columns have missing required data where the template's field mandates a value. In the CSV file, please provide a value for every cell in these columns or modify the template fields to no longer require a value. These columns are: ${columnsWithMissingData.join(
-          ", ",
-        )}.`,
+        reason: i18n.t("inventory:import.columnMapping.templateRequiredValueMissing", {
+          columns: formatList(columnsWithMissingData, i18n.resolvedLanguage ?? i18n.language),
+        }),
       };
     }
 

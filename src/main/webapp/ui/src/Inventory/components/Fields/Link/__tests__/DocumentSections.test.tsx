@@ -70,8 +70,8 @@ function renderDoc(props: Partial<React.ComponentProps<typeof DocumentSections>>
   );
 }
 
-// The public-link sentence is rendered via TransRichText, embedding the <a> in the
-// translated copy; cimode returns the raw key with no <a> tag to embed, so these
+// The public-link sentence is rendered via TransRichText, embedding a rich link in
+// the translated copy; cimode returns the raw key with no tag to embed, so these
 // two tests render against the real English bundle instead.
 async function renderDocWithRealI18n(props: Partial<React.ComponentProps<typeof DocumentSections>> = {}) {
   return renderWithRealI18n(

@@ -1,5 +1,8 @@
+import Link from "@mui/material/Link";
 import { ThemeProvider } from "@mui/material/styles";
+import userEvent from "@testing-library/user-event";
 import type React from "react";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { screen } from "@/__tests__/customQueries";
 import materialTheme from "@/theme";
@@ -9,7 +12,10 @@ vi.unmock("react-i18next");
 const { Trans } = await import("react-i18next");
 const { renderWithRealI18n } = await import("@/__tests__/helpers/realI18n");
 const { default: TransRichTextComponent } = await import("@/modules/common/i18n/TransRichText");
-const TransRichText = TransRichTextComponent as React.ComponentType<{ i18nKey: string }>;
+const TransRichText = TransRichTextComponent as React.ComponentType<{
+  i18nKey: string;
+  values?: Record<string, string>;
+}>;
 const TestTrans = Trans as React.ComponentType<{
   i18nKey: string;
   components: {
@@ -23,14 +29,30 @@ const richTextResources = {
       'Read the <strong>important note</strong> and <docsLink href="/docs/from-translation">open the translated docs</docsLink>.',
     richTextComponentUrlProbe:
       "Read the <strong>important note</strong> and <docsLink>open the component docs</docsLink>.",
-    richTextDefaultMapProbe: 'Open the <a href="/docs">docs</a>.',
     richTextDefaultInlineProbe:
       "<strong>Line one</strong><br/><strong>Line two</strong> with <cite>Darwin</cite>, <code>const x = 1</code>, and <kbd>Ctrl K</kbd>.",
     richTextDefaultOrderedListProbe: "<ol><li>First item</li><li>Second item</li></ol>",
     richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
     richTextDefaultUnorderedListProbe: "<ul><li>Bullet item</li></ul>",
+    richTextExternalLinkProbe: 'Visit <externalLink href="https://example.com">the example site</externalLink>.',
+    richTextHelpDocsProbe:
+      'See <helpDocs slug="abc123-some-article#important-section" section="ignored-section">the help article</helpDocs>.',
+    richTextInterpolatedHelpDocsProbe: 'See <helpDocs slug="{slug}">the dynamic help article</helpDocs>.',
+    richTextInternalLinkProbe: 'Go to the <internalLink to="/apps">Apps page</internalLink>.',
   },
 };
+
+function RouteProbe(): React.ReactNode {
+  const location = useLocation();
+  return (
+    <>
+      <span data-testid="current-path">{location.pathname}</span>
+      <p>
+        <TransRichText i18nKey="richTextInternalLinkProbe" />
+      </p>
+    </>
+  );
+}
 
 function RichTextProbe(): React.ReactNode {
   return (
@@ -39,7 +61,7 @@ function RichTextProbe(): React.ReactNode {
         <TestTrans
           i18nKey="richTextTranslationUrlProbe"
           components={{
-            docsLink: <a href="/docs/fallback">{"fallback docs text"}</a>,
+            docsLink: <Link href="/docs/fallback">{"fallback docs text"}</Link>,
           }}
         />
       </p>
@@ -47,7 +69,7 @@ function RichTextProbe(): React.ReactNode {
         <TestTrans
           i18nKey="richTextComponentUrlProbe"
           components={{
-            docsLink: <a href="/docs/from-component">{"fallback docs text"}</a>,
+            docsLink: <Link href="/docs/from-component">{"fallback docs text"}</Link>,
           }}
         />
       </p>
@@ -82,12 +104,9 @@ describe("Trans rich text rendering", () => {
 });
 
 describe("TransRichText default vocabulary", () => {
-  it("renders the <link> tag via the default (MUI) map with no provider wiring", async () => {
+  it("renders rich inline tags via the default map with no provider wiring", async () => {
     await renderWithRealI18n(
       <ThemeProvider theme={materialTheme}>
-        <p>
-          <TransRichText i18nKey="richTextDefaultMapProbe" />
-        </p>
         <p>
           <TransRichText i18nKey="richTextDefaultStrongProbe" />
         </p>
@@ -100,7 +119,6 @@ describe("TransRichText default vocabulary", () => {
       { resources: richTextResources, defaultNS: "common" },
     );
 
-    expect(screen.getByRole("link", { name: "docs" })).toHaveAttribute("href", "/docs");
     expect(screen.getByText("important note").tagName).toBe("STRONG");
     expect(screen.getByText("Line one").nextSibling).toBeInstanceOf(HTMLBRElement);
     expect(screen.getByText("Darwin").tagName).toBe("CITE");
@@ -112,5 +130,67 @@ describe("TransRichText default vocabulary", () => {
       "Second item",
       "Bullet item",
     ]);
+  });
+
+  it("renders external and helpdocs links via the default MUI map", async () => {
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <p>
+          <TransRichText i18nKey="richTextExternalLinkProbe" />
+        </p>
+        <p>
+          <TransRichText i18nKey="richTextHelpDocsProbe" />
+        </p>
+        <p>
+          <TransRichText
+            i18nKey="richTextInterpolatedHelpDocsProbe"
+            values={{ slug: "abc123-some-article#dynamic-section" }}
+          />
+        </p>
+      </ThemeProvider>,
+      { resources: richTextResources, defaultNS: "common" },
+    );
+
+    const external = screen.getByRole("link", { name: "the example site" });
+    expect(external).toHaveAttribute("href", "https://example.com");
+    expect(external).toHaveAttribute("target", "_blank");
+    expect(external).toHaveAttribute("rel", "noreferrer");
+
+    const helpDocs = screen.getByRole("link", { name: "the help article" });
+    expect(helpDocs).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/abc123-some-article#important-section",
+    );
+    expect(helpDocs).toHaveAttribute("target", "_blank");
+    expect(helpDocs).toHaveAttribute("rel", "noreferrer");
+
+    const dynamicHelpDocs = screen.getByRole("link", { name: "the dynamic help article" });
+    expect(dynamicHelpDocs).toHaveAttribute(
+      "href",
+      "https://researchspace.helpdocs.io/article/abc123-some-article#dynamic-section",
+    );
+    expect(dynamicHelpDocs).toHaveAttribute("target", "_blank");
+    expect(dynamicHelpDocs).toHaveAttribute("rel", "noreferrer");
+  });
+
+  it("renders internal links through react-router when a router is present", async () => {
+    const user = userEvent.setup();
+
+    await renderWithRealI18n(
+      <ThemeProvider theme={materialTheme}>
+        <MemoryRouter initialEntries={["/"]}>
+          <Routes>
+            <Route path="*" element={<RouteProbe />} />
+          </Routes>
+        </MemoryRouter>
+      </ThemeProvider>,
+      { resources: richTextResources, defaultNS: "common" },
+    );
+
+    expect(screen.getByTestId("current-path")).toHaveTextContent("/");
+
+    await user.click(screen.getByRole("link", { name: "Apps page" }));
+
+    expect(screen.getByTestId("current-path")).toHaveTextContent("/apps");
   });
 });

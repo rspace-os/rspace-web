@@ -69,7 +69,6 @@ import { formatList } from "@/modules/common/i18n/listFormat";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/sysadmin";
-import docLinks from "../../../assets/DocLinks";
 import Alerts from "../../../components/Alerts/Alerts";
 import Analytics from "../../../components/Analytics";
 import CustomTooltip from "../../../components/CustomTooltip";
@@ -220,12 +219,7 @@ const TagDialog = ({
         <DialogContent>
           <Stack spacing={2}>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="system:usersPage.tagDialog.description"
-                components={{
-                  a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
-                }}
-              />
+              <TransRichText i18nKey="system:usersPage.tagDialog.description" />
             </Typography>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
               {visibleTags.map((tag) => (
@@ -845,14 +839,7 @@ const DeleteAction = ({
                         mb: 1,
                       }}
                     >
-                      <TransRichText
-                        i18nKey="system:usersPage.deleteDialog.formsNotice"
-                        values={{
-                          ownerOfForms: t("usersPage.ownerOfForms"),
-                          willTransferOwnership: t("usersPage.willTransferOwnership"),
-                          thisSystemAdministrator: t("usersPage.thisSystemAdministrator"),
-                        }}
-                      />
+                      <TransRichText i18nKey="system:usersPage.deleteDialog.formsNotice" />
                     </Typography>
                   )}
                   <Typography
@@ -1773,12 +1760,7 @@ export const UsersPage = (): React.ReactNode => {
                       maxWidth: 575,
                     }}
                   >
-                    <TransRichText
-                      i18nKey="system:usersPage.intro"
-                      components={{
-                        a: <Link target="_blank" rel="noreferrer" href={docLinks.taggingUsers} />,
-                      }}
-                    />
+                    <TransRichText i18nKey="system:usersPage.intro" />
                   </Typography>
                   <Box sx={{ height: 4 }} />
                   <Box sx={{ width: "100%" }}>

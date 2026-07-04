@@ -226,7 +226,7 @@
       },
       "tags": {
         "clearButton": "Clear Tags",
-        "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Tagging Documents and using Controlled Vocabularies</a>.",
+        "helperText": "Add tags from controlled vocabularies to this export. The term's value and URI will be included in the deposit's metadata. For more info see <helpDocs slug=\"8ujmvpa1no-controlled-vocabularies\">Tagging Documents and using Controlled Vocabularies</helpDocs>.",
         "label": "Tags and Controlled Vocabulary Terms"
       },
       "user": {
@@ -334,14 +334,14 @@
       },
       "dataTypeChoiceLabel": "Display all data, only project data, or only screen data",
       "dataTypes": {
-        "all": "Projects And Screens",
+        "all": "Projects and Screens",
         "projects": "Projects",
         "screens": "Screens"
       },
-      "detailsFetched": "details fetched",
-      "fetchDetails": "fetch details",
+      "detailsFetched": "Details fetched",
+      "fetchDetails": "Fetch details",
       "filterResults": "Filter results",
-      "getLargeThumbnailLabel": "get large thumbnail",
+      "getLargeThumbnailLabel": "Get large thumbnail",
       "hideChildren": "hide children [{count}]",
       "hideImageGrid": "hide image grid{hasOtherFields, select, yes { (there are other fields)} other {}}",
       "itemSearchResultsLabel": "item search results",
@@ -349,15 +349,15 @@
       "loadingData": "Data is loading...",
       "noImage": "no image",
       "parentLink": " -> parent_{parentType}",
-      "redrawImage": "re-draw image",
-      "seeInOmero": "see in omero",
+      "redrawImage": "Redraw image",
+      "seeInOmero": "See in OMERO",
       "selectedCount": "Selected: {count}",
       "showChildren": "show children [{count}]",
       "showDatasets": "show datasets [{count}]",
       "showGridOfWells": "show grid of wells [{count}]",
       "showGridOfWellsForField": "show grid of wells for field {field}",
       "showImageGrid": "show image grid [{count}]",
-      "showPlateAcquisitions": "show plateAcquisitions [{count}]",
+      "showPlateAcquisitions": "Show plate acquisitions [{count}]",
       "showPlates": "show plates [{count}]",
       "unavailableAlt": "Unavailable"
     },
@@ -370,7 +370,7 @@
           "noneFound": "No compounds found for \"{searchTerm}\". Try a different search term."
         },
         "intro": {
-          "moreInfo": "See <pubchemLink>https://pubchem.ncbi.nlm.nih.gov/</pubchemLink> and our <docsLink>PubChem integration docs</docsLink> for more.",
+          "moreInfo": "See <externalLink href=\"https://pubchem.ncbi.nlm.nih.gov/\">https://pubchem.ncbi.nlm.nih.gov/</externalLink> and our <helpDocs slug=\"wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases\">PubChem integration docs</helpDocs> for more.",
           "searchDescription": "Search PubChem for chemical compounds by name, CAS number, or SMILES string."
         },
         "searchPlaceholders": {
@@ -438,7 +438,7 @@
         }
       },
       "instructionsTitle": "Instructions",
-      "reservedShortcutsNote": "Here's <a href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\" target=\"_blank\" rel=\"noreferrer\">a list</a> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
+      "reservedShortcutsNote": "Here's <externalLink href=\"https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/\">a list</externalLink> of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key, are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl + Shift + number/letter, or Alt + Shift + number/letter.",
       "tabActions": "Actions",
       "tabSymbols": "Symbols",
       "toggleInstructions": "Toggle instructions"
@@ -465,7 +465,7 @@
       "couldNotLoadDnaPreviewImage": "Could not load DNA preview image.",
       "dialogTitle": "SnapGene",
       "dnaPreviewAlt": "DNA preview",
-      "dnaPreviewError": "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
+      "dnaPreviewError": "An error has occurred. This could be because the SnapGene server is down or the DNA sequence is invalid.",
       "enzymeSetOptions": {
         "commercialNonredundant": "Commercial nonredundant",
         "sixPlus": "Six plus",
@@ -526,7 +526,7 @@
       },
       "validation": {
         "includeAtLeastOne": "Include at least one {filter}",
-        "termTooShort": "The term should be at least 2 symbols"
+        "termTooShort": "The term must be at least 2 characters."
       }
     },
     "chemicalSearch": {
@@ -631,7 +631,7 @@
       "searchPlaceholder": "Search"
     },
     "tags": {
-      "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <a href=\"{link}\" target=\"_blank\" rel=\"noreferrer\">Read more about creating, importing, and using Tags here.</a>",
+      "description": "You can tag Documents, Notebooks, and Folders to categorise work and make it more searchable. If you've selected multiple items, only shared tags are shown. <helpDocs slug=\"8ujmvpa1no-controlled-vocabularies\">Read more about creating, importing, and using Tags here.</helpDocs>",
       "getTagsError": "Could not get tags.",
       "invalidTags": "Some tags are invalid",
       "multipleErrors": "There are multiple errors.",

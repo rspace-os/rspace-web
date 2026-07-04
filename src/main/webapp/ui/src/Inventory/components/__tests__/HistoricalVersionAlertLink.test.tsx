@@ -45,7 +45,7 @@ describe("HistoricalVersionAlert rich i18n", () => {
       { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
     );
 
-    expect(screen.getByText("This is version 2 of the subsample.")).toBeVisible();
+    expect(screen.getByText("This is version 2.")).toBeVisible();
     const link = screen.getByRole("link", { name: "View the latest version" });
     expect(link).toHaveAttribute("href", "/inventory/subsample/1");
   });

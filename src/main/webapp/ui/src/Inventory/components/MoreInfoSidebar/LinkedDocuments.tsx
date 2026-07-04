@@ -20,7 +20,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../../assets/DocLinks";
 import ApiService from "../../../common/InvApiService";
 import GlobalIdLink from "../../../components/GlobalId";
 import NoValue from "../../../components/NoValue";
@@ -167,10 +166,7 @@ function DialogContents({ state }: { state: State }): React.ReactNode {
           <>
             <Box sx={{ mt: 1 }}>
               <Typography variant="body1">
-                <TransRichText
-                  i18nKey="inventory:moreInfo.linkedDocumentsHelp.listOfMaterials"
-                  values={{ link: docLinks.listOfMaterials }}
-                />
+                <TransRichText i18nKey="inventory:moreInfo.linkedDocumentsHelp.listOfMaterials" />
               </Typography>
             </Box>
             <Box sx={{ mt: 1 }}>

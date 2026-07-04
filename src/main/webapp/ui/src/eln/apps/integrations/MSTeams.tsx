@@ -4,7 +4,6 @@ import Card from "@mui/material/Card";
 import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -20,7 +19,6 @@ import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/msteams";
 import TeamsIcon from "../../../assets/branding/msteams/logo.svg";
-import docLinks from "../../../assets/DocLinks";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as ArrayUtils from "../../../util/ArrayUtils";
 import { Optional } from "../../../util/optional";
@@ -61,17 +59,12 @@ function MSTeams({ integrationState, update }: MSTeamsArgs): React.ReactNode {
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText={t("integrations.msteams.usage")}
         helpLinkText={t("integrations.msteams.helpLink")}
-        website="teams.microsoft.com"
-        docLink="teams"
+        website="https://teams.microsoft.com"
+        docLink="i95u9itfgu-microsoft-teams-integration"
         setupSection={
           <>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:integrations.msteams.setup.instructions"
-                components={{
-                  articleLink: <Link href={docLinks.teams} target="_blank" rel="noreferrer" />,
-                }}
-              />
+              <TransRichText i18nKey="apps:integrations.msteams.setup.instructions" />
             </Typography>
             {ArrayUtils.all(integrationState.credentials)
               .map((channels) => (

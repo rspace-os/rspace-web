@@ -8,7 +8,6 @@ import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import docLinks from "../../assets/DocLinks";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -184,7 +183,7 @@ function TagDialog(): React.ReactNode {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2">
-            <TransRichText i18nKey="workspace:toolbar.tags.description" values={{ link: docLinks.tags }} />
+            <TransRichText i18nKey="workspace:toolbar.tags.description" />
           </Typography>
           <TagListing
             tags={

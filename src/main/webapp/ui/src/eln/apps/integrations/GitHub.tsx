@@ -332,8 +332,8 @@ function GitHub({ integrationState, update }: GitHubArgs): React.ReactNode {
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText={t("integrations.github.usage")}
         helpLinkText={t("integrations.github.helpLink")}
-        website="github.com"
-        docLink="github"
+        website="https://github.com"
+        docLink="y2080yw30x-github-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.github.setup.instructions" />

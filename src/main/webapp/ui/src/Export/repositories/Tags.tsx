@@ -10,7 +10,6 @@ import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import { color, currentPageKey } from "@/util/pageBranding";
-import docLinks from "../../assets/DocLinks";
 import InputWrapper from "../../components/Inputs/InputWrapper";
 import NoValue from "../../components/NoValue";
 import AddTag from "../../components/Tags/AddTag";
@@ -67,10 +66,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
           }
         >
           <FormHelperText sx={{ ml: 0, mb: 2 }}>
-            <TransRichText
-              i18nKey="workspace:export.repositories.tags.helperText"
-              values={{ link: docLinks.controlledVocabularies }}
-            />
+            <TransRichText i18nKey="workspace:export.repositories.tags.helperText" />
           </FormHelperText>
           {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (
             <NoValue label={fieldOwner.noValueLabel.tags ?? t("common:values.none")} />

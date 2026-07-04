@@ -9,11 +9,11 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { useApplicationVersionQuery } from "@/modules/common/queries/applicationVersion";
 import createAccentedTheme from "../../accentedTheme";
 import RSpaceLogo from "../../assets/branding/rspace/logo.svg";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
-import docLinks from "../../assets/DocLinks";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import * as FetchingData from "../../util/fetchingData";
 import { Dialog } from "../DialogBoundary";
@@ -121,7 +121,7 @@ export function AboutRSpaceContent(): React.ReactElement {
             <Link href="https://researchspace.com" target="_blank" rel="noreferrer">
               {t("links.website")}
             </Link>
-            <Link href={docLinks.changelog} target="_blank" rel="noreferrer">
+            <Link href={helpDocsArticleUrl("mx11qvqg0i-changelog")} target="_blank" rel="noreferrer">
               {t("links.changelog")}
             </Link>
             <Link href="https://github.com/rspace-os" target="_blank" rel="noreferrer">

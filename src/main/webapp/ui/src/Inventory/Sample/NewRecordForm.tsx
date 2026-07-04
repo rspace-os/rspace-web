@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import docLinks from "../../assets/DocLinks";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import SampleModel from "../../stores/models/SampleModel";
 import useStores from "../../stores/use-stores";
 import { capitaliseJustFirstChar } from "../../util/Util";
@@ -185,7 +185,7 @@ function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createSample,
+          link: helpDocsArticleUrl("gb3r1lgm5g-create-a-sample"),
           title: t("createNew.helpTitles.sample"),
         }}
         titleText={t("createNew.newSample")}

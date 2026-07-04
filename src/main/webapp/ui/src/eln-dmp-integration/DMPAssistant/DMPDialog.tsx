@@ -4,7 +4,6 @@ import Checkbox from "@mui/material/Checkbox";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,10 +11,9 @@ import Typography from "@mui/material/Typography";
 import { DataGrid, type GridRenderCellParams, GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmpassistant";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
 import NoValue from "../../components/NoValue";
@@ -198,7 +196,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dmpassistant,
+          docLink: helpDocsArticleUrl("n88a3g86e0-dmp-assistant-integration"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmpAssistant") }),
         }}
       />
@@ -216,12 +214,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
               <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmpassistantImportDesc" />
             </Typography>
             <Typography variant="body2">
-              <TransRichText
-                i18nKey="apps:dmpIntegrations.dialog.dmpassistantDocsLink"
-                components={{
-                  helpLink: <Link href={docLinks.dmpassistant} />,
-                }}
-              />
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmpassistantDocsLink" />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>

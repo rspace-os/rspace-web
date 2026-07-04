@@ -3,7 +3,6 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -14,10 +13,9 @@ import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
-import TransRichText from "@/modules/common/i18n/TransRichText";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmptool";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import { Dialog, DialogBoundary } from "../../components/DialogBoundary";
@@ -99,12 +97,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
             addAlert(
               mkAlert({
                 title: t("dmpIntegrations.dialog.error.unableToLoad"),
-                message: (
-                  <TransRichText
-                    i18nKey="apps:dmpIntegrations.dialog.forMoreInfo"
-                    values={{ link: docLinks.dmptoolImportingDmps }}
-                  />
-                ),
+                message: <TransRichText i18nKey="apps:dmpIntegrations.dialog.forMoreInfo" />,
                 variant: "error",
               }),
             );
@@ -191,7 +184,7 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dmptool,
+          docLink: helpDocsArticleUrl("o0wlhlgxnr-dmptool-integration"),
           title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmptool") }),
         }}
       />
@@ -214,9 +207,6 @@ function DMPDialogContent({ setOpen }: { setOpen: (open: boolean) => void }): Re
               <TransRichText
                 i18nKey="apps:dmpIntegrations.dialog.dmptoolImportDescAndDocsLink"
                 values={{ serverAlias: DMPHost ?? "", hasAlias: DMPHost ? "yes" : "no" }}
-                components={{
-                  helpLink: <Link href={docLinks.dmptool} />,
-                }}
               />
             </Typography>
           </Box>

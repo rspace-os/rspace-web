@@ -1,13 +1,11 @@
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
-import Link from "@mui/material/Link";
 import { darken, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import NoResultsSvg from "@/assets/graphics/NoResults.svg";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../../assets/DocLinks";
 
 type NoResultsArgs = {
   query: string | null;
@@ -63,12 +61,7 @@ function NoResults({ query }: NoResultsArgs): React.ReactNode {
               maxWidth: "20em",
             }}
           >
-            <TransRichText
-              i18nKey="inventory:search.noResults.luceneInfo"
-              components={{
-                luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-              }}
-            />
+            <TransRichText i18nKey="inventory:search.noResults.luceneInfo" />
           </Typography>
         </>
       )}

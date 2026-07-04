@@ -86,7 +86,7 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
           {raidTitle}
           {" ("}
           {raidIdentifier}
-          {")\n        "}
+          {")"}
         </button>
       );
     },

@@ -34,8 +34,8 @@ function GoogleDrive({ integrationState, update }: GoogleDriveArgs): React.React
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText={t("integrations.googleDrive.usage")}
         helpLinkText={t("integrations.googleDrive.helpLink")}
-        website="drive.google.com"
-        docLink="cloudstorage"
+        website="https://drive.google.com"
+        docLink="j2z5f5r90q-cloud-storage-integrations"
         setupSection={<TransRichText i18nKey="apps:integrations.googleDrive.setup.instructions" />}
       />
     </Grid>

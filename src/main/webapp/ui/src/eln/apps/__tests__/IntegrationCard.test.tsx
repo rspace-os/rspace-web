@@ -20,7 +20,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -41,7 +41,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -62,7 +62,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -83,7 +83,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -108,7 +108,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           setupSection="Some dialog content"
         />
@@ -133,7 +133,7 @@ describe("IntegrationCard", () => {
           update={update}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -159,7 +159,7 @@ describe("IntegrationCard", () => {
           update={update}
           usageText=""
           helpLinkText="test"
-          docLink="teams"
+          docLink="i95u9itfgu-microsoft-teams-integration"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}

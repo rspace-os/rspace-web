@@ -18,9 +18,9 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/irods";
-import docLinks from "../../../assets/DocLinks";
 import AppBar from "../../../components/AppBar";
 import ChoiceField from "../../../components/Inputs/ChoiceField";
 import FormField from "../../../components/Inputs/FormField";
@@ -161,7 +161,7 @@ function MoveCopyDialog({ selectedIds, dialogOpen, setDialogOpen }: MoveCopyDial
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.irods,
+          docLink: helpDocsArticleUrl("xt21074dln-irods-integration"),
           title: t("moveToIrods.helpTitle"),
         }}
       />

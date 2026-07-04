@@ -21,8 +21,6 @@ import type React from "react";
 import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
-import type { DocLinkName } from "../../assets/DocLinks";
-import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
 import TransRichText from "../../modules/common/i18n/TransRichText";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -49,9 +47,9 @@ type IntegrationCardArgs<Credentials> = {
   // brief as it will be shown both in the card and in the header of the dialog
   explanatoryText: string;
 
-  // The website of the integration's service. Format like as `example.com`, as
-  // `https://` will be prefixed when used as a `href` property, and will be
-  // displayed in the UI as passed.
+  // The website of the integration's service, as a full URL
+  // (`https://example.com`) or a root-relative path (`/public/apiDocs`). Used
+  // directly as the link's `href`; displayed in the UI without the scheme.
   website?: string;
 
   // Logo, or similar image. This MUST be an SVG. Try to make any new images
@@ -73,10 +71,9 @@ type IntegrationCardArgs<Credentials> = {
   // Describe the behaviour of RSpace when the integration is enabled.
   usageText: React.ReactNode;
 
-  // The name of a link in ../../assets/DocLinks to our user-facing
-  // documentation. We cannot infer this from `name` because some very similar
-  // integrations share a single page of documentation.
-  docLink: DocLinkName;
+  // The helpdocs article slug for this integration's user-facing documentation.
+  // Include any #anchor fragment directly in the slug when linking to a section.
+  docLink: string;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in
@@ -460,20 +457,15 @@ function IntegrationCard<Credentials>({
                 <Typography variant="body2">
                   <TransRichText
                     i18nKey="apps:integrationCard.moreInfo.withWebsite"
-                    values={{ website, helpLinkText }}
+                    values={{ helpLinkText, docLink }}
                     components={{
-                      website: <Link href={website.startsWith("/") ? website : `https://${website}`} />,
-                      docs: <Link href={docLinks[docLink]} />,
+                      website: <Link href={website} />,
                     }}
                   />
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  <TransRichText
-                    i18nKey="apps:integrationCard.moreInfo.docsOnly"
-                    values={{ helpLinkText }}
-                    components={{ docs: <Link href={docLinks[docLink]} /> }}
-                  />
+                  <TransRichText i18nKey="apps:integrationCard.moreInfo.docsOnly" values={{ helpLinkText, docLink }} />
                 </Typography>
               )}
             </section>

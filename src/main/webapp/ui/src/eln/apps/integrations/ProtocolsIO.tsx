@@ -93,8 +93,8 @@ function ProtocolsIO({ integrationState, update }: ProtocolsIOArgs): React.React
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
         usageText={t("integrations.protocolsIo.usage")}
         helpLinkText={t("integrations.protocolsIo.helpLink")}
-        website="protocols.io"
-        docLink="protocolsio"
+        website="https://protocols.io"
+        docLink="nid9q64pas-protocols-io-integration"
         setupSection={
           <>
             <TransRichText i18nKey="apps:integrations.protocolsIo.setup.instructions" />

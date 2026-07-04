@@ -7,14 +7,12 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Grow from "@mui/material/Grow";
-import Link from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../assets/DocLinks";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
@@ -65,12 +63,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
                 <TransRichText i18nKey="common:searchDialog.luceneTip" />
               </DialogContentText>
               <DialogContentText>
-                <TransRichText
-                  i18nKey="common:searchDialog.moreInfo"
-                  components={{
-                    luceneLink: <Link href={docLinks.luceneSyntax} rel="noreferrer" target="_blank" />,
-                  }}
-                />
+                <TransRichText i18nKey="common:searchDialog.moreInfo" />
               </DialogContentText>
             </Box>
           </Stack>

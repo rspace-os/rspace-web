@@ -2,8 +2,7 @@ import { delay } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
-import TransRichText from "@/modules/common/i18n/TransRichText";
-import docLinks from "../../assets/DocLinks";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -363,7 +362,9 @@ export default class TemplateModel extends SampleModel implements Template {
         <>
           {i18n.t("inventory:template.updateSamplesConfirm.title")}
           <HelpLinkIcon
-            link={docLinks.updateAllSamplesOfTemplate}
+            link={helpDocsArticleUrl(
+              "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
+            )}
             title={i18n.t("inventory:template.updateSamplesConfirm.helpTitle")}
             size="small"
           />

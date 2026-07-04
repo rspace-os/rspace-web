@@ -41,8 +41,8 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         usageText={t("integrations.oneDrive.usage")}
         helpLinkText={t("integrations.oneDrive.helpLink")}
-        website="onedrive.live.com"
-        docLink="cloudstorage"
+        website="https://onedrive.live.com"
+        docLink="j2z5f5r90q-cloud-storage-integrations"
         setupSection={<TransRichText i18nKey="apps:integrations.oneDrive.setup.instructions" />}
       />
     </Grid>
