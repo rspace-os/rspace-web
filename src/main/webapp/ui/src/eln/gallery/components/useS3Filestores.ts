@@ -11,11 +11,7 @@ import Result from "../../../util/result";
 const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
 
-function handleErrors(
-  response: unknown,
-  successMessage: string = i18n.t("gallery:s3.success.moved"),
-  partialFailureMessage: string = i18n.t("gallery:s3.errors.partialMoveFailed"),
-): Alert {
+function handleErrors(response: unknown, successMessage: string, partialFailureMessage: string): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data

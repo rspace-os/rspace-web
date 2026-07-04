@@ -826,14 +826,7 @@ const DeleteAction = ({
                   {(user.hasFormsUsedByOtherUsers || user.hasTemplatesUsedByOtherUsers) && (
                     <Alert severity="info" sx={{ mb: 1 }}>
                       <Typography variant="body2">
-                        <TransRichText
-                          i18nKey="system:usersPage.deleteDialog.formsAndTemplatesNotice"
-                          values={{
-                            ownerOfFormsAndTemplates: t("usersPage.ownerOfFormsAndTemplates"),
-                            willTransferOwnership: t("usersPage.willTransferOwnership"),
-                            thisSystemAdministrator: t("usersPage.thisSystemAdministrator"),
-                          }}
-                        />
+                        <TransRichText i18nKey="system:usersPage.deleteDialog.formsAndTemplatesNotice" />
                       </Typography>
                     </Alert>
                   )}

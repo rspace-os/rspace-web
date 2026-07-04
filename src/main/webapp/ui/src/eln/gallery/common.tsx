@@ -8,6 +8,7 @@ import { faShapes } from "@fortawesome/free-solid-svg-icons/faShapes";
 import { faVolumeLow } from "@fortawesome/free-solid-svg-icons/faVolumeLow";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import type React from "react";
+import type Resources from "@/modules/common/i18n/resources";
 import { COLORS as baseThemeColors } from "../../theme";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -77,6 +78,8 @@ export const parseGallerySectionFromUrlSearchParams = (searchParams: URLSearchPa
     parseGallerySection,
   );
 
+type GallerySectionLabelKey = `sections.${keyof Resources["gallery"]["sections"]}`;
+
 const gallerySectionLabelKeys = {
   Images: "sections.images",
   Audios: "sections.audios",
@@ -88,9 +91,7 @@ const gallerySectionLabelKeys = {
   Snippets: "sections.snippets",
   Miscellaneous: "sections.miscellaneous",
   PdfDocuments: "sections.pdfDocuments",
-} as const satisfies Record<GallerySection, string>;
-
-type GallerySectionLabelKey = (typeof gallerySectionLabelKeys)[GallerySection];
+} satisfies Record<GallerySection, GallerySectionLabelKey>;
 
 export const translateGallerySectionLabel = (
   section: GallerySection,

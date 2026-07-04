@@ -1,6 +1,6 @@
 import { chipClasses } from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { makeMockBench, makeMockContainer } from "@/stores/models/__tests__/ContainerModel/mocking";
@@ -126,11 +126,14 @@ describe("RecordLink", () => {
     expect(setVisiblePanelSpy).not.toHaveBeenCalled();
   });
 
-  test("does not intercept a Ctrl-click, leaving the browser to open a new tab.", () => {
+  test("does not intercept a Ctrl-click, leaving the browser to open a new tab.", async () => {
+    const user = userEvent.setup();
     const container = makeMockContainer();
     const { setVisiblePanelSpy, trackEventSpy } = renderRecordLink(container);
 
-    fireEvent.click(screen.getByRole("link"), { ctrlKey: true });
+    await user.keyboard("{Control>}");
+    await user.click(screen.getByRole("link"));
+    await user.keyboard("{/Control}");
 
     expect(navigate).not.toHaveBeenCalled();
     expect(trackEventSpy).not.toHaveBeenCalled();

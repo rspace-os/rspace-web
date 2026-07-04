@@ -76,7 +76,7 @@
     "deleteDialog": {
       "confirmUsername": "To delete <strong>{fullName}</strong>'s account please enter their username.",
       "disabledByDeployment": "The deployment property \"sysadmin.delete.user\" is false.",
-      "formsAndTemplatesNotice": "The user you are trying to delete is <strong>{ownerOfFormsAndTemplates}</strong> To ensure continued access to these Forms/Templates, the system<strong> {willTransferOwnership}</strong> of those files to<strong> {thisSystemAdministrator}</strong> account. Forms and Templates that are not used by others will be deleted.",
+      "formsAndTemplatesNotice": "The user you are trying to delete is <strong>the owner of Forms and/or Templates that are used by other users.</strong> To ensure continued access to these Forms/Templates, the system<strong> will transfer ownership</strong> of those files to<strong> this System Administrator</strong> account. Forms and Templates that are not used by others will be deleted.",
       "formsNotice": "The user you are trying to delete is <strong>{ownerOfForms}</strong> To ensure continued access to these Forms, the system<strong> {willTransferOwnership}</strong> of the Forms to<strong> {thisSystemAdministrator}</strong> account. Forms that are not used by others will be deleted.",
       "irreversible": "User deletion is irreversible, and all documents will be deleted.",
       "onlyOneUser": "Only one user can be deleted at a time.",
@@ -112,7 +112,6 @@
     "loadingError": "Failed to load listing of users. Please try refreshing.",
     "loadingListing": "Loading listing of users.",
     "ownerOfForms": "the owner of Forms that are used by other users.",
-    "ownerOfFormsAndTemplates": "the owner of Forms and/or Templates that are used by other users.",
     "piRoleDialog": {
       "adminSelected": "The selected user is an admin.",
       "error": "ERROR: {error}",
