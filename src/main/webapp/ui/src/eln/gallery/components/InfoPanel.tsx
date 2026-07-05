@@ -13,7 +13,6 @@ import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import type { SxProps, Theme } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
-import type { TFunction } from "i18next";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -398,22 +397,6 @@ const DescriptionField = observer(
     );
   },
 );
-const formatDmpSource = (source: string, t: TFunction<"gallery">): string => {
-  switch (source) {
-    case "UNKNOWN":
-      return t("infoPanel.sources.unknown");
-    case "DMP_TOOL":
-      return t("infoPanel.sources.dmpTool");
-    case "DMP_ONLINE":
-      return t("infoPanel.sources.dmpOnline");
-    case "ARGOS":
-      return t("infoPanel.sources.argos");
-    case "DSW":
-      return t("infoPanel.sources.dsw");
-    default:
-      return source;
-  }
-};
 /**
  * Fetches an S3 filestore item's write-provenance (created-by / created-at) on demand when it is
  * selected, rather than HeadObject-ing every item during a folder listing. Returns nulls for
@@ -468,6 +451,24 @@ const InfoPanelContent = observer(
   ({ file, smallViewport = false }: { file: GalleryFile; smallViewport?: boolean }): React.ReactNode => {
     const { t } = useTranslation("gallery");
     const s3Provenance = useS3Provenance(file);
+
+    const formatDmpSource = (source: string): string => {
+      switch (source) {
+        case "UNKNOWN":
+          return t("infoPanel.sources.unknown");
+        case "DMP_TOOL":
+          return t("infoPanel.sources.dmpTool");
+        case "DMP_ONLINE":
+          return t("infoPanel.sources.dmpOnline");
+        case "ARGOS":
+          return t("infoPanel.sources.argos");
+        case "DSW":
+          return t("infoPanel.sources.dsw");
+        default:
+          return source;
+      }
+    };
+
     return (
       <Stack
         sx={{
@@ -547,7 +548,7 @@ const InfoPanelContent = observer(
                       {
                         label: t("infoPanel.labels.source"),
                         value: (
-                          <Chip label={formatDmpSource(file.metadata.dmpSource, t)} size="small" variant="outlined" />
+                          <Chip label={formatDmpSource(file.metadata.dmpSource)} size="small" variant="outlined" />
                         ),
                       },
                     ]
