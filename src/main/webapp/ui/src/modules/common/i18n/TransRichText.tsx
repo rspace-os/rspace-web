@@ -49,17 +49,14 @@ function ExternalLink(props: LinkProps): React.ReactNode {
 /**
  * Renders `<helpDocs docLink="...">` in a message as a link to the RSpace
  * help documentation, opened in a new tab. The docLink value resolves through
- * `common:help`. A raw `slug` still works as a narrow fallback for tests and
- * exceptional one-off links.
+ * `common:help`.
  */
-function HelpDocsLink({
-  docLink,
-  slug,
-  ...rest
-}: LinkProps & { docLink?: HelpDocsArticle; slug?: string }): React.ReactNode {
+function HelpDocsLink({ docLink, ...rest }: LinkProps & { docLink?: HelpDocsArticle }): React.ReactNode {
   const { t } = useTranslation("common");
-  const resolvedSlug = docLink ? t(`help.${docLink}`) : (slug ?? "");
-  return <Link {...rest} href={helpDocsArticleUrlFromSlug(resolvedSlug)} target="_blank" rel="noreferrer" />;
+  if (!docLink) {
+    throw new Error("<helpDocs> rich text links require a docLink attribute.");
+  }
+  return <Link {...rest} href={helpDocsArticleUrlFromSlug(t(`help.${docLink}`))} target="_blank" rel="noreferrer" />;
 }
 
 const muiRichTextComponents: RichTextComponents = {

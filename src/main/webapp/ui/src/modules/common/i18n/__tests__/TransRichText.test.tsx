@@ -38,11 +38,9 @@ const richTextResources = {
     richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
     richTextDefaultUnorderedListProbe: "<ul><li>Bullet item</li></ul>",
     richTextExternalLinkProbe: 'Visit <externalLink href="https://example.com">the example site</externalLink>.',
-    richTextHelpDocsProbe: 'See <helpDocs slug="abc123-some-article#important-section">the help article</helpDocs>.',
     richTextHelpDocsDocLinkProbe: 'See <helpDocs docLink="centralArticle">the central help article</helpDocs>.',
     richTextInterpolatedHelpDocsDocLinkProbe:
       'See <helpDocs docLink="{docLink}">the dynamic central help article</helpDocs>.',
-    richTextInterpolatedHelpDocsProbe: 'See <helpDocs slug="{slug}">the dynamic help article</helpDocs>.',
     richTextInternalLinkProbe: 'Go to the <internalLink to="/apps">Apps page</internalLink>.',
   },
 };
@@ -51,7 +49,9 @@ function RouteProbe(): React.ReactNode {
   const location = useLocation();
   return (
     <>
-      <span data-testid="current-path">{location.pathname}</span>
+      <span role="status" aria-label="current path">
+        {location.pathname}
+      </span>
       <p>
         <TransRichText i18nKey="richTextInternalLinkProbe" />
       </p>
@@ -144,19 +144,10 @@ describe("TransRichText default vocabulary", () => {
           <TransRichText i18nKey="richTextExternalLinkProbe" />
         </p>
         <p>
-          <TransRichText i18nKey="richTextHelpDocsProbe" />
-        </p>
-        <p>
           <TransRichText i18nKey="richTextHelpDocsDocLinkProbe" />
         </p>
         <p>
           <TransRichText i18nKey="richTextInterpolatedHelpDocsDocLinkProbe" values={{ docLink: "centralArticle" }} />
-        </p>
-        <p>
-          <TransRichText
-            i18nKey="richTextInterpolatedHelpDocsProbe"
-            values={{ slug: "abc123-some-article#dynamic-section" }}
-          />
         </p>
       </ThemeProvider>,
       { resources: richTextResources, defaultNS: "common" },
@@ -166,14 +157,6 @@ describe("TransRichText default vocabulary", () => {
     expect(external).toHaveAttribute("href", "https://example.com");
     expect(external).toHaveAttribute("target", "_blank");
     expect(external).toHaveAttribute("rel", "noreferrer");
-
-    const helpDocs = screen.getByRole("link", { name: "the help article" });
-    expect(helpDocs).toHaveAttribute(
-      "href",
-      "https://researchspace.helpdocs.io/article/abc123-some-article#important-section",
-    );
-    expect(helpDocs).toHaveAttribute("target", "_blank");
-    expect(helpDocs).toHaveAttribute("rel", "noreferrer");
 
     const centralHelpDocs = screen.getByRole("link", { name: "the central help article" });
     expect(centralHelpDocs).toHaveAttribute(
@@ -190,14 +173,6 @@ describe("TransRichText default vocabulary", () => {
     );
     expect(interpolatedCentralHelpDocs).toHaveAttribute("target", "_blank");
     expect(interpolatedCentralHelpDocs).toHaveAttribute("rel", "noreferrer");
-
-    const dynamicHelpDocs = screen.getByRole("link", { name: "the dynamic help article" });
-    expect(dynamicHelpDocs).toHaveAttribute(
-      "href",
-      "https://researchspace.helpdocs.io/article/abc123-some-article#dynamic-section",
-    );
-    expect(dynamicHelpDocs).toHaveAttribute("target", "_blank");
-    expect(dynamicHelpDocs).toHaveAttribute("rel", "noreferrer");
   });
 
   it("renders internal links through react-router when a router is present", async () => {
@@ -214,10 +189,10 @@ describe("TransRichText default vocabulary", () => {
       { resources: richTextResources, defaultNS: "common" },
     );
 
-    expect(screen.getByTestId("current-path")).toHaveTextContent("/");
+    expect(screen.getByRole("status", { name: "current path" })).toHaveTextContent("/");
 
     await user.click(screen.getByRole("link", { name: "Apps page" }));
 
-    expect(screen.getByTestId("current-path")).toHaveTextContent("/apps");
+    expect(screen.getByRole("status", { name: "current path" })).toHaveTextContent("/apps");
   });
 });
