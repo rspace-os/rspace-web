@@ -143,7 +143,86 @@ pnpm run tsc          # confirm key references type-check
 keys, so it is safe to run often. Keys in `__tests__`, `*.test.*`, `*.spec.*`,
 and `*.story.*` are ignored by extraction and lint.
 
-## 7. The `noJsxLiterals` lint rule is the safety net
+## 7. Translator workflow
+
+Translation catalogs live under
+`src/modules/common/i18n/locales/<language>/<namespace>.json`. `en-US` is the
+source language. Other languages must keep the same file names, object shape,
+and keys as `en-US`; only values are translated.
+
+### Adding a new language
+
+Use a BCP 47 language tag such as `fr-FR` or `de-DE`.
+
+1. Add the language tag to `locales` in `src/main/webapp/ui/i18next.config.ts`.
+2. Add the same tag to `supportedLngs` in
+   `src/main/webapp/ui/src/modules/common/i18n/index.ts`.
+3. Create `src/modules/common/i18n/locales/<language>/`.
+4. Copy every JSON namespace from `locales/en-US/` into the new language
+   folder and translate the values.
+5. Run:
+
+   ```bash
+   pnpm run i18n:lint
+   pnpm run i18n:status
+   pnpm run tsc
+   ```
+
+Keep `fallbackLng: "en-US"` unless product behaviour has been explicitly
+changed to use a different fallback.
+
+### Translating new feature strings
+
+For a feature added after a language already exists:
+
+1. Run `pnpm run i18n:check` so new keys are present in the catalogs.
+2. Run `pnpm run i18n:status` to see untranslated or missing values.
+3. Translate the new values in every non-`en-US` locale.
+4. Run `pnpm run i18n:lint` before handing the translation back.
+
+Do not rename keys to match the translated wording. If English changes but the
+meaning stays the same, keep the key and update the values.
+
+### What translators must preserve
+
+- Preserve JSON keys, nesting, punctuation required by JSON, and namespace file
+  names.
+- Preserve interpolation placeholders exactly: `{name}`, `{count}`, `{serverAlias}`.
+- Preserve ICU syntax and option names exactly, e.g.
+  `{count, plural, one {...} other {...}}` and `{enabled, select, yes {...} other {...}}`.
+- Preserve rich-text tag names and required attributes. Translate only the
+  human-readable text between tags unless the URL or documentation target
+  genuinely differs for the target language.
+- Do not introduce arbitrary HTML. Supported rich-text tags are provided by
+  `TransRichText`, including `<strong>`, `<br/>`, `<code>`, `<kbd>`, lists,
+  `<internalLink to="...">`, `<externalLink href="...">`, and
+  `<helpDocs docLink="...">`.
+- Keep product names, integration names, API names, and legal terms unchanged
+  unless there is an approved localized name.
+
+### Links and documentation targets
+
+`common.help` is a central map of HelpDocs article targets. Values are HelpDocs
+path segments, optionally with an anchor, e.g.
+`"c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version"`.
+
+Treat each `common.help` value as one translatable documentation target:
+
+- If the target language uses the same HelpDocs article and anchor, copy the
+  `en-US` value unchanged.
+- If the target language has localized HelpDocs pages, replace the whole value
+  with the localized `slug#anchor`.
+- Keep the slug and anchor together in `common.help`; do not put raw HelpDocs
+  slugs in feature strings.
+- In prose, link to documentation with `<helpDocs docLink="commonHelpKey">...`
+  rather than a raw URL or `<a>` tag.
+
+Internal app links use `<internalLink to="/path">...`; external web links use
+`<externalLink href="https://...">...`. The renderer controls router
+transitions and safe external-link attributes, so translators should not add
+`target`, `rel`, or raw `<a>` tags to catalog values.
+
+## 8. The `noJsxLiterals` lint rule is the safety net
 
 Biome's `style/noJsxLiterals` rule is enabled as an **error** (see
 `src/main/webapp/ui/biome.jsonc`) specifically to catch untranslated text: a raw
