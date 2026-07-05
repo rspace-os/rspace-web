@@ -44,12 +44,6 @@ const renderWithProviders = (
   return { ...view, addAlert };
 };
 
-async function waitForDialogTransitions() {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-  });
-}
-
 describe("RaidIntegrationCard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,7 +60,6 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(screen.getByRole("button", { name: /raid/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      await waitForDialogTransitions();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
       await expect(baseElement).toBeAccessible();

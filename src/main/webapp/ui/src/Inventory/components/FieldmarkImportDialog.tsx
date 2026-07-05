@@ -251,24 +251,23 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
     } catch (e) {
       const validationErrors = validationErrorMessages(e);
       if (validationErrors.isError) console.error(e);
-      if (e instanceof Error)
-        addAlert(
-          mkAlert({
-            variant: "error",
-            ...validationErrors
-              .map((errors) => ({
-                message: "Could not import notebook.",
-                details: errors.map((error) => ({
-                  variant: "error" as const,
-                  title: error,
-                })),
-              }))
-              .orElse({
-                title: "Could not import notebook.",
-                message: e.message,
-              }),
-          }),
-        );
+      addAlert(
+        mkAlert({
+          variant: "error",
+          ...validationErrors
+            .map((errors) => ({
+              message: "Could not import notebook.",
+              details: errors.map((error) => ({
+                variant: "error" as const,
+                title: error,
+              })),
+            }))
+            .orElse({
+              title: "Could not import notebook.",
+              message: e instanceof Error ? e.message : String(e),
+            }),
+        }),
+      );
       return false;
     } finally {
       setImporting(false);

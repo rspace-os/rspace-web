@@ -1,7 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { worker } from "@/__tests__/browserSetup";
-import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
+import { suppressFireAndForget404 } from "@/__tests__/browserSetup";
 import { TreeViewPage } from "./pageObjects/TreeViewPage";
 import { TreeViewWithFiles } from "./TreeView.story";
 
@@ -12,6 +11,9 @@ import { TreeViewWithFiles } from "./TreeView.story";
  */
 
 const treeView = new TreeViewPage();
+
+// Restores the fire-and-forget 404 suppressor installed in beforeEach.
+let restoreFireAndForget404: (() => void) | undefined;
 
 beforeEach(() => {
   /*
@@ -26,10 +28,10 @@ beforeEach(() => {
     "/gallery/getThumbnail",
     "/gallery/ajax/getLinkedDocuments",
   ]);
-  worker.use(oauthTokenHandler(), ...galleryAppShellHandlers());
 });
 
 afterEach(() => {
+  restoreFireAndForget404?.();
   cleanup();
 });
 

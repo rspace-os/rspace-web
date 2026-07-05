@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { stubAppChrome } from "@/__tests__/helpers/appChrome";
@@ -83,12 +83,6 @@ async function selectDestination(user: ReturnType<typeof userEvent.setup>, name:
   await user.click(await screen.findByRole("menuitem", { name }));
 }
 
-async function waitForDialogTransitions() {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-  });
-}
-
 describe("MoveToIrods", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations, including the visible login form", async () => {
@@ -100,7 +94,6 @@ describe("MoveToIrods", () => {
       // scanned for label-association violations too.
       await selectDestination(user, /lab data/i);
       expect(await screen.findByRole("textbox", { name: /username/i })).toBeVisible();
-      await waitForDialogTransitions();
       await expectAccessible(baseElement);
     });
   });

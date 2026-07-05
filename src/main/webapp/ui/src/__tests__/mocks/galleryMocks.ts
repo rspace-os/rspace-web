@@ -13,12 +13,11 @@ import { HttpResponse, http, type RequestHandler } from "msw";
  */
 export const galleryAppShellHandlers = (): RequestHandler[] => [
   /*
-   * UiPreferences fetches one request per key — catch the whole path prefix
-   * with a wildcard and return an empty object (the component's defaults apply).
+   * UiPreferences fetches/saves the UI_JSON_SETTINGS blob; return an empty
+   * object so the component's defaults apply.
    */
   http.get("/userform/ajax/preference", () => HttpResponse.json({})),
   http.post("/userform/ajax/preference", () => HttpResponse.json({})),
-  http.get("/userform/ajax/preference*", () => HttpResponse.json({})),
 
   /*
    * Deployment properties — the gallery reads several boolean flags; returning
@@ -28,12 +27,15 @@ export const galleryAppShellHandlers = (): RequestHandler[] => [
   http.get("/deploymentproperties/ajax/property*", () => HttpResponse.json(false)),
 
   /*
-   * SVG icon assets — Vite serves them as real files in the app but they are
-   * not available from the Vitest server root. Return a minimal valid SVG so
-   * <img> and inline-SVG usages do not produce broken-image errors.
+   * Runtime gallery icon asset URLs — Vite serves module-imported SVGs as JS,
+   * so this must not catch `/src/.../*.svg` imports. Only mock image URLs that
+   * the app puts directly into `<img src>`.
    */
   http.get(
-    "**/*.svg",
+    ({ request }) => {
+      const pathname = new URL(request.url).pathname;
+      return pathname.startsWith("/images/icons/") && pathname.endsWith(".svg");
+    },
     () =>
       new HttpResponse(
         `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><rect width="24" height="24" fill="none"/></svg>`,

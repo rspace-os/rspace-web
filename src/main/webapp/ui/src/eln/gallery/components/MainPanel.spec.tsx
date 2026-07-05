@@ -3,7 +3,6 @@ import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
-import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
 import { MainPanelPage } from "./pageObjects/MainPanelPage";
@@ -56,26 +55,14 @@ function uninstallClipboardStub(): void {
 
 // ── Per-suite MSW handlers ─────────────────────────────────────────────────────
 
-function linkedDocumentsHandler() {
-  return http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
-    HttpResponse.json({
-      data: [],
-      error: null,
-      success: true,
-      errorMsg: null,
-    }),
-  );
-}
-
 /*
  * When the TreeView expands the Outer folder (id=1), it calls
  * `useGalleryListing` which fetches `/gallery/getUploadedFiles?currentFolderId=1&...`.
  *
- * This handler MUST be registered before `galleryAppShellHandlers()` in the
- * `worker.use(...)` call because the app-shell handlers contain a wildcard catch-all
- * for `/gallery/getUploadedFiles` that returns an empty listing. MSW resolves
- * handlers in registration order (first match wins within a single `worker.use()`
- * call), so our specific folder handler must appear first.
+ * Registered via `worker.use(...)`, which always takes priority over the
+ * default `/gallery/getUploadedFiles` wildcard catch-all from
+ * `galleryAppShellHandlers()` in browserSetup.ts, regardless of registration
+ * order.
  */
 function outerFolderListingHandler() {
   return http.get("/gallery/getUploadedFiles", ({ request }) => {
@@ -145,13 +132,7 @@ beforeEach(async () => {
    */
   await page.viewport(1280, 720);
 
-  /*
-   * IMPORTANT: outerFolderListingHandler must be registered BEFORE
-   * galleryAppShellHandlers() because the app-shell handlers contain a
-   * wildcard catch-all for `/gallery/getUploadedFiles` that would otherwise
-   * intercept the folder-specific request first.
-   */
-  worker.use(linkedDocumentsHandler(), outerFolderListingHandler(), ...galleryAppShellHandlers());
+  worker.use(outerFolderListingHandler());
 });
 
 afterEach(() => {

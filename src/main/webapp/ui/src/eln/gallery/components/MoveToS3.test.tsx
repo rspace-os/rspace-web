@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { stubAppChrome } from "@/__tests__/helpers/appChrome";
@@ -57,12 +57,6 @@ async function selectMyS3Bucket(user: ReturnType<typeof userEvent.setup>) {
   await user.click(await screen.findByRole("menuitem", { name: /my s3 bucket/i }));
 }
 
-async function waitForDialogTransitions() {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 350));
-  });
-}
-
 describe("MoveToS3", () => {
   describe("Accessibility", () => {
     test("Should have no axe violations", async () => {
@@ -70,7 +64,6 @@ describe("MoveToS3", () => {
       expect(await screen.findByRole("heading", { name: /move to s3/i })).toBeVisible();
       // Wait for the filestore listing to resolve before scanning.
       await screen.findByRole("button", { name: /select a filestore/i });
-      await waitForDialogTransitions();
       await expectAccessible(baseElement);
     });
   });
