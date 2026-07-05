@@ -126,7 +126,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
           i18nKey="inventory:import.columnMapping.parentSampleImportIdMissing"
           values={{ label }}
           components={{
-            link: <Link to={onTypeSelect("SAMPLES")} />,
+            internalLink: <Link to={onTypeSelect("SAMPLES")} />,
           }}
         />
       ),
@@ -140,7 +140,7 @@ function ColumnFieldMapping({ onTypeSelect }: MappingArgs): React.ReactNode {
           i18nKey="inventory:import.columnMapping.parentContainerImportIdMissing"
           values={{ label }}
           components={{
-            link: <Link to={onTypeSelect("CONTAINERS")} />,
+            internalLink: <Link to={onTypeSelect("CONTAINERS")} />,
           }}
         />
       ),

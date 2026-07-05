@@ -93,23 +93,6 @@ function useAuthenticatedServers() {
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
-// Some of these are numeric, but the enhanced table alignment for numerics looks bad
-const TABLE_HEADER_CELLS = [
-  { id: "eartag_or_id", numeric: false, labelKey: "tinymce.pyrat.columns.id" },
-  { id: "sex", numeric: false, labelKey: "tinymce.pyrat.columns.sex" },
-  { id: "age_days", numeric: false, labelKey: "tinymce.pyrat.columns.ageDays" },
-  { id: "strain_name", numeric: false, labelKey: "tinymce.pyrat.columns.strain" },
-  { id: "mutations", numeric: false, labelKey: "tinymce.pyrat.columns.mutations", sortable: false },
-  { id: "dateborn", numeric: false, labelKey: "tinymce.pyrat.columns.dob" },
-  { id: "datesacrificed", numeric: false, labelKey: "tinymce.pyrat.columns.sacrificedOn" },
-  { id: "classification", numeric: false, labelKey: "tinymce.pyrat.columns.classification" },
-  { id: "licence_number", numeric: false, labelKey: "tinymce.pyrat.columns.license" },
-  { id: "labid", numeric: false, labelKey: "tinymce.pyrat.columns.labId" },
-  { id: "building_name", numeric: false, labelKey: "tinymce.pyrat.columns.building" },
-  { id: "projects", numeric: false, labelKey: "tinymce.pyrat.columns.project" },
-  { id: "responsible_fullname", numeric: false, labelKey: "tinymce.pyrat.columns.responsible" },
-] as const;
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let VISIBLE_HEADER_CELLS: any[] = [];
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -124,7 +107,25 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     timeout: 15000,
   });
   const { t } = useTranslation("workspace");
-  const tableHeaderCells = useMemo(() => TABLE_HEADER_CELLS.map((cell) => ({ ...cell, label: t(cell.labelKey) })), [t]);
+  const tableHeaderCells = useMemo(
+    () => [
+      // Some of these are numeric, but the enhanced table alignment for numerics looks bad.
+      { id: "eartag_or_id", numeric: false, label: t("tinymce.pyrat.columns.id") },
+      { id: "sex", numeric: false, label: t("tinymce.pyrat.columns.sex") },
+      { id: "age_days", numeric: false, label: t("tinymce.pyrat.columns.ageDays") },
+      { id: "strain_name", numeric: false, label: t("tinymce.pyrat.columns.strain") },
+      { id: "mutations", numeric: false, label: t("tinymce.pyrat.columns.mutations"), sortable: false },
+      { id: "dateborn", numeric: false, label: t("tinymce.pyrat.columns.dob") },
+      { id: "datesacrificed", numeric: false, label: t("tinymce.pyrat.columns.sacrificedOn") },
+      { id: "classification", numeric: false, label: t("tinymce.pyrat.columns.classification") },
+      { id: "licence_number", numeric: false, label: t("tinymce.pyrat.columns.license") },
+      { id: "labid", numeric: false, label: t("tinymce.pyrat.columns.labId") },
+      { id: "building_name", numeric: false, label: t("tinymce.pyrat.columns.building") },
+      { id: "projects", numeric: false, label: t("tinymce.pyrat.columns.project") },
+      { id: "responsible_fullname", numeric: false, label: t("tinymce.pyrat.columns.responsible") },
+    ],
+    [t],
+  );
 
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
@@ -242,7 +243,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   const [showFilter, setShowFilter] = useLocalStorage("pyratShowFilter", false);
   const [visibleColumnIds, setVisibleColumnIds] = useLocalStorage(
     "pyratVisibleColumns",
-    TABLE_HEADER_CELLS.map((cell) => cell.id),
+    tableHeaderCells.map((cell) => cell.id),
   );
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration

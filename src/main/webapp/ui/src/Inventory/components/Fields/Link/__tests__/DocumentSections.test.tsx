@@ -163,6 +163,20 @@ describe("DocumentSections (structured document)", () => {
     expect(screen.getByText("inventory:fields.link.documentSections.sharing.withGroup")).toBeInTheDocument();
   });
 
+  it("renders shared notebook references through the default internalLink rich-text tag", async () => {
+    await renderDocWithRealI18n({
+      info: {
+        ...baseInfo,
+        shared: true,
+        sharedNotebooksAndOwners: { NB12: "Ada Lovelace" },
+        implicitShares: { NB34: "Grace Hopper" },
+      },
+    });
+
+    expect(screen.getByRole("link", { name: "NB12" })).toHaveAttribute("href", "/globalId/NB12");
+    expect(screen.getByRole("link", { name: "NB34" })).toHaveAttribute("href", "/globalId/NB34");
+  });
+
   it("shows the public link when the document is published", async () => {
     getPublicLink.mockResolvedValue("abc-123");
     await renderDocWithRealI18n();

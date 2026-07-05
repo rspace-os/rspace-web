@@ -1,6 +1,5 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Link from "@mui/material/Link";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import Stack from "@mui/material/Stack";
@@ -172,9 +171,6 @@ function SharingAndPublication({
                 <TransRichText
                   i18nKey="inventory:fields.link.documentSections.sharing.intoNotebook"
                   values={{ nb, owner }}
-                  components={{
-                    notebookLink: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" />,
-                  }}
                 />
               </ListItem>
             ))}
@@ -183,9 +179,6 @@ function SharingAndPublication({
                 <TransRichText
                   i18nKey="inventory:fields.link.documentSections.sharing.implicitlyInNotebook"
                   values={{ nb, owner }}
-                  components={{
-                    notebookLink: <Link href={`/globalId/${nb}`} target="_blank" rel="noopener noreferrer" />,
-                  }}
                 />
               </ListItem>
             ))}

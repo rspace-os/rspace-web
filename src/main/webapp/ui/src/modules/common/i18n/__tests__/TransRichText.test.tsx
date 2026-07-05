@@ -38,8 +38,7 @@ const richTextResources = {
     richTextDefaultStrongProbe: "Read the <strong>important note</strong>.",
     richTextDefaultUnorderedListProbe: "<ul><li>Bullet item</li></ul>",
     richTextExternalLinkProbe: 'Visit <externalLink href="https://example.com">the example site</externalLink>.',
-    richTextHelpDocsProbe:
-      'See <helpDocs slug="abc123-some-article#important-section" section="ignored-section">the help article</helpDocs>.',
+    richTextHelpDocsProbe: 'See <helpDocs slug="abc123-some-article#important-section">the help article</helpDocs>.',
     richTextHelpDocsDocLinkProbe: 'See <helpDocs docLink="centralArticle">the central help article</helpDocs>.',
     richTextInterpolatedHelpDocsDocLinkProbe:
       'See <helpDocs docLink="{docLink}">the dynamic central help article</helpDocs>.',

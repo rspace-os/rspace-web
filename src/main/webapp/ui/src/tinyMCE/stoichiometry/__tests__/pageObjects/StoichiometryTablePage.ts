@@ -16,10 +16,6 @@ function cssWithin(root: Locator, selector: string): Locator {
   return (root as unknown as { locator(selector: string): Locator }).locator(`css=${selector}`);
 }
 
-function clickElement(locator: Locator): void {
-  (locator.element() as HTMLElement).click();
-}
-
 /**
  * Page object for the stoichiometry table, as mounted by the stories in
  * StoichiometryTable.story.tsx. Encapsulates the locators and user
@@ -199,7 +195,7 @@ export class StoichiometryTablePage {
   }
 
   async openAddChemicalMenu(): Promise<void> {
-    clickElement(this.addChemicalButton);
+    await this.addChemicalButton.click();
   }
 
   get pubChemDialog(): Locator {
@@ -219,16 +215,16 @@ export class StoichiometryTablePage {
     await page.getByRole("button", { name: "common:actions.search" }).click();
   }
 
-  openPubChemSource(): void {
-    clickElement(this.pubChemMenuItem);
+  async openPubChemSource(): Promise<void> {
+    await this.pubChemMenuItem.click();
   }
 
-  openManualSource(): void {
-    clickElement(this.manualEntryMenuItem);
+  async openManualSource(): Promise<void> {
+    await this.manualEntryMenuItem.click();
   }
 
-  openGallerySource(): void {
-    clickElement(this.galleryMenuItem);
+  async openGallerySource(): Promise<void> {
+    await this.galleryMenuItem.click();
   }
 
   async insertPubChemResult(): Promise<void> {

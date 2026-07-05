@@ -310,7 +310,7 @@ describe("Stoichiometry Table", () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.openAddChemicalMenu();
-      table.openPubChemSource();
+      await table.openPubChemSource();
 
       await expect.element(table.pubChemDialog).toBeVisible();
       await table.searchPubChem("caffeine");
@@ -330,7 +330,7 @@ describe("Stoichiometry Table", () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.openAddChemicalMenu();
-      table.openManualSource();
+      await table.openManualSource();
 
       await expect.element(table.manualSmilesDialog).toBeVisible();
       await table.enterManualSmiles({ smiles: "CCO", name: "Ethanol" });
@@ -347,7 +347,7 @@ describe("Stoichiometry Table", () => {
       render(<StoichiometryTableWithDataStory />);
       await table.waitForLoad();
       await table.openAddChemicalMenu();
-      table.openGallerySource();
+      await table.openGallerySource();
 
       await expect.element(table.galleryDialog).toBeVisible();
       await table.selectGalleryFile(/ethanol\.mol/i);
@@ -365,7 +365,7 @@ describe("Stoichiometry Table", () => {
       await table.waitForLoad();
       // Add first reagent (Ethanol) manually.
       await table.openAddChemicalMenu();
-      table.openManualSource();
+      await table.openManualSource();
       await table.enterManualSmiles({ smiles: "CCO", name: "Ethanol" });
       await table.addManualReagent();
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
@@ -373,7 +373,7 @@ describe("Stoichiometry Table", () => {
 
       // Add second reagent (Caffeine via PubChem).
       await table.openAddChemicalMenu();
-      table.openPubChemSource();
+      await table.openPubChemSource();
       await table.searchPubChem("caffeine");
       await table.insertPubChemResult();
 

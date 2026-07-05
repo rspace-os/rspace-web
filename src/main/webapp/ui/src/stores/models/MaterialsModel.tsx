@@ -759,8 +759,8 @@ export class ListOfMaterials {
           </ul>
           {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.prompt")}
         </>,
-        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.confirm"),
-        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.cancel"),
+        i18n.t("common:actions.yes"),
+        i18n.t("common:actions.no"),
       ))
     ) {
       moving = moving.union(parentIsOnBench);

@@ -43,7 +43,6 @@
     },
     "editSessionExpiring": {
       "body": "This session will expire in one minute. Please confirm if you want to continue editing. If you cancel, your unsaved changes will be lost.",
-      "continue": "CONTINUE",
       "title": "Your editing session is about to expire"
     },
     "unsavedChanges": {
@@ -846,9 +845,9 @@
             "read": "read",
             "write": "write"
           },
-          "implicitlyInNotebook": "implicitly - is in shared Notebook <notebookLink>{nb}</notebookLink> (shared with: {owner})",
+          "implicitlyInNotebook": "implicitly - is in shared Notebook <internalLink to=\"/globalId/{nb}\">{nb}</internalLink> (shared with: {owner})",
           "inPublishedNotebook": "This document is in a published notebook: <externalLink href=\"{publicLink}\">public link</externalLink>",
-          "intoNotebook": "into Notebook <notebookLink>{nb}</notebookLink> (owner: {owner})",
+          "intoNotebook": "into Notebook <internalLink to=\"/globalId/{nb}\">{nb}</internalLink> (owner: {owner})",
           "isPublished": "This {recordTypeName} is published: <externalLink href=\"{publicLink}\">public link</externalLink>",
           "isShared": "This {recordTypeName} is shared:",
           "notPublished": "This {recordTypeName} is not published.",
@@ -1003,7 +1002,7 @@
       "parentSampleOnly": "The parent sample only has one {alias}.",
       "parentSampleOthers": "There {count, plural, one {is} other {are}} {count} other {count, plural, one {{alias}} other {{plural}}}.",
       "perAlias": "per {alias}",
-      "totalCalculated": "Total is calculated from the quantites of <link>all {count} {plural}</link>, which can be changed by editing the {plural} individually.",
+      "totalCalculated": "Total is calculated from the quantites of <internalLink>all {count} {plural}</internalLink>, which can be changed by editing the {plural} individually.",
       "totalLabel": "Total Quantity",
       "totalSingle": "There is only one {alias}.",
       "validation": {
@@ -1280,8 +1279,8 @@
       "nameRequiredError": "It is required that a column be mapped to 'Name', as all {recordType} must have a name.",
       "nameRequiredInfo": "You must select one column to convert to the Name of the {recordType}.",
       "noCsv": "Column conversion is only available once a CSV file has been selected.",
-      "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <link>Containers CSV</link> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
-      "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <link>Samples CSV</link> with mapped \"Import ID\".",
+      "parentContainerImportIdMissing": "RSpace cannot find Parent Containers Import IDs for {label}. Please ensure you are importing a <internalLink>Containers CSV</internalLink> with mapped \"Import ID\", or unselect the \"Parent Container Import ID\" conversion.",
+      "parentSampleImportIdMissing": "RSpace cannot find Parent Sample Import IDs for {label}. Please ensure you are importing a <internalLink>Samples CSV</internalLink> with mapped \"Import ID\".",
       "parentSampleRequired": "You must select one column that refers to a Sample.",
       "quantityConversion": "Quantity conversion is not set. All imported {recordType} will have a total quantity of 1 {unitLabel}.",
       "selectMapping": "Select mapping for {fieldName}",
@@ -1417,8 +1416,6 @@
       "move": {
         "alreadyOnBench": "All items are already on your bench.",
         "confirmOnBench": {
-          "cancel": "No",
-          "confirm": "Yes",
           "itemsLabel": "The items are:",
           "prompt": "Do you want to move them to your bench?",
           "title": "Some items are in containers that are already on your bench."

@@ -182,7 +182,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
                 i18nKey="inventory:fields.quantity.totalCalculated"
                 values={{ count: sample.subSamplesCount, plural: sample.subSampleAlias.plural }}
                 components={{
-                  link: (
+                  internalLink: (
                     <Link
                       href={
                         typeof sample.globalId === "string"

@@ -671,7 +671,7 @@ export default class InventoryBaseRecord
         (await getRootStore().uiStore.confirm(
           i18n.t("inventory:baseRecord.editSessionExpiring.title"),
           i18n.t("inventory:baseRecord.editSessionExpiring.body"),
-          i18n.t("inventory:baseRecord.editSessionExpiring.continue"),
+          i18n.t("common:actions.continue"),
         ))
       ) {
         /*
