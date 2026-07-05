@@ -268,11 +268,9 @@ export class StoichiometryTablePage {
     });
   }
 
-  inventoryPickerDialog(molecule?: string): Locator {
+  inventoryPickerDialog(): Locator {
     return page.getByRole("dialog", {
-      name: molecule
-        ? `common:stoichiometry.inventoryLink.pickerTitle`
-        : "common:stoichiometry.inventoryLink.pickerTitle",
+      name: "common:stoichiometry.inventoryLink.pickerTitle",
     });
   }
 

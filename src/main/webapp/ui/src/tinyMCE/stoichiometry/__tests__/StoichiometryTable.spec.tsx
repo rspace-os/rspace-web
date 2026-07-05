@@ -132,7 +132,7 @@ describe("Stoichiometry Table", () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
     await table.openInventoryPickerFor("Benzene");
-    await expect.element(table.inventoryPickerDialog("Benzene")).toBeVisible();
+    await expect.element(table.inventoryPickerDialog()).toBeVisible();
     await table.closeInventoryPicker();
     await expect.element(table.inventoryPickerDialog()).not.toBeInTheDocument();
   });
