@@ -4,6 +4,7 @@ import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { render, within } from "@/__tests__/customQueries";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../common/InvApiService";
 import { mockFactory } from "../../../../stores/definitions/__tests__/Factory/mocking";
@@ -212,7 +213,7 @@ describe("LinkedDocuments", () => {
       <ThemeProvider theme={materialTheme}>
         <LinkedDocuments factory={mockFactory()} globalId="IC1" />
       </ThemeProvider>,
-      { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
+      { resources: { common: commonEn, inventory: inventoryEn }, defaultNS: "inventory" },
     );
     fireEvent.click(screen.getByRole("button", { name: "Show Linked Documents" }));
     const listOfMaterialsLink = await screen.findByRole("link", { name: "List of Materials" });

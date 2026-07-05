@@ -32,11 +32,11 @@ export class NewNotePage {
   }
 
   get createNoteButton(): Locator {
-    return page.getByRole("button", { name: "fields.notes.createNote" });
+    return page.getByRole("button", { name: "Create note" });
   }
 
   get clearButton(): Locator {
-    return page.getByRole("button", { name: "fields.notes.clear", exact: true });
+    return page.getByRole("button", { name: "Clear", exact: true });
   }
 
   errorPopover(message: string): Locator {

@@ -1,7 +1,33 @@
 import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
+import i18n from "@/modules/common/i18n";
 import { appShellHandlers } from "./mswAppShellHandlers";
+
+/*
+ * Unlike the jsdom unit-test config (setup.ts), which deliberately runs in
+ * "cimode" so assertions target stable translation keys, browser-mode tests
+ * assert against real rendered copy (visible text, accessible names, axe
+ * checks) and never wrap components in an `I18nRoot`/`I18nextProvider`. They
+ * rely on the shared i18n singleton, which lazily loads each namespace's JSON
+ * on first use. Without this, a component's first render can race that
+ * async load and paint raw translation keys (e.g.
+ * "accessibilityTips.skipToContent.header") instead of real text. Preloading
+ * every namespace here, before any test file's module graph finishes
+ * evaluating, closes that race.
+ */
+await i18n.loadNamespaces([
+  "about",
+  "admin",
+  "apps",
+  "common",
+  "gallery",
+  "groups",
+  "inventory",
+  "public",
+  "system",
+  "workspace",
+]);
 
 /*
  * A single MSW worker shared by every browser-mode test. Tests register their

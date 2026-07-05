@@ -318,7 +318,7 @@ describe("FieldmarkImportDialog", () => {
         const user = userEvent.setup();
         await renderAndWaitForNotebooks(
           await wrapWithRealI18n(<FieldmarkImportDialogStory />, {
-            resources: { inventory: inventoryEn },
+            resources: { common: commonEn, inventory: inventoryEn },
             defaultNS: "inventory",
           }),
         );
