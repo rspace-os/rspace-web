@@ -1,3 +1,4 @@
+<<<<<<<< HEAD:src/main/webapp/ui/src/__tests__/mocks/oauthTokenMocks.ts
 import { HttpResponse, http, type RequestHandler } from "msw";
 
 /*
@@ -10,3 +11,6 @@ export const OAUTH_TOKEN =
 
 export const oauthTokenHandler = (): RequestHandler =>
   http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: OAUTH_TOKEN }));
+========
+export { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+>>>>>>>> 19548d64e (Fix browser test OAuth mock failures):src/main/webapp/ui/src/__tests__/mocks/inventoryMocks.ts

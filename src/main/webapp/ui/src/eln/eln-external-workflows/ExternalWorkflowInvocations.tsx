@@ -4,7 +4,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid";
 import Modal from "@mui/material/Modal";
-import { createSvgIcon } from "@mui/material/utils";
+import { createSvgIcon } from "@mui/material/SvgIcon";
 import { useEffect, useState } from "react";
 import axios from "@/common/axios";
 import ExternalWorkflowDialog from "@/eln/eln-external-workflows/ExternalWorkflowDialog";
