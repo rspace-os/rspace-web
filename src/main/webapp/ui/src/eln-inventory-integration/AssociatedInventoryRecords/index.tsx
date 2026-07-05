@@ -18,7 +18,7 @@ type AssociatedInventoryRecordsArgs = {
 const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords({
   elnDocumentId,
 }: AssociatedInventoryRecordsArgs) {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { materialsStore } = useStores();
   const [open, setOpen] = useState(false);
@@ -66,7 +66,7 @@ const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords(
       <Collapse in={open}>
         <ul>
           {materialsStore.loading ? (
-            <NoValue label={t("associatedRecords.loading")} />
+            <NoValue label={t("common:loading")} />
           ) : materialsStore.allInvRecordsFromAllDocumentLists.size === 0 ? (
             t("associatedRecords.empty")
           ) : (

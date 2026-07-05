@@ -39,7 +39,7 @@ type SummaryInfoArgs = {
  * Shows basic information about a template, for placing inline within a form.
  */
 function SummaryInfo({ template, loading, paddingless }: SummaryInfoArgs): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
 
   if (template) {
     return (
@@ -52,9 +52,7 @@ function SummaryInfo({ template, loading, paddingless }: SummaryInfoArgs): React
     );
   }
   if (loading) {
-    return (
-      <OneItemList avatar={<FontAwesomeIcon icon={faSpinner} spin size="lg" />} text={t("template.summary.loading")} />
-    );
+    return <OneItemList avatar={<FontAwesomeIcon icon={faSpinner} spin size="lg" />} text={t("common:loading")} />;
   }
   if (paddingless) {
     return <NoValue label={t("template.summary.noTemplate")} />;

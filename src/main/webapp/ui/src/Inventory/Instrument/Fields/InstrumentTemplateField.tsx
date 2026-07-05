@@ -23,7 +23,7 @@ import { getErrorMessage } from "../../../util/error";
 import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
 
 function InstrumentTemplateField(): React.ReactNode {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const {
     searchStore: { activeResult },
     uiStore,
@@ -105,7 +105,7 @@ function InstrumentTemplateField(): React.ReactNode {
             <ListItemAvatar>
               <FontAwesomeIcon icon={faSpinner} spin size="lg" />
             </ListItemAvatar>
-            <ListItemText primary={t("instrumentTemplate.field.loading")} />
+            <ListItemText primary={t("common:loading")} />
           </ListItem>
         </List>
       ) : (

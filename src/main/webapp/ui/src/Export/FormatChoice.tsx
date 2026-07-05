@@ -59,9 +59,9 @@ function FormatChoice({
   fileStoresSelected,
   updateFileStores,
 }: FormatChoiceArgs): React.ReactNode {
-  const { t } = useTranslation("workspace");
+  const { t } = useTranslation(["workspace", "common"]);
   const [msgBlockingRepoChoice, setMsgBlockingRepoChoice] = useState<Optional<string>>(
-    Optional.present(t("export.format.chooser.loading")),
+    Optional.present(t("common:loading")),
   );
   const [pdfAvailable, setPdfAvailable] = useState(false);
   const [wordAvailable, setWordAvailable] = useState(false);

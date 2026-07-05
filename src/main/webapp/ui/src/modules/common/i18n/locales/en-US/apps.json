@@ -141,7 +141,6 @@
       "helpLink": "ARGOS integration docs",
       "name": "ARGOS",
       "setup": {
-        "enable": "Enable the integration.",
         "imported": "ARGOS DMPs can now be imported through the RSpace Gallery.",
         "instructions": "<ol><li>Enable the integration.</li><li>ARGOS DMPs can now be imported through the RSpace Gallery.</li></ol>"
       },
@@ -161,7 +160,6 @@
       "name": "Box",
       "setup": {
         "checkLinkType": "Check that the link type option below is correct.",
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Enable the integration.</li><li>Check that the link type option below is correct.</li><li>When editing a document, click on the Box icon in the text editor toolbar.</li></ol>",
         "toolbar": "When editing a document, click on the Box icon in the text editor toolbar."
       },
@@ -178,7 +176,6 @@
       "name": "Calira",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your Calira account.",
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Register for a Calira account.</li><li>Click on Connect to authorise RSpace to access your Calira account.</li><li>Enable the integration.</li><li>When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data.</li></ol>",
         "register": "Register for a Calira account.",
         "toolbar": "When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data."
@@ -191,7 +188,6 @@
       "name": "Chemistry",
       "setup": {
         "dragDrop": "You can also drag and drop existing chemical structure files into a document text field, and edit them.",
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher.</li><li>You can also drag and drop existing chemical structure files into a document text field, and edit them.</li></ol>",
         "toolbar": "When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher."
       },
@@ -223,7 +219,6 @@
       "multipleConfig": "You can configure multiple Dataverses to connect to.",
       "name": "Dataverse",
       "setup": {
-        "enable": "Enable the integration.",
         "enterCredentials": "Enter the required credentials and Save.",
         "exportDialog": "Dataverse will now be available as an option in the export dialog.",
         "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>Dataverse will now be available as an option in the export dialog.</li></ol>",
@@ -241,7 +236,6 @@
       "name": "Digital Commons Data / Mendeley Data",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.",
-        "enable": "Enable the integration.",
         "exportDialog": "Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.</li><li>Enable the integration.</li><li>Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.</li></ol>"
       },
@@ -257,7 +251,6 @@
       "name": "DMP Assistant",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your DMP Assistant account.",
-        "enable": "Enable the integration.",
         "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMP Assistant account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
       },
@@ -273,7 +266,6 @@
       "name": "DMPonline",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your DMPonline account.",
-        "enable": "Enable the integration.",
         "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPonline account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
       },
@@ -289,7 +281,6 @@
       "name": "DMPTool",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your DMPTool account.",
-        "enable": "Enable the integration.",
         "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPTool account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
       },
@@ -300,7 +291,6 @@
       "helpLink": "Cloud Storage integrations docs",
       "name": "Dropbox",
       "setup": {
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Dropbox icon in the text editor toolbar.</li></ol>",
         "toolbar": "When editing a document, click on the Dropbox icon in the text editor toolbar."
       },
@@ -347,7 +337,6 @@
       "multipleConfig": "You can configure multiple DSW or FAIR Wizard instances to connect to.",
       "name": "DSW / FAIR Wizard",
       "setup": {
-        "enable": "Enable the integration.",
         "enterCredentials": "Enter the required credentials and Save.",
         "gallery": "You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.",
         "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.</li></ol>",
@@ -363,7 +352,6 @@
       "helpLink": "Cloud Storage integrations docs",
       "name": "Egnyte",
       "setup": {
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Provide your Egnyte domain URL and Save.</li><li>Enable the integration.</li><li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li></ol>",
         "provideDomain": "Provide your Egnyte domain URL and Save.",
         "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
@@ -375,7 +363,6 @@
       "helpLink": "Evernote integration docs",
       "name": "Evernote",
       "setup": {
-        "enable": "Enable the integration.",
         "import": "In the Workspace, select Create → Import from Evernote.",
         "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
       },
@@ -390,7 +377,6 @@
       "name": "Fieldmark",
       "setup": {
         "copyToken": "Copy the API Token into the field below, and Save.",
-        "enable": "Enable the integration.",
         "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
         "instructions": "<ol><li>Obtain an API Token from Fieldmark.</li><li>Copy the API Token into the field below, and Save.</li><li>Enable the integration.</li><li>Use the import button in Inventory, and select Fieldmark to browse notebooks for import.</li></ol>",
         "obtainToken": "Obtain an API Token from Fieldmark."
@@ -407,7 +393,6 @@
       "name": "Figshare",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your Figshare account.",
-        "enable": "Enable the integration.",
         "exportDialog": "Figshare will now be available as an option in the export dialog.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Figshare account.</li><li>Enable the integration.</li><li>Figshare will now be available as an option in the export dialog.</li></ol>"
       },
@@ -429,7 +414,6 @@
       "noServers": "No authenticated servers.",
       "setup": {
         "chooseServer": "Choose the corresponding server from the add menu below.",
-        "enable": "Enable the integration.",
         "enterToken": "Enter the access token into the field that appears, and save.",
         "instructions": "<ol><li>Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the Galaxy icon in the text editor toolbar.</li></ol>",
         "requestToken": "Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.",
@@ -461,7 +445,6 @@
       },
       "setup": {
         "authorise": "Click on Connect to authorise RSpace to access your GitHub account.",
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Click on Connect to authorise RSpace to access your GitHub account.</li><li>Select repositories you want to give RSpace access to.</li><li>Enable the integration.</li><li>When editing a document, click on the GitHub icon in the text editor toolbar.</li></ol>",
         "select": "Select repositories you want to give RSpace access to.",
         "toolbar": "When editing a document, click on the GitHub icon in the text editor toolbar."
@@ -473,7 +456,6 @@
       "helpLink": "Cloud Storage integrations docs",
       "name": "Google Drive",
       "setup": {
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
         "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
       },
@@ -547,7 +529,6 @@
       "name": "OMERO",
       "setup": {
         "credentials": "Provide your OMERO credentials and click on Connect.",
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Provide your OMERO credentials and click on Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data.</li></ol>",
         "toolbar": "When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data."
       },
@@ -558,7 +539,6 @@
       "helpLink": "Cloud Storage integrations docs",
       "name": "OneDrive",
       "setup": {
-        "enable": "Enable the integration.",
         "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the OneDrive icon in the text editor toolbar.</li></ol>",
         "toolbar": "When editing a document, click on the OneDrive icon in the text editor toolbar."
       },
@@ -587,7 +567,6 @@
       "name": "protocols.io",
       "setup": {
         "connect": "Click on Connect to authorise RSpace to access your protocols.io account.",
-        "enable": "Enable the integration.",
         "import": "You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.",
         "instructions": "<ol><li>Register for a protocols.io account.</li><li>Click on Connect to authorise RSpace to access your protocols.io account.</li><li>Enable the integration.</li><li>You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.</li></ol>",
         "register": "Register for a protocols.io account."
@@ -610,7 +589,6 @@
       "noServers": "No authenticated servers.",
       "setup": {
         "chooseServer": "Choose the corresponding server from the add menu below.",
-        "enable": "Enable the integration.",
         "enterToken": "Enter the access token into the field that appears, and save.",
         "instructions": "<ol><li>Request a user access token by going to Administration → API → Request access in PyRAT.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the PyRAT icon in the text editor toolbar.</li></ol>",
         "requestToken": "Request a user access token by going to Administration → API → Request access in PyRAT.",
@@ -645,10 +623,6 @@
         "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
       },
       "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
-    },
-    "shared": {
-      "cloudStorageHelpLink": "Cloud Storage integrations docs",
-      "enable": "Enable the integration."
     },
     "slack": {
       "alerts": {

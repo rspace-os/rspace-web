@@ -53,7 +53,7 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
       <DialogTitle>{t("settings.dialog.title")}</DialogTitle>
       <DialogContent>
-        {fetchingSystemSettings?.state === "loading" && <>{t("settings.dialog.loading")}</>}
+        {fetchingSystemSettings?.state === "loading" && <>{t("common:loading")}</>}
         {fetchingSystemSettings?.state === "error" && (
           <Alert severity="error">
             <AlertTitle>{t("settings.dialog.error")}</AlertTitle>

@@ -103,7 +103,6 @@
         "heading": "Choose an appropriate format for your export",
         "includeAllVersions": "Check to include all previous versions of your documents, or leave unchecked for only current version",
         "includeFilestoreLinks": "Include filestore links",
-        "loading": "Loading",
         "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
         "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
         "revisionsSection": "Revisions",

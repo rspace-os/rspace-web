@@ -118,7 +118,6 @@
       "grantMenuItem": "Grant PI role",
       "grantPrompt": "To grant the PI role to <strong>{fullName}</strong> please re-enter your password.",
       "grantTitle": "Grant user PI role",
-      "loading": "Loading",
       "onlyOneUser": "Only one user can be modified at a time.",
       "password": "Password",
       "revokeAction": "Revoke",

@@ -896,7 +896,7 @@ export function InfoPanelForLargeViewports() {
                         onClick={() => {
                           void openAsposePreview(file);
                         }}
-                        label={asposeLoading ? t("infoPanel.loading") : t("actionsMenu.view")}
+                        label={asposeLoading ? t("common:loading") : t("actionsMenu.view")}
                         sx={{
                           height: "100%",
                           marginTop: "8px",

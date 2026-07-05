@@ -167,7 +167,6 @@ export default interface Resources {
         "helpLink": "ARGOS integration docs",
         "name": "ARGOS",
         "setup": {
-          "enable": "Enable the integration.",
           "imported": "ARGOS DMPs can now be imported through the RSpace Gallery.",
           "instructions": "<ol><li>Enable the integration.</li><li>ARGOS DMPs can now be imported through the RSpace Gallery.</li></ol>"
         },
@@ -187,7 +186,6 @@ export default interface Resources {
         "name": "Box",
         "setup": {
           "checkLinkType": "Check that the link type option below is correct.",
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Enable the integration.</li><li>Check that the link type option below is correct.</li><li>When editing a document, click on the Box icon in the text editor toolbar.</li></ol>",
           "toolbar": "When editing a document, click on the Box icon in the text editor toolbar."
         },
@@ -204,7 +202,6 @@ export default interface Resources {
         "name": "Calira",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your Calira account.",
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Register for a Calira account.</li><li>Click on Connect to authorise RSpace to access your Calira account.</li><li>Enable the integration.</li><li>When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data.</li></ol>",
           "register": "Register for a Calira account.",
           "toolbar": "When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data."
@@ -217,7 +214,6 @@ export default interface Resources {
         "name": "Chemistry",
         "setup": {
           "dragDrop": "You can also drag and drop existing chemical structure files into a document text field, and edit them.",
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher.</li><li>You can also drag and drop existing chemical structure files into a document text field, and edit them.</li></ol>",
           "toolbar": "When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher."
         },
@@ -249,7 +245,6 @@ export default interface Resources {
         "multipleConfig": "You can configure multiple Dataverses to connect to.",
         "name": "Dataverse",
         "setup": {
-          "enable": "Enable the integration.",
           "enterCredentials": "Enter the required credentials and Save.",
           "exportDialog": "Dataverse will now be available as an option in the export dialog.",
           "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>Dataverse will now be available as an option in the export dialog.</li></ol>",
@@ -267,7 +262,6 @@ export default interface Resources {
         "name": "Digital Commons Data / Mendeley Data",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.",
-          "enable": "Enable the integration.",
           "exportDialog": "Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.</li><li>Enable the integration.</li><li>Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.</li></ol>"
         },
@@ -283,7 +277,6 @@ export default interface Resources {
         "name": "DMP Assistant",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your DMP Assistant account.",
-          "enable": "Enable the integration.",
           "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMP Assistant account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
         },
@@ -299,7 +292,6 @@ export default interface Resources {
         "name": "DMPonline",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your DMPonline account.",
-          "enable": "Enable the integration.",
           "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPonline account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
         },
@@ -315,7 +307,6 @@ export default interface Resources {
         "name": "DMPTool",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your DMPTool account.",
-          "enable": "Enable the integration.",
           "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPTool account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
         },
@@ -326,7 +317,6 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "Dropbox",
         "setup": {
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Dropbox icon in the text editor toolbar.</li></ol>",
           "toolbar": "When editing a document, click on the Dropbox icon in the text editor toolbar."
         },
@@ -373,7 +363,6 @@ export default interface Resources {
         "multipleConfig": "You can configure multiple DSW or FAIR Wizard instances to connect to.",
         "name": "DSW / FAIR Wizard",
         "setup": {
-          "enable": "Enable the integration.",
           "enterCredentials": "Enter the required credentials and Save.",
           "gallery": "You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.",
           "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.</li></ol>",
@@ -389,7 +378,6 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "Egnyte",
         "setup": {
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Provide your Egnyte domain URL and Save.</li><li>Enable the integration.</li><li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li></ol>",
           "provideDomain": "Provide your Egnyte domain URL and Save.",
           "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
@@ -401,7 +389,6 @@ export default interface Resources {
         "helpLink": "Evernote integration docs",
         "name": "Evernote",
         "setup": {
-          "enable": "Enable the integration.",
           "import": "In the Workspace, select Create → Import from Evernote.",
           "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
         },
@@ -416,7 +403,6 @@ export default interface Resources {
         "name": "Fieldmark",
         "setup": {
           "copyToken": "Copy the API Token into the field below, and Save.",
-          "enable": "Enable the integration.",
           "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
           "instructions": "<ol><li>Obtain an API Token from Fieldmark.</li><li>Copy the API Token into the field below, and Save.</li><li>Enable the integration.</li><li>Use the import button in Inventory, and select Fieldmark to browse notebooks for import.</li></ol>",
           "obtainToken": "Obtain an API Token from Fieldmark."
@@ -433,7 +419,6 @@ export default interface Resources {
         "name": "Figshare",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your Figshare account.",
-          "enable": "Enable the integration.",
           "exportDialog": "Figshare will now be available as an option in the export dialog.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Figshare account.</li><li>Enable the integration.</li><li>Figshare will now be available as an option in the export dialog.</li></ol>"
         },
@@ -455,7 +440,6 @@ export default interface Resources {
         "noServers": "No authenticated servers.",
         "setup": {
           "chooseServer": "Choose the corresponding server from the add menu below.",
-          "enable": "Enable the integration.",
           "enterToken": "Enter the access token into the field that appears, and save.",
           "instructions": "<ol><li>Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the Galaxy icon in the text editor toolbar.</li></ol>",
           "requestToken": "Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.",
@@ -487,7 +471,6 @@ export default interface Resources {
         },
         "setup": {
           "authorise": "Click on Connect to authorise RSpace to access your GitHub account.",
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Click on Connect to authorise RSpace to access your GitHub account.</li><li>Select repositories you want to give RSpace access to.</li><li>Enable the integration.</li><li>When editing a document, click on the GitHub icon in the text editor toolbar.</li></ol>",
           "select": "Select repositories you want to give RSpace access to.",
           "toolbar": "When editing a document, click on the GitHub icon in the text editor toolbar."
@@ -499,7 +482,6 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "Google Drive",
         "setup": {
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
           "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
         },
@@ -573,7 +555,6 @@ export default interface Resources {
         "name": "OMERO",
         "setup": {
           "credentials": "Provide your OMERO credentials and click on Connect.",
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Provide your OMERO credentials and click on Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data.</li></ol>",
           "toolbar": "When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data."
         },
@@ -584,7 +565,6 @@ export default interface Resources {
         "helpLink": "Cloud Storage integrations docs",
         "name": "OneDrive",
         "setup": {
-          "enable": "Enable the integration.",
           "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the OneDrive icon in the text editor toolbar.</li></ol>",
           "toolbar": "When editing a document, click on the OneDrive icon in the text editor toolbar."
         },
@@ -613,7 +593,6 @@ export default interface Resources {
         "name": "protocols.io",
         "setup": {
           "connect": "Click on Connect to authorise RSpace to access your protocols.io account.",
-          "enable": "Enable the integration.",
           "import": "You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.",
           "instructions": "<ol><li>Register for a protocols.io account.</li><li>Click on Connect to authorise RSpace to access your protocols.io account.</li><li>Enable the integration.</li><li>You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.</li></ol>",
           "register": "Register for a protocols.io account."
@@ -636,7 +615,6 @@ export default interface Resources {
         "noServers": "No authenticated servers.",
         "setup": {
           "chooseServer": "Choose the corresponding server from the add menu below.",
-          "enable": "Enable the integration.",
           "enterToken": "Enter the access token into the field that appears, and save.",
           "instructions": "<ol><li>Request a user access token by going to Administration → API → Request access in PyRAT.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the PyRAT icon in the text editor toolbar.</li></ol>",
           "requestToken": "Request a user access token by going to Administration → API → Request access in PyRAT.",
@@ -671,10 +649,6 @@ export default interface Resources {
           "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
         },
         "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
-      },
-      "shared": {
-        "cloudStorageHelpLink": "Cloud Storage integrations docs",
-        "enable": "Enable the integration."
       },
       "slack": {
         "alerts": {
@@ -1885,7 +1859,6 @@ export default interface Resources {
         "type": "Type",
         "version": "Version"
       },
-      "loading": "Loading",
       "nameLabel": "Name",
       "noDescriptionPlaceholder": "No description",
       "noNamePlaceholder": "No Name",
@@ -2213,8 +2186,7 @@ export default interface Resources {
   "inventory": {
     "associatedRecords": {
       "button": "Inventory Items",
-      "empty": "The document has no connected Inventory items.",
-      "loading": "Loading"
+      "empty": "The document has no connected Inventory items."
     },
     "barcodeScanner": {
       "altEntry": "Alternatively, enter the data encoded in the barcode",
@@ -3585,7 +3557,6 @@ export default interface Resources {
         "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
         "fetchError": "Could not fetch instrument template details.",
         "label": "Instrument Template",
-        "loading": "Loading",
         "noTemplate": "No template",
         "noTemplateTitle": "No Template",
         "unknownReason": "Unknown reason.",
@@ -3756,7 +3727,6 @@ export default interface Resources {
       },
       "helpTitle": "Moving help",
       "hideItems": "Hide items being moved",
-      "loading": "Loading",
       "loadingEllipsis": "Loading...",
       "messages": {
         "benchSelected": "This will move the item to your bench.",
@@ -4283,7 +4253,6 @@ export default interface Resources {
       },
       "dialog": {
         "error": "Error",
-        "loading": "Loading",
         "title": "Configure Inventory (for System Administrators)"
       }
     },
@@ -4382,7 +4351,6 @@ export default interface Resources {
       "newImageAlt": "A visual representation of the samples that will be created from this new template",
       "permissionsExplanation": "This template will also be accessible to anyone who has access to a sample that has been created from it.",
       "summary": {
-        "loading": "Loading",
         "noTemplate": "No Template"
       },
       "updateSamplesConfirm": {
@@ -4585,7 +4553,6 @@ export default interface Resources {
         "grantMenuItem": "Grant PI role",
         "grantPrompt": "To grant the PI role to <strong>{fullName}</strong> please re-enter your password.",
         "grantTitle": "Grant user PI role",
-        "loading": "Loading",
         "onlyOneUser": "Only one user can be modified at a time.",
         "password": "Password",
         "revokeAction": "Revoke",
@@ -4743,7 +4710,6 @@ export default interface Resources {
           "heading": "Choose an appropriate format for your export",
           "includeAllVersions": "Check to include all previous versions of your documents, or leave unchecked for only current version",
           "includeFilestoreLinks": "Include filestore links",
-          "loading": "Loading",
           "noRepoSetup": "You have not setup a repository, to do so please activate them within Apps",
           "repoFetchError": "Export to repository is not available because there was an error fetching repository configurations.",
           "revisionsSection": "Revisions",

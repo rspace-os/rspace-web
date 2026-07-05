@@ -11,7 +11,7 @@ import InventoryPicker from "../Picker/Picker";
 type LeftPanelArgs = Record<string, never>;
 
 function LeftPanel(_: LeftPanelArgs) {
-  const { t } = useTranslation("inventory");
+  const { t } = useTranslation(["inventory", "common"]);
   const { moveStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -47,7 +47,7 @@ function LeftPanel(_: LeftPanelArgs) {
           testId="movePicker"
         />
       ) : (
-        <Typography variant="h5">{t("moveToTarget.loading")}</Typography>
+        <Typography variant="h5">{t("common:loading")}</Typography>
       )}
     </>
   );

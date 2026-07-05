@@ -1,8 +1,7 @@
 {
   "associatedRecords": {
     "button": "Inventory Items",
-    "empty": "The document has no connected Inventory items.",
-    "loading": "Loading"
+    "empty": "The document has no connected Inventory items."
   },
   "barcodeScanner": {
     "altEntry": "Alternatively, enter the data encoded in the barcode",
@@ -1373,7 +1372,6 @@
       "explanation": "If you select an instrument template below, initial metadata and custom fields will be automatically generated.",
       "fetchError": "Could not fetch instrument template details.",
       "label": "Instrument Template",
-      "loading": "Loading",
       "noTemplate": "No template",
       "noTemplateTitle": "No Template",
       "unknownReason": "Unknown reason.",
@@ -1544,7 +1542,6 @@
     },
     "helpTitle": "Moving help",
     "hideItems": "Hide items being moved",
-    "loading": "Loading",
     "loadingEllipsis": "Loading...",
     "messages": {
       "benchSelected": "This will move the item to your bench.",
@@ -2071,7 +2068,6 @@
     },
     "dialog": {
       "error": "Error",
-      "loading": "Loading",
       "title": "Configure Inventory (for System Administrators)"
     }
   },
@@ -2170,7 +2166,6 @@
     "newImageAlt": "A visual representation of the samples that will be created from this new template",
     "permissionsExplanation": "This template will also be accessible to anyone who has access to a sample that has been created from it.",
     "summary": {
-      "loading": "Loading",
       "noTemplate": "No Template"
     },
     "updateSamplesConfirm": {

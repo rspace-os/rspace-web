@@ -525,7 +525,7 @@ const PiAction = ({
                           mb: 2,
                         }}
                       >
-                        {t("usersPage.piRoleDialog.loading")}
+                        {t("common:loading")}
                       </DialogContentText>
                     ),
                     error: (errorMsg) => (
