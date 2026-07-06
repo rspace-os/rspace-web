@@ -58,9 +58,20 @@ const StoichiometryTableToolbar = ({
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
   const [inventoryUpdateDialogOpen, setInventoryUpdateDialogOpen] = React.useState(false);
   const [exportMenuAnchorEl, setExportMenuAnchorEl] = React.useState<HTMLButtonElement | null>(null);
+  // Gate the dialog on quantity data so it always opens with complete data
+  // and can compute its default selection on mount, with no reconciliation of
+  // late-arriving results. Failed fetches still resolve into the map (as
+  // error entries), so this only stays true while requests are in flight or
+  // the OAuth token is unavailable.
+  const isLoadingInventoryQuantities = allMolecules.some((molecule) => {
+    const globalId = molecule.inventoryLink?.inventoryItemGlobalId;
+    return globalId != null && !linkedInventoryQuantityInfoByGlobalId.has(globalId);
+  });
   const inventoryUpdateDisabledTooltip = hasChanges
     ? "Save the stoichiometry table before updating inventory stock."
-    : "";
+    : isLoadingInventoryQuantities
+      ? "Loading inventory stock information..."
+      : "";
   return (
     <Toolbar
       style={{
@@ -88,7 +99,7 @@ const StoichiometryTableToolbar = ({
                 sx={{
                   mr: 1,
                 }}
-                disabled={hasChanges}
+                disabled={hasChanges || isLoadingInventoryQuantities}
                 onClick={() => {
                   setInventoryUpdateDialogOpen(true);
                 }}
