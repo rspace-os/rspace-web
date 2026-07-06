@@ -1500,6 +1500,27 @@ public class RecordManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void createFromSharedTemplateAttributesCreatorToUserNotTemplateOwner() throws Exception {
+    // RSDEV-1144: doc from another user's shared template is attributed to the creator.
+    TestGroup testGroup = createTestGroup(1);
+    User templateOwner = testGroup.getPi();
+    User creator = testGroup.u1();
+
+    logoutAndLoginAs(templateOwner);
+    StructuredDocument doc = createBasicDocumentInRootFolderWithText(templateOwner, "text");
+    StructuredDocument template =
+        createTemplateFromDocumentAndAddtoTemplateFolder(doc.getId(), templateOwner);
+    shareRecordWithUser(templateOwner, template, creator);
+
+    logoutAndLoginAs(creator);
+    StructuredDocument fromTemplate = createFromTemplate(creator, template, "fromSharedTemplate");
+
+    assertEquals(creator, fromTemplate.getOwner());
+    assertEquals(creator.getUsername(), fromTemplate.getCreatedBy());
+    assertEquals(creator.getUsername(), fromTemplate.getModifiedBy());
+  }
+
+  @Test
   public void filterGalleryItems() throws IOException {
     // add 3 images with defined name to Gallery
     final int TOTAL_NUM_IMAGES = 3;
