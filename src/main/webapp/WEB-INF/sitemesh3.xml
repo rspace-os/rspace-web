@@ -39,7 +39,12 @@
     <mapping path="/public/status" exclude="true"/>
     <mapping path="/public/version" exclude="true"/>
     <mapping path="/public/bannerImageName" exclude="true"/>
-    <mapping path="/public/apiDocs" exclude="true"/>
+    <!-- Leading '*' also excludes the internal forward path (/app/public/apiDocs): this page is
+         served via a Spring view controller, whose extra DispatcherServlet forward leaves SiteMesh
+         matching the /app-prefixed path, which the start-anchored /public/apiDocs misses while the
+         greedy */public/* decorator below catches. The wildcard form is more specific than
+         */public/* so it wins and keeps the page bare. -->
+    <mapping path="*/public/apiDocs*" exclude="true"/>
     <mapping path="/slack/callbacks/*" exclude="true"/>
     <mapping path="/msteams/rspaceAuth*" exclude="true"/>
     <mapping path="/officeOnline/*" exclude="true"/>

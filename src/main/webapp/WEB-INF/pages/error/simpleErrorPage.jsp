@@ -1,7 +1,5 @@
 <%@ include file="/common/taglibs.jsp"%>
-<%-- Shared standalone error page. Params: titleKey, messageKey, linkUrl.
-     Used by /403.jsp and /404.jsp, which are container error-page targets served via ERROR
-     dispatch and so render undecorated (the SiteMesh filter is not mapped for ERROR). --%>
+<%-- Shared error page. Params: titleKey, messageKey, linkUrl. Used by /403.jsp and /404.jsp. --%>
 <!DOCTYPE html>
 <html>
 <head>
