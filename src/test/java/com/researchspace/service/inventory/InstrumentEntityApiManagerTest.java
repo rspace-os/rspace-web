@@ -20,8 +20,10 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryEntityField;
+import com.researchspace.api.v1.model.ApiInventoryLink;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiUser;
 import com.researchspace.model.Group;
 import com.researchspace.model.PaginationCriteria;
@@ -951,5 +953,118 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
     assertEquals(1, created.getFields().size());
     assertEquals("Status", created.getFields().get(0).getName());
     assertEquals(ApiFieldType.RADIO, created.getFields().get(0).getType());
+  }
+
+  // --- link field persistence (create / update / clear paths) ---
+
+  @Test
+  public void linkFieldValue_persistedWhenInstrumentCreatedFromTemplate() {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("link-tmpl-create-" + getRandomAlphabeticString("n"));
+    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
+    linkField.setName("ref");
+    linkField.setType(ApiFieldType.LINK);
+    templatePost.getFields().add(linkField);
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(testUser, "link-create-target");
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("linked-from-create");
+    request.setTemplateId(template.getId());
+    ApiInventoryEntityField fieldWithLink = new ApiInventoryEntityField();
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setTargetGlobalId(target.getGlobalId());
+    apiLink.setRelationType("References");
+    fieldWithLink.setLink(apiLink);
+    request.setFields(List.of(fieldWithLink));
+
+    ApiInstrument created = instrumentApiMgr.createNewApiInstrument(request, testUser);
+
+    ApiInstrument retrieved = instrumentApiMgr.getApiInstrumentById(created.getId(), testUser);
+    ApiInventoryLink storedLink = findInstrumentLinkField(retrieved.getFields()).getLink();
+    assertNotNull(storedLink, "link should be persisted on the field after creation");
+    assertEquals(target.getGlobalId(), storedLink.getTargetGlobalId());
+    assertEquals("References", storedLink.getRelationType());
+  }
+
+  @Test
+  public void linkFieldValue_persistedWhenInstrumentUpdated() {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("link-tmpl-update-" + getRandomAlphabeticString("n"));
+    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
+    linkField.setName("ref");
+    linkField.setType(ApiFieldType.LINK);
+    templatePost.getFields().add(linkField);
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("to-be-linked");
+    request.setTemplateId(template.getId());
+    ApiInstrument instrument = instrumentApiMgr.createNewApiInstrument(request, testUser);
+    assertNull(findInstrumentLinkField(instrument.getFields()).getLink(), "no link before update");
+
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(testUser, "link-update-target");
+    Long fieldId = findInstrumentLinkField(instrument.getFields()).getId();
+
+    ApiInventoryEntityField fieldUpdate = new ApiInventoryEntityField();
+    fieldUpdate.setId(fieldId);
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setTargetGlobalId(target.getGlobalId());
+    apiLink.setRelationType("References");
+    fieldUpdate.setLink(apiLink);
+    ApiInstrument update = new ApiInstrument();
+    update.setId(instrument.getId());
+    update.setFields(List.of(fieldUpdate));
+    instrumentApiMgr.updateApiInstrument(update, testUser);
+
+    ApiInstrument retrieved = instrumentApiMgr.getApiInstrumentById(instrument.getId(), testUser);
+    ApiInventoryLink storedLink = findInstrumentLinkField(retrieved.getFields()).getLink();
+    assertNotNull(storedLink, "link should be persisted after update");
+    assertEquals(target.getGlobalId(), storedLink.getTargetGlobalId());
+    assertEquals("References", storedLink.getRelationType());
+  }
+
+  @Test
+  public void linkFieldValue_clearedWhenInstrumentUpdated() {
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("link-tmpl-clear-" + getRandomAlphabeticString("n"));
+    ApiInventoryEntityField linkField = new ApiInventoryEntityField();
+    linkField.setName("ref");
+    linkField.setType(ApiFieldType.LINK);
+    templatePost.getFields().add(linkField);
+    ApiInstrumentTemplate template =
+        instrumentApiMgr.createInstrumentTemplate(templatePost, testUser);
+
+    ApiSampleWithFullSubSamples target = createBasicSampleForUser(testUser, "link-clear-target");
+
+    ApiInstrument request = new ApiInstrument();
+    request.setName("to-be-cleared");
+    request.setTemplateId(template.getId());
+    ApiInventoryEntityField fieldWithLink = new ApiInventoryEntityField();
+    ApiInventoryLink apiLink = new ApiInventoryLink();
+    apiLink.setTargetGlobalId(target.getGlobalId());
+    apiLink.setRelationType("References");
+    fieldWithLink.setLink(apiLink);
+    request.setFields(List.of(fieldWithLink));
+    ApiInstrument instrument = instrumentApiMgr.createNewApiInstrument(request, testUser);
+    assertNotNull(
+        findInstrumentLinkField(instrument.getFields()).getLink(), "link set on creation");
+
+    Long fieldId = findInstrumentLinkField(instrument.getFields()).getId();
+    ApiInventoryEntityField clearField = new ApiInventoryEntityField();
+    clearField.setId(fieldId);
+    // no link payload: clears the existing link
+    ApiInstrument clearUpdate = new ApiInstrument();
+    clearUpdate.setId(instrument.getId());
+    clearUpdate.setFields(List.of(clearField));
+    instrumentApiMgr.updateApiInstrument(clearUpdate, testUser);
+
+    ApiInstrument retrieved = instrumentApiMgr.getApiInstrumentById(instrument.getId(), testUser);
+    assertNull(
+        findInstrumentLinkField(retrieved.getFields()).getLink(),
+        "link should be cleared after update with no link payload");
   }
 }

@@ -34,6 +34,7 @@ export default class ExtraFieldModel implements ExtraField {
   owner: InventoryRecord;
   invalidInput: boolean;
   link: ExtraInventoryLink | null = null;
+  fromTemplate = false;
 
   constructor(attrs: ExtraFieldAttrs, owner: InventoryBaseRecord) {
     makeObservable(this, {

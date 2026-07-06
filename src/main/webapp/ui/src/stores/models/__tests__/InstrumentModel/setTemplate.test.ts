@@ -6,7 +6,11 @@ vi.mock("../../../../common/InvApiService", () => ({ default: { query: vi.fn(), 
 vi.mock("../../../../stores/stores/getRootStore", () => ({
   default: () => ({
     trackingStore: { trackEvent: vi.fn() },
-    uiStore: { addAlert: vi.fn() },
+    uiStore: {
+      addAlert: vi.fn(),
+      setPageNavigationConfirmation: vi.fn(),
+      setDirty: vi.fn(),
+    },
   }),
 }));
 
@@ -181,6 +185,94 @@ describe("InstrumentModel.setTemplate", () => {
       const instrument = makeUnsavedInstrument();
       await instrument.setTemplate(template);
       expect(fetchSpy).toHaveBeenCalledOnce();
+    });
+
+    test("preserves user-added extra fields when changing templates", async () => {
+      const templateA = makeMockInstrumentTemplate({
+        extraFields: [
+          {
+            id: 1,
+            globalId: "EF1",
+            name: "Template A Field",
+            lastModified: null,
+            type: "text",
+            content: "",
+            parentGlobalId: "NT1",
+          },
+        ],
+      });
+      const templateB = makeMockInstrumentTemplate({
+        extraFields: [
+          {
+            id: 2,
+            globalId: "EF2",
+            name: "Template B Field",
+            lastModified: null,
+            type: "text",
+            content: "",
+            parentGlobalId: "NT1",
+          },
+        ],
+      });
+      vi.spyOn(templateA, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      vi.spyOn(templateB, "fetchAdditionalInfo").mockResolvedValue(undefined);
+
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(templateA);
+      instrument.addExtraField({
+        id: null,
+        globalId: null,
+        parentGlobalId: null,
+        name: "User Added Field",
+        type: "text",
+        content: "my value",
+        lastModified: null,
+      });
+      await instrument.setTemplate(templateB);
+
+      const names = instrument.extraFields.map((ef) => ef.name);
+      expect(names).toContain("User Added Field");
+      expect(names).toContain("Template B Field");
+      expect(names).not.toContain("Template A Field");
+    });
+
+    test("replaces previous template extra fields when changing templates", async () => {
+      const templateA = makeMockInstrumentTemplate({
+        extraFields: [
+          {
+            id: 1,
+            globalId: "EF1",
+            name: "Calibration Date",
+            lastModified: null,
+            type: "text",
+            content: "",
+            parentGlobalId: "NT1",
+          },
+        ],
+      });
+      const templateB = makeMockInstrumentTemplate({
+        extraFields: [
+          {
+            id: 2,
+            globalId: "EF2",
+            name: "Warranty Expiry",
+            lastModified: null,
+            type: "text",
+            content: "",
+            parentGlobalId: "NT1",
+          },
+        ],
+      });
+      vi.spyOn(templateA, "fetchAdditionalInfo").mockResolvedValue(undefined);
+      vi.spyOn(templateB, "fetchAdditionalInfo").mockResolvedValue(undefined);
+
+      const instrument = makeUnsavedInstrument();
+      await instrument.setTemplate(templateA);
+      await instrument.setTemplate(templateB);
+
+      const names = instrument.extraFields.map((ef) => ef.name);
+      expect(names).not.toContain("Calibration Date");
+      expect(names).toContain("Warranty Expiry");
     });
   });
 

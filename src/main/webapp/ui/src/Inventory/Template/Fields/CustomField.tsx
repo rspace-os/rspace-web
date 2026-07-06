@@ -17,13 +17,12 @@ import DefaultValueField from "./DefaultValueField";
 import FieldTypeMenu from "./FieldTypeMenu";
 import MoveButtons from "./MoveButtons";
 
-const deleteOptions: Array<DeleteOption> = [
-  { value: false, label: "Keep field in existing samples" },
-  {
-    value: true,
-    label: "Remove field from existing samples",
-  },
-];
+function makeDeleteOptions(recordTypeName: "sample" | "instrument"): Array<DeleteOption> {
+  return [
+    { value: false, label: `Keep field in existing ${recordTypeName}s` },
+    { value: true, label: `Remove field from existing ${recordTypeName}s` },
+  ];
+}
 
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   return (
@@ -74,6 +73,7 @@ type CustomFieldArgs = {
   onRemove: (b?: boolean) => void;
   forceColumnLayout: boolean;
   onMove: (index: number) => void;
+  recordTypeName?: "sample" | "instrument";
 };
 
 function CustomField({
@@ -84,6 +84,7 @@ function CustomField({
   onRemove,
   forceColumnLayout,
   onMove,
+  recordTypeName = "sample",
 }: CustomFieldArgs): React.ReactNode {
   const nameFieldId = useId();
 
@@ -97,10 +98,10 @@ function CustomField({
                 <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will be deleted from this template.
               </Typography>
               <p>
-                New samples will not include this field.{" "}
+                New {recordTypeName}s will not include this field.{" "}
                 {field.deleteFieldOnSampleUpdate
-                  ? "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version."
-                  : "The field will not be deleted from existing samples even if the samples are updated to the latest template version."}
+                  ? `The field will also be deleted from existing ${recordTypeName}s made with this template after the ${recordTypeName}s are updated to the latest template version.`
+                  : `The field will not be deleted from existing ${recordTypeName}s even if the ${recordTypeName}s are updated to the latest template version.`}
               </p>
             </Box>
           ) : (
@@ -135,7 +136,7 @@ function CustomField({
                         <RemoveButton onClick={() => onRemove()} title="Delete new field" />
                       ) : (
                         <RemoveMenu
-                          deleteOptions={deleteOptions}
+                          deleteOptions={makeDeleteOptions(recordTypeName)}
                           onClick={(b) => onRemove(b)}
                           tooltipTitle="Delete field"
                         />

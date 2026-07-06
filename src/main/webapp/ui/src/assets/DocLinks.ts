@@ -12,7 +12,6 @@ const docLinks: Record<string, URL> = {
   createContainer: mkDocLink("e5v4bvcl61"),
   createTemplate: mkDocLink("c8sxesdqpy"),
   createInstrument: mkDocLink("ct15xwb13m"),
-  createInstrumentTemplate: mkDocLink("5f0lakn5nl"),
   updateAllSamplesOfTemplate: mkDocLink("c8sxesdqpy", "update_all_of_your_samples_to_latest_template_version"),
   createDialog: mkDocLink("x4y02hje72-edit-a-sample-or-container", "create"),
   createSample: mkDocLink("gb3r1lgm5g"),
