@@ -1048,8 +1048,8 @@
         "deleteField": "Delete field {fieldName}",
         "deleteNewField": "Delete new field",
         "deleteOptions": {
-          "keep": "Keep field in existing {recordType}s",
-          "remove": "Remove field from existing {recordType}s"
+          "keep": "Keep field in existing {recordType}",
+          "remove": "Remove field from existing {recordType}"
         },
         "mandatory": "Mandatory",
         "name": "Name",
@@ -1709,6 +1709,7 @@
     },
     "instrument": {
       "lower": "instrument",
+      "lowerPlural": "instruments",
       "plural": "Instruments",
       "singular": "Instrument"
     },
@@ -1719,6 +1720,7 @@
     },
     "sample": {
       "lower": "sample",
+      "lowerPlural": "samples",
       "plural": "Samples",
       "singular": "Sample"
     },
@@ -2162,9 +2164,9 @@
     "fields": {
       "customField": {
         "deleteField": "{fieldType} field will be deleted from this template.",
-        "deleteFieldOnUpdate": "The field will also be deleted from existing {recordType}s made with this template after the {recordType}s are updated to the latest template version.",
-        "deleteFieldOnUpdateNot": "The field will not be deleted from existing {recordType}s even if the {recordType}s are updated to the latest template version.",
-        "newSamplesExclusion": "New {recordType}s will not include this field."
+        "deleteFieldOnUpdate": "The field will also be deleted from existing {recordType} made with this template after the {recordType} are updated to the latest template version.",
+        "deleteFieldOnUpdateNot": "The field will not be deleted from existing {recordType} even if the {recordType} are updated to the latest template version.",
+        "newSamplesExclusion": "New {recordType} will not include this field."
       },
       "versionInfo": {
         "latestVersion": "Latest version:",

@@ -93,7 +93,7 @@ function CustomField({
 }: CustomFieldArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const nameFieldId = useId();
-  const recordType = t(`recordTypes.${recordTypeName}.lower`);
+  const recordType = t(`recordTypes.${recordTypeName}.lowerPlural`);
 
   return (
     <Grid role="region" aria-labelledby={nameFieldId}>

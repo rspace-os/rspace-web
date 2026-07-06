@@ -1313,7 +1313,7 @@ export default interface Resources {
         "adding": "Adding...",
         "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
         "confirmDisassociateTitle": "Confirm Disassociation",
-        "currentlyConnectedTo": "<strong>Currently connected to:</strong> {{raid}}",
+        "currentlyConnectedTo": "<strong>Currently connected to:</strong> {raid}",
         "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
         "disassociate": "Disassociate",
         "errorLoadingGroupInfo": "Error loading group info: {error}",
@@ -1327,7 +1327,7 @@ export default interface Resources {
         "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
         "notConnected": "Not connected",
         "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <internalLink to=\"/apps\">Apps page</internalLink> and enable RAiD.",
-        "previouslyConnectedTo": "<strong>Previously connected to:</strong> {{raid}}",
+        "previouslyConnectedTo": "<strong>Previously connected to:</strong> {raid}",
         "title": "RAiD Connections",
         "validation": {
           "identifierMinLength": "RAiD identifier must be at least 3 characters",
@@ -3233,8 +3233,8 @@ export default interface Resources {
           "deleteField": "Delete field {fieldName}",
           "deleteNewField": "Delete new field",
           "deleteOptions": {
-            "keep": "Keep field in existing {recordType}s",
-            "remove": "Remove field from existing {recordType}s"
+            "keep": "Keep field in existing {recordType}",
+            "remove": "Remove field from existing {recordType}"
           },
           "mandatory": "Mandatory",
           "name": "Name",
@@ -3888,6 +3888,7 @@ export default interface Resources {
       },
       "instrument": {
         "lower": "instrument",
+        "lowerPlural": "instruments",
         "plural": "Instruments",
         "singular": "Instrument"
       },
@@ -3898,6 +3899,7 @@ export default interface Resources {
       },
       "sample": {
         "lower": "sample",
+        "lowerPlural": "samples",
         "plural": "Samples",
         "singular": "Sample"
       },
@@ -4347,9 +4349,9 @@ export default interface Resources {
       "fields": {
         "customField": {
           "deleteField": "{fieldType} field will be deleted from this template.",
-          "deleteFieldOnUpdate": "The field will also be deleted from existing {recordType}s made with this template after the {recordType}s are updated to the latest template version.",
-          "deleteFieldOnUpdateNot": "The field will not be deleted from existing {recordType}s even if the {recordType}s are updated to the latest template version.",
-          "newSamplesExclusion": "New {recordType}s will not include this field."
+          "deleteFieldOnUpdate": "The field will also be deleted from existing {recordType} made with this template after the {recordType} are updated to the latest template version.",
+          "deleteFieldOnUpdateNot": "The field will not be deleted from existing {recordType} even if the {recordType} are updated to the latest template version.",
+          "newSamplesExclusion": "New {recordType} will not include this field."
         },
         "versionInfo": {
           "latestVersion": "Latest version:",
