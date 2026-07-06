@@ -32,4 +32,4 @@ pre-commit:
     # under a second, so we run it project-wide like tsc rather than per-file.
     biome:
       glob: "src/main/webapp/ui/**/*.{ts,tsx,css}"
-      run: pnpm run lint:ci
+      run: pnpm run lint:ci --colors=off
