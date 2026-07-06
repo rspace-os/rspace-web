@@ -198,6 +198,14 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
+    env:
+      # ponytail: shard count is a plain number, not a matrix-generating step;
+      # bump both this and the matrix.shard list below together to rescale.
+      VITEST_SHARD_COUNT: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5]
     if: |
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||
@@ -224,7 +232,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run Vitest tests
-        run: pnpm run test
+        run: pnpm run test -- --shard=${{ matrix.shard }}/${{ env.VITEST_SHARD_COUNT }}
 
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
@@ -235,7 +243,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Vitest Tests
+          check_name: Vitest Tests (shard ${{ matrix.shard }})
           comment_mode: off
           files: src/main/webapp/ui/junit.xml
 
