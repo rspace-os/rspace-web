@@ -231,16 +231,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # --reporter=junit (kept, for the per-shard check below) is combined
-      # with --reporter=blob, whose output (plus the coverage data --coverage
-      # collects) is merged across shards into one report in coverage-report
-      # below. --reporter=blob is additive here only because both are passed
-      # explicitly on the CLI; a bare --reporter=blob would otherwise replace
-      # the junit/default reporters configured in vite.config.ts.
+      # --reporter on the CLI replaces (not extends) the reporters array from
+      # vite.config.ts, so default/junit/blob must all be listed explicitly:
+      # default for readable CI logs, junit for the per-shard check below,
+      # blob (plus the coverage data --coverage collects) for the merge into
+      # one coverage report in vitest-coverage-report below.
       - name: Run Vitest tests
         run: |
           pnpm run test -- --shard=${{ matrix.shard }}/${{ env.VITEST_SHARD_COUNT }} \
-            --reporter=junit --reporter=blob --coverage
+            --reporter=default --reporter=junit --reporter=blob --coverage
 
       - name: Upload blob report
         if: ${{ !cancelled() }}
