@@ -64,6 +64,8 @@ public class GlobalLookupController extends BaseController {
     prefixToUrl.put(GlobalIdPrefix.IT, "/inventory/sampletemplate/");
     prefixToUrl.put(GlobalIdPrefix.IC, "/inventory/container/");
     prefixToUrl.put(GlobalIdPrefix.BE, "/inventory/search?parentGlobalId=BE");
+    prefixToUrl.put(GlobalIdPrefix.IN, "/inventory/instrument/");
+    prefixToUrl.put(GlobalIdPrefix.NT, "/inventory/instrumenttemplate/");
   }
 
   /** Inventory record types whose version-suffixed global IDs open the versioned viewer. */
