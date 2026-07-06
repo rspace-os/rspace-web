@@ -1938,8 +1938,7 @@ function isWindowWideEnoughForFileTreeBrowser() {
 function toggleFileTreeBrowserDependingOnWidthAndUISettings() {
 
   // for simplified view don't load nor display tree browser
-  // (the simplified view marks itself with a [data-simple-editor-view] element in the body)
-  if ($('[data-simple-editor-view="true"]').length > 0) {
+  if (document.querySelector('[data-simple-editor-view="true"]') !== null) {
     $('#page').removeClass('treeBrowserWide treeBrowserNarrow');
     return;
   }
