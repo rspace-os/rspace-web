@@ -862,6 +862,11 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
 
           /* then delete the sample */
           dbSample.setRecordDeleted(true);
+          // Recompute the active-subsample cache now the deleted flag is set: a deleted sample
+          // lists its deletedOnSampleDeletion subsamples as active, but the refresh above ran
+          // pre-deletion (leaving it empty). Hibernate 5 refreshed this transient cache as a
+          // side effect of a setter call during merge/flush; Hibernate 6 no longer does.
+          dbSample.refreshActiveSubSamples();
           dbSample = saveSampleEntity(dbSample);
           publisher.publishEvent(new InventoryDeleteEvent(dbSample, user));
         }
