@@ -283,7 +283,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
   @Override
   public boolean deleteUnassociatedIdentifier(ApiInventoryDOI identifier, User user) {
     DigitalObjectIdentifier doi = doiDao.get(identifier.getId());
-    if (!doi.getOwner().equals(user)) {
+    if (!user.equals(doi.getOwner())) {
       throw new IllegalArgumentException(
           messages.getMessage("errors.inventory.identifier.delete.not.owner"));
     }

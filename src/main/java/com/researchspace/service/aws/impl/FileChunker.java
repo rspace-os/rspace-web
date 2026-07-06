@@ -8,11 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Splits a file into chunks and returns a series of chunk ranges. <br>
  * getParts() returns a supplier to retrieve the actual bytes
  */
+@Slf4j
 public class FileChunker {
 
   private File toSplit;
@@ -36,15 +38,28 @@ public class FileChunker {
     public Optional<ByteBuffer> get() {
       long start = part.getStartOffset();
       long end = part.getEndOffset();
-      // A single part is chunk-sized (MB scale), so its length fits in an int even for
-      // multi-GB files; only the absolute offset needs to stay a long.
-      int size = Math.toIntExact(end - start);
-      byte[] buffer = new byte[size];
+      long size = end - start;
+      // The whole part is buffered in memory, so its length must fit in a byte[] (int-indexed).
+      // Part length is the configured chunk size (MB scale by default), but a single part can span
+      // the whole file when the file is smaller than the chunk size, so guard against a chunk size
+      // configured above 2GB rather than trusting the invariant.
+      if (size > Integer.MAX_VALUE) {
+        log.error(
+            "Cannot buffer part [{}, {}) of {}: length {} bytes exceeds the maximum in-memory "
+                + "buffer size; reduce the configured chunk size.",
+            start,
+            end,
+            toSplit,
+            size);
+        return Optional.empty();
+      }
+      byte[] buffer = new byte[(int) size];
 
       try (RandomAccessFile raf = new RandomAccessFile(toSplit, "r")) {
         raf.seek(start);
         raf.readFully(buffer);
       } catch (IOException e) {
+        log.error("Failed to read part [{}, {}) of {}", start, end, toSplit, e);
         return Optional.empty();
       }
       return Optional.of(ByteBuffer.wrap(buffer));

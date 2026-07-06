@@ -3,6 +3,7 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -193,6 +194,7 @@ class InventoryIdentifiersApiControllerTest {
   @Test
   void bulkAllocateRejectsCountAboveMaximum() {
     int tooMany = InventoryIdentifiersApiController.MAX_BULK_IGSN_ALLOCATION + 1;
+    when(mockMessages.getMessage(anyString(), any())).thenReturn("too many");
 
     assertThrows(
         IllegalArgumentException.class, () -> controller.bulkAllocateIdentifiers(tooMany, user));

@@ -89,7 +89,9 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
             + " The number must be greater than 0");
     Validate.isTrue(
         count <= MAX_BULK_IGSN_ALLOCATION,
-        "cannot allocate more than " + MAX_BULK_IGSN_ALLOCATION + " IGSNs in a single request");
+        messages.getMessage(
+            "errors.inventory.identifier.bulk.max.exceeded",
+            new Object[] {MAX_BULK_IGSN_ALLOCATION}));
     List<ApiInventoryDOI> result = identifierMgr.registerBulkIdentifiers(count, user);
     if (!count.equals(result.size())) {
       log.error(

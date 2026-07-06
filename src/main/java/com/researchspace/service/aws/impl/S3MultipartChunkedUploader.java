@@ -128,7 +128,15 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
               s3Client.uploadPart(
                   uploadPartRequest1,
                   RequestBody.fromByteBuffer(
-                      bb.getByteBufferSupplier().get().orElseThrow(() -> new IOException())));
+                      bb.getByteBufferSupplier()
+                          .get()
+                          .orElseThrow(
+                              () ->
+                                  new IOException(
+                                      "Could not read part number "
+                                          + bb.getPartNo()
+                                          + " of "
+                                          + fToUpload))));
 
       up = Retry.decorateCallable(rt, up);
       UploadPartResponse uploadPartResponse = null;
