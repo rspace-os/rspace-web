@@ -649,7 +649,9 @@ const InfoPanelContent = observer(
           />
         </Box>
         {file.linkedDocuments}
-        <ReferencingInventoryItemsPanel file={file} />
+        {/* Inventory items can only link to gallery media files (GL...); folders (GF),
+            snippets (ST) etc. 404 and would show a spurious error. See PRT-1091. */}
+        {file.globalId?.startsWith("GL") && <ReferencingInventoryItemsPanel file={file} />}
       </Stack>
     );
   },

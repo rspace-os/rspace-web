@@ -16,6 +16,7 @@ import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import type InstrumentModel from "../../../stores/models/InstrumentModel";
 import AttachmentField from "../../components/Fields/Attachments/AttachmentField";
 import FormField from "../../components/Inputs/FormField";
+import LinkFieldValue from "../../Sample/Fields/TemplateFields/LinkFieldValue";
 
 type TemplateFieldsArgs = {
   onErrorStateChange: (fieldName: string, hasError: boolean) => void;
@@ -249,6 +250,28 @@ function TemplateFields({ onErrorStateChange, instrument }: TemplateFieldsArgs):
                 field.setError(false);
                 onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error);
               }}
+            />
+          )}
+        />
+      );
+    }
+
+    if (field.type === "link") {
+      return (
+        <FormField
+          {...commonProps}
+          key={field.name}
+          value={field.link?.targetGlobalId ?? ""}
+          doNotAttachIdToLabel
+          hideLabel
+          renderInput={() => (
+            <LinkFieldValue
+              field={field}
+              sourceGlobalId={instrument.globalId ?? ""}
+              disabled={!instrument.isFieldEditable("fields")}
+              onChange={() =>
+                onErrorStateChange(`template_${field.name}`, (field.mandatory && !field.hasContent) || field.error)
+              }
             />
           )}
         />

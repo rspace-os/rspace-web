@@ -9,10 +9,12 @@
   display: inline-block; }
 
 .menuInnerPanelIcon {
-  margin-left: 7px; }
+  display: block;
+  margin: 4px auto 0; }
 
 .menuInnerPanelIconNew {
-  margin-left: 22px; }
+  display: block;
+  margin: 4px auto 0; }
 
 input:focus {
   outline: none; }
