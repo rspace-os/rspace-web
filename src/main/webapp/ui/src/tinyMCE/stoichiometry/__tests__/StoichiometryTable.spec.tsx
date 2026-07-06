@@ -11,7 +11,6 @@ import {
   galleryPickerSupportHandlers,
   type MockRouteResponse,
   moleculeInfoHandler,
-  oauthTokenHandler,
   pubchemSearchHandler,
 } from "./mocks/stoichiometryMocks";
 import { InventoryUpdateDialogPage, StoichiometryTablePage } from "./pageObjects/StoichiometryTablePage";
@@ -35,7 +34,6 @@ beforeEach(() => {
     inventorySubSampleRequestCount: 0,
   };
   worker.use(
-    oauthTokenHandler(),
     http.get("/api/v1/stoichiometry", () => HttpResponse.json(mocks.response)),
     http.get("/api/inventory/v1/subSamples/:id", ({ params }) => {
       mocks.inventorySubSampleRequestCount += 1;

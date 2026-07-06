@@ -4,7 +4,6 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi 
 import { page, userEvent } from "vitest/browser";
 import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
 import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
 import { MainPanelPage } from "./pageObjects/MainPanelPage";
@@ -176,7 +175,7 @@ beforeEach(async () => {
    * wildcard catch-all for `/gallery/getUploadedFiles` that would otherwise
    * intercept the folder-specific request first.
    */
-  worker.use(oauthTokenHandler(), linkedDocumentsHandler(), outerFolderListingHandler(), ...galleryAppShellHandlers());
+  worker.use(linkedDocumentsHandler(), outerFolderListingHandler(), ...galleryAppShellHandlers());
 });
 
 afterEach(() => {
