@@ -5,11 +5,7 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import StoichiometryDialogEntrypoint from "../StoichiometryDialogEntrypoint";
-import {
-  chemistryIntegrationHandler,
-  createDialogStoichiometryResponse,
-  oauthTokenHandler,
-} from "./mocks/stoichiometryMocks";
+import { chemistryIntegrationHandler, createDialogStoichiometryResponse } from "./mocks/stoichiometryMocks";
 import { StoichiometryDialogPage } from "./pageObjects/StoichiometryDialogPage";
 import {
   StoichiometryDialogWithCalculateButtonStory,
@@ -52,7 +48,7 @@ const dialog = new StoichiometryDialogPage();
 
 beforeEach(() => {
   networkRequests.length = 0;
-  worker.use(oauthTokenHandler(), chemistryIntegrationHandler(), ...dialogStoichiometryHandlers());
+  worker.use(chemistryIntegrationHandler(), ...dialogStoichiometryHandlers());
   worker.events.on("request:start", ({ request }) => {
     networkRequests.push({
       method: request.method,
