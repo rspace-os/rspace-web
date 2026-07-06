@@ -97,7 +97,11 @@ const StoichiometryTableToolbar = ({
                 aria-label="Update Inventory Stock"
                 aria-busy={isLoadingInventoryQuantities}
                 size="small"
-                startIcon={isLoadingInventoryQuantities ? <CircularProgress size={16} color="inherit" /> : null}
+                startIcon={
+                  isLoadingInventoryQuantities ? (
+                    <CircularProgress size={16} color="inherit" aria-hidden="true" />
+                  ) : null
+                }
                 sx={{
                   mr: 1,
                 }}

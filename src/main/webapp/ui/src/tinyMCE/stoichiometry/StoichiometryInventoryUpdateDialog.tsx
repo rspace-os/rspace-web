@@ -16,11 +16,6 @@ type StoichiometryInventoryUpdateDialogProps = {
   onClose: () => void;
 };
 
-/**
- * Thin shell around the Update Inventory Stock dialog. All state lives in the
- * content component, which MUI mounts fresh on each open and unmounts on
- * close, so opening the dialog is what resets it.
- */
 export default function StoichiometryInventoryUpdateDialog({
   open,
   molecules,
