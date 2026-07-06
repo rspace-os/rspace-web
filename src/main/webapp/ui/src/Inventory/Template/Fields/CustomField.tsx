@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import type { TFunction } from "i18next";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useId } from "react";
@@ -17,6 +18,13 @@ import NameField from "./CustomFieldNameField";
 import DefaultValueField from "./DefaultValueField";
 import FieldTypeMenu from "./FieldTypeMenu";
 import MoveButtons from "./MoveButtons";
+
+function makeDeleteOptions(t: TFunction<"inventory">, recordType: string): Array<DeleteOption> {
+  return [
+    { value: false, label: t("fields.templateFields.customField.deleteOptions.keep", { recordType }) },
+    { value: true, label: t("fields.templateFields.customField.deleteOptions.remove", { recordType }) },
+  ];
+}
 
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
   const { t } = useTranslation("inventory");
@@ -70,6 +78,7 @@ type CustomFieldArgs = {
   onRemove: (b?: boolean) => void;
   forceColumnLayout: boolean;
   onMove: (index: number) => void;
+  recordTypeName?: "sample" | "instrument";
 };
 
 function CustomField({
@@ -80,16 +89,11 @@ function CustomField({
   onRemove,
   forceColumnLayout,
   onMove,
+  recordTypeName = "sample",
 }: CustomFieldArgs): React.ReactNode {
   const { t } = useTranslation("inventory");
   const nameFieldId = useId();
-  const deleteOptions: Array<DeleteOption> = [
-    { value: false, label: t("fields.templateFields.customField.deleteOptions.keep") },
-    {
-      value: true,
-      label: t("fields.templateFields.customField.deleteOptions.remove"),
-    },
-  ];
+  const recordType = t(`recordTypes.${recordTypeName}.lower`);
 
   return (
     <Grid role="region" aria-labelledby={nameFieldId}>
@@ -102,10 +106,10 @@ function CustomField({
                 {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
               </Typography>
               <p>
-                {t("template.fields.customField.newSamplesExclusion")}{" "}
+                {t("template.fields.customField.newSamplesExclusion", { recordType })}{" "}
                 {field.deleteFieldOnSampleUpdate
-                  ? t("template.fields.customField.deleteFieldOnUpdate")
-                  : t("template.fields.customField.deleteFieldOnUpdateNot")}
+                  ? t("template.fields.customField.deleteFieldOnUpdate", { recordType })
+                  : t("template.fields.customField.deleteFieldOnUpdateNot", { recordType })}
               </p>
             </Box>
           ) : (
@@ -143,7 +147,7 @@ function CustomField({
                         />
                       ) : (
                         <RemoveMenu
-                          deleteOptions={deleteOptions}
+                          deleteOptions={makeDeleteOptions(t, recordType)}
                           onClick={(b) => onRemove(b)}
                           tooltipTitle={t("fields.templateFields.customField.deleteField", { fieldName: field.name })}
                         />

@@ -1,5 +1,7 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, test } from "vitest";
+import { server } from "vitest/browser";
+import { emulateReducedMotion } from "../__tests__/pageObjects/accessibility";
 import { SkipToContentMenuPage } from "./pageObjects/SkipToContentMenuPage";
 import { DynamicLandmarksExample, SimpleTestExample } from "./SkipToContentMenu.story";
 
@@ -46,8 +48,21 @@ describe("SkipToContentMenu", () => {
     await expect.element(menu.skipButton("Header")).toBeVisible();
     await menu.pressEscape();
     // The component hides via CSS opacity transition (0.2s). After Escape the
-    // isVisible state is set to false, which drives opacity to 0 on the menu
-    // element. Wait for the transition to complete then verify opacity is 0.
-    await expect.poll(() => getComputedStyle(menu.menu.element()).opacity, { timeout: 1000 }).toBe("0");
+    // isVisible state is set to false, which drives opacity to 0 on the outer
+    // container. Wait for the transition to complete then verify opacity is 0.
+    await expect.poll(() => getComputedStyle(menu.containerElement()).opacity, { timeout: 1000 }).toBe("0");
+  });
+
+  test("disables the show/hide transition when prefers-reduced-motion is set", async () => {
+    await emulateReducedMotion();
+    render(<SimpleTestExample />);
+    menu.focusSkipButton();
+    await expect.element(menu.skipButton("Header")).toBeVisible();
+
+    // CDP media emulation is chromium-only; on other engines emulateReducedMotion
+    // is a no-op so the transition assertion would not be meaningful.
+    if (server.browser === "chromium") {
+      expect(getComputedStyle(menu.containerElement()).transitionDuration).toBe("0s");
+    }
   });
 });

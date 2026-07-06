@@ -17,7 +17,7 @@ import BasketModel from "../models/Basket";
 import ContainerModel, { type ContainerAttrs } from "../models/ContainerModel";
 import MemoisedFactory from "../models/Factory/MemoisedFactory";
 import InstrumentModel, { type InstrumentAttrs } from "../models/InstrumentModel";
-import InstrumentTemplateModel from "../models/InstrumentTemplateModel";
+import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "../models/InstrumentTemplateModel";
 import type InventoryBaseRecord from "../models/InventoryBaseRecord";
 import SampleModel from "../models/SampleModel";
 import Search from "../models/Search";
@@ -441,6 +441,11 @@ export default class SearchStore {
       typeof version === "number" ? `${id}/versions/${version}` : `${id}`,
     );
     return new TemplateModel(factory, data);
+  }
+
+  async getInstrumentTemplate(id: number, factory: Factory): Promise<InstrumentTemplateModel> {
+    const { data } = await ApiService.get<InstrumentTemplateAttrs>("instrumentTemplates", `${id}`);
+    return new InstrumentTemplateModel(factory, data);
   }
 
   get activeResultIsBeingEdited(): boolean {

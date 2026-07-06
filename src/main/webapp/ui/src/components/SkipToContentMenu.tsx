@@ -66,10 +66,15 @@ const SkipToContentButton: React.FC = () => {
         transform: isVisible ? "translateY(0)" : "translateY(-100%)",
         opacity: isVisible ? 1 : 0,
         transition: "transform 0.2s ease-in-out, opacity 0.2s ease-in-out",
+        "@media (prefers-reduced-motion: reduce)": {
+          transition: "none",
+        },
         backgroundColor: "background.paper",
         border: 1,
         borderColor: "divider",
-        borderRadius: 1,
+        // Match the ListItemButton radius (8px, set by the theme) so the
+        // container and item corners line up.
+        borderRadius: "8px",
         boxShadow: 2,
         minWidth: 200,
       }}
@@ -79,13 +84,17 @@ const SkipToContentButton: React.FC = () => {
     >
       <List
         dense
-        sx={{ opacity: isVisible ? 1 : 0 }}
+        disablePadding
         role="menu"
         aria-label={t("accessibilityTips.skipToContent.navigation")}
+        sx={{ display: "flex", flexDirection: "column", gap: 1 }}
       >
         {landmarks.map((landmark, index) => (
           <ListItem key={landmark.name} disablePadding role="menuitem">
             <ListItemButton
+              // The app theme adds a border to every ListItemButton; the skip
+              // menu already has its own container border, so drop it here.
+              sx={{ border: "none" }}
               onClick={() => {
                 handleSkipToLandmark(landmark.ref);
               }}

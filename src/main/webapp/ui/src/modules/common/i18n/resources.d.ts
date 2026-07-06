@@ -3233,8 +3233,8 @@ export default interface Resources {
           "deleteField": "Delete field {fieldName}",
           "deleteNewField": "Delete new field",
           "deleteOptions": {
-            "keep": "Keep field in existing samples",
-            "remove": "Remove field from existing samples"
+            "keep": "Keep field in existing {recordType}s",
+            "remove": "Remove field from existing {recordType}s"
           },
           "mandatory": "Mandatory",
           "name": "Name",
@@ -3543,6 +3543,10 @@ export default interface Resources {
       }
     },
     "instrumentTemplate": {
+      "alerts": {
+        "updateExistingInstruments": "Update existing instruments?",
+        "updateLatestFailed": "Updating instruments to latest template version failed."
+      },
       "createOptions": {
         "instrument": {
           "explanation": "Create a new instrument based on this template.",
@@ -3563,7 +3567,13 @@ export default interface Resources {
         "version": "Version {version}"
       },
       "imageAlt": "What the instrument template looks like",
-      "newImageAlt": "A visual representation of the instrument template"
+      "newImageAlt": "A visual representation of the instrument template",
+      "updateInstrumentsConfirm": {
+        "body": "All of your instruments created from this template will be updated to pick up the structural changes that have been made to the template since the instrument was created or last updated, such as the addition, deletion and reordering of fields, and the change to available options in choice and radio fields. <strong>This action cannot be undone.</strong>",
+        "confirmButton": "Update all",
+        "helpTitle": "Info on updating instruments to latest template version.",
+        "title": "Update all instruments to latest template version?"
+      }
     },
     "layout": {
       "hideRightPanel": "Hide right panel",
@@ -4337,9 +4347,9 @@ export default interface Resources {
       "fields": {
         "customField": {
           "deleteField": "{fieldType} field will be deleted from this template.",
-          "deleteFieldOnUpdate": "The field will also be deleted from existing samples made with this template after the samples are updated to the latest template version.",
-          "deleteFieldOnUpdateNot": "The field will not be deleted from existing samples even if the samples are updated to the latest template version.",
-          "newSamplesExclusion": "New samples will not include this field."
+          "deleteFieldOnUpdate": "The field will also be deleted from existing {recordType}s made with this template after the {recordType}s are updated to the latest template version.",
+          "deleteFieldOnUpdateNot": "The field will not be deleted from existing {recordType}s even if the {recordType}s are updated to the latest template version.",
+          "newSamplesExclusion": "New {recordType}s will not include this field."
         },
         "versionInfo": {
           "latestVersion": "Latest version:",
