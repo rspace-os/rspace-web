@@ -84,7 +84,7 @@ const MaterialsLauncher = observer(
               <Badge
                 badgeContent={fieldListCount}
                 color="callToAction"
-                sx={{ position: "sticky", top: FAB_SIZE, zIndex: 1 }}
+                sx={{ position: "sticky", top: FAB_SIZE, zIndex: 1, pointerEvents: "auto" }}
                 slotProps={{ badge: { style: { transform: "none" } } }}
               >
                 <Fab
