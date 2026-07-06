@@ -10,9 +10,6 @@ import { HttpResponse, http, type RequestHandler } from "msw";
  * Note: `analyticsProperties` and `livechatProperties` are already covered by
  * the global app-shell defaults in mswAppShellHandlers.ts. Do not duplicate
  * them here.
- *
- * Note: the inventory OAuth token handler is in inventoryMocks.ts — import
- * `oauthTokenHandler` from there when a gallery suite also needs it.
  */
 export const galleryAppShellHandlers = (): RequestHandler[] => [
   /*

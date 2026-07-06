@@ -2,7 +2,6 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { SimpleIgsnTable } from "./IgsnTable.story";
 import { IgsnTablePage } from "./pageObjects/IgsnTablePage";
 
@@ -120,10 +119,7 @@ const IDENTIFIERS_PAYLOAD = [
 const table = new IgsnTablePage();
 
 beforeEach(() => {
-  worker.use(
-    oauthTokenHandler(),
-    http.get("/api/inventory/v1/identifiers", () => HttpResponse.json(IDENTIFIERS_PAYLOAD)),
-  );
+  worker.use(http.get("/api/inventory/v1/identifiers", () => HttpResponse.json(IDENTIFIERS_PAYLOAD)));
 });
 
 afterEach(() => {

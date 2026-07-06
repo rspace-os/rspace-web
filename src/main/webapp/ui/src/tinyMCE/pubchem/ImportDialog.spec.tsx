@@ -3,7 +3,6 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { ImportDialogStory } from "./ImportDialog.story";
 import { PubchemImportDialogPage } from "./pageObjects/PubchemImportDialogPage";
@@ -52,7 +51,7 @@ const pubchemSearchHandler = () =>
 const dialog = new PubchemImportDialogPage();
 
 beforeEach(() => {
-  worker.use(oauthTokenHandler(), pubchemSearchHandler());
+  worker.use(pubchemSearchHandler());
 });
 
 afterEach(() => {
