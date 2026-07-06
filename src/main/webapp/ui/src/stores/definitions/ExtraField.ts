@@ -45,6 +45,12 @@ export interface ExtraField {
   readonly link: ExtraInventoryLink | null;
 
   /*
+   * Client-side only. True when this field was copied from a template, false
+   * when the user added it manually. Never sent to the backend.
+   */
+  fromTemplate: boolean;
+
+  /*
    * When set, subsequent API calls to store modifications MUST ensure that the
    * extra field is deleted.
    */

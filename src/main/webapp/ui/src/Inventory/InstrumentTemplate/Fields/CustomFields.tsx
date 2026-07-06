@@ -38,8 +38,8 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
   const TemplateFields = observer(({ editable }: { editable: boolean }) => {
     const removeCustomField =
       (field: FieldModel) =>
-      (_b = false) => {
-        activeResult.removeCustomField(field.id, activeResult.fields.indexOf(field));
+      (b = false) => {
+        activeResult.removeCustomField(field.id, activeResult.fields.indexOf(field), b);
       };
 
     return (
@@ -56,6 +56,7 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
               onRemove={(b) => removeCustomField(field)(b)}
               forceColumnLayout={!uiStore.isLarge}
               onMove={(index) => activeResult.moveField(field, index)}
+              recordTypeName="instrument"
             />
           ))}
       </Stack>

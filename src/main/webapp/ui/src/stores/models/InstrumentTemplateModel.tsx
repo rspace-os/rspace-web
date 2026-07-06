@@ -1,7 +1,13 @@
 import { action, makeObservable, observable, override } from "mobx";
 import type React from "react";
 import type { _LINK } from "@/util/types";
+import docLinks from "../../assets/DocLinks";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
+import ApiService from "../../common/InvApiService";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
+import { getErrorMessage } from "../../util/error";
+import { mkAlert } from "../contexts/Alert";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
@@ -24,6 +30,8 @@ import InventoryBaseRecord, {
   RESULT_FIELDS,
 } from "./InventoryBaseRecord";
 import Search from "./Search";
+
+const mainSearch = () => getRootStore().searchStore.search;
 
 type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
@@ -78,6 +86,8 @@ export default class InstrumentTemplateModel
       addField: action,
       removeCustomField: action,
       moveField: action,
+      update: override,
+      updateInstrumentsToLatest: action,
       paramsForBackend: override,
       populateFromJson: override,
       updateFieldsState: override,
@@ -146,12 +156,15 @@ export default class InstrumentTemplateModel
     });
   }
 
-  removeCustomField(id: Id, index: number): void {
+  removeCustomField(id: Id, index: number, deleteFromInstruments = false): void {
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {
       const field = this.fields.find((f) => f.id === id);
-      field?.setAttributesDirty({ deleteFieldRequest: true });
+      field?.setAttributesDirty({
+        deleteFieldRequest: true,
+        deleteFieldOnSampleUpdate: deleteFromInstruments,
+      });
     }
   }
 
@@ -234,6 +247,107 @@ export default class InstrumentTemplateModel
 
   get usableInLoM(): boolean {
     return false;
+  }
+
+  private async setActiveResultToLatest(): Promise<InstrumentTemplateModel> {
+    const id = this.id;
+    if (!id) throw new Error("id is required.");
+    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, this.factory.newFactory());
+    await mainSearch().setActiveResult(latest);
+    mainSearch().replaceResult(latest);
+    return latest;
+  }
+
+  async update(): Promise<void> {
+    const oldVersion = this.version;
+    await super.update(false);
+    const latest = await this.setActiveResultToLatest();
+
+    if (this.id) {
+      await this.search.fetcher.performInitialSearch(null);
+      const instrumentsToBeUpdated = this.search.fetcher.results.filter((r) => r.owner?.isCurrentUser ?? true);
+      if (this.version !== oldVersion && instrumentsToBeUpdated.length > 0) {
+        const newToast = mkAlert({
+          message: "Update existing instruments?",
+          variant: "notice",
+          isInfinite: true,
+          actionLabel: "yes",
+          onActionClick: () => void this.updateInstrumentsToLatest(),
+        });
+        latest.addScopedToast(newToast);
+        getRootStore().uiStore.addAlert(newToast);
+      }
+    }
+  }
+
+  async updateInstrumentsToLatest(): Promise<void> {
+    if (!this.id) throw new Error("id is required.");
+    const id = this.id;
+
+    if (
+      !(await getRootStore().uiStore.confirm(
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            marginBottom: "10px",
+          }}
+        >
+          <span>Update all instruments to latest template version?</span>
+          <HelpLinkIcon
+            link={docLinks.updateAllSamplesOfTemplate}
+            title="Info on updating instruments to latest template version."
+            size="small"
+          />
+        </span>,
+        <>
+          All of your instruments created from this template will be updated to pick up the structural changes that have
+          been made to the template since the instrument was created or last updated, such as the addition, deletion and
+          reordering of fields, and the change to available options in choice and radio fields.&nbsp;
+          <strong>This action cannot be undone.</strong>
+        </>,
+        "Update all",
+      ))
+    )
+      return;
+    try {
+      const { data } = await ApiService.post<{
+        errorCount: number;
+        results: Array<{
+          error: { errors: Array<string> };
+          record: Record<string, unknown> & { globalId: GlobalId };
+        }>;
+      }>(`instrumentTemplates/${id.toString()}/actions/updateInstrumentsToLatestTemplateVersion`, {});
+      handleDetailedErrors(
+        data.errorCount,
+        data.results.map((response) => ({ response })),
+        "update",
+        () => this.updateInstrumentsToLatest(),
+        "",
+      );
+      const factory = this.factory.newFactory();
+      handleDetailedSuccesses(
+        data.results
+          .filter((r) => !r.error)
+          .map((r) => {
+            const newRecord = factory.newRecord(r.record);
+            newRecord.populateFromJson(factory, r.record, null);
+            return newRecord;
+          }),
+        "updated",
+      );
+    } catch (error) {
+      getRootStore().uiStore.addAlert(
+        mkAlert({
+          title: "Updating instruments to latest template version failed.",
+          message: getErrorMessage(error, "Unknown reason"),
+          variant: "error",
+        }),
+      );
+      console.error("Could not update instruments to latest template version.", error);
+    }
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
