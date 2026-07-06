@@ -558,7 +558,7 @@
       "adding": "Adding...",
       "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
       "confirmDisassociateTitle": "Confirm Disassociation",
-      "currentlyConnectedTo": "<strong>Currently connected to:</strong> {{raid}}",
+      "currentlyConnectedTo": "<strong>Currently connected to:</strong> {raid}",
       "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
       "disassociate": "Disassociate",
       "errorLoadingGroupInfo": "Error loading group info: {error}",
@@ -572,7 +572,7 @@
       "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
       "notConnected": "Not connected",
       "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <internalLink to=\"/apps\">Apps page</internalLink> and enable RAiD.",
-      "previouslyConnectedTo": "<strong>Previously connected to:</strong> {{raid}}",
+      "previouslyConnectedTo": "<strong>Previously connected to:</strong> {raid}",
       "title": "RAiD Connections",
       "validation": {
         "identifierMinLength": "RAiD identifier must be at least 3 characters",
