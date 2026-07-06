@@ -153,8 +153,9 @@ describe("CallableSnippetPreview", () => {
 
       /* eslint-disable testing-library/no-node-access -- asserting a non-semantic sink was sanitized */
       const evilImg = dialog.querySelector("#evil");
-      expect(evilImg?.getAttribute("onerror")).toBeNull();
-      expect(dialog.querySelector("script")).toBeNull();
+      expect(evilImg).toBeInTheDocument();
+      expect(evilImg).not.toHaveAttribute("onerror");
+      expect(dialog.querySelector("script")).not.toBeInTheDocument();
       /* eslint-enable testing-library/no-node-access */
     });
 

@@ -83,10 +83,8 @@ public class InventoryIdentifiersApiController extends BaseApiInventoryControlle
 
     Validate.isTrue(
         count > 0,
-        "not a valid number to IGSN to allocate: \""
-            + count
-            + "\""
-            + " The number must be greater than 0");
+        messages.getMessage(
+            "errors.inventory.identifier.bulk.positive.required", new Object[] {count}));
     Validate.isTrue(
         count <= MAX_BULK_IGSN_ALLOCATION,
         messages.getMessage(

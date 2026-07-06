@@ -129,7 +129,7 @@ public class InventoryBulkOperationHandler {
           ApiInventoryRecordInfo operationResult = operation.apply(recInfo, user);
           if (operationResult != null) {
             if (isDeleteOperation && operationResult instanceof ApiSample apiSample) {
-              if (!apiSample.getCanBeDeleted()) {
+              if (Boolean.FALSE.equals(apiSample.getCanBeDeleted())) {
                 ApiError err =
                     new ApiError(
                         HttpStatus.NOT_ACCEPTABLE,
