@@ -4,6 +4,27 @@ The intended audience is on-prem RSpace technical administrators who maintain RS
 
 You can find our official changelog at https://documentation.researchspace.com/article/mx11qvqg0i-changelog
 
+# 2.24.0 2026-07-06
+
+### ELN Features
+
+- RSDEV-1102 integration with DMP Assistant
+- RSDEV-1024 S3 File System connector supporting folder creation, deletion and moving resources
+- RSDEV-1016 API docs migrated from swagger 2.0 to openapi 3.0 format, and from swagger-ui to Scalar
+
+### ELN Bugfix
+
+- RSDEV-1140 fix problem with XML import missing document fields in some circumstances
+- RSDEV-992 "mentions" feature in text editor is now more robust (and handles large groups)
+- RSDEV-1124 fix problem with CREATE/RENAME audit trail events storing unexpected value for 'name'
+- RSDEV-1154 fix MS Teams integration (by supporting Workflows rather than discontinued Webhooks)
+
+### Inventory Features
+
+- RSDEV-1031 'Instruments' and 'Instrument Templates' to allow user manage their/lab's instruments
+- RSDEV-1131 new 'item relations' mechanics to allow linking inventory items with each other and with ELN resources
+- RSDEV-1141 UI for viewing historical versions of inventory items
+
 # 2.23.0 2026-06-05
 
 ### ELN Features
