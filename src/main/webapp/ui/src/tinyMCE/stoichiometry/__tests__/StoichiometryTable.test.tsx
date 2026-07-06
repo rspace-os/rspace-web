@@ -240,9 +240,10 @@ function resolveRoutedFetch(request: Request) {
     return Promise.resolve(JSON.stringify(createMockStoichiometryResponse()));
   }
 
-  const subSampleMatch = url.match(/\/api\/inventory\/v1\/subSamples\/(\d+)/);
-  if (subSampleMatch) {
-    const id = Number(subSampleMatch[1]);
+  const subSampleUrlMarker = "/api/inventory/v1/subSamples/";
+  const subSampleMarkerIndex = url.indexOf(subSampleUrlMarker);
+  if (subSampleMarkerIndex !== -1) {
+    const id = Number(url.slice(subSampleMarkerIndex + subSampleUrlMarker.length));
     const body = subSampleResponses[id];
     if (!body) {
       return Promise.resolve({
@@ -495,7 +496,7 @@ describe("StoichiometryTable", () => {
         releaseSubSampleResponses = resolve;
       });
       fetchMock.mockResponse(async (request) => {
-        if (/\/api\/inventory\/v1\/subSamples\/\d+/.test(request.url)) {
+        if (request.url.includes("/api/inventory/v1/subSamples/")) {
           await subSampleGate;
         }
         return resolveRoutedFetch(request);
