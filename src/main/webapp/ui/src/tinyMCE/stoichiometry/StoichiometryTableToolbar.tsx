@@ -95,7 +95,9 @@ const StoichiometryTableToolbar = ({
             <span>
               <Button
                 aria-label="Update Inventory Stock"
+                aria-busy={isLoadingInventoryQuantities}
                 size="small"
+                startIcon={isLoadingInventoryQuantities ? <CircularProgress size={16} color="inherit" /> : null}
                 sx={{
                   mr: 1,
                 }}
