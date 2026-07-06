@@ -10,7 +10,7 @@ export class PubchemImportDialogPage {
   }
 
   get searchButton(): Locator {
-    return page.getByRole("button", { name: "common:actions.search" });
+    return page.getByRole("button", { name: "Search" });
   }
 
   get firstCompoundCard(): Locator {
@@ -20,13 +20,13 @@ export class PubchemImportDialogPage {
   get firstCompoundCheckbox(): Locator {
     return page
       .getByRole("checkbox", {
-        name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
+        name: "Select compound",
       })
       .first();
   }
 
   get firstViewOnPubchemLink(): Locator {
-    return page.getByRole("link", { name: "workspace:tinymce.pubchem.viewOnPubChem" }).first();
+    return page.getByRole("link", { name: "View on PubChem" }).first();
   }
 
   compoundCard(name: string): Locator {
@@ -39,7 +39,7 @@ export class PubchemImportDialogPage {
 
   compoundCardCheckbox(name: string): Locator {
     return this.compoundCard(name).getByRole("checkbox", {
-      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
+      name: "Select compound",
     });
   }
 

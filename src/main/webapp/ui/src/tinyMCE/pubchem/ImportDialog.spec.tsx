@@ -3,9 +3,7 @@ import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { userEvent } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import i18n from "@/modules/common/i18n";
 import { ImportDialogStory } from "./ImportDialog.story";
 import { PubchemImportDialogPage } from "./pageObjects/PubchemImportDialogPage";
 
@@ -52,10 +50,8 @@ const pubchemSearchHandler = () =>
 
 const dialog = new PubchemImportDialogPage();
 
-beforeEach(async () => {
-  i18n.options.appendNamespaceToCIMode = true;
-  await i18n.changeLanguage("cimode");
-  worker.use(oauthTokenHandler(), pubchemSearchHandler());
+beforeEach(() => {
+  worker.use(pubchemSearchHandler());
 });
 
 afterEach(() => {

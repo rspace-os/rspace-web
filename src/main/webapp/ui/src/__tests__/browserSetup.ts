@@ -2,6 +2,7 @@ import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
 import i18n from "@/modules/common/i18n";
+import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
 import { appShellHandlers } from "./mswAppShellHandlers";
 
 /*
@@ -35,7 +36,7 @@ await i18n.loadNamespaces([
  * each test so suites stay isolated (the MSW equivalent of Playwright's
  * per-test `router.route`).
  */
-export const worker = setupWorker(...appShellHandlers());
+export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler());
 
 /*
  * Vitest browser mode runs each test file in its own isolated module graph, so
