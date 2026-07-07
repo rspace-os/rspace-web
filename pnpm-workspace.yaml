@@ -2,26 +2,6 @@
 packages: []
 
 overrides:
-  # The @mui core overrides below are intentionally COMMENTED OUT, not deleted,
-  # so the history and rationale stay visible. (The 9.1.x ESM Transition.mjs bug
-  # under Vitest that originally motivated pinning to 9.0.x, mui#48644, was
-  # verified NOT to reproduce on @mui/material 9.1.2: full vitest suite green,
-  # so package.json now pins the family at 9.1.x.)
-  # DO NOT re-enable them as bare-name overrides: that also forces ketcher-react@3.x
-  # (which requires @mui/material@^5 and ships its own v5 copy) onto v9, so
-  # Ketcher's macromolecule editor renders v9 Tabs/Tab and crashes with
-  # "MUI: RovingTabIndexContext is missing" in the ELN editor. RSpace is already
-  # held at 9.1.x by the exact pins in package.json, which do not touch ketcher's
-  # nested v5 (the working arrangement on main). If a future case genuinely needs
-  # these, scope them so ketcher-react's subtree keeps MUI v5.
-  #   '@mui/material': 9.1.2
-  #   '@mui/icons-material': 9.1.1
-  #   '@mui/system': 9.1.2
-  #   '@mui/styled-engine': 9.1.1
-  #   '@mui/utils': 9.1.1
-  #   '@mui/private-theming': 9.1.1
-  #   '@mui/core-downloads-tracker': 9.1.2
-  #   '@mui/types': 9.0.0
   # ketcher-react and ketcher-standalone declare ketcher-core@3.12 as a peer dep
   # but work with 3.15.0; the override pins a single version to avoid a tsc
   # type mismatch from the two-instance `#private` clash.
@@ -64,12 +44,6 @@ strictPeerDependencies: true
 
 peerDependencyRules:
   allowedVersions:
-    # Ketcher 3.12.0 brings draft-js@0.11.7 via ketcher-react, while its
-    # draft-js-custom-styles dependency declares draft-js@0.10.x.
-    'draft-js-custom-styles>draft-js': 0.11.7
     # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
     'vitest>@vitest/ui': 4.1.9
     'vitest>@vitest/browser': 4.1.9
-    # @scalar/api-reference-react pulls neverpanic, which peer-declares
-    # typescript@5 but works with the repo's typescript@6.0.3.
-    'neverpanic>typescript': 6.0.3
