@@ -17,9 +17,12 @@ import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import { filterForThoseWithLocations } from "./HasLocation";
 import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
+import type { InstrumentAttrs } from "./InstrumentModel";
 import type { SampleAttrs } from "./SampleModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
+
+type TrackEvent = (event: string, properties?: Record<string, unknown>) => void;
 
 export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
@@ -252,7 +255,7 @@ export type ListOfMaterialsAttrs = {
   description: string;
   elnFieldId: number;
   materials: Array<{
-    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs;
+    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs | InstrumentAttrs;
     usedQuantity: Quantity | null;
   }>;
 };
@@ -325,7 +328,7 @@ export class ListOfMaterials {
     this.setLoading(false);
     this.pickerSearch = new Search({
       uiConfig: {
-        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "ALL"]),
+        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "INSTRUMENT", "ALL"]),
         selectionMode: "MULTIPLE",
       },
       factory: new MemoisedFactory(),
@@ -474,16 +477,20 @@ export class ListOfMaterials {
     return this.selectedCategories.size > 1;
   }
 
-  trackInventoryRecordsUpdate() {
+  trackInventoryRecordsUpdate(trackEvent: TrackEvent) {
     if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsInventoryQuantityEdited", {
+      trackEvent("user:update_quantities:list_of_materials:document_editor", {
         lomid: this.id,
         elnFieldId: this.elnFieldId,
       });
     }
   }
 
-  async create(): Promise<void> {
+  get itemTypesUsed(): Array<string> {
+    return Array.from(new Set(this.materials.map((m) => m.invRec.type)));
+  }
+
+  async create(trackEvent: TrackEvent): Promise<void> {
     this.setLoading(true);
     try {
       const { data } = await InvApiService.post<{ id: Id }>(`listOfMaterials`, this.paramsForBackend);
@@ -494,11 +501,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsCreated", {
+      trackEvent("user:create:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate(trackEvent);
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -539,7 +547,7 @@ export class ListOfMaterials {
     });
   }
 
-  async update(): Promise<void> {
+  async update(trackEvent: TrackEvent): Promise<void> {
     if (!this.id) throw new Error("A new list cannot be updated.");
     const id = this.id;
     this.setLoading(true);
@@ -559,11 +567,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsUpdated", {
+      trackEvent("user:update:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate(trackEvent);
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -625,9 +634,10 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsDeleted", {
-        id,
+      getRootStore().trackingStore.trackEvent("user:delete:list_of_materials:document_editor", {
+        id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
       return confirmation;
     } catch (error) {
@@ -687,9 +697,10 @@ export class ListOfMaterials {
       link.setAttribute("download", fileName);
       link.click(); // trigger download
 
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsExported", {
+      getRootStore().trackingStore.trackEvent("user:export:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);

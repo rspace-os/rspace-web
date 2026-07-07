@@ -12,7 +12,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { Observer, observer } from "mobx-react-lite";
 import type React from "react";
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useContext, useEffect, useState } from "react";
 import docLinks from "../../assets/DocLinks";
 import Analytics from "../../components/Analytics";
 import Confirm from "../../components/Confirm";
@@ -27,6 +27,7 @@ import { defaultExportOptions } from "../../Inventory/components/Export/ExportDi
 import Exporter from "../../Inventory/components/Export/Exporter";
 import { useIsSingleColumnLayout } from "../../Inventory/components/Layout/Layout2x1";
 import InventoryPicker from "../../Inventory/components/Picker/Picker";
+import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { ExportOptions } from "../../stores/definitions/Search";
 import { hasLocation } from "../../stores/models/HasLocation";
 import type { ListOfMaterials } from "../../stores/models/MaterialsModel";
@@ -298,6 +299,7 @@ type DialogArgs = {
 
 function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs): React.ReactNode {
   const { materialsStore } = useStores();
+  const { trackEvent } = useContext(AnalyticsContext);
   const isSingleColumn = useIsSingleColumnLayout();
   const fullScreen = isSingleColumn || standalonePage;
 
@@ -495,7 +497,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                           if (currentList) {
                             const changed = materialsStore.hasListChanged;
                             if (changed) {
-                              await showToastWhilstPending(`Saving changes...`, currentList.update());
+                              await showToastWhilstPending(`Saving changes...`, currentList.update(trackEvent));
                               materialsStore.setCurrentList(currentList);
                               refetch();
                             }
@@ -536,11 +538,12 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                           void (async () => {
                             if (currentList && isListValid) {
                               if (isListNew) {
-                                await showToastWhilstPending(`Creating list...`, currentList.create());
+                                await showToastWhilstPending(`Creating list...`, currentList.create(trackEvent));
                               }
                               if (isListExisting) {
                                 const changed = materialsStore.hasListChanged;
-                                if (changed) await showToastWhilstPending(`Updating list...`, currentList.update());
+                                if (changed)
+                                  await showToastWhilstPending(`Updating list...`, currentList.update(trackEvent));
                               }
                               materialsStore.setCurrentList(currentList);
                               refetch();
