@@ -1,7 +1,6 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { FormLabel } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
 import InputAdornment from "@mui/material/InputAdornment";
 import MenuItem from "@mui/material/MenuItem";

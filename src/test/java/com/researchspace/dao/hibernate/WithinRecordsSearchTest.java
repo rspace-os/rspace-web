@@ -225,13 +225,6 @@ public class WithinRecordsSearchTest extends SearchSpringTestBase {
         newUser);
   }
 
-  private WorkspaceListingConfig setupSearch(String[] options, String[] terms) {
-    WorkspaceListingConfig cfg =
-        new WorkspaceListingConfig(
-            PaginationCriteria.createDefaultForClass(BaseRecord.class), options, terms, -1L, true);
-    return cfg;
-  }
-
   /**
    * When files are shared they can have more than 1 parent. This test verifies that such scenarios
    * still work as one would expect – as long as 1 of the parents are selected, the record will be

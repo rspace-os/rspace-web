@@ -81,30 +81,29 @@ const MaterialsLauncher = observer(
         >
           {typeof fieldListCount === "number" && fieldListCount > 0 && (
             <>
-              <Badge
-                badgeContent={fieldListCount}
+              <Fab
+                disabled={!materialsStore.canEdit && fieldListCount === 0}
                 color="callToAction"
-                sx={{ position: "sticky", top: FAB_SIZE, zIndex: 1 }}
-                slotProps={{ badge: { style: { transform: "none" } } }}
+                onClick={({ currentTarget }) => {
+                  trackEvent("user:open:menu:list_of_materials", {
+                    fieldListCount,
+                  });
+                  setShowMenu(true);
+                  setAnchorEl(currentTarget);
+                }}
+                size="medium"
+                sx={{ zIndex: "initial", pointerEvents: "auto" }}
+                aria-label="Show list of materials associated with this field"
+                aria-haspopup="menu"
               >
-                <Fab
-                  disabled={!materialsStore.canEdit && fieldListCount === 0}
+                <Badge
+                  badgeContent={fieldListCount}
                   color="callToAction"
-                  onClick={({ currentTarget }) => {
-                    trackEvent("user:open:menu:list_of_materials", {
-                      fieldListCount,
-                    });
-                    setShowMenu(true);
-                    setAnchorEl(currentTarget);
-                  }}
-                  size="medium"
-                  sx={{ zIndex: "initial" }}
-                  aria-label="Show list of materials associated with this field"
-                  aria-haspopup="menu"
-                >
-                  <FontAwesomeIcon icon={faVial} size="sm" />
-                </Fab>
-              </Badge>
+                  sx={{ top: FAB_SIZE, zIndex: 1, position: "initial" }}
+                  slotProps={{ badge: { style: { transform: "none" } } }}
+                />
+                <FontAwesomeIcon icon={faVial} size="sm" />
+              </Fab>
               <Popper
                 open={showMenu}
                 anchorEl={anchorEl}

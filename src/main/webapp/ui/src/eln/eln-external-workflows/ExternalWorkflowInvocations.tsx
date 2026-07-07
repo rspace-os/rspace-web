@@ -1,10 +1,10 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { createSvgIcon, Modal } from "@mui/material";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid";
+import Modal from "@mui/material/Modal";
+import { createSvgIcon } from "@mui/material/SvgIcon";
 import { useEffect, useState } from "react";
 import axios from "@/common/axios";
 import ExternalWorkflowDialog from "@/eln/eln-external-workflows/ExternalWorkflowDialog";

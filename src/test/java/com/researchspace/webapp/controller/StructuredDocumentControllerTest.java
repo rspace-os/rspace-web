@@ -540,14 +540,6 @@ public class StructuredDocumentControllerTest {
             Mockito.any(String.class));
   }
 
-  private List<MultipartFile> getOKFilesToUpload() throws IOException {
-    MultipartFile multipart =
-        new MockMultipartFile(
-            "wordFile", RSpaceTestUtils.getInputStreamOnFromTestResourcesFolder("genFilesi.txt"));
-    List<MultipartFile> files = toList(multipart);
-    return files;
-  }
-
   @Test
   public void importFromWordIntoNonSharedFolderAndErrorCases() throws IOException {
 

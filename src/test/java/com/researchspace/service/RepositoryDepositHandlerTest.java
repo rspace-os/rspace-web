@@ -8,7 +8,6 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.apps.App;
 import com.researchspace.model.apps.UserAppConfig;
-import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.repository.RepoUIConfigInfo;
 import com.researchspace.repository.spi.IRepository;
 import com.researchspace.repository.spi.RepositoryConfig;
@@ -147,11 +146,5 @@ public class RepositoryDepositHandlerTest {
     handler.getDataverseRepoUIConfigInfo(
         appCfg.getAppConfigElementSets().iterator().next(), anyUser);
     verifyConfigurerCalledOK(DATAVERSE_REPOSITORY);
-  }
-
-  private IntegrationInfo getConnectionList() {
-    IntegrationInfo rc = new IntegrationInfo();
-    rc.setName("TESTAPP");
-    return rc;
   }
 }
