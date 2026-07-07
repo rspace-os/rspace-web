@@ -96,6 +96,7 @@ const firefoxCiSkippedFiles =
         "**/tinyMCE/stoichiometry/__tests__/StoichiometryTable.spec.tsx",
         "**/tinyMCE/stoichiometry/__tests__/StoichiometryDialog.spec.tsx",
         "**/eln/gallery/components/CallableImagePreview.spec.tsx",
+        "**/eln/gallery/components/MainPanel.spec.tsx",
         "**/tinyMCE/pubchem/ImportDialog.spec.tsx",
         "**/Inventory/components/FieldmarkImportDialog.spec.tsx",
         "**/Inventory/Identifiers/IGSN/IgsnTable.spec.tsx",

@@ -223,39 +223,42 @@ const subSampleResponses: Record<number, unknown> = {
   125: { id: 125, globalId: "SS125", quantity: { numericValue: 25, unitId: 3 } },
 };
 
+function resolveRoutedFetch(request: Request) {
+  const url = request.url;
+
+  if (url.includes("/userform/ajax/inventoryOauthToken")) {
+    const payload = {
+      iss: "http://localhost:8080",
+      iat: Date.now(),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+    };
+    return Promise.resolve(JSON.stringify({ data: Jwt.sign(payload, "dummySecretKey") }));
+  }
+
+  if (url.includes("/api/v1/stoichiometry")) {
+    return Promise.resolve(JSON.stringify(createMockStoichiometryResponse()));
+  }
+
+  const subSampleUrlMarker = "/api/inventory/v1/subSamples/";
+  const subSampleMarkerIndex = url.indexOf(subSampleUrlMarker);
+  if (subSampleMarkerIndex !== -1) {
+    const id = Number(url.slice(subSampleMarkerIndex + subSampleUrlMarker.length));
+    const body = subSampleResponses[id];
+    if (!body) {
+      return Promise.resolve({
+        status: 404,
+        body: JSON.stringify({ message: "Not Found" }),
+      });
+    }
+    return Promise.resolve(JSON.stringify(body));
+  }
+
+  return Promise.resolve({ status: 404, body: "{}" });
+}
+
 function routeFetch() {
-  fetchMock.mockResponse((request) => {
-    const url = request.url;
-
-    if (url.includes("/userform/ajax/inventoryOauthToken")) {
-      const payload = {
-        iss: "http://localhost:8080",
-        iat: Date.now(),
-        exp: Math.floor(Date.now() / 1000) + 300,
-        refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-      };
-      return Promise.resolve(JSON.stringify({ data: Jwt.sign(payload, "dummySecretKey") }));
-    }
-
-    if (url.includes("/api/v1/stoichiometry")) {
-      return Promise.resolve(JSON.stringify(createMockStoichiometryResponse()));
-    }
-
-    const subSampleMatch = url.match(/\/api\/inventory\/v1\/subSamples\/(\d+)/);
-    if (subSampleMatch) {
-      const id = Number(subSampleMatch[1]);
-      const body = subSampleResponses[id];
-      if (!body) {
-        return Promise.resolve({
-          status: 404,
-          body: JSON.stringify({ message: "Not Found" }),
-        });
-      }
-      return Promise.resolve(JSON.stringify(body));
-    }
-
-    return Promise.resolve({ status: 404, body: "{}" });
-  });
+  fetchMock.mockResponse(resolveRoutedFetch);
 }
 
 /**
@@ -487,10 +490,38 @@ describe("StoichiometryTable", () => {
       expect(await screen.findByRole("dialog", { name: /Gallery Picker/i }, { timeout: 10000 })).toBeVisible();
     });
 
+    it("keeps Update Inventory Stock disabled until inventory quantities load", async () => {
+      let releaseSubSampleResponses: () => void = () => {};
+      const subSampleGate = new Promise<void>((resolve) => {
+        releaseSubSampleResponses = resolve;
+      });
+      fetchMock.mockResponse(async (request) => {
+        if (request.url.includes("/api/inventory/v1/subSamples/")) {
+          await subSampleGate;
+        }
+        return resolveRoutedFetch(request);
+      });
+
+      await renderLoadedTable();
+
+      const button = screen.getByRole("button", { name: "Update Inventory Stock" });
+      expect(button).toBeDisabled();
+
+      releaseSubSampleResponses();
+
+      await waitFor(() => {
+        expect(button).toBeEnabled();
+      });
+    });
+
     it("opens the inventory stock update dialog listing the current molecules", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Update Inventory Stock" }));
+      const updateStockButton = screen.getByRole("button", { name: "Update Inventory Stock" });
+      await waitFor(() => {
+        expect(updateStockButton).toBeEnabled();
+      });
+      await user.click(updateStockButton);
 
       const dialog = await screen.findByRole("dialog", {
         name: /Update Inventory Stock/i,

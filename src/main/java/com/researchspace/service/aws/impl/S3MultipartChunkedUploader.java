@@ -67,11 +67,6 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
           .retryOnResult(resp2 -> !((UploadPartResponse) resp2).sdkHttpResponse().isSuccessful())
           .build();
 
-  // for testing
-  void setChunkSizeMb(int chunkSizeMb) {
-    this.chunkSizeMb = chunkSizeMb;
-  }
-
   @Override
   public SdkHttpResponse apply(File fToUpload) {
     if (fToUpload.length() < AWS_MIN_CHUNK_SIZE_BYTES) {

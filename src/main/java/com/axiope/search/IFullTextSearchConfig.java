@@ -60,11 +60,7 @@ public interface IFullTextSearchConfig {
    */
   SearchDepth getSrchDepth();
 
-  void setSrchDepth(SearchDepth srchDepth);
-
   User getAuthenticatedUser();
-
-  void setAuthenticatedUser(User authenticatedUser);
 
   /**
    * @return string of concatenated options representing the options part in the url used for

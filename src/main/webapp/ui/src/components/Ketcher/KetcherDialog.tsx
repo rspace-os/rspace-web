@@ -1,7 +1,5 @@
 import "ketcher-react/dist/index.css";
 
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { createTheme, type ThemeOptions } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -10,7 +8,7 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { paperClasses } from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider, useTheme } from "@mui/material/styles";
+import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type { Ketcher } from "ketcher-core";
 import { Editor, InfoModal } from "ketcher-react";

@@ -151,7 +151,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(await screen.findByRole("button", { name: "Save" }));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith([1]);
@@ -238,7 +238,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
+    expect(await screen.findByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -263,7 +263,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("shows a warning for already deducted molecules without auto-selecting them", () => {
+  it("shows a warning for already deducted molecules without auto-selecting them", async () => {
     renderWithProviders(
       <StoichiometryInventoryUpdateDialog
         open
@@ -280,7 +280,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
+    expect(await screen.findByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
     expect(
       screen.getByText(
@@ -326,7 +326,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    const saveButton = screen.getByRole("button", { name: "Save" });
+    const saveButton = await screen.findByRole("button", { name: "Save" });
     expect(saveButton).toBeEnabled();
 
     await user.click(screen.getByText("Invalidate selection"));
@@ -358,7 +358,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "Save" }));
+    await user.click(await screen.findByRole("button", { name: "Save" }));
 
     await screen.findByText("Network down Current stock amounts were refreshed where possible.");
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
