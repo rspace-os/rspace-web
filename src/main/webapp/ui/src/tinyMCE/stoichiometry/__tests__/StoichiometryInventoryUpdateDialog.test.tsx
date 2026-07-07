@@ -151,7 +151,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await user.click(await screen.findByRole("button", { name: "common:actions.save" }));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith([1]);
@@ -238,7 +238,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
+    expect(await screen.findByRole("checkbox", { name: "Cyclopentane" })).toBeChecked();
     expect(screen.getByRole("checkbox", { name: "Cyclopentadiene" })).toBeChecked();
 
     await user.click(screen.getByRole("button", { name: "common:actions.save" }));
@@ -259,7 +259,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("shows a warning for already deducted molecules without auto-selecting them", () => {
+  it("shows a warning for already deducted molecules without auto-selecting them", async () => {
     renderWithProviders(
       <StoichiometryInventoryUpdateDialog
         open
@@ -276,7 +276,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
+    expect(await screen.findByRole("checkbox", { name: "Cyclopentane" })).toBeEnabled();
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();
     expect(screen.getByText("common:stoichiometry.inventoryUpdate.stockDeductedWarning")).toBeVisible();
   });
@@ -318,7 +318,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
 
     renderWithProviders(<Wrapper />);
 
-    const saveButton = screen.getByRole("button", { name: "common:actions.save" });
+    const saveButton = await screen.findByRole("button", { name: "common:actions.save" });
     expect(saveButton).toBeEnabled();
 
     await user.click(screen.getByText("Invalidate selection"));
@@ -350,7 +350,7 @@ describe("StoichiometryInventoryUpdateDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "common:actions.save" }));
+    await user.click(await screen.findByRole("button", { name: "common:actions.save" }));
 
     await screen.findByText("common:stoichiometry.inventoryUpdate.saveError");
     expect(screen.getByRole("checkbox", { name: "Cyclopentane" })).not.toBeChecked();

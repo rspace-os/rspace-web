@@ -759,6 +759,7 @@
       "irreversibleWarningLabel": "Action irreversible warning",
       "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
       "linkRequired": "Link an inventory item before updating stock.",
+      "loadingInventoryQuantities": "Loading inventory stock information...",
       "missingActualMass": "Define actual mass before updating linked inventory stock.",
       "molecule": "Molecule",
       "moleculeCannotBeUpdated": "This molecule cannot be updated.",

@@ -30,7 +30,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -325,11 +324,5 @@ public class RaIDController extends BaseOAuth2Controller {
             + "\" is not currently available on the system to be associated");
     availableRaids.retainAll(Set.of(raidReference));
     return availableRaids.stream().findFirst().get();
-  }
-
-  private void throwBindExceptionIfErrors(BindingResult errors) throws BindException {
-    if (errors != null && errors.hasErrors()) {
-      throw new BindException(errors);
-    }
   }
 }

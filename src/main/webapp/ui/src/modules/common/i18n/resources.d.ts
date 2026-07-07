@@ -1514,6 +1514,7 @@ export default interface Resources {
         "irreversibleWarningLabel": "Action irreversible warning",
         "linkRequired": "Link an inventory item before updating stock.",
         "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
+        "loadingInventoryQuantities": "Loading inventory stock information...",
         "missingActualMass": "Define actual mass before updating linked inventory stock.",
         "molecule": "Molecule",
         "moleculeCannotBeUpdated": "This molecule cannot be updated.",

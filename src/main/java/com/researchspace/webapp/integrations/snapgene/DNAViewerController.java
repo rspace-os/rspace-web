@@ -6,7 +6,6 @@ import static org.apache.commons.lang3.StringUtils.join;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.core.util.MediaUtils;
 import com.researchspace.model.EcatDocumentFile;
-import com.researchspace.model.FileProperty;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.Record;
@@ -271,18 +270,5 @@ public class DNAViewerController extends BaseController {
     return String.format(
         "Snapgene webservice call failed: %s - %s",
         error.getMessage(), join(error.getErrors(), ","));
-  }
-
-  private FileProperty generateFileProperty(
-      String outputformat, EcatDocumentFile input, String fName, User user) throws IOException {
-    FileProperty fp = new FileProperty();
-    fp.setFileCategory("convertedDocs-" + outputformat);
-    fp.setFileUser(user.getUsername());
-    fp.setFileOwner(input.getOwner().getUsername());
-    fp.setFileGroup("research");
-    fp.setFileVersion("v1");
-    fp.setFileName(fName);
-    fp.setRoot(fileStore.getCurrentFileStoreRoot());
-    return fp;
   }
 }

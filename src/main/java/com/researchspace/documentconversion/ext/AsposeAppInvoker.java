@@ -81,10 +81,6 @@ public class AsposeAppInvoker extends AbstractDocumentConversionService
     }
   }
 
-  void setConversionChecker(ConversionChecker conversionChecker) {
-    this.conversionChecker = conversionChecker;
-  }
-
   @Override
   public ConversionResult convert(Convertible toConvert, String outputExtension) {
     throw new UnsupportedOperationException("This must be invoked with a known outfile");

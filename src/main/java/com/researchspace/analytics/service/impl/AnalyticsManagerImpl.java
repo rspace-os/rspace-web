@@ -6,7 +6,6 @@ import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.admin.service.UserUsageInfo;
 import com.researchspace.analytics.service.AnalyticsEvent;
 import com.researchspace.analytics.service.AnalyticsManager;
-import com.researchspace.api.v1.controller.BaseApiInventoryController;
 import com.researchspace.auth.BaseLoginHelperImpl;
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
@@ -226,12 +225,6 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
         user.getAuthenticatedBy() != null ? user.getAuthenticatedBy().toString() : null);
     AnalyticsEvent event = AnalyticsEvent.PUBLIC_API_USED;
     track(userId, event.getLabel(), props);
-  }
-
-  private boolean isInventoryApiRequest(String requestURI) {
-    return requestURI.contains(BaseApiInventoryController.API_INVENTORY_V1)
-        || requestURI.startsWith("/app/api/v1/units")
-        || requestURI.startsWith("/app/api/v1/forms");
   }
 
   private void doRecordCreated(BaseRecord record, Person creator) {
