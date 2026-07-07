@@ -57,9 +57,9 @@ public class OmeroServiceTest {
     baseUrl = "http://localhost:" + mockServer.getPort() + "/";
   }
 
-  // canned fixtures embed this placeholder in place of a real host:port; substitute this run's
+  // canned fixtures embed this placeholder in place of a real port; substitute this run's port
   private static String withPort(String json) {
-    return json.replace("localhost:__MOCKSERVER_PORT__", "localhost:" + mockServer.getPort());
+    return json.replace("__MOCKSERVER_PORT__", String.valueOf(mockServer.getPort()));
   }
 
   @AfterAll
