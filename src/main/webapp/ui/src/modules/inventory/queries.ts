@@ -116,8 +116,14 @@ export function useSubSampleQuantitiesQuery({
     () =>
       new Map(
         uniqueInventoryItemGlobalIds.flatMap((inventoryItemGlobalId, index) => {
-          const result = queryResults[index]?.data;
-          return result ? [[inventoryItemGlobalId, result] as const] : [];
+          const queryResult = queryResults[index];
+          if (queryResult?.data) {
+            return [[inventoryItemGlobalId, queryResult.data] as const];
+          }
+          if (queryResult?.isError) {
+            return [[inventoryItemGlobalId, { status: "error" } as const] as const];
+          }
+          return [];
         }),
       ),
     [queryResults, uniqueInventoryItemGlobalIds],

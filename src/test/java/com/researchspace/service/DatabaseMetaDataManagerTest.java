@@ -2,6 +2,7 @@ package com.researchspace.service;
 
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.core.util.version.SemanticVersion;
 import com.researchspace.testutils.SpringTransactionalTest;
 import org.junit.After;
 import org.junit.Before;
@@ -9,8 +10,8 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DatabaseMetaDataManagerTest extends SpringTransactionalTest {
-  private static final int MARIA_DB10 = 10;
-  private static final int MYSQL_5 = 5;
+  private static final int MIN_MAJOR = 10;
+  private static final int MIN_MINOR = 11;
   @Autowired private DatabaseMetaDataManager mgr;
 
   @Before
@@ -25,7 +26,10 @@ public class DatabaseMetaDataManagerTest extends SpringTransactionalTest {
 
   @Test
   public void testGetVersion() {
-    int version = mgr.getVersion().getMajor();
-    assertTrue(version == MARIA_DB10 || version == MYSQL_5);
+    SemanticVersion version = mgr.getVersion();
+    boolean atLeastMinimum =
+        version.getMajor() > MIN_MAJOR
+            || (version.getMajor() == MIN_MAJOR && version.getMinor() >= MIN_MINOR);
+    assertTrue("Expected MariaDB >= 10.11 but got " + version, atLeastMinimum);
   }
 }

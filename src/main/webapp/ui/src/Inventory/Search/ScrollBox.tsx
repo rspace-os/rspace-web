@@ -1,6 +1,5 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import type { SxProps } from "@mui/material";
 import Box from "@mui/material/Box";
+import type { SxProps } from "@mui/material/styles";
 import type { Property } from "csstype";
 import type React from "react";
 
