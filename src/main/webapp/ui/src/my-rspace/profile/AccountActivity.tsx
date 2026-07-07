@@ -15,6 +15,11 @@ import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 
+const headCells = [
+  { id: "eventType", numeric: false, label: "Action" },
+  { id: "timestamp", numeric: true, label: "Time" },
+];
+
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function AccountActivity(props: any) {
   const [fetched, setFetched] = React.useState(false);
@@ -22,11 +27,6 @@ export default function AccountActivity(props: any) {
   const [activities, setActivities] = React.useState<any[] | null>([]);
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
-
-  const headCells = [
-    { id: "eventType", numeric: false, label: "Action" },
-    { id: "timestamp", numeric: true, label: "Time" },
-  ];
 
   const loadUserActivity = () => {
     const url = `/userform/ajax/accountEventsByUser/${props.userId}`;
