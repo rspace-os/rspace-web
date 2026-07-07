@@ -28,6 +28,21 @@ vi.mock("../JwtService", () => ({
   },
 }));
 
+// Mock the shared axios instance so constructing ApiServiceBase does not register response
+// interceptors on the real global axios (which would leak into other test files in this worker).
+vi.mock("@/common/axios", () => {
+  const instance = {
+    interceptors: { response: { use: vi.fn() } },
+    defaults: { headers: { common: {} } },
+  };
+  return {
+    default: {
+      create: vi.fn(() => instance),
+      interceptors: { response: { use: vi.fn() } },
+    },
+  };
+});
+
 import ApiServiceBase from "../ApiServiceBase";
 
 const makeError = (status: number): AxiosError =>

@@ -70,8 +70,8 @@ export default class AuthStore {
           this.isAuthenticated = true;
           this.isSynchronizing = false;
 
-          // Renew silently before the token expires.
-          this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
+          // Renew shortly before the token expires.
+          this.timeoutId = setTimeout(() => void this.refreshToken(), this.msUntilRenewal(token));
         }),
       )
       .then(() => {})
@@ -85,7 +85,7 @@ export default class AuthStore {
    * Obtains a fresh OAuth token without flipping isAuthenticated, so the caller can retry a failed
    * request while the app stays mounted (unlike authenticate(), which remounts it). Used by the 401
    * interceptor and the pre-expiry timer. Concurrent callers share a single in-flight refresh; a
-   * genuine failure to obtain a token unwinds to /login.
+   * genuine failure to obtain a token drops local auth state and unwinds to /login.
    */
   refreshToken(): Promise<void> {
     if (this.refreshPromise) {
@@ -99,11 +99,16 @@ export default class AuthStore {
       .get<{ data: string }>(oAuthUrl)
       .then(
         action((response) => {
+          // A sign-out may have completed while this refresh was in flight; don't revive the session.
+          if (this.isSigningOut) {
+            return;
+          }
           const token = response.data.data;
 
           if (typeof token === "undefined") {
-            // Usually this means that backend returned login.html in response.data
-            window.location.href = "/login";
+            // Backend returned login.html rather than a token: the session is gone. Drop local auth
+            // state before redirecting so the 401 interceptor stops retrying with the stale token.
+            this.endSession();
             return;
           }
           JwtService.saveToken(token);
@@ -112,19 +117,37 @@ export default class AuthStore {
           this.isAuthenticated = true;
           this.isSynchronizing = false;
 
-          // Renew silently before the token expires.
-          this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
+          // Renew shortly before the token expires.
+          this.timeoutId = setTimeout(() => void this.refreshToken(), this.msUntilRenewal(token));
         }),
       )
       .then(() => {})
-      .catch(() => {
-        // @ts-expect-error I can update the location by assigning a string to it
-        window.location = "/login";
-      })
+      .catch(
+        action(() => {
+          // The refresh itself failed; drop local auth state so callers stop retrying, then redirect.
+          this.endSession();
+        }),
+      )
       .finally(() => {
         this.refreshPromise = null;
       });
     return this.refreshPromise;
+  }
+
+  /** Drops local auth state and sends the user to the login page. */
+  private endSession(): void {
+    this.isAuthenticated = false;
+    JwtService.destroyToken();
+    window.location.href = "/login";
+  }
+
+  /**
+   * Milliseconds until the token should be renewed: a short buffer before actual expiry so the
+   * renewal happens ahead of time rather than at the boundary (clamped to >= 0).
+   */
+  private msUntilRenewal(token: string): number {
+    const bufferSeconds = 30;
+    return Math.max(0, (JwtService.secondsToExpiry(token) - bufferSeconds) * 1000);
   }
 
   signOut() {
@@ -150,8 +173,8 @@ export default class AuthStore {
       ElnApiService.setAuthorizationHeader();
       this.isSynchronizing = false;
 
-      // Renew silently before the token expires.
-      this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
+      // Renew shortly before the token expires.
+      this.timeoutId = setTimeout(() => void this.refreshToken(), this.msUntilRenewal(token));
       return Promise.resolve();
     }
 
