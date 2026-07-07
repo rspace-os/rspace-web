@@ -101,6 +101,17 @@ jobs:
             -Djava-version=${{ matrix.java-version }} \
             -Djava-vendor=${{ inputs.java_vendor || 'temurin' }}
 
+      # check_run: false everywhere this action is used in this file — GitHub's
+      # Checks API has no way to tell it which workflow run created the check
+      # (EnricoMi/publish-unit-test-result-action#12, open upstream, GitHub's
+      # to fix), so it lands the check under whichever workflow happens to
+      # "win" a race for the commit — in this repo, consistently CLA Assistant
+      # (a `pull_request_target` workflow that finishes almost instantly).
+      # Renaming/reordering workflows to influence that race is documented as
+      # unreliable even by people who've tried it. Disabling the check run
+      # loses nothing load-bearing: the job's own pass/fail (already grouped
+      # correctly under Lint and Test) and the job summary are unaffected, and
+      # main's branch protection has no required status checks configured.
       - name: Publish test results
         uses: EnricoMi/publish-unit-test-result-action@v2.24.0
         if: |
@@ -110,6 +121,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
+          check_run: false
           comment_mode: off
           files: target/surefire-reports/*.xml
 
@@ -261,6 +273,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
+          check_run: false
           check_name: Vitest Tests (shard ${{ matrix.shard }})
           comment_mode: off
           files: src/main/webapp/ui/junit.xml
@@ -377,6 +390,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
+          check_run: false
           check_name: Browser Tests (${{ matrix.browser }})
           comment_mode: off
           files: src/main/webapp/ui/browser-junit-${{ matrix.browser }}.xml
@@ -616,6 +630,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
+          check_run: false
           check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml
@@ -704,6 +719,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
+          check_run: false
           check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml
