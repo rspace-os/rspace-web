@@ -53,6 +53,14 @@ public interface UserDao extends GenericDao<User, Long> {
 
   User getUserByUsername(String username);
 
+  /**
+   * Looks up a user by username without throwing when none exists.
+   *
+   * @param username the login name
+   * @return the matching user, or empty if no user has that username
+   */
+  Optional<User> getOptionalUserByUsername(String username);
+
   Optional<User> getUserByUsernameAlias(String usernameAlias);
 
   /**

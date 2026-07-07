@@ -356,7 +356,8 @@ public interface UserManager extends GenericManager<User, Long> {
    * Gets a full name from the username. Cacheable.
    *
    * @param username
-   * @return
+   * @return the user's full name, or {@code null} if no user has that username (e.g. the account
+   *     has since been removed)
    */
   String getFullNameByUsername(String username);
 
