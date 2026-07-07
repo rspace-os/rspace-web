@@ -61,7 +61,8 @@ class ApiServiceBase {
         getRootStore().uiStore.addAlert(toast);
         await delay(10 * 1000);
       }
-      await getRootStore().authStore.authenticate();
+      // refreshToken() renews without remounting the app, unlike authenticate().
+      await getRootStore().authStore.refreshToken();
       getRootStore().uiStore.removeAlert(toast);
       // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
       // which then results in baseURL + baseURL + url(resource) as the url for axios request below.

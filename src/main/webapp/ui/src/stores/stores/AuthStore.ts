@@ -29,6 +29,8 @@ export default class AuthStore {
   isSigningOut: boolean = false;
   timeoutId: null | NodeJS.Timeout = null;
   systemSettings: SystemSettings | undefined;
+  /** Shared in-flight token refresh, so concurrent 401s trigger a single renewal. */
+  refreshPromise: Promise<void> | null = null;
 
   constructor(rootStore: RootStore) {
     makeObservable(this, {
@@ -68,8 +70,8 @@ export default class AuthStore {
           this.isAuthenticated = true;
           this.isSynchronizing = false;
 
-          // Reauthenticate few minutes before token expiry
-          this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+          // Renew silently before the token expires.
+          this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
         }),
       )
       .then(() => {})
@@ -77,6 +79,52 @@ export default class AuthStore {
         // @ts-expect-error I can update the location by assigning a string to it
         window.location = "/login";
       });
+  }
+
+  /**
+   * Obtains a fresh OAuth token without flipping isAuthenticated, so the caller can retry a failed
+   * request while the app stays mounted (unlike authenticate(), which remounts it). Used by the 401
+   * interceptor and the pre-expiry timer. Concurrent callers share a single in-flight refresh; a
+   * genuine failure to obtain a token unwinds to /login.
+   */
+  refreshToken(): Promise<void> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+    if (this.timeoutId) {
+      clearTimeout(this.timeoutId);
+    }
+    const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
+    this.refreshPromise = axios
+      .get<{ data: string }>(oAuthUrl)
+      .then(
+        action((response) => {
+          const token = response.data.data;
+
+          if (typeof token === "undefined") {
+            // Usually this means that backend returned login.html in response.data
+            window.location.href = "/login";
+            return;
+          }
+          JwtService.saveToken(token);
+          InvApiService.setAuthorizationHeader();
+          ElnApiService.setAuthorizationHeader();
+          this.isAuthenticated = true;
+          this.isSynchronizing = false;
+
+          // Renew silently before the token expires.
+          this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
+        }),
+      )
+      .then(() => {})
+      .catch(() => {
+        // @ts-expect-error I can update the location by assigning a string to it
+        window.location = "/login";
+      })
+      .finally(() => {
+        this.refreshPromise = null;
+      });
+    return this.refreshPromise;
   }
 
   signOut() {
@@ -102,8 +150,8 @@ export default class AuthStore {
       ElnApiService.setAuthorizationHeader();
       this.isSynchronizing = false;
 
-      // Reauthenticate few minutes before token expiry
-      this.timeoutId = setTimeout(() => void this.authenticate(), JwtService.secondsToExpiry(token) * 1000);
+      // Renew silently before the token expires.
+      this.timeoutId = setTimeout(() => void this.refreshToken(), JwtService.secondsToExpiry(token) * 1000);
       return Promise.resolve();
     }
 
