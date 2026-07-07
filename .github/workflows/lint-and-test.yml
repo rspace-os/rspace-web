@@ -462,15 +462,17 @@ jobs:
       checks: write
       pull-requests: write
     strategy:
+      fail-fast: false
       matrix:
         java-version: [17]
+        mariadb-version: ['lts', '11.8', '12.3']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
       inputs.full_java_tests
     services:
       db:
-        image: mariadb:lts
+        image: mariadb:${{ matrix.mariadb-version }}
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
@@ -535,7 +537,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Spring Tests
+          check_name: Spring Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml
 
@@ -547,15 +549,17 @@ jobs:
       checks: write
       pull-requests: write
     strategy:
+      fail-fast: false
       matrix:
         java-version: [17]
+        mariadb-version: ['lts', '11.8', '12.3']
     if: |
       (github.event_name == 'push' && github.ref_name == 'main' && needs.changed-files.outputs.java == 'true') ||
       (github.event_name == 'pull_request' && needs.changed-files.outputs.java == 'true') ||
       inputs.full_java_tests
     services:
       db:
-        image: mariadb:lts
+        image: mariadb:${{ matrix.mariadb-version }}
         env:
           MARIADB_ROOT_PASSWORD: rspacedbpwd
           MARIADB_DATABASE: rspace
@@ -621,7 +625,7 @@ jobs:
             github.event.pull_request.head.repo.full_name == github.repository
           )
         with:
-          check_name: Integration Tests
+          check_name: Integration Tests (MariaDB ${{ matrix.mariadb-version }})
           comment_mode: off
           files: target/surefire-reports/*.xml
 
