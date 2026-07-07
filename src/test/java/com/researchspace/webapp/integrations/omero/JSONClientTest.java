@@ -34,14 +34,20 @@ import org.mockserver.matchers.Times;
 
 public class JSONClientTest {
   private static ClientAndServer mockServer;
+  private static String baseUrl;
   private JSONClient jsonClient;
-  private String baseUrl = "http://localhost:1080";
 
   private MockServerClient client;
 
   @BeforeAll
   public static void startServer() {
-    mockServer = ClientAndServer.startClientAndServer(1080);
+    mockServer = ClientAndServer.startClientAndServer();
+    baseUrl = "http://localhost:" + mockServer.getPort();
+  }
+
+  // canned fixtures embed this placeholder in place of a real host:port; substitute this run's
+  private static String withPort(String json) {
+    return json.replace("http://localhost:__MOCKSERVER_PORT__", baseUrl);
   }
 
   @AfterAll
@@ -53,20 +59,20 @@ public class JSONClientTest {
   @SneakyThrows
   @BeforeEach
   public void setUp() {
-    client = new MockServerClient("localhost", 1080);
+    client = new MockServerClient("localhost", mockServer.getPort());
     client.reset();
     client
         .when(request().withMethod("GET").withPath("/api"), Times.exactly(1))
-        .respond(response().withBody(versionJson));
+        .respond(response().withBody(withPort(versionJson)));
     client
         .when(request().withMethod("GET").withPath("/api/v0"))
-        .respond(response().withBody(urlsJson));
+        .respond(response().withBody(withPort(urlsJson)));
     jsonClient = new JSONClient(baseUrl);
   }
 
   @Test
   public void testJsonClientCreation() {
-    assertEquals("http://localhost:1080", jsonClient.getRootUrl());
+    assertEquals(baseUrl, jsonClient.getRootUrl());
   }
 
   @SneakyThrows
@@ -123,7 +129,7 @@ public class JSONClientTest {
   public void testListImagesForDataset() {
     client
         .when(request().withMethod("GET").withPath("/api/v0/m/datasets/51"))
-        .respond(response().withBody(datasetJson));
+        .respond(response().withBody(withPort(datasetJson)));
     client
         .when(
             request()
@@ -145,7 +151,7 @@ public class JSONClientTest {
                 .withMethod("GET")
                 .withPath("/api/v0/m/plates/422")
                 .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(plateJson));
+        .respond(response().withBody(withPort(plateJson)));
     client
         .when(
             request()
@@ -220,7 +226,7 @@ public class JSONClientTest {
                 .withPath("/webclient/api/annotations/")
                 .withQueryStringParameter("screen", "102"))
         .respond(response().withBody(screenAnnotationsJson));
-    List<String> annotations = jsonClient.getAnnotations("http://localhost:1080", "screen", 102L);
+    List<String> annotations = jsonClient.getAnnotations(baseUrl, "screen", 102L);
     assertEquals(18, annotations.size());
     List<String> expected =
         List.of(

@@ -46,14 +46,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class OmeroServiceTest {
   private static ClientAndServer mockServer;
+  private static String baseUrl;
   private OmeroClientImpl omeroClient = new OmeroClientImpl();
   private OmeroServiceImpl service = new OmeroServiceImpl(omeroClient);
-  private String baseUrl = "http://localhost:1080/";
   private MockServerClient client;
 
   @BeforeAll
   public static void startServer() {
-    mockServer = ClientAndServer.startClientAndServer(1080);
+    mockServer = ClientAndServer.startClientAndServer();
+    baseUrl = "http://localhost:" + mockServer.getPort() + "/";
+  }
+
+  // canned fixtures embed this placeholder in place of a real host:port; substitute this run's
+  private static String withPort(String json) {
+    return json.replace("localhost:__MOCKSERVER_PORT__", "localhost:" + mockServer.getPort());
   }
 
   @AfterAll
@@ -71,14 +77,14 @@ public class OmeroServiceTest {
   public void setUp() {
     ReflectionTestUtils.setField(omeroClient, "omeroApiUrl", baseUrl);
     ReflectionTestUtils.setField(omeroClient, "omeroServerName", "omero");
-    client = new MockServerClient("localhost", 1080);
+    client = new MockServerClient("localhost", mockServer.getPort());
     client.reset();
     client
         .when(request().withMethod("GET").withPath("/api"))
-        .respond(response().withBody(versionJson));
+        .respond(response().withBody(withPort(versionJson)));
     client
         .when(request().withMethod("GET").withPath("/api/v0"))
-        .respond(response().withBody(urlsJson));
+        .respond(response().withBody(withPort(urlsJson)));
     client
         .when(request().withMethod("GET").withPath("/api/v0/servers/"))
         .respond(response().withBody(serversJson));
@@ -196,7 +202,7 @@ public class OmeroServiceTest {
                 .withMethod("GET")
                 .withPath("/api/v0/m/plates/422")
                 .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(plateJson));
+        .respond(response().withBody(withPort(plateJson)));
     client
         .when(
             request()
@@ -264,7 +270,7 @@ public class OmeroServiceTest {
   public void testListImagesForDataset() {
     client
         .when(request().withMethod("GET").withPath("/api/v0/m/datasets/51"))
-        .respond(response().withBody(datasetJson));
+        .respond(response().withBody(withPort(datasetJson)));
     client
         .when(
             request()
@@ -320,7 +326,7 @@ public class OmeroServiceTest {
                 .withMethod("GET")
                 .withPath("/api/v0/m/plates/422")
                 .withQueryStringParameter("childCount", "true"))
-        .respond(response().withBody(plateJson));
+        .respond(response().withBody(withPort(plateJson)));
     client
         .when(
             request()
