@@ -145,10 +145,6 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
     return maxEmailsPerSecond;
   }
 
-  void setMaxSendingRate(Integer maxEmailsPerSecond) {
-    this.maxEmailsPerSecond = maxEmailsPerSecond;
-  }
-
   // these constants are relied upon by external scripts that examine the log
   // file,
   // so don't change these values without consideration - see RSOPS-19/RSPAC-785

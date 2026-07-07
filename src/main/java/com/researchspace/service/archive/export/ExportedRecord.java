@@ -58,10 +58,6 @@ public class ExportedRecord {
     return archivedMedia;
   }
 
-  void setArchivedMedia(ArchivalGalleryMetadata archivedMedia) {
-    this.archivedMedia = archivedMedia;
-  }
-
   /**
    * The file that this record's data will be written to.
    *
