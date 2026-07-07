@@ -9,7 +9,6 @@ import com.researchspace.model.RecordGroupSharing;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.permissions.PermissionType;
-import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
@@ -190,14 +189,6 @@ public class NotebookSharingTest extends SpringTransactionalTest {
     logoutAndLoginAs(pi);
     assertFalse(
         recordMgr.move(doc.getId(), owner.getRootFolder().getId(), nb.getId(), pi).isSucceeded());
-  }
-
-  private int getSharedRecordCountForGroup(Group group) {
-    return folderDao.getSharedFolderForGroup(group).getChildrens().size();
-  }
-
-  private void assertSharedRecordInSharedFolder(Group group, BaseRecord notebookentry) {
-    assertTrue(folderDao.getSharedFolderForGroup(group).getChildrens().contains(notebookentry));
   }
 
   private void deleteNotebook(User owner, Notebook nb) throws Exception {

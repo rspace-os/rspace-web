@@ -1,10 +1,9 @@
 import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
 import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Button } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";

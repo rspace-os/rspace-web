@@ -331,10 +331,6 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     return setupUserWithOntologyDocAndDocWithTags(false, false, true);
   }
 
-  private User setupUserTagsInDocHavingForwardSlash() {
-    return setupUserWithOntologyDocAndDocWithTags(false, false, true);
-  }
-
   private User setupUserWithOntologyDocAndDocWithTagsEnforceOntologiesAndOntologyNotShared() {
     return setupUserWithOntologyDocAndDocWithTags(true, false, true);
   }

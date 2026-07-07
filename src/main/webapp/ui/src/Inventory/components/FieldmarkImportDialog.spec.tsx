@@ -2,7 +2,6 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import { FieldmarkImportDialogPage } from "./pageObjects/FieldmarkImportDialogPage";
@@ -148,7 +147,6 @@ const dialog = new FieldmarkImportDialogPage();
 
 beforeEach(() => {
   worker.use(
-    oauthTokenHandler(),
     http.get("/api/inventory/v1/fieldmark/notebooks", () => HttpResponse.json(NOTEBOOKS_PAYLOAD)),
     ...igsnCandidateFieldsHandlers(),
     importSuccessHandler(),

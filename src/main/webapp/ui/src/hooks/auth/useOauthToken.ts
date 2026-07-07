@@ -2,6 +2,12 @@ import React from "react";
 import axios from "@/common/axios";
 import { getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
 
+const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
+
+function refreshDelayMs(token: string): number {
+  return Math.min(secondsToExpiry(token) * 1000, MAX_SET_TIMEOUT_DELAY_MS);
+}
+
 /**
  * This custom hook allows us to get a token for making calls to the API
  * endpoints that expect an API key. This started out being for Inventory
@@ -76,7 +82,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
     tokenRef.current = newToken;
     setTimeout(() => {
       void refreshToken();
-    }, secondsToExpiry(newToken) * 1000);
+    }, refreshDelayMs(newToken));
   }
 
   const getToken = React.useCallback(async () => {
@@ -106,7 +112,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
      */
     setTimeout(() => {
       void refreshToken();
-    }, secondsToExpiry(savedToken) * 1000);
+    }, refreshDelayMs(savedToken));
     return savedToken;
   }, []);
 

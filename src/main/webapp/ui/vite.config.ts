@@ -272,6 +272,15 @@ export default defineConfig(async ({ mode }) => {
       outputFile: {
         junit: "./junit.xml",
       },
+      coverage: {
+        // ponytail: istanbul over the default v8 provider — v8 coverage
+        // segfaults during `--merge-reports` on this vitest/vite combo
+        // (vitest-dev/vitest#10032, still open); istanbul is confirmed to
+        // avoid it. Revisit once that's fixed if istanbul's slower
+        // instrumentation becomes a bottleneck.
+        provider: "istanbul",
+        reporter: ["text", "html", "lcov"],
+      },
     },
   };
   return config;

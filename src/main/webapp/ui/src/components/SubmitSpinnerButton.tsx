@@ -49,11 +49,14 @@ function SubmitSpinnerButton({
       <Box
         sx={{
           position: "absolute",
-          marginLeft: 10,
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          display: "flex",
           opacity: loading ? 1 : 0,
         }}
       >
-        <FontAwesomeIcon icon={faSpinner} spin size="lg" style={{ marginRight: "10px" }} />
+        <FontAwesomeIcon icon={faSpinner} spin size="lg" />
       </Box>
       {progress !== null && typeof progress !== "undefined" ? (
         <Box

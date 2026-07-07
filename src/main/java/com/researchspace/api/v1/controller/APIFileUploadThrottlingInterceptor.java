@@ -29,10 +29,6 @@ public class APIFileUploadThrottlingInterceptor extends AbstractThrottleIntercep
 
   private APIFileUploadThrottler fileUploadThrottler;
 
-  void setFileUploadThrottler(APIFileUploadThrottler fileUploadThrottler) {
-    this.fileUploadThrottler = fileUploadThrottler;
-  }
-
   Logger log = LoggerFactory.getLogger(APIRequestThrottlingInterceptor.class);
 
   public APIFileUploadThrottlingInterceptor(@Autowired APIFileUploadThrottler fileUploadThrottler) {
