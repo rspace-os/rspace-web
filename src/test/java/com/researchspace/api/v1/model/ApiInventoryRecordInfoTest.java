@@ -3,9 +3,15 @@ package com.researchspace.api.v1.model;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
+import com.researchspace.model.FileProperty;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.web.util.UriComponentsBuilder;
 
 public class ApiInventoryRecordInfoTest {
   private ApiInventoryRecordInfo testee;
@@ -93,5 +99,58 @@ public class ApiInventoryRecordInfoTest {
     testee.setApiTagInfo(tagPlusMeta);
     original.setApiTagInfo(tagPlusMeta2);
     assertTrue(ApiInventoryRecordInfo.tagDifferenceExists(original, testee));
+  }
+
+  /** A limited-read viewer can't fetch the image (it 403s), so its link is stripped. */
+  @Test
+  public void limitedReadItemHasImageLinksStripped() {
+    ApiInventoryRecordInfo rec = imagedRecord();
+    rec.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.LIMITED_READ));
+
+    rec.buildAndAddInventoryRecordLinks(BASE_URL);
+    assertTrue("links should be built before stripping", hasImageOrThumbnailLink(rec));
+
+    rec.removeImageLinksForLimitedView();
+
+    assertFalse(hasImageOrThumbnailLink(rec));
+  }
+
+  @Test
+  public void fullyReadableItemKeepsImageLinks() {
+    ApiInventoryRecordInfo rec = imagedRecord();
+    rec.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.READ));
+
+    rec.buildAndAddInventoryRecordLinks(BASE_URL);
+    rec.removeImageLinksForLimitedView();
+
+    assertTrue(hasImageOrThumbnailLink(rec));
+  }
+
+  private static final UriComponentsBuilder BASE_URL =
+      UriComponentsBuilder.fromHttpUrl("http://localhost:8080/api/inventory/v1");
+
+  private ApiInventoryRecordInfo imagedRecord() {
+    ApiInventoryRecordInfo rec =
+        new ApiInventoryRecordInfo() {
+          @Override
+          protected String getSelfLinkEndpoint() {
+            return "containers";
+          }
+        };
+    rec.setId(1L);
+    rec.setCustomImage(true);
+    FileProperty fp = mock(FileProperty.class);
+    when(fp.getContentsHash()).thenReturn("contentshash");
+    rec.setImageFileProperty(fp);
+    rec.setThumbnailFileProperty(fp);
+    return rec;
+  }
+
+  private boolean hasImageOrThumbnailLink(ApiInventoryRecordInfo rec) {
+    return rec.getLinks().stream()
+        .anyMatch(
+            l ->
+                ApiLinkItem.IMAGE_REL.equals(l.getRel())
+                    || ApiLinkItem.THUMBNAIL_REL.equals(l.getRel()));
   }
 }
