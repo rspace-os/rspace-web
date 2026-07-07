@@ -9,7 +9,7 @@ Below is the main docker-compose.yaml file:
 ```
 services:
     rspace-db:
-      image: 'mariadb:lts'
+      image: 'mariadb:12.3'
       restart: always
       container_name: rspace-db
       volumes:

@@ -9,8 +9,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 public class DatabaseMetaDataManagerTest extends SpringTransactionalTest {
-  private static final int MARIA_DB10 = 10;
-  private static final int MYSQL_5 = 5;
+  private static final int MIN_MARIADB_MAJOR = 10;
   @Autowired private DatabaseMetaDataManager mgr;
 
   @Before
@@ -26,6 +25,6 @@ public class DatabaseMetaDataManagerTest extends SpringTransactionalTest {
   @Test
   public void testGetVersion() {
     int version = mgr.getVersion().getMajor();
-    assertTrue(version == MARIA_DB10 || version == MYSQL_5);
+    assertTrue("Expected MariaDB 10+ but got major " + version, version >= MIN_MARIADB_MAJOR);
   }
 }
