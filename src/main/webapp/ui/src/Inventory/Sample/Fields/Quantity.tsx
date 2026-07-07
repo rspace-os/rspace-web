@@ -1,7 +1,6 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { inputBaseClasses } from "@mui/material";
 import Box from "@mui/material/Box";
 import InputAdornment from "@mui/material/InputAdornment";
+import { inputBaseClasses } from "@mui/material/InputBase";
 import Link from "@mui/material/Link";
 import type { SelectChangeEvent } from "@mui/material/Select";
 import { textFieldClasses } from "@mui/material/TextField";

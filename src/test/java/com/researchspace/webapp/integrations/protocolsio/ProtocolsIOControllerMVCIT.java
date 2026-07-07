@@ -22,9 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.lang.Nullable;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -130,11 +128,5 @@ public class ProtocolsIOControllerMVCIT extends MVCTestBase {
     String contentString =
         fieldMgr.getFieldsByRecordId(newDoc.getId(), anyUser).get(0).getFieldData();
     assertTrue(contentString.contains("colorimetric"));
-  }
-
-  private HttpHeaders getApiHeaders(@Nullable String accessToken) {
-    HttpHeaders headers = new HttpHeaders();
-    if (accessToken != null) headers.add("Authorization", String.format("Bearer %s", accessToken));
-    return headers;
   }
 }

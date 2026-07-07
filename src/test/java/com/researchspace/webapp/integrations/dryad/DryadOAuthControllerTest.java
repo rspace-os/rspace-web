@@ -106,13 +106,4 @@ class DryadOAuthControllerTest {
     accessToken.setType("access");
     return accessToken;
   }
-
-  private DryadOAuthController.DryadAccessToken getTestDryadAccessTokenError() {
-    DryadOAuthController.DryadAccessToken accessToken = new DryadOAuthController.DryadAccessToken();
-    accessToken.setError("invalid_client");
-    accessToken.setErrorDescription(
-        "Client authentication failed due to unknown client, no client authentication included, or"
-            + " unsupported authentication method.");
-    return accessToken;
-  }
 }

@@ -1,8 +1,7 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { ThemeProvider } from "@mui/material";
 import Button from "@mui/material/Button";
 import FormHelperText from "@mui/material/FormHelperText";
 import Grid from "@mui/material/Grid";
+import { ThemeProvider } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import createAccentedTheme from "@/accentedTheme";
