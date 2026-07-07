@@ -16,6 +16,15 @@ import {
 /* The public view is for a document made accessible to non RSpace users, List Of Materials access initialises AuthStore */
 const publicView = document.getElementById("public_document_view") !== null;
 
+/*
+ * A bare axios instance for fetching the OAuth token. Unlike the shared instance it carries no 401
+ * response interceptor: a 401 on the token endpoint means the RSpace session itself has expired, so
+ * the request must simply reject and let the caller unwind to /login. Routing it through the shared
+ * interceptor instead would make it try to recover a 401 by fetching a new token - i.e. re-enter
+ * this very request - which, with the shared in-flight refreshPromise, deadlocks.
+ */
+const tokenClient = axios.create();
+
 export type {
   DataCiteServerUrl,
   IntegrationState,
@@ -53,7 +62,7 @@ export default class AuthStore {
     }
     this.isAuthenticated = false;
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
-    return axios
+    return tokenClient
       .get<{ data: string }>(oAuthUrl)
       .then(
         action((response) => {
@@ -95,7 +104,7 @@ export default class AuthStore {
       clearTimeout(this.timeoutId);
     }
     const oAuthUrl = `${publicView ? "/public/publicView" : ""}/userform/ajax/inventoryOauthToken`;
-    this.refreshPromise = axios
+    this.refreshPromise = tokenClient
       .get<{ data: string }>(oAuthUrl)
       .then(
         action((response) => {
