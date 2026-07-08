@@ -16,6 +16,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext, useRef } from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -89,7 +90,13 @@ export default function OAuthDialog(props: any) {
         })
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .catch((error: any) => {
-          addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
+          addAlert(
+            mkAlert({
+              message: getErrorMessage(error, "There was a problem while creating your application."),
+              variant: "warning",
+              isInfinite: true,
+            }),
+          );
         });
     }
   };

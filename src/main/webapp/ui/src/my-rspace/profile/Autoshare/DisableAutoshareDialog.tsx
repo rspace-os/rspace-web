@@ -13,6 +13,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext } from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -68,7 +69,7 @@ function DisableAutoshareDialog({
       .catch((error: any) => {
         addAlert(
           mkAlert({
-            message: error.response.data || "Something went wrong. Please, contact support if the issue persists.",
+            message: getErrorMessage(error, "Something went wrong. Please, contact support if the issue persists."),
             variant: "warning",
             isInfinite: true,
           }),

@@ -13,6 +13,7 @@ import TableRow from "@mui/material/TableRow";
 import React, { useContext, useEffect } from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions } from "../../util/table";
@@ -86,7 +87,13 @@ export default function OrfTable(props: any) {
         filterResults(response.data.ORFs);
       })
       .catch((error) => {
-        addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, "Could not load the ORF table."),
+            variant: "warning",
+            isInfinite: true,
+          }),
+        );
       })
       .finally(() => {
         setLoading(false);

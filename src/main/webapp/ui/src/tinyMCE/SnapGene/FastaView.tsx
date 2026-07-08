@@ -4,6 +4,7 @@ import Typography from "@mui/material/Typography";
 import React, { useCallback, useContext, useEffect } from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import LoadingCircular from "../../components/LoadingCircular";
 
 type FastaViewProps = {
@@ -30,7 +31,13 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
         setSequence(response.data);
       })
       .catch((error) => {
-        addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, "Could not load the FASTA sequence."),
+            variant: "warning",
+            isInfinite: true,
+          }),
+        );
       })
       .finally(() => {
         setLoading(false);
