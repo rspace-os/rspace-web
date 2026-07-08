@@ -478,7 +478,7 @@ export class ListOfMaterials {
   trackInventoryRecordsUpdate() {
     if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
       getRootStore().trackingStore.trackEvent("user:update_quantities:list_of_materials:document_editor", {
-        lomid: this.id,
+        id: this.id,
         elnFieldId: this.elnFieldId,
       });
     }
