@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
-import Analytics from "../../components/Analytics";
+import Analytics from "../../Inventory/Analytics";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { ElnFieldId } from "../../stores/models/MaterialsModel";

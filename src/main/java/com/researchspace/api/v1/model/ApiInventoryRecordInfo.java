@@ -583,6 +583,33 @@ public abstract class ApiInventoryRecordInfo extends IdentifiableNameableApiObje
     buildAndAddSelfLink(getSelfLinkEndpoint(), "" + getId(), baseUrlBuilder);
   }
 
+  /**
+   * Removes the image/thumbnail links for a limited-read item, whose viewer cannot fetch the image
+   * (it 403s). Applied after link-building so it also covers the listing and
+   * subsample-from-parent-sample paths, which add these links even though the single-record path
+   * does not.
+   *
+   * <p>Subclasses whose {@link #buildAndAddInventoryRecordLinks} recurses into nested records
+   * (container content, a sample's subsamples, a subsample's parent sample) must override this to
+   * recurse the same way, otherwise the nested records keep advertising images the viewer cannot
+   * fetch.
+   */
+  public void removeImageLinksForLimitedView() {
+    if (isLimitedReadItem()) {
+      removeImageLinks();
+    }
+  }
+
+  /** Unconditionally removes the image/thumbnail links. */
+  protected void removeImageLinks() {
+    if (links != null) {
+      links.removeIf(
+          link ->
+              ApiLinkItem.IMAGE_REL.equals(link.getRel())
+                  || ApiLinkItem.THUMBNAIL_REL.equals(link.getRel()));
+    }
+  }
+
   protected abstract String getSelfLinkEndpoint();
 
   void addMainImageLink(UriComponentsBuilder baseUrlBuilder) {

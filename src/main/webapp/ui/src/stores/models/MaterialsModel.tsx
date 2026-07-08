@@ -18,6 +18,7 @@ import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import { filterForThoseWithLocations } from "./HasLocation";
 import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
+import type { InstrumentAttrs } from "./InstrumentModel";
 import type { SampleAttrs } from "./SampleModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -253,7 +254,7 @@ export type ListOfMaterialsAttrs = {
   description: string;
   elnFieldId: number;
   materials: Array<{
-    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs;
+    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs | InstrumentAttrs;
     usedQuantity: Quantity | null;
   }>;
 };
@@ -326,7 +327,7 @@ export class ListOfMaterials {
     this.setLoading(false);
     this.pickerSearch = new Search({
       uiConfig: {
-        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "ALL"]),
+        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "INSTRUMENT", "ALL"]),
         selectionMode: "MULTIPLE",
       },
       factory: new MemoisedFactory(),
@@ -477,11 +478,15 @@ export class ListOfMaterials {
 
   trackInventoryRecordsUpdate() {
     if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsInventoryQuantityEdited", {
-        lomid: this.id,
+      getRootStore().trackingStore.trackEvent("user:update_quantities:list_of_materials:document_editor", {
+        id: this.id,
         elnFieldId: this.elnFieldId,
       });
     }
+  }
+
+  get itemTypesUsed(): Array<string> {
+    return Array.from(new Set(this.materials.map((m) => m.invRec.type))).sort();
   }
 
   async create(): Promise<void> {
@@ -495,11 +500,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsCreated", {
+      getRootStore().trackingStore.trackEvent("user:create:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -560,11 +566,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsUpdated", {
+      getRootStore().trackingStore.trackEvent("user:update:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -629,9 +636,10 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsDeleted", {
-        id,
+      getRootStore().trackingStore.trackEvent("user:delete:list_of_materials:document_editor", {
+        id: id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
       return confirmation;
     } catch (error) {
@@ -691,9 +699,10 @@ export class ListOfMaterials {
       link.setAttribute("download", fileName);
       link.click(); // trigger download
 
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsExported", {
-        id: this.id,
+      getRootStore().trackingStore.trackEvent("user:export:list_of_materials:document_editor", {
+        id: id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
