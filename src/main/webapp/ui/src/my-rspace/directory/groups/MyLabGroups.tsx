@@ -4,6 +4,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import Alerts from "@/components/Alerts/Alerts";
 import materialTheme from "../../../theme";
 import GroupAutoshareManager from "./Autoshare/GroupAutoshareManager";
 import GroupBioOntologiesManager from "./GroupBioOntologiesManager";
@@ -48,92 +49,94 @@ class MyLabGroups extends React.Component<any, any> {
     return (
       <StyledEngineProvider injectFirst enableCssLayer>
         <ThemeProvider theme={materialTheme}>
-          <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
-            <h3>Members</h3>
-            {this.state.isCloud && (
-              <Button
-                id="inviteNewMembersGrpLink"
-                variant="outlined"
-                size="small"
-                sx={{ margin: "0 0 0.5em 15px" }}
-                data-test-id="button-invite-members"
-              >
-                Invite
-              </Button>
-            )}
-            {!this.state.isCloud && this.state.canEdit && this.state.role !== "admin" && (
-              <Button
-                onClick={this.openDialog}
-                variant="outlined"
-                size="small"
-                sx={{ margin: "0 0 0.5em 15px" }}
-                data-test-id="button-add-members"
-              >
-                Invite
-              </Button>
-            )}
-            {this.state.canEdit && this.state.role === "admin" && (
-              <Button
-                onClick={this.openDialog}
-                variant="outlined"
-                size="small"
-                sx={{ margin: "0 0 0.5em 15px" }}
-                data-test-id="button-add-members"
-              >
-                Add
-              </Button>
-            )}
-            {this.state.canManageAutoshare && (
-              <GroupAutoshareManager
-                groupId={parseInt(this.state.groupId, 10)}
-                groupDisplayName={this.state.groupDisplayName}
-                isCloud={this.state.isCloud}
-                isLabGroup={this.state.isLabGroup}
-                isGroupAutoshareAllowed={this.state.isGroupAutoshareAllowed}
-              />
-            )}
-            {
-              <GroupPublishManager
-                groupId={parseInt(this.state.groupId, 10)}
-                groupDisplayName={this.state.groupDisplayName}
-                isCloud={this.state.isCloud}
-                isLabGroup={this.state.isLabGroup}
-                isGroupPublicationAllowed={this.state.isGroupPublicationAllowed}
-                canManagePublish={this.state.canManagePublish}
-              />
-            }
-            {
-              <GroupSeoManager
-                groupId={parseInt(this.state.groupId, 10)}
-                groupDisplayName={this.state.groupDisplayName}
-                isCloud={this.state.isCloud}
-                isLabGroup={this.state.isLabGroup}
-                isGroupSeoAllowed={this.state.isGroupSEOAllowed}
-                canManagePublish={this.state.canManagePublish}
-              />
-            }
-            {
-              <GroupOntologiesManager
-                groupId={parseInt(this.state.groupId, 10)}
-                isCloud={this.state.isCloud}
-                canManageOntologies={this.state.canManageOntologies}
-              />
-            }
-            {
-              <GroupBioOntologiesManager
-                groupId={parseInt(this.state.groupId, 10)}
-                isCloud={this.state.isCloud}
-                canManageOntologies={this.state.canManageOntologies}
-              />
-            }
-          </Box>
-          <MyLabGroupsDialog
-            ref={this.membersDialog}
-            role={this.state.role}
-            groupId={this.state.groupId}
-            groupUniqueId={this.state.groupUniqueId}
-            groupType={this.state.groupType}
-          />
+          <Alerts>
+            <Box sx={{ display: "flex", width: "100%", alignItems: "center" }}>
+              <h3>Members</h3>
+              {this.state.isCloud && (
+                <Button
+                  id="inviteNewMembersGrpLink"
+                  variant="outlined"
+                  size="small"
+                  sx={{ margin: "0 0 0.5em 15px" }}
+                  data-test-id="button-invite-members"
+                >
+                  Invite
+                </Button>
+              )}
+              {!this.state.isCloud && this.state.canEdit && this.state.role !== "admin" && (
+                <Button
+                  onClick={this.openDialog}
+                  variant="outlined"
+                  size="small"
+                  sx={{ margin: "0 0 0.5em 15px" }}
+                  data-test-id="button-add-members"
+                >
+                  Invite
+                </Button>
+              )}
+              {this.state.canEdit && this.state.role === "admin" && (
+                <Button
+                  onClick={this.openDialog}
+                  variant="outlined"
+                  size="small"
+                  sx={{ margin: "0 0 0.5em 15px" }}
+                  data-test-id="button-add-members"
+                >
+                  Add
+                </Button>
+              )}
+              {this.state.canManageAutoshare && (
+                <GroupAutoshareManager
+                  groupId={parseInt(this.state.groupId, 10)}
+                  groupDisplayName={this.state.groupDisplayName}
+                  isCloud={this.state.isCloud}
+                  isLabGroup={this.state.isLabGroup}
+                  isGroupAutoshareAllowed={this.state.isGroupAutoshareAllowed}
+                />
+              )}
+              {
+                <GroupPublishManager
+                  groupId={parseInt(this.state.groupId, 10)}
+                  groupDisplayName={this.state.groupDisplayName}
+                  isCloud={this.state.isCloud}
+                  isLabGroup={this.state.isLabGroup}
+                  isGroupPublicationAllowed={this.state.isGroupPublicationAllowed}
+                  canManagePublish={this.state.canManagePublish}
+                />
+              }
+              {
+                <GroupSeoManager
+                  groupId={parseInt(this.state.groupId, 10)}
+                  groupDisplayName={this.state.groupDisplayName}
+                  isCloud={this.state.isCloud}
+                  isLabGroup={this.state.isLabGroup}
+                  isGroupSeoAllowed={this.state.isGroupSEOAllowed}
+                  canManagePublish={this.state.canManagePublish}
+                />
+              }
+              {
+                <GroupOntologiesManager
+                  groupId={parseInt(this.state.groupId, 10)}
+                  isCloud={this.state.isCloud}
+                  canManageOntologies={this.state.canManageOntologies}
+                />
+              }
+              {
+                <GroupBioOntologiesManager
+                  groupId={parseInt(this.state.groupId, 10)}
+                  isCloud={this.state.isCloud}
+                  canManageOntologies={this.state.canManageOntologies}
+                />
+              }
+            </Box>
+            <MyLabGroupsDialog
+              ref={this.membersDialog}
+              role={this.state.role}
+              groupId={this.state.groupId}
+              groupUniqueId={this.state.groupUniqueId}
+              groupType={this.state.groupType}
+            />
+          </Alerts>
         </ThemeProvider>
       </StyledEngineProvider>
     );

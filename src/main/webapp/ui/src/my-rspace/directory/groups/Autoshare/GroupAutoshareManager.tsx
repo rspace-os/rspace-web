@@ -8,13 +8,12 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import materialTheme from "../../../../theme";
 import AdditionalInfo from "./AdditionalInfo";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
@@ -26,12 +25,13 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
 
   const [enableDialogOpen, setEnableDialogOpen] = React.useState(false);
   const [disableDialogOpen, setDisableDialogOpen] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
 
   useEffect(() => {
     axios.get(`/groups/ajax/autoshareStatus/${groupId}`).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         return;
       }
 
@@ -54,7 +54,7 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         return;
       }
 
@@ -62,10 +62,13 @@ function GroupAutoshareManager({ groupId, groupDisplayName, isCloud, isLabGroup,
       setAutoshareStatus(true);
       setEnableDialogOpen(false);
       setDisableDialogOpen(false);
-      RS.confirm(
-        "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete",
-        "notice",
-        5000,
+      addAlert(
+        mkAlert({
+          message:
+            "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete",
+          variant: "notice",
+          duration: 5000,
+        }),
       );
     });
   }

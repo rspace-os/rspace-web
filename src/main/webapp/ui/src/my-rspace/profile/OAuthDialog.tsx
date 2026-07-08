@@ -13,16 +13,15 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { useRef } from "react";
+import React, { useContext, useRef } from "react";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import materialTheme from "../../theme";
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OAuthDialog(props: any) {
   const [open, setOpen] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
   const [appName, setAppName] = React.useState("");
   const [hasError, setHasError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -76,18 +75,21 @@ export default function OAuthDialog(props: any) {
               appName,
             });
           } else if (Object.hasOwn(response, "exceptionMessage")) {
-            RS.confirm(response.exceptionMessage, "warning", "infinite");
+            addAlert(mkAlert({ message: response.exceptionMessage, variant: "warning", isInfinite: true }));
           } else {
-            RS.confirm(
-              "There was a problem while creating your application. Please, try again later or contact support.",
-              "warning",
-              "infinite",
+            addAlert(
+              mkAlert({
+                message:
+                  "There was a problem while creating your application. Please, try again later or contact support.",
+                variant: "warning",
+                isInfinite: true,
+              }),
             );
           }
         })
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .catch((error: any) => {
-          RS.confirm(error.response.data, "warning", "infinite");
+          addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
         });
     }
   };
@@ -118,12 +120,16 @@ export default function OAuthDialog(props: any) {
     try {
       const successful = document.execCommand("copy");
       if (successful) {
-        RS.confirm("Copied to clipboard", "notice", 3000);
+        addAlert(mkAlert({ message: "Copied to clipboard", variant: "notice", duration: 3000 }));
       } else {
-        RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
+        addAlert(
+          mkAlert({ message: "Couldn't copy to clipboard. Try again manually.", variant: "warning", duration: 5000 }),
+        );
       }
     } catch (_err) {
-      RS.confirm("Couldn't copy to clipboard. Try again manually.", "warning", 5000);
+      addAlert(
+        mkAlert({ message: "Couldn't copy to clipboard. Try again manually.", variant: "warning", duration: 5000 }),
+      );
     }
   };
 

@@ -10,15 +10,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions } from "../../util/table";
 import type { Order } from "../../util/types";
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 const readingFrameOptions = {
   ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
@@ -75,6 +73,7 @@ export default function OrfTable(props: any) {
   const [results, setResults] = React.useState<Array<any>>([]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [filteredResults, setFilteredResults] = React.useState<Array<any>>([]);
+  const { addAlert } = useContext(AlertContext);
 
   const fetchData = () => {
     setLoading(true);
@@ -87,7 +86,7 @@ export default function OrfTable(props: any) {
         filterResults(response.data.ORFs);
       })
       .catch((error) => {
-        RS.confirm(error.response.data, "warning", "infinite");
+        addAlert(mkAlert({ message: error.response.data, variant: "warning", isInfinite: true }));
       })
       .finally(() => {
         setLoading(false);

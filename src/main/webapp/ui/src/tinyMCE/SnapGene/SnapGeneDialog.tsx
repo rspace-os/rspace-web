@@ -8,6 +8,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import Alerts from "@/components/Alerts/Alerts";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import DnaPreview from "./DnaPreview";
 import EnzymeTable from "./EnzymeTable";
@@ -119,7 +120,9 @@ function renderDialog(target_id: any) {
   const root = createRoot(container);
   root.render(
     <MuiCssLayerProvider>
-      <SnapGeneDialog id={target_id} />
+      <Alerts>
+        <SnapGeneDialog id={target_id} />
+      </Alerts>
     </MuiCssLayerProvider>,
   );
 }

@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import { IsInvalid, IsValid } from "@/components/ValidatingSubmitButton";
 import { type Filestore, type GalleryFile, LocalGalleryFile, RemoteFile } from "@/eln/gallery/useGalleryListing";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
+import { type Alert, mkAlert } from "@/stores/contexts/Alert";
 import GalleryEntrypoint from "@/tinyMCE/gallery/GalleryEntrypoint";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
 import type RsSet from "@/util/set";
@@ -9,7 +10,6 @@ import type RsSet from "@/util/set";
 declare global {
   interface RSGlobal {
     insertTemplateIntoTinyMCE?: (templateName: string, data: unknown) => void;
-    confirm?: (message: string, type: "error" | "info") => void;
   }
 
   interface Window {
@@ -28,6 +28,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
     { open: boolean; onClose?: () => void }
   > {
     const root = createRoot(domContainer);
+    let addAlert: ((alert: Alert) => void) | null = null;
     while (true) {
       let newProps: { open: boolean; onClose?: () => void } = {
         open: false,
@@ -40,7 +41,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
           const recordId = file.id;
 
           if (recordId === null) {
-            window.RS.confirm?.(`Could not insert file "${file.name}"`, "error");
+            addAlert?.(mkAlert({ message: `Could not insert file "${file.name}"`, variant: "error" }));
             return;
           }
 
@@ -52,7 +53,7 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
               addFromGallery(recordInformation);
             } catch (e) {
               console.error(e);
-              window.RS.confirm?.(`Could not insert file "${file.name}"`, "error");
+              addAlert?.(mkAlert({ message: `Could not insert file "${file.name}"`, variant: "error" }));
             }
           })();
         });
@@ -87,6 +88,9 @@ parent.tinymce.PluginManager.add("gallery", function (editor) {
           onClose={newProps.onClose}
           onSubmit={handleSubmit}
           validateSelection={handleValidateSelection}
+          onAlertReady={(fn) => {
+            addAlert = fn;
+          }}
         />,
       );
     }
