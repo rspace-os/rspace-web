@@ -1408,6 +1408,8 @@ export const UsersPage = (): React.ReactNode => {
   const { t, i18n } = useTranslation("system");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const formatDisplayList = (items: Iterable<string>) => formatList(items, language);
+  const formatRoleList = (items: Iterable<string>) =>
+    formatList(items, language, { type: "conjunction", style: "narrow" });
   const { userListing } = useUserListing();
   const [rowSelectionModel, setRowSelectionModel] = React.useState<GridRowSelectionModel>({
     type: "include",
@@ -1478,7 +1480,7 @@ export const UsersPage = (): React.ReactNode => {
         if (roles.includes("ROLE_PI")) labels.push(t("usersPage.roleLabels.pi"));
         if (roles.includes("ROLE_SYSADMIN")) labels.push(t("usersPage.roleLabels.sysadmin"));
         if (roles.includes("ROLE_USER")) labels.push(t("usersPage.roleLabels.user"));
-        return formatDisplayList(labels);
+        return formatRoleList(labels);
       },
       {
         headerName: t("usersPage.columns.role"),

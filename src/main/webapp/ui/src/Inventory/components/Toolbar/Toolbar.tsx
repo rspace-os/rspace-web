@@ -93,7 +93,11 @@ function CustomToolbar({ title, record, recordType, batch, stickyAlert }: Custom
         <Box sx={{ minWidth: record?.recordType === "instrument" ? 57 : 90 }}>{record?.illustration}</Box>
         {record && record.id !== null && (
           <Stack>
-            <Typography variant="caption" component="span" sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25 }}>
+            <Typography
+              variant="caption"
+              component="span"
+              sx={{ color: "inherit", whiteSpace: "nowrap", pb: 0.25, textTransform: "uppercase" }}
+            >
               {record.recordTypeLabel}
             </Typography>
             <GlobalId record={record} />

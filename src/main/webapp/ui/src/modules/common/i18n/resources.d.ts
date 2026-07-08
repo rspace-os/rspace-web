@@ -2997,7 +2997,7 @@ export default interface Resources {
       },
       "image": {
         "explanation": "Tap to view at full resolution, scroll to exit (or pinch on mobile)",
-        "label": "Image",
+        "label": "Preview Image",
         "tooManyToEdit": "The image can only be edited when no more than {max} items are selected."
       },
       "link": {
