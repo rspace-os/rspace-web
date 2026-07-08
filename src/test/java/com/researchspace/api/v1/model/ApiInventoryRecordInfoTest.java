@@ -177,6 +177,23 @@ public class ApiInventoryRecordInfoTest {
     assertFalse(hasImageOrThumbnailLink(limitedReadChild.getSampleInfo()));
   }
 
+  /**
+   * The nested sample's links must be built regardless of the subsample having its own image
+   * (getSubSampleById relies on this recursion; only the copied-from-parent image links are
+   * conditional on the subsample not having a custom image).
+   */
+  @Test
+  public void customImageSubSampleStillGetsParentSampleLinksBuilt() {
+    ApiSubSample subSample = limitedReadSubSampleOfImagedSample();
+    subSample.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.READ));
+    subSample.setCustomImage(true);
+
+    subSample.buildAndAddInventoryRecordLinks(BASE_URL);
+
+    assertFalse(subSample.getSampleInfo().getLinks().isEmpty());
+    assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
+  }
+
   private ApiSubSample limitedReadSubSampleOfImagedSample() {
     ApiSampleWithoutSubSamples parentSample = new ApiSampleWithoutSubSamples();
     parentSample.setId(1L);
