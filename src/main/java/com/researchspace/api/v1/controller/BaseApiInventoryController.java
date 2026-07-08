@@ -77,6 +77,7 @@ public class BaseApiInventoryController extends BaseApiController {
     invRecInfo.buildAndAddInventoryRecordLinks(getInventoryApiBaseURIBuilder());
     addFileLinksForAttachments(invRecInfo);
     addBarcodeLinks(invRecInfo);
+    invRecInfo.removeImageLinksForLimitedView();
   }
 
   private void addFileLinksForAttachments(ApiInventoryRecordInfo recInfo) {
