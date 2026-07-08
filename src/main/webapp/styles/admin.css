@@ -10,11 +10,19 @@
 
 .menuInnerPanelIcon {
   display: block;
-  margin: 4px auto 0; }
+  margin: 4px auto 0;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain; }
 
 .menuInnerPanelIconNew {
   display: block;
-  margin: 4px auto 0; }
+  margin: 4px auto 0;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain; }
 
 input:focus {
   outline: none; }

@@ -170,6 +170,7 @@ tr.spaceUnder > td {
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    scrollbar-width: none;
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
     float: left;
@@ -188,6 +189,8 @@ tr.spaceUnder > td {
       width: max-content;
       margin: 0 1.5% 0 1%; }
       #menuScrollContainer #menuFixer #menuMover .menuInnerPanel {
+        display: flex;
+        flex-direction: column;
         flex: 0 0 110px;
         scroll-snap-align: start;
         scroll-margin-left: 15px;
@@ -207,7 +210,16 @@ tr.spaceUnder > td {
           border-bottom-left-radius: 0;
           border-bottom-right-radius: 0;
           border-bottom-width: 0; }
+        #menuScrollContainer #menuFixer #menuMover .menuInnerPanel > form {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0; }
         #menuScrollContainer #menuFixer #menuMover .menuInnerPanel a {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0;
           color: #666;
           font-weight: bold;
           line-height: 1.1em;
