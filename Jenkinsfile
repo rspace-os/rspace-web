@@ -271,7 +271,7 @@ pipeline {
                 always {
                     sh "rm -rf ${RS_FILE_BASE}"
                     echo "dropping test database ${SANITIZED_DBNAME}"
-                    sh "mysql -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${SANITIZED_DBNAME}' "
+                    sh "mysql -h 127.0.0.1 -P 3306 -urspacedbuser -prspacedbpwd  -e 'drop database if exists ${SANITIZED_DBNAME}' "
                 }
 
                 success {
