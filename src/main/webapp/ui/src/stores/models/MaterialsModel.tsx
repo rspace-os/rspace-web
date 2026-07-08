@@ -635,7 +635,7 @@ export class ListOfMaterials {
         }),
       );
       trackEvent("user:delete:list_of_materials:document_editor", {
-        id: this.id,
+        id: id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
       });
@@ -698,7 +698,7 @@ export class ListOfMaterials {
       link.click(); // trigger download
 
       trackEvent("user:export:list_of_materials:document_editor", {
-        id: this.id,
+        id: id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
       });
