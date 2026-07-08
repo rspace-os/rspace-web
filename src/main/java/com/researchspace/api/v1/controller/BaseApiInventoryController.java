@@ -75,9 +75,18 @@ public class BaseApiInventoryController extends BaseApiController {
 
   protected void buildAndAddInventoryRecordLinks(ApiInventoryRecordInfo invRecInfo) {
     invRecInfo.buildAndAddInventoryRecordLinks(getInventoryApiBaseURIBuilder());
+    addFileAndBarcodeLinks(invRecInfo);
+    invRecInfo.removeImageLinksForLimitedView();
+  }
+
+  /**
+   * Attachment (field file) and barcode links are added controller-side rather than by the model's
+   * link recursion. A nested record reached only through that recursion (e.g. the parent sample of
+   * a subsample) therefore needs this called on it explicitly to gain those links.
+   */
+  protected void addFileAndBarcodeLinks(ApiInventoryRecordInfo invRecInfo) {
     addFileLinksForAttachments(invRecInfo);
     addBarcodeLinks(invRecInfo);
-    invRecInfo.removeImageLinksForLimitedView();
   }
 
   private void addFileLinksForAttachments(ApiInventoryRecordInfo recInfo) {

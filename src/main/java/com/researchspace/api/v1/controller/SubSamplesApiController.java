@@ -87,6 +87,11 @@ public class SubSamplesApiController extends BaseApiInventoryController implemen
 
     ApiSubSample subSample = retrieveSubSampleIfExists(id, user);
     buildAndAddInventoryRecordLinks(subSample);
+    // The nested parent sample's record links are built by the recursion above; its attachment and
+    // barcode links are not, so add them here (the strip has already run and does not touch them).
+    if (subSample.getSampleInfo() != null) {
+      addFileAndBarcodeLinks(subSample.getSampleInfo());
+    }
     return subSample;
   }
 
