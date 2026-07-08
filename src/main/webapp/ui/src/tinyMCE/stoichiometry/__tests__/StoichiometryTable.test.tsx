@@ -13,6 +13,7 @@ import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/useOauthToken";
 import MockAdapter from "axios-mock-adapter";
 import * as Jwt from "jsonwebtoken";
+import { uiNavigationData } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import {
@@ -293,6 +294,8 @@ describe("StoichiometryTable", () => {
     useWrapperStubs.current = false;
     fetchMock.resetMocks();
     mockAxios.reset();
+    mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData());
+    mockAxios.onGet("/session/ajax/livechatProperties").reply(200, {});
     mockAxios.onAny().reply(200, {});
   });
 
