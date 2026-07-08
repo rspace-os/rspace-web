@@ -63,6 +63,7 @@ export type ContainerAttrs = {
   name: string;
   canStoreContainers: boolean;
   canStoreSamples: boolean;
+  canStoreInstruments: boolean;
   description: string;
   permittedActions: Array<Action>;
   quantity: null;
@@ -104,6 +105,7 @@ const DEFAULT_CONTAINER: ContainerAttrs = {
   name: "",
   canStoreContainers: true,
   canStoreSamples: true,
+  canStoreInstruments: true,
   description: "",
   permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
   quantity: null,
@@ -112,7 +114,7 @@ const DEFAULT_CONTAINER: ContainerAttrs = {
   gridLayout: null,
   cType: "LIST",
   locationsCount: Infinity,
-  contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0 },
+  contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
   // user bench is added to parentConatiners for new Movable
   parentContainers: [],
   parentLocation: null,
@@ -135,6 +137,7 @@ const FIELDS = new Set([
   ...RESULT_FIELDS,
   "canStoreContainers",
   "canStoreSamples",
+  "canStoreInstruments",
   "quantity",
   "locations",
   "organization",
@@ -150,6 +153,7 @@ export default class ContainerModel
 {
   canStoreContainers: boolean = true;
   canStoreSamples: boolean = true;
+  canStoreInstruments: boolean = true;
   quantity: null = null; // Could this be removed from the API?
   locations: Array<Location> | null = [];
   unchangedLocationsIds: ReadonlyArray<number> = [];
@@ -176,6 +180,7 @@ export default class ContainerModel
     makeObservable(this, {
       canStoreContainers: observable,
       canStoreSamples: observable,
+      canStoreInstruments: observable,
       quantity: observable,
       locations: observable,
       unchangedLocationsIds: observable,
@@ -250,6 +255,7 @@ export default class ContainerModel
     };
     this.canStoreContainers = params.canStoreContainers;
     this.canStoreSamples = params.canStoreSamples;
+    this.canStoreInstruments = params.canStoreInstruments;
     this.quantity = params.quantity;
     this.locationsImage = null;
     this.gridLayout = params.gridLayout;
@@ -322,6 +328,7 @@ export default class ContainerModel
     const set: AllowedTypeFilters = new Set();
     if (this.canStoreContainers) set.add("CONTAINER");
     if (this.canStoreSamples) set.add("SUBSAMPLE");
+    if (this.canStoreInstruments) set.add("INSTRUMENT");
     if (set.size > 1) set.add("ALL");
     // set will be empty in public view case
     return set;
@@ -364,7 +371,8 @@ export default class ContainerModel
     const moveStore = getRootStore().moveStore;
     return (
       (!moveStore.selectedResultsIncludesContainers || this.canStoreContainers) &&
-      (!moveStore.selectedResultsIncludesSubSamples || this.canStoreSamples)
+      (!moveStore.selectedResultsIncludesSubSamples || this.canStoreSamples) &&
+      (!moveStore.selectedResultsIncludesInstruments || this.canStoreInstruments)
     );
   }
 
@@ -402,10 +410,11 @@ export default class ContainerModel
     return mapPermissioned(this.contentCount, (contentCount) => this.locationsCount - contentCount);
   }
 
-  get canStore(): Array<"containers" | "samples"> {
+  get canStore(): Array<"containers" | "samples" | "instruments"> {
     return [
       ...(this.canStoreContainers ? ["containers" as const] : []),
       ...(this.canStoreSamples ? ["samples" as const] : []),
+      ...(this.canStoreInstruments ? ["instruments" as const] : []),
     ];
   }
 
@@ -625,6 +634,7 @@ export default class ContainerModel
     const params = { ...super.paramsForBackend };
     if (this.currentlyEditableFields.has("canStoreContainers")) params.canStoreContainers = this.canStoreContainers;
     if (this.currentlyEditableFields.has("canStoreSamples")) params.canStoreSamples = this.canStoreSamples;
+    if (this.currentlyEditableFields.has("canStoreInstruments")) params.canStoreInstruments = this.canStoreInstruments;
     if (this.cType === "IMAGE") params.locations = this.getLocationsForApi;
     if (this.currentlyEditableFields.has("locationsImage"))
       params.newBase64LocationsImage = this.newBase64LocationsImage;
@@ -852,8 +862,8 @@ export default class ContainerModel
 
   validate(): ValidationResult {
     const validateCanStore = () => {
-      if (this.canStoreContainers || this.canStoreSamples) return IsValid();
-      return IsInvalid("Must be permitted to contain either containers or subsamples.");
+      if (this.canStoreContainers || this.canStoreSamples || this.canStoreInstruments) return IsValid();
+      return IsInvalid("Select at least one.");
     };
 
     const validateGridLayout = () => {
@@ -989,6 +999,10 @@ export default class ContainerModel
     if (!this.canStoreSamples) newSampleExplanation = "Subsamples cannot be stored inside this container.";
     if (!this.canEdit) newSampleExplanation = "You do not have permission to edit the contents of this container.";
 
+    let newInstrumentExplanation = "The instrument will be automatically added to this container.";
+    if (!this.canStoreInstruments) newInstrumentExplanation = "Instruments cannot be stored inside this container.";
+    if (!this.canEdit) newInstrumentExplanation = "You do not have permission to edit the contents of this container.";
+
     return [
       {
         label: "Container",
@@ -1062,6 +1076,49 @@ export default class ContainerModel
               coordY: location.coordY,
             },
           });
+        },
+      },
+      {
+        label: "Instrument",
+        explanation: newInstrumentExplanation,
+        parameters: [
+          {
+            label: "Location",
+            explanation:
+              this.cType === "LIST"
+                ? "No location selection required for list containers."
+                : "Specify a single location for where the new instrument should be placed.",
+            state: { key: "location", container: this },
+            validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
+          },
+        ],
+        disabled: !this.canStoreInstruments || !this.canEdit,
+        onReset: () => {
+          // nothing to reset
+        },
+        onSubmit: async () => {
+          if (this.cType === "LIST") {
+            await getRootStore().searchStore.createNewInstrument(
+              {},
+              {
+                parentContainers: [this],
+                parentLocation: {},
+              },
+            );
+            return;
+          }
+          if (this.selectedLocations?.length !== 1) throw new Error("Only one selection permitted");
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewInstrument(
+            {},
+            {
+              parentContainers: [this],
+              parentLocation: {
+                coordX: location.coordX,
+                coordY: location.coordY,
+              },
+            },
+          );
         },
       },
     ];

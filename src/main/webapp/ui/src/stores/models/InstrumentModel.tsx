@@ -21,7 +21,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
-import type { ContainerAttrs } from "./ContainerModel";
+import type { ContainerAttrs, ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { HasLocationMixin } from "./HasLocation";
@@ -136,6 +136,17 @@ export default class InstrumentModel
 
   get recordType(): RecordType {
     return "instrument";
+  }
+
+  get beingCreatedInContainer(): boolean {
+    return !this.isDirectlyOnWorkbench;
+  }
+
+  get inContainerParams(): ContainerInContainerParams {
+    return {
+      ...(this.beingCreatedInContainer ? { parentContainers: [{ id: this.parentContainers[0].id }] } : {}),
+      ...(this.parentLocation ? { parentLocation: this.parentLocation } : {}),
+    };
   }
 
   get cardTypeLabel(): string {

@@ -165,7 +165,8 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
         new ApiContainerContentSummary(
             container.getContentCount(),
             container.getContentCountSubSamples(),
-            container.getContentCountContainers()));
+            container.getContentCountContainers(),
+            container.getContentCountInstruments()));
     setCanStoreContainers(container.isCanStoreContainers());
     setCanStoreSamples(container.isCanStoreSamples());
     setCanStoreInstruments(container.isCanStoreInstruments());
@@ -208,6 +209,7 @@ public class ApiContainerInfo extends ApiInventoryRecordInfo {
     private Integer totalCount;
     private Integer subSampleCount;
     private Integer containerCount;
+    private Integer instrumentCount;
   }
 
   public boolean applyChangesToDatabaseContainer(Container dbContainer) {

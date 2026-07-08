@@ -7,7 +7,6 @@ import useStores from "../../stores/use-stores";
 import DescriptionField from "../components/Fields/Description";
 import ExtraFields from "../components/Fields/ExtraFields/ExtraFields";
 import ImageField from "../components/Fields/Image";
-import LocationField from "../components/Fields/Location";
 import NameField from "../components/Fields/Name";
 import TagsField from "../components/Fields/Tags";
 import Stepper from "../components/Stepper/Stepper";
@@ -35,7 +34,6 @@ const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentMo
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
       <InstrumentTemplateField />
-      <LocationField fieldOwner={activeResult} />
       <ImageField fieldOwner={activeResult} alt="What the instrument looks like" />
     </StepperPanel>
   );

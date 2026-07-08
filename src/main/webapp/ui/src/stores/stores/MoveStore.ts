@@ -56,6 +56,7 @@ export default class MoveStore {
       targetLocations: computed,
       selectedResultsIncludesContainers: computed,
       selectedResultsIncludesSubSamples: computed,
+      selectedResultsIncludesInstruments: computed,
       globalIdsOfSelectedResults: computed,
       sourceIsAlsoDestination: computed,
     });
@@ -80,6 +81,10 @@ export default class MoveStore {
 
   get selectedResultsIncludesSubSamples(): boolean {
     return this.selectedResults.some((r) => r.recordType === "subSample");
+  }
+
+  get selectedResultsIncludesInstruments(): boolean {
+    return this.selectedResults.some((r) => r.recordType === "instrument");
   }
 
   async setIsMoving(val: boolean) {

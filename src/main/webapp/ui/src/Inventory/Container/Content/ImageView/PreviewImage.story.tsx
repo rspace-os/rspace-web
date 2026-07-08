@@ -43,6 +43,7 @@ function buildVisualContainer(
       totalCount: 0,
       subSampleCount: 0,
       containerCount: 0,
+      instrumentCount: 0,
     },
   });
   container.locations = locations.map(
