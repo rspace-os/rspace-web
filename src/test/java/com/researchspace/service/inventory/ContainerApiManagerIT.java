@@ -2,6 +2,7 @@ package com.researchspace.service.inventory;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -75,5 +76,26 @@ public class ContainerApiManagerIT extends RealTransactionSpringTestBase {
         "Container cannot have all \"canStoreSamples\", \"canStoreContainers\" and "
             + "\"canStoreInstruments\" set to false",
         cve.getMessage());
+  }
+
+  @Test
+  public void retrievalSucceedsWhenModifyingUserNoLongerExists() throws Exception {
+    User testUser = createAndSaveUser(CoreTestUtils.getRandomName(10));
+    setUpUserWithoutCustomContent(testUser);
+
+    ApiContainer container = createBasicContainerForUser(testUser);
+    Long containerId = container.getId();
+    String ghostUser = "ghost" + CoreTestUtils.getRandomName(8);
+
+    doInTransaction(
+        () -> {
+          Container dbContainer = containerApiMgr.getContainerById(containerId, testUser);
+          dbContainer.setModifiedBy(ghostUser);
+          containerDao.save(dbContainer);
+        });
+
+    ApiContainer retrieved = containerApiMgr.getApiContainerById(containerId, testUser);
+    assertEquals(ghostUser, retrieved.getModifiedBy());
+    assertNull(retrieved.getModifiedByFullName());
   }
 }

@@ -623,7 +623,7 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   @Override
   @Cacheable(value = "com.researchspace.model.User.fullName")
   public String getFullNameByUsername(String username) {
-    return getUserByUsername(username).getFullName();
+    return userDao.getOptionalUserByUsername(username).map(User::getFullName).orElse(null);
   }
 
   @Override

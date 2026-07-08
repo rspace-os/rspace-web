@@ -1,7 +1,7 @@
 import { faSpinner } from "@fortawesome/free-solid-svg-icons/faSpinner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Button, Stack } from "@mui/material";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Suspense, useState } from "react";
 import { useTranslation } from "react-i18next";

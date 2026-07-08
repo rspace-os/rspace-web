@@ -1,5 +1,3 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Switch, Tooltip } from "@mui/material";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
@@ -7,9 +5,10 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { switchClasses } from "@mui/material/Switch";
+import Switch, { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { useTranslation } from "react-i18next";

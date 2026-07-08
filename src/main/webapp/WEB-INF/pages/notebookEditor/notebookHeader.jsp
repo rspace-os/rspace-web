@@ -1,5 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
-<head>
+<%-- Head-content fragment for SiteMesh 3: emits NO <head> wrapper of its own, so it can sit
+     inside a caller's single <head> without producing a nested <head> (SiteMesh 3 keeps only
+     the inner head and silently drops the outer head's content). Callers (notebookEditor.jsp,
+     public_notebookView.jsp) are responsible for the surrounding <head>...</head>. --%>
     <title><spring:message code="notebook.title"/></title>
     <link rel="canonical" href="${applicationScope['RS_DEPLOY_PROPS']['serverUrl']}${requestScope['javax.servlet.forward.servlet_path']}" />
 
@@ -63,4 +66,3 @@
     <rst:bundle bundle="tinymceGalleryUtils" />
     <script	src="<rst:assetUrl value='/scripts/pages/coreEditor.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/pages/notebookEditor.js'/>"></script>
-</head>

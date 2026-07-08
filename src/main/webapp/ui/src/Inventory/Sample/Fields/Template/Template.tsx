@@ -1,5 +1,3 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Stack } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Collapse from "@mui/material/Collapse";
@@ -8,6 +6,7 @@ import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
 import Radio from "@mui/material/Radio";
+import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";

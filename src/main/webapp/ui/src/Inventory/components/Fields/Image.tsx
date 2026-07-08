@@ -1,5 +1,4 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Alert } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";

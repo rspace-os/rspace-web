@@ -1,6 +1,8 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Box, Button, TextField as MuiTextField, Stack } from "@mui/material";
 import Autocomplete from "@mui/material/Autocomplete";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import MuiTextField from "@mui/material/TextField";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";

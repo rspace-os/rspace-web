@@ -73,6 +73,8 @@ samples/
 .factorypath
 .java-version
 src/main/webapp/ui/junit.xml
+src/main/webapp/ui/.vitest-reports
+src/main/webapp/ui/coverage
 
 # other tooling
 /.claude/
