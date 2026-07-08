@@ -92,11 +92,17 @@
 	   value="Get Audit Report" id="getAuditSubmit" style="width:160px; margin: 5px 0 12px 0;" >
 	   <span><spring:message code="audit.getreport.button.label"/></span>
 	</button>
-	<button class="downloadAudit btn btn-default" type="submit" role="button" name="downloadAudit" 
-	   value="Download Audit Report" id="downloadAuditSubmit" style="width:160px; margin: 5px 0 12px 0;" >
-	   <span>Download Audit Report</span>
+	<button class="downloadAudit btn btn-default" type="submit" role="button" name="downloadAudit"
+	   data-download-endpoint="/audit/download/csv"
+	   value="Download Audit CSV Report" id="downloadAuditSubmit" style="width:160px; margin: 5px 0 12px 0;" >
+	   <span><spring:message code="audit.downloadreport.csv.button.label"/></span>
 	</button>
-	(maximum of 10000 events per download)
+	<button class="downloadAudit btn btn-default" type="submit" role="button" name="downloadAuditProv"
+	   data-download-endpoint="/audit/download/prov"
+	   value="Download Audit PROV-JSON Report" id="downloadAuditProvSubmit" style="width:180px; margin: 5px 0 12px 0;" >
+	   <span><spring:message code="audit.downloadreport.prov.button.label"/></span>
+	</button>
+	<spring:message code="audit.downloadreport.limit.label"/>
 </p>
 </form>
 <div id="storedRowSet" style="display:none;">

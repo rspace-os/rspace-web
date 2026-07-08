@@ -52,8 +52,8 @@ $(document).ready(function() {
     	$(this).closest(".auditRow").appendTo('#storedRowSet');
     });
     $(document).on('click', '.downloadAudit', function(e) {
-    	RS.blockPage("Querying audit table..");
-    	e.preventDefault();
+        RS.blockPage("Querying audit table..");
+        e.preventDefault();
         resetSort();
 		if ($(this).hasClass('action')) {
 			orderBy = 'action';
@@ -66,12 +66,13 @@ $(document).ready(function() {
    		   order = 'ASC';
     	} else {
     	   order = 'DESC';
-    	}
-    	var requestData = doSerializeForm(true);
-    	var requestUrl = "/audit/download" +"?";
-    	for (var i =0; i<requestData.length; i++) {
-    		requestUrl = requestUrl + requestData[i]["name"]+"="+ requestData[i]["value"]+"&"
-    	}
+        }
+        var requestData = doSerializeForm(true);
+        var downloadEndpoint = $(this).data("downloadEndpoint") || "/audit/download/csv";
+        var requestUrl = downloadEndpoint +"?";
+        for (var i =0; i<requestData.length; i++) {
+            requestUrl = requestUrl + requestData[i]["name"]+"="+ requestData[i]["value"]+"&"
+        }
     	requestUrl=requestUrl.substring(0, requestUrl.length - 1);
     	console.log(requestUrl);
     	window.open(requestUrl,"_blank");
