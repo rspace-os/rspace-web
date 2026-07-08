@@ -1,16 +1,16 @@
 # Frontend Translation Key Guidelines
 
 How to name and organise i18next translation keys in `src/main/webapp/ui`.
-Keep it boring and consistent so keys are easy to find, reuse, and lint.
+Keep keys plain and consistent so they are easy to find, reuse, and lint.
 
 ## The setup in one paragraph
 
 The shared i18next singleton lives in `src/modules/common/i18n/index.ts`.
-English text is authored directly in the JSON catalogs under
-`src/modules/common/i18n/locales/en-US/<namespace>.json`; **code carries keys
-only, never English strings**. Config: `defaultNS: "common"`, `keySeparator:
-"."`, `nsSeparator: ":"`. Types are generated from the catalogs, so every key
-you reference is checked at compile time.
+English text lives in JSON catalogs under
+`src/modules/common/i18n/locales/en-US/<namespace>.json`; **code uses keys, not
+English strings**. Config: `defaultNS: "common"`, `keySeparator: "."`,
+`nsSeparator: ":"`. Types are generated from the catalogs, so key references
+are checked at compile time.
 
 ## 1. One namespace per module
 
@@ -27,22 +27,22 @@ Each catalog file is a namespace, and namespaces mirror the app's modules:
 | `system`    | System / sysadmin                                    |
 | `dashboard`, `admin`, `about`, `public` | their matching areas    |
 
-Rule of thumb: **put a key in the module namespace where it is shown. Promote
-it to `common` only when a second module needs the same text.** Do not
-pre-emptively drop everything into `common`.
+Rule of thumb: **put a key in the namespace for the module that shows it. Move
+it to `common` only when another module needs the same text.** Do not put keys
+in `common` just in case.
 
 ## 2. Key naming
 
-Nest by feature/component, then describe what the text *is* at the leaf:
+Nest by feature or component, then name what the text is *for*:
 
 ```
 <feature>.<subFeature>.<leaf>
 ```
 
 - Segments are `camelCase` (`emptyTablePlaceholder`, `insertTooltip`).
-- The leaf names the string's role, not its English words: prefer
-  `validation.nameRequired` over `pleaseEnterAName`. The wording can change; the
-  key should not.
+- The leaf names the string's role, not its English wording. Prefer
+  `validation.nameRequired` over `pleaseEnterAName`. Wording can change; keys
+  should not.
 - Group by the component or feature that owns the text, e.g. from `common`:
 
   ```json
@@ -55,15 +55,14 @@ Nest by feature/component, then describe what the text *is* at the leaf:
   }
   ```
 
-- Reuse generic leaves that already exist (`actions.save`, `actions.cancel`,
-  `alerts.*`) instead of minting `saveButton` / `cancelBtn` variants. Check the
+- Reuse generic keys that already exist (`actions.save`, `actions.cancel`,
+  `alerts.*`) instead of adding `saveButton` or `cancelBtn` variants. Check the
   `common` groups (`actions`, `alerts`, `inputs`, `confirmationDialog`, ...)
-  before adding a new one.
+  before adding a new key.
 
 ## 3. Referencing keys in code
 
-Inside a React component, use the hook and let the default namespace resolve
-bare keys:
+Inside a React component, use the hook. Bare keys use the default namespace:
 
 ```tsx
 const { t } = useTranslation();          // defaultNS = common
@@ -77,22 +76,22 @@ Preload a non-default namespace once at the component root:
 const { t } = useTranslation("inventory");
 ```
 
-Outside React (services, TinyMCE plugins, plain modules) there is no hook, so
-call the singleton and **prefix the namespace**:
+Outside React (services, TinyMCE plugins, plain modules), call the singleton
+and **prefix the namespace**:
 
 ```ts
 import i18n from "@/modules/common/i18n";
 i18n.t("common:stoichiometry.plugin.insertTooltip");
 ```
 
-Prefer the `common:` prefix over `getFixedT(null, "common")`; it reads the same
+Prefer the `common:` prefix over `getFixedT(null, "common")`. It is clearer
 and keeps full key type-checking.
 
 ## 4. Do not construct keys dynamically
 
-Prefer whole, literal keys. Do not build a key from string parts or select one
-inside the `t()` call with a ternary, because dynamic keys defeat static
-extraction (`i18n:check` cannot see them), type-checking, and "find usages".
+Use full, literal keys. Do not build keys from string parts or choose a key
+inside `t()` with a ternary. Dynamic keys are hard to extract, type-check, and
+search for.
 
 ```ts
 // avoid: key assembled/branched at the call site
@@ -103,9 +102,8 @@ t(isPi ? "role.pi" : "role.user");
 isPi ? t("role.pi") : t("role.user");
 ```
 
-When a key genuinely must be chosen at runtime (e.g. an enum -> message map),
-map to literal keys with `as const` so every key stays statically visible and
-the union stays type-checked:
+When a key must be chosen at runtime, such as from an enum, map to literal keys
+with `as const`. This keeps every key visible and type-checked:
 
 ```ts
 const keys = {
@@ -117,8 +115,8 @@ return i18n.t(keys[reason]);
 
 ## 5. Interpolation, never concatenation
 
-Do not build sentences by joining translated fragments (word order differs
-between languages). Use placeholders / ICU:
+Do not build sentences by joining translated fragments. Word order differs
+between languages. Use placeholders / ICU:
 
 ```json
 { "itemsSelected": "{count, plural, one {# item} other {# items}} selected" }
@@ -126,6 +124,36 @@ between languages). Use placeholders / ICU:
 
 For text with inline markup (links, `<strong>`), use `TransRichText` rather
 than splitting the string.
+
+### Placeholder names must match exactly, on both sides
+
+This project uses ICU interpolation, so placeholders use **single braces**
+(`{types}`), not react-i18next double braces (`{{types}}`).
+
+The placeholder name in the JSON must exactly match the object key passed to
+`t()`. If they do not match, there is no error. The user sees the placeholder
+text instead:
+
+```json
+"canStoreOnly": "This container can only store {types}."
+```
+
+```ts
+// wrong: key does not match the placeholder name; renders
+// "This container can only store {types}." verbatim
+t("moveToTarget.messages.canStoreOnly", { canStoreLabel });
+
+// right
+t("moveToTarget.messages.canStoreOnly", { types: canStoreLabel });
+```
+
+The same thing happens with unused variables. If you remove a placeholder from
+the English text, but the call still passes a value such as `count`, `placed`,
+or `total`, that value is ignored with no error or lint warning.
+
+`i18n:lint` checks key structure. It does not check placeholder names against
+the arguments passed to `t()`. **After adding or editing an interpolated
+message, click through the feature in a browser.**
 
 ## 6. Workflow when you add or change keys
 
@@ -139,16 +167,16 @@ pnpm run i18n:lint    # flag missing / malformed keys
 pnpm run tsc          # confirm key references type-check
 ```
 
-`i18n:check` never overwrites existing English values and never deletes unused
-keys, so it is safe to run often. Keys in `__tests__`, `*.test.*`, `*.spec.*`,
-and `*.story.*` are ignored by extraction and lint.
+`i18n:check` does not overwrite existing English values or delete unused keys,
+so it is safe to run often. Extraction and lint ignore keys in `__tests__`,
+`*.test.*`, `*.spec.*`, and `*.story.*`.
 
 ## 7. Translator workflow
 
 Translation catalogs live under
 `src/modules/common/i18n/locales/<language>/<namespace>.json`. `en-US` is the
 source language. Other languages must keep the same file names, object shape,
-and keys as `en-US`; only values are translated.
+and keys as `en-US`. Only values are translated.
 
 ### Adding a new language
 
@@ -180,8 +208,8 @@ For a feature added after a language already exists:
 3. Translate the new values in every non-`en-US` locale.
 4. Run `pnpm run i18n:lint` before handing the translation back.
 
-Do not rename keys to match the translated wording. If English changes but the
-meaning stays the same, keep the key and update the values.
+Do not rename keys to match translated wording. If the English wording changes
+but the meaning stays the same, keep the key and update the values.
 
 ### What translators must preserve
 
@@ -206,7 +234,7 @@ meaning stays the same, keep the key and update the values.
 path segments, optionally with an anchor, e.g.
 `"c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version"`.
 
-Treat each `common.help` value as one translatable documentation target:
+Treat each `common.help` value as one documentation target:
 
 - If the target language uses the same HelpDocs article and anchor, copy the
   `en-US` value unchanged.
@@ -218,17 +246,17 @@ Treat each `common.help` value as one translatable documentation target:
   rather than a raw URL or `<a>` tag.
 
 Internal app links use `<internalLink to="/path">...`; external web links use
-`<externalLink href="https://...">...`. The renderer controls router
-transitions and safe external-link attributes, so translators should not add
-`target`, `rel`, or raw `<a>` tags to catalog values.
+`<externalLink href="https://...">...`. The renderer handles routing and safe
+external-link attributes, so translators should not add `target`, `rel`, or raw
+`<a>` tags to catalog values.
 
 ## 8. The `noJsxLiterals` lint rule is the safety net
 
-Biome's `style/noJsxLiterals` rule is enabled as an **error** (see
-`src/main/webapp/ui/biome.jsonc`) specifically to catch untranslated text: a raw
-string literal sitting in JSX means someone rendered English directly instead of
-going through a translation key. Treat a `noJsxLiterals` failure as "this text
-needs a key", not as noise to silence.
+Biome's `style/noJsxLiterals` rule is an **error** (see
+`src/main/webapp/ui/biome.jsonc`) so untranslated JSX text gets caught. A raw
+string in JSX means English was rendered directly instead of through a
+translation key. Treat a `noJsxLiterals` failure as "this text needs a key",
+not as noise to silence.
 
 ```tsx
 // fails noJsxLiterals — hard-coded English
@@ -238,11 +266,24 @@ needs a key", not as noise to silence.
 <Button>{t("actions.save")}</Button>
 ```
 
-Do not suppress it with a disable comment to sneak literal text through. The
-rare legitimate exception (a symbol or non-word glyph) is handled with the
-rule's `allowedStrings` option in a scoped `overrides` entry, as done for
-`IdentifierPublicPage.tsx` (`"˚"`). If you find yourself wanting to disable it
-for actual words, add a translation key instead.
+Do not suppress this rule to allow literal text. Rare exceptions, such as a
+symbol or non-word glyph, belong in the rule's `allowedStrings` option in a
+scoped `overrides` entry. `IdentifierPublicPage.tsx` does this for `"˚"`. If
+you want to disable the rule for real words, add a translation key instead.
+
+## 9. Common pitfalls
+
+- **Placeholder name mismatch** between the JSON template and the object passed
+  to `t()`. The user sees the literal `{placeholder}` instead of an error. See
+  section 5.
+- **Unused variables** after simplifying English text. If the ICU string no
+  longer uses `count`, `placed`, or `total`, that value disappears from the
+  message.
+- **Forgetting `i18n:types` after editing JSON.** `tsc` can then pass against
+  stale key names or fail on a key that exists.
+- **Hand-typing a new key into JSON first.** Write the `t()` call, then run
+  `i18n:check` or `i18n:extract`. This avoids typos, wrong nesting, and keys
+  that do not match the code.
 
 ## Checklist for a new string
 
