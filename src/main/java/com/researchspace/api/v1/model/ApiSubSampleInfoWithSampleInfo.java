@@ -61,9 +61,24 @@ public class ApiSubSampleInfoWithSampleInfo extends ApiSubSampleInfo {
   public void buildAndAddInventoryRecordLinks(UriComponentsBuilder inventoryApiBaseUrl) {
     super.buildAndAddInventoryRecordLinks(inventoryApiBaseUrl);
 
-    if (!isCustomImage() && (getSampleInfo() != null)) {
+    if (getSampleInfo() != null) {
       getSampleInfo().buildAndAddInventoryRecordLinks(inventoryApiBaseUrl);
-      addImageLinksFromParentSample(inventoryApiBaseUrl, getSampleInfo());
+      if (!isCustomImage()) {
+        addImageLinksFromParentSample(inventoryApiBaseUrl, getSampleInfo());
+      }
+    }
+  }
+
+  @Override
+  public void removeImageLinksForLimitedView() {
+    super.removeImageLinksForLimitedView();
+
+    /* The limited-view copy keeps the raw parent sample, whose permitted actions are never
+     * evaluated for the viewer, so its own limited-read check cannot fire. A limited-read
+     * subsample implies the viewer cannot fetch the sample's image either, so strip it
+     * unconditionally. */
+    if (isLimitedReadItem() && getSampleInfo() != null) {
+      getSampleInfo().removeImageLinks();
     }
   }
 
