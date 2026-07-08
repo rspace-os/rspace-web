@@ -338,7 +338,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
 
   const confirmListDeletion = async () => {
     if (currentList) {
-      const deletionConfirmed = await currentList.delete();
+      const deletionConfirmed = await currentList.delete(trackEvent);
 
       if (deletionConfirmed) {
         materialsStore.setCurrentList(undefined);
@@ -472,7 +472,7 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                             exportOptions={exportOptions}
                             setExportOptions={setExportOptions}
                             onExport={() => {
-                              void currentList.export(exportOptions);
+                              void currentList.export(exportOptions, trackEvent);
                               setOpenExporter(false);
                             }}
                           />

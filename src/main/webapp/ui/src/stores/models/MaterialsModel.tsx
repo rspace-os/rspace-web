@@ -487,7 +487,7 @@ export class ListOfMaterials {
   }
 
   get itemTypesUsed(): Array<string> {
-    return Array.from(new Set(this.materials.map((m) => m.invRec.type)));
+    return Array.from(new Set(this.materials.map((m) => m.invRec.type))).sort();
   }
 
   async create(trackEvent: TrackEvent): Promise<void> {
@@ -613,7 +613,7 @@ export class ListOfMaterials {
     }
   }
 
-  async delete(): Promise<boolean> {
+  async delete(trackEvent: TrackEvent): Promise<boolean> {
     const id = this.id;
     if (!id) throw new Error("A new list cannot be deleted.");
 
@@ -634,7 +634,7 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      getRootStore().trackingStore.trackEvent("user:delete:list_of_materials:document_editor", {
+      trackEvent("user:delete:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
@@ -655,7 +655,7 @@ export class ListOfMaterials {
     }
   }
 
-  async export(exportOptions: ExportOptions): Promise<void> {
+  async export(exportOptions: ExportOptions, trackEvent: TrackEvent): Promise<void> {
     const id = this.id;
     if (!id) throw new Error("A new list cannot be exported.");
 
@@ -697,7 +697,7 @@ export class ListOfMaterials {
       link.setAttribute("download", fileName);
       link.click(); // trigger download
 
-      getRootStore().trackingStore.trackEvent("user:export:list_of_materials:document_editor", {
+      trackEvent("user:export:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
