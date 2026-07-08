@@ -2,6 +2,7 @@ import type React from "react";
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
+import InventoryAnalytics from "../../Inventory/Analytics";
 import useStores from "../../stores/use-stores";
 import MaterialsDialog from "./MaterialsDialog";
 
@@ -22,13 +23,15 @@ export default function StandaloneListOfMaterialsPage(): React.ReactNode {
 
   return (
     <AlwaysNewWindowNavigationContext>
-      <MaterialsDialog
-        open={true}
-        standalonePage
-        setOpen={(open) => {
-          if (!open) window.close();
-        }}
-      />
+      <InventoryAnalytics>
+        <MaterialsDialog
+          open={true}
+          standalonePage
+          setOpen={(open) => {
+            if (!open) window.close();
+          }}
+        />
+      </InventoryAnalytics>
     </AlwaysNewWindowNavigationContext>
   );
 }

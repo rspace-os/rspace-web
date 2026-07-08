@@ -22,8 +22,6 @@ import type { SampleAttrs } from "./SampleModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 
-type TrackEvent = (event: string, properties?: Record<string, unknown>) => void;
-
 export type ListOfMaterialsId = number | null;
 export type ElnFieldId = number;
 export type ElnDocumentId = number;
@@ -477,9 +475,9 @@ export class ListOfMaterials {
     return this.selectedCategories.size > 1;
   }
 
-  trackInventoryRecordsUpdate(trackEvent: TrackEvent) {
+  trackInventoryRecordsUpdate() {
     if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
-      trackEvent("user:update_quantities:list_of_materials:document_editor", {
+      getRootStore().trackingStore.trackEvent("user:update_quantities:list_of_materials:document_editor", {
         lomid: this.id,
         elnFieldId: this.elnFieldId,
       });
@@ -490,7 +488,7 @@ export class ListOfMaterials {
     return Array.from(new Set(this.materials.map((m) => m.invRec.type))).sort();
   }
 
-  async create(trackEvent: TrackEvent): Promise<void> {
+  async create(): Promise<void> {
     this.setLoading(true);
     try {
       const { data } = await InvApiService.post<{ id: Id }>(`listOfMaterials`, this.paramsForBackend);
@@ -501,12 +499,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      trackEvent("user:create:list_of_materials:document_editor", {
+      getRootStore().trackingStore.trackEvent("user:create:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
       });
-      this.trackInventoryRecordsUpdate(trackEvent);
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -547,7 +545,7 @@ export class ListOfMaterials {
     });
   }
 
-  async update(trackEvent: TrackEvent): Promise<void> {
+  async update(): Promise<void> {
     if (!this.id) throw new Error("A new list cannot be updated.");
     const id = this.id;
     this.setLoading(true);
@@ -567,12 +565,12 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      trackEvent("user:update:list_of_materials:document_editor", {
+      getRootStore().trackingStore.trackEvent("user:update:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
       });
-      this.trackInventoryRecordsUpdate(trackEvent);
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -613,7 +611,7 @@ export class ListOfMaterials {
     }
   }
 
-  async delete(trackEvent: TrackEvent): Promise<boolean> {
+  async delete(): Promise<boolean> {
     const id = this.id;
     if (!id) throw new Error("A new list cannot be deleted.");
 
@@ -634,7 +632,7 @@ export class ListOfMaterials {
           variant: "success",
         }),
       );
-      trackEvent("user:delete:list_of_materials:document_editor", {
+      getRootStore().trackingStore.trackEvent("user:delete:list_of_materials:document_editor", {
         id: id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
@@ -655,7 +653,7 @@ export class ListOfMaterials {
     }
   }
 
-  async export(exportOptions: ExportOptions, trackEvent: TrackEvent): Promise<void> {
+  async export(exportOptions: ExportOptions): Promise<void> {
     const id = this.id;
     if (!id) throw new Error("A new list cannot be exported.");
 
@@ -697,7 +695,7 @@ export class ListOfMaterials {
       link.setAttribute("download", fileName);
       link.click(); // trigger download
 
-      trackEvent("user:export:list_of_materials:document_editor", {
+      getRootStore().trackingStore.trackEvent("user:export:list_of_materials:document_editor", {
         id: id,
         elnFieldId: this.elnFieldId,
         types: this.itemTypesUsed,
