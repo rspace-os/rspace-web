@@ -5,6 +5,7 @@ import Button from "@mui/material/Button";
 import MuiTextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type { GalleryFile } from "../../../eln/gallery/useGalleryListing";
 import type { Option } from "../../../stores/definitions/Field";
@@ -21,6 +22,7 @@ type DefaultValueFieldArgs = {
 };
 
 function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const _hasOptions = hasOptions(field.fieldType);
   const isAttachment = field.type === "attachment";
 
@@ -44,8 +46,8 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
   if (field.type === "link") {
     return (
       <InputWrapper
-        label="Allowed relationship types"
-        explanation="The DataCite relationship types that links may use on samples created from this template. Leave empty to allow all relationship types."
+        label={t("fields.templateFields.defaultValue.allowedRelationshipTypes")}
+        explanation={t("fields.templateFields.defaultValue.allowedRelationshipTypesExplanation")}
       >
         <Autocomplete
           multiple
@@ -62,12 +64,16 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
               <MuiTextField
                 {...textFieldProps}
                 variant="standard"
-                placeholder={field.allowedRelationTypes.length === 0 ? "All relationship types" : ""}
+                placeholder={
+                  field.allowedRelationTypes.length === 0
+                    ? t("fields.templateFields.defaultValue.allRelationshipTypes")
+                    : ""
+                }
                 slotProps={{
                   ...slotProps,
                   htmlInput: {
                     ...slotProps.htmlInput,
-                    "aria-label": "Allowed relationship types",
+                    "aria-label": t("fields.templateFields.defaultValue.allowedRelationshipTypes"),
                   },
                 }}
               />
@@ -80,8 +86,8 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
 
   const errorState = match<void, string | null>([
     [() => !_hasOptions, null],
-    [() => field.options.length === 0, "One or more values are required."],
-    [() => !field.optionsAreUnique, "All values must be unique."],
+    [() => field.options.length === 0, t("fields.templateFields.customField.validation.optionsRequired")],
+    [() => !field.optionsAreUnique, t("fields.templateFields.customField.validation.optionsNotUnique")],
     [() => true, null],
   ])();
 
@@ -169,7 +175,7 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
   // Add properties based on field type
   props.onChange = handleChange;
   props.name = field.name;
-  props.noValueLabel = "None";
+  props.noValueLabel = t("fields.templateFields.defaultValue.none");
 
   // Add options for choice/radio fields
   if (field.type === "radio" || field.type === "choice") {
@@ -204,12 +210,14 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
 
   return (
     <InputWrapper
-      label={_hasOptions ? "Values" : isAttachment ? "Default Description" : "Default Value"}
-      explanation={
+      label={
         _hasOptions
-          ? "The set of available options. Any selected values will be the default when creating samples."
-          : null
+          ? t("fields.templateFields.customField.values")
+          : isAttachment
+            ? t("fields.templateFields.customField.defaultDescription")
+            : t("fields.templateFields.customField.defaultValue")
       }
+      explanation={_hasOptions ? t("fields.templateFields.customField.valuesExplanation") : null}
     >
       {custom}
       {hasOptions(field.fieldType) && editing && (
@@ -231,7 +239,7 @@ function DefaultValueField({ field, editing }: DefaultValueFieldArgs): React.Rea
               });
             }}
           >
-            Add Value
+            {t("fields.templateFields.defaultValue.addValue")}
           </Button>
         </Box>
       )}

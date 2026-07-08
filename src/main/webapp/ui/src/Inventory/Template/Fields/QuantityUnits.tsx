@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import FormControl from "../../../components/Inputs/FormControl";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
@@ -39,6 +40,7 @@ function FormBoxWithLabel({ children, label }: { children: React.ReactNode; labe
 }
 
 function QuantityUnits(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
     unitStore,
@@ -59,15 +61,15 @@ function QuantityUnits(): React.ReactNode {
   const quantityCategories: Array<RadioOption<"mass" | "volume" | "dimensionless">> = [
     {
       value: "mass",
-      label: "Mass",
+      label: t("fields.templateFields.quantityUnits.mass"),
     },
     {
       value: "volume",
-      label: "Volume",
+      label: t("fields.templateFields.quantityUnits.volume"),
     },
     {
       value: "dimensionless",
-      label: "Unitless",
+      label: t("fields.templateFields.quantityUnits.unitless"),
     },
   ];
 
@@ -90,7 +92,7 @@ function QuantityUnits(): React.ReactNode {
 
   const editable = activeResult.isFieldEditable("defaultUnitId");
   return (
-    <InputWrapper label="Quantity Units">
+    <InputWrapper label={t("fields.templateFields.quantityUnits.label")}>
       <Box sx={{ mt: 2 }}>
         <Grid container spacing={2}>
           <Grid
@@ -99,7 +101,7 @@ function QuantityUnits(): React.ReactNode {
               sm: 5,
             }}
           >
-            <FormBoxWithLabel label="Unit Type">
+            <FormBoxWithLabel label={t("fields.templateFields.quantityUnits.unitType")}>
               <RadioField
                 value={category}
                 name="quantityUnitsCategory"
@@ -115,7 +117,7 @@ function QuantityUnits(): React.ReactNode {
               sm: 7,
             }}
           >
-            <FormBoxWithLabel label="Default Scale">
+            <FormBoxWithLabel label={t("fields.templateFields.quantityUnits.defaultScale")}>
               <RadioField
                 value={`${activeResult.defaultUnitId}`}
                 name="defaultscale"

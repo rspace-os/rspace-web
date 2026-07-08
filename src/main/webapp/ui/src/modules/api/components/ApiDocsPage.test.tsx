@@ -37,13 +37,13 @@ describe("createApiDocsConfiguration", () => {
     expect(config.sources).toHaveLength(2);
     const [eln, inventory] = config.sources ?? [];
     expect(eln).toMatchObject({
-      title: "RSpace ELN",
+      title: "common:apiDocs.sources.eln",
       slug: "rspace-eln",
       url: "https://example.com/resources/rspace_api_specs_2_23_0.yaml",
       default: true,
     });
     expect(inventory).toMatchObject({
-      title: "RSpace Inventory",
+      title: "common:apiDocs.sources.inventory",
       slug: "rspace-inventory",
       url: "https://example.com/resources/rspace_api_inventory_specs_2_24_0.yaml",
     });
@@ -102,6 +102,9 @@ describe("ApiDocsPage", () => {
     const passed = JSON.parse(mounted.getAttribute("data-configuration") ?? "{}") as ReturnType<
       typeof createApiDocsConfiguration
     >;
-    expect(passed.sources?.map((s) => s.title)).toEqual(["RSpace ELN", "RSpace Inventory"]);
+    expect(passed.sources?.map((s) => s.title)).toEqual([
+      "common:apiDocs.sources.eln",
+      "common:apiDocs.sources.inventory",
+    ]);
   });
 });

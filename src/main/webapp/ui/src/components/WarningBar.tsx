@@ -2,6 +2,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * This component is for showing a warning label just above a dialog's submit
@@ -9,6 +10,8 @@ import type React from "react";
  * will be lost if the user closes the dialog without submitting.
  */
 export default function WarningBar(): React.ReactNode {
+  const { t } = useTranslation("common");
+
   return (
     <Grid
       container
@@ -22,7 +25,7 @@ export default function WarningBar(): React.ReactNode {
       }}
     >
       <WarningIcon />
-      <Typography variant="caption">Unsaved changes</Typography>
+      <Typography variant="caption">{t("warningBar.unsavedChanges")}</Typography>
     </Grid>
   );
 }

@@ -1,6 +1,7 @@
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import { CELSIUS, type Temperature } from "../../../stores/definitions/Units";
 import BatchFormField from "../../components/Inputs/BatchFormField";
@@ -19,6 +20,7 @@ function StorageTemperature<
   fieldOwner: FieldOwner;
   onErrorStateChange: (value: boolean) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const disabled = !fieldOwner.isFieldEditable("storageTempMin") && !fieldOwner.isFieldEditable("storageTempMax");
 
   const storageTempMin: Temperature | null = fieldOwner.fieldValues.storageTempMin;
@@ -29,7 +31,7 @@ function StorageTemperature<
     <>
       {!storageTempMin || !storageTempMax ? (
         <BatchFormField
-          label="Storage Temperature"
+          label={t("sample.fields.storageTemperature.label")}
           value={void 0}
           asFieldset
           disabled={disabled}
@@ -38,8 +40,8 @@ function StorageTemperature<
             fieldOwner.setFieldEditable("storageTempMax", checked);
           }}
           canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit}
-          noValueLabel={fieldOwner.noValueLabel.storageTempMin ?? "None"}
-          explanation={disabled ? "" : "The storage temperature for this item is currently not specified."}
+          noValueLabel={fieldOwner.noValueLabel.storageTempMin ?? t("sample.fields.storageTemperature.none")}
+          explanation={disabled ? "" : t("sample.fields.storageTemperature.notSpecified")}
           renderInput={() => (
             <Button
               color="primary"
@@ -51,7 +53,7 @@ function StorageTemperature<
                 });
               }}
             >
-              Specify
+              {t("sample.fields.storageTemperature.specify")}
             </Button>
           )}
         />

@@ -23,8 +23,8 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={sample1} />
         </ThemeProvider>,
       );
-      expect(container).toHaveTextContent("Required Identifier Properties");
-      expect(container).toHaveTextContent("Recommended Identifier Properties");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.required.title");
+      expect(container).toHaveTextContent("fields.identifiers.wrapper.recommended.title");
     });
   });
   describe("When an identifier exists for container", () => {
@@ -49,7 +49,7 @@ describe("Identifiers section", () => {
           <IdentifiersList activeResult={historicalSample} />
         </ThemeProvider>,
       );
-      expect(screen.getByRole("button", { name: /preview/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "inventory:fields.identifiers.list.preview" })).toBeDisabled();
       expect(screen.getByRole("button", { name: /republish|publish/i })).toBeDisabled();
       expect(screen.getByRole("button", { name: /delete|retract/i })).toBeDisabled();
     });

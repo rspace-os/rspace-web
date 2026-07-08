@@ -18,8 +18,6 @@ import materialTheme from "../../../theme";
 import { menuIDs } from "../../../util/menuIDs";
 import ResultsTable from "../ResultsTable";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
-
 const renderResultsTable = (search: Search) => {
   const rootStore = makeMockRootStore({
     uiStore: {
@@ -145,7 +143,7 @@ describe("Results Table", () => {
       renderResultsTable(search);
 
       const checkbox = screen.getByRole("checkbox", {
-        name: /select result item/i,
+        name: "inventory:search.results.selectResultItem",
       });
       expect(checkbox).toBeDisabled();
 
@@ -153,7 +151,7 @@ describe("Results Table", () => {
       if (!row) throw new Error("Could not find table row for result");
 
       await user.hover(row);
-      expect(await screen.findByText(REQUIRED_PERMISSIONS_TOOLTIP)).toBeInTheDocument();
+      expect(await screen.findByText("inventory:detailedListing.card.requiredPermissions")).toBeInTheDocument();
     });
 
     test("select all skips results that lack the required permissions", async () => {
@@ -181,7 +179,7 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByRole("button", { name: /select all/i }));
+      await user.click(screen.getByRole("button", { name: "inventory:search.resultsTable.selectAll" }));
 
       expect(allowedContainer.selected).toBe(true);
       expect(disallowedContainer.selected).toBe(false);
@@ -214,8 +212,8 @@ describe("Results Table", () => {
       setSearchResults(search, allowedContainer, disallowedContainer);
       renderResultsTable(search);
 
-      await user.click(screen.getByLabelText(/more selection options/i));
-      await user.click(await screen.findByText("Invert"));
+      await user.click(screen.getByLabelText("inventory:contextMenu.splitButton.moreOptions"));
+      await user.click(await screen.findByText("inventory:search.resultsTable.selection.invert"));
 
       expect(allowedContainer.selected).toBe(false);
       expect(disallowedContainer.selected).toBe(false);
@@ -246,7 +244,7 @@ describe("Results Table", () => {
 
       await user.hover(row);
       expect(await screen.findByText("This item is already linked.")).toBeInTheDocument();
-      expect(screen.queryByText(REQUIRED_PERMISSIONS_TOOLTIP)).not.toBeInTheDocument();
+      expect(screen.queryByText("inventory:detailedListing.card.requiredPermissions")).not.toBeInTheDocument();
     });
   });
 });

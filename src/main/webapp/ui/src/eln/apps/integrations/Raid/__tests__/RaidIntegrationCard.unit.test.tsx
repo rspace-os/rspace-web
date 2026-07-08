@@ -1,13 +1,18 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import type React from "react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import materialTheme from "@/theme";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
+import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import AlertContext, { type Alert } from "@/stores/contexts/Alert";
 
 const mockSaveAppOptions = vi.fn();
@@ -27,6 +32,7 @@ vi.mock("@/modules/common/hooks/broadcast", () => ({
 const renderWithProviders = (
   integrationState: IntegrationStates["RAID"],
   update: (s: IntegrationStates["RAID"]) => void = () => {},
+  RealI18nWrapper?: React.ComponentType<{ children: React.ReactNode }>,
 ) => {
   const addAlert = vi.fn();
   const removeAlert = vi.fn();
@@ -34,19 +40,36 @@ const renderWithProviders = (
     addAlert,
     removeAlert,
   };
-  const view = render(
+  const tree = (
     <ThemeProvider theme={materialTheme}>
       <AlertContext.Provider value={result}>
         <RaidIntegrationCard integrationState={integrationState} update={update} />
       </AlertContext.Provider>
-    </ThemeProvider>,
+    </ThemeProvider>
   );
+  const view = render(RealI18nWrapper ? <RealI18nWrapper>{tree}</RealI18nWrapper> : tree);
   return { ...view, addAlert };
 };
-
+const renderWithRealI18n = async (
+  integrationState: IntegrationStates["RAID"],
+  update: (s: IntegrationStates["RAID"]) => void = () => {},
+) =>
+  renderWithProviders(
+    integrationState,
+    update,
+    await createRealI18nWrapper({ resources: { apps: appsEn, common: commonEn }, defaultNS: "apps" }),
+  );
+const openCard = (name = "apps:integrations.raid.name") => screen.getByRole("button", { name });
+const connectButton = (name = "apps:actions.connect") => screen.getByRole("button", { name });
+const disconnectButton = (name = "apps:actions.disconnect") => screen.getByRole("button", { name });
 describe("RaidIntegrationCard", () => {
+  let restoreConsole = () => {};
   beforeEach(() => {
     vi.clearAllMocks();
+    restoreConsole = silenceConsole(["log"], ["RaidIntegrationCard:"]);
+  });
+  afterEach(() => {
+    restoreConsole();
   });
   describe("Accessibility", () => {
     test("Should have no axe violations once dialog opened.", async () => {
@@ -58,7 +81,7 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
+      await userEvent.click(openCard());
       expect(await screen.findByRole("dialog")).toBeVisible();
 
       // @ts-expect-error toBeAccessible is from @sa11y/vitest
@@ -75,8 +98,8 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      expect(screen.getAllByText(/No authenticated servers./i)[0]).toBeVisible();
+      await userEvent.click(openCard());
+      expect(screen.getByText("apps:integrations.raid.noServers")).toBeVisible();
     });
 
     test("Renders server alias and URL link.", async () => {
@@ -91,15 +114,15 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
+      await userEvent.click(openCard());
       expect(screen.getByText("srvA")).toBeVisible();
-      expect(screen.getByRole("link", { name: /https:\/\/a.example/i })).toBeVisible();
-      expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+      expect(screen.getByRole("link", { name: "https://a.example" })).toBeVisible();
+      expect(connectButton()).toBeVisible();
     });
   });
   describe("Broadcast connect flow", () => {
     test("Marks server authenticated and shows alert when RAID_CONNECTED message received.", async () => {
-      const { addAlert } = renderWithProviders({
+      const { addAlert } = await renderWithRealI18n({
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
@@ -107,19 +130,19 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
+      await userEvent.click(openCard("RAiD"));
 
-      expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+      expect(connectButton("Connect")).toBeVisible();
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((h) =>
           h({ data: { type: "RAID_CONNECTED", alias: "srvA" } } as MessageEvent<RaidConnectedMessage>),
         );
       });
-      expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+      expect(disconnectButton("Disconnect")).toBeVisible();
       expect(addAlert).toHaveBeenCalled();
       const alertArg = (vi.mocked(addAlert).mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Successfully connected to srvA RAiD server.");
+      expect(alertArg.message).toBe("Successfully connected to srvA RAiD server.");
     });
 
     test("Ignores broadcast messages for unknown serverAlias", async () => {
@@ -131,16 +154,16 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
+      await userEvent.click(openCard());
 
-      expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+      expect(connectButton()).toBeVisible();
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((h) =>
           h({ data: { type: "RAID_CONNECTED", alias: "srvB" } } as MessageEvent<RaidConnectedMessage>),
         );
       });
-      expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "apps:actions.disconnect" })).not.toBeInTheDocument();
       expect(addAlert).not.toHaveBeenCalled();
     });
 
@@ -153,14 +176,14 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
+      await userEvent.click(openCard());
 
-      expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+      expect(connectButton()).toBeVisible();
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
         broadcastHandlers.forEach((h) => h("aaaaaaa" as unknown as MessageEvent<RaidConnectedMessage>));
       });
-      expect(screen.queryByRole("button", { name: /disconnect/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "apps:actions.disconnect" })).not.toBeInTheDocument();
       expect(addAlert).not.toHaveBeenCalled();
     });
   });
@@ -185,9 +208,9 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      await userEvent.click(screen.getByRole("button", { name: /add/i }));
-      const menuItem = await screen.findByRole("menuitem", { name: /srvB/i });
+      await userEvent.click(openCard());
+      await userEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      const menuItem = await screen.findByRole("menuitem", { name: "srvB https://b.example" });
 
       await userEvent.click(menuItem);
       await waitFor(() => {
@@ -207,8 +230,8 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
+      await userEvent.click(openCard());
+      const disconnectBtn = disconnectButton();
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -221,13 +244,13 @@ describe("RaidIntegrationCard", () => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Successfully disconnected.");
-      expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+      expect(alertArg.message).toContain("apps:integrations.raid.alerts.disconnectSuccess");
+      expect(connectButton()).toBeVisible();
     });
 
     test("Disconnect button shows error alert on fetch failure.", async () => {
       fetchMock.mockResponseOnce("", { status: 500, statusText: "Internal Server Error" });
-      const { addAlert } = renderWithProviders({
+      const { addAlert } = await renderWithRealI18n({
         mode: "DISABLED",
         credentials: {
           configuredServers: [{ alias: "srvA", url: "https://a.example" }],
@@ -235,8 +258,8 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
+      await userEvent.click(openCard("RAiD"));
+      const disconnectBtn = disconnectButton("Disconnect");
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -249,8 +272,9 @@ describe("RaidIntegrationCard", () => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Server responded with status 500: Internal Server Error");
-      expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+      expect(alertArg.title).toBe("Could not disconnect srvA RAiD connection");
+      expect(alertArg.message).toBe("Server responded with status 500: Internal Server Error");
+      expect(disconnectButton("Disconnect")).toBeVisible();
     });
 
     test("Disconnect button shows error alert on fetch network error.", async () => {
@@ -263,8 +287,8 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      const disconnectBtn = screen.getByRole("button", { name: /disconnect/i });
+      await userEvent.click(openCard());
+      const disconnectBtn = disconnectButton();
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
@@ -278,7 +302,7 @@ describe("RaidIntegrationCard", () => {
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
       expect(alertArg.message).toContain("Network error");
-      expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+      expect(disconnectButton()).toBeVisible();
     });
   });
   describe("Delete", () => {
@@ -292,8 +316,8 @@ describe("RaidIntegrationCard", () => {
         },
       });
 
-      await userEvent.click(screen.getByRole("button", { name: /raid/i }));
-      const deleteBtn = screen.getByRole("button", { name: /delete/i });
+      await userEvent.click(openCard());
+      const deleteBtn = screen.getByRole("button", { name: "common:actions.delete" });
 
       await userEvent.click(deleteBtn);
       await waitFor(() => {

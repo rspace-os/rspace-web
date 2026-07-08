@@ -6,6 +6,8 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/zenodo";
 import ZenodoIcon from "../../../assets/branding/zenodo/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -21,6 +23,7 @@ type ZenodoArgs = {
  * Zenodo uses API-key based authentication, as implemeted by the form below.
  */
 function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [apiKey, setApiKey] = useState(integrationState.credentials.ZENODO_USER_TOKEN.orElse(""));
 
   return (
@@ -32,24 +35,18 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Zenodo"
+        name={t("integrations.zenodo.name")}
         integrationState={integrationState}
-        explanatoryText="Deposit research papers and datasets into a general-purpose open repository with PIDs."
+        explanatoryText={t("integrations.zenodo.description")}
         image={ZenodoIcon}
         color={LOGO_COLOR}
-        usageText="You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
-        helpLinkText="Zenodo integration docs"
-        website="zenodo.org"
+        usageText={t("integrations.zenodo.usage")}
+        helpLinkText={t("integrations.zenodo.helpLink")}
+        website="https://zenodo.org"
         docLink="zenodo"
         setupSection={
           <>
-            <ol>
-              <li>
-                Obtain an API Token from Zenodo by going into Settings → Applications, and name the token “RSpace”.
-              </li>
-              <li>Copy the API Token into the field below, and Save.</li>
-              <li>Zenodo will now be available as an option in the export dialog.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.zenodo.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {
@@ -66,7 +63,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
                   <TextField
                     fullWidth
                     variant="outlined"
-                    label="API Key"
+                    label={t("integrations.zenodo.fields.apiKey")}
                     type="password"
                     size="small"
                     value={apiKey}
@@ -76,7 +73,7 @@ function Zenodo({ integrationState, update }: ZenodoArgs): React.ReactNode {
                   />
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>

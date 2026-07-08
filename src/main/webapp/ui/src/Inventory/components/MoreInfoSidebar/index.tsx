@@ -7,6 +7,7 @@ import Drawer from "@mui/material/Drawer";
 import IconButton from "@mui/material/IconButton";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Factory } from "../../../stores/definitions/Factory";
 import useStores from "../../../stores/use-stores";
 import { useIsSingleColumnLayout } from "../Layout/Layout2x1";
@@ -17,6 +18,7 @@ type SidebarArgs = {
 };
 
 function Sidebar({ factory }: SidebarArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     uiStore,
     searchStore: { activeResult },
@@ -39,7 +41,7 @@ function Sidebar({ factory }: SidebarArgs): React.ReactNode {
     >
       <Card elevation={0} sx={{ display: "flex", flexDirection: "column" }}>
         <CardActions>
-          <IconButton onClick={() => uiStore.toggleInfo()} aria-label="Close more info sidebar">
+          <IconButton onClick={() => uiStore.toggleInfo()} aria-label={t("moreInfo.closeSidebar")}>
             <ChevronRightIcon />
           </IconButton>
         </CardActions>

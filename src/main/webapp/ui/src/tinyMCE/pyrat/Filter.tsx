@@ -9,6 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import DateField2 from "../../components/Inputs/DateField";
 import { truncateIsoTimestamp } from "../../stores/definitions/Units";
 
@@ -31,6 +32,7 @@ export default function Filter({
 }) {
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [valid, setValid] = React.useState<Record<string, any>>({});
+  const { t } = useTranslation(["apps", "common"]);
 
   useEffect(resetValidity, []);
 
@@ -241,7 +243,7 @@ export default function Filter({
               variant="outlined"
               value={config.value}
               error={!valid[key]}
-              helperText={!valid[key] ? "Should be an integer" : null}
+              helperText={!valid[key] ? t("pyrat.filter.integerValidation") : null}
               onChange={(event) => handleFilterChange(event, key, config)}
               fullWidth
               slotProps={{
@@ -307,7 +309,7 @@ export default function Filter({
         }}
         onClick={handleClear}
       >
-        Clear
+        {t("common:actions.clear")}
       </Button>
       <Button
         variant="contained"
@@ -327,7 +329,7 @@ export default function Filter({
         }}
         onClick={() => setFilterCounter(filterCounter + 1)}
       >
-        Filter
+        {t("pyrat.filter.label")}
       </Button>
     </>
   );

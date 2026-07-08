@@ -9,6 +9,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import type { Group, SharedWithGroup } from "../../../../stores/definitions/Group";
 import GroupsField from "../../Inputs/GroupsField";
@@ -26,6 +27,7 @@ export default function AccessListTable({
   onCheckboxClick,
   onAdditionalGroup,
 }: AccessListTableArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [addButton, setAddButton] = useState<HTMLElement | null>(null);
 
   return (
@@ -35,10 +37,10 @@ export default function AccessListTable({
           <TableCell></TableCell>
           <TableCell>
             <Grid container sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "nowrap" }}>
-              <Grid>Group Name</Grid>
+              <Grid>{t("fields.accessPermissions.groupName")}</Grid>
               <Grid>
                 <IconButtonWithTooltip
-                  title="Add a group"
+                  title={t("fields.accessPermissions.addGroup")}
                   icon={<AddIcon />}
                   onClick={(event) => {
                     setAddButton(event.currentTarget);

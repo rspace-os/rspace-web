@@ -1,47 +1,37 @@
-import TimeAgo, { type Formatter } from "react-timeago";
-import { makeIntlFormatter } from "react-timeago/defaultFormatter";
+import { useTranslation } from "react-i18next";
+import TimeAgo from "react-timeago-i18n";
 import { isoToLocale } from "@/util/Util";
 
-type UserDetailsArgs = {
-  time: string;
-  formatter?: Formatter;
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const COMPACT_FORMAT_OPTIONS: Intl.RelativeTimeFormatOptions = {
+  numeric: "always",
+  style: "narrow",
 };
 
-const intlFormatter = makeIntlFormatter({
-  locale: "en-US",
-  localeMatcher: "best fit",
-  numberingSystem: "latn",
-  style: "long",
-  numeric: "auto",
-});
+type TimeAgoCustomProps = {
+  time: string;
+  compact?: boolean;
+};
 
-const TimeAgoCustom = ({ time, formatter }: UserDetailsArgs) => {
-  const customFormatter: Formatter = (value, unit, suffix, epochMilliseconds, nextFormatter, now) => {
-    if (unit === "second") {
-      return "< 1 minute ago";
-    }
+const TimeAgoCustom = ({ time, compact = false }: TimeAgoCustomProps) => {
+  const { t } = useTranslation();
+  const timestamp = Date.parse(time);
+  const shouldRenderRelativeTime = timestamp + THIRTY_DAYS_MS > Date.now();
+  const hideSecondsText: [string, string] = [t("timeAgo.lessThanOneMinuteAgo"), t("timeAgo.inLessThanOneMinute")];
 
-    if (typeof formatter === "function") {
-      return formatter(value, unit, suffix, epochMilliseconds, nextFormatter, now);
-    }
-
-    if (typeof nextFormatter === "function") {
-      try {
-        return nextFormatter(value, unit, suffix, epochMilliseconds, intlFormatter, now);
-      } catch {
-        return `${value} ${unit}${suffix}`;
-      }
-    }
-
-    return `${value} ${unit}${suffix}`;
-  };
-
-  // display "time ago" if less than 30 days ago
-  if (Date.parse(time) + 30 * 24 * 60 * 60 * 1000 > Date.now()) {
-    // Not sure what's causing this
-    return <TimeAgo date={time} formatter={customFormatter} />;
+  if (shouldRenderRelativeTime) {
+    return (
+      <TimeAgo
+        date={timestamp}
+        locale="en-US"
+        hideSeconds
+        hideSecondsText={hideSecondsText}
+        formatOptions={compact ? COMPACT_FORMAT_OPTIONS : undefined}
+        roundStrategy={compact ? "floor" : undefined}
+        allowFuture={compact}
+      />
+    );
   }
-  // display actual date otherwise
   return <>{isoToLocale(time)}</>;
 };
 

@@ -31,9 +31,9 @@ describe("IdentifierPublicPage", () => {
 
       render(<IdentifierPublicPage publicId={"1"} />);
       await waitFor(() => {
-        expect(screen.getByText("Dates")).toBeVisible();
+        expect(screen.getByText("public:headings.dates")).toBeVisible();
       });
-      expect(screen.getByRole("group", { name: /dates/ })).toHaveTextContent("2024-09-05");
+      expect(screen.getByRole("group", { name: "public:labels.dates" })).toHaveTextContent("2024-09-05");
     });
   });
 });

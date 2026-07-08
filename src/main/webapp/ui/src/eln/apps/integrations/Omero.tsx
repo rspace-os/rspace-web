@@ -3,7 +3,9 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/omero";
 import OmeroIcon from "../../../assets/branding/omero/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -25,6 +27,7 @@ export const OMERO_CONNECTION_CHANNEL = "rspace.apps.omero.connection";
  * Omero passes a username and password in a regular form submission.
  */
 function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -35,7 +38,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Could not connect to OMERO",
+          title: t("integrations.omero.alerts.connectError"),
           message: e.data.error,
         }),
       );
@@ -44,7 +47,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
     addAlert(
       mkAlert({
         variant: "success",
-        message: "Successfully connected to OMERO.",
+        message: t("integrations.omero.alerts.connectSuccess"),
       }),
     );
   });
@@ -58,28 +61,21 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="OMERO"
+        name={t("integrations.omero.name")}
         integrationState={integrationState}
-        explanatoryText="View, manage, and share your microscopy image data with an extensible central repository."
+        explanatoryText={t("integrations.omero.description")}
         image={OmeroIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
-        usageText="You can import OMERO image thumbnails and metadata into RSpace documents."
-        helpLinkText="Omero integration docs"
-        website="openmicroscopy.org/omero"
+        usageText={t("integrations.omero.usage")}
+        helpLinkText={t("integrations.omero.helpLink")}
+        website="https://openmicroscopy.org/omero"
         docLink="omero"
         setupSection={
           <>
-            <ol>
-              <li>Provide your OMERO credentials and click on Connect.</li>
-              <li>Enable the integration.</li>
-              <li>
-                When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image
-                data.
-              </li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.omero.setup.instructions" />
             <form
-              aria-label="OMERO credentials"
+              aria-label={t("integrations.omero.credentialsFormLabel")}
               action="/apps/omero/connect"
               method="POST"
               target="_blank"
@@ -90,7 +86,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                   fullWidth
                   value={username}
                   onChange={({ target: { value } }) => setUsername(value)}
-                  label="Username"
+                  label={t("integrations.omero.fields.username")}
                   sx={{ mt: 1 }}
                   slotProps={{
                     htmlInput: {
@@ -103,7 +99,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                   fullWidth
                   value={password}
                   onChange={({ target: { value } }) => setPassword(value)}
-                  label="Password"
+                  label={t("integrations.omero.fields.password")}
                   sx={{ mt: 1 }}
                   slotProps={{
                     htmlInput: {
@@ -114,7 +110,7 @@ function Omero({ integrationState, update }: OmeroArgs): React.ReactNode {
                   }}
                 />
                 <Button type="submit" value={"Connect"} sx={{ mt: 1 }}>
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </Stack>
             </form>

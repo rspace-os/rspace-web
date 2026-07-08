@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { INVENTORY_PREFIX_ICON_DATA, prefixOf } from "@/Inventory/components/Fields/Link/iconForGlobalId";
 import type { LinkableRecord } from "../../stores/definitions/LinkableRecord";
@@ -32,6 +33,7 @@ export default function useReferencingInventoryItems(globalId: string | null): {
   const [loading, setLoading] = React.useState(true);
   const [items, setItems] = React.useState<ReadonlyArray<ReferencingInventoryItem>>([]);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const { t } = useTranslation(["gallery", "common"]);
 
   const fetchReferencingItems = React.useCallback(async (): Promise<void> => {
     if (!globalId) {
@@ -62,17 +64,19 @@ export default function useReferencingInventoryItems(globalId: string | null): {
                 // must still render (as the legacy panel does) rather than be
                 // silently dropped
                 const relationType = Parsers.getValueWithKey("relationType")(obj).flatMap(Parsers.isString).orElse("");
-                return Result.all(sourceGlobalId, name, type).map(([g, n, t]) => ({
+                return Result.all(sourceGlobalId, name, type).map(([g, n, ty]) => ({
                   globalId: g,
                   name: n,
-                  type: t,
+                  type: ty,
                   relationType,
                   permalinkHref: `/globalId/${g}`,
                   linkableRecord: {
                     id: parseInt(g.replace(/^[A-Z]{2}/, ""), 10) || null,
                     globalId: g,
                     name: n,
-                    recordTypeLabel: INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.recordTypeLabel ?? "Item",
+                    recordTypeLabel:
+                      INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.recordTypeLabel ??
+                      t("common:recordTypes.item.singular"),
                     iconName: INVENTORY_PREFIX_ICON_DATA[prefixOf(g) ?? ""]?.iconName ?? "container",
                     permalinkURL: `/globalId/${g}`,
                   },
@@ -84,11 +88,11 @@ export default function useReferencingInventoryItems(globalId: string | null): {
       setItems(rows);
     } catch (e) {
       console.error(e);
-      setErrorMessage("Error loading related inventory items.");
+      setErrorMessage(t("referencingInventoryItems.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [globalId]);
+  }, [globalId, t]);
 
   React.useEffect(() => {
     void fetchReferencingItems();

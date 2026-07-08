@@ -8,6 +8,7 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/inventory";
@@ -16,6 +17,8 @@ import AppBar from "../../../components/AppBar";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import IgsnManagementPage from "../../../Inventory/Identifiers/IGSN/IgsnManagementPage";
 import { type Identifier, IdentifiersRefreshProvider } from "../../../Inventory/useIdentifiers";
+import i18n from "../../../modules/common/i18n";
+import I18nRoot from "../../../modules/common/i18n/I18nRoot";
 import { Optional } from "../../../util/optional";
 import RsSet from "../../../util/set";
 import { toTitleCase } from "../../../util/Util";
@@ -45,6 +48,7 @@ type Editor = {
 };
 
 function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: () => void; editor: Editor }) {
+  const { t } = useTranslation(["workspace", "common"]);
   const [selectedIgsns, setSelectedIgsns] = React.useState<RsSet<Identifier>>(new RsSet([]));
   const { getToken } = useOauthToken();
 
@@ -79,19 +83,16 @@ function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: 
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg">
-      <AppBar variant="dialog" currentPage="Inventory Identifiers" accessibilityTips={{}} />
-      <DialogTitle>Insert Barcodes Table</DialogTitle>
+      <AppBar variant="dialog" currentPage={t("tinymce.identifiers.pageTitle")} accessibilityTips={{}} />
+      <DialogTitle>{t("tinymce.identifiers.dialogTitle")}</DialogTitle>
       <DialogContent>
-        <Typography variant="body1">
-          Select from newly registered IGSN IDs or those already with linked items, and insert a table into your
-          document, each with a QR code.
-        </Typography>
+        <Typography variant="body1">{t("tinymce.identifiers.instructions")}</Typography>
         <IdentifiersRefreshProvider>
           <IgsnManagementPage selectedIgsns={selectedIgsns} setSelectedIgsns={setSelectedIgsns} />
         </IdentifiersRefreshProvider>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t("common:actions.close")}</Button>
         <Button
           variant="contained"
           color="primary"
@@ -115,7 +116,7 @@ function IdentifiersDialog({ open, onClose, editor }: { open: boolean; onClose: 
             onClose();
           }}
         >
-          Insert Barcode Table
+          {t("tinymce.identifiers.insertBarcodeTable")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -140,13 +141,15 @@ class IdentifiersPlugin {
       while (true) {
         newProps = yield newProps;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Alerts>
-                <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-              </Alerts>
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["workspace", "common"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Alerts>
+                  <IdentifiersDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
+                </Alerts>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }
@@ -161,7 +164,7 @@ class IdentifiersPlugin {
     identifiersRenderer.next({ open: false });
 
     editor.ui.registry.addMenuItem("optIdentifiers", {
-      text: "Inventory Identifiers",
+      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
@@ -173,7 +176,7 @@ class IdentifiersPlugin {
       },
     });
     editor.ui.registry.addButton("identifiers", {
-      tooltip: "Inventory Identifiers",
+      tooltip: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       icon: "inventory_identifiers",
       onAction: () => {
         identifiersRenderer.next({
@@ -186,7 +189,7 @@ class IdentifiersPlugin {
     });
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optIdentifiers", {
-      text: "Inventory Identifiers",
+      text: i18n.t("workspace:tinymce.identifiers.pageTitle"),
       aliases: ["IGSN"],
       icon: "inventory_identifiers",
       action: () => {

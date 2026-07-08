@@ -19,7 +19,7 @@ const TestLandmark = ({ name }: { name: string }) => {
         m: 1,
       }}
     >
-      <Typography variant="h6">{name} Content</Typography>
+      <Typography variant="h6">{`${name} Content`}</Typography>
     </Box>
   );
 };
@@ -53,7 +53,7 @@ export function DynamicLandmarksExample() {
       <Box sx={{ mt: 5 }}>
         {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
         <button onClick={() => setShowExtraLandmarks(!showExtraLandmarks)}>
-          {showExtraLandmarks ? "Hide" : "Show"} Extra Landmarks
+          {`${showExtraLandmarks ? "Hide" : "Show"} Extra Landmarks`}
         </button>
         <TestLandmark name="Header" />
         <TestLandmark name="Main Content" />

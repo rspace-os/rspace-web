@@ -2,6 +2,7 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
 import type { FieldModelAttrs } from "../../../stores/models/FieldModel";
@@ -23,16 +24,17 @@ type NewFieldArgs = {
 };
 
 function NewField({ record }: NewFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <FormControl inline>
-      <CustomTooltip title="Add field">
+      <CustomTooltip title={t("fields.templateFields.addField")}>
         <Button
           color="primary"
           startIcon={<AddOutlinedIcon />}
           variant="outlined"
           onClick={() => record.addField(EMPTY_FIELD)}
         >
-          Add new field
+          {t("fields.extraFields.addNewField")}
         </Button>
       </CustomTooltip>
     </FormControl>

@@ -9,6 +9,7 @@ import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import StyledMenu from "../../../components/StyledMenu";
 import NameDialog from "../../../Inventory/Search/components/NameDialog";
@@ -27,11 +28,6 @@ export type SavedListArgs<T extends SavedItem> = {
   isDisabled?: (item: T) => boolean;
 };
 
-const helpText: Record<ItemType, string> = {
-  baskets: `There are no Baskets yet. To create one: select some results and then 'Add to Basket'.`,
-  searches: `There are no Saved Searches yet.`,
-};
-
 function SavedList<T extends SavedItem>({
   anchorEl,
   itemType,
@@ -39,6 +35,7 @@ function SavedList<T extends SavedItem>({
   onSelect,
   isDisabled,
 }: SavedListArgs<T>): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore, peopleStore } = useStores();
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
@@ -95,9 +92,9 @@ function SavedList<T extends SavedItem>({
                 {itemType === "baskets" && (
                   <Badge sx={{ mx: 1 }} badgeContent={(item as BasketModel).itemCount || "0"} color="primary" />
                 )}
-                <CustomTooltip title="Edit name">
+                <CustomTooltip title={t("search.savedList.editName")}>
                   <IconButton
-                    aria-label="edit saved item"
+                    aria-label={t("search.savedList.editLabel")}
                     onClick={(e) => {
                       e.stopPropagation();
                       setIndex(i);
@@ -108,10 +105,16 @@ function SavedList<T extends SavedItem>({
                     <EditIcon sx={{ color: "primary.main" }} />
                   </IconButton>
                 </CustomTooltip>
-                <CustomTooltip title={`Delete ${itemType === "searches" ? "Saved Search" : "Basket"}`}>
+                <CustomTooltip
+                  title={
+                    itemType === "searches"
+                      ? t("search.savedList.deleteSavedSearch")
+                      : t("search.savedList.deleteBasket")
+                  }
+                >
                   <IconButton
                     edge="end"
-                    aria-label="delete saved item"
+                    aria-label={t("search.savedList.deleteLabel")}
                     onClick={(e) => {
                       e.stopPropagation();
                       void handleDelete(item);
@@ -125,7 +128,7 @@ function SavedList<T extends SavedItem>({
           ))
         ) : (
           <Alert sx={{ width: "300px" }} severity="info" onClose={() => onSelect(null)}>
-            {helpText[itemType]}
+            {itemType === "searches" ? t("search.savedList.noSavedSearches") : t("search.savedList.noBaskets")}
           </Alert>
         )}
       </StyledMenu>

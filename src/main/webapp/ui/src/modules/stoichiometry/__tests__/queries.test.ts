@@ -134,9 +134,10 @@ describe("getStoichiometry", () => {
       statusText: "Internal Server Error",
     });
 
-    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow(
-      "Failed to fetch stoichiometry: Internal Server Error",
-    );
+    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toMatchObject({
+      key: "stoichiometry.errors.fetchFailed",
+      values: { status: "Internal Server Error" },
+    });
   });
 
   it("bubbles up network failures", async () => {

@@ -1,5 +1,6 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import React from "react";
+import i18n from "@/modules/common/i18n";
 import RsSet from "../../util/set";
 import type { GalleryFile } from "./useGalleryListing";
 
@@ -68,15 +69,14 @@ class Selection {
   }
 
   get label(): string {
-    if (this.isEmpty) return "No selection";
+    if (this.isEmpty) return i18n.t("gallery:selection.empty");
     const folderCount = this.asSet().filter((f) => f.isFolder).size;
     const fileCount = this.size - folderCount;
-    return [
-      fileCount > 0 ? `${fileCount} file${fileCount > 1 ? "s" : ""}` : "",
-      fileCount > 0 && folderCount > 0 ? ", " : "",
-      folderCount > 0 ? `${folderCount} folder${folderCount > 1 ? "s" : ""}` : "",
-      " selected",
-    ].join("");
+    if (fileCount > 0 && folderCount > 0) {
+      return i18n.t("gallery:selection.filesAndFolders", { fileCount, folderCount });
+    }
+    if (fileCount > 0) return i18n.t("gallery:selection.files", { count: fileCount });
+    return i18n.t("gallery:selection.folders", { count: folderCount });
   }
 }
 

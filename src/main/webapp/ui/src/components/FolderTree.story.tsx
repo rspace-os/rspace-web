@@ -38,31 +38,31 @@ export function SimpleFolderTreeExample() {
     <ThemeProvider theme={materialTheme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h4" gutterBottom>
-          Folder Tree
+          {"Folder Tree"}
         </Typography>
         <Stack direction="row" spacing={2}>
           <Box sx={{ width: 300, border: 1, borderColor: "grey.300", p: 1 }}>
             <FolderTree onFolderSelect={setSelectedFolder} />
           </Box>
           <Box sx={{ flex: 1, p: 2, border: 1, borderColor: "grey.300" }}>
-            <Typography variant="h6">Selected Folder:</Typography>
+            <Typography variant="h6">{"Selected Folder:"}</Typography>
             {selectedFolder ? (
               <div>
                 <p>
-                  <strong>ID:</strong> {selectedFolder.id}
+                  <strong>{"ID:"}</strong> {selectedFolder.id}
                 </p>
                 <p>
-                  <strong>Name:</strong> {selectedFolder.name}
+                  <strong>{"Name:"}</strong> {selectedFolder.name}
                 </p>
                 <p>
-                  <strong>Global ID:</strong> {selectedFolder.globalId}
+                  <strong>{"Global ID:"}</strong> {selectedFolder.globalId}
                 </p>
                 <p>
-                  <strong>Type:</strong> {selectedFolder.type}
+                  <strong>{"Type:"}</strong> {selectedFolder.type}
                 </p>
               </div>
             ) : (
-              <Typography color="text.secondary">No folder selected</Typography>
+              <Typography color="text.secondary">{"No folder selected"}</Typography>
             )}
           </Box>
         </Stack>

@@ -7,6 +7,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import EnhancedTableHead, { type Cell } from "../../components/EnhancedTableHead";
 import { getSorting } from "../../util/table";
 import type { BookingAndEquipmentDetails } from "./ClustermarketData";
@@ -45,6 +46,7 @@ export default function ResultsTable({
   setSelectedBookingIds: (newSelection: Array<BookingAndEquipmentDetails["bookingID"]>) => void;
   bookingType: string;
 }) {
+  const { t } = useTranslation("workspace");
   function onRowClick(_event: unknown, item_id: BookingAndEquipmentDetails["bookingID"]) {
     const newSelected = selectedBookingIds.includes(item_id)
       ? selectedBookingIds.filter((id) => id !== item_id)
@@ -65,7 +67,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label="booking search results">
+        <Table aria-label={t("tinymce.clustermarket.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -168,7 +170,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          Selected: {selectedBookingIds.length}
+          {t("tinymce.clustermarket.selectedCount", { count: selectedBookingIds.length })}
         </Typography>
       </Box>
     </>

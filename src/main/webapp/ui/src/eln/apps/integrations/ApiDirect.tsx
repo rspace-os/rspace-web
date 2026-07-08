@@ -3,11 +3,14 @@ import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/rspace/api";
 import ApiIcon from "../../../assets/branding/rspace/api/logo.svg";
 import IntegrationCard from "../IntegrationCard";
 
 function ApiDirect(): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -17,22 +20,19 @@ function ApiDirect(): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="API Direct Access"
-        explanatoryText="Directly interact with the RSpace API using scripts and custom applications."
+        name={t("integrations.apiDirect.name")}
+        explanatoryText={t("integrations.apiDirect.description")}
         image={ApiIcon}
         color={LOGO_COLOR}
-        usageText="Access RSpace programmatically using Python, R, or any language with HTTP capabilities to automate tasks and integrate with your own tools."
-        helpLinkText="API documentation"
+        usageText={t("integrations.apiDirect.usage")}
+        helpLinkText={t("integrations.apiDirect.helpLink")}
         website="/public/apiDocs"
         docLink="apiDirect"
         setupSection={
           <>
-            <ol>
-              <li>In My RSpace → My Profile, generate an API key.</li>
-              <li>Use the API key in your scripts with the following example patterns:</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.apiDirect.setup.instructions" />
             <Typography variant="body2" sx={{ mt: 2, mb: 1 }}>
-              <strong>cURL example:</strong>
+              <strong>{t("integrations.apiDirect.curlExample")}</strong>
             </Typography>
             <Box
               component="pre"
@@ -47,7 +47,7 @@ function ApiDirect(): React.ReactNode {
      https://your-rspace-instance.com/api/v1/userDetails/whoami`}
             </Box>
             <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-              <strong>Python SDK:</strong>
+              <strong>{t("integrations.apiDirect.pythonSdk")}</strong>
               <Box
                 component="pre"
                 sx={{

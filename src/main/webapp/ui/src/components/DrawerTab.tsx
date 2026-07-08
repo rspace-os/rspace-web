@@ -45,6 +45,11 @@ const DrawerTab = React.forwardRef<HTMLDivElement, DrawerTabProps>(
             opacity: drawerOpen ? 1 : 0,
             transform: drawerOpen ? "unset" : "translateX(-20px)",
             textTransform: "uppercase",
+            // The Drawer sets `white-space: nowrap` (an inherited CSS
+            // property) so its width doesn't reflow mid-transition; that
+            // otherwise prevents longer labels (e.g. "Instrument Templates")
+            // from wrapping onto a second line and truncates them instead.
+            whiteSpace: "normal",
             transitionDelay: `${(index + 1) * 0.02}s !important`,
           }}
         />

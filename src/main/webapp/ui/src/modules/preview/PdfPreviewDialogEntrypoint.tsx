@@ -6,6 +6,7 @@ import Alerts from "@/components/Alerts/Alerts";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { CallableAsposePreview, useAsposePreview } from "@/eln/gallery/components/CallableAsposePreview";
 import { CallablePdfPreview, usePdfPreview } from "@/eln/gallery/components/CallablePdfPreview";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "@/theme";
 
 export const OPEN_PDF_PREVIEW_DIALOG = "OPEN_PDF_PREVIEW_DIALOG";
@@ -90,7 +91,9 @@ window.addEventListener("load", () => {
   const root = createRoot(domContainer);
   root.render(
     <React.StrictMode>
-      <PdfPreviewDialogWrapper />
+      <I18nRoot namespaces={["gallery", "common"]}>
+        <PdfPreviewDialogWrapper />
+      </I18nRoot>
     </React.StrictMode>,
   );
 });

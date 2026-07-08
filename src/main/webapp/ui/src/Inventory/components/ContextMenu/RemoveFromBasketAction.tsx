@@ -1,6 +1,7 @@
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import { type GlobalId, getSavedGlobalId } from "../../../stores/definitions/BaseRecord";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -18,6 +19,7 @@ type RemoveFromBasketActionArgs = {
 
 const RemoveFromBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, RemoveFromBasketActionArgs>(
   ({ as, closeMenu, disabled, selectedResults }: RemoveFromBasketActionArgs, ref) => {
+    const { t } = useTranslation("inventory");
     const { searchStore } = useStores();
     const { useLocation } = useContext(NavigateContext);
     function useSearchParams() {
@@ -49,7 +51,7 @@ const RemoveFromBasketAction = forwardRef<React.ElementRef<typeof ContextMenuAct
             <ContextMenuAction
               onClick={handleOpen}
               icon={<RemoveFromBasketIcon />}
-              label="Remove from This Basket"
+              label={t("contextMenu.actions.removeFromThisBasket")}
               disabledHelp={disabledHelp}
               as={as}
               ref={ref}

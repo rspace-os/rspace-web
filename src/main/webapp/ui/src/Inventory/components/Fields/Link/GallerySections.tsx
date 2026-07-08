@@ -7,6 +7,7 @@ import TableBody from "@mui/material/TableBody";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { uploadNewGalleryVersion } from "@/modules/workspace/galleryUpload";
 import { getLinkedDocuments } from "@/modules/workspace/linkedRecords";
 import type { LinkedRecords, WorkspaceRecordInformation } from "@/modules/workspace/schema";
@@ -26,6 +27,7 @@ export interface GallerySectionsProps {
  * preview, and the Download / Show-linked-docs / Upload-new-version actions.
  */
 export default function GallerySections({ info, onRecordChanged }: GallerySectionsProps): React.ReactElement {
+  const { t } = useTranslation(["inventory", "common"]);
   const isRevisionView = info.revision != null;
   const isImage = info.type === "Image";
   // The ELN gates upload on `!isRevisionView && (owner || VIEW_MODE)`. `VIEW_MODE` is
@@ -67,7 +69,7 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
         onRecordChanged();
       })
       .catch((e: unknown) => {
-        setUploadError(e instanceof Error ? e.message : "Upload failed.");
+        setUploadError(e instanceof Error ? e.message : t("fields.link.gallerySections.uploadFailed"));
       })
       .finally(() => setUploading(false));
   }
@@ -82,31 +84,41 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
         <Box sx={{ flex: "1 1 18rem" }}>
           <Table size="small">
             <TableBody>
-              <MetaRow label="Unique Id">
+              <MetaRow label={t("fields.link.gallerySections.labels.uniqueId")}>
                 <GlobalIdLink globalId={info.oid.idString} />
               </MetaRow>
-              <MetaRow label="Type">{info.type}</MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.type")}>{info.type}</MetaRow>
               {info.version != null && (info.version > 1 || isRevisionView) ? (
-                <MetaRow label="Version">{info.version}</MetaRow>
+                <MetaRow label={t("fields.link.gallerySections.labels.version")}>{info.version}</MetaRow>
               ) : null}
-              {info.size != null ? <MetaRow label="File size">{formatFileSize(info.size)}</MetaRow> : null}
-              {info.extension ? <MetaRow label="Extension">{info.extension}</MetaRow> : null}
-              <MetaRow label="Owner">{info.ownerFullName}</MetaRow>
-              <MetaRow label="Creation Date">{info.creationDateWithClientTimezoneOffset}</MetaRow>
-              <MetaRow label="Last Modified">{info.modificationDateWithClientTimezoneOffset}</MetaRow>
+              {info.size != null ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.fileSize")}>{formatFileSize(info.size)}</MetaRow>
+              ) : null}
+              {info.extension ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.extension")}>{info.extension}</MetaRow>
+              ) : null}
+              <MetaRow label={t("fields.link.gallerySections.labels.owner")}>{info.ownerFullName}</MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.creationDate")}>
+                {info.creationDateWithClientTimezoneOffset}
+              </MetaRow>
+              <MetaRow label={t("fields.link.gallerySections.labels.lastModified")}>
+                {info.modificationDateWithClientTimezoneOffset}
+              </MetaRow>
               {info.originalImageOid ? (
-                <MetaRow label="Original Image">
+                <MetaRow label={t("fields.link.gallerySections.labels.originalImage")}>
                   <GlobalIdLink globalId={info.originalImageOid.idString} />
                 </MetaRow>
               ) : null}
-              {info.description ? <MetaRow label="Caption">{info.description}</MetaRow> : null}
+              {info.description ? (
+                <MetaRow label={t("fields.link.gallerySections.labels.caption")}>{info.description}</MetaRow>
+              ) : null}
             </TableBody>
           </Table>
         </Box>
 
         {isImage ? (
           <Box sx={{ flex: "0 0 auto" }}>
-            <Typography variant="subtitle2">Preview</Typography>
+            <Typography variant="subtitle2">{t("fields.link.gallerySections.preview")}</Typography>
             <Box
               component="img"
               src={thumbnailSrc}
@@ -124,17 +136,19 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
       <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
         <Button size="small" href={downloadHref} target="_blank" rel="noopener noreferrer">
-          Download
+          {t("fields.link.download")}
         </Button>
         {!isRevisionView ? (
           <Button size="small" disabled={linkedLoading} onClick={handleShowLinkedDocs}>
-            Show linked docs
+            {t("fields.link.gallerySections.showLinkedDocs")}
           </Button>
         ) : null}
         {canUpload ? (
           <>
             <Button size="small" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
-              {uploading ? "Uploading…" : "Upload new version"}
+              {uploading
+                ? t("fields.link.gallerySections.uploading")
+                : t("fields.link.gallerySections.uploadNewVersion")}
             </Button>
             <input
               ref={fileInputRef}
@@ -157,14 +171,15 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
       {linked !== null ? (
         <Box sx={{ mt: 1 }}>
           {linked.readable.length === 0 ? (
-            <Typography variant="body2">There are no references to this file.</Typography>
+            <Typography variant="body2">{t("fields.link.gallerySections.noReferences")}</Typography>
           ) : (
             <>
-              <Typography variant="body2">This file is referenced by:</Typography>
+              <Typography variant="body2">{t("fields.link.gallerySections.referencedBy")}</Typography>
               <List dense disablePadding sx={{ pl: 3, my: 0.5, listStyleType: "disc" }}>
                 {linked.readable.map((r) => (
                   <ListItem key={r.globalId} disableGutters sx={{ display: "list-item", py: 0 }}>
-                    <GlobalIdLink globalId={r.globalId} />: {r.name}
+                    <GlobalIdLink globalId={r.globalId} />
+                    {`: ${r.name}`}
                   </ListItem>
                 ))}
               </List>
@@ -175,7 +190,10 @@ export default function GallerySections({ info, onRecordChanged }: GallerySectio
 
       {showRelatedInventory ? (
         <Box sx={{ mt: 1 }}>
-          <RelatedInventoryItems globalId={info.oid.idString} recordTypeName="file" />
+          <RelatedInventoryItems
+            globalId={info.oid.idString}
+            recordTypeName={t("common:recordTypes.galleryFile.lower")}
+          />
         </Box>
       ) : null}
     </Box>

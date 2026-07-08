@@ -1,11 +1,14 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import Alerts from "@/components/Alerts/Alerts";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function MemberAutoshareStatusWrapper(props: any) {
+  const { t } = useTranslation("common");
   const [isCurrentlySharing, setIsCurrentlySharing] = React.useState(props.isAutoshareInProgress);
   const [autoshareEnabled, setAutoshareEnabled] = React.useState(props.autoshareEnabled);
 
@@ -40,17 +43,17 @@ function MemberAutoshareStatusWrapper(props: any) {
   if (props.userId !== subjectId) {
     if (isCloud) {
       isSwitchDisabled = true;
-      switchDisabledReason = "Only available on Enterprise";
+      switchDisabledReason = t("profile.groups.manager.onlyEnterprise");
     } else if (!canManageAutoshare || props.isPI) {
       isSwitchDisabled = true;
     } else if (!isGroupAutoshareAllowed) {
       isSwitchDisabled = true;
-      switchDisabledReason = "Please contact your system administrator to enable this feature";
+      switchDisabledReason = t("profile.groups.manager.contactAdmin");
     }
   }
 
   if (!isLabGroup) {
-    return <> n/a </>;
+    return <>{t("profile.groups.autosharing.memberStatus.notApplicable")}</>;
   }
   return (
     <Alerts>
@@ -90,15 +93,17 @@ axios.get(url).then((response) => {
     .forEach((member: any) => {
       const root = createRoot(document.getElementById(`autoshareStatus-${member.userId}`) as HTMLElement);
       root.render(
-        <MemberAutoshareStatusWrapper
-          isCloud={isCloud}
-          isGroupAutoshareAllowed={isGroupAutoshareAllowed}
-          userId={member.userId}
-          username={member.username}
-          isPI={member.isPI}
-          autoshareEnabled={member.autoshareEnabled}
-          isAutoshareInProgress={member.isAutoshareInProgress}
-        />,
+        <I18nRoot namespaces={["common"]}>
+          <MemberAutoshareStatusWrapper
+            isCloud={isCloud}
+            isGroupAutoshareAllowed={isGroupAutoshareAllowed}
+            userId={member.userId}
+            username={member.username}
+            isPI={member.isPI}
+            autoshareEnabled={member.autoshareEnabled}
+            isAutoshareInProgress={member.isAutoshareInProgress}
+          />
+        </I18nRoot>,
       );
     });
 });

@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useUiPreference, { PREFERENCES } from "../../../hooks/api/useUiPreference";
@@ -53,6 +54,7 @@ export function useIsSingleColumnLayout(): boolean {
  * exported to the whole codebase.
  */
 export const RightPanelToggle = observer(() => {
+  const { t } = useTranslation("inventory");
   const { userHiddenRightPanel, setUserHiddenRightPanel } = React.useContext(UserHiddenRightPanelContext);
   const { uiStore } = useStores();
 
@@ -67,7 +69,7 @@ export const RightPanelToggle = observer(() => {
       size="small"
       color="primary"
       icon={<ExpandCollapseIcon open={userHiddenRightPanel} />}
-      title={userHiddenRightPanel ? "Show right panel" : "Hide right panel"}
+      title={userHiddenRightPanel ? t("layout.showRightPanel") : t("layout.hideRightPanel")}
     />
   );
 });

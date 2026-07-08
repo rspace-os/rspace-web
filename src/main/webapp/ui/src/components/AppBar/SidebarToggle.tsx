@@ -1,6 +1,7 @@
 import MenuIcon from "@mui/icons-material/Menu";
 import IconButton from "@mui/material/IconButton";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 
 type SidebarToggleArgs = {
   sidebarOpen: boolean;
@@ -13,9 +14,11 @@ type SidebarToggleArgs = {
  * sidebar.
  */
 export default function SidebarToggle({ sidebarOpen, sidebarId, setSidebarOpen }: SidebarToggleArgs): React.ReactNode {
+  const { t } = useTranslation("common");
+  const label = sidebarOpen ? t("appBar.closeSidebar") : t("appBar.openSidebar");
   return (
     <IconButton
-      aria-label={sidebarOpen ? "close sidebar" : "open sidebar"}
+      aria-label={label}
       aria-controls={sidebarId}
       aria-expanded={sidebarOpen ? "true" : "false"}
       onClick={() => {

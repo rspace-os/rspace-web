@@ -6,6 +6,7 @@ import FormGroup from "@mui/material/FormGroup";
 import Grid from "@mui/material/Grid";
 import Switch from "@mui/material/Switch";
 import { useTheme } from "@mui/material/styles";
+import { useTranslation } from "react-i18next";
 import { Circle, MapContainer, Polygon, Rectangle, TileLayer } from "react-leaflet";
 import type { GeoLocationBox, GeoLocationPolygon, PolygonPoint } from "../../../../stores/definitions/GeoLocation";
 import { boxComplete, pointComplete } from "../../../../stores/models/GeoLocationModel";
@@ -33,6 +34,7 @@ type MapViewerArgs = {
  * alone did not prove fruitful. For example, https://github.com/PaulLeCam/react-leaflet/issues/977
  */
 export default function MapViewer({ point, box, polygon }: MapViewerArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   const [showPoint, setShowPoint] = useState<boolean>(pointComplete(point));
   const [showBox, setShowBox] = useState<boolean>(boxComplete(box));
@@ -192,12 +194,12 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
                   onChange={() => setShowPoint(!showPoint)}
                   slotProps={{
                     input: {
-                      "aria-label": "show GL Point",
+                      "aria-label": t("fields.identifiers.geoLocationField.map.showPointLabel"),
                     },
                   }}
                 />
               }
-              label="Point"
+              label={t("fields.identifiers.geoLocationField.point.title")}
             />
           </Grid>
           <Grid>
@@ -210,12 +212,12 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
                   onChange={() => setShowBox(!showBox)}
                   slotProps={{
                     input: {
-                      "aria-label": "show GL box",
+                      "aria-label": t("fields.identifiers.geoLocationField.map.showBoxLabel"),
                     },
                   }}
                 />
               }
-              label="Box"
+              label={t("fields.identifiers.geoLocationField.box.title")}
             />
           </Grid>
           <Grid>
@@ -228,12 +230,12 @@ export default function MapViewer({ point, box, polygon }: MapViewerArgs): React
                   onChange={() => setShowPolygon(!showPolygon)}
                   slotProps={{
                     input: {
-                      "aria-label": "show GL Polygon",
+                      "aria-label": t("fields.identifiers.geoLocationField.map.showPolygonLabel"),
                     },
                   }}
                 />
               }
-              label="Polygon"
+              label={t("fields.identifiers.geoLocationField.polygon.title")}
             />
           </Grid>
         </Grid>

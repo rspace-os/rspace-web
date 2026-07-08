@@ -9,7 +9,8 @@ import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
-import docLinks from "../../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -22,6 +23,7 @@ import VersionInfo from "../../../Template/Fields/VersionInfo";
 import SummaryInfo from "../../../Template/SummaryInfo";
 
 function Template(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
     uiStore,
@@ -31,19 +33,19 @@ function Template(): React.ReactNode {
   const [open, setOpen] = useState(true);
 
   const setTemplate = React.useCallback(
-    (t: TemplateModel | null) => {
-      activeResult.setTemplate(t).catch((error) => {
+    (tmpl: TemplateModel | null) => {
+      activeResult.setTemplate(tmpl).catch((error) => {
         uiStore.addAlert(
           mkAlert({
-            title: "Could not fetch template details.",
-            message: getErrorMessage(error, "Unknown reason."),
+            title: t("sample.fields.template.couldNotFetchError"),
+            message: getErrorMessage(error, t("errors.unknownReason")),
             variant: "error",
           }),
         );
         console.error("Could not set template", error);
       });
     },
-    [activeResult, uiStore],
+    [activeResult, uiStore, t],
   );
 
   const template = activeResult.template;
@@ -51,16 +53,11 @@ function Template(): React.ReactNode {
   if (!activeResult.id)
     return (
       <InputWrapper
-        label="Sample Template"
+        label={t("sample.fields.template.label")}
         data-test-id="ChooseTemplate"
         explanation={
           activeResult.isFieldEditable("template") ? (
-            <>
-              If you select a sample template below, initial metadata and custom fields will be automatically generated.
-              <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
-                (Learn more about sample templates)
-              </a>
-            </>
+            <TransRichText i18nKey="inventory:sample.fields.template.explanationNew" />
           ) : null
         }
       >
@@ -68,7 +65,7 @@ function Template(): React.ReactNode {
           <FormControlLabel
             value="no-template"
             control={<Radio checked={template === null} />}
-            label="No template"
+            label={t("sample.fields.template.noTemplate")}
             onClick={() => {
               setTemplate(null);
             }}
@@ -87,18 +84,12 @@ function Template(): React.ReactNode {
   return (
     <>
       <InputWrapper
-        label="Sample Template"
+        label={t("sample.fields.template.label")}
         data-test-id="ChooseTemplate"
         disabled
         explanation={
           activeResult.isFieldEditable("template") ? (
-            <>
-              See the documentation for information on{" "}
-              <a href={docLinks.createTemplate} target="_blank" rel="noreferrer">
-                how to create custom templates
-              </a>
-              .
-            </>
+            <TransRichText i18nKey="inventory:sample.fields.template.explanationCreate" />
           ) : null
         }
       >
@@ -141,7 +132,7 @@ function Template(): React.ReactNode {
         <>
           {!activeResult.template && (
             <Alert severity="info" role="status">
-              {open ? "Select a template from the list below." : "Expand to select a template."}
+              {open ? t("sample.fields.template.alertSelect") : t("sample.fields.template.alertExpand")}
             </Alert>
           )}
           <Collapse in={open} component="div" collapsedSize={0}>

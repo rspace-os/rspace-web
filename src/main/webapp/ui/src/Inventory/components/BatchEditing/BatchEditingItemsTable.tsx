@@ -4,6 +4,7 @@ import CardHeader from "@mui/material/CardHeader";
 import IconButton from "@mui/material/IconButton";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import type { Record } from "../../../stores/definitions/Record";
 import type RsSet from "../../../util/set";
@@ -17,13 +18,17 @@ function BatchEditingItemsTable<RecordLike extends Record>({
   records,
   label,
 }: BatchEditingItemsTableArgs<RecordLike>): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [open, setOpen] = React.useState(false);
   return (
     <Box sx={{ my: 1 }}>
       <Card variant="outlined">
         <CardHeader
           sx={{ height: 48, p: "0 0 0 12px" }}
-          title={`${label} (Click to ${open ? "close" : "expand"} list)`}
+          title={t("formSections.batchEditingItemsTitle", {
+            label,
+            open: String(open),
+          })}
           onClick={() => setOpen(!open)}
           action={
             <IconButton>

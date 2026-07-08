@@ -35,7 +35,7 @@ describe("MSTeams", () => {
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(table).findTableCell({
-          columnHeading: "Channel Connector Name",
+          columnHeading: "apps:integrations.msteams.tableHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("foo");
@@ -69,12 +69,14 @@ describe("MSTeams", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
-      expect(await screen.findByRole("alert", { name: /Successfully/ })).toBeVisible();
+      expect(
+        await screen.findByRole("alert", { name: "apps:integrations.msteams.alerts.removeSuccess" }),
+      ).toBeVisible();
 
       const table = screen.getByRole("table");
       await waitFor(() => {
@@ -110,19 +112,19 @@ describe("MSTeams", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
       await waitFor(() => {
-        expect(screen.queryByRole("button", { name: /add/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "common:actions.add" })).not.toBeInTheDocument();
       });
-      fireEvent.change(screen.getByRole("textbox", { name: /channel connector name/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.channelName" }), {
         target: { value: "new name" },
       });
-      fireEvent.change(screen.getByRole("textbox", { name: /webhook url/i }), {
+      fireEvent.change(screen.getByRole("textbox", { name: "apps:integrations.msteams.fields.webhookUrl" }), {
         target: { value: "example.com" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
-      expect(await screen.findByRole("alert", { name: /Successfully/ })).toBeVisible();
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
+      expect(await screen.findByRole("alert", { name: "apps:integrations.msteams.alerts.addSuccess" })).toBeVisible();
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("MSTEAMS");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
@@ -131,7 +133,7 @@ describe("MSTeams", () => {
       });
 
       expect(integrationState.credentials.length).toBe(1);
-      expect(screen.getByRole("button", { name: /add/i })).toBeVisible();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeVisible();
     });
   });
 });

@@ -10,6 +10,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import useFolders, { type FolderTreeNode, folderDetailsAsTreeNode } from "../hooks/api/useFolders";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import { Tree, TreeItem } from "./Tree";
@@ -23,6 +24,7 @@ type CreateFolderDialogProps = {
 };
 
 const CreateFolderDialog = ({ open, onClose, onSubmit, isLoading }: CreateFolderDialogProps): React.ReactNode => {
+  const { t } = useTranslation("common");
   const [folderName, setFolderName] = React.useState("");
 
   const isValidName = folderName.length > 0;
@@ -47,12 +49,12 @@ const CreateFolderDialog = ({ open, onClose, onSubmit, isLoading }: CreateFolder
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Create New Folder</DialogTitle>
+      <DialogTitle>{t("folderTree.createFolder.title")}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 0.75 }}>
           <TextField
             autoFocus
-            label="Folder Name"
+            label={t("folderTree.createFolder.folderName")}
             fullWidth
             variant="outlined"
             value={folderName}
@@ -68,14 +70,14 @@ const CreateFolderDialog = ({ open, onClose, onSubmit, isLoading }: CreateFolder
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} disabled={isLoading}>
-          Cancel
+          {t("actions.cancel")}
         </Button>
         <ValidatingSubmitButton
           loading={isLoading}
-          validationResult={isValidName ? IsValid() : IsInvalid("Folder name is required")}
+          validationResult={isValidName ? IsValid() : IsInvalid(t("folderTree.errors.folderNameRequired"))}
           onClick={handleSubmit}
         >
-          Create
+          {t("actions.create")}
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>
@@ -89,6 +91,7 @@ const TreeItemContent = ({
   folder: FolderTreeNode;
   onFolderCreated?: (newFolder: FolderTreeNode, parentId: number) => void;
 }): React.ReactNode => {
+  const { t } = useTranslation("common");
   const { getFolderTree, createFolder } = useFolders();
   const [folders, setFolders] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [currentPage, setCurrentPage] = React.useState(0);
@@ -170,7 +173,7 @@ const TreeItemContent = ({
       <span>{folder.name}</span>
       {folder.type !== "NOTEBOOK" && (
         <IconButtonWithTooltip
-          title={`Add subfolder to ${folder.name}`}
+          title={t("folderTree.addSubfolder", { folderName: folder.name })}
           icon={<AddIcon fontSize="small" />}
           size="small"
           onClick={(e) => {
@@ -195,11 +198,11 @@ const TreeItemContent = ({
               severity="error"
               action={
                 <Button size="small" onClick={() => void loadFolders(currentPage)} disabled={isLoading}>
-                  Retry
+                  {t("actions.retry")}
                 </Button>
               }
             >
-              Failed to load subfolders
+              {t("folderTree.errors.failedSubfolders")}
             </Alert>
           </Box>
         )}
@@ -211,7 +214,7 @@ const TreeItemContent = ({
               disabled={isLoading}
               startIcon={isLoading ? <CircularProgress size={16} /> : null}
             >
-              {isLoading ? "Loading..." : "Load More"}
+              {isLoading ? t("folderTree.loading") : t("folderTree.loadMore")}
             </Button>
           </Box>
         )}
@@ -233,6 +236,7 @@ export default function FolderTree({
   rootFolderId?: number;
   onFolderSelect?: (folder: FolderTreeNode | null) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
   const { getFolderTree, getFolder, createFolder } = useFolders();
   const [rootFolders, setRootFolders] = React.useState<ReadonlyArray<FolderTreeNode>>([]);
   const [expandedFolders, setExpandedFolders] = React.useState<Set<FolderTreeNode>>(new Set());
@@ -353,16 +357,16 @@ export default function FolderTree({
                 }}
                 disabled={isLoading}
               >
-                Retry
+                {t("actions.retry")}
               </Button>
             }
           >
-            Failed to load folders
+            {t("folderTree.errors.failedFolders")}
           </Alert>
         </Box>
       )}
       <Tree<FolderTreeNode, string>
-        aria-label="tree view of shared folder"
+        aria-label={t("folderTree.sharedFolderLabel")}
         getId={(item) => item.id.toString()}
         expandedItems={[...expandedFolders]}
         onExpandedItemsChange={(_event, newlyExpandedFolders) => {
@@ -385,7 +389,7 @@ export default function FolderTree({
             disabled={isLoading}
             startIcon={isLoading ? <CircularProgress size={16} /> : null}
           >
-            {isLoading ? "Loading..." : "Load More"}
+            {isLoading ? t("folderTree.loading") : t("folderTree.loadMore")}
           </Button>
         </Box>
       )}

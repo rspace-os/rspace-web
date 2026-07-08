@@ -1,7 +1,8 @@
 import { delay } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
-import docLinks from "../../assets/DocLinks";
+import i18n from "@/modules/common/i18n";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -340,10 +341,10 @@ export default class TemplateModel extends SampleModel implements Template {
       );
       if (this.version !== oldVersion && samplesToBeUpdated.length > 0) {
         const newToast = mkAlert({
-          message: "Update existing samples?",
+          message: i18n.t("inventory:template.alerts.updateExistingSamples"),
           variant: "notice",
           isInfinite: true,
-          actionLabel: "yes",
+          actionLabel: i18n.t("common:actions.yes"),
           onActionClick: () => void this.updateSamplesToLatest(),
         });
         latest.addScopedToast(newToast);
@@ -359,20 +360,15 @@ export default class TemplateModel extends SampleModel implements Template {
     if (
       !(await getRootStore().uiStore.confirm(
         <>
-          Update all samples to latest template version?
+          {i18n.t("inventory:template.updateSamplesConfirm.title")}
           <HelpLinkIcon
-            link={docLinks.updateAllSamplesOfTemplate}
-            title="Info on updating samples to latest template version."
+            link={helpDocsArticleUrl("updateAllSamplesOfTemplate")}
+            title={i18n.t("inventory:template.updateSamplesConfirm.helpTitle")}
             size="small"
           />
         </>,
-        <>
-          All of your samples created from this template will be updated to pick up the structural changes that have
-          been made to the template since the sample was created or last updated, such as the addition, deletion and
-          reordering of fields, and the change to available options in choice and radio fields.&nbsp;
-          <strong>This action cannot be undone.</strong>
-        </>,
-        "Update all",
+        <TransRichText i18nKey="inventory:template.updateSamplesConfirm.body" />,
+        i18n.t("inventory:template.updateSamplesConfirm.confirmButton"),
       ))
     )
       return;
@@ -405,8 +401,8 @@ export default class TemplateModel extends SampleModel implements Template {
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Updating samples to latest template version failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:template.alerts.updateLatestFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -417,7 +413,7 @@ export default class TemplateModel extends SampleModel implements Template {
   contextMenuDisabled(): string | null {
     return (
       super.contextMenuDisabled() ??
-      (this.historicalVersion ? "Cannot modify a historical version of a template." : null)
+      (this.historicalVersion ? i18n.t("inventory:template.contextMenu.historicalVersion") : null)
     );
   }
 
@@ -427,9 +423,9 @@ export default class TemplateModel extends SampleModel implements Template {
 
   adjustableTableOptions(): AdjustableTableRowOptions<string> {
     const options = super.adjustableTableOptions();
-    options.delete("Subsamples Count");
-    options.delete("Quantity");
-    options.set("Version", () => ({
+    options.delete("subsamplesCount");
+    options.delete("quantity");
+    options.set("version", () => ({
       renderOption: "node",
       data: this.version,
     }));
@@ -538,8 +534,8 @@ export default class TemplateModel extends SampleModel implements Template {
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Sample",
-        explanation: "Tapping create will open the new sample form, with this template pre-populated.",
+        label: i18n.t("inventory:template.createOptions.sample.label"),
+        explanation: i18n.t("inventory:template.createOptions.sample.explanation"),
         onReset: () => {
           // nothing to reset
         },

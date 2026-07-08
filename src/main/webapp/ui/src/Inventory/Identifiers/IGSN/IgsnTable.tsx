@@ -18,6 +18,7 @@ import {
   useGridApiContext,
 } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { DataGridWithRadioSelection } from "@/components/DataGridWithRadioSelection";
 import ExportMenuItem from "@/components/ExportMenuItem";
 import SearchBarcodeIcon from "../../../assets/graphics/SearchBarcode";
@@ -28,7 +29,6 @@ import useDebounce from "../../../hooks/ui/useDebounce";
 import LinkableRecordFromGlobalId from "../../../stores/models/LinkableRecordFromGlobalId";
 import RsSet from "../../../util/set";
 import { DataGridColumn } from "../../../util/table";
-import { toTitleCase } from "../../../util/Util";
 import BarcodeScanner from "../../components/BarcodeScanner/AllBarcodeScanner";
 import { type Identifier, useIdentifiersListing, useIdentifiersRefresh } from "../../useIdentifiers";
 
@@ -87,6 +87,7 @@ function Toolbar({
   searchTerm,
   setSearchTerm,
 }: GridSlotProps["toolbar"]): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const apiRef = useGridApiContext();
 
   /**
@@ -104,10 +105,16 @@ function Toolbar({
   }, [setColumnsMenuAnchorEl]);
 
   const linkedItemStateLabel = (() => {
-    if (isAssociated === null) return "All";
-    if (isAssociated === true) return "Yes";
-    return "No";
+    if (isAssociated === null) return t("igsnTable.filters.all");
+    if (isAssociated === true) return t("igsnTable.filters.linkedItemStates.yes");
+    return t("igsnTable.filters.linkedItemStates.no");
   })();
+  const stateLabelFor = (identifierState: string) => {
+    if (identifierState === "draft") return t("igsnTable.filters.stateOptions.draft.title");
+    if (identifierState === "findable") return t("igsnTable.filters.stateOptions.findable.title");
+    if (identifierState === "registered") return t("igsnTable.filters.stateOptions.registered.title");
+    return identifierState;
+  };
 
   const [localSearchTerm, setLocalSearchTerm] = React.useState(searchTerm);
   const debouncedCallback = React.useCallback((value: string) => {
@@ -127,7 +134,7 @@ function Toolbar({
     <GridToolbarContainer sx={{ width: "100%" }}>
       <TextField
         type="search"
-        placeholder="Search IGSN IDs..."
+        placeholder={t("igsnTable.searchPlaceholder")}
         value={localSearchTerm}
         onChange={handleSearchChange}
         size="small"
@@ -144,7 +151,7 @@ function Toolbar({
             endAdornment: localSearchTerm ? (
               <InputAdornment position="end">
                 <IconButton
-                  aria-label="clear search"
+                  aria-label={t("search.controls.searchbar.clearSearch")}
                   onClick={() => {
                     setLocalSearchTerm("");
                     setSearchTerm("");
@@ -166,7 +173,7 @@ function Toolbar({
         }}
         startIcon={<SearchBarcodeIcon />}
       >
-        Scan
+        {t("igsnTable.scan")}
       </Button>
       <Panel anchorEl={scannerAnchorEl} onClose={() => setScannerAnchorEl(null)}>
         <BarcodeScanner
@@ -175,60 +182,68 @@ function Toolbar({
             setSearchTerm(result.rawValue);
           }}
           onClose={() => setScannerAnchorEl(null)}
-          buttonPrefix="Search for IGSN"
+          buttonPrefix={t("igsnTable.searchButtonPrefix")}
         />
       </Panel>
-      <MenuWithSelectedState label="State" currentState={state ?? "All"} defaultState="All">
+      <MenuWithSelectedState
+        label={t("igsnTable.filters.state")}
+        currentState={state ? stateLabelFor(state) : t("igsnTable.filters.all")}
+        defaultState={t("igsnTable.filters.all")}
+      >
         <AccentMenuItem
-          title="All"
-          subheader="Show all IGSN IDs"
+          title={t("igsnTable.filters.stateOptions.all.title")}
+          subheader={t("igsnTable.filters.stateOptions.all.subheader")}
           onClick={() => {
             setState(null);
           }}
           current={state === null}
         />
         <AccentMenuItem
-          title="Draft"
-          subheader="A newly created IGSN ID without any public metadata."
+          title={t("igsnTable.filters.stateOptions.draft.title")}
+          subheader={t("igsnTable.filters.stateOptions.draft.subheader")}
           onClick={() => {
             setState("draft");
           }}
           current={state === "draft"}
         />
         <AccentMenuItem
-          title="Findable"
-          subheader="A published, searchable IGSN ID with a public landing page."
+          title={t("igsnTable.filters.stateOptions.findable.title")}
+          subheader={t("igsnTable.filters.stateOptions.findable.subheader")}
           onClick={() => {
             setState("findable");
           }}
           current={state === "findable"}
         />
         <AccentMenuItem
-          title="Registered"
-          subheader="An IGSN ID that has been retracted from public access."
+          title={t("igsnTable.filters.stateOptions.registered.title")}
+          subheader={t("igsnTable.filters.stateOptions.registered.subheader")}
           onClick={() => {
             setState("registered");
           }}
           current={state === "registered"}
         />
       </MenuWithSelectedState>
-      <MenuWithSelectedState label="Linked Item" currentState={linkedItemStateLabel} defaultState="All">
+      <MenuWithSelectedState
+        label={t("igsnTable.filters.linkedItem")}
+        currentState={linkedItemStateLabel}
+        defaultState={t("igsnTable.filters.all")}
+      >
         <AccentMenuItem
-          title="All Identifiers"
+          title={t("igsnTable.filters.all")}
           onClick={() => {
             setIsAssociated(null);
           }}
           current={isAssociated === null}
         />
         <AccentMenuItem
-          title="No Linked Item"
+          title={t("igsnTable.filters.noLinkedItem")}
           onClick={() => {
             setIsAssociated(false);
           }}
           current={isAssociated === false}
         />
         <AccentMenuItem
-          title="Has Linked Item"
+          title={t("igsnTable.filters.hasLinkedItem")}
           onClick={() => {
             setIsAssociated(true);
           }}
@@ -249,7 +264,7 @@ function Toolbar({
             });
           }}
         >
-          Export to CSV
+          {t("igsnTable.exportToCsv")}
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </GridToolbarContainer>
@@ -314,6 +329,7 @@ export default function IgsnTable({
     searchTerm?: string | null;
   };
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [state, setState] = React.useState<"draft" | "findable" | "registered" | null>(controlDefaults?.state ?? null);
   const [isAssociated, setIsAssociated] = React.useState<boolean | null>(controlDefaults?.isAssociated ?? null);
   const [searchTerm, setSearchTerm] = React.useState<string>(controlDefaults?.searchTerm ?? "");
@@ -323,6 +339,12 @@ export default function IgsnTable({
     searchTerm,
   });
   const { setRefreshListing } = useIdentifiersRefresh();
+  const stateLabelFor = (identifierState: string) => {
+    if (identifierState === "draft") return t("igsnTable.filters.stateOptions.draft.title");
+    if (identifierState === "findable") return t("igsnTable.filters.stateOptions.findable.title");
+    if (identifierState === "registered") return t("igsnTable.filters.stateOptions.registered.title");
+    return identifierState;
+  };
   React.useEffect(() => {
     setRefreshListing(refreshListing);
     return () => setRefreshListing(null);
@@ -334,26 +356,26 @@ export default function IgsnTable({
     rows: identifiers,
     columns: [
       DataGridColumn.newColumnWithFieldName<"doi", Identifier>("doi", {
-        headerName: "DOI",
+        headerName: t("igsnTable.columns.doi"),
         flex: 1,
         sortable: false,
         resizable: true,
       }),
       DataGridColumn.newColumnWithFieldName<"state", Identifier>("state", {
-        headerName: "State",
+        headerName: t("igsnTable.columns.state"),
         flex: 1,
         resizable: true,
         sortable: false,
-        renderCell: ({ row }) => toTitleCase(row.state),
+        renderCell: ({ row }) => stateLabelFor(row.state),
       }),
       DataGridColumn.newColumnWithFieldName<"associatedGlobalId", Identifier>("associatedGlobalId", {
-        headerName: "Linked Item",
+        headerName: t("igsnTable.columns.linkedItem"),
         flex: 1,
         resizable: true,
         sortable: false,
         renderCell: ({ row }) => {
           if (row.associatedGlobalId === null) {
-            return "None";
+            return t("igsnTable.noLinkedItem");
           }
           return <GlobalId record={new LinkableRecordFromGlobalId(row.associatedGlobalId)} onClick={() => {}} />;
         },
@@ -387,7 +409,7 @@ export default function IgsnTable({
       },
     },
     localeText: {
-      noRowsLabel: "No IGSN IDs",
+      noRowsLabel: t("igsnTable.noRows"),
     },
   };
 
@@ -401,7 +423,7 @@ export default function IgsnTable({
       <DataGridWithRadioSelection
         {...common}
         getRowId={(row: Identifier) => row.doi}
-        selectRadioAriaLabelFunc={() => "Select IGSN"}
+        selectRadioAriaLabelFunc={() => t("igsnTable.selectIgsn")}
         onSelectionChange={(doi: GridRowId) => {
           const selectedIdentifier = identifiers.find((id) => id.doi === doi);
           if (selectedIdentifier) {

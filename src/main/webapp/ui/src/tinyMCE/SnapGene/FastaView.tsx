@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import React, { useCallback, useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
@@ -17,6 +18,7 @@ type FastaViewProps = {
  * Displays the FASTA sequence for a SnapGene file and lets the user copy it.
  */
 export default function FastaView({ id, setDisabled }: FastaViewProps) {
+  const { t } = useTranslation("workspace");
   const [loading, setLoading] = React.useState(true);
   const [sequence, setSequence] = React.useState("");
   const { addAlert } = useContext(AlertContext);
@@ -53,11 +55,9 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
     el?.select(); // Select the <textarea> content
     try {
       document.execCommand("copy");
-      addAlert(mkAlert({ message: "Copied to clipboard", variant: "notice", duration: 3000 }));
+      addAlert(mkAlert({ message: t("tinymce.snapGene.copySuccess"), variant: "notice", duration: 3000 }));
     } catch {
-      addAlert(
-        mkAlert({ message: "Couldn't copy to clipboard. Try again manually.", variant: "warning", duration: 5000 }),
-      );
+      addAlert(mkAlert({ message: t("tinymce.snapGene.copyFailed"), variant: "warning", duration: 5000 }));
     }
     if (el) {
       document.body.removeChild(el); // Remove the <textarea> element
@@ -107,7 +107,7 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
       </Grid>
       <Grid sx={{ textAlign: "right" }} size={2}>
         <Button onClick={copyToClipboard} color="primary" variant="outlined" disabled={loading}>
-          Copy to Clipboard
+          {t("tinymce.snapGene.copyToClipboard")}
         </Button>
       </Grid>
     </>

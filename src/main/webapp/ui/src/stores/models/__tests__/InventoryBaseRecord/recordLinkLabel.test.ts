@@ -46,13 +46,13 @@ describe("computed: recordLinkLabel", () => {
         lastName: "Bloggs",
       },
     });
-    expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
+    expect(bench.recordLinkLabel).toBe("inventory:moveToTarget.ownerBench");
   });
   test("A bench, where the current user is the owner, should show 'My Bench'.", () => {
     const owner = personAttrs();
     const bench = makeMockBench({ owner });
     getRootStore().peopleStore.currentUser = new PersonModel(owner);
-    expect(bench.recordLinkLabel).toBe("My Bench");
+    expect(bench.recordLinkLabel).toBe("inventory:moveToTarget.myBench");
   });
   test("A bench, where the current user is not the owner, should show the owner's name.", () => {
     const bench = makeMockBench({
@@ -69,6 +69,6 @@ describe("computed: recordLinkLabel", () => {
         username: "bar",
       }),
     );
-    expect(bench.recordLinkLabel).toBe("Joe Bloggs's Bench");
+    expect(bench.recordLinkLabel).toBe("inventory:moveToTarget.ownerBench");
   });
 });

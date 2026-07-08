@@ -15,10 +15,12 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
 import Analytics from "../../Inventory/Analytics";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { ElnFieldId } from "../../stores/models/MaterialsModel";
 import useStores from "../../stores/use-stores";
@@ -50,6 +52,7 @@ const itemTextSx = {
 const MaterialsLauncher = observer(
   ({ elnFieldId, fabRightPadding }: { elnFieldId: ElnFieldId; fabRightPadding: number }) => {
     const { materialsStore } = useStores();
+    const { t } = useTranslation("inventory");
     const { trackEvent } = React.useContext(AnalyticsContext);
 
     const [showMenu, setShowMenu] = useState(false);
@@ -93,7 +96,7 @@ const MaterialsLauncher = observer(
                 }}
                 size="medium"
                 sx={{ zIndex: "initial", pointerEvents: "auto" }}
-                aria-label="Show list of materials associated with this field"
+                aria-label={t("materialsListing.launcher.showAssociatedLists")}
                 aria-haspopup="menu"
               >
                 <Badge
@@ -138,7 +141,7 @@ const MaterialsLauncher = observer(
                               }}
                             >
                               <Typography variant="inherit" component="span" sx={itemTextSx}>
-                                {i + 1}: {list.name}
+                                {`${i + 1}: ${list.name}`}
                               </Typography>
                               <Typography variant="inherit" component="em" sx={itemTextSx}>
                                 {list.description}
@@ -207,6 +210,7 @@ type NewMaterialsListingArgs = {
 
 const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListingArgs) => {
   const { materialsStore } = useStores();
+  const { t } = useTranslation("inventory");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [showDialog, _setShowDialog] = useState(false);
   const setShowDialog = (value: boolean) => {
@@ -233,7 +237,7 @@ const NewMaterialsListing = observer(({ elnFieldId }: NewMaterialsListingArgs) =
                   materialsStore.newListOfMaterials(parseInt(elnFieldId, 10));
                 }}
               >
-                New List of Materials
+                {t("materialsListing.launcher.newList")}
               </button>
               <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
                 <MaterialsDialog open={showDialog} setOpen={setShowDialog} />
@@ -273,9 +277,11 @@ function initListOfMaterials({
 
     const root = getMaterialsListingRoot(listingWrapper);
     root.render(
-      <Analytics>
-        <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
-      </Analytics>,
+      <I18nRoot namespaces={["inventory", "common"]}>
+        <Analytics>
+          <MaterialsListing elnFieldId={fieldId} canEdit={canEdit} fabRightPadding={fabRightPadding} />
+        </Analytics>
+      </I18nRoot>,
     );
     if (makeWrapperRelative) listingWrapper.style.position = "relative";
 
@@ -286,9 +292,11 @@ function initListOfMaterials({
     );
     if (newButtonWrapper) {
       getMaterialsListingRoot(newButtonWrapper).render(
-        <Analytics>
-          <NewMaterialsListing elnFieldId={fieldId} />
-        </Analytics>,
+        <I18nRoot namespaces={["inventory", "common"]}>
+          <Analytics>
+            <NewMaterialsListing elnFieldId={fieldId} />
+          </Analytics>
+        </I18nRoot>,
       );
     }
   });

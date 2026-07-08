@@ -1,6 +1,8 @@
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/argos";
 import ArgosIcon from "../../../assets/branding/argos/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -16,6 +18,7 @@ type ArgosArgs = {
  * simply enabling the integration users can import those DMPs into the Gallery
  */
 function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -25,20 +28,15 @@ function Argos({ integrationState, update }: ArgosArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="ARGOS"
-        explanatoryText="Create, manage and exchange Data Management Plans on an extensible open platform."
+        name={t("integrations.argos.name")}
+        explanatoryText={t("integrations.argos.description")}
         image={ArgosIcon}
         color={LOGO_COLOR}
-        usageText="You can import Data Management Plans (DMPs) from ARGOS into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
-        helpLinkText="ARGOS integration docs"
-        website="argos.openaire.eu"
+        usageText={t("integrations.argos.usage")}
+        helpLinkText={t("integrations.argos.helpLink")}
+        website="https://argos.openaire.eu"
         docLink="argos"
-        setupSection={
-          <ol>
-            <li>Enable the integration.</li>
-            <li>ARGOS DMPs can now be imported through the RSpace Gallery.</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.argos.setup.instructions" />}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
         integrationState={integrationState}
       />

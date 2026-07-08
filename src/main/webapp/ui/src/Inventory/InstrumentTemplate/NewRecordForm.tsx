@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
-import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
+import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
 import AccessPermissions from "../components/Fields/AccessPermissions";
@@ -16,6 +16,7 @@ import SynchroniseFormSections, { UnsynchroniseFormSections } from "../component
 import CustomFields from "./Fields/CustomFields";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -27,7 +28,7 @@ const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentTe
 
   return (
     <StepperPanel
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -37,12 +38,13 @@ const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentTe
         record={activeResult}
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "name", e)}
       />
-      <ImageField fieldOwner={activeResult} alt="A visual representation of the instrument template" />
+      <ImageField fieldOwner={activeResult} alt={t("instrumentTemplate.newImageAlt")} />
     </StepperPanel>
   );
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -50,7 +52,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentTem
 
   return (
     <StepperPanel
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -65,6 +67,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentTem
 });
 
 const CustomFieldsSection = observer(({ activeResult }: { activeResult: InstrumentTemplateModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -72,7 +75,7 @@ const CustomFieldsSection = observer(({ activeResult }: { activeResult: Instrume
 
   return (
     <StepperPanel
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -83,6 +86,7 @@ const CustomFieldsSection = observer(({ activeResult }: { activeResult: Instrume
 });
 
 export default function NewRecordForm(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -93,17 +97,21 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createTemplate,
-          title: "Info on creating and using sample and instrument templates.",
+          link: helpDocsArticleUrl("createInstrumentTemplate"),
+          title: t("createNew.helpTitles.instrumentTemplate"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.instrumentTemplate}`}
+        titleText={t("createNew.newInstrumentTemplate")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>
           <OverviewSection activeResult={activeResult} />
         </UnsynchroniseFormSections>
         <DetailsSection activeResult={activeResult} />
-        <StepperPanel title="Access Permissions" sectionName="permissions" recordType="instrumentTemplate">
+        <StepperPanel
+          title={t("formSections.accessPermissions")}
+          sectionName="permissions"
+          recordType="instrumentTemplate"
+        >
           <AccessPermissions fieldOwner={activeResult} />
         </StepperPanel>
         <CustomFieldsSection activeResult={activeResult} />

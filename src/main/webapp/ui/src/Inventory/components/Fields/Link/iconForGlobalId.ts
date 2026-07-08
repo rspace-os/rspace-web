@@ -1,21 +1,62 @@
+import i18n from "../../../../modules/common/i18n";
 import type { RecordIconData } from "../../../../stores/definitions/BaseRecord";
 
 import { GLOBAL_ID_PATTERN } from "./linkTarget";
 
 export const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
-  SA: { iconName: "sample", recordTypeLabel: "Sample" },
-  SS: { iconName: "subsample", recordTypeLabel: "Subsample" },
-  IC: { iconName: "container", recordTypeLabel: "Container" },
-  IN: { iconName: "container", recordTypeLabel: "Instrument" },
-  IT: { iconName: "template", recordTypeLabel: "Sample template" },
+  SA: {
+    iconName: "sample",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.sample.singular");
+    },
+  },
+  SS: {
+    iconName: "subsample",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.subsample.singular");
+    },
+  },
+  IC: {
+    iconName: "container",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.container.singular");
+    },
+  },
+  IN: {
+    iconName: "container",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.instrument.singular");
+    },
+  },
+  IT: {
+    iconName: "template",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.sampleTemplate.singular");
+    },
+  },
 };
 
 // RecordTypeIcon supports "document" and "gallery" but has no dedicated notebook
 // icon, so notebooks reuse the document icon (with a Notebook label).
 const ELN_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
-  SD: { iconName: "document", recordTypeLabel: "Document" },
-  NB: { iconName: "document", recordTypeLabel: "Notebook" },
-  GL: { iconName: "gallery", recordTypeLabel: "Gallery file" },
+  SD: {
+    iconName: "document",
+    get recordTypeLabel() {
+      return i18n.t("common:recordTypes.document.singular");
+    },
+  },
+  NB: {
+    iconName: "document",
+    get recordTypeLabel() {
+      return i18n.t("common:recordTypes.notebook.singular");
+    },
+  },
+  GL: {
+    iconName: "gallery",
+    get recordTypeLabel() {
+      return i18n.t("common:recordTypes.galleryFile.singular");
+    },
+  },
 };
 
 /** Returns the two-letter prefix of a Global ID (ignoring any version suffix), or null. */

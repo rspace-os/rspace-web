@@ -60,10 +60,10 @@ describe("KetcherDialog cancel confirmation", () => {
 
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(screen.queryByText("You have unsaved changes.")).not.toBeInTheDocument();
+    expect(screen.queryByText("common:ketcher.discardChangesDialog.text")).not.toBeInTheDocument();
   });
 
   it("shows confirmation dialog when Cancel is clicked and editor is dirty", async () => {
@@ -73,10 +73,10 @@ describe("KetcherDialog cancel confirmation", () => {
 
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    expect(screen.getByText(/You have unsaved changes/)).toBeInTheDocument();
+    expect(screen.getByText("common:ketcher.discardChangesDialog.text")).toBeInTheDocument();
   });
 
   it("dismisses confirmation and keeps editor open when Keep Editing is clicked", async () => {
@@ -86,11 +86,11 @@ describe("KetcherDialog cancel confirmation", () => {
 
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-    await user.click(screen.getByRole("button", { name: "Keep Editing" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:ketcher.discardChangesDialog.keepEditing" }));
 
     expect(handleClose).not.toHaveBeenCalled();
-    await waitFor(() => expect(screen.queryByText(/You have unsaved changes/)).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("common:ketcher.discardChangesDialog.text")).not.toBeInTheDocument());
   });
 
   it("skips dirty check and closes immediately in read-only mode", async () => {
@@ -100,10 +100,10 @@ describe("KetcherDialog cancel confirmation", () => {
 
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} readOnly />);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
-    expect(screen.queryByText("You have unsaved changes.")).not.toBeInTheDocument();
+    expect(screen.queryByText("common:ketcher.discardChangesDialog.text")).not.toBeInTheDocument();
   });
 
   it("closes the editor when Discard is clicked", async () => {
@@ -113,8 +113,8 @@ describe("KetcherDialog cancel confirmation", () => {
 
     render(<KetcherDialog title="Test Ketcher" handleClose={handleClose} handleInsert={handleInsert} />);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
-    await user.click(screen.getByRole("button", { name: "Discard" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:ketcher.discardChangesDialog.discard" }));
 
     expect(handleClose).toHaveBeenCalledOnce();
     expect(mockSetMolecule).toHaveBeenCalledWith("");

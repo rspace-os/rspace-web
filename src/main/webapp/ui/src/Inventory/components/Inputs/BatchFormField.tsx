@@ -1,5 +1,6 @@
 import FormControl from "@mui/material/FormControl";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import ChooseToEdit from "../../../components/Inputs/ChooseToEdit";
 import FieldLabel from "../../../components/Inputs/FieldLabel";
 import NoValue from "../../../components/NoValue";
@@ -75,6 +76,7 @@ export type FormFieldArgs<T> = BaseFormFieldArgs<T> & {
  */
 
 export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
+  const { t } = useTranslation("common");
   const { disabled, renderInput, value, label, noValueLabel, canChooseWhichToEdit, setDisabled, asFieldset, ...rest } =
     props;
 
@@ -116,7 +118,7 @@ export default function FormField<T>(props: FormFieldArgs<T>): React.ReactNode {
         <FieldLabel disabled id={labelId}>
           {label}
         </FieldLabel>
-        <NoValue label={noValueLabel ?? "No Value"} />
+        <NoValue label={noValueLabel ?? t("values.noValue")} />
         {canChooseWhichToEdit ? (
           <ChooseToEdit
             ariaControls={controlledId}

@@ -10,7 +10,8 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { lazy, Suspense } from "react";
-import docLinks from "../../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import type { Identifier } from "../../../../stores/definitions/Identifier";
@@ -46,6 +47,7 @@ type PreviewRecordWithOptionalFields = InventoryRecord & {
  * Dialog to preview public page for an identifier
  */
 const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): React.ReactNode => {
+  const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   if (!id.rsPublicId) return null;
   const publicId: string = id.rsPublicId;
@@ -68,11 +70,14 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
         <Grid container direction="row">
           <Grid>
             <Typography component="h2" variant="h6">
-              Review your page before publishing
+              {t("fields.identifiers.publicPreviewDialog.title")}
             </Typography>
           </Grid>
           <Grid>
-            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Info on handling Identifiers." />
+            <HelpLinkIcon
+              link={helpDocsArticleUrl("igsnIdentifiers")}
+              title={t("fields.identifiers.publicPreviewDialog.helpTitle")}
+            />
           </Grid>
         </Grid>
       </DialogTitle>
@@ -118,12 +123,10 @@ const PublicPreviewDialog = ({ open, onClose, id, record }: PreviewDialogArgs): 
       <DialogActions>
         {!id.isValid && (
           <Box sx={{ flexGrow: 1 }}>
-            <Alert severity="warning">
-              Some required details are missing. To enable publishing, please fill them in.
-            </Alert>
+            <Alert severity="warning">{t("fields.identifiers.publicPreviewDialog.missingDetails")}</Alert>
           </Box>
         )}
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t("common:actions.close")}</Button>
         <PublishButton identifier={id} />
       </DialogActions>
     </Dialog>

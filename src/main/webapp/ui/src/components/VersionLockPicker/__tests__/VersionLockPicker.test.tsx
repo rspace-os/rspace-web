@@ -34,10 +34,13 @@ describe("VersionLockPicker", () => {
 
   it("renders a row for each revision and a 'latest' row", async () => {
     renderComponent({ currentSelection: LATEST_SELECTION, onChange: vi.fn() });
-    expect(await screen.findByText(/version 1/i)).toBeInTheDocument();
-    expect(await screen.findByText(/version 2/i)).toBeInTheDocument();
-    expect(await screen.findByText(/version 3/i)).toBeInTheDocument();
-    expect(screen.getByText(/latest/i)).toBeInTheDocument();
+    const versionRows = await screen.findAllByText("common:versionLockPicker.versionValue");
+
+    expect(versionRows).toHaveLength(revisions.length);
+    versionRows.forEach((row) => {
+      expect(row).toBeInTheDocument();
+    });
+    expect(screen.getByText("common:versionLockPicker.latest")).toBeInTheDocument();
   });
 
   it("calls onChange with the version number when a row is selected", async () => {
@@ -45,7 +48,7 @@ describe("VersionLockPicker", () => {
     const user = userEvent.setup();
     renderComponent({ currentSelection: LATEST_SELECTION, onChange });
 
-    const row = await screen.findByText(/version 2/i);
+    const row = (await screen.findAllByText("common:versionLockPicker.versionValue"))[1];
     await user.click(row);
 
     expect(onChange).toHaveBeenCalledWith(2);
@@ -56,7 +59,7 @@ describe("VersionLockPicker", () => {
     const user = userEvent.setup();
     renderComponent({ currentSelection: 1, onChange });
 
-    const latestRow = await screen.findByText(/latest/i);
+    const latestRow = await screen.findByText("common:versionLockPicker.latest");
     await user.click(latestRow);
 
     expect(onChange).toHaveBeenCalledWith(LATEST_SELECTION);
@@ -66,7 +69,7 @@ describe("VersionLockPicker", () => {
     renderComponent({ currentSelection: 2, onChange: vi.fn() });
 
     // wait for rows to load
-    await screen.findByText(/version 2/i);
+    await screen.findAllByText("common:versionLockPicker.versionValue");
     const radios = screen.getAllByRole("radio");
     const checkedRadios = radios.filter((r) => (r as HTMLInputElement).checked);
     expect(checkedRadios).toHaveLength(1);
@@ -93,7 +96,7 @@ describe("VersionLockPicker", () => {
         </ThemeProvider>,
       );
 
-      expect(await screen.findByText(/latest/i)).toBeInTheDocument();
+      expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
       // let the rejection cross a macrotask boundary so node's
       // unhandled-rejection detection has run
       await new Promise((resolve) => setTimeout(resolve, 0));

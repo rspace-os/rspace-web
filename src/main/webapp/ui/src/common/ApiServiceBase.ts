@@ -6,19 +6,24 @@ import axios, {
   type AxiosRequestConfig,
   type AxiosResponse,
 } from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import { mkAlert } from "../stores/contexts/Alert";
 import getRootStore from "../stores/stores/getRootStore";
 import JwtService from "./JwtService";
 
 type JSON = unknown;
 
-const toast = mkAlert({
-  variant: "warning",
-  title: "Could not authenticate via API",
-  message:
-    "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
-  isInfinite: true,
-});
+// Lazily memoised: i18n initialises asynchronously, so the strings can't be
+// resolved at module load. Caching the single alert keeps a stable id so the
+// later removeAlert calls actually match the alert that was added.
+let authWarningToast: ReturnType<typeof mkAlert> | undefined;
+const getAuthWarningToast = (): ReturnType<typeof mkAlert> =>
+  (authWarningToast ??= mkAlert({
+    variant: "warning",
+    title: i18n.t("apiAuthentication.warningTitle"),
+    message: i18n.t("apiAuthentication.warningMessage"),
+    isInfinite: true,
+  }));
 
 // Axios wrapper for making requests to RSpace APIs
 class ApiServiceBase {
@@ -57,12 +62,12 @@ class ApiServiceBase {
          * logs-in in another window but only once every 10 seconds so as not
          * to cause too much overhead on both client and server.
          */
-        getRootStore().uiStore.removeAlert(toast);
-        getRootStore().uiStore.addAlert(toast);
+        getRootStore().uiStore.removeAlert(getAuthWarningToast());
+        getRootStore().uiStore.addAlert(getAuthWarningToast());
         await delay(10 * 1000);
       }
       await getRootStore().authStore.authenticate();
-      getRootStore().uiStore.removeAlert(toast);
+      getRootStore().uiStore.removeAlert(getAuthWarningToast());
       // Axios constructs url as baseURL + url(resource) and leaves the baseURL in config,
       // which then results in baseURL + baseURL + url(resource) as the url for axios request below.
       error.config.baseURL = "";

@@ -260,6 +260,12 @@ function createEditorHarness({
 }
 
 async function instantiateStoichiometryPlugin() {
+  // vi.resetModules() (in beforeEach) gives the plugin module a fresh copy of
+  // the i18n singleton, whose "common" namespace loads asynchronously. Await
+  // it here so the plugin's synchronous i18n.t() calls in its constructor
+  // always see real translations instead of racing the namespace load.
+  const i18n = (await import("@/modules/common/i18n")).default;
+  await i18n.loadNamespaces("common");
   await import("@/tinyMCE/stoichiometry/index");
 }
 

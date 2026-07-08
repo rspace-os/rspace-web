@@ -8,6 +8,7 @@ import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import {
   ABSOLUTE_ZERO,
@@ -31,19 +32,16 @@ type LabelArgs = {
 };
 
 const Label = ({ min, max, unitId }: LabelArgs): React.ReactNode => {
-  // prettier-ignore
+  const { t } = useTranslation("inventory");
   const render = (x: number) =>
     unitId === CELSIUS ? `${x}°C` : unitId === KELVIN ? `${x}K` : /* else FAHRENHEIT */ `${x}°F`;
 
-  if (Number.isNaN(min) || Number.isNaN(max)) return <>Invalid values.</>;
+  if (Number.isNaN(min) || Number.isNaN(max)) return <>{t("sample.fields.storageTemperature.invalidValues")}</>;
   const absoluteZeroInUnitId = temperatureFromTo(CELSIUS, unitId, ABSOLUTE_ZERO);
-  if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId) return <>One or more values are below absolute zero.</>;
+  if (min < absoluteZeroInUnitId || max < absoluteZeroInUnitId)
+    return <>{t("sample.fields.storageTemperature.belowAbsoluteZero")}</>;
   if (min === max) return render(min);
-  return (
-    <>
-      Between {render(min)} and {render(max)}.
-    </>
-  );
+  return <>{t("sample.fields.storageTemperature.between", { max: render(max), min: render(min) })}</>;
 };
 
 type TemperatureButtonArgs = {
@@ -85,6 +83,7 @@ function SpecifiedStorageTemperature({
   setFieldEditable,
   onErrorStateChange,
 }: SpecifiedStorageTemperatureArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   if (storageTempMin.unitId !== storageTempMax.unitId)
     throw new Error("Unit IDs of storageTempMin and storageTempMax are not the same.");
   const unitId: TemperatureScale = storageTempMin.unitId;
@@ -156,7 +155,7 @@ function SpecifiedStorageTemperature({
 
   return (
     <BatchFormField
-      label="Storage Temperature"
+      label={t("sample.fields.storageTemperature.label")}
       value={{ min, max, unitId }}
       canChooseWhichToEdit={canChooseWhichToEdit}
       disabled={disabled}
@@ -173,7 +172,7 @@ function SpecifiedStorageTemperature({
               <Stack spacing={1}>
                 <Box>
                   <FormLabel sx={{ pr: 1 }} htmlFor={unitSelectId}>
-                    Unit
+                    {t("sample.fields.storageTemperature.unit")}
                   </FormLabel>
                   <Select
                     variant="standard"
@@ -184,9 +183,9 @@ function SpecifiedStorageTemperature({
                       id: unitSelectId,
                     }}
                   >
-                    <MenuItem value={CELSIUS}>°C</MenuItem>
-                    <MenuItem value={KELVIN}>K</MenuItem>
-                    <MenuItem value={FAHRENHEIT}>°F</MenuItem>
+                    <MenuItem value={CELSIUS}>{"°C"}</MenuItem>
+                    <MenuItem value={KELVIN}>{"K"}</MenuItem>
+                    <MenuItem value={FAHRENHEIT}>{"°F"}</MenuItem>
                   </Select>
                 </Box>
                 {!disabled && (
@@ -204,7 +203,11 @@ function SpecifiedStorageTemperature({
                           fullWidth
                           slotProps={{
                             input: {
-                              startAdornment: <InputAdornment position="start">Min</InputAdornment>,
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  {t("sample.fields.storageTemperature.min")}
+                                </InputAdornment>
+                              ),
                             },
                           }}
                         />
@@ -221,7 +224,11 @@ function SpecifiedStorageTemperature({
                           fullWidth
                           slotProps={{
                             input: {
-                              startAdornment: <InputAdornment position="start">Max</InputAdornment>,
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  {t("sample.fields.storageTemperature.max")}
+                                </InputAdornment>
+                              ),
                             },
                           }}
                         />
@@ -229,7 +236,7 @@ function SpecifiedStorageTemperature({
                     </Grid>
                     <Grid container direction="row" spacing={1}>
                       <TemperatureButton
-                        label="Ambient"
+                        label={t("sample.fields.storageTemperature.presets.ambient")}
                         onClick={() => {
                           handleButtonPressed(
                             temperatureFromTo(CELSIUS, unitId, 15),
@@ -238,7 +245,7 @@ function SpecifiedStorageTemperature({
                         }}
                       />
                       <TemperatureButton
-                        label="Refrigerated"
+                        label={t("sample.fields.storageTemperature.presets.refrigerated")}
                         onClick={() => {
                           handleButtonPressed(
                             temperatureFromTo(CELSIUS, unitId, 3),
@@ -247,7 +254,7 @@ function SpecifiedStorageTemperature({
                         }}
                       />
                       <TemperatureButton
-                        label="Frozen"
+                        label={t("sample.fields.storageTemperature.presets.frozen")}
                         onClick={() => {
                           handleButtonPressed(
                             temperatureFromTo(CELSIUS, unitId, -30),
@@ -256,7 +263,7 @@ function SpecifiedStorageTemperature({
                         }}
                       />
                       <TemperatureButton
-                        label="ULT Frozen"
+                        label={t("sample.fields.storageTemperature.presets.ultFrozen")}
                         onClick={() => {
                           handleButtonPressed(
                             temperatureFromTo(CELSIUS, unitId, -80),
@@ -266,7 +273,7 @@ function SpecifiedStorageTemperature({
                       />
                       <TemperatureButton
                         wide
-                        label="Liquid Nitrogen"
+                        label={t("sample.fields.storageTemperature.presets.liquidNitrogen")}
                         onClick={() => {
                           handleButtonPressed(
                             temperatureFromTo(CELSIUS, unitId, LIQUID_NITROGEN),

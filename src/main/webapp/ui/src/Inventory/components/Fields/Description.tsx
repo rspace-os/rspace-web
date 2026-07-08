@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import TextField from "../../../components/Inputs/TextField";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
 import BatchFormField from "../Inputs/BatchFormField";
@@ -33,6 +34,7 @@ function Description<
   fieldOwner: FieldOwner;
   onErrorStateChange: (hasError: boolean) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const handleChange = (e: { target: { name: string; value: string } }) => {
     fieldOwner.setFieldsDirty({
       description: e.target.value,
@@ -42,13 +44,13 @@ function Description<
 
   const errorMessage = () => {
     if ((fieldOwner.fieldValues.description ?? "").length > MAX_LENGTH)
-      return `Description must be no longer than ${MAX_LENGTH} characters (including HTML tags).`;
+      return t("fields.description.maxLength", { max: MAX_LENGTH });
     return null;
   };
 
   return (
     <BatchFormField
-      label="Description"
+      label={t("fields.description.label")}
       value={fieldOwner.fieldValues.description ?? ""}
       disabled={!fieldOwner.isFieldEditable("description")}
       maxLength={MAX_LENGTH}

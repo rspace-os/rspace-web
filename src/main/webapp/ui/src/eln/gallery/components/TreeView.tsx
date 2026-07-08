@@ -8,6 +8,7 @@ import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
 import { useFileImportDropZone } from "../../../hooks/ui/useFileImportDragAndDrop";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -445,6 +446,7 @@ const TreeView = ({
   foldersOnly = false,
 }: TreeViewArgs) => {
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
   const selection = useGallerySelection();
   const [expandedItems, setExpandedItems] = React.useState<Array<string>>([]);
 
@@ -479,10 +481,10 @@ const TreeView = ({
           <div>
             <PlaceholderLabel>
               {listing.refreshing
-                ? "Refreshing..."
+                ? t("treeView.refreshing")
                 : listing.tag === "empty"
                   ? listing.reason
-                  : "There are no folders."}
+                  : t("treeView.noFolders")}
             </PlaceholderLabel>
           </div>
         </Fade>
@@ -491,7 +493,7 @@ const TreeView = ({
   }
   return (
     <SimpleTreeView
-      aria-label="tree view of files"
+      aria-label={t("treeView.filesLabel")}
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, nodeIds) => {
         setExpandedItems(nodeIds);
@@ -530,8 +532,8 @@ const TreeView = ({
           if (selected) {
             addAlert(
               mkAlert({
-                title: "Shift selection is not supported in tree view.",
-                message: "Either use command/ctrl to select each in turn, or use grid view.",
+                title: t("treeView.shiftSelectionUnsupportedTitle"),
+                message: t("treeView.shiftSelectionUnsupportedMessage"),
                 variant: "warning",
               }),
             );

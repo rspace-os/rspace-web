@@ -4,10 +4,10 @@ import TextField from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { HasEditableFields } from "@/stores/definitions/Editable";
 import type { Alias } from "@/stores/definitions/Sample";
 import type { UseState } from "@/util/types";
-import { toTitleCase } from "@/util/Util";
 import RadioField, { type RadioOption } from "../../../components/Inputs/RadioField";
 import FormField from "../../components/Inputs/FormField";
 
@@ -52,16 +52,6 @@ function convert(a: Alias): AliasSelection {
   return { source: "custom", alias: a.alias, plural: a.plural };
 }
 
-const aliasOptions = ALIAS_DEFAULTS.map((value) => ({
-  value,
-  label: toTitleCase(value),
-}));
-
-const radioButtons: Array<RadioOption<DefaultAliasOption | "custom">> = [
-  ...aliasOptions,
-  { value: "custom", label: "Custom" },
-];
-
 type Fields = {
   subSampleAlias: Alias;
 };
@@ -75,12 +65,40 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
   fieldOwner,
   onErrorStateChange,
 }: SubSampleAliasArgs<FieldOwner>): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const emptyAlias: Alias = { alias: "", plural: "" };
   const min = 2;
   const max = 30;
-  const helperText = `Please enter at least ${min} characters, and no more than ${max}`;
+  const helperText = t("fields.templateFields.alias.helperText", { min, max });
   const aliasDisabled = !fieldOwner.isFieldEditable("subSampleAlias");
   const aliasValue = fieldOwner.fieldValues.subSampleAlias;
+  const aliasOptions = ALIAS_DEFAULTS.map((value): RadioOption<DefaultAliasOption> => {
+    switch (value) {
+      case "aliquot":
+        return { value, label: t("fields.templateFields.alias.defaults.aliquot") };
+      case "component":
+        return { value, label: t("fields.templateFields.alias.defaults.component") };
+      case "individual":
+        return { value, label: t("fields.templateFields.alias.defaults.individual") };
+      case "piece":
+        return { value, label: t("fields.templateFields.alias.defaults.piece") };
+      case "portion":
+        return { value, label: t("fields.templateFields.alias.defaults.portion") };
+      case "section":
+        return { value, label: t("fields.templateFields.alias.defaults.section") };
+      case "subsample":
+        return { value, label: t("fields.templateFields.alias.defaults.subsample") };
+      case "unit":
+        return { value, label: t("fields.templateFields.alias.defaults.unit") };
+      case "volume":
+        return { value, label: t("fields.templateFields.alias.defaults.volume") };
+    }
+    throw new Error(`Unknown alias default: ${value}`);
+  });
+  const radioButtons: Array<RadioOption<DefaultAliasOption | "custom">> = [
+    ...aliasOptions,
+    { value: "custom", label: t("fields.templateFields.alias.custom") },
+  ];
 
   const [value, setValue]: UseState<AliasSelection> = useState(convert(aliasValue));
 
@@ -126,8 +144,8 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
 
   return (
     <FormField
-      label="Subsample Alias"
-      explanation={!aliasDisabled && "The name for subsamples of the samples created from this template."}
+      label={t("fields.templateFields.alias.label")}
+      explanation={!aliasDisabled && t("fields.templateFields.alias.explanation")}
       value={customSelected ? "custom" : value.option}
       asFieldset
       renderInput={() => (
@@ -154,12 +172,12 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
             >
               <TextField
                 data-testid="aliasField_singleBox"
-                label="Singular"
+                label={t("fields.templateFields.alias.singular")}
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
                 sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
-                placeholder="Minimum 2 char."
+                placeholder={t("fields.templateFields.alias.minimumPlaceholder")}
                 value={customSelected ? value.alias : ""}
                 onChange={(e) => {
                   setValue({
@@ -182,12 +200,12 @@ function SubSampleAlias<FieldOwner extends HasEditableFields<Fields>>({
               />
               <TextField
                 data-testid="aliasField_pluralBox"
-                label="Plural"
+                label={t("fields.templateFields.alias.plural")}
                 variant={aliasDisabled ? "standard" : "outlined"}
                 size="small"
                 multiline
                 sx={{ m: 0.5, width: "45%", [`& .${inputBaseClasses.input}`]: { color: "black" } }}
-                placeholder="Minimum 2 char."
+                placeholder={t("fields.templateFields.alias.minimumPlaceholder")}
                 value={customSelected ? value.plural : ""}
                 onChange={(e) => {
                   setValue({

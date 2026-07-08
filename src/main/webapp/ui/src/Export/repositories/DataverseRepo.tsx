@@ -2,6 +2,7 @@ import Grid from "@mui/material/Grid";
 import MenuItem from "@mui/material/MenuItem";
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import Users from "../ExportRepoUser";
 import type { Person, Repo, StandardValidations } from "./common";
 import Tags, { type Tag } from "./Tags";
@@ -66,17 +67,19 @@ export default function DataverseRepo({
   onTagsChange,
   fetchingTags,
 }: DataverseArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   return (
     <Grid container sx={{ width: "100%" }}>
       <Grid size={12}>
         <TextField
           error={submitAttempt && !inputValidations.title}
           name="title"
-          label="Title *"
+          label={t("export.repositories.common.title")}
+          required
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please choose a title, >3 symbols"
+          helperText={t("export.repositories.dataverse.titleHelper")}
           fullWidth
           value={title}
         />
@@ -85,13 +88,14 @@ export default function DataverseRepo({
         <TextField
           error={submitAttempt && !inputValidations.description}
           name="description"
-          label="Description *"
+          label={t("export.repositories.common.description")}
+          required
           multiline
           maxRows="4"
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
           margin="normal"
-          helperText="Please add a relevant description for your export"
+          helperText={t("export.repositories.dataverse.descriptionHelper")}
           fullWidth
           value={description}
         />
@@ -101,11 +105,12 @@ export default function DataverseRepo({
           error={submitAttempt && !inputValidations.subject}
           name="subject"
           select
-          label="Subject *"
+          label={t("export.repositories.dataverse.subject")}
+          required
           defaultValue={""}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your subject"
+          helperText={t("export.repositories.dataverse.subjectHelper")}
           margin="normal"
           fullWidth
           value={subject}
@@ -122,10 +127,10 @@ export default function DataverseRepo({
           <TextField
             name="metadataLanguage"
             select
-            label="Metadata language"
+            label={t("export.repositories.dataverse.metadataLanguageLabel")}
             // @ts-expect-error React event handlers are not parameterised by the name prop
             onChange={handleMetadataLanguageChange}
-            helperText="Please select your metadata language (only if target Dataverse supports it)"
+            helperText={t("export.repositories.dataverse.metadataLanguageHelper")}
             margin="normal"
             fullWidth
             value={metadataLanguage}
@@ -142,11 +147,12 @@ export default function DataverseRepo({
         <TextField
           name="license"
           select
-          label="License *"
+          label={t("export.repositories.dataverse.license")}
+          required
           defaultValue={0}
           // @ts-expect-error React event handlers are not parameterised by the name prop
           onChange={handleChange}
-          helperText="Please select your license"
+          helperText={t("export.repositories.dataverse.licenseHelper")}
           margin="normal"
           fullWidth
           value={license}

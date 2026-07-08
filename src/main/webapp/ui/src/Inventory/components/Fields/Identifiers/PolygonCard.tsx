@@ -9,7 +9,8 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type { ComponentType, ReactNode } from "react";
-import docLinks from "../../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import AddButton from "../../../../components/AddButton";
 import HelpLinkIcon from "../../../../components/HelpLinkIcon";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
@@ -26,12 +27,6 @@ import {
 } from "./GeoLocationField";
 import { isEmpty } from "./MultipleInputHandler";
 
-const POLYGON_CARD_MESSAGES: PolygonMessages = {
-  empty: "An empty Polygon will not be included in the Geolocation.",
-  incomplete: "All points values need to be completed in order for the Polygon to be used.",
-  complete: "All points are completed, the Polygon can be included in the Geolocation.",
-};
-
 const PolygonEditor = observer(
   ({
     geoLocation,
@@ -42,6 +37,7 @@ const PolygonEditor = observer(
     editable: boolean;
     doUpdateIdentifiers: () => void;
   }): ReactNode => {
+    const { t } = useTranslation("inventory");
     const { geoLocationPolygon, polygonEmpty }: GeoLocation = geoLocation;
 
     /* in some cases points cannot be removed, or added */
@@ -79,7 +75,7 @@ const PolygonEditor = observer(
             md: 5,
           }}
         >
-          <InputWrapper label={`Point ${i + 1} Latitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.pointLatitude", { pointNumber: i + 1 })}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
@@ -89,20 +85,22 @@ const PolygonEditor = observer(
                 data-test-id={`Polygon-point-${i}-latitude`}
                 disabled={false}
                 value={point.pointLatitude ?? ""}
-                placeholder="Enter Point Latitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLatitude")}
                 onChange={({ target: { value } }) => {
                   geoLocationPolygon.set(i, "pointLatitude", value);
                   doUpdateIdentifiers();
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLatitudeError(point)}
-                helperText={polygonPointLatitudeError(point) ? <>Between &minus;90.0˚ and 90.0˚.</> : null}
+                helperText={
+                  polygonPointLatitudeError(point) ? t("fields.identifiers.geoLocationField.latitudeRange") : null
+                }
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLatitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -113,7 +111,7 @@ const PolygonEditor = observer(
             md: 5,
           }}
         >
-          <InputWrapper label={`Point ${i + 1} Longitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.pointLongitude", { pointNumber: i + 1 })}>
             {editable && i < geoLocationPolygon.length - 1 ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
@@ -123,20 +121,22 @@ const PolygonEditor = observer(
                 data-test-id={`Polygon-point-${i + 1}-longitude`}
                 disabled={false}
                 value={point.pointLongitude ?? ""}
-                placeholder="Enter Point Longitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLongitude")}
                 onChange={({ target: { value } }) => {
                   geoLocationPolygon.set(i, "pointLongitude", value);
                   doUpdateIdentifiers();
                 }}
                 /* value is required for any polygon point (if at least another value is specified) */
                 error={polygonPointLongitudeError(point)}
-                helperText={polygonPointLongitudeError(point) ? <>Between &minus;180.0˚ and 180.0˚.</> : null}
+                helperText={
+                  polygonPointLongitudeError(point) ? t("fields.identifiers.geoLocationField.longitudeRange") : null
+                }
               />
             ) : (
               /* last point is edited by editing first */
               point.pointLongitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -148,9 +148,12 @@ const PolygonEditor = observer(
           }}
         >
           {canBeAdded(i) ? (
-            <AddButton onClick={() => handleAddPoint(i)} title={`Add Point after ${i + 1}`} />
+            <AddButton
+              onClick={() => handleAddPoint(i)}
+              title={t("fields.identifiers.polygonCard.addPointAfter", { pointNumber: i + 1 })}
+            />
           ) : (
-            <>&nbsp;</>
+            " "
           )}
         </Grid>
         <Grid
@@ -159,9 +162,12 @@ const PolygonEditor = observer(
           }}
         >
           {canBeRemoved(i) ? (
-            <RemoveButton onClick={() => handleRemovePoint(i)} title={`Remove Point ${i + 1}`} />
+            <RemoveButton
+              onClick={() => handleRemovePoint(i)}
+              title={t("fields.identifiers.polygonCard.removePoint", { pointNumber: i + 1 })}
+            />
           ) : (
-            <>&nbsp;</>
+            " "
           )}
         </Grid>
       </Grid>
@@ -176,6 +182,12 @@ type PolygonCardArgs = {
 };
 
 function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCardArgs): ReactNode {
+  const { t } = useTranslation("inventory");
+  const polygonCardMessages: PolygonMessages = {
+    empty: t("fields.identifiers.polygonCard.state.empty"),
+    incomplete: t("fields.identifiers.polygonCard.state.incomplete"),
+    complete: t("fields.identifiers.polygonCard.state.complete"),
+  };
   const InPolygonPointEditor = observer((): ReactNode => {
     const { geoLocationInPolygonPoint, inPolygonPointIncomplete }: GeoLocation = geoLocation;
     return (
@@ -193,7 +205,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             md: 5,
           }}
         >
-          <InputWrapper label={`In Polygon Point Latitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.inPolygonPointLatitude")}>
             {editable ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_Y } }}
@@ -203,7 +215,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 data-test-id={`In-polygon-point-latitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLatitude}
-                placeholder="Enter Point Latitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLatitude")}
                 onChange={({ target: { value } }) => {
                   runInAction(() => {
                     geoLocationInPolygonPoint.pointLatitude = value;
@@ -217,15 +229,15 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLatitude) && inPolygonPointIncomplete) ||
-                  isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude)) ? (
-                    <>Between &minus;90.0˚ and 90.0˚.</>
-                  ) : null
+                  isOutOfRangeY(Number(geoLocationInPolygonPoint.pointLatitude))
+                    ? t("fields.identifiers.geoLocationField.latitudeRange")
+                    : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLatitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -236,7 +248,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
             md: 5,
           }}
         >
-          <InputWrapper label={`In Polygon Point Longitude`}>
+          <InputWrapper label={t("fields.identifiers.polygonCard.inPolygonPointLongitude")}>
             {editable ? (
               <AmberNumberField
                 slotProps={{ htmlInput: { ...COORD_RANGE_X } }}
@@ -246,7 +258,7 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 data-test-id={`In-polygon-point-longitude`}
                 disabled={false}
                 value={geoLocationInPolygonPoint.pointLongitude ?? ""}
-                placeholder="Enter Point Longitude"
+                placeholder={t("fields.identifiers.polygonCard.enterPointLongitude")}
                 onChange={({ target: { value } }) => {
                   runInAction(() => {
                     geoLocationInPolygonPoint.pointLongitude = value;
@@ -260,15 +272,15 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
                 }
                 helperText={
                   (isEmpty(geoLocationInPolygonPoint.pointLongitude) && inPolygonPointIncomplete) ||
-                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude)) ? (
-                    <>Between &minus;180.0˚ and 180.0˚.</>
-                  ) : null
+                  isOutOfRangeX(Number(geoLocationInPolygonPoint.pointLongitude))
+                    ? t("fields.identifiers.geoLocationField.longitudeRange")
+                    : null
                 }
               />
             ) : (
               geoLocationInPolygonPoint.pointLongitude || (
                 <Typography variant="inherit" component="span" sx={{ color: "#949494" }}>
-                  -
+                  {"-"}
                 </Typography>
               )
             )}
@@ -284,25 +296,27 @@ function PolygonCard({ editable, geoLocation, doUpdateIdentifiers }: PolygonCard
       <CardContent sx={{ pt: 1 }}>
         <FormControl component="fieldset" fullWidth>
           <FormLabel>
-            {`Polygon ${editable ? "Editor" : "Configuration"}`}
-            <HelpLinkIcon link={docLinks.IGSNIdentifiers} title="Add a Polygon to your IGSN ID Geolocation" />
+            {editable
+              ? t("fields.identifiers.polygonCard.editorTitle")
+              : t("fields.identifiers.polygonCard.configurationTitle")}
+            <HelpLinkIcon
+              link={helpDocsArticleUrl("igsnIdentifiers")}
+              title={t("fields.identifiers.polygonCard.helpTitle")}
+            />
           </FormLabel>
           <FormHelperText component="div" sx={{ mx: 0, mt: 1 }}>
-            You can add a Polygon to a Geolocation associated with an IGSN ID. A Polygon is made of 4 or more points
-            that form a closed shape. The first and last points have the same coordinates, editing the first point will
-            automatically update the last one.
+            {t("fields.identifiers.polygonCard.polygonDescription")}
           </FormHelperText>
           <Box sx={{ my: 1 }}>
             <PolygonStateAlert
               polygonEmpty={polygonEmpty}
               polygonComplete={geoLocation.geoLocationPolygon.isValid}
-              textMessages={POLYGON_CARD_MESSAGES}
+              textMessages={polygonCardMessages}
             />
           </Box>
           <PolygonEditor geoLocation={geoLocation} editable={editable} doUpdateIdentifiers={doUpdateIdentifiers} />
           <FormHelperText component="div" sx={{ mx: 0, mt: 1, mb: 0.5 }}>
-            Optional: you can specify an In Polygon Point below. This is only required if the Polygon covers more than
-            the half of the Earth&apos;s surface.
+            {t("fields.identifiers.polygonCard.inPolygonPointDescription")}
           </FormHelperText>
           <InPolygonPointEditor />
         </FormControl>

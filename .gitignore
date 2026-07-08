@@ -84,3 +84,5 @@ src/main/webapp/ui/coverage
 # Playwright outputs (repo root; written by the component-test runner)
 /test-results/
 /playwright-report/
+# Playwright MCP output (snapshots, console logs, screenshots from browser driving)
+.playwright-mcp/

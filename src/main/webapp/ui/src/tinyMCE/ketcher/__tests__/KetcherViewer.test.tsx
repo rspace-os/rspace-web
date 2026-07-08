@@ -58,7 +58,7 @@ describe("KetcherViewer", () => {
 
     expect(
       await screen.findByRole("dialog", {
-        name: "Ketcher Chemical Viewer (Read-Only)",
+        name: "common:ketcher.viewerTitle",
       }),
     ).toBeVisible();
 

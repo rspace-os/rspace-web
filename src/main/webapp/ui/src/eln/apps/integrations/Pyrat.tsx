@@ -12,6 +12,8 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/pyrat";
 import PyratIcon from "../../../assets/branding/pyrat/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -28,6 +30,7 @@ type PyratArgs = {
  * Pyrat uses API-key based authentication, as implemeted by the form below.
  */
 function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -46,29 +49,23 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="PyRAT"
+        name={t("integrations.pyrat.name")}
         integrationState={integrationState}
-        explanatoryText="Increase efficiency, access, and ensure compliance through a lab animal colony management software."
+        explanatoryText={t("integrations.pyrat.description")}
         image={PyratIcon}
         color={LOGO_COLOR}
-        usageText="You can browse and link to animals in a PyRAT database directly from RSpace."
-        helpLinkText="PyRAT integration docs"
-        website="scionics.com/pyrat"
+        usageText={t("integrations.pyrat.usage")}
+        helpLinkText={t("integrations.pyrat.helpLink")}
+        website="https://scionics.com/pyrat"
         docLink="pyrat"
         setupSection={
           <>
-            <ol>
-              <li>Request a user access token by going to Administration → API → Request access in PyRAT.</li>
-              <li>Choose the corresponding server from the add menu below.</li>
-              <li>Enter the access token into the field that appears, and save.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the PyRAT icon in the text editor toolbar.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.pyrat.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack spacing={1}>
                   {authenticatedServers.length === 0 && (
-                    <Typography variant="body2">No authenticated servers.</Typography>
+                    <Typography variant="body2">{t("integrations.pyrat.noServers")}</Typography>
                   )}
                   {authenticatedServers.map((server) => (
                     <form
@@ -84,7 +81,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                             addAlert(
                               mkAlert({
                                 variant: "success",
-                                message: "Successfully saved API key.",
+                                message: t("integrations.pyrat.alerts.saveSuccess"),
                               }),
                             );
                           })
@@ -93,7 +90,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "error",
-                                  title: "Error saving API key.",
+                                  title: t("integrations.pyrat.alerts.saveError"),
                                   message: e.message,
                                 }),
                               );
@@ -104,7 +101,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                         <TextField
                           fullWidth
                           variant="outlined"
-                          label={`API Key for ${server.alias}`}
+                          label={t("integrations.pyrat.apiKeyLabel", { alias: server.alias })}
                           type="password"
                           size="small"
                           value={server.apiKey}
@@ -114,7 +111,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                             });
                           }}
                         />
-                        <Button type="submit">Save</Button>
+                        <Button type="submit">{t("common:actions.save")}</Button>
                         <Button
                           onClick={() => {
                             void deleteAppOptions("PYRAT", server.optionsId)
@@ -128,7 +125,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                 addAlert(
                                   mkAlert({
                                     variant: "success",
-                                    message: "Successfully deleted API key.",
+                                    message: t("integrations.pyrat.alerts.deleteSuccess"),
                                   }),
                                 );
                               })
@@ -137,14 +134,14 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                                   addAlert(
                                     mkAlert({
                                       variant: "error",
-                                      title: "Could not delete API key.",
+                                      title: t("integrations.pyrat.alerts.deleteError"),
                                       message: e.message,
                                     }),
                                   );
                               });
                           }}
                         >
-                          Delete
+                          {t("common:actions.delete")}
                         </Button>
                       </Stack>
                     </form>
@@ -158,7 +155,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  Add
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}
@@ -193,7 +190,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "success",
-                                  message: "Successfully added new PyRAT server.",
+                                  message: t("integrations.pyrat.alerts.addSuccess"),
                                 }),
                               );
                             });
@@ -203,7 +200,7 @@ function Pyrat({ integrationState, update }: PyratArgs): React.ReactNode {
                               addAlert(
                                 mkAlert({
                                   variant: "error",
-                                  title: "Error added new PyRAT server.",
+                                  title: t("integrations.pyrat.alerts.addError"),
                                   message: e.message,
                                 }),
                               );

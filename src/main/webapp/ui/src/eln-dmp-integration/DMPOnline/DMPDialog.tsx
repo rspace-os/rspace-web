@@ -3,17 +3,17 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Link from "@mui/material/Link";
 import Portal from "@mui/material/Portal";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { ColumnsPanelTrigger, Toolbar as DataGridToolbar, type GridRowId } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogBoundary } from "@/components/DialogBoundary";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/dmponline";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import NoValue from "../../components/NoValue";
@@ -46,6 +46,7 @@ function CustomDialog({ fullScreen, ...props }: React.ComponentProps<typeof Dial
 }
 
 const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => {
+  const { t } = useTranslation(["apps", "common"]);
   const [selection, setSelection] = React.useState<DmpSummary | null>(null);
   const [importing, setImporting] = React.useState(false);
 
@@ -69,25 +70,26 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<"title", DmpSummary>("title", {
-      headerName: "Title",
+      headerName: t("dmpIntegrations.dialog.columns.title"),
       hideable: false,
     }),
     {
       field: "contact name",
-      headerName: "Contact Name",
-      renderCell: (params: { row: DmpSummary }) => params.row.contactName.orElse(<NoValue label="Not Specified" />),
+      headerName: t("dmpIntegrations.dialog.columns.contactName"),
+      renderCell: (params: { row: DmpSummary }) =>
+        params.row.contactName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     {
       field: "contact affiliation",
-      headerName: "Contact Affiliation",
+      headerName: t("dmpIntegrations.dialog.columns.contactAffiliation"),
       renderCell: (params: { row: DmpSummary }) =>
-        params.row.contactAffiliationName.orElse(<NoValue label="Not Specified" />),
+        params.row.contactAffiliationName.orElse(<NoValue label={t("dmpIntegrations.dialog.notSpecified")} />),
     },
     DataGridColumn.newColumnWithFieldName<"created", DmpSummary>("created", {
-      headerName: "Created",
+      headerName: t("dmpIntegrations.dialog.columns.created"),
     }),
     DataGridColumn.newColumnWithFieldName<"modified", DmpSummary>("modified", {
-      headerName: "Modified",
+      headerName: t("dmpIntegrations.dialog.columns.modified"),
     }),
   ].map((colDefinition) => ({
     sortable: false,
@@ -99,16 +101,16 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
     <>
       <AppBar
         variant="dialog"
-        currentPage="DMPonline"
+        currentPage={t("dmpIntegrations.dmponline")}
         accessibilityTips={{
           supportsHighContrastMode: true,
         }}
         helpPage={{
-          docLink: docLinks.dmponline,
-          title: "DMPonline help",
+          docLink: helpDocsArticleUrl("dmponline"),
+          title: t("dmpIntegrations.dialog.helpTitle", { name: t("dmpIntegrations.dmponline") }),
         }}
       />
-      <DialogTitle variant="h3">Import a DMP into the Gallery</DialogTitle>
+      <DialogTitle variant="h3">{t("dmpIntegrations.dialog.importDmpIntoGallery")}</DialogTitle>
       <DialogContent>
         <Stack
           sx={{
@@ -124,20 +126,18 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         >
           <Box>
             <Typography variant="body2">
-              Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference
-              within RSpace.
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmponlineImportDesc" />
             </Typography>
             <Typography variant="body2">
-              See <Link href="https://dmponline.dcc.ac.uk">dmponline.dcc.ac.uk</Link> and our{" "}
-              <Link href={docLinks.dmponline}>DMPonline integration docs</Link> for more.
+              <TransRichText i18nKey="apps:dmpIntegrations.dialog.dmponlineDocsLink" />
             </Typography>
           </Box>
           <Box sx={{ flexGrow: 1, overflowY: "auto" }}>
             {FetchingData.match(listing, {
-              loading: () => <Typography variant="body2">Loading listing of DMPs.</Typography>,
+              loading: () => <Typography variant="body2">{t("dmpIntegrations.dialog.loadingDmps")}</Typography>,
               error: (error) => (
                 <>
-                  <Typography variant="body2">Failed to load listing of DMPs. Please try refreshing.</Typography>
+                  <Typography variant="body2">{t("dmpIntegrations.dialog.error.loadFailed")}</Typography>
                   <samp>{error}</samp>
                 </>
               ),
@@ -160,7 +160,7 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
                   },
                 });
               }}
-              selectRadioAriaLabelFunc={(row) => `Select ${row.title}`}
+              selectRadioAriaLabelFunc={(row) => t("dmpIntegrations.dialog.selectPlanLabel", { label: row.title })}
               initialState={{
                 columns: {
                   columnVisibilityModel: {
@@ -242,13 +242,13 @@ const DMPDialogContent = ({ setOpen }: { setOpen: (open: boolean) => void }) => 
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Close</Button>
+        <Button onClick={() => setOpen(false)}>{t("common:actions.close")}</Button>
         <ValidatingSubmitButton
-          validationResult={selection ? IsValid() : IsInvalid("No DMP is selected.")}
+          validationResult={selection ? IsValid() : IsInvalid(t("dmpIntegrations.dialog.noDmpIsSelected"))}
           loading={importing}
           onClick={(e) => void onSubmit(e)}
         >
-          Import
+          {t("common:actions.import")}
         </ValidatingSubmitButton>
       </DialogActions>
     </>

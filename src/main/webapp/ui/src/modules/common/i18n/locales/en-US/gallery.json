@@ -1,0 +1,417 @@
+{
+  "actions": {
+    "delete": {
+      "filesCannotBeDeleted": "Some of the selected files cannot be deleted.",
+      "filesFailed": "Failed to delete files.",
+      "filestoreFailed": "Failed to delete filestore.",
+      "filestoreSuccess": "Successfully deleted filestore.",
+      "itemFailed": "Failed to delete item.",
+      "itemsFailed": "{count, plural, one {Failed to delete item.} other {Failed to delete items.}}",
+      "itemsSuccess": "{count, plural, one {Successfully deleted item.} other {Successfully deleted items.}}",
+      "remoteFailed": "{count, plural, one {Failed to delete 1 item.} other {Failed to delete {count} items.}}",
+      "remoteSuccess": "{count, plural, one {Successfully deleted 1 item.} other {Successfully deleted {count} items.}}"
+    },
+    "description": {
+      "changeFailed": "Failed to change file description.",
+      "missing": "The file does not have a description.",
+      "updateFailed": "Failed to update description.",
+      "updateSuccess": "Successfully updated description."
+    },
+    "download": {
+      "allFailed": "Failed to download all the files.",
+      "failed": "{partial, select, true {Failed to download some of the files.} other {Failed to download the files.}}",
+      "success": "{partial, select, true {Successfully downloaded some of the files.} other {Successfully downloaded the files.}}"
+    },
+    "duplicate": {
+      "filesCannotBeDuplicated": "Some of the selected files cannot be duplicated.",
+      "filesFailed": "Failed to duplicate files.",
+      "itemFailed": "Failed to duplicate item.",
+      "itemsFailed": "{count, plural, one {Failed to duplicate item.} other {Failed to duplicate items.}}",
+      "itemsSuccess": "{count, plural, one {Successfully duplicated item.} other {Successfully duplicated items.}}"
+    },
+    "folder": {
+      "createFailed": "Failed to create new folder.",
+      "createSuccess": "Successfully created new folder."
+    },
+    "inProgress": {
+      "deleting": "Deleting...",
+      "duplicating": "Duplicating...",
+      "moving": "Moving...",
+      "renaming": "Renaming...",
+      "uploading": "Uploading..."
+    },
+    "move": {
+      "filesCannotBeMoved": "Some of the selected files cannot be moved.",
+      "filesFailed": "Failed to move files.",
+      "itemFailed": "Failed to move item.",
+      "itemsFailed": "{count, plural, one {Failed to move item.} other {Failed to move items.}}",
+      "itemsSuccess": "{count, plural, one {Successfully moved item.} other {Successfully moved items.}}",
+      "remoteFailed": "{count, plural, one {Failed to move 1 item.} other {Failed to move {count} items.}}",
+      "remoteSuccess": "{count, plural, one {Successfully moved 1 item.} other {Successfully moved {count} items.}}",
+      "snippetsFolderFailed": "Cannot move files into SNIPPETS folders.",
+      "snippetsFolderMessage": "Share them and they will automatically appear in these folders."
+    },
+    "rename": {
+      "failed": "Failed to rename item.",
+      "fileCannotBeRenamed": "The selected file cannot be renamed.",
+      "fileFailed": "Failed to rename file.",
+      "success": "Successfully renamed item."
+    },
+    "upload": {
+      "failed": "{count, plural, one {Failed to upload file.} other {Failed to upload files.}}",
+      "success": "{count, plural, one {Successfully uploaded file.} other {Successfully uploaded files.}}"
+    },
+    "uploadNewVersion": {
+      "cannotBeSet": "A new version for this file cannot be set.",
+      "failed": "Failed to upload new version.",
+      "fileFailed": "Failed to upload new version for the file.",
+      "success": "Successfully uploaded new version."
+    }
+  },
+  "actionsMenu": {
+    "actions": "Actions",
+    "cannotView": "Cannot view this file because",
+    "deleteS3Confirm": {
+      "body": "This permanently deletes {count} {count, plural, one {item} other {items}} from the S3 filestore. This cannot be undone.",
+      "confirmText": "permanently delete",
+      "confirmTextLabel": "Type 'permanently delete' to confirm",
+      "title": "Permanently delete?"
+    },
+    "downloadImageForEditingFailed": "Failed to download image for editing",
+    "label": "actions",
+    "moveToIrods": "Move to iRODS",
+    "moveToS3": "Move to S3",
+    "nameRequired": "Empty name is not permitted.",
+    "processEditedImageFailed": "Failed to process edited image",
+    "rename": "Rename",
+    "renameLabel": "Name",
+    "renamePrompt": "Please give a new name for {name}.",
+    "saveAsNewImage": "Save as new image",
+    "uploadNewVersion": "Upload New Version",
+    "view": "View"
+  },
+  "addFilestoreDialog": {
+    "addFailed": "Failed to add new filestore",
+    "addFilestore": "Add Filestore",
+    "addSuccess": "Successfully added new filestore",
+    "browseFailed": "Failed to browse filestore",
+    "bucketTopLevel": "(bucket top level)",
+    "chooseFilesystem": "Choose Filesystem",
+    "chooseFolder": "Choose Folder",
+    "filesystemHelp": "Your sysadmin needs to configure a file system before it appears here.",
+    "filesystemStep": "Choose Filesystem",
+    "filesystemStepLabel": "Select a File system",
+    "folderHelp": "You can configure multiple Filestores from the same File system with different top-level folders, to facilitate accessing deeply-nested content.",
+    "folderStep": "Select the top-level Folder for the Filestore",
+    "folderStepLabel": "Select the top-level Folder for the Filestore",
+    "loading": "Loading...",
+    "nameHelp": "This name is used in RSpace to help you identify the Filestore.",
+    "nameLabel": "Filestore name",
+    "nameStep": "Name the Filestore",
+    "nameStepLabel": "Name the Filestore",
+    "noReadAccess": "(no read access; contact your sysadmin)"
+  },
+  "callableAsposePreview": {
+    "generatePdfError": "Could not generate a PDF preview for .{fileExtension} documents.",
+    "previewError": "Could not generate preview."
+  },
+  "callablePdfPreview": {
+    "title": "PDF Preview"
+  },
+  "carousel": {
+    "currentFileIndex": "Current file index",
+    "generatingPdf": "Generating PDF...",
+    "label": "Carousel view of files",
+    "loadingImage": "Loading image...",
+    "loadingPdf": "Loading PDF...",
+    "next": "Next",
+    "noFolders": "There are no folders.",
+    "previewAlt": "Preview of {name}",
+    "previous": "Previous",
+    "refreshing": "Refreshing..."
+  },
+  "errors": {
+    "parseResponse": "Could not parse response.",
+    "tryRefreshing": "Please try refreshing.",
+    "unknownError": "Unknown error",
+    "unknownReason": "Unknown reason"
+  },
+  "filestoreLoginDialog": {
+    "couldNotAuthenticate": "Could not authenticate",
+    "login": "Login",
+    "password": "Password",
+    "prompt": "Please authenticate to the filesystem {filesystemName}.",
+    "title": "Filestore Login",
+    "username": "Username",
+    "wrongCredentials": "Wrong credentials?"
+  },
+  "filestores": {
+    "logoutFailed": "Failed to log out of {name}",
+    "logoutSuccess": "Logged out of {name}"
+  },
+  "infoPanel": {
+    "details": "Details",
+    "dmpDetails": "DMP Details",
+    "labels": {
+      "addedToS3By": "Added to S3 by",
+      "addedToS3On": "Added to S3 on",
+      "created": "Created",
+      "description": "Description",
+      "doiLink": "DOI Link",
+      "globalId": "Global ID",
+      "link": "Link",
+      "modified": "Modified",
+      "originalImageId": "Original Image ID",
+      "owner": "Owner",
+      "size": "Size",
+      "source": "Source",
+      "totalSize": "Total size",
+      "type": "Type",
+      "version": "Version"
+    },
+    "nameLabel": "Name",
+    "noDescriptionPlaceholder": "No description",
+    "noNamePlaceholder": "No Name",
+    "nothingSelected": "Nothing selected.",
+    "sources": {
+      "argos": "ARGOS",
+      "dmpOnline": "DMP Online",
+      "dmpTool": "DMP Tool",
+      "dsw": "DSW / FAIR Wizard",
+      "unknown": "Unknown"
+    }
+  },
+  "irods": {
+    "errors": {
+      "authenticationFailed": "Authentication failed",
+      "copyFailed": "Could not copy file.",
+      "couldNotReachServer": "Could not reach the iRODs server",
+      "filesAlreadyExist": "Some or all of the files already exist",
+      "moveFailed": "Could not move file.",
+      "partialCopyFailed": "Copying some files failed.",
+      "partialMoveFailed": "Moving some files failed."
+    },
+    "success": {
+      "copied": "Successfully copied the files.",
+      "moved": "Successfully moved the files."
+    }
+  },
+  "landingPage": {
+    "error": "Error: {error}",
+    "filestoreEnabledError": "Error checking if filestores are enabled.",
+    "invalidSection": "Not a valid Gallery section.",
+    "loading": "Loading..."
+  },
+  "linkedDocumentsPanel": {
+    "columns": {
+      "globalId": "Global ID",
+      "name": "Name"
+    },
+    "heading": "Linked Documents",
+    "noRows": "No Linked Documents"
+  },
+  "listing": {
+    "alerts": {
+      "processFailed": "Could not process Gallery content.",
+      "refreshFailed": "Error refreshing Gallery listing.",
+      "retrieveFilestoresFailed": "Error retrieving filestores.",
+      "retrieveGalleryFilesFailed": "Error retrieving gallery files.",
+      "retrieveRemoteFilesFailed": "Error retrieving remote files."
+    },
+    "empty": {
+      "addFilestore": "Add a filestore in the Create menu.",
+      "errorLoadingFiles": "Error loading files.",
+      "folder": "The folder \"{folderName}\" is empty.",
+      "folderSearch": "Nothing in the folder \"{folderName}\" matches the search term \"{searchTerm}\".",
+      "loading": "Loading...",
+      "section": "There are no top-level {section}.",
+      "sectionSearch": "There are no top-level {section} that match the search term \"{searchTerm}\"."
+    }
+  },
+  "loadMore": "Load More",
+  "mainPanel": {
+    "breadcrumbsLabel": "Breadcrumbs",
+    "cancelDrag": "Cancel",
+    "cannotDropFiles": "Cannot drop files to upload here.",
+    "carouselView": "Carousel",
+    "carouselViewDesc": "Flick through all files to find one.",
+    "clearSearch": "Clear",
+    "copyToClipboard": "Copy to clipboard",
+    "filesListingControlsLabel": "files listing controls",
+    "filesListingLabel": "files listing",
+    "gridView": "Grid",
+    "gridViewDesc": "Browse by thumbnail previews.",
+    "gridViewLabel": "grid view of files",
+    "infoPanelLabel": "info panel",
+    "linkCopied": "Link copied to clipboard successfully.",
+    "linkCopyFailed": "Failed to copy link to clipboard. Please try again.",
+    "noFolders": "There are no folders.",
+    "refreshing": "Refreshing...",
+    "searchCurrentFolderLabel": "Search current folder",
+    "searchPlaceholder": "Search",
+    "searchThisFolder": "Search this folder",
+    "sort": "Sort",
+    "sortActions": {
+      "modificationDateAsc": "Tap to sort oldest first",
+      "modificationDateDesc": "Tap to sort newest first",
+      "nameAsc": "Tap to sort from A to Z",
+      "nameDesc": "Tap to sort from Z to A"
+    },
+    "sortListingLabel": "sort listing",
+    "sortOptions": {
+      "modificationDate": "Modification Date",
+      "name": "Name"
+    },
+    "sortStatus": {
+      "modificationDateAsc": "(Sorted oldest first)",
+      "modificationDateDesc": "(Sorted newest first)",
+      "nameAsc": "(Sorted from A to Z)",
+      "nameDesc": "(Sorted from Z to A)"
+    },
+    "treeView": "Tree",
+    "treeViewDesc": "View and manage folder hierarchy.",
+    "versionLabel": "version {version}",
+    "viewOptionsLabel": "view options",
+    "views": "Views"
+  },
+  "moveDialog": {
+    "description": "Choose a folder or tap the \"top-level\" button.",
+    "makeTopLevel": "Make top-level",
+    "title": "Move"
+  },
+  "moveToIrods": {
+    "description": "You have selected {count} {count, plural, one {item} other {items}} to move to the iRODS server",
+    "descriptionSuffix": ". By default, the items will be added to iRODS and removed from RSpace. You will be able to link to the iRODS items inside of RSpace documents and include them into any exports through our iRODS integration.",
+    "destination": {
+      "explanation": "The available folders are configured in the Gallery's filestore section.",
+      "label": "Destination in iRODS",
+      "placeholder": "Select a destination"
+    },
+    "errors": {
+      "misconfigured": "Please check with your System Admin to ensure iRODS is correctly configured.",
+      "noFilestoreConfigured": {
+        "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+        "title": "No iRODS filestore has been configured."
+      }
+    },
+    "helpTitle": "iRODS help",
+    "login": {
+      "legend": "iRODS login",
+      "password": "Password",
+      "prompt": "Please provide your login credentials for {serverName}{hasServerUrl, select, yes { ({serverUrl})} other {}}",
+      "username": "Username"
+    },
+    "retainCopy": "Retain a copy in RSpace",
+    "submit": "Move",
+    "title": "Move to iRODS",
+    "validation": {
+      "destinationRequired": "A destination is required.",
+      "loadingLocations": "Loading available locations",
+      "passwordRequired": "Password for iRODS server is required.",
+      "usernameRequired": "Username for iRODS server is required."
+    }
+  },
+  "moveToS3": {
+    "destination": {
+      "explanation": "The available filestores are configured in the Gallery's filestore section.",
+      "label": "Destination S3 filestore",
+      "noWriteAccess": "No write access",
+      "placeholder": "Select a filestore"
+    },
+    "errors": {
+      "misconfigured": "Please check with your System Admin to ensure the S3 filestore is correctly configured.",
+      "noFilestoreConfigured": {
+        "body": "Add a new one in the filestore section of the Gallery or speak to your system administrator.",
+        "title": "No S3 filestore has been configured."
+      },
+      "noWriteAccess": {
+        "body": "Your account is not on the write allowlist for any S3 filestore. Ask your system administrator if you need write access.",
+        "title": "You do not have write access to any S3 filestore."
+      }
+    },
+    "moveDescription": "You have selected {count} {count, plural, one {item} other {items}} to move to S3. By default, the items will be added to S3 and removed from RSpace. You will be able to link to the S3 items inside of RSpace documents.",
+    "moveTitle": "Move to S3",
+    "retainRspaceCopy": "Retain a copy in RSpace",
+    "retainSourceCopy": "Retain a copy on source bucket",
+    "transferDescription": "You have selected {count} {count, plural, one {item} other {items}} to transfer to another S3 bucket. By default, the items will be copied to the destination and deleted from the source.",
+    "transferTitle": "Transfer to S3"
+  },
+  "moveWithinFilestore": {
+    "description": "Choose a destination folder in this filestore, or move to its top level.",
+    "loading": "Loading...",
+    "move": "Move",
+    "moveToTopLevel": "Move to top level",
+    "title": "Move",
+    "validation": {
+      "noFolder": "No folder is selected.",
+      "tooManyFolders": "More than one folder is selected."
+    }
+  },
+  "pageTitle": "RSpace Gallery",
+  "pageTitleWithContext": "{pageContext} | RSpace Gallery",
+  "referencingInventoryItems": {
+    "loadFailed": "Error loading related inventory items."
+  },
+  "s3": {
+    "errors": {
+      "copyFailed": "Could not copy files to S3.",
+      "moveFailed": "Could not move files to S3.",
+      "partialCopyFailed": "Copying some files to S3 failed.",
+      "partialMoveFailed": "Moving some files to S3 failed.",
+      "partialTransferFailed": "Transferring some files to S3 failed.",
+      "transferFailed": "Could not transfer files to S3."
+    },
+    "success": {
+      "copied": "Successfully copied the files to S3.",
+      "moved": "Successfully moved the files to S3.",
+      "transferred": "Successfully transferred the files to S3."
+    }
+  },
+  "sections": {
+    "audios": "Audio",
+    "chemistry": "Chemistry",
+    "dmps": "DMPs",
+    "documents": "Documents",
+    "images": "Images",
+    "miscellaneous": "Miscellaneous",
+    "networkFiles": "Filestores",
+    "pdfDocuments": "Exports",
+    "snippets": "Snippets",
+    "videos": "Videos"
+  },
+  "selection": {
+    "empty": "No selection",
+    "files": "{count} {count, plural, one {file} other {files}} selected",
+    "filesAndFolders": "{fileCount} {fileCount, plural, one {file} other {files}}, {folderCount} {folderCount, plural, one {folder} other {folders}} selected",
+    "folders": "{count} {count, plural, one {folder} other {folders}} selected"
+  },
+  "sidebar": {
+    "addFilestore": "Add a Filestore",
+    "createFilestoreFolder": "New Filestore Folder",
+    "createFolder": "New Folder",
+    "createFolderLabel": "Name",
+    "createFolderNameRequired": "A name is required.",
+    "createFolderPrompt": "Please give the new folder a name.",
+    "dmpImport": "DMP Import",
+    "dmpsLabel": "DMPs",
+    "noFilestoresConfigured": "System Admin has not configured any external filestores.",
+    "s3FolderNote": "Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object, and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of files will be easier to manage than a folder structure.",
+    "sectionsDrawerLabel": "gallery sections drawer",
+    "uploadFiles": "Upload Files"
+  },
+  "snippetPreview": {
+    "error": "Error: {error}",
+    "loadError": "Failed to load snippet content",
+    "loading": "Loading snippet content...",
+    "noContent": "No content available",
+    "title": "Snippet Preview: {name}"
+  },
+  "treeView": {
+    "filesLabel": "tree view of files",
+    "noFolders": "There are no folders.",
+    "refreshing": "Refreshing...",
+    "shiftSelectionUnsupportedMessage": "Either use command/ctrl to select each in turn, or use grid view.",
+    "shiftSelectionUnsupportedTitle": "Shift selection is not supported in tree view."
+  },
+  "unknownOwner": "Unknown owner"
+}

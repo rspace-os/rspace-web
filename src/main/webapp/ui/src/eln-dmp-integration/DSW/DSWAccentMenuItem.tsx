@@ -1,5 +1,6 @@
 import CardMedia from "@mui/material/CardMedia";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../assets/branding/dsw";
 import DSWIcon from "../../assets/branding/dsw/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
@@ -23,13 +24,14 @@ type DSWAccentMenuItemArgs = {
  */
 export default function DSWAccentMenuItem({ onDialogClose, connection }: DSWAccentMenuItemArgs): React.ReactNode {
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("apps");
   const [showDSWDialog, setShowDSWDialog] = React.useState(false);
 
   return (
     <>
       <AccentMenuItem
         title={connection.DSW_ALIAS}
-        subheader="DSW / FAIR Wizard"
+        subheader={t("dmpIntegrations.dsw")}
         avatar={<CardMedia image={DSWIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}

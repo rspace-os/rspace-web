@@ -11,7 +11,9 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../../theme";
@@ -29,6 +31,7 @@ function EnableAutoshareDialog({
   switchDisabledReason,
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -64,8 +67,8 @@ function EnableAutoshareDialog({
         }
         const async = response.data.data.async;
         const msg = async
-          ? `Autoshare for ${group.groupDisplayName} was enabled successfully. You will receive a notification once it is complete.`
-          : `Autoshare for ${group.groupDisplayName} was enabled successfully.`;
+          ? t("profile.groups.autosharing.enableAsyncSuccess", { group: group.groupDisplayName })
+          : t("profile.groups.autosharing.enableSuccess", { group: group.groupDisplayName });
 
         setDone(true);
         callback();
@@ -75,7 +78,7 @@ function EnableAutoshareDialog({
       .catch((error: any) => {
         addAlert(
           mkAlert({
-            message: getErrorMessage(error, "Something went wrong. Please, contact support if the issue persists."),
+            message: getErrorMessage(error, t("profile.groups.autosharing.genericError")),
             variant: "warning",
             isInfinite: true,
           }),
@@ -95,7 +98,7 @@ function EnableAutoshareDialog({
     <>
       {!isSwitch && (
         <Button variant="outlined" size="small" onClick={handleClickOpen}>
-          Enable autosharing
+          {t("profile.groups.autosharing.enable")}
         </Button>
       )}
       {isSwitch && (
@@ -107,29 +110,23 @@ function EnableAutoshareDialog({
               checked={false}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              slotProps={{ input: { "aria-label": "Enable autosharing" } }}
+              slotProps={{ input: { "aria-label": t("profile.groups.autosharing.enable") } }}
             />
           </div>
         </Tooltip>
       )}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle id="form-dialog-title">Enable autosharing</DialogTitle>
+        <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.enable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Autosharing work will ensure that all current and future documents and notebooks for user{" "}
-            <strong>{username}</strong> will be shared with group
-            <strong> {group.groupDisplayName}</strong> with the READ permission.
-            <br />
-            <br />
-            The EDIT permission can be granted or items can be unshared from the "Manage Shared Documents" section as
-            usual.
-            <br />
-            <br />
-            Please enter a name for the folder that the work will be shared into.
+            <TransRichText
+              i18nKey="common:profile.groups.autosharing.enableUserText"
+              values={{ username, group: group.groupDisplayName }}
+            />
           </DialogContentText>
           <TextField
             variant="standard"
-            label="Folder name"
+            label={t("profile.groups.autosharing.folderName")}
             placeholder={username}
             autoFocus={true}
             fullWidth
@@ -139,10 +136,10 @@ function EnableAutoshareDialog({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} sx={{ color: "grey" }}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button onClick={handleSubmit} color="primary" disabled={waiting || done}>
-            Confirm
+            {t("actions.confirm")}
             {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
           </Button>
         </DialogActions>

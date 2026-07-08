@@ -1,5 +1,6 @@
 import CardMedia from "@mui/material/CardMedia";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../assets/branding/dmpassistant/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
@@ -14,12 +15,13 @@ type DMPAssistantAccentMenuItemArgs = {
  * The menu item for the create menu for importing DMPs from DMP Assistant.
  */
 export default function DMPAssistantAccentMenuItem({ onDialogClose }: DMPAssistantAccentMenuItemArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const [showDialog, setShowDialog] = React.useState(false);
 
   return (
     <>
       <AccentMenuItem
-        title="DMP Assistant"
+        title={t("dmpIntegrations.dmpAssistant")}
         avatar={<CardMedia image={DMPAssistantIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}

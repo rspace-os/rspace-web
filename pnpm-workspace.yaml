@@ -47,6 +47,9 @@ allowBuilds:
   '@swc/core': true
   canvas: true
   core-js: true
+  # core-js-pure ships the same postinstall funding banner as core-js, just
+  # under a separate package name; pulled in transitively by @mui/x-chat.
+  core-js-pure: true
   esbuild: true
   # msw's postinstall only prints a funding notice; allow it so frozen
   # installs don't fail with ERR_PNPM_IGNORED_BUILDS.

@@ -25,7 +25,7 @@ beforeEach(() => {
 
 async function waitForPreviewImages() {
   await waitFor(() => {
-    expect(screen.getAllByRole("img", { name: /preview of image/i, hidden: true })).toHaveLength(8);
+    expect(screen.getAllByRole("img", { name: "gallery:carousel.previewAlt", hidden: true })).toHaveLength(8);
   });
 }
 
@@ -49,11 +49,11 @@ describe("Carousel", () => {
     render(<SimpleCarousel />);
     await waitForPreviewImages();
 
-    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("1 / 8");
+    expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("1 / 8");
 
-    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
-    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("2 / 8");
+    expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("2 / 8");
   });
 
   test("Moving to a different file resets the zoom level", async () => {
@@ -61,9 +61,9 @@ describe("Carousel", () => {
     render(<SimpleCarousel />);
     await waitForPreviewImages();
 
-    await user.click(screen.getByRole("button", { name: /zoom in/i }));
-    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.zoomIn" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
-    expect(screen.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.resetZoom" })).toBeDisabled();
   });
 });

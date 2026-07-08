@@ -2,6 +2,8 @@ import { useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Heading, HeadingContext } from "../../components/DynamicHeadingLevel";
 import RecordTypeIcon from "../../components/RecordTypeIcon";
 import type { Person } from "../../stores/definitions/Person";
@@ -37,6 +39,7 @@ type OverviewSectionArgs = {
 };
 
 const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -45,7 +48,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
   return (
     <StepperPanel
       icon="subsample"
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="subSample"
@@ -62,7 +65,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
         <>
           <SampleField fieldOwner={activeResult} />
           <LocationField fieldOwner={activeResult} />
-          <ImageField fieldOwner={activeResult} alt="What the subsample looks like" />
+          <ImageField fieldOwner={activeResult} alt={t("subsample.imageAlt")} />
         </>
       )}
     </StepperPanel>
@@ -74,6 +77,7 @@ type DetailsSectionArgs = {
 };
 
 const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -82,7 +86,7 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
   return (
     <StepperPanel
       icon="subsample"
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="subSample"
@@ -114,12 +118,13 @@ type SampleFieldsSectionArgs = {
  * (`activeResult`) into edit mode has no effect on its `sample` property.
  */
 const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const theme = useTheme();
   return (
     <StepperPanel
       icon="sample"
       thickBorder
-      title="Sample Fields"
+      title={t("formSections.sampleFields")}
       sectionName="sampleFields"
       /*
        * `formSectionError` is not necessary because these fields will always
@@ -145,11 +150,14 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
             transform: "scale(0.8)",
           }}
         />{" "}
-        Parent Sample
+        {t("formSections.parentSample")}
       </Heading>
       <Typography variant="body2">
-        These fields belong to <RecordLink record={activeResult.sample} />, the parent sample of this{" "}
-        {activeResult.alias.alias}. To edit these fields, please edit the sample directly.
+        <TransRichText
+          i18nKey="inventory:subsample.sampleFieldsSection.parentSampleExplanation"
+          values={{ alias: activeResult.alias.alias }}
+          components={{ recordLink: <RecordLink record={activeResult.sample} /> }}
+        />
       </Typography>
       <Heading
         variant="h6"
@@ -168,7 +176,7 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
             transform: "scale(0.8)",
           }}
         />{" "}
-        Details
+        {t("formSections.details")}
       </Heading>
       <HeadingContext>
         <TotalQuantity sample={activeResult.sample} onErrorStateChange={() => {}} />
@@ -196,7 +204,7 @@ const SampleFieldsSection = observer(({ activeResult }: SampleFieldsSectionArgs)
             transform: "scale(0.8)",
           }}
         />{" "}
-        Custom Fields
+        {t("formSections.customFields")}
       </Heading>
       <HeadingContext>
         <Fields sample={activeResult.sample} onErrorStateChange={() => {}} />
@@ -211,6 +219,7 @@ type ExtaFieldSectionArgs = {
 };
 
 const ExtaFieldSection = observer(({ activeResult }: ExtaFieldSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -219,7 +228,7 @@ const ExtaFieldSection = observer(({ activeResult }: ExtaFieldSectionArgs) => {
   return (
     <StepperPanel
       icon="subsample"
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="subSample"
@@ -237,6 +246,7 @@ type NotesSectionArgs = {
 };
 
 const NotesSection = observer(({ activeResult }: NotesSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -245,7 +255,7 @@ const NotesSection = observer(({ activeResult }: NotesSectionArgs) => {
   return (
     <StepperPanel
       icon="subsample"
-      title="Notes"
+      title={t("formSections.notes")}
       sectionName="notes"
       formSectionError={formSectionError}
       recordType="subSample"
@@ -260,6 +270,7 @@ const NotesSection = observer(({ activeResult }: NotesSectionArgs) => {
 });
 
 function SubSampleForm(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -276,7 +287,7 @@ function SubSampleForm(): ReactNode {
     >
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
-        whatLabel="subsample, or its parent sample"
+        whatLabel={t("subsample.limitedAccessLabel")}
         owner={owner}
       />
       {activeResult.readAccessLevel === "full" && <SampleFieldsSection activeResult={activeResult} />}
@@ -284,17 +295,32 @@ function SubSampleForm(): ReactNode {
       {activeResult.readAccessLevel !== "public" && (
         <>
           <DetailsSection activeResult={activeResult} />
-          <StepperPanel icon="subsample" title="Barcodes" sectionName="barcodes" recordType="subSample">
+          <StepperPanel
+            icon="subsample"
+            title={t("formSections.barcodes")}
+            sectionName="barcodes"
+            recordType="subSample"
+          >
             <BarcodesField fieldOwner={activeResult} factory={activeResult.factory} connectedItem={activeResult} />
           </StepperPanel>
         </>
       )}
       {activeResult.readAccessLevel === "full" && (
         <>
-          <StepperPanel icon="subsample" title="Identifiers" sectionName="identifiers" recordType="subSample">
+          <StepperPanel
+            icon="subsample"
+            title={t("formSections.identifiers")}
+            sectionName="identifiers"
+            recordType="subSample"
+          >
             <IdentifiersField fieldOwner={activeResult} />
           </StepperPanel>
-          <StepperPanel icon="subsample" title="Attachments" sectionName="attachments" recordType="subSample">
+          <StepperPanel
+            icon="subsample"
+            title={t("formSections.attachments")}
+            sectionName="attachments"
+            recordType="subSample"
+          >
             <AttachmentsField fieldOwner={activeResult} />
           </StepperPanel>
           <ExtaFieldSection activeResult={activeResult} />

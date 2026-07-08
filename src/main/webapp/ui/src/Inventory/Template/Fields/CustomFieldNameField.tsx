@@ -3,6 +3,7 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { match } from "../../../util/Util";
@@ -15,6 +16,7 @@ type NameFieldArgs = {
 };
 
 function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [duplicateFieldError, setDuplicateFieldError] = useState(false);
 
   useEffect(() => {
@@ -25,15 +27,15 @@ function NameField({ field, editing, onErrorStateChange, id }: NameFieldArgs): R
   const tooLongName = field.name.length > 50;
 
   const helperText = match<void, string>([
-    [() => emptyName, "Name cannot be empty"],
-    [() => duplicateFieldError, "You either already have a field with that name or that name is not permitted"],
-    [() => tooLongName, "Name cannot be longer than 50 characters"],
+    [() => emptyName, t("fields.templateFields.customField.validation.emptyName")],
+    [() => duplicateFieldError, t("fields.templateFields.customField.validation.duplicateName")],
+    [() => tooLongName, t("fields.templateFields.customField.validation.nameTooLong")],
     [() => true, ""],
   ])();
 
   return editing ? (
     <InputWrapper
-      label="Name"
+      label={t("fields.templateFields.customField.name")}
       error={emptyName || tooLongName || duplicateFieldError}
       helperText={helperText}
       maxLength={50}

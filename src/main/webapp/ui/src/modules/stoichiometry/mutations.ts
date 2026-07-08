@@ -69,7 +69,7 @@ export async function calculateStoichiometry(
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to calculate stoichiometry: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.calculateFailed", { status: response.statusText });
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);
@@ -96,7 +96,7 @@ export async function updateStoichiometry(
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to update stoichiometry: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.updateFailed", { status: response.statusText });
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);
@@ -125,7 +125,7 @@ export async function deleteStoichiometry(
   }
 
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to delete stoichiometry: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.deleteFailed", { status: response.statusText });
   }
 
   if (data === null) {
@@ -158,7 +158,7 @@ export async function deductStock(
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to deduct stock: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.deductStockFailed", { status: response.statusText });
   }
 
   return parseOrThrow(StockDeductionResultSchema, data);
@@ -177,7 +177,7 @@ export async function getMoleculeInfo({ smiles }: GetMoleculeInfoParams, token: 
 
   const data: unknown = await response.json();
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to retrieve molecule information: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.moleculeInfoFailed", { status: response.statusText });
   }
 
   return parseOrThrow(MoleculeInfoSchema, data);

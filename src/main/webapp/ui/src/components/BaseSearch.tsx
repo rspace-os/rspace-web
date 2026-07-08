@@ -7,6 +7,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 
 function BaseSearch(props: {
@@ -15,6 +17,7 @@ function BaseSearch(props: {
   elId: string;
   placeholder: string;
 }) {
+  const { t } = useTranslation("common");
   const [search, setSearch] = React.useState("");
 
   const submitSearch = (e: React.FormEvent<HTMLFormElement>) => {
@@ -56,15 +59,20 @@ function BaseSearch(props: {
         <InputBase
           id={props.elId}
           data-test-id="base-search-input"
-          placeholder={props.placeholder || "Search..."}
+          placeholder={props.placeholder || t("search.placeholder")}
           slotProps={{
-            input: { "aria-label": props.placeholder || "Search" },
+            input: { "aria-label": props.placeholder || t("actions.search") },
           }}
           value={search}
           onChange={handleChange}
           sx={{ pl: 1, flexGrow: 1 }}
         />
-        <IconButton id={`${props.elId}-submit`} type="submit" aria-label="Search" data-test-id="base-search-submit">
+        <IconButton
+          id={`${props.elId}-submit`}
+          type="submit"
+          aria-label={t("actions.search")}
+          data-test-id="base-search-submit"
+        >
           <SearchIcon />
         </IconButton>
       </Box>
@@ -96,12 +104,14 @@ function renderElements() {
         const variant = dataset.variant === "outlined" || dataset.variant === "elevation" ? dataset.variant : undefined;
         const root = createRoot(container);
         root.render(
-          <WrappedBaseSearch
-            placeholder={dataset.placeholder ?? "Search..."}
-            onSubmit={dataset.onsubmit}
-            elId={dataset.elid ?? "base-search"}
-            variant={variant}
-          />,
+          <I18nRoot namespaces={["common"]}>
+            <WrappedBaseSearch
+              placeholder={dataset.placeholder ?? ""}
+              onSubmit={dataset.onsubmit}
+              elId={dataset.elid ?? "base-search"}
+              variant={variant}
+            />
+          </I18nRoot>,
         );
       });
     }

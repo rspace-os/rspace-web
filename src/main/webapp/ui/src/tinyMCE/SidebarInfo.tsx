@@ -5,6 +5,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useCallback, useEffect } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
+import I18nRoot from "../modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import ChemCard from "./ChemCard";
 
@@ -69,6 +71,7 @@ function findSidebarContainer(iframe: HTMLIFrameElement): HTMLElement | null {
 export default function SidebarInfo({ iframe }: SidebarInfoProps) {
   const [items, setItems] = React.useState<SidebarItem[]>([]);
   const [open, setOpen] = React.useState(false);
+  const { t } = useTranslation("workspace");
 
   const addItem = useCallback((element: HTMLImageElement): void => {
     if (!element.id) {
@@ -180,7 +183,7 @@ export default function SidebarInfo({ iframe }: SidebarInfoProps) {
       {items.length > 1 && (
         <Box sx={{ textAlign: "right" }}>
           <Button sx={{ p: "10px" }} onClick={closeAll}>
-            Close All
+            {t("tinymce.sidebarInfo.closeAll")}
           </Button>
         </Box>
       )}
@@ -207,11 +210,13 @@ document.addEventListener("tinymce-iframe-loaded", (event: Event) => {
   const root = sidebarRoots.get(container) ?? createRoot(container);
   sidebarRoots.set(container, root);
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <SidebarInfo iframe={iframe} />
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <I18nRoot namespaces={["workspace", "common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <SidebarInfo iframe={iframe} />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
   );
 });
 

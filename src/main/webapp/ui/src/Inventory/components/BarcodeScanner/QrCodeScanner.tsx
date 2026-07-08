@@ -2,6 +2,7 @@ import Alert from "@mui/material/Alert";
 import QrScanner from "qr-scanner";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { mkAlert } from "../../../stores/contexts/Alert";
 import useStores from "../../../stores/use-stores";
 import BarcodeScannerSkeleton, { type BarcodeInput } from "./BarcodeScannerSkeleton";
@@ -14,6 +15,7 @@ type QrCodeScannerArgs = {
 
 export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeScannerArgs): React.ReactNode {
   const { uiStore } = useStores();
+  const { t } = useTranslation("inventory");
   const [loading, setLoading] = useState<boolean>(true);
   const [barcode, setBarcode] = useState<BarcodeInput | null>(null);
   const [error, setError] = useState(false);
@@ -38,11 +40,8 @@ export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeS
       if (typeof e === "string")
         uiStore.addAlert(
           mkAlert({
-            title: "Unable to start camera with Barcode Detector.",
-            message:
-              e === "Camera not found."
-                ? `If your device has a camera, please reset camera permission, and try again.`
-                : e,
+            title: t("barcodeScanner.startError.title"),
+            message: e === "Camera not found." ? t("barcodeScanner.startError.cameraReset") : e,
             variant: "error",
             isInfinite: true,
           }),
@@ -66,21 +65,16 @@ export default function QrCodeScanner({ onClose, onScan, buttonPrefix }: QrCodeS
       onClose={onClose}
       onScan={onScan}
       buttonPrefix={buttonPrefix}
-      beforeScanHelpText="QR format supported"
+      beforeScanHelpText={t("barcodeScanner.supportedFormats.qr")}
       videoElem={videoElem}
       barcode={barcode}
       setBarcode={setBarcode}
       loading={loading}
       warning={
-        error
-          ? !loading && <Alert severity="warning">{"Could not access camera, please enter code below."}</Alert>
-          : !loading &&
-            !barcode?.rawValue && (
-              <Alert severity="warning">
-                {`To scan other formats,
-              please try an Android device, or Chrome on a Mac (with a webcam).`}
-              </Alert>
-            )
+        !loading &&
+        (error || !barcode?.rawValue) && (
+          <Alert severity="warning">{error ? t("barcodeScanner.cameraError") : t("barcodeScanner.otherFormats")}</Alert>
+        )
       }
       error={error}
     />

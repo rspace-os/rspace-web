@@ -1,4 +1,5 @@
 import { action, makeObservable, observable } from "mobx";
+import i18n from "@/modules/common/i18n";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
@@ -61,7 +62,7 @@ export default class BasketModel implements Basket {
     } catch {
       uiStore.addAlert(
         mkAlert({
-          message: `Error getting Basket contents.`,
+          message: i18n.t("inventory:baskets.alerts.getContentsFailed"),
           variant: "error",
         }),
       );
@@ -80,7 +81,7 @@ export default class BasketModel implements Basket {
         const itemsCount = itemsToAdd.length;
         if (itemsCount > 0 && typeof this.id === "number") {
           const res = await showToastWhilstPending(
-            `Adding item${itemsCount > 1 ? "s" : ""} to Basket...`,
+            i18n.t("inventory:baskets.pending.addItems", { count: itemsCount }),
             ApiService.post<void>(`baskets/${this.id}/addItems`, {
               globalIds: itemsToAdd,
             }),
@@ -90,7 +91,7 @@ export default class BasketModel implements Basket {
             await searchStore.search.fetcher.reperformCurrentSearch();
             uiStore.addAlert(
               mkAlert({
-                message: `Item${itemsCount > 1 ? "s" : ""} successfully added to ${this.name}.`,
+                message: i18n.t("inventory:baskets.alerts.itemsAdded", { count: itemsCount, name: this.name }),
                 variant: "success",
               }),
             );
@@ -100,7 +101,7 @@ export default class BasketModel implements Basket {
         } else {
           uiStore.addAlert(
             mkAlert({
-              message: `The selected items are in ${this.name} already. No items were added.`,
+              message: i18n.t("inventory:baskets.alerts.itemsAlreadyAdded", { name: this.name }),
               variant: "warning",
             }),
           );
@@ -111,7 +112,7 @@ export default class BasketModel implements Basket {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error adding items to Basket.",
+          title: i18n.t("inventory:baskets.alerts.addItemsFailed"),
           message: getErrorMessage(e, ""),
           variant: "error",
         }),
@@ -128,7 +129,7 @@ export default class BasketModel implements Basket {
       if (this.id) {
         const itemsCount = itemIds.length;
         const res = await showToastWhilstPending(
-          `Removing item${itemsCount > 1 ? "s" : ""} from Basket...`,
+          i18n.t("inventory:baskets.pending.removeItems", { count: itemsCount }),
           ApiService.post<void>(`baskets/${this.id}/removeItems`, {
             globalIds: itemIds,
           }),
@@ -138,7 +139,7 @@ export default class BasketModel implements Basket {
           await searchStore.search.fetcher.reperformCurrentSearch();
           uiStore.addAlert(
             mkAlert({
-              message: `Item${itemsCount > 1 ? "s" : ""} successfully removed from ${this.name}.`,
+              message: i18n.t("inventory:baskets.alerts.itemsRemoved", { count: itemsCount, name: this.name }),
               variant: "success",
             }),
           );
@@ -151,7 +152,7 @@ export default class BasketModel implements Basket {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error removing items from Basket.",
+          title: i18n.t("inventory:baskets.alerts.removeItemsFailed"),
           message: (e as Error).message || "",
           variant: "error",
         }),
@@ -166,10 +167,13 @@ export default class BasketModel implements Basket {
     try {
       this.setLoading(true);
       if (this.id) {
-        await showToastWhilstPending(`Updating Basket details...`, ApiService.put<void>(`baskets/${this.id}`, details));
+        await showToastWhilstPending(
+          i18n.t("inventory:baskets.pending.updateDetails"),
+          ApiService.put<void>(`baskets/${this.id}`, details),
+        );
         uiStore.addAlert(
           mkAlert({
-            message: `Basket details updated.`,
+            message: i18n.t("inventory:baskets.alerts.detailsUpdated"),
             variant: "success",
           }),
         );
@@ -181,7 +185,7 @@ export default class BasketModel implements Basket {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error updating Basket details.",
+          title: i18n.t("inventory:baskets.alerts.updateDetailsFailed"),
           message: (e as Error).message || "",
           variant: "error",
         }),
@@ -192,11 +196,17 @@ export default class BasketModel implements Basket {
   }
 }
 
-export const NEW_BASKET: Basket = new BasketModel({
-  name: "New Basket",
-  id: null,
-  globalId: "",
-  items: [],
-  itemCount: 0,
-  _links: [],
-});
+/*
+ * A factory rather than a shared const so the localized name resolves when a
+ * dialog mounts (after i18n has initialised and the inventory namespace has
+ * loaded) instead of being frozen to whatever was available at import time.
+ */
+export const getNewBasket = (): Basket =>
+  new BasketModel({
+    name: i18n.t("inventory:baskets.newBasket"),
+    id: null,
+    globalId: "",
+    items: [],
+    itemCount: 0,
+    _links: [],
+  });

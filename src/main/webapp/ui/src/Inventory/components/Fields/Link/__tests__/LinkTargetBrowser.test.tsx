@@ -30,10 +30,10 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
   }) => (
     <div data-testid="inventory-picker" data-reset={String(props.resetActiveResultOnClose ?? false)}>
       <button type="button" onClick={() => props.onAddition([{ globalId: "SA42", name: "Sample 42" }])}>
-        pick SA42
+        {"pick SA42"}
       </button>
       <button type="button" onClick={() => props.onAddition([])}>
-        cancel picker
+        {"cancel picker"}
       </button>
     </div>
   ),
@@ -52,7 +52,7 @@ describe("LinkTargetBrowser", () => {
     const user = userEvent.setup();
     render(<LinkTargetBrowser open onPick={onPick} onCancel={() => {}} />);
 
-    await user.click(screen.getByRole("button", { name: /pick sa42/i }));
+    await user.click(screen.getByRole("button", { name: "pick SA42" }));
 
     expect(onPick).toHaveBeenCalledWith({
       globalId: "SA42",
@@ -100,7 +100,7 @@ describe("LinkTargetBrowser", () => {
     const user = userEvent.setup();
     render(<LinkTargetBrowser open onPick={() => {}} onCancel={onCancel} />);
 
-    await user.click(screen.getByRole("button", { name: /cancel picker/i }));
+    await user.click(screen.getByRole("button", { name: "cancel picker" }));
 
     expect(onCancel).toHaveBeenCalled();
   });

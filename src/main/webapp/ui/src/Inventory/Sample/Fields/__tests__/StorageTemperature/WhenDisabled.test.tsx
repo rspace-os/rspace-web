@@ -1,6 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { render } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import { CELSIUS, FAHRENHEIT, KELVIN, type Temperature } from "../../../../../stores/definitions/Units";
 
 import materialTheme from "../../../../../theme";
@@ -105,8 +107,8 @@ describe("StorageTemperature", () => {
       });
     });
     describe("Display a string when both values are valid temperatures,", () => {
-      test("That includer both min and max values.", () => {
-        const { container } = render(
+      test("That includer both min and max values.", async () => {
+        const { container } = await renderWithRealI18n(
           <ThemeProvider theme={materialTheme}>
             <StorageTemperature
               onErrorStateChange={() => {}}
@@ -123,9 +125,9 @@ describe("StorageTemperature", () => {
               })}
             />
           </ThemeProvider>,
+          { resources: { inventory: inventoryEn }, defaultNS: "inventory" },
         );
-        expect(container).toHaveTextContent("1");
-        expect(container).toHaveTextContent("2");
+        expect(container).toHaveTextContent("Between 1°C and 2°C.");
       });
       describe("That renders the units correctly.", () => {
         test("Celsius", () => {

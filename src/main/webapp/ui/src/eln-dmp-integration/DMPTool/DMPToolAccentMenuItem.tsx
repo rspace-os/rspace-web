@@ -1,5 +1,6 @@
 import CardMedia from "@mui/material/CardMedia";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../assets/branding/dmptool";
 import DMPToolIcon from "../../assets/branding/dmptool/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
@@ -14,12 +15,13 @@ type DMPToolAccentMenuItemArgs = {
  * The menu item for the create menu for importing DMPs from DMPTool.
  */
 export default function DMPToolAccentMenuItem({ onDialogClose }: DMPToolAccentMenuItemArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
     <>
       <AccentMenuItem
-        title="DMPTool"
+        title={t("dmpIntegrations.dmptool")}
         avatar={<CardMedia image={DMPToolIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}

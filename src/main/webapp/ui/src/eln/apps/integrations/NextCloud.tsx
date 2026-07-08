@@ -1,7 +1,9 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/nextcloud";
 import NextCloudIcon from "../../../assets/branding/nextcloud/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -45,6 +47,7 @@ export const NEXTCLOUD_CONNECTION_CHANNEL = "rspace.apps.nextcloud.connection";
  * ../useNextcloud.
  */
 function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useNextcloudEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -57,7 +60,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to NextCloud",
+            title: t("integrations.nextCloud.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -67,7 +70,7 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to NextCloud.",
+          message: t("integrations.nextCloud.alerts.connectSuccess"),
         }),
       );
     },
@@ -82,23 +85,19 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
       }}
     >
       <IntegrationCard
-        name="Nextcloud"
+        name={t("integrations.nextCloud.name")}
         integrationState={integrationState}
-        explanatoryText="Create, organise, and share your files through an open-source file hosting system."
+        explanatoryText={t("integrations.nextCloud.description")}
         image={NextCloudIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can make links to Nextcloud documents directly from RSpace."
-        helpLinkText="NextCloud integration docs"
-        website="nextcloud.com"
+        usageText={t("integrations.nextCloud.usage")}
+        helpLinkText={t("integrations.nextCloud.helpLink")}
+        website="https://nextcloud.com"
         docLink="nextcloud"
         setupSection={
           <>
-            <ol>
-              <li>Click on Connect to authorise RSpace to access your Nextcloud account.</li>
-              <li>Enable the integration.</li>
-              <li>When editing a document, click on the Nextcloud icon in the text editor toolbar.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.nextCloud.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -110,13 +109,13 @@ function NextCloud({ integrationState, update }: NextCloudArgs): React.ReactNode
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/nextcloud/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

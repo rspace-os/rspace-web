@@ -49,14 +49,14 @@ describe("Table Listing", () => {
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 1 }),
+      await within(grid).findTableCell({ columnHeading: "system:usersPage.columns.usage", rowIndex: 1 }),
       // 362006 bytes: pretty-bytes rounds 362.006 kB to "362 kB" (the previous
       // hand-rolled toFixed(2) produced "362.01 kB")
     ).toHaveTextContent("362 kB");
     expect(
       // @ts-expect-error findTableCell exists on the custom within function
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "Usage", rowIndex: 2 }),
+      await within(grid).findTableCell({ columnHeading: "system:usersPage.columns.usage", rowIndex: 2 }),
     ).toHaveTextContent("0 B");
   });
 });

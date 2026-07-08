@@ -9,6 +9,7 @@ import TableRow from "@mui/material/TableRow";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type KeyboardEvent, type MouseEvent, useContext, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../../stores/contexts/Search";
 import type { Location } from "../../../../stores/definitions/Container";
 import ContainerModel from "../../../../stores/models/ContainerModel";
@@ -89,6 +90,7 @@ interface LoadedContentProps {
 }
 
 const LoadedContent = observer(({ container }: LoadedContentProps) => {
+  const { t } = useTranslation("inventory");
   const { search } = React.useContext(SearchContext);
   const columnsUnderHover = useLocalObservable(() => new Set<number>());
 
@@ -176,7 +178,7 @@ const LoadedContent = observer(({ container }: LoadedContentProps) => {
       >
         <Table
           stickyHeader
-          aria-label="Grid view of container contents"
+          aria-label={t("container.content.gridViewLabel")}
           role="grid"
           aria-multiselectable="true"
           sx={tableSx}

@@ -11,6 +11,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../components/GlobalId";
 import type { Record } from "../../stores/definitions/Record";
 
@@ -27,14 +28,16 @@ type SimpleRecordsTableArgs = {
 };
 
 export default function SimpleRecordsTable({ open, records }: SimpleRecordsTableArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
+
   return (
     <Collapse in={open}>
       <CardContent sx={{ p: "0 !important" }}>
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Global ID</TableCell>
+              <TableCell>{t("recordsTable.columns.name")}</TableCell>
+              <TableCell>{t("recordsTable.columns.globalId")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>

@@ -4,6 +4,7 @@ import PreviewIcon from "@mui/icons-material/Visibility";
 import NoPreviewIcon from "@mui/icons-material/VisibilityOff";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../../components/IconButtonWithTooltip";
 import ImagePreview, { type PreviewSize } from "../../../../components/ImagePreview";
 import { mkAlert } from "../../../../stores/contexts/Alert";
@@ -15,6 +16,7 @@ type PreviewArgs = {
 };
 
 function Preview({ attachment }: PreviewArgs) {
+  const { t } = useTranslation("inventory");
   const { uiStore } = useStores();
 
   const [showPreview, setShowPreview] = useState(false);
@@ -31,7 +33,7 @@ function Preview({ attachment }: PreviewArgs) {
       .catch((e: Error) => {
         uiStore.addAlert(
           mkAlert({
-            title: "Could not fetch image",
+            title: t("fields.attachments.alert.couldNotFetchImage"),
             message: e.message,
             variant: "error",
           }),
@@ -51,12 +53,12 @@ function Preview({ attachment }: PreviewArgs) {
           imageLink
             ? ""
             : loadingImage
-              ? "Loading image"
+              ? t("fields.attachments.tooltips.loadingImage")
               : previewSupported
-                ? "Preview file as image"
+                ? t("fields.attachments.tooltips.previewImage")
                 : !attachment.id
-                  ? "Save first to enable image preview"
-                  : "Preview is not supported for this file type"
+                  ? t("fields.attachments.tooltips.saveFirstImagePreview")
+                  : t("fields.attachments.tooltips.previewImageUnsupported")
         }
         size="small"
         color="primary"

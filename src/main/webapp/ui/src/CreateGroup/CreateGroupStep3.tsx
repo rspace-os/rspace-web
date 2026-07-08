@@ -11,6 +11,7 @@ import EmailValidator from "email-validator";
 import React from "react";
 import Select from "react-select";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import materialTheme from "../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -168,10 +169,10 @@ class createGroupStep3 extends React.Component<any, any> {
             <Grid container spacing={8}>
               <Grid size={6}>
                 <Paper sx={{ padding: "10px" }}>
-                  <h2>Invite RSpace users</h2>
+                  <h2>{i18n.t("groups:createGroup.step3.inviteExistingHeading")}</h2>
                   <Box sx={{ marginTop: "36.5px", paddingBottom: "6px" }} data-test-id="createGroupInviteMembers">
                     {" "}
-                    <p className="bootstrap-custom-flat"> type at least 3 characters</p>
+                    <p className="bootstrap-custom-flat">{i18n.t("groups:createGroup.step3.typeHint")}</p>
                     <Select
                       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                       {...({ style: { marginTop: "36.5px", paddingBottom: "6px" } } as any)}
@@ -179,7 +180,7 @@ class createGroupStep3 extends React.Component<any, any> {
                       options={this.state.returnedUserList}
                       onInputChange={this.getCurrentUsers}
                       onChange={this.handleSelect}
-                      placeholder="Enter email address"
+                      placeholder={i18n.t("groups:createGroup.step3.emailPlaceholder")}
                       classNamePrefix="seleniumTest"
                     />
                   </Box>
@@ -189,13 +190,13 @@ class createGroupStep3 extends React.Component<any, any> {
               {newUsersDisplay && (
                 <Grid size={6}>
                   <Paper sx={{ padding: "10px" }}>
-                    <h2>Invite new users</h2>
+                    <h2>{i18n.t("groups:createGroup.step3.inviteNewHeading")}</h2>
                     <FormControl error aria-describedby="email-error-text">
                       <TextField
                         variant="standard"
                         data-test-id="createGroupInviteNewUsers"
                         error={!this.state.newUserEmailCheck}
-                        placeholder="Enter email address"
+                        placeholder={i18n.t("groups:createGroup.step3.emailPlaceholder")}
                         name="newUsers"
                         margin="normal"
                         onChange={this.emailValidation}
@@ -203,7 +204,9 @@ class createGroupStep3 extends React.Component<any, any> {
                         onKeyPress={this.handleEnter}
                       />
                       {!this.state.newUserEmailCheck && (
-                        <FormHelperText id="email-error-text">Please enter a valid email address</FormHelperText>
+                        <FormHelperText id="email-error-text">
+                          {i18n.t("groups:createGroup.validation.invalidEmail")}
+                        </FormHelperText>
                       )}
                     </FormControl>
                     <Grid sx={{ overflow: "auto", maxHeight: "250px" }}>{newUsersDisplay}</Grid>

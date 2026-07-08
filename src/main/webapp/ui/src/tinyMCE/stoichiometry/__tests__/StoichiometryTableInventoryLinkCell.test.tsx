@@ -48,7 +48,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
           onAddition([{ id: 999, globalId: "SS999" }]);
         }}
       >
-        Select inventory item
+        {"Select inventory item"}
       </button>
       <button
         type="button"
@@ -56,7 +56,7 @@ vi.mock("@/Inventory/components/Picker/Picker", () => ({
           onAddition([{ id: 123, globalId: "SS123" }]);
         }}
       >
-        Select existing inventory item
+        {"Select existing inventory item"}
       </button>
     </>
   ),
@@ -91,8 +91,8 @@ describe("StoichiometryTableInventoryLinkCell", () => {
   it("renders an add button when the molecule has no inventory link", () => {
     render(<StoichiometryTableInventoryLinkCell inventoryLink={null} moleculeName="Benzene" />);
 
-    expect(screen.getByLabelText("Add inventory link for Benzene")).toBeVisible();
-    expect(screen.queryByLabelText("Remove inventory link for Benzene")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule")).toBeVisible();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.removeForMolecule")).not.toBeInTheDocument();
   });
 
   it("opens InventoryPicker and returns selected inventory item id", async () => {
@@ -107,11 +107,11 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    await user.click(screen.getByLabelText("Add inventory link for Benzene"));
+    await user.click(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule"));
 
     expect(
       screen.getByRole("dialog", {
-        name: "Pick inventory item for Benzene",
+        name: "common:stoichiometry.inventoryLink.pickerTitle",
       }),
     ).toBeVisible();
     expect(screen.getByText("reset active result enabled")).toBeVisible();
@@ -121,7 +121,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("dialog", {
-          name: "Pick inventory item for Benzene",
+          name: "common:stoichiometry.inventoryLink.pickerTitle",
         }),
       ).not.toBeVisible();
     });
@@ -138,7 +138,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    await user.click(screen.getByLabelText("Add inventory link for Benzene"));
+    await user.click(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule"));
     expect(screen.getByText("SS123 filtered")).toBeVisible();
   });
 
@@ -155,13 +155,13 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    await user.click(screen.getByLabelText("Add inventory link for Benzene"));
+    await user.click(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule"));
     await user.click(screen.getByRole("button", { name: "Select existing inventory item" }));
 
     expect(onPickInventoryItem).not.toHaveBeenCalled();
     expect(
       screen.getByRole("dialog", {
-        name: "Pick inventory item for Benzene",
+        name: "common:stoichiometry.inventoryLink.pickerTitle",
       }),
     ).toBeVisible();
   });
@@ -170,8 +170,8 @@ describe("StoichiometryTableInventoryLinkCell", () => {
     render(<StoichiometryTableInventoryLinkCell inventoryLink={mockInventoryLink} moleculeName="Cyclopentadiene" />);
 
     expect(screen.getByRole("link", { name: "SS123" })).toHaveAttribute("href", "/inventory/subsample/123");
-    expect(screen.getByLabelText("Remove inventory link for Cyclopentadiene")).toBeVisible();
-    expect(screen.queryByLabelText("Add inventory link for Cyclopentadiene")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("common:stoichiometry.inventoryLink.removeForMolecule")).toBeVisible();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.addForMolecule")).not.toBeInTheDocument();
   });
 
   it("renders a deleted placeholder with undo action for a soft-deleted saved link", async () => {
@@ -187,11 +187,11 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByText("Link Deleted")).toBeVisible();
-    expect(screen.getByLabelText("Undo deleting inventory link for Cyclopentadiene")).toBeVisible();
-    expect(screen.queryByLabelText("Add inventory link for Cyclopentadiene")).not.toBeInTheDocument();
+    expect(screen.getByText("common:stoichiometry.inventoryLink.deleted")).toBeVisible();
+    expect(screen.getByLabelText("common:stoichiometry.inventoryLink.undoForMolecule")).toBeVisible();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.addForMolecule")).not.toBeInTheDocument();
 
-    await user.click(screen.getByLabelText("Undo deleting inventory link for Cyclopentadiene"));
+    await user.click(screen.getByLabelText("common:stoichiometry.inventoryLink.undoForMolecule"));
 
     expect(onUndoRemoveInventoryLink).toHaveBeenCalledTimes(1);
   });
@@ -199,8 +199,8 @@ describe("StoichiometryTableInventoryLinkCell", () => {
   it("does not show the add button while a saved link deletion is pending", () => {
     render(<StoichiometryTableInventoryLinkCell inventoryLink={null} isDeleted moleculeName="Cyclopentadiene" />);
 
-    expect(screen.getByText("Link Deleted")).toBeVisible();
-    expect(screen.queryByLabelText("Add inventory link for Cyclopentadiene")).not.toBeInTheDocument();
+    expect(screen.getByText("common:stoichiometry.inventoryLink.deleted")).toBeVisible();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.addForMolecule")).not.toBeInTheDocument();
   });
 
   it("renders an insufficient stock warning when requested", () => {
@@ -212,7 +212,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByRole("img", { name: "Insufficient Stock" })).toBeVisible();
+    expect(screen.getByRole("img", { name: "common:stoichiometry.inventoryLink.insufficientStock" })).toBeVisible();
   });
 
   it("renders a stock deducted indicator and hides the insufficient stock warning when stock was already deducted", () => {
@@ -224,14 +224,18 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       />,
     );
 
-    expect(screen.getByLabelText("Stock deducted")).toBeVisible();
-    expect(screen.queryByRole("img", { name: "Insufficient Stock" })).not.toBeInTheDocument();
+    expect(screen.getAllByLabelText("common:stoichiometry.inventoryLink.stockDeducted").length).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("img", { name: "common:stoichiometry.inventoryLink.insufficientStock" }),
+    ).not.toBeInTheDocument();
   });
 
   it("does not render an insufficient stock warning by default", () => {
     render(<StoichiometryTableInventoryLinkCell inventoryLink={mockInventoryLink} moleculeName="Cyclopentadiene" />);
 
-    expect(screen.queryByRole("img", { name: "Insufficient Stock" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("img", { name: "common:stoichiometry.inventoryLink.insufficientStock" }),
+    ).not.toBeInTheDocument();
   });
 
   it("disables controls in read-only mode", () => {
@@ -239,7 +243,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
       <StoichiometryTableInventoryLinkCell inventoryLink={null} moleculeName="Benzene" editable={false} />,
     );
 
-    expect(screen.getByLabelText("Add inventory link for Benzene")).toBeDisabled();
+    expect(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule")).toBeDisabled();
 
     rerender(
       <StoichiometryTableInventoryLinkCell
@@ -248,7 +252,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
         editable={false}
       />,
     );
-    expect(screen.queryByLabelText("Remove inventory link for Cyclopentadiene")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.removeForMolecule")).not.toBeInTheDocument();
 
     rerender(
       <StoichiometryTableInventoryLinkCell
@@ -258,7 +262,7 @@ describe("StoichiometryTableInventoryLinkCell", () => {
         editable={false}
       />,
     );
-    expect(screen.queryByLabelText("Undo deleting inventory link for Cyclopentadiene")).not.toBeInTheDocument();
-    expect(screen.getByText("Link Deleted")).toBeVisible();
+    expect(screen.queryByLabelText("common:stoichiometry.inventoryLink.undoForMolecule")).not.toBeInTheDocument();
+    expect(screen.getByText("common:stoichiometry.inventoryLink.deleted")).toBeVisible();
   });
 });

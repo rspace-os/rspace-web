@@ -1,10 +1,12 @@
 import type React from "react";
 import { createRoot } from "react-dom/client";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import StoichiometryDialogEntrypoint from "./StoichiometryDialogEntrypoint";
 
 const STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE = "data-stoichiometry-table-only";
 const STOICHIOMETRY_TABLE_DATA_ATTRIBUTE = "data-stoichiometry-table";
-const EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER = "Empty Stoichiometry Table";
+const getEmptyStoichiometryTablePlaceholder = (): string => i18n.t("common:stoichiometry.plugin.emptyTablePlaceholder");
 
 declare global {
   interface Window {
@@ -53,7 +55,6 @@ interface Editor {
   focus: () => void;
 }
 
-// Declare the global tinymce object
 declare const tinymce: {
   PluginManager: {
     add: (name: string, plugin: new (editor: Editor) => unknown) => void;
@@ -128,7 +129,7 @@ class StoichiometryPlugin {
       const hasStoichiometryData = node.hasAttribute(STOICHIOMETRY_TABLE_DATA_ATTRIBUTE);
       const hasElementChildren = node.children.length > 0;
       const textContent = node.textContent?.trim() ?? "";
-      const hasOnlyPlaceholderText = textContent === EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
+      const hasOnlyPlaceholderText = textContent === getEmptyStoichiometryTablePlaceholder();
 
       if (hasStoichiometryData) {
         if (!hasElementChildren && hasOnlyPlaceholderText) {
@@ -138,12 +139,12 @@ class StoichiometryPlugin {
       }
 
       if (!hasElementChildren && textContent.length === 0) {
-        node.textContent = EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER;
+        node.textContent = getEmptyStoichiometryTablePlaceholder();
       }
     };
 
     const getStoichiometryTableOnlyText = (): string => {
-      return "Stoichiometry Table (no preview)";
+      return i18n.t("common:stoichiometry.plugin.noPreview");
     };
 
     const syncStoichiometryTableOnlyNodePresentation = (node: HTMLElement) => {
@@ -211,7 +212,7 @@ class StoichiometryPlugin {
     };
 
     const buildStoichiometryTableOnlyHtml = (nodeId: string): string => {
-      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="Reaction table">${EMPTY_STOICHIOMETRY_TABLE_PLACEHOLDER}</div>`;
+      return `<div id="${nodeId}" ${STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE}="true" class="mceNonEditable" data-mce-contenteditable="false" contenteditable="false" role="button" tabindex="-1" aria-label="${i18n.t("common:stoichiometry.dialog.reactionTable")}">${getEmptyStoichiometryTablePlaceholder()}</div>`;
     };
 
     const insertStoichiometryTableOnly = (): string => {
@@ -250,7 +251,11 @@ class StoichiometryPlugin {
           ...nextProps,
         };
 
-        root.render(<StoichiometryDialogEntrypoint {...props} />);
+        root.render(
+          <I18nRoot namespaces={["common"]}>
+            <StoichiometryDialogEntrypoint {...props} />
+          </I18nRoot>,
+        );
       };
     };
 
@@ -460,13 +465,13 @@ class StoichiometryPlugin {
     };
 
     editor.ui.registry.addButton("stoichiometryInsertButton", {
-      tooltip: "Insert reaction table",
+      tooltip: i18n.t("common:stoichiometry.plugin.insertTooltip"),
       icon: "stoichiometry",
       onAction: openStoichiometryDialogFromSelection,
     });
 
     editor.ui.registry.addMenuItem("stoichiometryMenuItem", {
-      text: "Reaction Table",
+      text: i18n.t("common:stoichiometry.dialog.reactionTable"),
       icon: "stoichiometry",
       onAction: openStoichiometryDialogFromSelection,
     });
@@ -475,9 +480,9 @@ class StoichiometryPlugin {
       window.insertActions = new Map();
     }
     window.insertActions.set("stoichiometryMenuItem", {
-      text: "Stoichiometry Table",
+      text: i18n.t("common:stoichiometry.plugin.insertActionText"),
       icon: "stoichiometry",
-      aliases: ["Stoichiometry"],
+      aliases: [i18n.t("common:stoichiometry.plugin.insertActionAlias")],
       action: openStoichiometryDialogFromSelection,
     });
 

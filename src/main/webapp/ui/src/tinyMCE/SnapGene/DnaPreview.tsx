@@ -9,6 +9,7 @@ import Grid from "@mui/material/Grid";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import React, { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import LoadingCircular from "../../components/LoadingCircular";
@@ -29,6 +30,7 @@ type DnaPreviewState = {
  * Preview pane for SnapGene DNA images.
  */
 export default function DnaPreview(props: DnaPreviewProps) {
+  const { t } = useTranslation("workspace");
   const { clicked, id, setDisabled } = props;
   const [state, setState] = React.useState<DnaPreviewState>({
     linear: false,
@@ -63,8 +65,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
   const onImageError = () => {
     addAlert(
       mkAlert({
-        message:
-          "An error has occurred. This could be because the Snapgene server is down or the DNA sequence is invalid.",
+        message: t("tinymce.snapGene.dnaPreviewError"),
         variant: "warning",
         isInfinite: true,
       }),
@@ -99,16 +100,16 @@ export default function DnaPreview(props: DnaPreviewProps) {
                   zIndex: 100,
                 }}
                 size="small"
-                aria-label="small outlined button group"
+                aria-label={t("tinymce.snapGene.zoomControlsLabel")}
               >
-                <Button onClick={() => zoomIn()}>+</Button>
-                <Button onClick={() => zoomOut()}>-</Button>
-                <Button onClick={() => resetTransform()}>Reset</Button>
+                <Button onClick={() => zoomIn()}>{"+"}</Button>
+                <Button onClick={() => zoomOut()}>{"-"}</Button>
+                <Button onClick={() => resetTransform()}>{t("tinymce.snapGene.reset")}</Button>
               </ButtonGroup>
               <TransformComponent wrapperStyle={{ width: "100%" }}>
                 <img
                   src={image}
-                  alt="DNA preview"
+                  alt={t("tinymce.snapGene.dnaPreviewAlt")}
                   style={{
                     display: "block",
                     maxWidth: "100%",
@@ -128,19 +129,24 @@ export default function DnaPreview(props: DnaPreviewProps) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            Image type
+            {t("tinymce.snapGene.imageType")}
           </FormLabel>
           <RadioGroup
-            aria-label="Linear choice"
+            aria-label={t("tinymce.snapGene.linearChoiceLabel")}
             name="linear"
             value={state.linear.toString()}
             onChange={(event) => handleChange(event.target.name as keyof DnaPreviewState, event.target.value)}
           >
-            <FormControlLabel value="true" control={<Radio color="primary" />} label="Linear" labelPlacement="start" />
+            <FormControlLabel
+              value="true"
+              control={<Radio color="primary" />}
+              label={t("tinymce.snapGene.linear")}
+              labelPlacement="start"
+            />
             <FormControlLabel
               value="false"
               control={<Radio color="primary" />}
-              label="Circular"
+              label={t("tinymce.snapGene.circular")}
               labelPlacement="start"
             />
           </RadioGroup>
@@ -158,7 +164,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                 color="primary"
               />
             }
-            label="Show enzymes"
+            label={t("tinymce.snapGene.showEnzymes")}
             labelPlacement="start"
           />
         </FormControl>
@@ -175,7 +181,7 @@ export default function DnaPreview(props: DnaPreviewProps) {
                 color="primary"
               />
             }
-            label="Show ORFs"
+            label={t("tinymce.snapGene.showORFs")}
             labelPlacement="start"
           />
         </FormControl>

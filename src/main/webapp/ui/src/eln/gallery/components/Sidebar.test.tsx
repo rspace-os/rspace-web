@@ -116,7 +116,7 @@ describe("Sidebar", () => {
     const { baseElement } = render(<DefaultSidebar />);
 
     // wait for the sidebar to be on screen before scanning
-    await screen.findByRole("button", { name: "Create" });
+    await screen.findByRole("button", { name: "common:actions.create" });
 
     await expectAccessible(baseElement);
   });
@@ -127,21 +127,21 @@ describe("Sidebar", () => {
       render(<DefaultSidebar />);
 
       // the sidebar is visible
-      await user.click(await screen.findByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(within(dialog).getByRole("heading", { name: /New Folder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFolder" })).toBeVisible();
 
       // the user types a folder name
       await user.type(within(dialog).getByRole("textbox"), "test");
 
       // the user clicks the Create button in the dialog
-      await user.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
       // a folder creation request should be made
       await waitFor(() => {
@@ -158,15 +158,15 @@ describe("Sidebar", () => {
       const user = userEvent.setup();
       render(<S3FilestoreSidebar />);
 
-      await user.click(await screen.findByRole("button", { name: "Create" }));
-      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       const dialog = await screen.findByRole("dialog");
       // S3 gets the filestore-specific title and the "no native folders" note
-      expect(within(dialog).getByRole("heading", { name: /New Filestore Folder/i })).toBeVisible();
-      expect(within(dialog).getByText(/S3 has no native concept of folders/i)).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFilestoreFolder" })).toBeVisible();
+      expect(within(dialog).getByText("gallery:sidebar.s3FolderNote")).toBeVisible();
       await user.type(within(dialog).getByRole("textbox"), "test");
-      await user.click(within(dialog).getByRole("button", { name: "Create" }));
+      await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
       // the request goes to the filestore folder endpoint, not the local one
       await waitFor(() => {
@@ -186,15 +186,15 @@ describe("Sidebar", () => {
       render(<DefaultSidebar />);
 
       // the sidebar is visible
-      await user.click(await screen.findByRole("button", { name: "Create" }));
+      await user.click(await screen.findByRole("button", { name: "common:actions.create" }));
 
       // the user clicks the New Folder menu item
-      await user.click(await screen.findByRole("menuitem", { name: /New Folder/i }));
+      await user.click(await screen.findByRole("menuitem", { name: "gallery:sidebar.createFolder" }));
 
       // the New Folder dialog should be visible
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(within(dialog).getByRole("heading", { name: /New Folder/i })).toBeVisible();
+      expect(within(dialog).getByRole("heading", { name: "gallery:sidebar.createFolder" })).toBeVisible();
 
       // the user types a folder name and presses Enter
       const textbox = within(dialog).getByRole("textbox");

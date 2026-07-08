@@ -12,6 +12,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { action, observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { Suspense, startTransition, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { DEFAULT_STATE, type ExportConfig } from "@/Export/constants";
 import ExportDialogRaid from "@/Export/ExportDialogRaid";
@@ -67,6 +68,7 @@ const isArchiveExport = (archiveType: (typeof DEFAULT_STATE)["exportConfig"]["ar
 };
 
 function ExportDialog({ open, onClose, exportSelection, allowFileStores }: ExportDialogArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const { data: token } = useOauthTokenQuery();
   const { addAlert } = React.useContext(AlertContext);
   const { isViewportSmall } = useViewportDimensions();
@@ -96,22 +98,22 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     updateProjectGroupId(projectGroupId);
   }, [commonGroups, shouldFetchCommonGroups]);
 
-  const [firstPane, setFirstPane] = useState(makePane("FormatChoice", "Export"));
+  const [firstPane, setFirstPane] = useState(makePane("FormatChoice", t("export.dialog.panes.export")));
   const [activePane, setActivePane] = useState(firstPane);
 
   const createWizardPanes = () => {
-    const newListOfPanes = makePane("FormatChoice", "Export");
-    appendPane(newListOfPanes, makePane("FormatSpecificOptions", "Export"));
+    const newListOfPanes = makePane("FormatChoice", t("export.dialog.panes.export"));
+    appendPane(newListOfPanes, makePane("FormatSpecificOptions", t("export.dialog.panes.export")));
 
     if (state.exportConfig.repository) {
       if (raidEnabled) {
-        appendPane(newListOfPanes, makePane("ExportDialogRaid", "RAiD"));
+        appendPane(newListOfPanes, makePane("ExportDialogRaid", t("export.dialog.panes.raid")));
       }
-      appendPane(newListOfPanes, makePane("ExportRepo", "Setup Repository"));
+      appendPane(newListOfPanes, makePane("ExportRepo", t("export.dialog.panes.setupRepository")));
     }
 
     if (state.exportConfig.fileStores) {
-      appendPane(newListOfPanes, makePane("ExportFileStore", "Filestore Links Export Configuration"));
+      appendPane(newListOfPanes, makePane("ExportFileStore", t("export.dialog.panes.filestoreExportConfiguration")));
     }
 
     setFirstPane(newListOfPanes);
@@ -138,11 +140,11 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
     if (exportSelection.type === "selection" && exportSelection.exportNames.length > 0) {
       initialExportName = exportSelection.exportNames[0].trimStart();
     } else if (exportSelection.type === "user") {
-      initialExportName = `${exportSelection.username} - all work`;
+      initialExportName = t("export.dialog.defaultExportName.userAllWork", { username: exportSelection.username });
     } else if (exportSelection.type === "group") {
-      initialExportName = `${exportSelection.groupName} - all work`;
+      initialExportName = t("export.dialog.defaultExportName.groupAllWork", { groupName: exportSelection.groupName });
     } else {
-      initialExportName = "Export Data";
+      initialExportName = t("export.dialog.defaultExportName.exportData");
     }
 
     pdfConfig.exportName = initialExportName;
@@ -426,7 +428,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
             <LoadingFade loading={state.loading} />
             <DialogActions>
               <Button size="small" onClick={handleClose}>
-                Cancel
+                {t("common:actions.cancel")}
               </Button>
               <Divider orientation="vertical" sx={{ height: "2em" }} />
               <MobileStepper
@@ -447,7 +449,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
                     onClick={handleBack}
                     disabled={!activePane.prev}
                   >
-                    Back
+                    {t("common:actions.back")}
                   </Button>
                 }
                 nextButton={
@@ -459,7 +461,7 @@ function ExportDialog({ open, onClose, exportSelection, allowFileStores }: Expor
                     }}
                     disabled={state.exportConfig.archiveType === ""}
                   >
-                    {activePane.next ? "Next" : "Export"}
+                    {activePane.next ? t("common:actions.next") : t("common:actions.export")}
                   </Button>
                 }
               />

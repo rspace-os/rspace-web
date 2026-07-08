@@ -68,12 +68,12 @@ describe("method: importFile", () => {
           details: [
             {
               variant: "error",
-              title: "Row 2",
+              title: "inventory:import.records.row",
               help: mockErrorMsg,
             },
             {
               variant: "error",
-              title: "Row 3",
+              title: "inventory:import.records.row",
               help: mockErrorMsg,
             },
           ],

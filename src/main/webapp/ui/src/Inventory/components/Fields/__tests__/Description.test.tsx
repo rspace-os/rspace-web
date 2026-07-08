@@ -56,9 +56,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).not.toHaveTextContent(
-          "Description must be no longer than 250 characters (including HTML tags).",
-        );
+        expect(container).not.toHaveTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(false);
       }),
     );
@@ -73,7 +71,7 @@ describe("Description", () => {
         fireEvent.change(screen.getByRole("textbox"), {
           target: { value: generatedDescription },
         });
-        expect(container).toHaveTextContent("Description must be no longer than 250 characters (including HTML tags).");
+        expect(container).toHaveTextContent("fields.description.maxLength");
         expect(onErrorStateChange).toHaveBeenCalledWith(true);
       }),
     );

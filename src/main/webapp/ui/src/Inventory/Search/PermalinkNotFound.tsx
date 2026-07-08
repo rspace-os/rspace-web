@@ -1,21 +1,23 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useContext } from "react";
-import NavigateContext from "../../stores/contexts/Navigate";
+import { useTranslation } from "react-i18next";
+import type Resources from "@/modules/common/i18n/resources";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { Permalink, PermalinkType } from "../../stores/definitions/Search";
 
-const TYPE_LABELS: Record<PermalinkType, string> = {
-  sample: "sample",
-  subsample: "subsample",
-  container: "container",
-  sampletemplate: "sample template",
-  instrument: "instrument",
-  instrumenttemplate: "instrument template",
-};
+type RecordTypeLabelKey = `recordTypes.${keyof Resources["inventory"]["recordTypes"]}.lower`;
+
+const TYPE_LABEL_KEYS = {
+  sample: "recordTypes.sample.lower",
+  subsample: "recordTypes.subsample.lower",
+  container: "recordTypes.container.lower",
+  sampletemplate: "recordTypes.sampleTemplate.lower",
+  instrument: "recordTypes.instrument.lower",
+  instrumenttemplate: "recordTypes.instrumentTemplate.lower",
+} as const satisfies Record<PermalinkType, RecordTypeLabelKey>;
 
 type PermalinkNotFoundArgs = {
   permalink: Permalink;
@@ -27,33 +29,21 @@ type PermalinkNotFoundArgs = {
  * message with a link to the latest state of the record.
  */
 function PermalinkNotFound({ permalink }: PermalinkNotFoundArgs): React.ReactNode {
-  const { useNavigate } = useContext(NavigateContext);
-  const navigate = useNavigate();
+  const { t } = useTranslation("inventory");
   const latestUrl = `/inventory/${permalink.type}/${permalink.id}`;
+  const typeLabel = t(TYPE_LABEL_KEYS[permalink.type]);
 
   return (
     <Box sx={{ p: 2 }}>
       {permalink.version != null ? (
         <Alert severity="warning">
-          <AlertTitle>
-            Version {permalink.version} of this {TYPE_LABELS[permalink.type]} could not be found.
-          </AlertTitle>
-          The version may never have existed.{" "}
-          <Link
-            href={latestUrl}
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              navigate(latestUrl);
-            }}
-          >
-            View the latest version
-          </Link>
-          .
+          <AlertTitle>{t("permalinkNotFound.versionedTitle", { typeLabel, version: permalink.version })}</AlertTitle>
+          <TransRichText i18nKey="inventory:permalinkNotFound.versionedBody" values={{ link: latestUrl }} />
         </Alert>
       ) : (
         <Alert severity="warning">
-          <AlertTitle>This {TYPE_LABELS[permalink.type]} could not be found.</AlertTitle>
-          It may have been deleted, or you may not have permission to view it.
+          <AlertTitle>{t("permalinkNotFound.unversionedTitle", { typeLabel })}</AlertTitle>
+          {t("permalinkNotFound.unversionedBody")}
         </Alert>
       )}
     </Box>

@@ -22,7 +22,7 @@ export function SimplePageWithAppBar(props: Partial<React.ComponentProps<typeof 
         <ThemeProvider theme={createAccentedTheme(testAccentColor)}>
           <AppBar variant="page" currentPage="Some page" accessibilityTips={{}} {...props} />
           <main>
-            <article>Some content here to test the app bar.</article>
+            <article>{"Some content here to test the app bar."}</article>
           </main>
         </ThemeProvider>
       </StyledEngineProvider>

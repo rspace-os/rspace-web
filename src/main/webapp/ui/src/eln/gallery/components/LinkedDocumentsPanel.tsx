@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { DataGridColumn } from "../../../util/table";
@@ -20,6 +21,7 @@ import useLinkedDocuments, { type Document } from "../useLinkedDocuments";
  * @param file The GalleryFile that can be referenced by ELN documents.
  */
 export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.ReactNode {
+  const { t } = useTranslation("gallery");
   const apiRef = useGridApiRef();
   const linkedDocuments = useLinkedDocuments(file);
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -36,18 +38,18 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
   return (
     <Box component="section" sx={{ flexGrow: 1, mt: 0.5, "--DataGrid-overlayHeight": "40px" }}>
       <Typography variant="h4" component="h4">
-        Linked Documents
+        {t("linkedDocumentsPanel.heading")}
       </Typography>
       <DataGrid
         columns={[
           DataGridColumn.newColumnWithFieldName<"name", Document>("name", {
-            headerName: "Name",
+            headerName: t("linkedDocumentsPanel.columns.name"),
             flex: 1,
             sortable: false,
             resizable: true,
           }),
           DataGridColumn.newColumnWithFieldName<"globalId", Document>("globalId", {
-            headerName: "Global ID",
+            headerName: t("linkedDocumentsPanel.columns.globalId"),
             flex: 0,
             resizable: true,
             sortable: false,
@@ -74,7 +76,7 @@ export function LinkedDocumentsPanel({ file }: { file: GalleryFile }): React.Rea
           pagination: null,
         }}
         localeText={{
-          noRowsLabel: linkedDocuments.errorMessage ?? "No Linked Documents",
+          noRowsLabel: linkedDocuments.errorMessage ?? t("linkedDocumentsPanel.noRows"),
         }}
         loading={linkedDocuments.loading}
         getRowId={(row) => row.id}

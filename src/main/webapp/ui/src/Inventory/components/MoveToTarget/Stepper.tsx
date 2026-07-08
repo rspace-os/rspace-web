@@ -3,6 +3,7 @@ import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import Button from "@mui/material/Button";
 import MobileStepper from "@mui/material/MobileStepper";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 
 type StepperArgs = {
@@ -26,21 +27,27 @@ export default function Stepper({
   disabled,
   loading,
 }: StepperArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const prevButton = () =>
     activeStep === 0 ? (
-      <Button onClick={handleCancel}>Cancel</Button>
+      <Button onClick={handleCancel}>{t("common:actions.cancel")}</Button>
     ) : (
       <Button size="medium" onClick={handleBack} disabled={!activeStep}>
-        <KeyboardArrowLeft /> Back
+        <KeyboardArrowLeft /> {t("common:actions.back")}
       </Button>
     );
 
   const nextButton = () =>
     activeStep === stepsCount - 1 ? (
-      <SubmitSpinner onClick={onMove} disabled={disabled || loading} loading={loading} label="Move" />
+      <SubmitSpinner
+        onClick={onMove}
+        disabled={disabled || loading}
+        loading={loading}
+        label={t("common:actions.move")}
+      />
     ) : (
       <Button size="medium" onClick={handleNext}>
-        Next <KeyboardArrowRight />
+        {t("common:actions.next")} <KeyboardArrowRight />
       </Button>
     );
 

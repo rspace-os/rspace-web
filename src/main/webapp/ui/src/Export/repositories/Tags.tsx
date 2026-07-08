@@ -4,10 +4,11 @@ import Grid from "@mui/material/Grid";
 import { ThemeProvider } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
-import { color, currentPage } from "@/util/pageBranding";
-import docLinks from "../../assets/DocLinks";
+import TransRichText from "@/modules/common/i18n/TransRichText";
+import { color, currentPageKey } from "@/util/pageBranding";
 import InputWrapper from "../../components/Inputs/InputWrapper";
 import NoValue from "../../components/NoValue";
 import AddTag from "../../components/Tags/AddTag";
@@ -32,6 +33,7 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
   fieldOwner: FieldOwner;
   loading: boolean;
 }): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   /*
    * InputWrapper assumes that it is being used on a page with an accented theme,
    * but the export dialog isn't always on such a page, so we need to provide
@@ -42,13 +44,13 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
    * subheadings and derive the accented theme from the current page.
    */
   return (
-    <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+    <ThemeProvider theme={createAccentedTheme(color(currentPageKey()))}>
       <HeadingContext level={4}>
         <InputWrapper
           error={false}
           disabled={!fieldOwner.isFieldEditable("tags")}
           value={fieldOwner.fieldValues.tags.map((t) => t.value).join(",")}
-          label="Tags and Controlled Vocabulary Terms"
+          label={t("export.repositories.tags.label")}
           helperText={null}
           actions={
             <Button
@@ -58,20 +60,15 @@ function Tags<Fields extends { tags: Array<Tag> }, FieldOwner extends HasEditabl
               sx={{ py: 0 }}
               disabled={fieldOwner.fieldValues.tags.length === 0}
             >
-              Clear Tags
+              {t("export.repositories.tags.clearButton")}
             </Button>
           }
         >
           <FormHelperText sx={{ ml: 0, mb: 2 }}>
-            Add tags from controlled vocabularies to this export. The term&apos;s value and URI will be included in the
-            deposit&apos;s metadata. For more info see{" "}
-            <a href={docLinks.controlledVocabularies} target="_blank" rel="noreferrer">
-              Tagging Documents and using Controlled Vocabularies
-            </a>
-            .
+            <TransRichText i18nKey="workspace:export.repositories.tags.helperText" />
           </FormHelperText>
           {fieldOwner.fieldValues.tags.length === 0 && !fieldOwner.isFieldEditable("tags") && (
-            <NoValue label={fieldOwner.noValueLabel.tags ?? "None"} />
+            <NoValue label={fieldOwner.noValueLabel.tags ?? t("common:values.none")} />
           )}
           <TagListing
             tags={fieldOwner.fieldValues.tags.map((tag) => ({

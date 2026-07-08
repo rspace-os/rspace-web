@@ -66,7 +66,7 @@ vi.mock("@/tinyMCE/stoichiometry/table/StaticStoichiometryTable", async () => {
     default: (props: React.ComponentProps<typeof actual.default>) => {
       staticStoichiometryTableSpy(props);
       if (useWrapperStubs.current) {
-        return <div>Static stoichiometry table</div>;
+        return <div>{"Static stoichiometry table"}</div>;
       }
       return <actual.default {...props} />;
     },
@@ -80,8 +80,8 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableLoadingDialog", async () => {
   return {
     default: () =>
       useWrapperStubs.current ? (
-        <div role="dialog" aria-label="Loading molecule information">
-          Loading molecule information...
+        <div role="dialog" aria-label="common:stoichiometry.dialog.loadingMoleculeInformation">
+          {"common:stoichiometry.dialog.loadingMoleculeInformation"}
         </div>
       ) : (
         <actual.default />
@@ -270,7 +270,7 @@ async function renderLoadedTable() {
   const view = render(<StoichiometryTableWithDataStory />);
   const grid = await screen.findByRole("grid", undefined, { timeout: 10000 });
   await waitFor(() => {
-    expect(screen.queryByText("Loading molecule information...")).not.toBeInTheDocument();
+    expect(screen.queryByText("common:stoichiometry.dialog.loadingMoleculeInformation")).not.toBeInTheDocument();
   });
   return { ...view, grid, user };
 }
@@ -322,7 +322,9 @@ describe("StoichiometryTable", () => {
         </StoichiometryTableControllerProvider>,
       );
 
-      expect(screen.getByRole("dialog", { name: "Loading molecule information" })).toBeVisible();
+      expect(
+        screen.getByRole("dialog", { name: "common:stoichiometry.dialog.loadingMoleculeInformation" }),
+      ).toBeVisible();
       expect(stoichiometryTableGridSpy).not.toHaveBeenCalled();
     });
 
@@ -369,39 +371,41 @@ describe("StoichiometryTable", () => {
       await renderLoadedTable();
 
       const headers = getColumnHeaders();
-      expect(headers).toContain("Name");
-      expect(headers).toContain("Inventory Link");
-      expect(headers).toContain("Type");
-      expect(headers).toContain("Limiting Reagent");
-      expect(headers).toContain("Equivalent");
-      expect(headers).toContain("Molecular Weight (g/mol)");
-      expect(headers).toContain("Mass (g)");
-      expect(headers).toContain("Moles (mol)");
-      expect(headers).toContain("Notes");
+      expect(headers).toContain("common:stoichiometry.table.columns.name");
+      expect(headers).toContain("common:stoichiometry.table.columns.inventoryLink");
+      expect(headers).toContain("common:stoichiometry.table.columns.type");
+      expect(headers).toContain("common:stoichiometry.table.columns.limitingReagent");
+      expect(headers).toContain("common:stoichiometry.table.columns.equivalent");
+      expect(headers).toContain("common:stoichiometry.table.columns.molecularWeight");
+      expect(headers).toContain("common:stoichiometry.table.columns.mass");
+      expect(headers).toContain("common:stoichiometry.table.columns.moles");
+      expect(headers).toContain("common:stoichiometry.table.columns.notes");
     });
 
     it("shows inventory link controls for both linked and unlinked molecules", async () => {
       await renderLoadedTable();
 
-      expect(screen.getByLabelText("Remove inventory link for Cyclopentadiene")).toBeVisible();
-      expect(screen.getByLabelText("Add inventory link for Benzene")).toBeVisible();
+      expect(screen.getAllByLabelText("common:stoichiometry.inventoryLink.removeForMolecule").length).toBeGreaterThan(
+        0,
+      );
+      expect(screen.getAllByLabelText("common:stoichiometry.inventoryLink.addForMolecule").length).toBeGreaterThan(0);
     });
 
     it("opens and closes the inventory picker from an unlinked molecule", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByLabelText("Add inventory link for Benzene"));
+      await user.click(screen.getByLabelText("common:stoichiometry.inventoryLink.addForMolecule"));
       expect(
         await screen.findByRole("dialog", {
-          name: "Pick inventory item for Benzene",
+          name: "common:stoichiometry.inventoryLink.pickerTitle",
         }),
       ).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: "Cancel" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
       await waitFor(() => {
         expect(
           screen.queryByRole("dialog", {
-            name: "Pick inventory item for Benzene",
+            name: "common:stoichiometry.inventoryLink.pickerTitle",
           }),
         ).not.toBeVisible();
       });
@@ -413,7 +417,7 @@ describe("StoichiometryTable", () => {
       const benzeneRow = getDataRow("Benzene");
       expect(
         within(benzeneRow).getByRole("radio", {
-          name: "Select Benzene as limiting reagent",
+          name: "common:stoichiometry.table.label.selectLimitingReagent",
         }),
       ).toBeChecked();
     });
@@ -421,29 +425,29 @@ describe("StoichiometryTable", () => {
     it("provides a menu for exporting the stoichiometry table to CSV", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Export" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.export" }));
       expect(await screen.findByRole("tooltip")).toBeVisible();
-      expect(screen.getByRole("menuitem", { name: "Export to CSV" })).toBeVisible();
+      expect(screen.getByRole("menuitem", { name: "common:stoichiometry.tableToolbar.exportToCsv" })).toBeVisible();
     });
 
     it("opens the Add Chemical menu with PubChem, Gallery and manual options", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
 
       expect(
         await screen.findByRole("menuitem", {
-          name: /PubChem.*Import compound from PubChem/i,
+          name: "common:stoichiometry.addReagent.sources.pubChem.title common:stoichiometry.addReagent.sources.pubChem.subheader",
         }),
       ).toBeVisible();
       expect(
         screen.getByRole("menuitem", {
-          name: /Gallery.*Import compound from Gallery/i,
+          name: "common:stoichiometry.addReagent.sources.gallery.title common:stoichiometry.addReagent.sources.gallery.subheader",
         }),
       ).toBeVisible();
       expect(
         screen.getByRole("menuitem", {
-          name: /Manually.*Manually enter SMILES/i,
+          name: "common:stoichiometry.addReagent.sources.manual.title common:stoichiometry.addReagent.sources.manual.subheader",
         }),
       ).toBeVisible();
     });
@@ -451,43 +455,45 @@ describe("StoichiometryTable", () => {
     it("opens the PubChem dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /PubChem.*Import compound from PubChem/i,
+          name: "common:stoichiometry.addReagent.sources.pubChem.title common:stoichiometry.addReagent.sources.pubChem.subheader",
         }),
       );
 
-      expect(await screen.findByRole("dialog", { name: /Insert from PubChem/i })).toBeVisible();
+      expect(await screen.findByText("workspace:tinymce.pubchem.dialog.title")).toBeVisible();
     });
 
     it("opens the manual SMILES dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Manually.*Manually enter SMILES/i,
+          name: "common:stoichiometry.addReagent.sources.manual.title common:stoichiometry.addReagent.sources.manual.subheader",
         }),
       );
 
-      expect(await screen.findByRole("dialog", { name: /Add New Chemical/i })).toBeVisible();
+      expect(await screen.findByRole("dialog", { name: "common:stoichiometry.addReagent.title" })).toBeVisible();
     });
 
     it("opens the Gallery dialog from the Add Chemical menu", async () => {
       const { user } = await renderLoadedTable();
 
-      await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+      await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
       await user.click(
         await screen.findByRole("menuitem", {
-          name: /Gallery.*Import compound from Gallery/i,
+          name: "common:stoichiometry.addReagent.sources.gallery.title common:stoichiometry.addReagent.sources.gallery.subheader",
         }),
       );
 
       // The Gallery picker is a React.lazy import with a large dependency
       // graph; allow extra time for the chunk to load and render before the
       // dialog appears (the sibling PubChem/SMILES dialogs are not lazy).
-      expect(await screen.findByRole("dialog", { name: /Gallery Picker/i }, { timeout: 10000 })).toBeVisible();
+      expect(
+        await screen.findByRole("dialog", { name: "common:appBar.sections.gallery.title" }, { timeout: 10000 }),
+      ).toBeVisible();
     });
 
     it("keeps Update Inventory Stock disabled until inventory quantities load", async () => {
@@ -504,7 +510,7 @@ describe("StoichiometryTable", () => {
 
       await renderLoadedTable();
 
-      const button = screen.getByRole("button", { name: "Update Inventory Stock" });
+      const button = screen.getByRole("button", { name: "common:stoichiometry.inventoryUpdate.updateInventoryStock" });
       expect(button).toBeDisabled();
 
       releaseSubSampleResponses();
@@ -517,14 +523,16 @@ describe("StoichiometryTable", () => {
     it("opens the inventory stock update dialog listing the current molecules", async () => {
       const { user } = await renderLoadedTable();
 
-      const updateStockButton = screen.getByRole("button", { name: "Update Inventory Stock" });
+      const updateStockButton = screen.getByRole("button", {
+        name: "common:stoichiometry.inventoryUpdate.updateInventoryStock",
+      });
       await waitFor(() => {
         expect(updateStockButton).toBeEnabled();
       });
       await user.click(updateStockButton);
 
       const dialog = await screen.findByRole("dialog", {
-        name: /Update Inventory Stock/i,
+        name: "common:stoichiometry.inventoryUpdate.dialogTitle",
       });
       expect(dialog).toBeVisible();
       expect(within(dialog).getByText("Benzene")).toBeVisible();

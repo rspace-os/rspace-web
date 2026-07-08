@@ -1,6 +1,7 @@
 import { DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { runInAction } from "mobx";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import AlertContext, { type Alert, mkAlert } from "../../../../stores/contexts/Alert";
 import type { GlobalId } from "../../../../stores/definitions/BaseRecord";
 import type { Container, Location } from "../../../../stores/definitions/Container";
@@ -23,6 +24,7 @@ type ContextArgs = {
 };
 
 export function Context({ children, container, supportKeyboard, supportMultiple }: ContextArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getDestinationLocationForSourceLocation } = useContainerHelpers(container);
   const { moveStore } = useStores();
@@ -96,7 +98,7 @@ export function Context({ children, container, supportKeyboard, supportMultiple 
         if (!supportMultiple && (container.selectedLocations ?? []).length > 1) {
           const alert = mkAlert({
             variant: "warning",
-            message: "Dragging-and-dropping multiple items is not supported in visual containers.",
+            message: t("container.content.dragAndDrop.multipleItemsNotSupported"),
             isInfinite: true,
           });
           setMultipleAlert(alert);

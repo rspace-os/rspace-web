@@ -10,6 +10,7 @@ import Radio from "@mui/material/Radio";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import NoValue from "../../../components/NoValue";
@@ -22,6 +23,7 @@ import { getErrorMessage } from "../../../util/error";
 import InstrumentTemplatePicker from "../../components/Picker/InstrumentTemplatePicker";
 
 function InstrumentTemplateField(): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const {
     searchStore: { activeResult },
     uiStore,
@@ -30,12 +32,12 @@ function InstrumentTemplateField(): React.ReactNode {
     throw new Error("ActiveResult must be an Instrument");
 
   const setTemplate = React.useCallback(
-    (t: InstrumentTemplateModel | null) => {
-      activeResult.setTemplate(t).catch((error) => {
+    (template: InstrumentTemplateModel | null) => {
+      activeResult.setTemplate(template).catch((error) => {
         uiStore.addAlert(
           mkAlert({
-            title: "Could not fetch instrument template details.",
-            message: getErrorMessage(error, "Unknown reason."),
+            title: t("instrumentTemplate.field.fetchError"),
+            message: getErrorMessage(error, t("instrumentTemplate.field.unknownReason")),
             variant: "error",
           }),
         );
@@ -50,22 +52,15 @@ function InstrumentTemplateField(): React.ReactNode {
   if (!activeResult.id) {
     return (
       <InputWrapper
-        label="Instrument Template"
+        label={t("instrumentTemplate.field.label")}
         data-test-id="ChooseInstrumentTemplate"
-        explanation={
-          activeResult.isFieldEditable("template") ? (
-            <>
-              If you select an instrument template below, initial metadata and custom fields will be automatically
-              generated.
-            </>
-          ) : null
-        }
+        explanation={activeResult.isFieldEditable("template") ? t("instrumentTemplate.field.explanation") : null}
       >
         <Stack sx={{ flexWrap: "nowrap" }}>
           <FormControlLabel
             value="no-template"
             control={<Radio checked={template === null} />}
-            label="No template"
+            label={t("instrumentTemplate.field.noTemplate")}
             onClick={() => {
               setTemplate(null);
             }}
@@ -87,7 +82,7 @@ function InstrumentTemplateField(): React.ReactNode {
 
   // Existing instrument — show read-only template summary
   return (
-    <InputWrapper label="Instrument Template" disabled>
+    <InputWrapper label={t("instrumentTemplate.field.label")} disabled>
       {template ? (
         <List dense disablePadding>
           <ListItem>
@@ -96,7 +91,7 @@ function InstrumentTemplateField(): React.ReactNode {
             </ListItemAvatar>
             <ListItemText
               primary={template.name}
-              secondary={`Version ${template.version}`}
+              secondary={t("instrumentTemplate.field.version", { version: template.version })}
               style={{ overflowWrap: "anywhere", maxWidth: "60%" }}
             />
             <ListItemSecondaryAction>
@@ -110,11 +105,11 @@ function InstrumentTemplateField(): React.ReactNode {
             <ListItemAvatar>
               <FontAwesomeIcon icon={faSpinner} spin size="lg" />
             </ListItemAvatar>
-            <ListItemText primary="Loading" />
+            <ListItemText primary={t("common:loading")} />
           </ListItem>
         </List>
       ) : (
-        <NoValue label="No Template" />
+        <NoValue label={t("instrumentTemplate.field.noTemplateTitle")} />
       )}
     </InputWrapper>
   );

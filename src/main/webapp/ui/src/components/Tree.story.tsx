@@ -71,13 +71,16 @@ export const SimpleTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Simple Tree Selection
+          {"Simple Tree Selection"}
         </Typography>
         <Tree getId={(item) => item.id} selectedItems={selectedItem} onSelectedItemsChange={handleSelectionChange}>
           {renderTreeItems(sampleData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
-          <Typography variant="body2">Selected: {selectedItem?.name || "None"}</Typography>
+          <Typography variant="body2">
+            {"Selected: "}
+            {selectedItem?.name || "None"}
+          </Typography>
         </Box>
       </Box>
     </ThemeProvider>
@@ -105,10 +108,10 @@ export const MultiSelectTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Multi-Select Tree
+          {"Multi-Select Tree"}
         </Typography>
         <Box sx={{ mb: 2 }}>
-          <Button onClick={clearSelection}>Clear Selection</Button>
+          <Button onClick={clearSelection}>{"Clear Selection"}</Button>
         </Box>
         <Tree
           multiSelect
@@ -120,7 +123,8 @@ export const MultiSelectTreeExample = ({
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Selected: {selectedItems.map((item) => item.name).join(", ") || "None"}
+            {"Selected: "}
+            {selectedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -164,18 +168,19 @@ export const ExpandableTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Expandable Tree
+          {"Expandable Tree"}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <Button onClick={expandAll}>Expand All</Button>
-          <Button onClick={collapseAll}>Collapse All</Button>
+          <Button onClick={expandAll}>{"Expand All"}</Button>
+          <Button onClick={collapseAll}>{"Collapse All"}</Button>
         </Stack>
         <Tree getId={(item) => item.id} expandedItems={expandedItems} onExpandedItemsChange={handleExpansionChange}>
           {renderTreeItems(hierarchicalData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2">
-            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
+            {"Expanded: "}
+            {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>
@@ -232,12 +237,12 @@ export const ControlledTreeExample = ({
     <ThemeProvider theme={theme}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h5" gutterBottom>
-          Controlled Tree (Selection + Expansion)
+          {"Controlled Tree (Selection + Expansion)"}
         </Typography>
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-          <Button onClick={expandAll}>Expand All</Button>
-          <Button onClick={collapseAll}>Collapse All</Button>
-          <Button onClick={clearSelection}>Clear Selection</Button>
+          <Button onClick={expandAll}>{"Expand All"}</Button>
+          <Button onClick={collapseAll}>{"Collapse All"}</Button>
+          <Button onClick={clearSelection}>{"Clear Selection"}</Button>
         </Stack>
         <Tree
           getId={(item) => item.id}
@@ -249,9 +254,13 @@ export const ControlledTreeExample = ({
           {renderTreeItems(hierarchicalData)}
         </Tree>
         <Box sx={{ mt: 2 }}>
-          <Typography variant="body2">Selected: {selectedItem?.name || "None"}</Typography>
           <Typography variant="body2">
-            Expanded: {expandedItems.map((item) => item.name).join(", ") || "None"}
+            {"Selected: "}
+            {selectedItem?.name || "None"}
+          </Typography>
+          <Typography variant="body2">
+            {"Expanded: "}
+            {expandedItems.map((item) => item.name).join(", ") || "None"}
           </Typography>
         </Box>
       </Box>

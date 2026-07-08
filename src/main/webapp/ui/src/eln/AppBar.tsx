@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
-import { color, currentPage } from "@/util/pageBranding";
+import { color, currentPageKey } from "@/util/pageBranding";
 import createAccentedTheme from "../accentedTheme";
 import Analytics from "../components/Analytics";
 import AppBar from "../components/AppBar";
@@ -38,6 +38,7 @@ window.addEventListener("load", () => {
   });
 
   const root = createRoot(wrapper);
+  const pageColor = color(currentPageKey());
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
@@ -45,13 +46,13 @@ window.addEventListener("load", () => {
           <Analytics>
             <ErrorBoundary>
               <CssBaseline />
-              <ThemeProvider theme={createAccentedTheme(color(currentPage()))}>
+              <ThemeProvider theme={createAccentedTheme(pageColor)}>
                 <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                   {/*
                    * We use a DialogBoundary to keep the menu inside the shadow DOM
                    */}
                   <DialogBoundary>
-                    <AppBar variant="page" currentPage={currentPage()} accessibilityTips={{}} />
+                    <AppBar variant="page" currentPage={currentPageKey()} accessibilityTips={{}} />
                   </DialogBoundary>
                 </Box>
                 <Box sx={{ height: "30px" }}></Box>
@@ -65,8 +66,6 @@ window.addEventListener("load", () => {
 
   const meta = document.createElement("meta");
   meta.name = "theme-color";
-  meta.content = `hsl(${color(currentPage()).background.hue}, ${
-    color(currentPage()).background.saturation
-  }%, ${color(currentPage()).background.lightness}%)`;
+  meta.content = `hsl(${pageColor.background.hue}, ${pageColor.background.saturation}%, ${pageColor.background.lightness}%)`;
   document.head?.appendChild(meta);
 });

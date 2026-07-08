@@ -2,6 +2,8 @@ import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import type { GroupInfo } from "@/modules/groups/schema";
 import type { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 import materialTheme from "../../theme";
@@ -47,6 +49,18 @@ const renderExportDialogRaid = (stateOverrides: Partial<typeof DEFAULT_STATE> = 
     </ThemeProvider>,
   );
 
+const renderExportDialogRaidWithRealI18n = async (
+  stateOverrides: Partial<typeof DEFAULT_STATE> = {},
+  updateRepoConfig = vi.fn(),
+) => {
+  return renderWithRealI18n(
+    <ThemeProvider theme={materialTheme}>
+      <ExportDialogRaid state={makeState(stateOverrides)} updateRepoConfig={updateRepoConfig} />
+    </ThemeProvider>,
+    { resources: { workspace: workspaceEn }, defaultNS: "workspace" },
+  );
+};
+
 const makeGroup = (id: number, overrides: Partial<GroupInfo> = {}): GroupInfo => ({
   id,
   globalId: `GR${id}`,
@@ -79,46 +93,49 @@ describe("ExportDialogRaid", () => {
     expect(spinner).toHaveAttribute("data-icon", "spinner");
   });
 
-  it("renders an error alert when the query errors", () => {
+  it("renders an error alert when the query errors", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({ data: new Map(), error: new Error("Boom") }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("Error")).toBeInTheDocument();
-    expect(screen.getByText(/An error occurred while determining RAiD export eligibility: Boom/)).toBeInTheDocument();
-    expect(screen.getByText(/Please press Next to continue without reporting to RAiD\./)).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Error")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("An error occurred while determining RAiD export eligibility: Boom");
+    expect(alert).toHaveTextContent("Please press Next to continue without reporting to RAiD.");
   });
 
-  it("renders an ineligible message when groups are missing", () => {
+  it("renders an ineligible message when groups are missing", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([[101, null]]),
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/unable to determine whether you have the rights/i)).toBeInTheDocument();
-    expect(screen.getByText(/101/)).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("unable to determine whether you have the rights");
+    expect(alert).toHaveTextContent("101");
   });
 
-  it("renders an ineligible message when no project groups are available", () => {
+  it("renders an ineligible message when no project groups are available", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([[2, makeGroup(2, { name: "Lab Group 2", type: "LAB_GROUP" })]]),
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/No project groups are associated with all shared items selected/i)).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent("No project groups are associated with all shared items selected");
   });
 
-  it("renders an ineligible message when no RAiD association is found", () => {
+  it("renders an ineligible message when no RAiD association is found", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([
@@ -128,17 +145,16 @@ describe("ExportDialogRaid", () => {
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /None of the project groups \(Project Group 7, Project Group 8\) associated with the shared items have a RAiD association\./,
-      ),
-    ).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      "None of the project groups (Project Group 7 and Project Group 8) associated with the shared items have a RAiD association.",
+    );
   });
 
-  it("renders an ineligible message when multiple RAiD associations are found", () => {
+  it("renders an ineligible message when multiple RAiD associations are found", async () => {
     mockedUseCommonGroupsShareListingQuery.mockReturnValue(
       makeQueryResult({
         data: new Map<number, GroupInfo | null>([
@@ -148,14 +164,13 @@ describe("ExportDialogRaid", () => {
       }),
     );
 
-    renderExportDialogRaid();
+    await renderExportDialogRaidWithRealI18n();
 
-    expect(screen.getByText("Cannot report to RAiD")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        /Multiple project groups \(Project Group 3, Project Group 4\) associated with the shared items have RAiD associations, which is not supported\./,
-      ),
-    ).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(within(alert).getByText("Cannot report to RAiD")).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      "Multiple project groups (Project Group 3 and Project Group 4) associated with the shared items have RAiD associations, which is not supported.",
+    );
   });
 
   it("renders the RAiD info and toggles exportToRaid when eligible", async () => {
@@ -167,17 +182,18 @@ describe("ExportDialogRaid", () => {
 
     const updateRepoConfig = vi.fn();
 
-    renderExportDialogRaid({}, updateRepoConfig);
+    await renderExportDialogRaidWithRealI18n({}, updateRepoConfig);
 
     const alert = screen.getByRole("alert");
     expect(alert).toBeInTheDocument();
     expect(within(alert).getByText("Report to RAiD")).toBeInTheDocument();
-    expect(screen.getByText(/Project Group 5/)).toBeInTheDocument();
-    expect(screen.getByText(/Test RAiD/)).toBeInTheDocument();
-    expect(screen.getByText(/raid-5/)).toBeInTheDocument();
+    expect(alert).toHaveTextContent(
+      "The content you're about to export is part of the project group Project Group 5 which is associated with the following RAiD identifier:",
+    );
+    expect(alert).toHaveTextContent("Test RAiD 5 (raid-5).");
 
     const user = userEvent.setup();
-    const toggle = screen.getByRole("checkbox", { name: /Report to RAiD/i });
+    const toggle = screen.getByRole("checkbox", { name: "Report to RAiD" });
     await user.click(toggle);
 
     expect(updateRepoConfig).toHaveBeenCalledWith(expect.objectContaining({ exportToRaid: true }));

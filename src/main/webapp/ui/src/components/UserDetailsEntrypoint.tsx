@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot, type Root } from "react-dom/client";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "@/theme";
 import UserDetails from "./UserDetails";
 
@@ -107,21 +108,23 @@ function mountUserDetails(domContainer: Element): void {
   const root = createRoot(domContainer);
   mountedRoots.set(domContainer, root);
   root.render(
-    <StyledEngineProvider injectFirst enableCssLayer>
-      <ThemeProvider theme={materialTheme}>
-        <UserDetails
-          userId={userId}
-          fullName={fullName}
-          label={label}
-          position={position}
-          variant="outlined"
-          allowMessaging
-          onOpen={() => {
-            window.RS?.trackEvent?.("user:open:user_details_popover");
-          }}
-        />
-      </ThemeProvider>
-    </StyledEngineProvider>,
+    <I18nRoot namespaces={["common"]}>
+      <StyledEngineProvider injectFirst enableCssLayer>
+        <ThemeProvider theme={materialTheme}>
+          <UserDetails
+            userId={userId}
+            fullName={fullName}
+            label={label}
+            position={position}
+            variant="outlined"
+            allowMessaging
+            onOpen={() => {
+              window.RS?.trackEvent?.("user:open:user_details_popover");
+            }}
+          />
+        </ThemeProvider>
+      </StyledEngineProvider>
+    </I18nRoot>,
   );
 }
 

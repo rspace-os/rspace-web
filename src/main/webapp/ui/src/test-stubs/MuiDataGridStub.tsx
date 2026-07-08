@@ -1,6 +1,11 @@
 import MenuList from "@mui/material/MenuList";
 import React from "react";
 
+const SELECT_COLUMNS_LABEL = "Select columns";
+const SHOW_HIDE_ALL_LABEL = "Show/Hide All";
+const CHECKBOX_SELECTION_LABEL = "Checkbox selection";
+const EXPORT_LABEL = "Export";
+
 type GridId = string | number;
 
 type SelectionModel =
@@ -166,15 +171,15 @@ export const GridToolbarColumnsButton = () => {
   // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button">Select columns</button>
+      <button type="button">{SELECT_COLUMNS_LABEL}</button>
       <div role="menu">
         <label>
-          <input type="checkbox" aria-label="Show/Hide All" defaultChecked />
-          Show/Hide All
+          <input type="checkbox" aria-label={SHOW_HIDE_ALL_LABEL} defaultChecked />
+          {SHOW_HIDE_ALL_LABEL}
         </label>
         <label>
-          <input type="checkbox" aria-label="Checkbox selection" defaultChecked />
-          Checkbox selection
+          <input type="checkbox" aria-label={CHECKBOX_SELECTION_LABEL} defaultChecked />
+          {CHECKBOX_SELECTION_LABEL}
         </label>
         {(columnsMenu?.columns ?? []).map(({ label }) => (
           <label key={label}>
@@ -195,7 +200,7 @@ export const GridToolbarExportContainer = ({ children }: { children: React.React
   // which would unmount any local state in jsdom tests.
   return (
     <div>
-      <button type="button">Export</button>
+      <button type="button">{EXPORT_LABEL}</button>
       <MenuList>{children}</MenuList>
     </div>
   );

@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import StyledMenu from "../../../components/StyledMenu";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -32,6 +33,7 @@ function ContextMenu({
   paddingTop,
   basketSearch,
 }: ContextMenuArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const anySelected = selectedResults.length > 0;
   const mixedSelectedStatus = selectedResults.some((r) => r.deleted) && selectedResults.some((r) => !r.deleted);
 
@@ -97,7 +99,7 @@ function ContextMenu({
     return () => io.disconnect();
   }, [buttonList.length, selectedResults]);
 
-  const alertMessage = mixedSelectedStatus && `Please select only 'Current' or 'In Trash' items to view more actions`;
+  const alertMessage = mixedSelectedStatus && t("contextMenu.mixedStatusWarning");
 
   return (
     /*
@@ -147,7 +149,7 @@ function ContextMenu({
             )}
           </Box>
           <IconButtonWithTooltip
-            title="More actions"
+            title={t("contextMenu.actions.more")}
             icon={<MoreHorizIcon />}
             aria-haspopup="menu"
             sx={{ p: 0.75 }}

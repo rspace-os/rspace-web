@@ -53,7 +53,7 @@ describe("Print Tests", () => {
   const renderDialog = async () => {
     render(<Dialog />);
     await waitFor(() => {
-      expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+      expect(screen.queryByText("inventory:print.dialog.loading")).not.toBeInTheDocument();
     });
   };
   describe("PrintDialog with items to print (barcodes)", () => {
@@ -61,15 +61,15 @@ describe("Print Tests", () => {
       await renderDialog();
 
       expect(screen.getAllByRole("radio")).toHaveLength(10);
-      const standardOption = screen.getByLabelText("Standard Printer");
+      const standardOption = screen.getByLabelText("inventory:print.options.standardPrinter");
       expect(standardOption).toBeInTheDocument();
 
       expect(standardOption).toBeChecked();
-      const labelOption = screen.getByLabelText("Label Printer");
+      const labelOption = screen.getByLabelText("inventory:print.options.labelPrinter");
       expect(labelOption).toBeInTheDocument();
 
       expect(labelOption).not.toBeChecked();
-      const previewHeader = "Preview Barcode Label Layout";
+      const previewHeader = "inventory:print.dialog.previewLabelLayout";
       expect(screen.getByText(previewHeader)).toBeInTheDocument();
     });
   });
@@ -82,7 +82,7 @@ describe("Print Tests", () => {
       if (!globalId) throw new Error("Missing globalId");
       // on default "full" option elements are rendered, on "basic" they are not
       expect(screen.getAllByText(globalId)[0]).toBeInTheDocument();
-      const basicOption = screen.getAllByLabelText("Basic")[0];
+      const basicOption = screen.getAllByLabelText("inventory:print.options.basic")[0];
       await act(async () => {
         fireEvent.click(basicOption);
         await Promise.resolve();

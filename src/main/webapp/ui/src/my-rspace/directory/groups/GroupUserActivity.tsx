@@ -4,18 +4,14 @@ import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { getSorting } from "@/util/table";
 import EnhancedTableHead from "../../../components/EnhancedTableHead";
 import UserDetails from "./../../../components/UserDetails";
-
-const headCells = [
-  { id: "userFullName", numeric: false, label: "User" },
-  { id: "eventType", numeric: false, label: "Action" },
-  { id: "timestamp", numeric: true, label: "Time" },
-];
 
 type GroupActivityProps = {
   groupId: string;
@@ -32,6 +28,12 @@ type ActivityRow = {
 /**
  */
 function GroupActivity({ groupId }: GroupActivityProps) {
+  const { t } = useTranslation("common");
+  const headCells = [
+    { id: "userFullName", numeric: false, label: t("profile.groups.groupActivity.user") },
+    { id: "eventType", numeric: false, label: t("profile.groups.activity.action") },
+    { id: "timestamp", numeric: true, label: t("profile.groups.activity.time") },
+  ];
   const [activities, setActivities] = React.useState<Array<ActivityRow>>([]);
   const [order, setOrder] = React.useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
@@ -60,7 +62,7 @@ function GroupActivity({ groupId }: GroupActivityProps) {
 
   return (
     <>
-      <h3>Group Activity</h3>
+      <h3>{t("profile.groups.groupActivity.title")}</h3>
       <Table>
         <EnhancedTableHead
           headCells={headCells}
@@ -99,7 +101,9 @@ export default GroupActivity;
 const domContainer = document.getElementById("groupActivity");
 const root = createRoot(domContainer as HTMLElement);
 root.render(
-  <MuiCssLayerProvider>
-    <GroupActivity groupId={domContainer?.dataset.groupid as string} />
-  </MuiCssLayerProvider>,
+  <I18nRoot namespaces={["common"]}>
+    <MuiCssLayerProvider>
+      <GroupActivity groupId={domContainer?.dataset.groupid as string} />
+    </MuiCssLayerProvider>
+  </I18nRoot>,
 );

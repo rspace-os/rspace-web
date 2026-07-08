@@ -1,6 +1,8 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import type React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { ErrorReason } from "./Enums";
 
 export default function ErrorView({
@@ -10,41 +12,37 @@ export default function ErrorView({
   errorReason: (typeof ErrorReason)[keyof typeof ErrorReason];
   errorMessage: string;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
+  // @ts-expect-error -- tinymce is defined in the parent window
+  const clustermarketUrl = parent.tinymce.activeEditor.settings.clustermarket_url;
+
   return (
     <Alert severity="error">
-      <AlertTitle>Error</AlertTitle>
+      <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
-        <>
-          The Calira server at{" "}
-          <a
-            // @ts-expect-error -- tinymce is defined in the parent window
-            href={parent.tinymce.activeEditor.settings.clustermarket_url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {" "}
-            {/* @ts-expect-error -- tinymce is defined in the parent window */}
-            {parent.tinymce.activeEditor.settings.clustermarket_url}
-          </a>{" "}
-          is down, or CORS for this server has not been configured properly. If you are responsible for setting up the
-          Calira integration, open developer tools and have a look at the console and/or the network tab to find out
-          what the issue is.
-        </>
+        <TransRichText
+          i18nKey="common:integrationErrors.serverUnavailable"
+          values={{ appName: "Calira", url: clustermarketUrl }}
+          components={{
+            serverLink: (
+              <a href={clustermarketUrl} target="_blank" rel="noreferrer">
+                {clustermarketUrl}
+              </a>
+            ),
+          }}
+        />
       )}
-      {errorReason === ErrorReason.NotFound && (
-        <>Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?</>
-      )}
+      {errorReason === ErrorReason.NotFound && t("integrationErrors.calira.notFound")}
       {/* when an OAuth token expires the Clustermarket API responds with 401 response.
         When a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
-      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>Invalid Calira user or client token. Please re-connect to Calira.</>
-      )}
-      {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
+      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) &&
+        t("integrationErrors.calira.invalidToken")}
+      {errorReason === ErrorReason.Timeout && t("integrationErrors.timeout")}
       {/* when a refresh token expires the Clustermarket API responds with 400 response and 'invalid_grant' in the response message */}
-      {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <> There is a problem, please try again later </>
-      )}
-      {errorReason === ErrorReason.UNKNOWN && <>Unknown issue, please attempt to relogin to RSpace.</>}
+      {errorReason === ErrorReason.BadRequest &&
+        !errorMessage.includes("invalid_grant") &&
+        t("integrationErrors.tryAgainLater")}
+      {errorReason === ErrorReason.UNKNOWN && t("integrationErrors.unknownRelogin")}
     </Alert>
   );
 }
