@@ -94,7 +94,7 @@ function MoveInstructions(): React.ReactNode {
       [
         () => !container.canStoreRecords,
         {
-          message: t("moveToTarget.messages.canStoreOnly", { canStoreLabel }),
+          message: t("moveToTarget.messages.canStoreOnly", { types: canStoreLabel }),
           severity: "warning",
         },
       ],

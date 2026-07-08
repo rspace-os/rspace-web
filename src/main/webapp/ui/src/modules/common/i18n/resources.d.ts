@@ -3747,8 +3747,8 @@ export default interface Resources {
         "movingIntoItself": "An item cannot be moved into itself.",
         "noPermission": "You do not have permission to move to this destination.",
         "notEnoughSpace": "There is not enough space in this destination.",
-        "selectLocations": "Select locations for the items being moved.",
-        "selectMoreLocations": "Select {count} more {count, plural, one {location} other {locations}}.",
+        "selectLocations": "Select {count, plural, one {# location} other {# locations}}. ({placed}/{total} placed)",
+        "selectMoreLocations": "Select {count} more {count, plural, one {location} other {locations}}. ({placed}/{total} placed)",
         "selectionComplete": "Selection complete.",
         "visualContainerNoImage": "This visual container does not have an image.",
         "visualContainerNoLocations": "This visual container does not have any locations."

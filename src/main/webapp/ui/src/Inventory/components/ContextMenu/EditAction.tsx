@@ -59,9 +59,7 @@ const EditAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, EditAc
               record,
               variant: "error",
               help: t("contextMenu.edit.beingEditedBy", {
-                firstName: lockOwner.firstName,
-                lastName: lockOwner.lastName,
-                username: lockOwner.username,
+                name: [lockOwner.firstName, lockOwner.lastName].filter(Boolean).join(" ") || lockOwner.username,
               }),
             })),
           }),
