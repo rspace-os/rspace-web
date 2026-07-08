@@ -7,13 +7,12 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
@@ -26,12 +25,13 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
 
   const [enableDialogOpen, setEnableDialogOpen] = React.useState(false);
   const [disableDialogOpen, setDisableDialogOpen] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
 
   useEffect(() => {
     axios.get(`/groups/ajax/seoAllowedStatus/${groupId}`).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         setWaiting(false);
         return;
       }
@@ -55,7 +55,7 @@ function GroupSeoManager({ groupId, groupDisplayName, isCloud, isLabGroup, isGro
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         setWaiting(false);
         return;
       }

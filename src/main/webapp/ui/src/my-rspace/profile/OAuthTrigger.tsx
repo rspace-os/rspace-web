@@ -5,6 +5,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import Alerts from "@/components/Alerts/Alerts";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../../theme";
 import OAuthTable from "./OAuthTable";
@@ -21,14 +22,16 @@ export default function OAuthTrigger(_props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        {!open && (
-          <Box sx={{ width: "690px", padding: "0px 15px" }}>
-            <Button color="primary" onClick={handleOpen}>
-              {t("profile.oauth.createdApps.show")}
-            </Button>
-          </Box>
-        )}
-        {open && <OAuthTable />}
+        <Alerts>
+          {!open && (
+            <Box sx={{ width: "690px", padding: "0px 15px" }}>
+              <Button color="primary" onClick={handleOpen}>
+                {t("profile.oauth.createdApps.show")}
+              </Button>
+            </Box>
+          )}
+          {open && <OAuthTable />}
+        </Alerts>
       </ThemeProvider>
     </StyledEngineProvider>
   );

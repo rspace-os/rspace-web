@@ -13,18 +13,18 @@ import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React, { useRef } from "react";
+import React, { useContext, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../theme";
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OAuthDialog(props: any) {
   const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
   const [appName, setAppName] = React.useState("");
   const [hasError, setHasError] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
@@ -78,14 +78,26 @@ export default function OAuthDialog(props: any) {
               appName,
             });
           } else if (Object.hasOwn(response, "exceptionMessage")) {
-            RS.confirm(response.exceptionMessage, "warning", "infinite");
+            addAlert(mkAlert({ message: response.exceptionMessage, variant: "warning", isInfinite: true }));
           } else {
-            RS.confirm(t("profile.oauth.dialog.createError"), "warning", "infinite");
+            addAlert(
+              mkAlert({
+                message: t("profile.oauth.dialog.createError"),
+                variant: "warning",
+                isInfinite: true,
+              }),
+            );
           }
         })
         // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
         .catch((error: any) => {
-          RS.confirm(error.response.data, "warning", "infinite");
+          addAlert(
+            mkAlert({
+              message: getErrorMessage(error, "There was a problem while creating your application."),
+              variant: "warning",
+              isInfinite: true,
+            }),
+          );
         });
     }
   };
@@ -116,12 +128,12 @@ export default function OAuthDialog(props: any) {
     try {
       const successful = document.execCommand("copy");
       if (successful) {
-        RS.confirm(t("profile.oauth.dialog.copySuccess"), "notice", 3000);
+        addAlert(mkAlert({ message: t("profile.oauth.dialog.copySuccess"), variant: "notice", duration: 3000 }));
       } else {
-        RS.confirm(t("profile.oauth.dialog.copyError"), "warning", 5000);
+        addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
       }
     } catch (_err) {
-      RS.confirm(t("profile.oauth.dialog.copyError"), "warning", 5000);
+      addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
     }
   };
 

@@ -2,6 +2,7 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import Alerts from "@/components/Alerts/Alerts";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import AutoshareStatus from "../../../profile/Autoshare/AutoshareStatus";
 
@@ -55,16 +56,18 @@ function MemberAutoshareStatusWrapper(props: any) {
     return <>{t("profile.groups.autosharing.memberStatus.notApplicable")}</>;
   }
   return (
-    <AutoshareStatus
-      group={group}
-      username={props.username}
-      userId={props.userId}
-      isCurrentlySharing={isCurrentlySharing}
-      callback={fetchShareStatus}
-      isSwitch={true}
-      isSwitchDisabled={isSwitchDisabled}
-      switchDisabledReason={switchDisabledReason}
-    />
+    <Alerts>
+      <AutoshareStatus
+        group={group}
+        username={props.username}
+        userId={props.userId}
+        isCurrentlySharing={isCurrentlySharing}
+        callback={fetchShareStatus}
+        isSwitch={true}
+        isSwitchDisabled={isSwitchDisabled}
+        switchDisabledReason={switchDisabledReason}
+      />
+    </Alerts>
   );
 }
 

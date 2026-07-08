@@ -15,11 +15,9 @@ import SnackbarContent from "@mui/material/SnackbarContent";
 import { produce } from "immer";
 import React from "react";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import i18n from "../../../modules/common/i18n";
 import UserListComponent from "./UserList";
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 
 // UserList is an untyped JS->TSX class component; cast at the call site to
 // accept the props it consumes without changing behavior.
@@ -39,6 +37,8 @@ const DEFAULT_STATE = {
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 class MyLabGroupsDialog extends React.Component<any, any> {
+  declare context: React.ContextType<typeof AlertContext>;
+
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   constructor(props: any) {
     super(props);
@@ -90,7 +90,13 @@ class MyLabGroupsDialog extends React.Component<any, any> {
       })
       .catch((error) => {
         console.error(`couldn't add users: ${error}`);
-        RS.confirm(i18n.t("profile.groups.dialog.addError"), "error", "infinite");
+        this.context.addAlert(
+          mkAlert({
+            message: i18n.t("profile.groups.dialog.addError"),
+            variant: "error",
+            isInfinite: true,
+          }),
+        );
       });
   };
 
@@ -327,5 +333,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
     );
   }
 }
+
+MyLabGroupsDialog.contextType = AlertContext;
 
 export default MyLabGroupsDialog;

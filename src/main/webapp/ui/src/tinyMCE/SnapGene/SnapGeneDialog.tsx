@@ -9,6 +9,7 @@ import Tabs from "@mui/material/Tabs";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import Alerts from "@/components/Alerts/Alerts";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import DnaPreview from "./DnaPreview";
@@ -123,7 +124,9 @@ function renderDialog(target_id: any) {
   root.render(
     <I18nRoot namespaces={["workspace", "common"]}>
       <MuiCssLayerProvider>
-        <SnapGeneDialog id={target_id} />
+        <Alerts>
+          <SnapGeneDialog id={target_id} />
+        </Alerts>
       </MuiCssLayerProvider>
     </I18nRoot>,
   );

@@ -10,14 +10,14 @@ import Switch, { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TransRichText from "@/modules/common/i18n/TransRichText";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare function getValidationErrorString(...args: any[]): string;
 
@@ -35,6 +35,7 @@ function DisableAutoshareDialog({
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -54,7 +55,7 @@ function DisableAutoshareDialog({
       .then((response) => {
         if (!response.data.success) {
           const msg2 = getValidationErrorString(response.data.error, ",", true);
-          RS.confirm(msg2, "warning", 5000, { sticky: true });
+          addAlert(mkAlert({ message: msg2, variant: "warning", duration: 5000 }));
           return;
         }
 
@@ -65,11 +66,17 @@ function DisableAutoshareDialog({
 
         setDone(true);
         callback();
-        RS.confirm(msg, "notice", async ? 7000 : 3000);
+        addAlert(mkAlert({ message: msg, variant: "notice", duration: async ? 7000 : 3000 }));
       })
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
-        RS.confirm(error.response.data || t("profile.groups.autosharing.genericError"), "warning", "infinite");
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, t("profile.groups.autosharing.genericError")),
+            variant: "warning",
+            isInfinite: true,
+          }),
+        );
       })
       .then(() => {
         setWaiting(false);

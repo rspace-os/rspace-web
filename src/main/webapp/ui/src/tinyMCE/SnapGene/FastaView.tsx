@@ -1,14 +1,12 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useContext, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import LoadingCircular from "../../components/LoadingCircular";
-
-declare const RS: {
-  confirm: (message: string, level: "warning" | "notice", timeout: string | number) => void;
-};
 
 type FastaViewProps = {
   id: string | number;
@@ -23,6 +21,7 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
   const { t } = useTranslation("workspace");
   const [loading, setLoading] = React.useState(true);
   const [sequence, setSequence] = React.useState("");
+  const { addAlert } = useContext(AlertContext);
 
   const fetchData = useCallback(() => {
     setLoading(true);
@@ -34,12 +33,18 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
         setSequence(response.data);
       })
       .catch((error) => {
-        RS.confirm(error.response.data, "warning", "infinite");
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, "Could not load the FASTA sequence."),
+            variant: "warning",
+            isInfinite: true,
+          }),
+        );
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [id]);
+  }, [id, addAlert]);
 
   const copyToClipboard = () => {
     const el = document.getElementById("copy-text") as HTMLTextAreaElement | null; // Create a <textarea> element
@@ -50,9 +55,9 @@ export default function FastaView({ id, setDisabled }: FastaViewProps) {
     el?.select(); // Select the <textarea> content
     try {
       document.execCommand("copy");
-      RS.confirm(t("tinymce.snapGene.copySuccess"), "notice", 3000);
+      addAlert(mkAlert({ message: t("tinymce.snapGene.copySuccess"), variant: "notice", duration: 3000 }));
     } catch {
-      RS.confirm(t("tinymce.snapGene.copyFailed"), "warning", 5000);
+      addAlert(mkAlert({ message: t("tinymce.snapGene.copyFailed"), variant: "warning", duration: 5000 }));
     }
     if (el) {
       document.body.removeChild(el); // Remove the <textarea> element
