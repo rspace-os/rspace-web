@@ -18,7 +18,7 @@ import { createRoot, type Root } from "react-dom/client";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "../../assets/branding/rspace/inventory";
 import AlwaysNewWindowNavigationContext from "../../components/AlwaysNewWindowNavigationContext";
-import Analytics from "../../components/Analytics";
+import Analytics from "../../Inventory/Analytics";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { ElnFieldId } from "../../stores/models/MaterialsModel";
 import useStores from "../../stores/use-stores";
