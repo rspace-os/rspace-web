@@ -538,7 +538,6 @@ function MaterialsDialog({ open, setOpen, standalonePage = false }: DialogArgs):
                               if (isListNew) {
                                 await showToastWhilstPending(`Creating list...`, currentList.create());
                               }
-
                               if (isListExisting) {
                                 const changed = materialsStore.hasListChanged;
                                 if (changed) await showToastWhilstPending(`Updating list...`, currentList.update());
