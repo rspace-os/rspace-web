@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { runInAction } from "mobx";
 import { describe, expect, test, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import * as PersonMocking from "../../../../stores/models/__tests__/PersonModel/mocking";
 import PersonModel from "../../../../stores/models/PersonModel";
 import getRootStore from "../../../../stores/stores/getRootStore";
@@ -27,15 +28,23 @@ vi.mock("../../../../common/ElnApiService", () => ({
 }));
 describe("PeopleField", () => {
   test("When the API returns an error, there should be an error alert.", async () => {
+    const restoreConsole = silenceConsole(
+      ["error"],
+      ["Could not fetch set of users in the same group as current user"],
+    );
     const { peopleStore } = getRootStore();
     runInAction(() => {
       peopleStore.currentUser = new PersonModel(PersonMocking.personAttrs());
     });
-    render(
-      <Alerts>
-        <PeopleField onSelection={() => {}} label="foo" recipient={null} />
-      </Alerts>,
-    );
-    expect(await screen.findByRole("alert")).toHaveTextContent("some error message");
+    try {
+      render(
+        <Alerts>
+          <PeopleField onSelection={() => {}} label="foo" recipient={null} />
+        </Alerts>,
+      );
+      expect(await screen.findByRole("alert")).toHaveTextContent("some error message");
+    } finally {
+      restoreConsole();
+    }
   });
 });

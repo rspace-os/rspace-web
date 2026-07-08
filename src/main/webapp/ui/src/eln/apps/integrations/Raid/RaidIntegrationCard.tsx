@@ -56,14 +56,12 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       return;
     }
     if (e.data?.type !== "RAID_CONNECTED" || !e.data.alias) {
-      console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
       return;
     }
 
     runInAction(() => {
       const index = authenticatedServers.findIndex((s) => s.alias === e.data.alias);
       if (index === -1) {
-        console.log("RaidIntegrationCard: Could not find server with alias", e.data.alias);
         return;
       }
 

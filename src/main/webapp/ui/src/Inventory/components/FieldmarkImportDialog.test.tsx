@@ -1,12 +1,22 @@
+/*
+ * Vitest/jsdom conversion of FieldmarkImportDialog.spec.tsx.
+ *
+ * The two alert tests that depend on real toast geometry (clicking the
+ * sub-message expand toggle on a `position:fixed`, off-viewport toast stack and
+ * asserting that the revealed link / sub-message is actually visible) remain in
+ * FieldmarkImportDialog.spec.tsx because they need real layout / scroll
+ * position. Everything else is converted here.
+ */
+import "@/__tests__/__mocks__/muiTransitions";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import { expectAccessible, render } from "@/__tests__/customQueries";
+import { stubAppChrome } from "@/__tests__/helpers/appChrome";
 import { wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
@@ -86,6 +96,7 @@ const IGSN_CANDIDATE_FIELDS: Record<string, ReadonlyArray<string>> = {
 };
 
 function stubEndpoints({ importResponder }: { importResponder?: (body: unknown) => [number, unknown] } = {}) {
+  stubAppChrome(mockAxios);
   mockAxios.onGet("/api/inventory/v1/fieldmark/notebooks").reply(200, NOTEBOOKS);
 
   mockAxios.onGet(/\/api\/inventory\/v1\/fieldmark\/notebooks\/igsnCandidateFields/).reply((config) => {
@@ -279,7 +290,9 @@ describe("FieldmarkImportDialog", () => {
 
       // Release the pending import so the test can clean up without dangling
       // promises.
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
 
     test("should show loading state on import button during import", async () => {
@@ -309,30 +322,24 @@ describe("FieldmarkImportDialog", () => {
         expect(screen.getByRole("button", { name: "common:actions.import" })).toBeDisabled();
       });
 
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
 
     test("should display IGSN message when igsnCandidateFields endpoint returns IGSN error", async () => {
-      const restoreConsole = silenceConsole(["error"], [/.*/]);
-      try {
-        const user = userEvent.setup();
-        await renderAndWaitForNotebooks(
-          await wrapWithRealI18n(<FieldmarkImportDialogStory />, {
-            resources: { common: commonEn, inventory: inventoryEn },
-            defaultNS: "inventory",
-          }),
-        );
+      const user = userEvent.setup();
+      await renderAndWaitForNotebooks(
+        await wrapWithRealI18n(<FieldmarkImportDialogStory />, {
+          resources: { common: commonEn, inventory: inventoryEn },
+          defaultNS: "inventory",
+        }),
+      );
 
-        await user.click(getRadioForNotebook("Notebook IGSN Error"));
+      await user.click(getRadioForNotebook("Notebook IGSN Error"));
 
-        const integrationLink = await screen.findByRole("link", { name: "DataCite IGSN ID integration" });
-        expect(integrationLink).toHaveAttribute(
-          "href",
-          expect.stringContaining("add-igsn-identifiers-to-your-samples"),
-        );
-      } finally {
-        restoreConsole();
-      }
+      const integrationLink = await screen.findByRole("link", { name: "DataCite IGSN ID integration" });
+      expect(integrationLink).toHaveAttribute("href", expect.stringContaining("add-igsn-identifiers-to-your-samples"));
     });
 
     test("should hide identifier parsing UI during import when identifier field is unselected", async () => {
@@ -365,7 +372,9 @@ describe("FieldmarkImportDialog", () => {
       ).not.toBeInTheDocument();
       expect(screen.queryByText("inventory:fieldmarkImport.igsnField.loading")).not.toBeInTheDocument();
 
-      (resolveImport as (() => void) | null)?.();
+      await act(async () => {
+        (resolveImport as (() => void) | null)?.();
+      });
     });
   });
 });

@@ -4,7 +4,6 @@ import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { page } from "vitest/browser";
 import { worker } from "@/__tests__/browserSetup";
 import { emulateHighContrast, expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
-import i18n from "@/modules/common/i18n";
 import {
   createDefaultSubSampleResponses,
   createMockStoichiometryResponse,
@@ -28,34 +27,32 @@ let mocks: StoichiometryMocks;
 const table = new StoichiometryTablePage();
 const inventoryUpdateDialog = new InventoryUpdateDialogPage();
 const tableHeaders = [
-  "common:stoichiometry.table.columns.name",
-  "common:stoichiometry.table.columns.inventoryLink",
-  "common:stoichiometry.table.columns.type",
-  "common:stoichiometry.table.columns.limitingReagent",
-  "common:stoichiometry.table.columns.equivalent",
-  "common:stoichiometry.table.columns.molecularWeight",
-  "common:stoichiometry.table.columns.mass",
-  "common:stoichiometry.table.columns.moles",
-  "common:stoichiometry.table.columns.notes",
+  "Name",
+  "Inventory Link",
+  "Type",
+  "Limiting Reagent",
+  "Equivalent",
+  "Molecular Weight (g/mol)",
+  "Mass (g)",
+  "Moles (mol)",
+  "Notes",
 ] as const;
 const inventoryUpdateHeaders = {
-  molecule: "common:stoichiometry.inventoryUpdate.molecule",
-  inStock: "common:stoichiometry.inventoryUpdate.inStock",
-  willUse: "common:stoichiometry.inventoryUpdate.willUse",
-  remaining: "common:stoichiometry.inventoryUpdate.remaining",
+  molecule: "Molecule",
+  inStock: "In Stock",
+  willUse: "Will Use",
+  remaining: "Remaining",
 };
 const columns = {
-  actualMass: "common:stoichiometry.table.columns.actualMass",
-  actualMoles: "common:stoichiometry.table.columns.actualMoles",
-  equivalent: "common:stoichiometry.table.columns.equivalent",
-  mass: "common:stoichiometry.table.columns.mass",
-  moles: "common:stoichiometry.table.columns.moles",
-  yieldExcess: "common:stoichiometry.table.columns.yieldExcess",
+  actualMass: "Actual Mass (g)",
+  actualMoles: "Actual Moles (mol)",
+  equivalent: "Equivalent",
+  mass: "Mass (g)",
+  moles: "Moles (mol)",
+  yieldExcess: "Yield/Excess (%)",
 };
 
 beforeEach(async () => {
-  i18n.options.appendNamespaceToCIMode = true;
-  await i18n.changeLanguage("cimode");
   mocks = {
     response: createMockStoichiometryResponse(),
     subSampleResponses: createDefaultSubSampleResponses(),
@@ -147,9 +144,7 @@ describe("Stoichiometry Table", () => {
     await table.openExportMenu();
     // Opening the menu marks the rest of the page aria-hidden, so assert on the
     // menu item that appears rather than the (now hidden) Export button.
-    await expect
-      .element(page.getByRole("menuitem", { name: "common:stoichiometry.tableToolbar.exportToCsv" }))
-      .toBeVisible();
+    await expect.element(page.getByRole("menuitem", { name: "Export to CSV" })).toBeVisible();
   });
 
   test("When exporting to CSV, all molecule rows should be included", async () => {
@@ -164,9 +159,9 @@ describe("Stoichiometry Table", () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
     const csv = await table.exportToCsv();
-    expect(csv).toContain("common:stoichiometry.table.roles.reactant");
-    expect(csv).toContain("common:stoichiometry.table.roles.product");
-    expect(csv).toContain("common:stoichiometry.table.roles.reagent");
+    expect(csv).toContain("Reactant");
+    expect(csv).toContain("Product");
+    expect(csv).toContain("Reagent");
     expect(csv).not.toContain("REACTANT");
     expect(csv).not.toContain("PRODUCT");
     expect(csv).not.toContain("AGENT");
@@ -231,7 +226,7 @@ describe("Stoichiometry Table", () => {
       .toHaveAttribute("data-status", "positive");
 
     await expect.element(inventoryUpdateDialog.checkbox("Benzene")).toBeDisabled();
-    await expect.element(dialog.getByText("common:stoichiometry.inventoryUpdate.linkRequired")).toBeVisible();
+    await expect.element(dialog.getByText("Link an inventory item before updating stock.")).toBeVisible();
     await expect.element(metric("Benzene", inventoryUpdateHeaders.inStock)).toHaveTextContent("—");
 
     await expect.element(inventoryUpdateDialog.checkbox("Cyclopentadiene")).toBeDisabled();
@@ -241,11 +236,15 @@ describe("Stoichiometry Table", () => {
     await expect
       .element(metric("Cyclopentadiene", inventoryUpdateHeaders.remaining))
       .toHaveAttribute("data-status", "negative");
-    await expect.element(dialog.getByText("common:stoichiometry.inventoryLink.insufficientStock")).toBeVisible();
+    await expect.element(dialog.getByText("Insufficient Stock")).toBeVisible();
 
     await expect.element(inventoryUpdateDialog.checkbox("Ethanol")).toBeDisabled();
     await expect
-      .element(dialog.getByText("common:stoichiometry.inventoryUpdate.nonMassInventoryQuantity"))
+      .element(
+        dialog.getByText(
+          "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+        ),
+      )
       .toBeVisible();
     await expect.element(metric("Ethanol", inventoryUpdateHeaders.inStock)).toHaveTextContent("25.0 mL");
     await expect.element(metric("Ethanol", inventoryUpdateHeaders.willUse)).toHaveTextContent("—");
@@ -266,7 +265,11 @@ describe("Stoichiometry Table", () => {
     await expect.element(inventoryUpdateDialog.checkbox("Cyclopentane")).toBeEnabled();
     await expect.element(inventoryUpdateDialog.checkbox("Cyclopentane")).not.toBeChecked();
     await expect
-      .element(inventoryUpdateDialog.dialog.getByText("common:stoichiometry.inventoryUpdate.stockDeductedWarning"))
+      .element(
+        inventoryUpdateDialog.dialog.getByText(
+          "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+        ),
+      )
       .toBeVisible();
   });
 
@@ -282,16 +285,22 @@ describe("Stoichiometry Table", () => {
 
     await expect.element(inventoryUpdateDialog.checkbox("Cyclopentane")).toBeDisabled();
     await expect
-      .element(inventoryUpdateDialog.dialog.getByText("common:stoichiometry.inventoryUpdate.linkedStockUnavailable"))
+      .element(
+        inventoryUpdateDialog.dialog.getByText(
+          "Linked stock information is unavailable, so this molecule cannot be updated.",
+        ),
+      )
       .toBeVisible();
   });
 
   test("The inventory stock update action is disabled while the table has unsaved changes", async () => {
     render(<StoichiometryTableWithDataStory />);
     await table.waitForLoad();
-    await table.editCell({ row: 0, column: "common:stoichiometry.table.columns.mass", value: "12" });
+    await table.editCell({ row: 0, column: "Mass (g)", value: "12" });
     await expect.element(table.updateInventoryStockButton).toBeDisabled();
-    await expect.element(page.getByLabelText("common:stoichiometry.inventoryUpdate.saveBeforeUpdate")).toBeVisible();
+    await expect
+      .element(page.getByLabelText("Save the stoichiometry table before updating inventory stock."))
+      .toBeVisible();
   });
 
   describe("Adding reagants", () => {
@@ -320,7 +329,7 @@ describe("Stoichiometry Table", () => {
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
       await expect.element(table.table).toHaveTextContent("Caffeine");
       await expect.element(table.table).toHaveTextContent("194.19");
-      await expect.element(table.table).toHaveTextContent("common:stoichiometry.table.roles.reagent");
+      await expect.element(table.table).toHaveTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 
@@ -337,7 +346,7 @@ describe("Stoichiometry Table", () => {
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
       await expect.element(table.table).toHaveTextContent("Ethanol");
       await expect.element(table.table).toHaveTextContent("46.07");
-      await expect.element(table.table).toHaveTextContent("common:stoichiometry.table.roles.reagent");
+      await expect.element(table.table).toHaveTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 
@@ -354,7 +363,7 @@ describe("Stoichiometry Table", () => {
       await expect.element(table.moleculeInfoLoadingDialog).not.toBeInTheDocument();
       await expect.element(table.table).toHaveTextContent("ethanol");
       await expect.element(table.table).toHaveTextContent("46.07");
-      await expect.element(table.table).toHaveTextContent("common:stoichiometry.table.roles.reagent");
+      await expect.element(table.table).toHaveTextContent("Reagent");
       await expect.poll(() => table.dataRows().elements().length).toBe(5);
     });
 

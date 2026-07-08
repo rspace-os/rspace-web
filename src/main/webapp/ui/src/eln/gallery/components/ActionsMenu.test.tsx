@@ -361,17 +361,19 @@ describe("ActionsMenu", () => {
 
       const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
-      const user = userEvent.setup();
-      renderStory(<ActionsMenuWithNonFolder />);
-      await openMenu(user);
-      expect(await screen.findByRole("menuitem", { name: "gallery:actionsMenu.moveToS3" })).toBeVisible();
+      try {
+        const user = userEvent.setup();
+        renderStory(<ActionsMenuWithNonFolder />);
+        await openMenu(user);
+        expect(await screen.findByRole("menuitem", { name: "gallery:actionsMenu.moveToS3" })).toBeVisible();
 
-      const muiErrors = errorSpy.mock.calls
-        .map((args) => args.map((a) => String(a)).join(" "))
-        .filter((msg) => /MUI.*Unsupported|MUI error #9/i.test(msg));
-      expect(muiErrors).toHaveLength(0);
-
-      errorSpy.mockRestore();
+        const errorMessages = errorSpy.mock.calls.map((args) => args.map((a) => String(a)).join(" "));
+        const muiErrors = errorMessages.filter((msg) => /MUI.*Unsupported|MUI error #9/i.test(msg));
+        expect(muiErrors).toHaveLength(0);
+        expect(errorMessages).toEqual([]);
+      } finally {
+        errorSpy.mockRestore();
+      }
     });
 
     test("Move to iRODS and Move to S3 should be hidden when netfilestores is disabled", async () => {

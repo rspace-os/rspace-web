@@ -4,7 +4,7 @@ import "@testing-library/jest-dom/vitest";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
 import createFetchMock from "vitest-fetch-mock";
-import { silenceConsole, silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import i18n from "@/modules/common/i18n";
 
 await i18n.loadNamespaces([
@@ -57,10 +57,8 @@ afterEach(() => {
   globalThis.sessionStorage?.clear?.();
 });
 
-const restoreConsole = silenceConsole(["error"], ["Could not fetch set of users in the same group as current user"]);
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
-  restoreConsole();
   restoreStderr();
 });
 

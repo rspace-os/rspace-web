@@ -37,6 +37,20 @@ import { DataGridColumn } from "../../util/table";
 const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
 
+const validationErrorMessages = (error: unknown): Result<ReadonlyArray<string>> =>
+  Parsers.objectPath(["response", "data", "data", "validationErrors"], error)
+    .flatMap(Parsers.isArray)
+    .flatMap((array) =>
+      Result.all(
+        ...array.map((x) =>
+          Parsers.isObject(x)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("message"))
+            .flatMap(Parsers.isString),
+        ),
+      ),
+    );
+
 /**
  * This class allows us to provide a link to the newly created container in the
  * success alert toast.
@@ -180,14 +194,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
       } catch (e) {
         console.error(e);
         if (e instanceof Error) {
-          const message = Parsers.objectPath(["response", "data", "data", "validationErrors"], e)
-            .flatMap(Parsers.isArray)
-            .flatMap(firstResult)
-            .flatMap(Parsers.isObject)
-            .flatMap(Parsers.isNotNull)
-            .flatMap(Parsers.getValueWithKey("message"))
-            .flatMap(Parsers.isString)
-            .orElse(e.message);
+          const message = validationErrorMessages(e).flatMap(firstResult).orElse(e.message);
           addAlert(
             mkAlert({
               variant: "error",
@@ -243,38 +250,28 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
           ],
         }),
       );
+      return true;
     } catch (e) {
-      console.error(e);
-      if (e instanceof Error)
-        addAlert(
-          mkAlert({
-            variant: "error",
-            ...Parsers.objectPath(["response", "data", "data", "validationErrors"], e)
-              .flatMap(Parsers.isArray)
-              .flatMap((array) =>
-                Result.all(
-                  ...array.map((x) =>
-                    Parsers.isObject(x)
-                      .flatMap(Parsers.isNotNull)
-                      .flatMap(Parsers.getValueWithKey("message"))
-                      .flatMap(Parsers.isString),
-                  ),
-                ),
-              )
-              .map((errors) => ({
-                message: t("fieldmarkImport.importError"),
-                details: errors.map((error) => ({
-                  variant: "error" as const,
-                  title: error,
-                })),
-              }))
-              .orElse({
-                title: t("fieldmarkImport.importError"),
-                message: e.message,
-              }),
-          }),
-        );
-      throw e;
+      const validationErrors = validationErrorMessages(e);
+      if (validationErrors.isError) console.error(e);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          ...validationErrors
+            .map((errors) => ({
+              message: t("fieldmarkImport.importError"),
+              details: errors.map((error) => ({
+                variant: "error" as const,
+                title: error,
+              })),
+            }))
+            .orElse({
+              title: t("fieldmarkImport.importError"),
+              message: e instanceof Error ? e.message : String(e),
+            }),
+        }),
+      );
+      return false;
     } finally {
       setImporting(false);
       if (importingAlert) removeAlert(importingAlert);
@@ -301,21 +298,12 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
           .elseThrow(),
       );
     } catch (error: unknown) {
-      console.error(error);
+      const showIgsnIntegrationMessage = validationErrorMessages(error)
+        .map((messages) => messages.some((message) => /IGSN integration is not enabled/.test(message)))
+        .orElse(false);
+      if (!showIgsnIntegrationMessage) console.error(error);
       setIdentifierFields([]);
-      setShowIgsnMessage(
-        Parsers.objectPath(["response", "data", "data", "validationErrors"], error)
-          .flatMap(Parsers.isArray)
-          .map((validationErrors) =>
-            validationErrors.some((validationError) =>
-              Parsers.objectPath(["message"], validationError)
-                .flatMap(Parsers.isString)
-                .map((message) => /IGSN integration is not enabled/.test(message))
-                .orElse(false),
-            ),
-          )
-          .orElse(false),
-      );
+      setShowIgsnMessage(showIgsnIntegrationMessage);
     } finally {
       setFetchingIdentifierFields(false);
     }
@@ -546,7 +534,11 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
             <Button onClick={() => handleClose()}>{t("common:actions.close")}</Button>
             <ValidatingSubmitButton
               onClick={() => {
-                if (selectedNotebook) void importNotebook(selectedNotebook).then(() => handleClose());
+                if (selectedNotebook) {
+                  void importNotebook(selectedNotebook).then((success) => {
+                    if (success) handleClose();
+                  });
+                }
               }}
               validationResult={!selectedNotebook ? IsInvalid(t("fieldmarkImport.noNotebookSelected")) : IsValid()}
               loading={importing}

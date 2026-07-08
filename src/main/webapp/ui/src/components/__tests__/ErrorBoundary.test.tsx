@@ -7,7 +7,13 @@ import { ErrorComponent } from "../ErrorBoundary.story";
 describe("ErrorBoundary", () => {
   let restoreConsole: () => void;
   beforeEach(() => {
-    restoreConsole = silenceConsole(["error"], [/.*/]);
+    // React logs the caught render error via console.error; that noise is
+    // expected here (and in the intentionally-throwing MessageBoundary case
+    // below) and would otherwise clutter the test output.
+    restoreConsole = silenceConsole(
+      ["error"],
+      ["Error: Error", "ErrorComponent", "message render failed", "ThrowingMessage"],
+    );
   });
   afterEach(() => {
     restoreConsole();
