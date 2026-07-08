@@ -139,7 +139,7 @@ export default class InstrumentModel
   }
 
   get beingCreatedInContainer(): boolean {
-    return !this.isDirectlyOnWorkbench;
+    return this.parentContainers.length > 0 && !this.isDirectlyOnWorkbench;
   }
 
   get inContainerParams(): ContainerInContainerParams {
