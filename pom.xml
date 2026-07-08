@@ -712,7 +712,7 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>opensymphony</groupId>
+      <groupId>org.sitemesh</groupId>
       <artifactId>sitemesh</artifactId>
       <version>${sitemesh.version}</version>
       <scope>runtime</scope>
@@ -2625,7 +2625,7 @@
     <jstl.version>1.1.2</jstl.version>
     <lucene.version>5.5.5</lucene.version>
     <servlet.version>3.1.0</servlet.version>
-    <sitemesh.version>2.4.2</sitemesh.version>
+    <sitemesh.version>3.1.1</sitemesh.version>
     <urlrewrite.version>4.0.3</urlrewrite.version>
     <skipUnitTests>false</skipUnitTests>
     <spotless.version>3.5.1</spotless.version>

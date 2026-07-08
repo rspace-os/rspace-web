@@ -1,0 +1,84 @@
+<sitemesh>
+    <!--
+      SiteMesh 3 configuration (replaces the SiteMesh 2 sitemesh.xml + decorators.xml).
+
+      NB path matching differs from SiteMesh 2. It matches WITHOUT the query string (SiteMesh 2
+      appended it), so query-string-based excludes (e.g. the old "/*ajax=true*") no longer apply
+      and have been dropped; use a path-based exclude instead where needed.
+      Also note the matched path is the ORIGINAL request path: for forwarded or error-dispatched
+      requests SiteMesh reads javax.servlet.forward.servlet_path (the pre-forward URL), NOT the
+      forward/error target. So write excludes against the incoming URL (e.g. /gallery), not the
+      JSP the request is ultimately forwarded to (e.g. /eln/gallery.jsp).
+      Decorator names are resolved relative to SiteMesh's default decorator prefix
+      (/WEB-INF/decorators/), so they are given as bare file names here. Do NOT prefix them
+      with /WEB-INF/decorators/ — that gets prepended again, producing a // empty segment
+      that Jetty/Tomcat reject ("Ambiguous URI empty segment").
+    -->
+
+    <!-- Decorate error responses too, matching SiteMesh 2 / PageFilter. Without this, SiteMesh 3
+         stops buffering as soon as a response sets a non-200 status, so Spring MVC error views
+         rendered inline with an error status (e.g. the access-denied "error" view from
+         ControllerExceptionHandler) come back undecorated. Does not affect the container
+         403/404 pages, which are ERROR-dispatched and no longer routed through this filter. -->
+    <include-error-pages>true</include-error-pages>
+
+    <!-- Paths that must never be decorated (evaluated before the decorator mappings below). -->
+    <!-- 500/405 error-page target: keep undecorated, matching main (whose error.jsp has no
+         page:applyDecorator). On prod Tomcat this exclude fires because the ERROR dispatch has no
+         forward attributes, so SiteMesh matches /error.jsp; on local dev Jetty the ERROR dispatch
+         carries the original URL, so the exclude is bypassed and the 500 page appears decorated in
+         dev only. 403.jsp/404.jsp are intentionally NOT excluded so they get decorated. -->
+    <mapping path="/error.jsp" exclude="true"/>
+    <mapping path="*/ajax/*" exclude="true"/>
+    <mapping path="/scripts/**" exclude="true"/>
+    <mapping path="/ui/dist/**" exclude="true"/>
+    <mapping path="/resources/*" exclude="true"/>
+    <mapping path="/image/getImage/**" exclude="true"/>
+    <mapping path="/image/getImageForEdit/**" exclude="true"/>
+    <mapping path="/Streamfile/*" exclude="true"/>
+    <mapping path="/public/status" exclude="true"/>
+    <mapping path="/public/version" exclude="true"/>
+    <mapping path="/public/bannerImageName" exclude="true"/>
+    <!-- Leading '*' also excludes the internal forward path (/app/public/apiDocs): this page is
+         served via a Spring view controller, whose extra DispatcherServlet forward leaves SiteMesh
+         matching the /app-prefixed path, which the start-anchored /public/apiDocs misses while the
+         greedy */public/* decorator below catches. The wildcard form is more specific than
+         */public/* so it wins and keeps the page bare. -->
+    <mapping path="*/public/apiDocs*" exclude="true"/>
+    <mapping path="/slack/callbacks/*" exclude="true"/>
+    <mapping path="/msteams/rspaceAuth*" exclude="true"/>
+    <mapping path="/officeOnline/*" exclude="true"/>
+    <mapping path="/collaboraOnline/*" exclude="true"/>
+    <mapping path="/wopi/*" exclude="true"/>
+    <mapping path="/oauth/*" exclude="true"/>
+    <mapping path="/messaging/get_calendar_event" exclude="true"/>
+    <mapping path="/tools/*" exclude="true"/>
+    <mapping path="/externalTinymcePlugins/*" exclude="true"/>
+    <mapping path="*/public/publishedView/publishedDocuments/*" exclude="true"/>
+    <mapping path="/molbiol/*" exclude="true"/>
+    <mapping path="/inventory" exclude="true"/>
+    <mapping path="/inventory/**" exclude="true"/>
+    <mapping path="/listOfMaterials/**" exclude="true"/>
+    <mapping path="*/public/inventory/**" exclude="true"/>
+    <mapping path="/apps" exclude="true"/>
+    <!-- '*' spans path segments in SiteMesh 3's PathMapper, so /gallery* already covers
+         /gallery and every /gallery/** subpath (the whole reactified gallery module). -->
+    <mapping path="/gallery*" exclude="true"/>
+    <mapping path="/about" exclude="true"/>
+    <mapping path="/about/**" exclude="true"/>
+
+    <!-- Public / external pages decorator -->
+    <mapping path="*/signup*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/verifysignup*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/verifyEmailChange*" decorator="externalPages.jsp"/>
+    <mapping path="*/cloud/resendConfirmationEmail*" decorator="externalPages.jsp"/>
+    <mapping path="*/login*" decorator="externalPages.jsp"/>
+    <mapping path="*/adminLogin*" decorator="externalPages.jsp"/>
+    <mapping path="*/passwordReset*" decorator="externalPages.jsp"/>
+    <mapping path="*/vfpwd/verificationPasswordResetReply*" decorator="externalPages.jsp"/>
+    <mapping path="*/public/*" decorator="externalPages.jsp"/>
+    <mapping path="/msteams/*" decorator="externalPages.jsp"/>
+
+    <!-- Default decorator (catch-all) -->
+    <mapping decorator="default.jsp"/>
+</sitemesh>
