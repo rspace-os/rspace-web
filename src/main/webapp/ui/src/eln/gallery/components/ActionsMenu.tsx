@@ -158,7 +158,7 @@ const UploadNewVersionMenuItem = ({
         )
         .map(([file, extension]) => (
           <input
-            key={null}
+            key="upload-new-version-input"
             ref={newVersionInputRef}
             accept={`.${extension}`}
             hidden
@@ -779,7 +779,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             .asSet()
             .only.map((file) => (
               <RenameDialog
-                key={null}
+                key={`rename-${idToString(file.id).orElse(file.name)}`}
                 open={renameOpen}
                 onClose={() => {
                   setRenameOpen(false);
@@ -837,7 +837,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             {getShareDialogSelection()
               .map(({ globalIds, names }) => (
                 <ShareDialog
-                  key={globalIds.join(",")}
+                  key={`share-${globalIds.join(",")}`}
                   open={shareOpen}
                   onClose={() => {
                     setShareOpen(false);
@@ -878,7 +878,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               )
                 .map((exportIds) => (
                   <ExportDialog
-                    key={exportIds.join(",")}
+                    key={`export-${exportIds.join(",")}`}
                     open={exportOpen}
                     onClose={() => {
                       setExportOpen(false);
@@ -928,7 +928,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
               )
                 .map((selectedIds) => (
                   <MoveToIrods
-                    key={selectedIds.join(",")}
+                    key={`move-to-irods-${selectedIds.join(",")}`}
                     selectedIds={selectedIds}
                     dialogOpen={irodsOpen}
                     setDialogOpen={(newState) => {
@@ -970,7 +970,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 if (sources !== null) {
                   return (
                     <MoveToS3
-                      key={sources.map((s) => s.sourcePath).join(",")}
+                      key={`transfer-to-s3-${sources.map((s) => s.sourcePath).join(",")}`}
                       transferSources={sources}
                       dialogOpen={s3Open}
                       setDialogOpen={onClose}
@@ -985,7 +985,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 )
                   .map((selectedIds) => (
                     <MoveToS3
-                      key={selectedIds.join(",")}
+                      key={`move-to-s3-${selectedIds.join(",")}`}
                       selectedIds={selectedIds}
                       dialogOpen={s3Open}
                       setDialogOpen={onClose}
@@ -1005,7 +1005,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
             .get()
             .map((filestore) => (
               <AccentMenuItem
-                key={filestore.id}
+                key={`logout-${filestore.id}`}
                 title="Log Out"
                 subheader={logOutAllowed
                   .get()

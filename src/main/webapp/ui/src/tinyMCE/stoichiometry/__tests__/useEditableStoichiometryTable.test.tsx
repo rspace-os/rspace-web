@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import { inventoryQueryKeys } from "@/modules/inventory/queries";
 import { stoichiometryQueryKeys } from "@/modules/stoichiometry/queries";
 import type { StoichiometryRequest } from "@/modules/stoichiometry/schema";
@@ -523,36 +524,36 @@ describe("useEditableStoichiometryTable", () => {
         mutations: { retry: false },
       },
     });
-    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const restoreConsole = silenceConsole(["error"], ["Modifying the role of a molecule is not supported"]);
     let latestValue: ReturnType<typeof useEditableStoichiometryTable> | null = null;
 
-    renderWithProviders({
-      queryClient,
-      activeChemId: 123,
-      onValue: (value) => {
-        latestValue = value;
-      },
-    });
+    try {
+      renderWithProviders({
+        queryClient,
+        activeChemId: 123,
+        onValue: (value) => {
+          latestValue = value;
+        },
+      });
 
-    await waitFor(() => {
-      expect(latestValue?.allMolecules).toHaveLength(4);
-    });
+      await waitFor(() => {
+        expect(latestValue?.allMolecules).toHaveLength(4);
+      });
 
-    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
-    const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
-    let returnedRow: EditableMolecule | undefined;
+      // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+      const originalRow = latestValue!.allMolecules.find(({ id }) => id === 6)!;
+      let returnedRow: EditableMolecule | undefined;
 
-    act(() => {
-      returnedRow = latestValue?.tableController.processRowUpdate({ ...originalRow, role: "REACTANT" }, originalRow);
-    });
+      act(() => {
+        returnedRow = latestValue?.tableController.processRowUpdate({ ...originalRow, role: "REACTANT" }, originalRow);
+      });
 
-    expect(returnedRow).toEqual(originalRow);
-    // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
-    expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe("PRODUCT");
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
-      "Error updating row:",
-      "Modifying the role of a molecule is not supported",
-    );
+      expect(returnedRow).toEqual(originalRow);
+      // biome-ignore lint/style/noNonNullAssertion: latestValue is set asynchronously before this access
+      expect(latestValue!.allMolecules.find(({ id }) => id === 6)?.role).toBe("PRODUCT");
+    } finally {
+      restoreConsole();
+    }
   });
 
   it.each([

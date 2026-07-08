@@ -1,7 +1,6 @@
 import { cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
-import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
+import { suppressFireAndForget404 } from "@/__tests__/browserSetup";
 import { TreeViewPage } from "./pageObjects/TreeViewPage";
 import { TreeViewWithFiles } from "./TreeView.story";
 
@@ -29,7 +28,6 @@ beforeEach(() => {
     "/gallery/getThumbnail",
     "/gallery/ajax/getLinkedDocuments",
   ]);
-  worker.use(...galleryAppShellHandlers());
 });
 
 afterEach(() => {

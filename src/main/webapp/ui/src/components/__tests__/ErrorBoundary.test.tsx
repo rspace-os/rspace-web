@@ -15,7 +15,7 @@ describe("ErrorBoundary", () => {
      * just pollutes the output of the vitest CLI runner
      */
 
-    const restoreConsole = silenceConsole(["error"], [/./]);
+    const restoreConsole = silenceConsole(["error"], ["Error: foo", "AlwaysError"]);
     const errorHandler = (event: ErrorEvent) => {
       event.preventDefault();
     };

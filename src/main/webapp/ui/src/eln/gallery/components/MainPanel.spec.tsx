@@ -2,8 +2,7 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { page, userEvent } from "vitest/browser";
-import { suppressFireAndForget404, worker } from "@/__tests__/browserSetup";
-import { galleryAppShellHandlers } from "@/__tests__/mocks/galleryMocks";
+import { worker } from "@/__tests__/browserSetup";
 import { expectNoAxeViolations } from "@/__tests__/pageObjects/accessibility";
 import { BunchOfImages, NestedFoldersWithImageFile } from "./MainPanel.story";
 import { MainPanelPage } from "./pageObjects/MainPanelPage";
@@ -56,26 +55,14 @@ function uninstallClipboardStub(): void {
 
 // ── Per-suite MSW handlers ─────────────────────────────────────────────────────
 
-function linkedDocumentsHandler() {
-  return http.get("/gallery/ajax/getLinkedDocuments/:id", () =>
-    HttpResponse.json({
-      data: [],
-      error: null,
-      success: true,
-      errorMsg: null,
-    }),
-  );
-}
-
 /*
  * When the TreeView expands the Outer folder (id=1), it calls
  * `useGalleryListing` which fetches `/gallery/getUploadedFiles?currentFolderId=1&...`.
  *
- * This handler MUST be registered before `galleryAppShellHandlers()` in the
- * `worker.use(...)` call because the app-shell handlers contain a wildcard catch-all
- * for `/gallery/getUploadedFiles` that returns an empty listing. MSW resolves
- * handlers in registration order (first match wins within a single `worker.use()`
- * call), so our specific folder handler must appear first.
+ * Registered via `worker.use(...)`, which always takes priority over the
+ * default `/gallery/getUploadedFiles` wildcard catch-all from
+ * `galleryAppShellHandlers()` in browserSetup.ts, regardless of registration
+ * order.
  */
 function outerFolderListingHandler() {
   return http.get("/gallery/getUploadedFiles", ({ request }) => {
@@ -117,29 +104,6 @@ function outerFolderListingHandler() {
 }
 
 /*
- * Install the fire-and-forget 404 suppressor once for the entire file.
- *
- * Gallery tests expand folders and select files, which fire fire-and-forget
- * requests (listing, thumbnail, linked-documents) the component never awaits.
- * One of these can still be in-flight when a test ends; the `resetHandlers()`
- * in browserSetup.ts's afterEach drops its MSW mock, the request bypasses MSW
- * and 404s against the Vite dev server, then surfaces as an unhandled rejection
- * that fails the run on slow CI runners.
- *
- * Using beforeAll/afterAll (rather than beforeEach/afterEach) is essential:
- * Vitest runs the spec file's afterEach BEFORE the setup file's afterEach, so
- * a per-test suppressor installed/removed in spec afterEach would be gone by
- * the time resetHandlers() fires (setup afterEach). With beforeAll/afterAll the
- * suppressor outlives resetHandlers() — afterAll runs AFTER the setup file's
- * last afterEach — so late-arriving 404s are still caught.
- */
-const restoreFireAndForget404 = suppressFireAndForget404([
-  "/gallery/getUploadedFiles",
-  "/gallery/getThumbnail",
-  "/gallery/ajax/getLinkedDocuments",
-]);
-
-/*
  * This suite pins the viewport to 1280×720 (see beforeEach). The viewport is a
  * property of the shared browser instance, not of this file's iframe, so it
  * would otherwise leak to whichever spec file runs next and skew its layout-
@@ -151,7 +115,6 @@ beforeAll(() => {
   originalViewport = { width: window.innerWidth, height: window.innerHeight };
 });
 afterAll(async () => {
-  restoreFireAndForget404();
   if (originalViewport) {
     await page.viewport(originalViewport.width, originalViewport.height);
   }
@@ -169,13 +132,7 @@ beforeEach(async () => {
    */
   await page.viewport(1280, 720);
 
-  /*
-   * IMPORTANT: outerFolderListingHandler must be registered BEFORE
-   * galleryAppShellHandlers() because the app-shell handlers contain a
-   * wildcard catch-all for `/gallery/getUploadedFiles` that would otherwise
-   * intercept the folder-specific request first.
-   */
-  worker.use(linkedDocumentsHandler(), outerFolderListingHandler(), ...galleryAppShellHandlers());
+  worker.use(outerFolderListingHandler());
 });
 
 afterEach(() => {
