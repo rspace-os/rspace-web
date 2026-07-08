@@ -227,6 +227,7 @@ import com.researchspace.slack.SlackMessageSender;
 import com.researchspace.snapgene.wclient.SnapgeneWSClient;
 import com.researchspace.snapgene.wclient.SnapgeneWSClientImpl;
 import com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator;
+import com.researchspace.webapp.controller.AuditTrailSearchResultProvGenerator;
 import com.researchspace.webapp.controller.PaginationSettingsPreferences;
 import com.researchspace.webapp.controller.RepositoryConfigFactoryImpl;
 import com.researchspace.webapp.controller.SysadminCreateUserFormConfigurer;
@@ -1258,6 +1259,11 @@ public abstract class BaseConfig {
   @Bean
   AuditTrailSearchResultCsvGenerator auditTrailSearchResultCsvGenerator() {
     return new AuditTrailSearchResultCsvGenerator();
+  }
+
+  @Bean
+  AuditTrailSearchResultProvGenerator auditTrailSearchResultProvGenerator() {
+    return new AuditTrailSearchResultProvGenerator();
   }
 
   /**

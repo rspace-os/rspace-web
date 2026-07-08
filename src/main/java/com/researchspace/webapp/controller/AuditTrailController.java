@@ -29,11 +29,13 @@ import javax.validation.Valid;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -46,6 +48,7 @@ public class AuditTrailController extends BaseController {
   private @Autowired AuditTrailHandler auditTrailHandler;
   private @Autowired CommunityServiceManager communityMgr;
   private @Autowired AuditTrailSearchResultCsvGenerator auditTrailSearchResultCsvGenerator;
+  private @Autowired AuditTrailSearchResultProvGenerator auditTrailSearchResultProvGenerator;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
   @GetMapping("/auditing")
@@ -186,9 +189,10 @@ public class AuditTrailController extends BaseController {
     return new AjaxReturnObject<>(res, null);
   }
 
-  @GetMapping("/download")
+  @GetMapping("/download/{downloadType}")
   @ResponseBody
   public ResponseEntity<String> download(
+      @PathVariable String downloadType,
       @Valid AuditTrailUISearchConfig inputSearchConfig,
       BindingResult errors,
       PaginationCriteria<AuditTrailSearchResult> pgCrit)
@@ -202,10 +206,13 @@ public class AuditTrailController extends BaseController {
     pgCrit.setResultsPerPage(AuditTrailSearchResultCsvGenerator.MAX_RESULTS_PER_CSV);
     ISearchResults<AuditTrailSearchResult> res =
         auditTrailHandler.searchAuditTrail(inputSearchConfig, pgCrit, subject);
-    ResponseEntity<String> rc =
-        auditTrailSearchResultCsvGenerator.convertToCsv(res, inputSearchConfig);
-
-    return rc;
+    if (downloadType.equals("csv")) {
+      return auditTrailSearchResultCsvGenerator.convertToCsv(res, inputSearchConfig);
+    } else if (downloadType.equals("prov")) {
+      return auditTrailSearchResultProvGenerator.convertToProv(res);
+    } else {
+      return new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
+    }
   }
 
   private Optional<ErrorList> validateAndConfigure(
