@@ -213,6 +213,18 @@ public class ApiContainer extends ApiContainerInfo {
     }
   }
 
+  @Override
+  public void removeImageLinksForLimitedView() {
+    super.removeImageLinksForLimitedView();
+
+    List<ApiInventoryRecordInfo> storedContent = getStoredContent();
+    if (storedContent != null) {
+      for (ApiInventoryRecordInfo item : storedContent) {
+        item.removeImageLinksForLimitedView();
+      }
+    }
+  }
+
   public ApiContainerInfo toContainerInfoWithIdOnly() {
     ApiContainerInfo apiContainerInfo = new ApiContainerInfo();
     apiContainerInfo.setId(getId());

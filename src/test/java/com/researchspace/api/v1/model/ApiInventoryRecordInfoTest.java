@@ -126,6 +126,73 @@ public class ApiInventoryRecordInfoTest {
     assertTrue(hasImageOrThumbnailLink(rec));
   }
 
+  /**
+   * The limited-view copy of a subsample keeps the raw parent sample, whose permitted actions are
+   * never evaluated for the viewer, so both the subsample's from-parent image links and the nested
+   * sample's own links must be stripped off the limited-read subsample.
+   */
+  @Test
+  public void limitedReadSubSampleHasParentSampleImageLinksStripped() {
+    ApiSubSample subSample = limitedReadSubSampleOfImagedSample();
+
+    subSample.buildAndAddInventoryRecordLinks(BASE_URL);
+    assertTrue("subsample should get image links from parent", hasImageOrThumbnailLink(subSample));
+    assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
+
+    subSample.removeImageLinksForLimitedView();
+
+    assertFalse(hasImageOrThumbnailLink(subSample));
+    assertFalse(hasImageOrThumbnailLink(subSample.getSampleInfo()));
+  }
+
+  @Test
+  public void fullyReadableSubSampleKeepsParentSampleImageLinks() {
+    ApiSubSample subSample = limitedReadSubSampleOfImagedSample();
+    subSample.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.READ));
+
+    subSample.buildAndAddInventoryRecordLinks(BASE_URL);
+    subSample.removeImageLinksForLimitedView();
+
+    assertTrue(hasImageOrThumbnailLink(subSample));
+    assertTrue(hasImageOrThumbnailLink(subSample.getSampleInfo()));
+  }
+
+  /** Content of a readable container must still be stripped per-item, not just the container. */
+  @Test
+  public void limitedReadContainerContentHasImageLinksStripped() {
+    ApiSubSample limitedReadChild = limitedReadSubSampleOfImagedSample();
+    ApiContainerLocationWithContent location = new ApiContainerLocationWithContent(1, 1);
+    location.setContent(limitedReadChild);
+    ApiContainer container = new ApiContainer();
+    container.setId(3L);
+    container.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.READ));
+    container.setLocations(List.of(location));
+
+    container.buildAndAddInventoryRecordLinks(BASE_URL);
+    assertTrue(hasImageOrThumbnailLink(limitedReadChild));
+
+    container.removeImageLinksForLimitedView();
+
+    assertFalse(hasImageOrThumbnailLink(limitedReadChild));
+    assertFalse(hasImageOrThumbnailLink(limitedReadChild.getSampleInfo()));
+  }
+
+  private ApiSubSample limitedReadSubSampleOfImagedSample() {
+    ApiSampleWithoutSubSamples parentSample = new ApiSampleWithoutSubSamples();
+    parentSample.setId(1L);
+    parentSample.setCustomImage(true);
+    FileProperty fp = mock(FileProperty.class);
+    when(fp.getContentsHash()).thenReturn("contentshash");
+    parentSample.setImageFileProperty(fp);
+    parentSample.setThumbnailFileProperty(fp);
+
+    ApiSubSample subSample = new ApiSubSample();
+    subSample.setId(2L);
+    subSample.setSampleInfo(parentSample);
+    subSample.setPermittedActions(List.of(ApiInventoryRecordPermittedAction.LIMITED_READ));
+    return subSample;
+  }
+
   private static final UriComponentsBuilder BASE_URL =
       UriComponentsBuilder.fromHttpUrl("http://localhost:8080/api/inventory/v1");
 
