@@ -16,7 +16,7 @@ Our build toolchain requires Java 17. Currently using a different Java version t
 
 -   Install Java JDK17 via [Adoptium](https://adoptium.net/temurin/releases/?version=17)
 -   Optionally, install [jenv](https://github.com/jenv/jenv) to manage multiple versions of Java
--   Install MariaDB 10.11 (the version supported in production). For local development, newer versions (MariaDB 11.x or 12.x) should also work fine (the dockerized RSpace dev stack uses MariaDB 12).
+-   Install MariaDB 10.11 (the version supported in production). For local development, newer versions (MariaDB 11.x or 12.x) should also work fine (the dockerized RSpace dev stack uses MariaDB 12.3).
 
 Historically we were running RSpace on MySQL database, so some docs may still mention MySQL, but go with MariaDB.
 Database installation can be skipped if your only goal is to compile/build the project.
