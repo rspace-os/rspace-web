@@ -564,7 +564,7 @@ function TagsComboboxContent<
   }, [value]);
 
   const [debounceTimeout, setDebounceTimeout] = useState<NodeJS.Timeout | null>(null);
-  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 1000): () => void {
+  function debounce<FuncReturn>(func: () => FuncReturn, timeout: number = 300): () => void {
     return () => {
       if (debounceTimeout) {
         clearTimeout(debounceTimeout);
