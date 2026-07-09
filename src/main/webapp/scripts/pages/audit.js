@@ -265,9 +265,8 @@ function doSerializeForm(forDownload) {
 		requestData.push({"name":"domains", "value":domainsToSubmit.join(",") })
 	}
 	
-	// order by date descending until ordering is implemented
 	if(forDownload) {
-		requestData.push({name:"sortOrder", value:previousOrder});
+		requestData.push({name:"sortOrder", value:"ASC"});
 		requestData.push({name:"orderBy", value:previousOrderBy});
 	} else {
 		 requestData.push({name:"sortOrder", value:order});

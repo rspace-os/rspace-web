@@ -94,12 +94,12 @@
 	</button>
 	<button class="downloadAudit btn btn-default" type="submit" role="button" name="downloadAudit"
 	   data-download-endpoint="/audit/download/csv"
-	   value="Download Audit CSV Report" id="downloadAuditSubmit" style="width:160px; margin: 5px 0 12px 0;" >
+	   value="Download Audit CSV Report" id="downloadAuditSubmit" style="width:auto; margin: 5px 0 12px 0;" >
 	   <span><spring:message code="audit.downloadreport.csv.button.label"/></span>
 	</button>
 	<button class="downloadAudit btn btn-default" type="submit" role="button" name="downloadAuditProv"
 	   data-download-endpoint="/audit/download/prov"
-	   value="Download Audit PROV-JSON Report" id="downloadAuditProvSubmit" style="width:180px; margin: 5px 0 12px 0;" >
+	   value="Download Audit PROV-JSON Report" id="downloadAuditProvSubmit" style="width:auto; margin: 5px 0 12px 0;" >
 	   <span><spring:message code="audit.downloadreport.prov.button.label"/></span>
 	</button>
 	<spring:message code="audit.downloadreport.limit.label"/>
