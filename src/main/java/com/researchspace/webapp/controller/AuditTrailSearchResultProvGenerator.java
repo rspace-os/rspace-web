@@ -28,9 +28,11 @@ import org.openprovenance.prov.model.Entity;
 import org.openprovenance.prov.model.Namespace;
 import org.openprovenance.prov.model.ProvFactory;
 import org.openprovenance.prov.model.QualifiedName;
+import org.openprovenance.prov.model.SpecializationOf;
 import org.openprovenance.prov.model.Used;
 import org.openprovenance.prov.model.WasAssociatedWith;
 import org.openprovenance.prov.model.WasAttributedTo;
+import org.openprovenance.prov.model.WasDerivedFrom;
 import org.openprovenance.prov.model.WasGeneratedBy;
 import org.openprovenance.prov.model.WasInvalidatedBy;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +51,7 @@ public class AuditTrailSearchResultProvGenerator {
   private static final String RS_RESOURCE = "rs-resource";
   private static final String DCT = "dcterms";
   private static final String FOAF = "foaf";
+  private static final String OWL = "owl";
 
   @Value("${server.urls.prefix}")
   private String rspaceBase;
@@ -73,12 +76,17 @@ public class AuditTrailSearchResultProvGenerator {
                     DCT,
                     "http://purl.org/dc/terms/",
                     FOAF,
-                    "http://xmlns.com/foaf/0.1/")));
+                    "http://xmlns.com/foaf/0.1/",
+                    OWL,
+                    "http://www.w3.org/2002/07/owl#")));
     ns.addKnownNamespaces();
     ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
     List<AuditTrailSearchResult> auditEntries = res.getResults();
     Map<String, Agent> agents = new HashMap<>();
     Map<String, Entity> entities = new HashMap<>();
+    Map<String, List<Entity>> versions = new HashMap<>();
+    List<SpecializationOf> specializations = new ArrayList<>();
+    List<WasDerivedFrom> derivations = new ArrayList<>();
     List<Activity> activities = new ArrayList<>();
     List<WasAssociatedWith> associations = new ArrayList<>();
     List<WasAttributedTo> attributions = new ArrayList<>();
@@ -136,13 +144,18 @@ public class AuditTrailSearchResultProvGenerator {
         String resourceId = data.getOrDefault("id", "n/a").toString();
         String name = data.getOrDefault("name", "n/a").toString();
         if (!name.equals("n/a")) {
-          Attribute dct_title =
+          Attribute dctTitle =
               provFactory.newAttribute(
                   ns.qualifiedName(DCT, "title", provFactory),
                   name,
                   ns.qualifiedName("xsd", "string", provFactory));
           QualifiedName resourceQn = ns.qualifiedName(RS_RESOURCE, resourceId, provFactory);
-          Entity resource = provFactory.newEntity(resourceQn, List.of(dct_title));
+          Attribute sameAs =
+              provFactory.newAttribute(
+                  ns.qualifiedName(OWL, "sameAs", provFactory),
+                  resourceQn.getUri(),
+                  ns.qualifiedName("xsd", "string", provFactory));
+          Entity resource = provFactory.newEntity(resourceQn, List.of());
           entities.putIfAbsent(resourceId, resource);
           switch (action) {
             case CREATE:
@@ -153,6 +166,18 @@ public class AuditTrailSearchResultProvGenerator {
                       activityQn,
                       timestamp,
                       null));
+              QualifiedName firstVersionQn =
+                  ns.qualifiedName(RS_RESOURCE, resourceId + "v1", provFactory);
+              versions.putIfAbsent(
+                  resourceId,
+                  new ArrayList<>(
+                      List.of(provFactory.newEntity(firstVersionQn, List.of(dctTitle, sameAs)))));
+              specializations.add(
+                  provFactory.newQualifiedSpecializationOf(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      firstVersionQn,
+                      resourceQn,
+                      null));
               break;
             case DELETE:
               invalidations.add(
@@ -162,7 +187,29 @@ public class AuditTrailSearchResultProvGenerator {
                       activityQn,
                       timestamp,
                       null));
-            // TODO MOVE, WRITE
+              break;
+            case WRITE:
+            case RENAME:
+              // Entity generalEntity = entities.get(resourceId);
+              var previousVersions = versions.get(resourceId);
+              int versionNumber = previousVersions.size() + 1;
+              Entity latest = previousVersions.get(versionNumber - 2);
+              QualifiedName newVersionQn =
+                  ns.qualifiedName(RS_RESOURCE, resourceId + "v" + versionNumber, provFactory);
+              previousVersions.add(provFactory.newEntity(newVersionQn, List.of(dctTitle, sameAs)));
+              derivations.add(
+                  provFactory.newWasDerivedFrom(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      newVersionQn,
+                      latest.getId()));
+              specializations.add(
+                  provFactory.newQualifiedSpecializationOf(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      newVersionQn,
+                      resourceQn,
+                      null));
+              break;
+            // TODO MOVE
             default:
               uses.add(
                   provFactory.newUsed(
@@ -185,6 +232,9 @@ public class AuditTrailSearchResultProvGenerator {
     document.getStatementOrBundle().addAll(generations);
     document.getStatementOrBundle().addAll(uses);
     document.getStatementOrBundle().addAll(invalidations);
+    document.getStatementOrBundle().addAll(specializations);
+    document.getStatementOrBundle().addAll(derivations);
+    versions.values().stream().forEach(document.getStatementOrBundle()::addAll);
     interopF.writeDocument(os, ProvFormat.JSON, document);
     return createProvEntityResponse(os.toString());
   }
