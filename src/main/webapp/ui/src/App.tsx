@@ -63,7 +63,7 @@ window.addEventListener("load", () => {
   if (domContainer) {
     const root = createRoot(domContainer);
     root.render(
-      <I18nRoot namespaces={["inventory", "common"]} fullPage>
+      <I18nRoot namespaces={["inventory", "common", "about"]} fullPage>
         <App />
       </I18nRoot>,
     );

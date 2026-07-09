@@ -61,7 +61,7 @@ window.addEventListener("load", () => {
             <QueryClientProvider client={queryClient}>
               <Analytics>
                 <ErrorBoundary>
-                  <I18nRoot namespaces={["apps", "common"]} fullPage>
+                  <I18nRoot namespaces={["apps", "common", "about"]} fullPage>
                     <Alerts>
                       <App />
                     </Alerts>

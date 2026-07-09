@@ -190,6 +190,7 @@ const WholePage = ({
                     <AppBar
                       variant="page"
                       currentPage="gallery"
+                      ambientI18n
                       sidebarToggle={
                         <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                       }
@@ -486,7 +487,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common"]} fullPage>
+        <I18nRoot namespaces={["gallery", "common", "about"]} fullPage>
           <BrowserRouter>
             <Gallery />
           </BrowserRouter>
