@@ -131,11 +131,6 @@ public class AuditTrailSearchResultProvGenerator {
               ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
               activityQn,
               agentQn));
-      attributions.add(
-          provFactory.newWasAttributedTo(
-              ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-              activityQn,
-              agentQn));
       activities.add(activity);
       if (auditEntry.getData() != null
           && auditEntry.getData().getData() != null
@@ -157,6 +152,11 @@ public class AuditTrailSearchResultProvGenerator {
                   ns.qualifiedName("xsd", "string", provFactory));
           Entity resource = provFactory.newEntity(resourceQn, List.of());
           entities.putIfAbsent(resourceId, resource);
+          attributions.add(
+              provFactory.newWasAttributedTo(
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                  resourceQn,
+                  agentQn));
           switch (action) {
             case CREATE:
               generations.add(
@@ -178,6 +178,11 @@ public class AuditTrailSearchResultProvGenerator {
                       firstVersionQn,
                       resourceQn,
                       null));
+              attributions.add(
+                  provFactory.newWasAttributedTo(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      firstVersionQn,
+                      agentQn));
               break;
             case DELETE:
               invalidations.add(
@@ -197,17 +202,24 @@ public class AuditTrailSearchResultProvGenerator {
               QualifiedName newVersionQn =
                   ns.qualifiedName(RS_RESOURCE, resourceId + "v" + versionNumber, provFactory);
               previousVersions.add(provFactory.newEntity(newVersionQn, List.of(dctTitle, sameAs)));
-              derivations.add(
+              WasDerivedFrom derivation =
                   provFactory.newWasDerivedFrom(
                       ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
                       newVersionQn,
-                      latest.getId()));
+                      latest.getId());
+              derivation.setActivity(activityQn);
+              derivations.add(derivation);
               specializations.add(
                   provFactory.newQualifiedSpecializationOf(
                       ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
                       newVersionQn,
                       resourceQn,
                       null));
+              attributions.add(
+                  provFactory.newWasAttributedTo(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      newVersionQn,
+                      agentQn));
               break;
             // TODO MOVE
             default:
