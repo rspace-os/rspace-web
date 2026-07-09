@@ -146,7 +146,9 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
   const [state, setState] = useState<State>({ state: "init" });
 
   const supported =
-    ["sample", "subSample", "container", "sampleTemplate"].includes(record.recordType) && record.id !== null;
+    ["sample", "subSample", "container", "sampleTemplate", "instrument", "instrumentTemplate"].includes(
+      record.recordType,
+    ) && record.id !== null;
 
   useEffect(() => {
     if (open && supported) {

@@ -25,7 +25,7 @@ function LocationDisplay() {
   );
 }
 
-function renderAt(initialUrl: string, type: "sample" | "subsample") {
+function renderAt(initialUrl: string, type: "sample" | "subsample" | "instrument" | "instrumenttemplate") {
   return render(
     <MemoryRouter initialEntries={[initialUrl]}>
       <NavigateContext.Provider
@@ -57,6 +57,22 @@ describe("PermalinkRouter", () => {
     expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/subsample/4");
     expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
     // and the redirected route resolves to the versioned permalink search
+    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
+  });
+
+  test("a versioned instrument Global Id redirects with the version as a search param", () => {
+    renderAt("/inventory/instrument/IN4v1", "instrument");
+
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/instrument/4");
+    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
+    expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
+  });
+
+  test("a versioned instrument template Global Id redirects with the version as a search param", () => {
+    renderAt("/inventory/instrumenttemplate/NT4v1", "instrumenttemplate");
+
+    expect(screen.getByTestId("location-pathname")).toHaveTextContent("/inventory/instrumenttemplate/4");
+    expect(screen.getByTestId("location-search")).toHaveTextContent("version=1");
     expect(screen.getByTestId("search-router")).toHaveTextContent('"version":1');
   });
 

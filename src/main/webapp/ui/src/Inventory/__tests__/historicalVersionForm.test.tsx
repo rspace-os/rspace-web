@@ -8,15 +8,20 @@ import "@/__tests__/__mocks__/matchMedia";
 import { cleanup, render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom/vitest";
 import { ThemeProvider } from "@mui/material/styles";
+import type { ReactNode } from "react";
 import { IsValid } from "../../components/ValidatingSubmitButton";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";
 import { makeMockContainer } from "../../stores/models/__tests__/ContainerModel/mocking";
+import { makeMockInstrument } from "../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { personAttrs } from "../../stores/models/__tests__/PersonModel/mocking";
 import { makeMockRootStore } from "../../stores/stores/__tests__/RootStore/mocking";
 import { storesContext } from "../../stores/stores-context";
 import materialTheme from "../../theme";
 import ContainerForm from "../Container/Form";
 import SynchroniseFormSections from "../components/Stepper/SynchroniseFormSections";
+import InstrumentForm from "../Instrument/Form";
+import InstrumentTemplateForm from "../InstrumentTemplate/Form";
 
 class ResizeObserver {
   observe(): void {}
@@ -34,6 +39,18 @@ vi.mock("../components/Fields/ExtraFields/ExtraFields", () => ({
   default: vi.fn(() => <div></div>),
 }));
 vi.mock("../components/ContextMenu/ContextMenu", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Instrument/Fields/InstrumentTemplateField", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../Instrument/Fields/TemplateFields", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../InstrumentTemplate/Fields/CustomFields", () => ({
+  default: vi.fn(() => <div></div>),
+}));
+vi.mock("../InstrumentTemplate/Fields/InstrumentsList", () => ({
   default: vi.fn(() => <div></div>),
 }));
 vi.mock("../../common/InvApiService", () => ({
@@ -97,6 +114,95 @@ function renderContainerForm(activeResult: InventoryRecord) {
     </ThemeProvider>,
   );
 }
+
+function renderForm(FormComponent: () => ReactNode, activeResult: InventoryRecord) {
+  const rootStore = makeMockRootStore({
+    searchStore: {
+      activeResult,
+      fetcher: {
+        generateNewQuery: () => "foo",
+      },
+      search: {
+        activeResult,
+        processingContextActions: false,
+        fetcher: {
+          basketSearch: false,
+        },
+        batchEditableInstance: { loading: false, submittable: IsValid() },
+      },
+    },
+    unitStore: {
+      getUnit: () => ({
+        id: 1,
+        label: "items",
+        category: "dimensionless",
+        description: "",
+      }),
+      unitsOfCategory: () => [],
+    },
+  });
+  render(
+    <ThemeProvider theme={materialTheme}>
+      <storesContext.Provider value={rootStore}>
+        <SynchroniseFormSections>
+          <FormComponent />
+        </SynchroniseFormSections>
+      </storesContext.Provider>
+    </ThemeProvider>,
+  );
+}
+
+describe("Instrument Form and historical versions", () => {
+  window.ResizeObserver = ResizeObserver;
+  window.scrollTo = vi.fn();
+
+  afterEach(cleanup);
+
+  test("the HistoricalVersionAlert is shown for a historical instrument", () => {
+    renderForm(
+      InstrumentForm,
+      makeMockInstrument({
+        owner: personAttrs(),
+        version: 1,
+        historicalVersion: true,
+      }),
+    );
+
+    expect(screen.getByText("inventory:historicalVersion.title")).toBeInTheDocument();
+  });
+
+  test("the HistoricalVersionAlert is not shown for a live instrument", () => {
+    renderForm(InstrumentForm, makeMockInstrument({ owner: personAttrs() }));
+
+    expect(screen.queryByText("inventory:historicalVersion.title")).not.toBeInTheDocument();
+  });
+});
+
+describe("Instrument Template Form and historical versions", () => {
+  window.ResizeObserver = ResizeObserver;
+  window.scrollTo = vi.fn();
+
+  afterEach(cleanup);
+
+  test("the HistoricalVersionAlert is shown for a historical instrument template", () => {
+    renderForm(
+      InstrumentTemplateForm,
+      makeMockInstrumentTemplate({
+        owner: personAttrs(),
+        version: 1,
+        historicalVersion: true,
+      }),
+    );
+
+    expect(screen.getByText("inventory:historicalVersion.title")).toBeInTheDocument();
+  });
+
+  test("the HistoricalVersionAlert is not shown for a live instrument template", () => {
+    renderForm(InstrumentTemplateForm, makeMockInstrumentTemplate({ owner: personAttrs() }));
+
+    expect(screen.queryByText("inventory:historicalVersion.title")).not.toBeInTheDocument();
+  });
+});
 
 describe("Container Form and historical versions", () => {
   window.ResizeObserver = ResizeObserver;

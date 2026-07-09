@@ -35,8 +35,9 @@ export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "S
  * fall out of sync with its own Global ID format.
  */
 export const globalIdDefinitions = {
-  // samples, subsamples, containers, and templates support an optional
-  // version suffix (e.g. SS4v1), identifying a historical version
+  // samples, subsamples, containers, instruments, and templates (sample and
+  // instrument) support an optional version suffix (e.g. SS4v1), identifying
+  // a historical version
   sample: { pattern: /^sa\d+(v\d+)?$/i, prefix: "SA" },
   subsample: { pattern: /^ss\d+(v\d+)?$/i, prefix: "SS" },
   container: { pattern: /^ic\d+(v\d+)?$/i, prefix: "IC" },
@@ -47,7 +48,7 @@ export const globalIdDefinitions = {
   field: { pattern: /^sf\d+$/i, prefix: "SF" },
   document: { pattern: /^sd\d+$/i, prefix: "SD" },
   group: { pattern: /^gp\d+$/i, prefix: "GP" },
-  instrument: { pattern: /^in\d+$/i, prefix: "IN" },
+  instrument: { pattern: /^in\d+(v\d+)?$/i, prefix: "IN" },
   instrumentTemplate: { pattern: /^nt\d+(v\d+)?$/i, prefix: "NT" },
 } satisfies Record<string, { pattern: RegExp; prefix: GlobalIdPrefix }>;
 

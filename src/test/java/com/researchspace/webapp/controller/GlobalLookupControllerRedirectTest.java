@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,8 +49,14 @@ public class GlobalLookupControllerRedirectTest {
   }
 
   @Test
-  public void versionedInstrumentRemainsUnsupported() {
-    assertThrows(UnsupportedOperationException.class, () -> controller.globalIdLookUp("IN7v1"));
+  public void versionedInstrumentRedirectsToVersionedViewer() {
+    assertEquals("redirect:/inventory/instrument/7?version=1", controller.globalIdLookUp("IN7v1"));
+  }
+
+  @Test
+  public void versionedInstrumentTemplateRedirectsToVersionedViewer() {
+    assertEquals(
+        "redirect:/inventory/instrumenttemplate/7?version=2", controller.globalIdLookUp("NT7v2"));
   }
 
   @Test
