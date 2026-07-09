@@ -32,7 +32,7 @@ The following services/packages are required by RSpace and are the default packa
 
 * Java JDK 17
 * Tomcat 9.0.x
-* MariaDB 10.6
+* MariaDB (the default Ubuntu 22 package is 10.6; we recommend switching to 10.11 after installation)
 * Webserver (We recommend Apache 2.4.x)
 
 
@@ -78,7 +78,7 @@ Update and install required packages.
 	sudo apt-get update
 	sudo apt-get upgrade
 
-Reboot and repeat if necessary. Now install Java 17 ( the default fo Ubuntu22  is java 11 )
+Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu22 is java 11)
 
 	 sudo apt install openjdk-17-jre-headless
 
@@ -132,11 +132,11 @@ Once MariaDB is installed we run the secure installation script to remove any ex
     sudo mysql_secure_installation  (accept defaults.)
     
 On Ubuntu22:
-Follow instructions from https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-20-04. 
+Follow instructions from https://www.digitalocean.com/community/tutorials/how-to-install-mariadb-on-ubuntu-22-04. 
 
 Before creating RSpace database you must ensure that your database server settings are set 
  to use `utf8mb4` character encoding and `utf8mb4_unicode_ci` collation. 
-The default for MariaDB 10.6  is utf8mb4, which will  store scientific or non-Western language symbols, but it's worth checking. 
+The default for MariaDB 10.11 is utf8mb4, which will store scientific or non-Western language symbols, but it's worth checking. 
 
 Also configure `datadir` variable; this should be `/media/mysql` for a standard install. This is where datafiles will be kept.
 

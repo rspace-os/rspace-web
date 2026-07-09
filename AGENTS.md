@@ -33,7 +33,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 - Java 17 source level and Java 17 JDK runtime (Adoptium Temurin); Java 17 language features are allowed
 - Spring Framework (MVC, Security, WebSocket)
 - Maven 3.8.1+ build tool (`./mvnw`)
-- MariaDB 10.6 or 10.11 with Hibernate ORM + Envers auditing
+- MariaDB 10.11 with Hibernate ORM + Envers auditing
 - Liquibase for database migrations
 - Jetty embedded servlet container (dev)
 - Parent POM: `rspace-parent` (controls dependency versions — if a version isn't in this project's `pom.xml`, check the parent)
@@ -49,7 +49,7 @@ Java/Spring backend, React/TypeScript frontend, MariaDB.
 ### Prerequisites
 - Java 17 JDK (Adoptium Temurin recommended)
 - Maven 3.8.1+ or use `./mvnw`
-- MariaDB 10.6 or 10.11
+- MariaDB 10.11
 - Node 24 (frontend dev only)
 - `~/.m2/toolchains.xml` configured with Java 17 path
 
