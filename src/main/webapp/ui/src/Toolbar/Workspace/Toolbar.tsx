@@ -569,10 +569,7 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    // `content()` above resolves its text via `i18n.t()` directly rather than
-    // `useTranslation`, so it never re-renders once the namespace arrives —
-    // `I18nRoot` must gate WorkspaceToolbar's whole first render, not just its
-    // presentational output, or the toolbar freezes with raw i18n keys.
+    // content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys.
     <I18nRoot namespaces={["workspace", "common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
       <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
     </I18nRoot>,

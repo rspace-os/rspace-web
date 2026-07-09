@@ -29,14 +29,7 @@ export default function I18nRoot({
   children: React.ReactNode;
   namespaces?: readonly FlatNamespace[];
   componentMap?: RichTextComponents;
-  /**
-   * Shown while namespaces load. Defaults to nothing, which is correct for
-   * islands hidden until a user action (dialogs, toasts, menus). Callers that
-   * mount into visible, in-flow page space should pass something that
-   * occupies the same footprint (a `LoaderCircular` for full-page apps, a
-   * `Skeleton` or static lookalike for islands) so nothing reflows once the
-   * namespaces resolve.
-   */
+  /** Shown while namespaces load; defaults to nothing, right for hidden-until-triggered islands. */
   fallback?: React.ReactNode;
 }): React.ReactNode {
   return (

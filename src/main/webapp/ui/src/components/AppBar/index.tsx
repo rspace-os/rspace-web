@@ -339,16 +339,7 @@ type GalleryAppBarArgs = {
     title: string;
   };
 
-  /**
-   * Full-page SPAs (Gallery, Apps, Inventory) already wrap their whole tree in
-   * an `I18nRoot` that preloads "common" and "about" alongside the page's own
-   * namespace. In that context, pass `true` so the AppBar renders directly
-   * against that ambient `I18nRoot` instead of mounting a second, nested one.
-   * Nesting would gate the whole toolbar's render on its own "about" fetch,
-   * causing it to blank out again even after the page has already appeared.
-   * Leave this `false` (the default) for standalone islands and dialogs, which
-   * have no ambient `I18nRoot` above them and so need AppBar to provide one.
-   */
+  /** Pass `true` inside a full-page SPA that already provides an ambient `I18nRoot`, to avoid nesting a second one. */
   ambientI18n?: boolean;
 };
 function GalleryAppBar({

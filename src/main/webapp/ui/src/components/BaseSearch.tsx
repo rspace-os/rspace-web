@@ -80,12 +80,7 @@ function BaseSearch(props: {
   );
 }
 
-/**
- * Suspense fallback shown while the "common" namespace loads. Mirrors
- * `BaseSearch`'s markup with its known placeholder text and a disabled,
- * non-interactive input so the search bar's footprint doesn't shift once the
- * real component mounts.
- */
+/** I18nRoot fallback: a disabled lookalike so the search bar's footprint doesn't shift once it mounts. */
 function BaseSearchFallback({ placeholder, variant }: { placeholder: string; variant?: "elevation" | "outlined" }) {
   return (
     <Paper sx={{ boxShadow: "none" }} variant={variant} data-test-id="base-search-content">

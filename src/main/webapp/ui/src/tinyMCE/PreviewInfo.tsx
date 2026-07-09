@@ -162,13 +162,7 @@ function PreviewInfoFrame({ children, isTableOnly = false }: { children: React.R
   );
 }
 
-/**
- * Suspense fallback shown while the "apps"/"common"/"workspace" namespaces
- * load. Reuses `PreviewInfoFrame`'s chrome (border, radius, its own theme)
- * so the eventual real content doesn't shift the surrounding document text:
- * only the height, derived from the replaced img's own `height` attribute
- * where known, needs to match.
- */
+/** I18nRoot fallback: reuses PreviewInfoFrame's chrome sized to the source img's height, so document text doesn't shift. */
 function PreviewInfoFallback({ isTableOnly, height }: { isTableOnly?: boolean; height: number }) {
   return (
     <PreviewInfoFrame isTableOnly={isTableOnly}>
