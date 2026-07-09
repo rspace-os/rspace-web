@@ -32,6 +32,7 @@ import org.openprovenance.prov.model.Used;
 import org.openprovenance.prov.model.WasAssociatedWith;
 import org.openprovenance.prov.model.WasAttributedTo;
 import org.openprovenance.prov.model.WasGeneratedBy;
+import org.openprovenance.prov.model.WasInvalidatedBy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -83,6 +84,7 @@ public class AuditTrailSearchResultProvGenerator {
     List<WasAttributedTo> attributions = new ArrayList<>();
     List<WasGeneratedBy> generations = new ArrayList<>();
     List<Used> uses = new ArrayList<>();
+    List<WasInvalidatedBy> invalidations = new ArrayList<>();
     for (AuditTrailSearchResult auditEntry : auditEntries) {
       String subject = auditEntry.getEvent().getSubject();
       String fullName = auditEntry.getEvent().getFullName();
@@ -152,7 +154,15 @@ public class AuditTrailSearchResultProvGenerator {
                       timestamp,
                       null));
               break;
-            // TODO DELETE, MOVE, WRITE
+            case DELETE:
+              invalidations.add(
+                  provFactory.newWasInvalidatedBy(
+                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
+                      resourceQn,
+                      activityQn,
+                      timestamp,
+                      null));
+            // TODO MOVE, WRITE
             default:
               uses.add(
                   provFactory.newUsed(
@@ -174,6 +184,7 @@ public class AuditTrailSearchResultProvGenerator {
     document.getStatementOrBundle().addAll(attributions);
     document.getStatementOrBundle().addAll(generations);
     document.getStatementOrBundle().addAll(uses);
+    document.getStatementOrBundle().addAll(invalidations);
     interopF.writeDocument(os, ProvFormat.JSON, document);
     return createProvEntityResponse(os.toString());
   }
