@@ -25,15 +25,18 @@ export default function I18nRoot({
   children,
   namespaces,
   componentMap = muiRichTextComponents,
+  fullPage = false,
 }: {
   children: React.ReactNode;
   namespaces?: readonly FlatNamespace[];
   componentMap?: RichTextComponents;
+  /** Full-page apps show a loading spinner while namespaces load; islands render nothing. */
+  fullPage?: boolean;
 }): React.ReactNode {
   return (
     <I18nextProvider i18n={i18n}>
       <RichTextComponentsContext.Provider value={componentMap}>
-        <Suspense fallback={<LoaderCircular />}>
+        <Suspense fallback={fullPage ? <LoaderCircular /> : null}>
           <NamespacePreloader namespaces={namespaces}>{children}</NamespacePreloader>
         </Suspense>
       </RichTextComponentsContext.Provider>

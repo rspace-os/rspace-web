@@ -486,7 +486,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common"]}>
+        <I18nRoot namespaces={["gallery", "common"]} fullPage>
           <BrowserRouter>
             <Gallery />
           </BrowserRouter>

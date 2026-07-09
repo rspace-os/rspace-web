@@ -66,7 +66,7 @@ window.addEventListener("load", () => {
             <ErrorBoundary>
               <CssBaseline />
               <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
-                <I18nRoot namespaces={["about"]}>
+                <I18nRoot namespaces={["about"]} fullPage>
                   <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                     <DialogBoundary>
                       <Container maxWidth="sm">

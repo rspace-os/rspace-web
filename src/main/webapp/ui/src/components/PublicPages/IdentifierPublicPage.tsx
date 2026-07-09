@@ -754,7 +754,7 @@ window.addEventListener("load", (_e) => {
     const root = createRoot(domContainer);
     root.render(
       <MuiCssLayerProvider>
-        <I18nRoot namespaces={["public"]}>
+        <I18nRoot namespaces={["public"]} fullPage>
           <IdentifierPublicPage publicId={rsPublicId} />
         </I18nRoot>
       </MuiCssLayerProvider>,
