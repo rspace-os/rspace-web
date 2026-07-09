@@ -19,6 +19,7 @@ import SidebarToggle from "../../components/AppBar/SidebarToggle";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import { LandmarksProvider } from "../../components/LandmarksContext";
+import LoaderCircular from "../../components/LoadingCircular";
 import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../hooks/api/useUiPreference";
@@ -487,7 +488,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common", "about"]} fullPage>
+        <I18nRoot namespaces={["gallery", "common", "about"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
             <Gallery />
           </BrowserRouter>

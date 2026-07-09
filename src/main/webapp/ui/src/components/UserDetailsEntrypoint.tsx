@@ -1,3 +1,4 @@
+import Chip from "@mui/material/Chip";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot, type Root } from "react-dom/client";
@@ -108,9 +109,19 @@ function mountUserDetails(domContainer: Element): void {
   const root = createRoot(domContainer);
   mountedRoots.set(domContainer, root);
   root.render(
-    <I18nRoot namespaces={["common"]}>
-      <StyledEngineProvider injectFirst enableCssLayer>
-        <ThemeProvider theme={materialTheme}>
+    <StyledEngineProvider injectFirst enableCssLayer>
+      <ThemeProvider theme={materialTheme}>
+        <I18nRoot
+          namespaces={["common"]}
+          fallback={
+            <Chip
+              component="div"
+              variant="outlined"
+              label={label}
+              sx={(theme) => ({ mt: 0.5, mb: 0.5, height: theme.spacing(3), cursor: "default" })}
+            />
+          }
+        >
           <UserDetails
             userId={userId}
             fullName={fullName}
@@ -122,9 +133,9 @@ function mountUserDetails(domContainer: Element): void {
               window.RS?.trackEvent?.("user:open:user_details_popover");
             }}
           />
-        </ThemeProvider>
-      </StyledEngineProvider>
-    </I18nRoot>,
+        </I18nRoot>
+      </ThemeProvider>
+    </StyledEngineProvider>,
   );
 }
 

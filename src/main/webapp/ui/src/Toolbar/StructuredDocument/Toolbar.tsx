@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -305,7 +306,11 @@ window.renderToolbar = (newProps: any) => {
     canSign: newProps?.canSign ?? prevProps.canSign,
   };
   rootNode.render(
-    <I18nRoot namespaces={["common"]}>
+    // `content()` above resolves its text via `i18n.t()` directly rather than
+    // `useTranslation`, so it never re-renders once the namespace arrives —
+    // `I18nRoot` must gate StructuredDocumentToolbar's whole first render, not
+    // just its presentational output, or the toolbar freezes with raw i18n keys.
+    <I18nRoot namespaces={["common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
       <StructuredDocumentToolbar domContainer={domContainer} {...prevProps} canSign={prevProps.canSign} />
     </I18nRoot>,
   );

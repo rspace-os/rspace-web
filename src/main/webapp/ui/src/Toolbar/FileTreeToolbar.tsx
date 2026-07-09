@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
@@ -72,7 +73,11 @@ const domContainer = document.getElementById("fileTreeToolbar");
 // biome-ignore lint/style/noNonNullAssertion: initial biome migration
 const root = createRoot(domContainer!);
 root.render(
-  <I18nRoot namespaces={["common"]}>
+  // `content()` above resolves its text via `i18n.t()` directly rather than
+  // `useTranslation`, so it never re-renders once the namespace arrives —
+  // `I18nRoot` must gate FileTreeToolbar's whole first render, not just its
+  // presentational output, or the toolbar freezes with raw i18n keys.
+  <I18nRoot namespaces={["common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
     <FileTreeToolbar />
   </I18nRoot>,
 );

@@ -13,6 +13,7 @@ import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -568,7 +569,11 @@ window.renderToolbar = (newProps) => {
     },
   };
   rootNode.render(
-    <I18nRoot namespaces={["workspace", "common"]}>
+    // `content()` above resolves its text via `i18n.t()` directly rather than
+    // `useTranslation`, so it never re-renders once the namespace arrives —
+    // `I18nRoot` must gate WorkspaceToolbar's whole first render, not just its
+    // presentational output, or the toolbar freezes with raw i18n keys.
+    <I18nRoot namespaces={["workspace", "common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
       <WorkspaceToolbar domContainer={domContainer} {...prevProps} />
     </I18nRoot>,
   );

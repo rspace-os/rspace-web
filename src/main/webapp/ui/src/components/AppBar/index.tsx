@@ -27,6 +27,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import { menuClasses } from "@mui/material/Menu";
 import Popover from "@mui/material/Popover";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import SvgIcon from "@mui/material/SvgIcon";
 import { darken, lighten, useTheme } from "@mui/material/styles";
@@ -977,7 +978,13 @@ function GalleryAppBar({
     </AppBar>
   );
 
-  return ambientI18n ? appBar : <I18nRoot namespaces={["common", "about"]}>{appBar}</I18nRoot>;
+  return ambientI18n ? (
+    appBar
+  ) : (
+    <I18nRoot namespaces={["common", "about"]} fallback={<Skeleton variant="rectangular" height={48} />}>
+      {appBar}
+    </I18nRoot>
+  );
 }
 
 export default observer(GalleryAppBar);

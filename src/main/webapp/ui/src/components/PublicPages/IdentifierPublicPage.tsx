@@ -31,6 +31,7 @@ import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import LoaderCircular from "@/components/LoadingCircular";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import { formatList } from "@/modules/common/i18n/listFormat";
@@ -754,7 +755,7 @@ window.addEventListener("load", (_e) => {
     const root = createRoot(domContainer);
     root.render(
       <MuiCssLayerProvider>
-        <I18nRoot namespaces={["public"]} fullPage>
+        <I18nRoot namespaces={["public"]} fallback={<LoaderCircular />}>
           <IdentifierPublicPage publicId={rsPublicId} />
         </I18nRoot>
       </MuiCssLayerProvider>,
