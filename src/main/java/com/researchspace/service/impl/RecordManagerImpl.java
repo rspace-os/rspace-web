@@ -222,6 +222,10 @@ public class RecordManagerImpl implements RecordManager {
     createdDoc.setAllFieldsValid(listFields.stream().allMatch(Field::isMandatoryStateSatisfied));
     createdDoc.notifyDelta(
         DeltaType.CREATED_FROM_TEMPLATE, getTemplateCreationDeltaMsg(templateId, copy, createdDoc));
+    // the copy inherits the template owner's createdBy/modifiedBy, so reset to the creator
+    // (RSDEV-1144)
+    createdDoc.setCreatedBy(user.getUsername());
+    createdDoc.setModifiedBy(user.getUsername());
     // now update this so it is not a template
     createdDoc.removeType(RecordType.TEMPLATE);
 
