@@ -137,6 +137,28 @@ describe("CallableSnippetPreview", () => {
       expect(within(dialog).getByText("Cell 1")).toBeVisible();
     });
 
+    test("Should strip script and event-handler attributes from snippet HTML", async () => {
+      const user = userEvent.setup();
+      const malicious =
+        '<p id="benign">safe text</p>' +
+        '<img id="evil" src="x" onerror="window.__xss__ = true" />' +
+        "<script>window.__xss__ = true;</script>";
+      mockAxios.onGet("/api/v1/snippets/123/content").reply(200, malicious);
+
+      render(<CallableSnippetPreviewStory />);
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await within(dialog).findByText(/safe text/i);
+
+      /* eslint-disable testing-library/no-node-access -- asserting a non-semantic sink was sanitized */
+      const evilImg = dialog.querySelector("#evil");
+      expect(evilImg).toBeInTheDocument();
+      expect(evilImg).not.toHaveAttribute("onerror");
+      expect(dialog.querySelector("script")).not.toBeInTheDocument();
+      /* eslint-enable testing-library/no-node-access */
+    });
+
     test("Should display error message when loading fails", async () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewWithError />);

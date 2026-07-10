@@ -115,6 +115,11 @@ public class InventoryBulkOperationHandler {
     List<ApiInventoryRecordInfo> records = bulkOpConfig.getRecords();
     User user = bulkOpConfig.getUser();
     boolean onErrorStopWithException = bulkOpConfig.isOnErrorStopWithException();
+    // The canBeDeleted constraint only makes sense for deletion: it reports a sample that
+    // could not be removed because a subsample is still located in a container. Applying it to
+    // UPDATE/DUPLICATE/RESTORE/CHANGE_OWNER would falsely fail operations that have already
+    // succeeded, so it is scoped to DELETE.
+    boolean isDeleteOperation = bulkOpConfig.getOperationType() == BulkApiOperationType.DELETE;
     if (records != null) {
       for (ApiInventoryRecordInfo recInfo : records) {
         try {
@@ -123,9 +128,8 @@ public class InventoryBulkOperationHandler {
           }
           ApiInventoryRecordInfo operationResult = operation.apply(recInfo, user);
           if (operationResult != null) {
-            if (operationResult.getClass().isInstance(ApiSample.class)) {
-              ApiSample apiSample = (ApiSample) operationResult;
-              if (!apiSample.getCanBeDeleted()) {
+            if (isDeleteOperation && operationResult instanceof ApiSample apiSample) {
+              if (Boolean.FALSE.equals(apiSample.getCanBeDeleted())) {
                 ApiError err =
                     new ApiError(
                         HttpStatus.NOT_ACCEPTABLE,

@@ -2,6 +2,7 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import DOMPurify from "dompurify";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
@@ -75,7 +76,7 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
           ) : error ? (
             <p>{t("snippetPreview.error", { error })}</p>
           ) : snippetContent ? (
-            <div dangerouslySetInnerHTML={{ __html: snippetContent }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(snippetContent, { ADD_ATTR: ["target"] }) }} />
           ) : (
             <p>{t("snippetPreview.noContent")}</p>
           )}

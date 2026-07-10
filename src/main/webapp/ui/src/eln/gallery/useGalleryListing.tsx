@@ -1016,7 +1016,7 @@ export function useGalleryListing({
   const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<ReadonlyArray<GalleryFile>>([]);
-  const [api] = React.useState(
+  const [api] = React.useState(() =>
     getToken().then((token) =>
       axios.create({
         baseURL: "/api/v1",
