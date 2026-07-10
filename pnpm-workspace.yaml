@@ -14,12 +14,6 @@ overrides:
   # dependency (the workspace protocol only resolves inside miew's own
   # monorepo). Redirect it to the published miew 0.12.0 on npm.
   miew-react>miew: 0.12.0
-  # @mui/x-* is pinned at 9.8.0. Background: 9.6.0-9.7.0 shipped a broken
-  # @mui/x-internals that imports `core-js-pure/actual/disposable-stack` as a bare
-  # directory import, which Node/Vitest ESM rejects (ERR_UNSUPPORTED_DIR_IMPORT),
-  # failing ~22 test files at load time (mui/mui-x#22984). Fixed by mui/mui-x#22985:
-  # 9.8.0 drops the core-js-pure ponyfill entirely (native Symbol.dispose), so no
-  # vitest shim is needed.
 
 allowBuilds:
   lefthook: true
