@@ -78,7 +78,7 @@ Update and install required packages.
 	sudo apt-get update
 	sudo apt-get upgrade
 
-Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu22 is java 11)
+Reboot and repeat if necessary. Now install Java 17 (the default for Ubuntu 22 is Java 11)
 
 	 sudo apt install openjdk-17-jre-headless
 
