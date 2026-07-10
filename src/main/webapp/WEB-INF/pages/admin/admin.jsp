@@ -127,7 +127,7 @@
         <c:if test="${fn:startsWith(pageContext.request.servletPath, '/WEB-INF/pages/groups/sharing') && !publishedLinks_for_user_to_see && !publishedLinks_for_sysadmin_to_manage}"> currentPanel</c:if>">
         <a id="sharedDocumentsLink" href="/record/share/manage">
           <fmt:message key="menu.admin.listrecordsharing"/><br>
-          <img src="/images/icons/manageShared.png" class="menuInnerPanelIcon" style="max-height: 80px">
+          <img src="/images/icons/manageShared.png" class="menuInnerPanelIcon">
         </a>
       </li>
       <shiro:hasAnyRoles name="ROLE_PI,ROLE_USER">

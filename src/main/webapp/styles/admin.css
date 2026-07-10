@@ -16,6 +16,9 @@
   width: 100%;
   object-fit: contain; }
 
+#sharedDocumentsLink .menuInnerPanelIcon {
+  max-height: 80px; }
+
 .menuInnerPanelIconNew {
   display: block;
   margin: 4px auto 0;
