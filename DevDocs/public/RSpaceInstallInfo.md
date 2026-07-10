@@ -44,7 +44,7 @@ The examples below refer to Debian/Ubuntu installations
 
 ## RSpace database
 
--  standard MariaDB 10.6 - 10.11
+-  standard MariaDB 10.11
 -  Restart: `sudo systemctl restart mariadb`
 
 ## Important log files

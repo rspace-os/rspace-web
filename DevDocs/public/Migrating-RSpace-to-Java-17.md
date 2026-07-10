@@ -5,7 +5,7 @@
 
 Before starting, gracefully stop the tomcat9 service. As a result, this will stop RSpace from running while you perform the steps below.
 
-You will be working on this file "/usr/share/tomcat9/bin/setenv.sh", please take a backup of the file before making the changes below. This is the location of the file on Ubuntu 20.04 / 22.04 running tomcat9. Open this file with your preferred text editor.
+You will be working on this file "/usr/share/tomcat9/bin/setenv.sh", please take a backup of the file before making the changes below. This is the location of the file on Ubuntu 22.04 running tomcat9. Open this file with your preferred text editor.
 
 1. Replace "**JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64**" at the top of that file with "**JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64**". If it's not already there, add the latter to the top of your file.
 
