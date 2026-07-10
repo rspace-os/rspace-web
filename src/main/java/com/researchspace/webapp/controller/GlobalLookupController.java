@@ -31,7 +31,8 @@ public class GlobalLookupController extends BaseController {
    *       <li>StructuredDocuments
    *       <li>Folders
    *       <li>Groups
-   *       <li>Inventory: Samples, Subsamples, Templates, Containers
+   *       <li>Inventory: Samples, Subsamples, Templates, Containers, Instruments, Instrument
+   *           Templates
    *     </ul>
    */
   @GetMapping("/{oid}")
@@ -70,7 +71,13 @@ public class GlobalLookupController extends BaseController {
 
   /** Inventory record types whose version-suffixed global IDs open the versioned viewer. */
   private static final Set<GlobalIdPrefix> VERSIONED_INVENTORY_PREFIXES =
-      EnumSet.of(GlobalIdPrefix.SA, GlobalIdPrefix.SS, GlobalIdPrefix.IC, GlobalIdPrefix.IT);
+      EnumSet.of(
+          GlobalIdPrefix.SA,
+          GlobalIdPrefix.SS,
+          GlobalIdPrefix.IC,
+          GlobalIdPrefix.IT,
+          GlobalIdPrefix.IN,
+          GlobalIdPrefix.NT);
 
   private String getRedirect(GlobalIdentifier oid) {
     GlobalIdPrefix prefix = oid.getPrefix();

@@ -7,6 +7,8 @@ import { renderWithRealI18n, wrapWithRealI18n } from "@/__tests__/helpers/realI1
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../common/InvApiService";
+import { makeMockInstrument } from "../../../../stores/models/__tests__/InstrumentModel/mocking";
+import { makeMockInstrumentTemplate } from "../../../../stores/models/__tests__/InstrumentTemplateModel/mocking";
 import { makeMockSample } from "../../../../stores/models/__tests__/SampleModel/mocking";
 import { makeMockSubSample } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
@@ -169,6 +171,58 @@ describe("VersionHistory", () => {
     await screen.findByRole("table");
     const link = screen.getByRole("link", { name: "Version 1" });
     expect(link).toHaveAttribute("href", "/inventory/sampletemplate/1?version=1");
+  });
+
+  test("shows the version history of an instrument", async () => {
+    const spy = vi
+      .spyOn(InvApiService, "get")
+      .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
+    const instrument = makeMockInstrument({ version: 2 });
+    await renderVersionHistory(instrument);
+
+    expect(screen.getByText("2")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    expect(await screen.findByRole("table")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("instruments/1/revisions");
+  });
+
+  test("an instrument version row links to the versioned viewer URL", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
+    );
+    const instrument = makeMockInstrument({ version: 2 });
+    await renderVersionHistory(instrument);
+    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+
+    await screen.findByRole("table");
+    const link = screen.getByRole("link", { name: "Version 1" });
+    expect(link).toHaveAttribute("href", "/inventory/instrument/1?version=1");
+  });
+
+  test("shows the version history of an instrument template", async () => {
+    const spy = vi
+      .spyOn(InvApiService, "get")
+      .mockImplementation(() => Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])));
+    const instrumentTemplate = makeMockInstrumentTemplate({ version: 2 });
+    await renderVersionHistory(instrumentTemplate);
+
+    expect(screen.getByText("2")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+    expect(await screen.findByRole("table")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("instrumentTemplates/1/revisions");
+  });
+
+  test("an instrument template version row links to the versioned viewer URL", async () => {
+    vi.spyOn(InvApiService, "get").mockImplementation(() =>
+      Promise.resolve(revisionsResponse([{ revisionId: 100, version: 1 }])),
+    );
+    const instrumentTemplate = makeMockInstrumentTemplate({ version: 2 });
+    await renderVersionHistory(instrumentTemplate);
+    fireEvent.click(screen.getByRole("button", { name: "View version history" }));
+
+    await screen.findByRole("table");
+    const link = screen.getByRole("link", { name: "Version 1" });
+    expect(link).toHaveAttribute("href", "/inventory/instrumenttemplate/1?version=1");
   });
 
   test("shows an informational message when there is no history yet", async () => {

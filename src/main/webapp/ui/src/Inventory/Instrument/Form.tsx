@@ -14,6 +14,7 @@ import LocationField from "../components/Fields/Location";
 import NameField from "../components/Fields/Name";
 import OwnerField from "../components/Fields/Owner";
 import TagsField from "../components/Fields/Tags";
+import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
@@ -129,7 +130,12 @@ function InstrumentForm(): ReactNode {
   const owner: Person = activeResult.owner;
 
   return (
-    <Stepper titleText={activeResult.name} resetScrollPosition={activeResult} factory={activeResult.factory}>
+    <Stepper
+      stickyAlert={activeResult.historicalVersion ? <HistoricalVersionAlert record={activeResult} /> : null}
+      titleText={activeResult.name}
+      resetScrollPosition={activeResult}
+      factory={activeResult.factory}
+    >
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
         whatLabel={t("recordTypes.instrument.lower")}

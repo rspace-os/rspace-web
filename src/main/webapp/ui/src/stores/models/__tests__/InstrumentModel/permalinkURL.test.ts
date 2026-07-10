@@ -19,4 +19,17 @@ describe("InstrumentModel.permalinkURL", () => {
     const instrument = makeMockInstrument({ id: 1, globalId: "IN1" });
     expect(instrument.permalinkURL).not.toBeNull();
   });
+
+  test("carries the version for a historical record", () => {
+    const instrument = makeMockInstrument({
+      version: 2,
+      historicalVersion: true,
+    });
+    expect(instrument.permalinkURL).toBe("/inventory/instrument/1?version=2");
+  });
+
+  test("is unversioned for a live record", () => {
+    const instrument = makeMockInstrument({ version: 3 });
+    expect(instrument.permalinkURL).toBe("/inventory/instrument/1");
+  });
 });

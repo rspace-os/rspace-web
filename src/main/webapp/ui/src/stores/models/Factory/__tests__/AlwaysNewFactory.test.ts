@@ -1,6 +1,8 @@
 import { describe, expect, test, vi } from "vitest";
 import type { GlobalId } from "../../../definitions/BaseRecord";
 import { containerAttrs } from "../../__tests__/ContainerModel/mocking";
+import { instrumentAttrs } from "../../__tests__/InstrumentModel/mocking";
+import { instrumentTemplateAttrs } from "../../__tests__/InstrumentTemplateModel/mocking";
 import { personAttrs } from "../../__tests__/PersonModel/mocking";
 import { makeMockSample, sampleAttrs } from "../../__tests__/SampleModel/mocking";
 import { subsampleAttrs } from "../../__tests__/SubSampleModel/mocking";
@@ -61,6 +63,26 @@ describe("AlwaysNewFactory", () => {
         },
       );
       expect(container.recordType).toBe("container");
+    });
+
+    test("instantiate an instrument from e.g. IN4v1.", () => {
+      const factory = new AlwaysNewFactory();
+      const instrument = factory.newRecord(
+        instrumentAttrs({ globalId: "IN4v1" }) as Record<string, unknown> & {
+          globalId: GlobalId;
+        },
+      );
+      expect(instrument.recordType).toBe("instrument");
+    });
+
+    test("instantiate an instrument template from e.g. NT7v2.", () => {
+      const factory = new AlwaysNewFactory();
+      const instrumentTemplate = factory.newRecord(
+        instrumentTemplateAttrs({ globalId: "NT7v2" }) as Record<string, unknown> & {
+          globalId: GlobalId;
+        },
+      );
+      expect(instrumentTemplate.recordType).toBe("instrumentTemplate");
     });
   });
 

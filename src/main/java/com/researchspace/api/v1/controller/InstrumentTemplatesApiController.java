@@ -14,12 +14,14 @@ import com.researchspace.api.v1.model.ApiInventoryBulkOperationPost.BulkApiOpera
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult.InventoryBulkOperationStatus;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.service.impl.SpringMultipartFileAdapter;
 import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.record.IconEntity;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.inventory.InventoryAuditApiManager;
 import com.researchspace.service.inventory.impl.InventoryBulkOperationHandler;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -46,6 +48,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
   private @Autowired InventoryBulkOperationHandler bulkOperationHandler;
   private @Autowired InstrumentTemplatePostValidator postValidator;
   private @Autowired InstrumentTemplatePutValidator putValidator;
+  private @Autowired InventoryAuditApiManager inventoryAuditMgr;
 
   @Override
   public ApiInstrumentTemplateSearchResult getTemplatesForUser(
@@ -91,10 +94,24 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       @RequestAttribute(name = "user") User user) {
     ApiInstrumentTemplate template =
         instrumentApiMgr.getApiInstrumentTemplateVersion(id, version, user);
-    if (template != null) {
-      buildAndAddInventoryRecordLinks(template);
+    if (template == null) {
+      throw new NotFoundException(createNotFoundMessage("Instrument template version", version));
     }
+    buildAndAddInventoryRecordLinks(template);
     return template;
+  }
+
+  @Override
+  public ApiInventoryRecordRevisionList getInstrumentTemplateAllRevisions(
+      @PathVariable Long id, @RequestAttribute(name = "user") User user) {
+    InstrumentTemplate dbTemplate = instrumentApiMgr.assertUserCanReadInstrumentTemplate(id, user);
+    ApiInventoryRecordRevisionList revisions =
+        inventoryAuditMgr.getInventoryRecordRevisions(dbTemplate);
+    for (ApiInventoryRecordRevisionList.ApiInventoryRecordRevision templateRev :
+        revisions.getRevisions()) {
+      buildAndAddInventoryRecordLinks(templateRev.getRecord());
+    }
+    return revisions;
   }
 
   @Override

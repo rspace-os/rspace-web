@@ -3,7 +3,6 @@ import type React from "react";
 import i18n from "@/modules/common/i18n";
 import type { _LINK } from "@/util/types";
 import InstrumentHeader from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/InstrumentHeader";
-import ApiService from "../../common/InvApiService";
 import RsSet from "../../util/set";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
@@ -26,7 +25,7 @@ import type { ContainerAttrs } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { HasLocationMixin } from "./HasLocation";
-import InstrumentTemplateModel, { type InstrumentTemplateAttrs } from "./InstrumentTemplateModel";
+import type InstrumentTemplateModel from "./InstrumentTemplateModel";
 import InventoryBaseRecord, {
   defaultVisibleResultFields,
   type InventoryBaseRecordEditableFields,
@@ -65,6 +64,8 @@ export type InstrumentAttrs = {
   extraFields?: Array<ExtraFieldAttrs>;
   fields?: Array<FieldModelAttrs>;
   templateVersion?: number | null;
+  version?: number | null;
+  historicalVersion?: boolean;
   _links: Array<_LINK>;
 } & Record<string, unknown>;
 
@@ -241,9 +242,13 @@ export default class InstrumentModel
     await super.fetchAdditionalInfo(silent);
     if (this.templateId) {
       const templateId = this.templateId;
-      const { data } = await ApiService.get<InstrumentTemplateAttrs>("instrumentTemplates", String(templateId));
+      const template = await getRootStore().searchStore.getInstrumentTemplate(
+        templateId,
+        this.templateVersion,
+        this.factory.newFactory(),
+      );
       runInAction(() => {
-        this.template = new InstrumentTemplateModel(this.factory.newFactory(), data);
+        this.template = template;
       });
     }
     getRootStore().trackingStore.trackEvent("InventoryRecordAccessed", {

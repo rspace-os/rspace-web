@@ -443,8 +443,15 @@ export default class SearchStore {
     return new TemplateModel(factory, data);
   }
 
-  async getInstrumentTemplate(id: number, factory: Factory): Promise<InstrumentTemplateModel> {
-    const { data } = await ApiService.get<InstrumentTemplateAttrs>("instrumentTemplates", `${id}`);
+  async getInstrumentTemplate(
+    id: number,
+    version: number | null | undefined,
+    factory: Factory,
+  ): Promise<InstrumentTemplateModel> {
+    const { data } = await ApiService.get<InstrumentTemplateAttrs>(
+      "instrumentTemplates",
+      typeof version === "number" ? `${id}/versions/${version}` : `${id}`,
+    );
     return new InstrumentTemplateModel(factory, data);
   }
 

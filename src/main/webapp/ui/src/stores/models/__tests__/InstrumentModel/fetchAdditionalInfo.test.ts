@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import InvApiService from "../../../../common/InvApiService";
-import { instrumentTemplateAttrs } from "../InstrumentTemplateModel/mocking";
+import { makeMockInstrumentTemplate } from "../InstrumentTemplateModel/mocking";
 import { instrumentAttrs, makeMockInstrument } from "./mocking";
 
 const mockRootStore = {
@@ -9,6 +9,9 @@ const mockRootStore = {
   },
   uiStore: {
     addAlert: vi.fn(),
+  },
+  searchStore: {
+    getInstrumentTemplate: vi.fn(),
   },
 };
 
@@ -42,7 +45,7 @@ describe("InstrumentModel.fetchAdditionalInfo", () => {
 
   test("fetches and sets the template when templateId is present", async () => {
     const instrument = makeMockInstrument({ id: 1, templateId: 10 });
-    const templateData = instrumentTemplateAttrs({ id: 10, globalId: "NT10" });
+    const template = makeMockInstrumentTemplate({ id: 10, globalId: "NT10" });
 
     vi.spyOn(InvApiService, "query").mockResolvedValue({
       data: instrumentAttrs({ templateId: 10 }),
@@ -52,18 +55,49 @@ describe("InstrumentModel.fetchAdditionalInfo", () => {
       // biome-ignore lint/suspicious/noExplicitAny: test setup
       config: {} as any,
     });
-    vi.spyOn(InvApiService, "get").mockResolvedValue({
-      data: templateData,
+    mockRootStore.searchStore.getInstrumentTemplate.mockResolvedValue(template);
+
+    await instrument.fetchAdditionalInfo();
+    expect(instrument.template).not.toBeNull();
+    expect(instrument.template?.id).toBe(10);
+  });
+
+  test("pins the template fetch to templateVersion when set", async () => {
+    const instrument = makeMockInstrument({ id: 1, templateId: 10, templateVersion: 3 });
+    const template = makeMockInstrumentTemplate({ id: 10, globalId: "NT10" });
+
+    vi.spyOn(InvApiService, "query").mockResolvedValue({
+      data: instrumentAttrs({ templateId: 10, templateVersion: 3 }),
       status: 200,
       statusText: "OK",
       headers: {},
       // biome-ignore lint/suspicious/noExplicitAny: test setup
       config: {} as any,
     });
+    mockRootStore.searchStore.getInstrumentTemplate.mockResolvedValue(template);
 
     await instrument.fetchAdditionalInfo();
-    expect(instrument.template).not.toBeNull();
-    expect(instrument.template?.id).toBe(10);
+
+    expect(mockRootStore.searchStore.getInstrumentTemplate).toHaveBeenCalledWith(10, 3, expect.anything());
+  });
+
+  test("fetches the live template when templateVersion is null", async () => {
+    const instrument = makeMockInstrument({ id: 1, templateId: 10, templateVersion: null });
+    const template = makeMockInstrumentTemplate({ id: 10, globalId: "NT10" });
+
+    vi.spyOn(InvApiService, "query").mockResolvedValue({
+      data: instrumentAttrs({ templateId: 10, templateVersion: null }),
+      status: 200,
+      statusText: "OK",
+      headers: {},
+      // biome-ignore lint/suspicious/noExplicitAny: test setup
+      config: {} as any,
+    });
+    mockRootStore.searchStore.getInstrumentTemplate.mockResolvedValue(template);
+
+    await instrument.fetchAdditionalInfo();
+
+    expect(mockRootStore.searchStore.getInstrumentTemplate).toHaveBeenCalledWith(10, null, expect.anything());
   });
 
   test("tracks an inventory access event", async () => {

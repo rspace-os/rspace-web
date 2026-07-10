@@ -24,7 +24,7 @@ function InstrumentsList(): React.ReactNode {
   const handleSearch = (query: string) => {
     void instrumentsSearch().fetcher.performInitialSearch({
       query,
-      parentGlobalId: activeResult.globalId,
+      parentGlobalId: activeResult.globalIdOfLatest,
     });
   };
 

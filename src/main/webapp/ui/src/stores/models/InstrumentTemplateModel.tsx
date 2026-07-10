@@ -1,4 +1,4 @@
-import { action, makeObservable, observable, override } from "mobx";
+import { action, computed, makeObservable, observable, override } from "mobx";
 import type React from "react";
 import i18n from "@/modules/common/i18n";
 import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
@@ -47,6 +47,7 @@ export type InstrumentTemplateAttrs = {
   permittedActions: Array<Action>;
   tags: string | null;
   version?: number;
+  historicalVersion?: boolean;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
@@ -101,13 +102,14 @@ export default class InstrumentTemplateModel
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
+      globalIdOfLatest: computed,
     });
 
     if (this.recordType === "instrumentTemplate") this.populateFromJson(factory, params, {});
 
     this.search = new Search({
       fetcherParams: {
-        parentGlobalId: this.globalId,
+        parentGlobalId: this.globalIdOfLatest,
         resultType: "INSTRUMENT",
       },
       uiConfig: {
@@ -125,6 +127,11 @@ export default class InstrumentTemplateModel
 
   get cardTypeLabel(): string {
     return inventoryRecordTypeLabels.instrumentTemplate;
+  }
+
+  get globalIdOfLatest(): GlobalId | null {
+    if (!this.id) return null;
+    return `NT${this.id}`;
   }
 
   get recordTypeLabel(): string {
@@ -253,7 +260,7 @@ export default class InstrumentTemplateModel
   private async setActiveResultToLatest(): Promise<InstrumentTemplateModel> {
     const id = this.id;
     if (!id) throw new Error("id is required.");
-    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, this.factory.newFactory());
+    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, null, this.factory.newFactory());
     await mainSearch().setActiveResult(latest);
     mainSearch().replaceResult(latest);
     return latest;

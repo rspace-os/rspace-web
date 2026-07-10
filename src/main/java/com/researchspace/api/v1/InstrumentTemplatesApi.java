@@ -11,6 +11,7 @@ import com.researchspace.api.v1.model.ApiInstrumentTemplate;
 import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInstrumentTemplateSearchResult;
 import com.researchspace.api.v1.model.ApiInventoryBulkOperationResult;
+import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.model.User;
 import java.io.IOException;
 import javax.servlet.http.HttpServletResponse;
@@ -44,6 +45,9 @@ public interface InstrumentTemplatesApi {
 
   @GetMapping(path = "/{id}/versions/{version}")
   ApiInstrumentTemplate getInstrumentTemplateVersionById(Long id, Long version, User user);
+
+  @GetMapping(value = "/{id}/revisions")
+  ApiInventoryRecordRevisionList getInstrumentTemplateAllRevisions(Long id, User user);
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)

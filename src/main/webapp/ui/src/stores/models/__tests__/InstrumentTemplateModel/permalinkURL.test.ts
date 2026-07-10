@@ -19,4 +19,17 @@ describe("InstrumentTemplateModel.permalinkURL", () => {
     const template = makeMockInstrumentTemplate({ id: 1, globalId: "NT1" });
     expect(template.permalinkURL).not.toBeNull();
   });
+
+  test("carries the version for a historical record", () => {
+    const template = makeMockInstrumentTemplate({
+      version: 2,
+      historicalVersion: true,
+    });
+    expect(template.permalinkURL).toBe("/inventory/instrumenttemplate/1?version=2");
+  });
+
+  test("is unversioned for a live record", () => {
+    const template = makeMockInstrumentTemplate({ version: 3 });
+    expect(template.permalinkURL).toBe("/inventory/instrumenttemplate/1");
+  });
 });
