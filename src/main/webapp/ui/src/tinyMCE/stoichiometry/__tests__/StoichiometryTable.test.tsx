@@ -295,7 +295,7 @@ describe("StoichiometryTable", () => {
     fetchMock.resetMocks();
     mockAxios.reset();
     mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData());
-    mockAxios.onGet("/session/ajax/livechatProperties").reply(200, {});
+    mockAxios.onGet("/session/ajax/livechatProperties").reply(200, { livechatEnabled: false });
     mockAxios.onAny().reply(200, {});
   });
 
