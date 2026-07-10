@@ -1,6 +1,5 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 
 const { mockAxiosGet } = vi.hoisted(() => ({
   mockAxiosGet: vi.fn<(url: string, config: { params: URLSearchParams }) => Promise<{ data: string }>>(),

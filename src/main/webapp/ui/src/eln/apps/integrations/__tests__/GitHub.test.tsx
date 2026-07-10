@@ -1,8 +1,9 @@
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
 import { observable } from "mobx";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { render, within } from "@/__tests__/customQueries";
+
+import { findTableCell } from "@/__tests__/tableQueries";
 import axios from "@/common/axios";
 import { Optional } from "../../../../util/optional";
 import type { IntegrationStates } from "../../useIntegrationsEndpoint";
@@ -149,8 +150,7 @@ describe("GitHub", () => {
       });
       const newReposTable = screen.getAllByRole("table")[1];
       expect(
-        // @ts-expect-error findTableCell comes from customQueries
-        await within(newReposTable).findTableCell({
+        await findTableCell(newReposTable, {
           columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
@@ -285,15 +285,13 @@ describe("GitHub", () => {
       });
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
-        // @ts-expect-error findTableCell comes from customQueries
-        await within(connectedReposTable).findTableCell({
+        await findTableCell(connectedReposTable, {
           columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("a repo");
       expect(
-        // @ts-expect-error findTableCell comes from customQueries
-        await within(allReposTable).findTableCell({
+        await findTableCell(allReposTable, {
           columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),

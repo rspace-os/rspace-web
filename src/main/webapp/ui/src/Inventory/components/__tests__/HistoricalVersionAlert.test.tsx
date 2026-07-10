@@ -2,9 +2,8 @@
  * @vitest-environment jsdom
  */
 
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 import { makeMockContainer } from "../../../stores/models/__tests__/ContainerModel/mocking";
 import { makeMockSubSample } from "../../../stores/models/__tests__/SubSampleModel/mocking";
 import HistoricalVersionAlert from "../HistoricalVersionAlert";

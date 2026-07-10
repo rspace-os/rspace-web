@@ -191,13 +191,14 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 
 ### Frontend Testing Patterns
 
+- **Test helpers:** Import ordinary Testing Library helpers such as `render` and `within` directly from `@testing-library/react`. Import focused helpers only when needed: `findTableCell` / `getIndexOfTableCell` from `@/__tests__/tableQueries`, and `expectAccessible` from `@/__tests__/accessibility`.
 - **Path alias:** `@/` resolves to `src/` in imports.
 - **Fetch mocking:** `vitest-fetch-mock` is enabled globally in test setup.
 - **Accessibility:** `@sa11y/vitest` is integrated — use `toBeAccessible` matcher.
 - **Test setup:** Global setup in `src/__tests__/setup.ts` polyfills `localStorage`, `sessionStorage`, `TextEncoder`/`TextDecoder`.
 - **Console suppression:** Use `silenceConsole()` from test helpers to suppress expected errors.
 - **Test timeout:** 20 seconds (configured in `vitest.config.ts`).
-- **Vitest must execute with `src/main/webapp/ui` as its working directory.** The `vite.config.ts` that owns module aliases (`@/` -> `src/`, `Styles` -> `src/util/styles.ts`) lives there. Running `vitest` from any other directory produces module-resolution failures such as `Cannot find package '@/__tests__/customQueries'` or `Cannot find package 'Styles'`, which look like a source bug but are a cwd problem. Since the pnpm migration the package.json lives at the repo root, so the sanctioned entry is `pnpm test <path-relative-to-ui>` from the repo root (the script cd's into `ui` itself). `npx vitest run <path>` from inside `ui` also works. Beware: `pnpm exec vitest` from inside `ui` can fail with `ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE` because `ui` no longer has its own package.json.
+- **Vitest must execute with `src/main/webapp/ui` as its working directory.** The `vite.config.ts` that owns module aliases (`@/` -> `src/`, `Styles` -> `src/util/styles.ts`) lives there. Running `vitest` from any other directory produces module-resolution failures such as `Cannot find package '@/__tests__/tableQueries'` or `Cannot find package 'Styles'`, which look like a source bug but are a cwd problem. Since the pnpm migration the package.json lives at the repo root, so the sanctioned entry is `pnpm test <path-relative-to-ui>` from the repo root (the script cd's into `ui` itself). `npx vitest run <path>` from inside `ui` also works. Beware: `pnpm exec vitest` from inside `ui` can fail with `ERR_PNPM_RECURSIVE_EXEC_NO_PACKAGE` because `ui` no longer has its own package.json.
 - **Lint dialect required by this repo's ESLint config — write it compliant from the first draft instead of fixing up afterwards:**
   - Use `expect(node).toBeInTheDocument()` / `not.toBeInTheDocument()`, never `.toBeTruthy()` / `toBeNull()` for DOM existence.
   - Use `expect(node).toHaveAttribute(name, value)`, never `expect(node.getAttribute(name)).toBe(value)`.
