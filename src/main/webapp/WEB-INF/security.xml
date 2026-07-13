@@ -7,9 +7,27 @@
        default-lazy-init="true">
 
     <bean id="authc" name="authc" class="org.apache.shiro.web.filter.authc.PassThruAuthenticationFilter" />
+
+    <!-- Lazy proxy standing in for the securityManager so that injecting it does not
+         instantiate it. shiroFilter (a BeanPostProcessor, SHIRO-829) and the
+         AuthorizationAttributeSourceAdvisor below are both created before context refresh
+         completes; a direct ref would drag the realms' entire service-bean dependency
+         graph into that early window, where annotation-driven advice (@Transactional,
+         Shiro's authorization annotations) is silently skipped. See the AOP notes in
+         applicationContext-service.xml. The real securityManager is initialised right
+         after refresh by TransactionAdviceStartupCheck. -->
+    <bean id="securityManagerLazy" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="targetSource">
+            <bean class="org.springframework.aop.target.LazyInitTargetSource">
+                <property name="targetBeanName" value="securityManager" />
+            </bean>
+        </property>
+        <property name="proxyInterfaces" value="org.apache.shiro.web.mgt.WebSecurityManager" />
+    </bean>
+
     <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
 
-        <property name="securityManager" ref="securityManager" />
+        <property name="securityManager" ref="securityManagerLazy" />
         <!-- override these for application-specific URLs if you like: -->
 
         <property name="loginUrl" value="/login" />
@@ -87,7 +105,7 @@
     <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator"
           depends-on="lifecycleBeanPostProcessor" />
     <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
-        <property name="securityManager" ref="securityManager" />
+        <property name="securityManager" ref="securityManagerLazy" />
     </bean>
 
 </beans>

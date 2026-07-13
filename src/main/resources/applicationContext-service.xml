@@ -31,21 +31,26 @@
         <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
         <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
         <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
-        <!-- Component-scanned service-layer beans not matching *Manager patterns need
-             explicit advisors here; class-level @Transactional alone is NOT reliable for
-             them. Mechanism: shiroFilter (ShiroFilterFactoryBean, security.xml) is a
-             BeanPostProcessor, so it is created during BPP registration and its
-             securityManager reference eagerly instantiates the realm's entire service-bean
-             dependency graph (~200 beans) before context refresh completes. While that
-             happens, the <tx:annotation-driven> advisor (internalTransactionAdvisor) is
-             itself still mid-creation, and Spring's advisor retrieval SKIPS in-creation
-             advisors ("Skipping currently created advisor" at TRACE). Every @Transactional
-             bean in that window is therefore proxied permanently WITHOUT transaction
-             advice. The plain XML advisors below finish creating instantly, so they still
-             apply inside the window. See SHIRO-829 and RSDEV-444 review finding M1: do not
-             remove these in favour of @Transactional without verifying the bean is created
-             after context refresh (transactional tests cannot catch this; the test context
-             uses applicationContext-test-service.xml and never loads security.xml). -->
+        <!-- Explicit advisors for service-layer beans not matching the *Manager patterns
+             above. Historically these were REQUIRED because class-level @Transactional
+             was unreliable: shiroFilter (ShiroFilterFactoryBean, security.xml) is a
+             BeanPostProcessor, and its securityManager reference used to eagerly
+             instantiate the realms' entire service-bean dependency graph (~200 beans)
+             before context refresh completed. In that window the <tx:annotation-driven>
+             advisor (internalTransactionAdvisor) is itself still mid-creation and Spring's
+             advisor retrieval SKIPS in-creation advisors ("Skipping currently created
+             advisor" at TRACE), so every @Transactional bean created there was proxied
+             permanently WITHOUT transaction advice (SHIRO-829). Plain XML advisors finish
+             creating instantly and are immune.
+             That window is now closed: security.xml injects a LAZY proxy of the
+             securityManager (see securityManagerLazy there), so the realm graph
+             initialises just AFTER refresh, when annotation advisors work, and
+             TransactionAdviceStartupCheck both triggers that initialisation and fails
+             startup if an early-instantiated bean is still missing transaction advice.
+             New service beans can therefore rely on @Transactional. The advisors below
+             remain because the classes they cover carry no annotations. Verify any change
+             to this wiring in the running app, not tests: the test context uses
+             applicationContext-test-service.xml and never loads security.xml. -->
         <aop:advisor id="contentInitializerTx" advice-ref="txAdvice" pointcut="execution(* *..service.IContentInitializer.*(..))" order="2"/>
         <aop:advisor id="shareApiTx" advice-ref="txAdvice" pointcut="execution(* *..service.ShareApiService.*(..))" order="2"/>
         <aop:advisor id="contentUpdaterTx" advice-ref="txAdvice" pointcut="execution(* *..service.impl.UserContentUpdater.*(..))" order="2"/>
