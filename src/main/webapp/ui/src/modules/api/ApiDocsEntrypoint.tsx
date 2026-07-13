@@ -1,6 +1,7 @@
 import React from "react";
 import { createRoot } from "react-dom/client";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import LoaderCircular from "@/components/LoadingCircular";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import ApiDocsPage from "./components/ApiDocsPage";
 
@@ -19,7 +20,7 @@ window.addEventListener("load", () => {
   createRoot(domContainer).render(
     <React.StrictMode>
       <ErrorBoundary>
-        <I18nRoot>
+        <I18nRoot fallback={<LoaderCircular />}>
           <ApiDocsPage />
         </I18nRoot>
       </ErrorBoundary>

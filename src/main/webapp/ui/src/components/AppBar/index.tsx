@@ -841,7 +841,7 @@ function GalleryAppBar({
                       onClick={(e) => {
                         e.preventDefault();
                         setAccountMenuAnchorEl(null);
-                        window.open("/public/publishedView/publishedDocuments", "_target");
+                        window.open("/public/publishedView/publishedDocuments", "_blank", "noopener,noreferrer");
                       }}
                       component="a"
                       href="/public/publishedView/publishedDocuments"
