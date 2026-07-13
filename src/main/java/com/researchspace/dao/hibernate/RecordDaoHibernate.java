@@ -625,12 +625,14 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
 
   @Override
   public int updateRecordToFolder(RecordToFolder toUpdate, Long newFolderId) {
-    // Hibernate 6 HQL requires property paths, not SQL column names.
+    // Hibernate 6 HQL requires property paths, not SQL column names, and the SET target must be
+    // the association itself (bound to an entity reference), not a dereferenced .id path.
+    Folder newFolder = getSession().getReference(Folder.class, newFolderId);
     return getSession()
         .createMutationQuery(
-            "update RecordToFolder rtf set rtf.folder.id = :newFolderId"
+            "update RecordToFolder rtf set rtf.folder = :newFolder"
                 + " where rtf.folder.id = :fid and rtf.record.id = :recordId")
-        .setParameter("newFolderId", newFolderId)
+        .setParameter("newFolder", newFolder)
         .setParameter("fid", toUpdate.getFolder().getId())
         .setParameter("recordId", toUpdate.getRecord().getId())
         .executeUpdate();

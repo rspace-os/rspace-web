@@ -128,19 +128,30 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
    *
    * <p>{@inheritDoc}
    */
-  @SuppressWarnings("unchecked")
   public T save(T object) {
+    return persistOrMerge(object);
+  }
+
+  /**
+   * Saves an entity of any type using the same new/managed-vs-detached logic as {@link
+   * #save(Object)}: {@code persist()} for new or session-managed instances (preserving
+   * same-instance semantics) and {@code merge()} for detached instances. Subclasses that save
+   * entities other than their primary {@code persistentClass} should use this rather than {@code
+   * session.merge()} or {@code PersistenceUnitUtil.getIdentifier()} directly (see {@link
+   * #getEntityId} for why).
+   *
+   * @return the managed instance; callers must use this, not the argument (see {@link
+   *     #save(Object)}).
+   */
+  @SuppressWarnings("unchecked")
+  protected <E> E persistOrMerge(E object) {
     Session session = getSession();
     Object id = getEntityId(object, session);
-    if (id == null) {
+    if (id == null || session.contains(object)) {
       session.persist(object);
       return object;
     }
-    if (session.contains(object)) {
-      session.persist(object);
-      return object;
-    }
-    return (T) session.merge(object);
+    return (E) session.merge(object);
   }
 
   /**

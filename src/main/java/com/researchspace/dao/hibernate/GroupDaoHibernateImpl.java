@@ -85,6 +85,14 @@ public class GroupDaoHibernateImpl extends GenericDaoHibernate<Group, Long> impl
       if (filter == null) {
         return createEmptyResultSet(pgCrit);
       }
+      // If the search terms cannot be parsed we return no results, matching the pre-migration
+      // behaviour: an unparseable filter must not fall through to an unfiltered "list all" query.
+      try {
+        filter.getSearchTermField2Values();
+      } catch (Exception e) {
+        log.error("problem with converting search criteria to search terms", e);
+        return createEmptyResultSet(pgCrit);
+      }
     }
 
     CriteriaQuery<Long> countQuery = builder.createQuery(Long.class);

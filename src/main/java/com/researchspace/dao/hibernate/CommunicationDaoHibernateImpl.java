@@ -2,6 +2,7 @@ package com.researchspace.dao.hibernate;
 
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.SearchResultsImpl;
+import com.researchspace.core.util.SortOrder;
 import com.researchspace.dao.CommunicationDao;
 import com.researchspace.dao.GenericDaoHibernate;
 import com.researchspace.model.PaginationCriteria;
@@ -430,7 +431,8 @@ public class CommunicationDaoHibernateImpl extends GenericDaoHibernate<Communica
     if (defaultAlias != null && orderBy.indexOf(".") == -1) {
       orderBy = defaultAlias + "." + orderBy;
     }
-    return " order by " + orderBy + " " + pgCrit.getSortOrder().toString();
+    String direction = SortOrder.ASC.equals(pgCrit.getSortOrder()) ? "asc" : "desc";
+    return " order by " + orderBy + " " + direction;
   }
 
   private List<Long> getPageFromIdList(List<Long> ids, PaginationCriteria<?> pgCrit) {

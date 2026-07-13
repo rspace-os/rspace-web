@@ -243,13 +243,9 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
         rc, pgCrit.getPageNumber().intValue(), userCount, pgCrit.getResultsPerPage());
   }
 
-  private String applySearchRestrictionsToHQL(UserSearchCriteria sc) {
-    return applySearchRestrictionsToHQL(sc, null);
-  }
-
   /**
-   * @param params if non-null, date parameters will be added to this map (key=param name,
-   *     value=Date) for use with query.setParameter()
+   * @param params date parameters are added to this map (key=param name, value=Date) for binding
+   *     via query.setParameter(); must not be null.
    */
   private String applySearchRestrictionsToHQL(UserSearchCriteria sc, Map<String, Object> params) {
     var clauses = new ArrayList<String>();
@@ -546,13 +542,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
   @Override
   public UserProfile saveUserProfile(UserProfile profile) {
-    Session session = getSession();
-    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(profile);
-    if (id == null) {
-      session.persist(profile);
-      return profile;
-    }
-    return (UserProfile) session.merge(profile);
+    return persistOrMerge(profile);
   }
 
   @Override

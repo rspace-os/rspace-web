@@ -323,13 +323,7 @@ public class FileMetadataHibernate extends GenericDaoHibernate<FileProperty, Lon
   }
 
   public FileStoreRoot saveFileStoreRoot(FileStoreRoot root) {
-    Session session = getSession();
-    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(root);
-    if (id == null) {
-      session.persist(root);
-      return root;
-    }
-    return (FileStoreRoot) session.merge(root);
+    return persistOrMerge(root);
   }
 
   public void resetCurrentFileStoreRoot(boolean external) {
