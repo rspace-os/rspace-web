@@ -9,10 +9,10 @@ import DialogTitle from "@mui/material/DialogTitle";
 import Grow from "@mui/material/Grow";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
-import docLinks from "../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import IconButtonWithTooltip from "./IconButtonWithTooltip";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
@@ -24,13 +24,14 @@ type TextAreaDialogArgs = {
 };
 
 export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: TextAreaDialogArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [dialogOpen, setDialogOpen] = useState(false);
   const onClose = () => setDialogOpen(false);
   return visible ? (
     <>
       <Grow in={visible}>
         <IconButtonWithTooltip
-          title="Expand field"
+          title={t("searchDialog.expandField")}
           icon={<SettingsOverscanIcon />}
           onClick={() => {
             setDialogOpen(true);
@@ -39,7 +40,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
         />
       </Grow>
       <Dialog open={dialogOpen} onClose={onClose}>
-        <DialogTitle>Search query</DialogTitle>
+        <DialogTitle>{t("searchDialog.query")}</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <TextField
@@ -59,32 +60,17 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
             />
             <Box>
               <DialogContentText>
-                Tip: Create powerful Lucene queries by prefixing your query with{" "}
-                <Typography
-                  variant="inherit"
-                  component="samp"
-                  sx={{ bgcolor: "#eee", borderRadius: "3px", p: "1px 2px" }}
-                >
-                  l:
-                </Typography>
+                <TransRichText i18nKey="common:searchDialog.luceneTip" />
               </DialogContentText>
               <DialogContentText>
-                For more information, see{" "}
-                <a href={docLinks.luceneSyntax} rel="noreferrer" target="_blank">
-                  advanced search
-                </a>{" "}
-                and the related{" "}
-                <a href="https://lucene.apache.org/core/2_9_4/queryparsersyntax.html" rel="noreferrer" target="_blank">
-                  Apache page
-                </a>
-                .
+                <TransRichText i18nKey="common:searchDialog.moreInfo" />
               </DialogContentText>
             </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setQuery({ target: { value: "" } })}>Clear</Button>
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={() => setQuery({ target: { value: "" } })}>{t("actions.clear")}</Button>
+          <Button onClick={onClose}>{t("actions.close")}</Button>
           <SubmitSpinnerButton
             loading={false}
             disabled={false}
@@ -92,7 +78,7 @@ export default function TextAreaDialog({ onSubmit, setQuery, query, visible }: T
               onSubmit();
               onClose();
             }}
-            label="Search"
+            label={t("actions.search")}
           />
         </DialogActions>
       </Dialog>

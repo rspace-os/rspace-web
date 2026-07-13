@@ -2,6 +2,7 @@ import OpenWithIcon from "@mui/icons-material/OpenWith";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import useStores from "../../../stores/use-stores";
 import { match } from "../../../util/Util";
@@ -16,6 +17,7 @@ type MoveActionArgs = {
 
 const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveActionArgs>(
   ({ as, selectedResults, disabled, closeMenu }, ref) => {
+    const { t } = useTranslation(["inventory", "common"]);
     const { moveStore } = useStores();
 
     const handleOpen = () => {
@@ -42,7 +44,7 @@ const MoveAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, MoveAc
           <ContextMenuAction
             onClick={handleOpen}
             icon={<OpenWithIcon />}
-            label="Move"
+            label={t("common:actions.move")}
             as={as}
             ref={ref}
             disabledHelp={disabledHelp}

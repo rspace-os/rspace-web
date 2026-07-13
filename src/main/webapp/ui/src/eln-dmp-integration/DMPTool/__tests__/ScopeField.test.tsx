@@ -5,7 +5,11 @@ import materialTheme from "../../../theme";
 import ScopeField, { type Scope } from "../ScopeField";
 
 describe("ScopeField", () => {
-  test.each(["Mine", "Public", "Both"])("getDMPs is called correctly when the scope is %s", (scope: string) => {
+  test.each([
+    ["apps:dmpIntegrations.scope.mine", "MINE"],
+    ["apps:dmpIntegrations.scope.public", "PUBLIC"],
+    ["apps:dmpIntegrations.scope.both", "BOTH"],
+  ])("getDMPs is called correctly when the scope key is %s", (key: string, scopeValue: string) => {
     cleanup();
 
     const getDMPs = vi.fn<(scope: Scope) => void>();
@@ -14,8 +18,8 @@ describe("ScopeField", () => {
         <ScopeField getDMPs={getDMPs} />
       </ThemeProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: scope }));
+    fireEvent.click(screen.getByRole("radio", { name: key }));
     expect(getDMPs).toHaveBeenCalledTimes(1);
-    expect(getDMPs).toHaveBeenCalledWith(scope.toUpperCase());
+    expect(getDMPs).toHaveBeenCalledWith(scopeValue);
   });
 });

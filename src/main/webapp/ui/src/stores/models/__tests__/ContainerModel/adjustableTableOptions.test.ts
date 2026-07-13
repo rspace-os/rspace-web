@@ -3,18 +3,18 @@ import { personAttrs } from "../PersonModel/mocking";
 import { makeMockContainer } from "./mocking";
 
 describe("adjustableTableOptions", () => {
-  describe("Number of Empty Locations", () => {
+  describe("numberOfEmptyLocations", () => {
     test("List containers should have unlimited empty locations.", () => {
       const container = makeMockContainer({
         cType: "LIST",
         owner: personAttrs(),
       });
 
-      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("numberOfEmptyLocations");
       expect(optionValue).not.toBeNull();
       // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
-      expect(cellContent().data).toEqual("Unlimited");
+      expect(cellContent().data).toEqual("inventory:container.availableLocations.unlimited");
     });
     test("Empty grid containers should render the number of locations.", () => {
       const container = makeMockContainer({
@@ -29,7 +29,7 @@ describe("adjustableTableOptions", () => {
         owner: personAttrs(),
       });
 
-      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("numberOfEmptyLocations");
       expect(optionValue).not.toBeNull();
       // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;
@@ -49,7 +49,7 @@ describe("adjustableTableOptions", () => {
         contentSummary: null,
       });
 
-      const optionValue = container.adjustableTableOptions().get("Number of Empty Locations");
+      const optionValue = container.adjustableTableOptions().get("numberOfEmptyLocations");
       expect(optionValue).not.toBeNull();
       // biome-ignore lint/style/noNonNullAssertion: initial biome migration
       const cellContent = optionValue!;

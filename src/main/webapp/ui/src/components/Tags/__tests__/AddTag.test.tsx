@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import "@/__tests__/__mocks__/muiTransitions";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import AddTag from "../AddTag";
+import { FINAL_DATA_SIGNAL } from "../ParseEncodedTagStrings";
 
 describe("AddTag", () => {
   beforeEach(() => {
@@ -21,23 +24,25 @@ describe("AddTag", () => {
   });
 
   test("opening the popover does not log a missing-input-element error", async () => {
-    fetchMock.mockResponse(JSON.stringify({ data: ["alpha", "beta"] }));
+    const user = userEvent.setup();
+    fetchMock.mockResponse(JSON.stringify({ data: ["alpha", "beta", FINAL_DATA_SIGNAL] }));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     render(<AddTag enforceOntologies={false} onSelection={() => {}} value={[]} />);
 
-    fireEvent.click(screen.getByText("Add Tag"));
+    await user.click(screen.getByText("common:tags.addTag"));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Filter suggested tags")).toBeVisible();
+      expect(screen.getByLabelText("common:tags.filterSuggestedTags")).toBeVisible();
     });
 
-    // give effects a tick to flush
-    await new Promise((r) => setTimeout(r, 50));
+    // give effects a tick to flush, wrapped so any resulting state updates are captured
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
 
     const messages = errorSpy.mock.calls.map((c) => c.map((arg) => String(arg)).join(" "));
 
-    expect(messages.filter((m) => m.includes("Unable to find the input element"))).toEqual([]);
-    expect(messages.filter((m) => m.includes('A props object containing a "key" prop is being spread'))).toEqual([]);
+    expect(messages).toEqual([]);
   });
 });

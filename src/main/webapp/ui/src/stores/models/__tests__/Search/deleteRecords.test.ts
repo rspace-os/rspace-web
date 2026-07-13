@@ -124,7 +124,7 @@ describe("action: deleteRecords", () => {
         expect.objectContaining({
           details: expect.arrayContaining([
             expect.objectContaining({
-              title: expect.stringContaining("The container 'A list container' is not empty."),
+              title: expect.stringContaining("inventory:bulkAlerts.error.containerNotEmpty.title"),
             }),
           ]),
         }),

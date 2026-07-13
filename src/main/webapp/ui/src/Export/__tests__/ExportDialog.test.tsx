@@ -1,12 +1,16 @@
 import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
+import type React from "react";
 import { useState } from "react";
+import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
 import axios from "@/common/axios";
+import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
+import workspaceEn from "@/modules/common/i18n/locales/en-US/workspace.json";
 import Alerts from "../../components/Alerts/Alerts";
 import type { ExportSelection } from "../common";
 import ExportDialog from "../ExportDialog";
@@ -78,7 +82,12 @@ const arbDocumentSelection = (args: { max?: number } = {}) =>
       }),
     }),
   );
-function renderExportDialog({ allowFileStores }: { allowFileStores?: boolean } = {}): {
+type RenderExportDialogArgs = {
+  allowFileStores?: boolean;
+  RealI18nWrapper?: React.ComponentType<{ children: React.ReactNode }>;
+};
+
+function renderExportDialog({ allowFileStores, RealI18nWrapper }: RenderExportDialogArgs = {}): {
   setProps: (props: { selection: ExportSelection; open: boolean }) => void;
 } {
   // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
@@ -95,16 +104,34 @@ function renderExportDialog({ allowFileStores }: { allowFileStores?: boolean } =
       setSelection(s);
       setOpen(o);
     };
-    return (
+    const dialog = (
       <Alerts>
         <ExportDialog exportSelection={selection} open={open} allowFileStores={allowFileStores ?? false} />
       </Alerts>
     );
+    return RealI18nWrapper ? <RealI18nWrapper>{dialog}</RealI18nWrapper> : dialog;
   };
   render(<Wrapper />);
   if (!setProps) throw new Error("setProps is not initialised");
   return { setProps };
 }
+
+async function renderExportDialogWithRealI18n({ allowFileStores }: { allowFileStores?: boolean } = {}) {
+  const RealI18nWrapper = await createRealI18nWrapper({
+    resources: { common: commonEn, workspace: workspaceEn },
+    defaultNS: "workspace",
+  });
+  return renderExportDialog({ allowFileStores, RealI18nWrapper });
+}
+
+/*
+ * In cimode, i18n renders the untranslated key (e.g.
+ * "workspace:export.format.pdf.pageSize.a4") rather than the real page size
+ * text, so tests must match against the key's lowercase suffix rather than
+ * the API's uppercase pageSize value ("A4"/"LETTER").
+ */
+const PAGE_SIZE_KEY_SUFFIX: Record<string, string> = { A4: "a4", LETTER: "letter" };
+
 describe("ExportDialog", () => {
   mockAxios.onGet("deploymentproperties/ajax/property").reply(200, true);
   test("Should be renderable", () => {
@@ -130,7 +157,7 @@ describe("ExportDialog", () => {
           .onPost("/nfsExport/ajax/createQuickExportPlan")
 
           .reply(200, { ...CREATE_QUICK_EXPORT_PLAN });
-        const { setProps } = renderExportDialog({ allowFileStores: true });
+        const { setProps } = await renderExportDialogWithRealI18n({ allowFileStores: true });
         act(() => {
           setProps({
             open: true,
@@ -144,7 +171,7 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^.ZIP bundle containing .HTML files/,
+            name: (name) => name.startsWith(".ZIP bundle containing .HTML files"),
           }),
         );
         await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
@@ -184,7 +211,7 @@ describe("ExportDialog", () => {
             },
           ],
         });
-        const { setProps } = renderExportDialog({ allowFileStores: true });
+        const { setProps } = await renderExportDialogWithRealI18n({ allowFileStores: true });
         act(() => {
           setProps({
             open: true,
@@ -198,7 +225,7 @@ describe("ExportDialog", () => {
         });
         await user.click(
           screen.getByRole("radio", {
-            name: /^.ZIP bundle containing .HTML files/,
+            name: (name) => name.startsWith(".ZIP bundle containing .HTML files"),
           }),
         );
         await user.click(screen.getByRole("checkbox", { name: "Include filestore links" }));
@@ -277,14 +304,18 @@ describe("ExportDialog", () => {
         });
       });
 
-      await user.click(await screen.findByRole("radio", { name: /PDF/ }));
-      await user.click(screen.getByRole("checkbox", { name: /Export to a repository/ }));
+      await user.click(
+        await screen.findByRole("radio", {
+          name: (name) => name.startsWith("workspace:export.format.chooser.formats.pdfHeading"),
+        }),
+      );
+      await user.click(screen.getByRole("checkbox", { name: "workspace:export.format.chooser.exportToRepository" }));
 
-      await user.click(screen.getByRole("button", { name: /Next/ }));
-      await screen.findByRole("textbox", { name: /File name/ });
-      await user.click(screen.getByRole("button", { name: /Next/ }));
-      await screen.findByRole("radio", { name: /Zenodo/ });
-      expect(await screen.findByRole("button", { name: /BT-20/ })).toBeVisible();
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      await screen.findByRole("textbox", { name: "workspace:export.format.pdf.name" });
+      await user.click(screen.getByRole("button", { name: "common:actions.next" }));
+      await screen.findByRole("radio", { name: "Zenodo" });
+      expect(await screen.findByRole("button", { name: "BT-20 cell" })).toBeVisible();
     });
   });
   describe("Completing the export, makes the right call to /export/ajax/exportArchive", () => {
@@ -315,25 +346,29 @@ describe("ExportDialog", () => {
           });
           await user.click(
             screen.getByRole("radio", {
-              name: /^.ZIP bundle containing .XML files/,
+              name: (name) => name.startsWith("workspace:export.format.chooser.formats.xmlHeading"),
             }),
           );
           if (setAllVersionsSwitch) {
             await user.click(
               await screen.findByRole("checkbox", {
-                name: /^Check to include all previous versions of your documents/,
+                name: "workspace:export.format.chooser.includeAllVersions",
               }),
             );
           }
-          const nextButton = screen.getByRole("button", { name: "Next" });
+          const nextButton = screen.getByRole("button", { name: "common:actions.next" });
           await waitFor(() => expect(nextButton).toBeEnabled());
           await user.click(nextButton);
           const exportButton = await screen.findByRole("button", {
-            name: "Export",
+            name: "common:actions.export",
           });
-          fireEvent.click(exportButton);
+          await user.click(exportButton);
           await waitFor(() => {
-            expect(screen.getByText(/submitted to the server/)).toBeVisible();
+            expect(
+              screen.getByText(
+                "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready.",
+              ),
+            ).toBeVisible();
           });
           expect(mockAxios.history.post.length).toBe(1);
           expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.allVersions).toBe(setAllVersionsSwitch);
@@ -350,7 +385,8 @@ describe("ExportDialog", () => {
           200,
           "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready.",
         );
-      const { setProps } = renderExportDialog();
+      const user = userEvent.setup();
+      const { setProps } = await renderExportDialogWithRealI18n();
       act(() => {
         setProps({
           open: true,
@@ -362,17 +398,21 @@ describe("ExportDialog", () => {
           },
         });
       });
-      fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
-      fireEvent.click(screen.getByRole("button", { name: "Next" }));
+      await user.click(await screen.findByRole("radio", { name: (name) => name.startsWith(".DOC file") }));
+      await user.click(screen.getByRole("button", { name: "Next" }));
       await waitFor(() => expect(screen.getByRole("combobox")).toBeVisible());
-      fireEvent.mouseDown(screen.getByRole("combobox"));
-      fireEvent.click(screen.getByRole("option", { name: "Letter" }));
-      fireEvent.click(screen.getByRole("checkbox", { name: "Set LETTER as default." }));
+      await user.click(screen.getByRole("combobox"));
+      await user.click(screen.getByRole("option", { name: "Letter" }));
+      await user.click(screen.getByRole("checkbox", { name: "Set LETTER as default." }));
 
       mockAxios.resetHistory();
-      fireEvent.click(screen.getByRole("button", { name: "Export" }));
+      await user.click(screen.getByRole("button", { name: "Export" }));
       await waitFor(() => {
-        expect(screen.getByText(/submitted to the server/)).toBeVisible();
+        expect(
+          screen.getByText(
+            "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready.",
+          ),
+        ).toBeVisible();
       });
       expect(mockAxios.history.post.length).toBe(1);
       expect(JSON.parse(mockAxios.history.post[0].data).exportConfig.setPageSizeAsDefault).toBe(true);
@@ -396,8 +436,12 @@ describe("ExportDialog", () => {
                 act(() => {
                   setProps({ open: true, selection });
                 });
-                fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
-                await user.click(screen.getByRole("button", { name: "Next" }));
+                await user.click(
+                  screen.getByRole("radio", {
+                    name: (name) => name.startsWith("workspace:export.format.chooser.formats.pdfHeading"),
+                  }),
+                );
+                await user.click(screen.getByRole("button", { name: "common:actions.next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
                 });
@@ -411,11 +455,11 @@ describe("ExportDialog", () => {
           const user = userEvent.setup();
           await fc.assert(
             fc.asyncProperty(arbGroupSelection, async (selection) => {
-              const { setProps } = renderExportDialog();
+              const { setProps } = await renderExportDialogWithRealI18n();
               act(() => {
                 setProps({ open: true, selection });
               });
-              await user.click(screen.getByRole("radio", { name: /^PDF/ }));
+              await user.click(screen.getByRole("radio", { name: (name) => name.startsWith("PDF file") }));
 
               await user.click(screen.getByRole("button", { name: "Next" }));
               await waitFor(() => {
@@ -430,11 +474,11 @@ describe("ExportDialog", () => {
           const user = userEvent.setup();
           await fc.assert(
             fc.asyncProperty(arbUserSelection, async (selection) => {
-              const { setProps } = renderExportDialog();
+              const { setProps } = await renderExportDialogWithRealI18n();
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(screen.getByRole("radio", { name: /^PDF/ }));
+              await user.click(screen.getByRole("radio", { name: (name) => name.startsWith("PDF file") }));
 
               await user.click(screen.getByRole("button", { name: "Next" }));
               await waitFor(() => {
@@ -458,8 +502,12 @@ describe("ExportDialog", () => {
                 act(() => {
                   setProps({ open: true, selection });
                 });
-                fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
-                await user.click(screen.getByRole("button", { name: "Next" }));
+                await user.click(
+                  await screen.findByRole("radio", {
+                    name: (name) => name.startsWith("workspace:export.format.chooser.formats.docHeading"),
+                  }),
+                );
+                await user.click(screen.getByRole("button", { name: "common:actions.next" }));
                 await waitFor(() => {
                   expect(screen.getByRole("textbox")).toBeVisible();
                 });
@@ -488,10 +536,18 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
-              await user.click(screen.getByRole("button", { name: "Next" }));
+              await user.click(
+                await screen.findByRole("radio", {
+                  name: (name) => name.startsWith("workspace:export.format.chooser.formats.pdfHeading"),
+                }),
+              );
+              await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
-                expect(screen.getByRole("combobox")).toHaveTextContent(new RegExp(pageSize, "i"));
+                const pageSizeLabel = screen.getByText("workspace:export.format.pdf.pageFormatLabel");
+                if (!pageSizeLabel.parentElement) throw new Error("pageSizeLabel has no parent");
+                expect(within(pageSizeLabel.parentElement).getByRole("combobox")).toHaveTextContent(
+                  `workspace:export.format.pdf.pageSize.${PAGE_SIZE_KEY_SUFFIX[pageSize]}`,
+                );
               });
             },
           ),
@@ -512,10 +568,16 @@ describe("ExportDialog", () => {
               act(() => {
                 setProps({ open: true, selection });
               });
-              fireEvent.click(await screen.findByRole("radio", { name: /^.DOC/ }));
-              await user.click(screen.getByRole("button", { name: "Next" }));
+              await user.click(
+                await screen.findByRole("radio", {
+                  name: (name) => name.startsWith("workspace:export.format.chooser.formats.docHeading"),
+                }),
+              );
+              await user.click(screen.getByRole("button", { name: "common:actions.next" }));
               await waitFor(() => {
-                expect(screen.getByRole("combobox")).toHaveTextContent(new RegExp(pageSize, "i"));
+                expect(screen.getByRole("combobox")).toHaveTextContent(
+                  `workspace:export.format.word.pageSize.${PAGE_SIZE_KEY_SUFFIX[pageSize]}`,
+                );
               });
             },
           ),

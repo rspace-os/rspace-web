@@ -6,6 +6,7 @@ import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
 import type { Container } from "../../../../stores/definitions/Container";
 import GridDimensions from "./GridDimensions";
@@ -15,6 +16,7 @@ type GridDimensionsAndLayoutArgs = {
   container: Container;
 };
 export default function GridDimensionsAndLayout({ container }: GridDimensionsAndLayoutArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [open, setOpen] = useState(false);
   const headingId = useId();
   const contentId = useId();
@@ -40,12 +42,12 @@ export default function GridDimensionsAndLayout({ container }: GridDimensionsAnd
               },
               title: { variant: "body1", id: headingId },
             }}
-            title="Configure Grid Labels"
+            title={t("container.fields.gridLabels.title")}
             onClick={() => setOpen(!open)}
             aria-controls={contentId}
             aria-expanded={open}
             action={
-              <IconButton onClick={() => setOpen(!open)} aria-label="Expand grid dimension controls group">
+              <IconButton onClick={() => setOpen(!open)} aria-label={t("container.fields.gridLabels.expandLabel")}>
                 <ExpandCollapseIcon open={open} />
               </IconButton>
             }

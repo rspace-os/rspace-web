@@ -8,9 +8,12 @@ import type { SwitchProps } from "@mui/material/Switch";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react";
+import { useTranslation } from "react-i18next";
 import type { DEFAULT_STATE } from "@/Export/constants";
 import type { RepoDetails } from "@/Export/repositories/common";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
+import { formatList } from "@/modules/common/i18n/listFormat";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getRaidExportEligibility } from "@/modules/raid/services/export";
 import { useCommonGroupsShareListingQuery } from "@/modules/share/queries";
 
@@ -20,6 +23,8 @@ interface ExportDialogRaidProps {
 }
 
 const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) => {
+  const { t, i18n } = useTranslation("workspace");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { data: token } = useOauthTokenQuery();
   const sharedItemIds = state.exportSelection.exportIds as string[];
   const { data, error } = useCommonGroupsShareListingQuery({
@@ -34,11 +39,9 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
   if (error) {
     return (
       <Alert severity="error">
-        <AlertTitle>Error</AlertTitle>
-        <Typography variant="body1">
-          An error occurred while determining RAiD export eligibility: {error.message}
-        </Typography>
-        <Typography variant="body1">Please press Next to continue without reporting to RAiD.</Typography>
+        <AlertTitle>{t("export.raid.error.title")}</AlertTitle>
+        <Typography variant="body1">{t("export.raid.error.message", { message: error.message })}</Typography>
+        <Typography variant="body1">{t("export.raid.error.nextHint")}</Typography>
       </Alert>
     );
   }
@@ -49,15 +52,27 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
     if (raidExportStatus.isEligible) return null;
     switch (raidExportStatus.reason) {
       case "MISSING_GROUPS":
-        return `You do not have access to the following groups, therefore RSpace is unable to determine whether you have the rights to export the items to RAiD: ${raidExportStatus.missingGroupIds.join(", ")}. For more information, please contact the owner of the item, or press Next to continue without reporting to RAiD.`;
+        return t("export.raid.ineligible.missingGroups", {
+          groupIds: formatList(raidExportStatus.missingGroupIds, language),
+        });
       case "NO_PROJECT_GROUPS":
-        return "No project groups are associated with all shared items selected. Please press Next to continue without reporting to RAiD.";
+        return t("export.raid.ineligible.noProjectGroups");
       case "NO_RAID_ASSOCIATION_FOUND":
-        return `None of the project groups (${raidExportStatus.projectGroups.map((group) => group.name).join(", ")}) associated with the shared items have a RAiD association. Please press Next to continue without reporting to RAiD.`;
+        return t("export.raid.ineligible.noRaidAssociation", {
+          groups: formatList(
+            raidExportStatus.projectGroups.map((group) => group.name),
+            language,
+          ),
+        });
       case "MULTIPLE_RAIDS_FOUND":
-        return `Multiple project groups (${raidExportStatus.projectGroups.map((group) => group.name).join(", ")}) associated with the shared items have RAiD associations, which is not supported. Please narrow your selection, or press Next to continue without reporting to RAiD.`;
+        return t("export.raid.ineligible.multipleRaids", {
+          groups: formatList(
+            raidExportStatus.projectGroups.map((group) => group.name),
+            language,
+          ),
+        });
       default:
-        return "An unknown error occurred while determining RAiD export eligibility. Please press Next to continue without reporting to RAiD.";
+        return t("export.raid.ineligible.unknown");
     }
   };
 
@@ -73,26 +88,30 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
     <>
       {!raidExportStatus.isEligible ? (
         <Alert severity="error">
-          <AlertTitle>Cannot report to RAiD</AlertTitle>
+          <AlertTitle>{t("export.raid.ineligible.title")}</AlertTitle>
           <Typography variant="body1">{getErrorMessage()}</Typography>
         </Alert>
       ) : (
         <Stack direction="column" spacing={1}>
           <Alert severity="info">
-            <AlertTitle>Report to RAiD</AlertTitle>
+            <AlertTitle>{t("export.raid.eligible.title")}</AlertTitle>
             <Stack direction="column" spacing={2}>
               <Typography variant="body1">
-                The content you're about to export is part of the project group{" "}
-                <strong>{raidExportStatus.projectGroup.name}</strong> which is associated with the following RAiD
-                identifier:
+                <TransRichText
+                  i18nKey="workspace:export.raid.eligible.projectGroupLine"
+                  values={{ name: raidExportStatus.projectGroup.name }}
+                />
               </Typography>
               <Typography variant="body1">
-                <strong>{raidExportStatus.raid.raidTitle}</strong> ({raidExportStatus.raid.raidIdentifier}).
+                <TransRichText
+                  i18nKey="workspace:export.raid.eligible.raidDetails"
+                  values={{
+                    title: raidExportStatus.raid.raidTitle,
+                    identifier: raidExportStatus.raid.raidIdentifier,
+                  }}
+                />
               </Typography>
-              <Typography variant="body1">
-                By enabling reporting to RAID below, the DOI of your repository export will be automatically added to
-                your RAiD record. Otherwise, click Next to continue without reporting to RAiD.
-              </Typography>
+              <Typography variant="body1">{t("export.raid.eligible.instructions")}</Typography>
             </Stack>
           </Alert>
           <FormControlLabel
@@ -107,7 +126,7 @@ const ExportDialogRaid = ({ state, updateRepoConfig }: ExportDialogRaidProps) =>
                 slotProps={{ input: { role: "checkbox" } }}
               />
             }
-            label={"Report to RAiD"}
+            label={t("export.raid.eligible.reportLabel")}
           />
         </Stack>
       )}

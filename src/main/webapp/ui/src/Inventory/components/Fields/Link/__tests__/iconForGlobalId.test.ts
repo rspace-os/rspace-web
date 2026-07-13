@@ -12,26 +12,26 @@ describe("iconForInventoryGlobalId", () => {
   test("maps known Inventory prefixes to RecordTypeIcon data", () => {
     expect(iconForInventoryGlobalId("SA12")).toEqual({
       iconName: "sample",
-      recordTypeLabel: "Sample",
+      recordTypeLabel: "inventory:recordTypes.sample.singular",
     });
     expect(iconForInventoryGlobalId("SS9")).toEqual({
       iconName: "subsample",
-      recordTypeLabel: "Subsample",
+      recordTypeLabel: "inventory:recordTypes.subsample.singular",
     });
     expect(iconForInventoryGlobalId("IC1")).toEqual({
       iconName: "container",
-      recordTypeLabel: "Container",
+      recordTypeLabel: "inventory:recordTypes.container.singular",
     });
     expect(iconForInventoryGlobalId("IN7")).toEqual({
       iconName: "container",
-      recordTypeLabel: "Instrument",
+      recordTypeLabel: "inventory:recordTypes.instrument.singular",
     });
   });
 
   test("maps sample templates to the template icon", () => {
     expect(iconForInventoryGlobalId("IT3")).toEqual({
       iconName: "template",
-      recordTypeLabel: "Sample template",
+      recordTypeLabel: "inventory:recordTypes.sampleTemplate.singular",
     });
   });
 
@@ -50,16 +50,16 @@ describe("iconForGlobalId (inventory + ELN)", () => {
   test("maps ELN prefixes to supported RecordTypeIcon names", () => {
     expect(iconForGlobalId("SD1")).toEqual({
       iconName: "document",
-      recordTypeLabel: "Document",
+      recordTypeLabel: "common:recordTypes.document.singular",
     });
     // RecordTypeIcon has no dedicated notebook icon, so notebooks reuse the document icon
     expect(iconForGlobalId("NB5")).toEqual({
       iconName: "document",
-      recordTypeLabel: "Notebook",
+      recordTypeLabel: "common:recordTypes.notebook.singular",
     });
     expect(iconForGlobalId("GL9")).toEqual({
       iconName: "gallery",
-      recordTypeLabel: "Gallery file",
+      recordTypeLabel: "common:recordTypes.galleryFile.singular",
     });
   });
 

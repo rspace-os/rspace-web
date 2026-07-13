@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Container } from "@/stores/definitions/Container";
 import type { ContentSummary } from "@/stores/definitions/container/types";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
@@ -17,8 +18,11 @@ function getCount(type: string, cs: ContentSummary): number {
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
+  const { t } = useTranslation("inventory");
   if (!record.contentSummary.isAccessible) return null;
   const count = getCount(type, record.contentSummary.value);
+  const recordTypeLabel =
+    type === "container" ? t("recordTypes.container.singular") : t("recordTypes.subsample.singular");
 
   return (
     <Chip
@@ -29,7 +33,7 @@ const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
         <Box component="span" sx={(theme) => ({ ml: `${theme.spacing(1)} !important` })}>
           <RecordTypeIcon
             record={{
-              recordTypeLabel: type.toUpperCase(),
+              recordTypeLabel,
               iconName: type === "container" ? "container" : "sample",
             }}
           />

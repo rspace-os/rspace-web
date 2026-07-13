@@ -169,14 +169,4 @@ public class WopiProofKeyValidator {
 
     return (RSAPublicKey) factory.generatePublic(ks);
   }
-
-  /*
-   * ============
-   *  for tests
-   * ============
-   */
-
-  void setTimestampVerificationEnabled(boolean timestampVerificationEnabled) {
-    this.timestampVerificationEnabled = timestampVerificationEnabled;
-  }
 }

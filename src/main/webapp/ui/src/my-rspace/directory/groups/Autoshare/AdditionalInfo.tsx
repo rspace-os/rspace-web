@@ -5,15 +5,21 @@ import AlertTitle from "@mui/material/AlertTitle";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "../../../../modules/common/i18n/TransRichText";
 
 function AdditionalInfo() {
+  const { t } = useTranslation("common");
   const [showInfo, setShowInfo] = React.useState(false);
 
   return (
     <Alert variant="outlined" severity="info">
       <AlertTitle>
-        Additional Information
-        <Tooltip title="Toggle additional information" aria-label="Toggle additional information">
+        {t("profile.groups.autosharing.additionalInfo.title")}
+        <Tooltip
+          title={t("profile.groups.autosharing.additionalInfo.toggle")}
+          aria-label={t("profile.groups.autosharing.additionalInfo.toggle")}
+        >
           <IconButton
             size="small"
             onClick={(e) => {
@@ -26,20 +32,7 @@ function AdditionalInfo() {
         </Tooltip>
       </AlertTitle>
       {showInfo && (
-        <>
-          <p>
-            Enabling autosharing for a member will ensure that all their current and future documents and notebooks will
-            be shared automatically with the "read" permission with this group.
-          </p>
-          <p>
-            Edit permission can be granted or items can be unshared through the "Manage Shared Documents" section as
-            usual.
-          </p>
-          <p>
-            This setting is revertible and you can always manually change the autoshare status of any non-PI member in
-            your lab group.
-          </p>
-        </>
+        <TransRichText i18nKey="common:profile.groups.autosharing.additionalInfo.body" components={{ p: <p /> }} />
       )}
     </Alert>
   );

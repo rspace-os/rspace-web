@@ -1,12 +1,14 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import FormControl from "@mui/material/FormControl";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import materialTheme from "../../theme";
@@ -25,107 +27,16 @@ import { BookingType, ErrorReason, Order } from "./Enums";
 import ErrorView from "./ErrorView";
 import ResultsTable from "./ResultsTable";
 
-const TABLE_HEADER_CELLS = [
-  {
-    id: "bookingID" as const,
-    numeric: false,
-    label: "Booking ID",
-  },
-  {
-    id: "equipmentName" as const,
-    numeric: false,
-    label: "Equipment Name",
-  },
-  {
-    id: "manufacturer" as const,
-    numeric: false,
-    label: "Manufacturer",
-  },
-  {
-    id: "model" as const,
-    numeric: false,
-    label: "Model",
-  },
-  {
-    id: "requesterName" as const,
-    numeric: false,
-    label: "Booked by",
-  },
-  {
-    id: "start_time" as const,
-    numeric: false,
-    label: "Start Time",
-  },
-  {
-    id: "duration" as const,
-    numeric: false,
-    label: "Duration (mins)",
-  },
-  {
-    id: "bookingType" as const,
-    numeric: false,
-    label: "Booking Type",
-  },
-  {
-    id: "status" as const,
-    numeric: false,
-    label: "Status",
-  },
-];
-// Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
-// therefore its OK to just cache notes in the DB along with the other booking details
-const maintenanceNotes = {
-  id: "maintenance_notes",
-  numeric: false,
-  label: "Maintenance notes",
-};
-const EQUIPMENT_TABLE_HEADER_CELLS = [
-  {
-    id: "equipmentID" as const,
-    numeric: false,
-    label: "Equipment ID",
-  },
-  {
-    id: "equipmentName" as const,
-    numeric: false,
-    label: "Equipment Name",
-  },
-  {
-    id: "manufacturer" as const,
-    numeric: false,
-    label: "Manufacturer",
-  },
-  {
-    id: "model" as const,
-    numeric: false,
-    label: "Model",
-  },
-  {
-    id: "bookingType" as const,
-    numeric: false,
-    label: "Booking Type",
-  },
-  {
-    id: "bookingID" as const,
-    numeric: false,
-    label: "Last use",
-  },
-  {
-    id: "start_time" as const,
-    numeric: false,
-    label: "On date",
-  },
-  {
-    id: "requesterName" as const,
-    numeric: false,
-    label: "Booked by",
-  },
-];
 type ClustermarketArgs = {
   defaultBookingType: BOOKING_TYPE[keyof BOOKING_TYPE];
   clustermarket_web_url: string;
 };
-let VISIBLE_HEADER_CELLS: typeof TABLE_HEADER_CELLS | typeof EQUIPMENT_TABLE_HEADER_CELLS = TABLE_HEADER_CELLS;
+type HeaderCell = {
+  id: string;
+  numeric: boolean;
+  label: string;
+};
+let VISIBLE_HEADER_CELLS: Array<HeaderCell> = [];
 let SELECTED_BOOKINGS: ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> = [];
 export const getSelectedBookings = (): ReadonlyArray<BookingAndEquipmentDetails | EquipmentWithBookingDetails> =>
   SELECTED_BOOKINGS;
@@ -140,7 +51,104 @@ function Clustermarket({
   defaultBookingType = BookingType.BOOKED,
   clustermarket_web_url,
 }: ClustermarketArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const bookingHeaderCells = [
+    {
+      id: "bookingID",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.bookingId"),
+    },
+    {
+      id: "equipmentName",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.equipmentName"),
+    },
+    {
+      id: "manufacturer",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.manufacturer"),
+    },
+    {
+      id: "model",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.model"),
+    },
+    {
+      id: "requesterName",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.bookedBy"),
+    },
+    {
+      id: "start_time",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.startTime"),
+    },
+    {
+      id: "duration",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.durationMins"),
+    },
+    {
+      id: "bookingType",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.bookingType"),
+    },
+    {
+      id: "status",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.status"),
+    },
+  ];
+  const equipmentHeaderCells = [
+    {
+      id: "equipmentID",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.equipmentId"),
+    },
+    {
+      id: "equipmentName",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.equipmentName"),
+    },
+    {
+      id: "manufacturer",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.manufacturer"),
+    },
+    {
+      id: "model",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.model"),
+    },
+    {
+      id: "bookingType",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.bookingType"),
+    },
+    {
+      id: "bookingID",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.lastUse"),
+    },
+    {
+      id: "start_time",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.onDate"),
+    },
+    {
+      id: "requesterName",
+      numeric: false,
+      label: t("tinymce.clustermarket.columns.bookedBy"),
+    },
+  ];
+  // Notes CAN be edited for bookings, however, only 3% of people ever add an additional note
+  // therefore its OK to just cache notes in the DB along with the other booking details
+  const maintenanceNotes = {
+    id: "maintenance_notes",
+    numeric: false,
+    label: t("tinymce.clustermarket.columns.maintenanceNotes"),
+  };
   const [bookings, setBookings]: UseState<Array<BookingAndEquipmentDetails>> = useState(
     [] as Array<BookingAndEquipmentDetails>,
   );
@@ -155,9 +163,9 @@ function Clustermarket({
   const [bookingType, setBookingType] = useLocalStorage("clustermarketBookingType", defaultBookingType);
   const [isMaintenance, setIsMaintenance] = useLocalStorage("clustermarketIsMaintenance", false);
   const [orderBy, setOrderBy] = useLocalStorage(ORDER_BY_KEY, DEFAULT_ORDERBY);
+  VISIBLE_HEADER_CELLS = bookingType === BookingType.EQUIPMENT ? equipmentHeaderCells : bookingHeaderCells;
   const addMaintanceNotesToHeaders = (headers: typeof VISIBLE_HEADER_CELLS) => {
     if (!headers.find((header) => header.id === maintenanceNotes.id)) {
-      // @ts-expect-error type mismatch
       headers.splice(4, 0, maintenanceNotes);
     }
     return headers;
@@ -170,13 +178,13 @@ function Clustermarket({
   };
   const setHeadersByBookingType = (newBookingType: BOOKING_TYPE[keyof BOOKING_TYPE], newIsMaintenance: boolean) => {
     if (newBookingType === BookingType.EQUIPMENT) {
-      VISIBLE_HEADER_CELLS = isMaintenance
-        ? addMaintanceNotesToHeaders(EQUIPMENT_TABLE_HEADER_CELLS)
-        : removeMaintanceNotesFromHeaders(EQUIPMENT_TABLE_HEADER_CELLS);
+      VISIBLE_HEADER_CELLS = newIsMaintenance
+        ? addMaintanceNotesToHeaders(equipmentHeaderCells)
+        : removeMaintanceNotesFromHeaders(equipmentHeaderCells);
     } else {
       VISIBLE_HEADER_CELLS = newIsMaintenance
-        ? addMaintanceNotesToHeaders(TABLE_HEADER_CELLS)
-        : removeMaintanceNotesFromHeaders(TABLE_HEADER_CELLS);
+        ? addMaintanceNotesToHeaders(bookingHeaderCells)
+        : removeMaintanceNotesFromHeaders(bookingHeaderCells);
     }
   };
   function handleRequestError(error: {
@@ -284,15 +292,19 @@ function Clustermarket({
               data-testid="booked_radio"
               value={BookingType.BOOKED}
               control={<Radio />}
-              label="Booked"
+              label={t("tinymce.clustermarket.bookingTypes.booked")}
             />
             <FormControlLabel
               data-testid="booked_and_completed_radio"
               value={BookingType.ALL}
               control={<Radio />}
-              label="Booked and Completed"
+              label={t("tinymce.clustermarket.bookingTypes.all")}
             />
-            <FormControlLabel value={BookingType.EQUIPMENT} control={<Radio />} label="Booked Equipment" />
+            <FormControlLabel
+              value={BookingType.EQUIPMENT}
+              control={<Radio />}
+              label={t("tinymce.clustermarket.bookingTypes.equipment")}
+            />
           </RadioGroup>
         </FormControl>
         <FormControlLabel
@@ -304,12 +316,12 @@ function Clustermarket({
               color="primary"
               slotProps={{
                 input: {
-                  "aria-label": "maintenance",
+                  "aria-label": t("tinymce.clustermarket.maintenanceLabel"),
                 },
               }}
             />
           }
-          label={`maintenance only`}
+          label={t("tinymce.clustermarket.maintenanceOnly")}
         />
         <Grid container spacing={1}>
           <Grid size={12}>

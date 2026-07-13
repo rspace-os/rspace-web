@@ -4,6 +4,69 @@ $(document).ready(function (){
 	// this input field will only be available in cloud version
 	applyAutocomplete('.user_autocompletable');
 
+	let menuScrollTarget = null;
+	let menuScrollTargetResetTimer = null;
+
+	const getMenuScrollPositions = (menuFixer) => {
+		const maxScrollLeft = menuFixer.scrollWidth - menuFixer.clientWidth;
+		const panels = Array.from(document.querySelectorAll("#menuMover .menuInnerPanel"))
+			.filter((panel) => panel.offsetParent !== null);
+		const firstPanelOffset = panels[0]?.offsetLeft ?? 0;
+		const positions = panels
+			.map((panel) => Math.min(maxScrollLeft, Math.max(0, panel.offsetLeft - firstPanelOffset)));
+		return positions.filter((position, index) =>
+			index === 0 || Math.abs(position - positions[index - 1]) > 1);
+	};
+
+	const scrollCurrentMenuPanelIntoView = () => {
+		const currentPanel = document.querySelector("#menuMover .menuInnerPanel.currentPanel");
+		if (currentPanel !== null && currentPanel.offsetParent !== null) {
+			currentPanel.scrollIntoView({ block: "nearest", inline: "center" });
+			updateMenuScrollButtons();
+		}
+	};
+
+	function updateMenuScrollButtons() {
+		const menuFixer = document.querySelector("#menuFixer");
+		if (menuFixer === null) {
+			return;
+		}
+		const currentPosition = menuScrollTarget ?? menuFixer.scrollLeft;
+		const scrollPositions = getMenuScrollPositions(menuFixer);
+		const leftScroller = document.querySelector(".leftScroller");
+		const rightScroller = document.querySelector(".rightScroller");
+		if (leftScroller !== null) {
+			leftScroller.style.display =
+				scrollPositions.some((position) => position < currentPosition - 1) ? "" : "none";
+		}
+		if (rightScroller !== null) {
+			rightScroller.style.display =
+				scrollPositions.some((position) => position > currentPosition + 1) ? "" : "none";
+		}
+	}
+
+	const scrollMenu = (direction) => {
+		const menuFixer = document.querySelector("#menuFixer");
+		if (menuFixer === null) {
+			return;
+		}
+		const currentPosition = menuScrollTarget ?? menuFixer.scrollLeft;
+		const panelPositions = getMenuScrollPositions(menuFixer);
+		const targetPosition = direction > 0
+			? panelPositions.find((position) => position > currentPosition + 1)
+			: panelPositions.slice().reverse().find((position) => position < currentPosition - 1);
+		if (targetPosition === undefined) {
+			return;
+		}
+		menuScrollTarget = targetPosition;
+		menuFixer.scrollTo({
+			left: targetPosition
+		});
+		updateMenuScrollButtons();
+		requestAnimationFrame(updateMenuScrollButtons);
+		setTimeout(updateMenuScrollButtons, 150);
+	};
+
 	$('#createFormLink').click (function (e){
 		e.preventDefault();
 		var form$=$(this).closest('form');
@@ -15,6 +78,7 @@ $(document).ready(function (){
 		if (piCanCreateLabGroups !== 'ALLOWED') {
 			$('#self_service_labgroups').hide();
 		}
+		scrollCurrentMenuPanelIntoView();
 	});
 
 	const allowProjectGroupsReq = $.get("/deploymentproperties/ajax/editableProperties");
@@ -23,6 +87,7 @@ $(document).ready(function (){
 	    if (allowProjectGroups !== 'ALLOWED') {
 	        $('#new_project_group').hide();
 	    }
+	    scrollCurrentMenuPanelIntoView();
 	});
 
 	var paginationEventHandler = function(source, e) {
@@ -44,86 +109,21 @@ $(document).ready(function (){
 		}
 	};
 
-	/*
-	 * Menu slider: initialising, toggling visibility of the arrows, adjusting number of panels shown...
-	 */
-	var numberOfSlides = $("#menuMover .menuInnerPanel").length;
-	var availableSliderWidth = parseInt($("#menuScrollContainer").innerWidth());
-	var menuPanelWidth = parseInt($(".menuInnerPanel").outerWidth()) +
-						 parseInt($(".menuInnerPanel").css("margin-left")) +
-						 parseInt($(".menuInnerPanel").css("margin-right"));
-	var slidesToShow = Math.floor(availableSliderWidth/menuPanelWidth);
-	// Toggle arrows as appropriate (when either edge of the slider is reached)
-	var toggleSliderArrows = function(nextSlide) {
-		if (nextSlide == 0) {
-			$(".leftScroller").animate({opacity: 0}, fadeTime, function() { $(this).hide(); });
-		} else {
-			$(".leftScroller").show().animate({opacity: 1}, fadeTime);
-		}
-		if (nextSlide >= numberOfSlides - slidesToShow) {
-			$(".rightScroller").animate({opacity: 0}, fadeTime, function() { $(this).hide(); });
-		} else {
-			$(".rightScroller").show().animate({opacity: 1}, fadeTime);
-		}
-	}
-	// Hide arrows as appropriate on slider initialisation; scroll to slide
-	// based on detected active My RSpace tab.
-	$('#menuMover').on('init', function(event, slick){
-
-
-		// If we know what My RSpace tab we're on, highlight it as active
-		// in the slider and scroll the slider so the active tab is visible
-		if ($('.menuInnerPanel.currentPanel').length) {
-			// Doesn't work without the timeout; see:
-			// https://github.com/kenwheeler/slick/issues/1802
-			setTimeout(function () {
-				$('.menuInnerPanel').attr('tabindex', '0');
-				$('.menuInnerPanel a').attr('tabindex', '-1');
-
-				// Get the current My RSpace slide index
-				var currentSlideIndex = $('.menuInnerPanel.currentPanel').data('slick-index');
-
-				if (currentSlideIndex >= slidesToShow - 2) {
-    				// Scrolling doesn't behave as expected, if the slider wouldn't be filled
-    				// with slides after scrolling. So, only ever scroll as far as we can while
-    				// keeping the number of slides at the calculated 'slidesToShow' value.
-    				slideToGoTo = Math.min(currentSlideIndex, numberOfSlides - slidesToShow);
-    				// Scroll in the slider
-    				slick.$slider.slick('slickGoTo', slideToGoTo);
-
-						// Adjust the arrows
-						toggleSliderArrows(currentSlideIndex);
-				} else {
-					toggleSliderArrows(0);
-				}
-			}, 0);
-		} else {
-			toggleSliderArrows(0);
-		}
+	document.querySelector(".leftScroller")?.addEventListener("click", () => scrollMenu(-1));
+	document.querySelector(".rightScroller")?.addEventListener("click", () => scrollMenu(1));
+	document.querySelector("#menuFixer")?.addEventListener("scroll", () => {
+		updateMenuScrollButtons();
+		clearTimeout(menuScrollTargetResetTimer);
+		menuScrollTargetResetTimer = setTimeout(() => {
+			menuScrollTarget = null;
+			updateMenuScrollButtons();
+		}, 200);
 	});
-	// Hide arrows as appropriate on moving to different slide
-	$('#menuMover').on('beforeChange', function(event, slick, currentSlide, nextSlide){
-	  toggleSliderArrows(nextSlide);
+	window.addEventListener("resize", () => {
+		menuScrollTarget = null;
+		updateMenuScrollButtons();
 	});
-	// Do check for '.slick-initialized', because any attempts to reinit Slick
-	// once it's been initialised already will break the page
-	$('#menuMover').not('.slick-initialized').slick({
-		infinite: false,
-		slidesToShow: slidesToShow,
-		slidesToScroll: 1,
-		dots: false,
-		arrows: true,
-		nextArrow: ".rightScroller",
-		prevArrow: ".leftScroller",
-		swipeToSlide: true,
-		initialSlide: 0
-	});
-
-	$('.menuInnerPanel').keyup(function(e){
-		if (e.keyCode === 13) {
-			$(this).find('img').click();
-		}
-	});
-
+	setTimeout(scrollCurrentMenuPanelIntoView, 0);
+	updateMenuScrollButtons();
 	RS.setupPagination(paginationEventHandler);
 });

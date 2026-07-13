@@ -1,13 +1,13 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { TableContainer } from "@mui/material";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow, { tableRowClasses } from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
+import { useTranslation } from "react-i18next";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import { getSorting } from "../../util/table";
 import { Order } from "./Enums";
@@ -32,6 +32,7 @@ export default function ResultsTable({
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   [key: string]: any;
 }) {
+  const { t } = useTranslation("workspace");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function onRowClick(eartag: any) {
     setSelectedAnimalIds(
@@ -64,7 +65,7 @@ export default function ResultsTable({
   return (
     <>
       <TableContainer sx={{ mb: "40px" }}>
-        <Table aria-label="animal search results">
+        <Table aria-label={t("tinymce.pyrat.tableLabel")}>
           <EnhancedTableHead
             headSx={{ background: "#F6F6F6" }}
             headCells={visibleHeaderCells}
@@ -141,7 +142,7 @@ export default function ResultsTable({
         }}
       >
         <Typography sx={{ pl: "16px" }} component="span" variant="body2" color="textPrimary">
-          Selected: {selectedAnimalIds.length}
+          {t("tinymce.pyrat.selectedCount", { count: selectedAnimalIds.length })}
         </Typography>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50].filter((c) => c <= count)}

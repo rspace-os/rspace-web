@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import React from "react";
-import docLinks from "../../assets/DocLinks";
-import { inventoryRecordTypeLabels } from "../../stores/definitions/BaseRecord";
+import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import InstrumentModel from "../../stores/models/InstrumentModel";
 import useStores from "../../stores/use-stores";
 import DescriptionField from "../components/Fields/Description";
@@ -18,6 +18,7 @@ import InstrumentTemplateField from "./Fields/InstrumentTemplateField";
 import TemplateFields from "./Fields/TemplateFields";
 
 const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -28,7 +29,12 @@ const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentMo
   }, []);
 
   return (
-    <StepperPanel title="Overview" sectionName="overview" formSectionError={formSectionError} recordType="instrument">
+    <StepperPanel
+      title={t("formSections.overview")}
+      sectionName="overview"
+      formSectionError={formSectionError}
+      recordType="instrument"
+    >
       <NameField
         fieldOwner={activeResult}
         record={activeResult}
@@ -36,19 +42,25 @@ const OverviewSection = observer(({ activeResult }: { activeResult: InstrumentMo
       />
       <InstrumentTemplateField />
       <LocationField fieldOwner={activeResult} />
-      <ImageField fieldOwner={activeResult} alt="What the instrument looks like" />
+      <ImageField fieldOwner={activeResult} alt={t("instrument.imageAlt")} />
     </StepperPanel>
   );
 });
 
 const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
   });
 
   return (
-    <StepperPanel title="Details" sectionName="details" formSectionError={formSectionError} recordType="instrument">
+    <StepperPanel
+      title={t("formSections.details")}
+      sectionName="details"
+      formSectionError={formSectionError}
+      recordType="instrument"
+    >
       <DescriptionField
         fieldOwner={activeResult}
         onErrorStateChange={(e) => setFormSectionError(formSectionError, "description", e)}
@@ -59,6 +71,7 @@ const DetailsSection = observer(({ activeResult }: { activeResult: InstrumentMod
 });
 
 const CustomFieldsSection = observer(({ activeResult }: { activeResult: InstrumentModel }) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -66,7 +79,7 @@ const CustomFieldsSection = observer(({ activeResult }: { activeResult: Instrume
 
   return (
     <StepperPanel
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="instrument"
@@ -84,6 +97,7 @@ const CustomFieldsSection = observer(({ activeResult }: { activeResult: Instrume
 });
 
 export default function NewRecordForm(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -94,10 +108,10 @@ export default function NewRecordForm(): React.ReactNode {
     <SynchroniseFormSections>
       <Stepper
         helpLink={{
-          link: docLinks.createInstrument,
-          title: "Info on creating new instruments.",
+          link: helpDocsArticleUrl("createInstrument"),
+          title: t("createNew.helpTitles.instrument"),
         }}
-        titleText={`New ${inventoryRecordTypeLabels.instrument}`}
+        titleText={t("createNew.newInstrument")}
         resetScrollPosition={Symbol("always reset scroll")}
       >
         <UnsynchroniseFormSections>

@@ -96,6 +96,18 @@ public class ApiSample extends ApiSampleWithoutSubSamples {
   }
 
   @Override
+  public void removeImageLinksForLimitedView() {
+    super.removeImageLinksForLimitedView();
+
+    List<ApiSubSampleInfo> subSamples = getSubSamples();
+    if (subSamples != null) {
+      for (ApiSubSampleInfo subSample : subSamples) {
+        subSample.removeImageLinksForLimitedView();
+      }
+    }
+  }
+
+  @Override
   protected void nullifyListsForLimitedView(ApiInventoryRecordInfo apiInvRec) {
     ApiSample apiSample = (ApiSample) apiInvRec;
     super.nullifyListsForLimitedView(apiSample);

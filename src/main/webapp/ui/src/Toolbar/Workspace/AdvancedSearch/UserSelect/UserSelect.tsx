@@ -1,10 +1,12 @@
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function UserSelect(props: any) {
+  const { t } = useTranslation("workspace");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [multi, setMulti] = React.useState<any[]>([]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -50,8 +52,12 @@ export default function UserSelect(props: any) {
       }
       onChange={(_, selection) => handleChangeMulti(selection)}
       renderInput={(props) => (
-        // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-        <TextField {...props} variant="standard" placeholder={(props as any).error ?? "Select owner(s)"} />
+        <TextField
+          {...props}
+          variant="standard"
+          // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+          placeholder={(props as any).error ?? t("toolbar.userSelect.placeholder")}
+        />
       )}
       slotProps={{
         popupIndicator: {

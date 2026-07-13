@@ -24,8 +24,8 @@ describe("InitialScreen", () => {
     );
     expect(Header).toHaveBeenCalled();
     expect(Sidebar).toHaveBeenCalled();
-    expect(screen.getByText("My Bench")).toBeInTheDocument();
-    expect(screen.getByText("Containers")).toBeInTheDocument();
-    expect(screen.getByText("Samples")).toBeInTheDocument();
+    expect(screen.getByText("inventory:layout.sidebar.myBench")).toBeInTheDocument();
+    expect(screen.getByText("inventory:recordTypes.container.plural")).toBeInTheDocument();
+    expect(screen.getByText("inventory:recordTypes.sample.plural")).toBeInTheDocument();
   });
 });

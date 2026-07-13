@@ -5,6 +5,7 @@ import { isValid, parse, parseISO } from "date-fns";
 import { enGB } from "date-fns/locale";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 
 const DATE_FORMAT = "yyyy-MM-dd";
@@ -51,12 +52,13 @@ function DateField({
   disableWidthLimit = false,
   id,
 }: DateFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const parsedValue = parseDateFieldValue(value);
   const error = Boolean(value && !parsedValue);
   const textFieldSlotProps = {
     variant,
     error,
-    helperText: error ? "Invalid date." : "",
+    helperText: error ? t("inputs.dateField.invalidDate") : "",
     style: {
       maxWidth: disableWidthLimit ? "initial" : "10em",
     },
@@ -70,7 +72,7 @@ function DateField({
   };
 
   return disabled && !value ? (
-    <NoValue label={noValueLabel ?? "None"} />
+    <NoValue label={noValueLabel ?? t("values.none")} />
   ) : (
     <>
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>

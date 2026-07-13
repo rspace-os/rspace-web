@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-@Service("mysqlmetadata")
+@Service
 public class DatabaseMetaDataManagerImpl implements DatabaseMetaDataManager {
   Logger log = LoggerFactory.getLogger(DatabaseMetaDataManagerImpl.class);
 
@@ -20,7 +20,8 @@ public class DatabaseMetaDataManagerImpl implements DatabaseMetaDataManager {
     if (SemanticVersion.VERSION.matcher(versionStr).matches()) {
       return new SemanticVersion(versionStr);
     } else {
-      log.warn("MySQL version string could not be parsed into an AppVersion  - {}", versionStr);
+      log.warn(
+          "Database version string could not be parsed into a SemanticVersion - {}", versionStr);
       return SemanticVersion.UNKNOWN_VERSION;
     }
   }
@@ -41,6 +42,6 @@ public class DatabaseMetaDataManagerImpl implements DatabaseMetaDataManager {
 
   @Override
   public String getDescription() {
-    return "MySQL version";
+    return "MariaDB version";
   }
 }

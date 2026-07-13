@@ -1,5 +1,6 @@
 import { createRoot, type Root } from "react-dom/client";
 import ExternalWorkflowInvocations from "@/eln/eln-external-workflows/ExternalWorkflowInvocations";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 
 const externalWorkflowRoots = new WeakMap<Element, Root>();
 
@@ -39,7 +40,11 @@ const loadUIOnPageLoad = (isForNotebookPage = false) => {
       wrapperDiv.style.position = "relative";
     }
     const root = getExternalWorkflowRoot(wrapperDiv);
-    root.render(<ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />);
+    root.render(
+      <I18nRoot namespaces={["apps"]}>
+        <ExternalWorkflowInvocations isForNotebookPage={isForNotebookPage} fieldId={fieldId} />
+      </I18nRoot>,
+    );
   });
 };
 /**

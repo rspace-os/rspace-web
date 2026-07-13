@@ -15,7 +15,8 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useState } from "react";
-import docLinks from "../../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import BigIconButton from "../../../../components/BigIconButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
@@ -51,6 +52,7 @@ const CollapseContents = <
   fieldOwner?: FieldOwner;
   editable: boolean;
 }): ReactNode => {
+  const { t } = useTranslation("inventory");
   const chemistryProvider = FetchingData.getSuccessValue(useDeploymentProperty("chemistry.provider"))
     .flatMap(Parser.isString)
     .orElse("");
@@ -64,8 +66,8 @@ const CollapseContents = <
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell>{t("fields.attachments.columns.name")}</TableCell>
+              <TableCell>{t("fields.attachments.columns.actions")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -93,6 +95,7 @@ const FileSelector = ({
   setOpen: (value: boolean) => void;
   editable: boolean;
 }): ReactNode => {
+  const { t } = useTranslation("inventory");
   const { trackingStore } = useStores();
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
   const onFileSelection = ({ file }: { file: File }) => {
@@ -112,7 +115,7 @@ const FileSelector = ({
     <>
       <FileField
         accept="*"
-        buttonLabel="Upload"
+        buttonLabel={t("fields.attachments.actions.upload")}
         name="attachments"
         onChange={onFileSelection}
         showSelectedFilename={false}
@@ -121,7 +124,7 @@ const FileSelector = ({
         error={false}
         key={0}
         disabled={!editable}
-        explanatoryText="Upload a file from your device."
+        explanatoryText={t("fields.attachments.uploadFromDevice")}
         containerProps={{
           wrap: "nowrap",
           sx: { alignItems: "stretch", flexDirection: "column" },
@@ -134,8 +137,8 @@ const FileSelector = ({
                   setGalleryDialogOpen(true);
                 }}
                 icon={<AttachFileIcon />}
-                label="Browse Gallery"
-                explanatoryText="Link to existing items in the Gallery."
+                label={t("fields.attachments.actions.browseGallery")}
+                explanatoryText={t("fields.attachments.linkGalleryItems")}
               />
             ),
           },
@@ -159,12 +162,12 @@ const FileSelector = ({
               setGalleryDialogOpen(false);
             }}
             validateSelection={(file) => {
-              if (file.isSnippet) return Result.Error([new Error("Snippets cannot be attached to Inventory records.")]);
-              if (file.isFolder) return Result.Error([new Error("Folders cannot be attached to Inventory records.")]);
+              if (file.isSnippet) return Result.Error([new Error(t("fields.attachments.validation.noSnippets"))]);
+              if (file.isFolder) return Result.Error([new Error(t("fields.attachments.validation.noFolders"))]);
               if (!file.globalId)
                 return Result.Error([
                   // some of the files will be from filestores
-                  new Error(`"${file.name}" does not have an RSpace Global Id`),
+                  new Error(t("fields.attachments.validation.missingGlobalId", { name: file.name })),
                 ]);
               return Result.Ok(null);
             }}
@@ -186,6 +189,7 @@ const FilesCard = observer(
   }: {
     fieldOwner?: FieldOwner;
   }): ReactNode => {
+    const { t } = useTranslation("inventory");
     const [open, setOpen] = useState(false);
     const {
       searchStore: { activeResult },
@@ -206,13 +210,13 @@ const FilesCard = observer(
               variant: "body2",
             },
           }}
-          subheader="Attach files of any type, e.g. images, documents, or chemistry files."
+          subheader={t("fields.attachments.summary")}
           action={
             <CustomTooltip
               title={match<void, string>([
-                [() => attachments.length === 0, "No current attachments"],
-                [() => open, "Hide attachment listing"],
-                [() => true, "Show attachment listing"],
+                [() => attachments.length === 0, t("fields.attachments.toggle.none")],
+                [() => open, t("fields.attachments.toggle.hide")],
+                [() => true, t("fields.attachments.toggle.show")],
               ])()}
             >
               <IconButton onClick={() => setOpen(!open)} disabled={attachments.length === 0}>
@@ -256,13 +260,7 @@ function Attachments<
       error={false}
       explanation={
         activeResult.isFieldEditable("attachments") ? (
-          <>
-            See the documentation for information on{" "}
-            <a href={docLinks.attachments} target="_blank" rel="noreferrer">
-              adding attachments
-            </a>
-            .
-          </>
+          <TransRichText i18nKey="inventory:fields.attachments.formField.explanation" />
         ) : null
       }
     >

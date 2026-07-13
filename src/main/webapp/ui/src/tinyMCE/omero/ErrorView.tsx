@@ -1,5 +1,7 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { ErrorReason, type ErrorReasonType } from "./Enums";
 
 type ErrorViewProps = {
@@ -8,38 +10,36 @@ type ErrorViewProps = {
 };
 
 export default function ErrorView({ errorReason, errorMessage }: ErrorViewProps) {
+  const { t } = useTranslation("common");
+  // @ts-expect-error -- tinymce is defined in the parent window
+  const omeroUrl = parent.tinymce?.activeEditor?.settings?.omero_url;
+
   return (
     <Alert severity="error">
-      <AlertTitle>Error</AlertTitle>
+      <AlertTitle>{t("integrationErrors.title")}</AlertTitle>
       {errorReason === ErrorReason.NetworkError && (
-        <>
-          The Omero server at{" "}
-          <a
-            // @ts-expect-error -- tinymce is defined in the parent window
-            href={parent.tinymce?.activeEditor?.settings?.omero_url}
-            target="_blank"
-            rel="noreferrer"
-          >
-            {" "}
-            {/* @ts-expect-error -- tinymce is defined in the parent window */}
-            {parent.tinymce?.activeEditor?.settings?.omero_url}
-          </a>{" "}
-          is down, or CORS for this server has not been configured properly. If you are responsible for setting up the
-          Omero integration, open developer tools and have a look at the console and/or the network tab to find out what
-          the issue is.
-        </>
+        <TransRichText
+          i18nKey="common:integrationErrors.serverUnavailable"
+          values={{ appName: "Omero", url: omeroUrl }}
+          components={{
+            serverLink: (
+              <a href={omeroUrl} target="_blank" rel="noreferrer">
+                {omeroUrl}
+              </a>
+            ),
+          }}
+        />
       )}
-      {errorReason === ErrorReason.NotFound && <>The requested data was not found on this instance of Omero</>}
+      {errorReason === ErrorReason.NotFound && t("integrationErrors.omero.notFound")}
       {/* when user credentials expire on user session end, server responds with 401 */}
-      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) && (
-        <>Your session with Omero has expired. Please re-connect to Omero on the Apps page.</>
-      )}
-      {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
+      {(errorReason === ErrorReason.Unauthorized || errorMessage.includes("invalid_grant")) &&
+        t("integrationErrors.omero.sessionExpired")}
+      {errorReason === ErrorReason.Timeout && t("integrationErrors.timeout")}
       {/* when a refresh token expires the omero API responds with 400 response and 'invalid_grant' in the response message */}
-      {errorReason === ErrorReason.BadRequest && !errorMessage.includes("invalid_grant") && (
-        <> There is a problem, please try again later </>
-      )}
-      {errorReason === ErrorReason.UNKNOWN && <>Unknown issue, please attempt to relogin to RSpace.</>}
+      {errorReason === ErrorReason.BadRequest &&
+        !errorMessage.includes("invalid_grant") &&
+        t("integrationErrors.tryAgainLater")}
+      {errorReason === ErrorReason.UNKNOWN && t("integrationErrors.unknownRelogin")}
     </Alert>
   );
 }

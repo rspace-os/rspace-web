@@ -149,7 +149,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "missingInventoryLink",
-      helperText: "Link an inventory item before updating stock.",
+      helperText: "common:stoichiometry.inventoryUpdate.linkRequired",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "—", unitLabel: null },
@@ -169,7 +169,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: null,
-      helperText: "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      helperText: "common:stoichiometry.inventoryUpdate.stockDeductedWarning",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
@@ -190,7 +190,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "linkedStockUnavailable",
-      helperText: "Linked stock information is unavailable, so this molecule cannot be updated.",
+      helperText: "common:stoichiometry.inventoryUpdate.linkedStockUnavailable",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "—", unitLabel: null },
@@ -209,8 +209,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "nonMassInventoryQuantity",
-      helperText:
-        "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+      helperText: "common:stoichiometry.inventoryUpdate.nonMassInventoryQuantity",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "25.0", unitLabel: "mL" },
@@ -232,7 +231,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "missingActualMass",
-      helperText: "Define actual mass before updating linked inventory stock.",
+      helperText: "common:stoichiometry.inventoryUpdate.missingActualMass",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "10.0", unitLabel: "g" },
@@ -261,7 +260,7 @@ describe("getInventoryUpdateEligibility", () => {
         willUse: { displayValue: "11.0", unitLabel: "g" },
         remaining: { displayValue: "-1.0", unitLabel: "g" },
         remainingStatus: "negative",
-        warningText: "Insufficient Stock",
+        warningText: "common:stoichiometry.inventoryLink.insufficientStock",
       },
     });
   });
@@ -346,7 +345,7 @@ describe("getInventoryUpdateEligibility", () => {
 
     expect(getInventoryUpdateEligibility(molecule, linkedQuantityInfo)).toMatchObject({
       disabledReason: "linkedStockUnavailable",
-      helperText: "Linked stock information is unavailable, so this molecule cannot be updated.",
+      helperText: "common:stoichiometry.inventoryUpdate.linkedStockUnavailable",
       showInsufficientStockWarning: false,
       stockDisplay: {
         inStock: { displayValue: "—", unitLabel: null },

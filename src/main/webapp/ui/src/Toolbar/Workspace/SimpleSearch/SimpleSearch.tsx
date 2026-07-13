@@ -19,6 +19,7 @@ import Tooltip from "@mui/material/Tooltip";
 import React from "react";
 import axios from "@/common/axios";
 import DateField from "../../../components/Inputs/DateField";
+import i18n from "../../../modules/common/i18n";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { truncateIsoTimestamp } from "../../../stores/definitions/Units";
 import TagSelect from "../AdvancedSearch/TagSelect/TagSelect";
@@ -39,18 +40,24 @@ function formatDateForTooltip(date: any) /*: string*/ {
   return truncateIsoTimestamp(date, "date").orElse("Invalid date");
 }
 
-const FILTERS: Record<string, string> = {
-  global: "All",
-  fullText: "Text",
-  tag: "Tag(s)",
-  name: "Name",
-  form: "Form",
-  template: "Template",
-  created: "Creation date",
-  lastModified: "Last modified",
-  owner: "Owner(s)",
-  attachment: "Attachment",
-};
+function getFilterLabels(includeChemical: boolean): Record<string, string> {
+  const labels: Record<string, string> = {
+    global: i18n.t("workspace:toolbar.simpleSearch.filterTypes.global"),
+    fullText: i18n.t("workspace:toolbar.simpleSearch.filterTypes.fullText"),
+    tag: i18n.t("workspace:toolbar.simpleSearch.filterTypes.tag"),
+    name: i18n.t("workspace:toolbar.simpleSearch.filterTypes.name"),
+    form: i18n.t("workspace:toolbar.simpleSearch.filterTypes.form"),
+    template: i18n.t("workspace:toolbar.simpleSearch.filterTypes.template"),
+    created: i18n.t("workspace:toolbar.simpleSearch.filterTypes.created"),
+    lastModified: i18n.t("workspace:toolbar.simpleSearch.filterTypes.lastModified"),
+    owner: i18n.t("workspace:toolbar.simpleSearch.filterTypes.owner"),
+    attachment: i18n.t("workspace:toolbar.simpleSearch.filterTypes.attachment"),
+  };
+  if (includeChemical) {
+    labels.chemical = i18n.t("workspace:toolbar.simpleSearch.filterTypes.chemical");
+  }
+  return labels;
+}
 
 const DEFAULT_STATE = {
   recordsDialog: false,
@@ -63,6 +70,7 @@ const DEFAULT_STATE = {
   to: null,
   chemicalSearchDialogOpen: false,
   chemistryProvider: "",
+  chemicalEnabled: false,
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -103,7 +111,7 @@ class SimpleSearch extends React.Component<any, any> {
       .then((response) => {
         const integration = response.data.data;
         if (integration?.available && integration.enabled) {
-          FILTERS.chemical = "Chemical";
+          this.setState({ chemicalEnabled: true });
         }
       });
 
@@ -323,14 +331,14 @@ class SimpleSearch extends React.Component<any, any> {
               }}
             >
               {(this.state.filter === "global" || this.state.filter === "chemical") && (
-                <Tooltip title="Filters" enterDelay={300}>
+                <Tooltip title={i18n.t("workspace:toolbar.simpleSearch.filters")} enterDelay={300}>
                   <IconButton
                     data-test-id="s-search-filter"
                     color="default"
                     aria-haspopup="true"
                     onClick={this.handleOpen}
                     disabled={this.props.advancedOpen}
-                    aria-label="Filters"
+                    aria-label={i18n.t("workspace:toolbar.simpleSearch.filters")}
                   >
                     <FontAwesomeIcon icon={faFilter} />
                   </IconButton>
@@ -339,7 +347,7 @@ class SimpleSearch extends React.Component<any, any> {
               {this.state.filter !== "global" && this.state.filter !== "chemical" && (
                 <Chip
                   data-test-id="s-search-filtered"
-                  label={FILTERS[this.state.filter]}
+                  label={getFilterLabels(this.state.chemicalEnabled)[this.state.filter]}
                   clickable={!this.props.advancedOpen}
                   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                   variant={(this.props.advancedOpen ? "default" : "outlined") as any}
@@ -362,7 +370,7 @@ class SimpleSearch extends React.Component<any, any> {
                 open={this.state.filterDropdownIsOpen}
                 onClose={this.handleClose}
               >
-                {Object.keys(FILTERS).map((key) => (
+                {Object.entries(getFilterLabels(this.state.chemicalEnabled)).map(([key, label]) => (
                   <MenuItem
                     data-test-id={`s-search-filter-${key}`}
                     onClick={() => this.handleSelect(key)}
@@ -370,7 +378,7 @@ class SimpleSearch extends React.Component<any, any> {
                     sx={{ minHeight: "25px" }}
                     selected={this.state.filter === key}
                   >
-                    {FILTERS[key]}
+                    {label}
                   </MenuItem>
                 ))}
               </Menu>
@@ -378,10 +386,10 @@ class SimpleSearch extends React.Component<any, any> {
                 <InputBase
                   data-test-id="s-search-input-normal"
                   disabled={this.props.advancedOpen}
-                  placeholder="Search"
+                  placeholder={i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder")}
                   value={this.state.term}
                   onChange={this.handleChange}
-                  slotProps={{ input: { "aria-label": "Search" } }}
+                  slotProps={{ input: { "aria-label": i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder") } }}
                 />
               )}
               {this.state.filter === "owner" && (
@@ -407,8 +415,8 @@ class SimpleSearch extends React.Component<any, any> {
                         onChange={({ target: { value } }) => this.handleDateChange("from", value)}
                         maxDate={this.state.to || new Date()}
                         disableFuture
-                        placeholder="the beginning"
-                        label="From"
+                        placeholder={i18n.t("workspace:toolbar.advancedSearch.datePlaceholderFrom")}
+                        label={i18n.t("workspace:toolbar.advancedSearch.dateFrom")}
                         data-test-id="s-search-input-from"
                       />
                     </div>
@@ -420,8 +428,8 @@ class SimpleSearch extends React.Component<any, any> {
                         onChange={({ target: { value } }) => this.handleDateChange("to", value)}
                         minDate={this.state.from || new Date(1990, 1, 1)}
                         disableFuture
-                        placeholder="now"
-                        label="To"
+                        placeholder={i18n.t("workspace:toolbar.advancedSearch.datePlaceholderTo")}
+                        label={i18n.t("workspace:toolbar.advancedSearch.dateTo")}
                         data-test-id="s-search-input-to"
                       />
                     </div>
@@ -429,7 +437,7 @@ class SimpleSearch extends React.Component<any, any> {
                 </>
               )}
               <IconButton
-                aria-label="Search"
+                aria-label={i18n.t("workspace:toolbar.simpleSearch.searchPlaceholder")}
                 type="submit"
                 onClick={this.submitSearch}
                 disabled={this.props.advancedOpen || !this.isValid()}
@@ -437,8 +445,15 @@ class SimpleSearch extends React.Component<any, any> {
               >
                 <FontAwesomeIcon icon={faSearch} />
               </IconButton>
-              <Tooltip title="Advanced search" enterDelay={300} data-test-id="toggle-advanced">
-                <IconButton onClick={this.toggleAdvanced} aria-label="Advanced search">
+              <Tooltip
+                title={i18n.t("workspace:toolbar.simpleSearch.advancedSearch")}
+                enterDelay={300}
+                data-test-id="toggle-advanced"
+              >
+                <IconButton
+                  onClick={this.toggleAdvanced}
+                  aria-label={i18n.t("workspace:toolbar.simpleSearch.advancedSearch")}
+                >
                   <FontAwesomeIcon icon={faBars} />
                 </IconButton>
               </Tooltip>

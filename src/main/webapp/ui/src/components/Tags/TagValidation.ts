@@ -8,6 +8,7 @@
  * ================
  */
 
+import i18n from "@/modules/common/i18n";
 import type { Tag } from "../../stores/definitions/Tag";
 import { lift2 } from "../../util/optional";
 
@@ -128,17 +129,21 @@ export const isAllowed = (tagValidation: TagValidation): boolean => {
  */
 export const helpText = (tagValidation: TagValidation): string | null => {
   if (tagValidation.reason === "NoIssues") return null;
-  if (tagValidation.reason === "OntologiesAreEnforced") return "Not from an ontology";
+  if (tagValidation.reason === "OntologiesAreEnforced") return i18n.t("tags.validation.notFromOntology");
   if (tagValidation.reason === "NoIssuesWithSourceInformation")
-    return `From version ${tagValidation.version} of ${tagValidation.filename}`;
-  if (tagValidation.reason === "TooLong") return `Tag cannot exceed ${MAX_LENGTH} characters.`;
-  if (tagValidation.reason === "TooShort") return `Tag must be at least ${MIN_LENGTH} characters long.`;
-  if (tagValidation.reason === "AlreadySelected") return "Tag is already selected.";
-  if (tagValidation.reason === "InvalidChar") return `Tag contains invalid character "${tagValidation.char}".`;
+    return i18n.t("tags.validation.fromSource", {
+      filename: tagValidation.filename,
+      version: tagValidation.version,
+    });
+  if (tagValidation.reason === "TooLong") return i18n.t("tags.validation.tooLong", { maxLength: MAX_LENGTH });
+  if (tagValidation.reason === "TooShort") return i18n.t("tags.validation.tooShort", { minLength: MIN_LENGTH });
+  if (tagValidation.reason === "AlreadySelected") return i18n.t("tags.validation.alreadySelected");
+  if (tagValidation.reason === "InvalidChar")
+    return i18n.t("tags.validation.invalidChar", { char: tagValidation.char });
   if (tagValidation.reason === "InvalidWhitespace") {
-    if (tagValidation.detail === "Prefix") return "Tags cannot start with whitespace characters.";
-    if (tagValidation.detail === "Suffix") return "Tags cannot end with whitespace characters.";
-    if (tagValidation.detail === "Consecutive") return "Tags cannot contain consecutive whitespace characters.";
+    if (tagValidation.detail === "Prefix") return i18n.t("tags.validation.whitespacePrefix");
+    if (tagValidation.detail === "Suffix") return i18n.t("tags.validation.whitespaceSuffix");
+    if (tagValidation.detail === "Consecutive") return i18n.t("tags.validation.whitespaceConsecutive");
   }
   throw new Error("impossible");
 };

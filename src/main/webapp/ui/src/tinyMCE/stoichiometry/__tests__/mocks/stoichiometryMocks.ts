@@ -1,7 +1,5 @@
 import { HttpResponse, http, type RequestHandler } from "msw";
 
-export { OAUTH_TOKEN, oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
-
 /*
  * Shared MSW fixtures + handlers for the stoichiometry browser-mode tests.
  * Responses are expressed as MSW request handlers, registered per-test via

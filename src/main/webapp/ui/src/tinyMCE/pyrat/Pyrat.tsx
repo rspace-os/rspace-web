@@ -15,12 +15,16 @@ import Typography from "@mui/material/Typography";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR } from "@/assets/branding/pyrat";
-import docLinks from "@/assets/DocLinks";
 import axios from "@/common/axios";
 import AppBar from "@/components/AppBar";
 import useLocalStorage from "@/hooks/browser/useLocalStorage";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import { formatList } from "@/modules/common/i18n/listFormat";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import { getHeader } from "@/util/axios";
 import * as FetchingData from "@/util/fetchingData";
 import * as Parsers from "@/util/parsers";
@@ -89,23 +93,6 @@ function useAuthenticatedServers() {
 
 const SUPPORTED_PYRAT_API_VERSION = 3;
 
-// Some of these are numeric, but the enhanced table alignment for numerics looks bad
-const TABLE_HEADER_CELLS = [
-  { id: "eartag_or_id", numeric: false, label: "ID" },
-  { id: "sex", numeric: false, label: "Sex" },
-  { id: "age_days", numeric: false, label: "Age (Days)" },
-  { id: "strain_name", numeric: false, label: "Strain" },
-  { id: "mutations", numeric: false, label: "Mutations", sortable: false },
-  { id: "dateborn", numeric: false, label: "DOB" },
-  { id: "datesacrificed", numeric: false, label: "Sacrificed On" },
-  { id: "classification", numeric: false, label: "Classification" },
-  { id: "licence_number", numeric: false, label: "License" },
-  { id: "labid", numeric: false, label: "Lab ID" },
-  { id: "building_name", numeric: false, label: "Building" },
-  { id: "projects", numeric: false, label: "Project" },
-  { id: "responsible_fullname", numeric: false, label: "Responsible" },
-];
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 let VISIBLE_HEADER_CELLS: any[] = [];
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -119,6 +106,26 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     baseURL: "/apps/pyrat",
     timeout: 15000,
   });
+  const { t } = useTranslation("workspace");
+  const tableHeaderCells = useMemo(
+    () => [
+      // Some of these are numeric, but the enhanced table alignment for numerics looks bad.
+      { id: "eartag_or_id", numeric: false, label: t("tinymce.pyrat.columns.id") },
+      { id: "sex", numeric: false, label: t("tinymce.pyrat.columns.sex") },
+      { id: "age_days", numeric: false, label: t("tinymce.pyrat.columns.ageDays") },
+      { id: "strain_name", numeric: false, label: t("tinymce.pyrat.columns.strain") },
+      { id: "mutations", numeric: false, label: t("tinymce.pyrat.columns.mutations"), sortable: false },
+      { id: "dateborn", numeric: false, label: t("tinymce.pyrat.columns.dob") },
+      { id: "datesacrificed", numeric: false, label: t("tinymce.pyrat.columns.sacrificedOn") },
+      { id: "classification", numeric: false, label: t("tinymce.pyrat.columns.classification") },
+      { id: "licence_number", numeric: false, label: t("tinymce.pyrat.columns.license") },
+      { id: "labid", numeric: false, label: t("tinymce.pyrat.columns.labId") },
+      { id: "building_name", numeric: false, label: t("tinymce.pyrat.columns.building") },
+      { id: "projects", numeric: false, label: t("tinymce.pyrat.columns.project") },
+      { id: "responsible_fullname", numeric: false, label: t("tinymce.pyrat.columns.responsible") },
+    ],
+    [t],
+  );
 
   // Counter is increased when filtering is required.
   // Counter instead of boolean, as useEffect functions below that depend on
@@ -126,22 +133,22 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   const [filterCounter, setFilterCounter] = useState(0);
   const [filter, setFilter] = useState({
     age_days_from: {
-      label: "Age days from",
+      label: t("tinymce.pyrat.filters.ageDaysFrom"),
       type: "number",
       value: "",
     },
     age_days_to: {
-      label: "Age days to",
+      label: t("tinymce.pyrat.filters.ageDaysTo"),
       type: "number",
       value: "",
     },
     eartag: {
-      label: "ID",
+      label: t("tinymce.pyrat.columns.id"),
       type: "string",
       value: "",
     },
     labid: {
-      label: "Lab ID",
+      label: t("tinymce.pyrat.columns.labId"),
       type: "string",
       value: "",
     },
@@ -149,7 +156,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   // Multi request filter fields
   const [filterMultiReq, setFilterMultiReq] = useState({
     licence_id: {
-      label: "License",
+      label: t("tinymce.pyrat.columns.license"),
       value: "",
       query: `licenses?serverAlias=${serverAlias}&k=license_id&k=license_number&s=license_id:asc&license_number=`,
       enumObj: {},
@@ -160,7 +167,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       ],
     },
     responsible_id: {
-      label: "Responsible",
+      label: t("tinymce.pyrat.columns.responsible"),
       value: "",
       query: `users?serverAlias=${serverAlias}&k=userid&k=fullname&s=username:asc&fullname=`,
       enumObj: {},
@@ -171,7 +178,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       ],
     },
     project_id: {
-      label: "Project",
+      label: t("tinymce.pyrat.columns.project"),
       value: "",
       query: `projects?serverAlias=${serverAlias}&k=id&k=name&s=id:asc&status=active&status=inactive&name=`,
       enumObj: {},
@@ -182,46 +189,46 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   // Other special filter fields
   const [filterSpecial, setFilterSpecial] = useState({
     animal_type: {
-      label: "Animal Type",
+      label: t("tinymce.pyrat.filters.animalType"),
       defaultValue: AnimalType.Animal,
       value: AnimalType.Animal,
       enumObj: AnimalType,
     },
     animal_state: {
-      label: "Animal State",
+      label: t("tinymce.pyrat.filters.animalState"),
       defaultValue: [AnimalState.Live],
       value: [AnimalState.Live],
       enumObj: AnimalState,
     },
     sex: {
-      label: "Sex",
+      label: t("tinymce.pyrat.columns.sex"),
       defaultValue: Sex.None,
       value: Sex.None,
       enumObj: Sex,
     },
     building_id: {
-      label: "Building",
+      label: t("tinymce.pyrat.columns.building"),
       defaultValue: "",
       value: "",
       enumObj: {},
     },
     birth_date_from: {
-      label: "Birth date from",
+      label: t("tinymce.pyrat.filters.birthDateFrom"),
       defaultValue: null,
       value: null,
     },
     birth_date_to: {
-      label: "Birth date to",
+      label: t("tinymce.pyrat.filters.birthDateTo"),
       defaultValue: null,
       value: null,
     },
     sacrifice_date_from: {
-      label: "Sacrificed from",
+      label: t("tinymce.pyrat.filters.sacrificedFrom"),
       defaultValue: null,
       value: null,
     },
     sacrifice_date_to: {
-      label: "Sacrificed to",
+      label: t("tinymce.pyrat.filters.sacrificedTo"),
       defaultValue: null,
       value: null,
     },
@@ -236,7 +243,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
   const [showFilter, setShowFilter] = useLocalStorage("pyratShowFilter", false);
   const [visibleColumnIds, setVisibleColumnIds] = useLocalStorage(
     "pyratVisibleColumns",
-    TABLE_HEADER_CELLS.map((cell) => cell.id),
+    tableHeaderCells.map((cell) => cell.id),
   );
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -322,15 +329,23 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           animals.forEach((animal: any) => {
             // projects contain a lot of metadata that should not be displayed
             if (animal.projects) {
-              // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-              animal.projects = animal.projects.map((project: any) => project.project_label).join(", ");
+              animal.projects = formatList(
+                animal.projects.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (project: any) => project.project_label,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
             }
 
             if (animal.mutations) {
-              animal.mutations = animal.mutations
-                // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-                .map((mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`)
-                .join(", ");
+              animal.mutations = formatList(
+                animal.mutations.map(
+                  // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
+                  (mutation: any) => `${mutation.mutationname} ${mutation.mutationgrade}`,
+                ),
+                i18n.resolvedLanguage ?? i18n.language,
+              );
             }
           });
 
@@ -370,7 +385,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
       }
     }
 
-    TABLE_HEADER_CELLS.forEach((config) => {
+    tableHeaderCells.forEach((config) => {
       params.push(`&k=${config.id}`);
     });
     Object.entries(filter).forEach(([key, config]) => {
@@ -387,11 +402,11 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
     return `serverAlias=${serverAlias}&l=${rowsPerPage}&o=${
       page * rowsPerPage
     }&${params.join("")}&s=${orderBy}:${order}`;
-  }, [filterCounter, order, orderBy, rowsPerPage, page]);
+  }, [filterCounter, order, orderBy, page, rowsPerPage, tableHeaderCells]);
 
   VISIBLE_HEADER_CELLS = useMemo(
-    () => TABLE_HEADER_CELLS.filter((cell) => visibleColumnIds.includes(cell.id)),
-    [visibleColumnIds],
+    () => tableHeaderCells.filter((cell) => visibleColumnIds.includes(cell.id)),
+    [tableHeaderCells, visibleColumnIds],
   );
 
   React.useEffect(() => {
@@ -470,7 +485,7 @@ function PyratListing({ serverAlias, setSelectedAnimals }: { serverAlias: any; s
           <ColumnVisibilitySettings
             visibleColumnIds={visibleColumnIds}
             setVisibleColumnIds={setVisibleColumnIds}
-            allTableHeaderCells={TABLE_HEADER_CELLS}
+            allTableHeaderCells={tableHeaderCells}
           />
         </Grid>
       )}
@@ -503,6 +518,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [serverAlias, setServerAlias] = React.useState<any>(null);
   const servers = useAuthenticatedServers();
+  const { t } = useTranslation(["apps", "common", "workspace"]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [selectedAnimals, setSelectedAnimals] = React.useState<any[]>([]);
 
@@ -520,12 +536,12 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         variant="dialog"
         currentPage="PyRAT"
         helpPage={{
-          docLink: docLinks.pyrat,
-          title: "PyRAT help",
+          docLink: helpDocsArticleUrl("pyrat"),
+          title: t("workspace:tinymce.pyrat.helpTitle"),
         }}
         accessibilityTips={{}}
       />
-      <DialogTitle>Insert from PyRAT</DialogTitle>
+      <DialogTitle>{t("workspace:tinymce.pyrat.dialogTitle")}</DialogTitle>
       <DialogContent>
         {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
         {FetchingData.match(servers as any, {
@@ -540,7 +556,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
             return (
               <>
                 <Typography variant="body1" gutterBottom>
-                  Pick one of your authenticated servers
+                  {t("workspace:tinymce.pyrat.chooseServer")}
                 </Typography>
                 <List>
                   <Divider />
@@ -568,7 +584,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
         })}
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
         <Button
           disabled={selectedAnimals.length === 0}
           color="callToAction"
@@ -578,7 +594,7 @@ function PyratDialog({ editor, open, onClose }: { editor: any; open: any; onClos
             onClose();
           }}
         >
-          Insert
+          {t("pyrat.insertButton")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -594,11 +610,13 @@ class PyratPlugin {
       while (true) {
         const newProps = yield;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <PyratDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["apps", "common", "workspace"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <PyratDialog editor={editor} open={false} onClose={() => {}} {...newProps} />
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }
@@ -613,7 +631,7 @@ class PyratPlugin {
 
     // Add a button to the toolbar
     editor.ui.registry.addButton("pyrat", {
-      tooltip: "Link to PyRAT",
+      tooltip: i18n.t("workspace:tinymce.pyrat.linkTooltip"),
       icon: "pyrat",
       onAction() {
         pyratRenderer.next({
@@ -627,7 +645,7 @@ class PyratPlugin {
 
     // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPyrat", {
-      text: "From PyRAT",
+      text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
       icon: "pyrat",
       onAction() {
         pyratRenderer.next({
@@ -642,7 +660,7 @@ class PyratPlugin {
     // Adds an option to the slash-menu
     if (!window.insertActions) window.insertActions = new Map();
     window.insertActions.set("optPyrat", {
-      text: "From PyRAT",
+      text: i18n.t("workspace:tinymce.pyrat.fromPyrat"),
       icon: "pyrat",
       action: () => {
         pyratRenderer.next({

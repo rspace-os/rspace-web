@@ -6,6 +6,7 @@ import Collapse from "@mui/material/Collapse";
 import IconButton from "@mui/material/IconButton";
 import type SvgIcon from "@mui/material/SvgIcon";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ErrorReason } from "./Enums";
 
 export default function ErrorView({
@@ -17,14 +18,15 @@ export default function ErrorView({
   errorMessage: string;
   WorkFlowIcon: typeof SvgIcon;
 }): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = React.useState(true);
   return (
     <>
       <Collapse in={open}>
         <Alert severity="error" icon={<WorkFlowIcon fontSize="inherit" />}>
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t("externalWorkflows.error.title")}</AlertTitle>
           <IconButton
-            aria-label="close"
+            aria-label={t("common:actions.close")}
             color="inherit"
             size="large"
             onClick={() => {
@@ -34,20 +36,11 @@ export default function ErrorView({
             <CloseIcon fontSize="inherit" />
           </IconButton>
           {/* When Galaxy API KEY is invalid Galaxy API responds with 403 */}
-          {errorReason === ErrorReason.Unauthorized && (
-            <>Invalid Galaxy API Key Please re-enter your API Key on the Apps page.</>
-          )}
-          {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
-          {errorReason === ErrorReason.NotFound && (
-            <>Unable to retrieve any relevant results. Error message was: {errorMessage}</>
-          )}
+          {errorReason === ErrorReason.Unauthorized && <>{t("externalWorkflows.error.unauthorized")}</>}
+          {errorReason === ErrorReason.Timeout && <>{t("externalWorkflows.error.timeout")}</>}
+          {errorReason === ErrorReason.NotFound && <>{t("externalWorkflows.error.notFound", { errorMessage })}</>}
 
-          {errorReason === ErrorReason.UNKNOWN && (
-            <>
-              Unknown issue, please investigate whether your Galaxy Server(s) is/are running. Error message was:{" "}
-              {errorMessage}
-            </>
-          )}
+          {errorReason === ErrorReason.UNKNOWN && <>{t("externalWorkflows.error.unknown", { errorMessage })}</>}
           {errorReason === ErrorReason.None && errorMessage && <> {errorMessage}</>}
         </Alert>
       </Collapse>
@@ -58,7 +51,7 @@ export default function ErrorView({
           setOpen(true);
         }}
       >
-        See Galaxy error
+        {t("externalWorkflows.error.seeError")}
       </Button>
     </>
   );

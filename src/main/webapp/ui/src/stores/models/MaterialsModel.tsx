@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import InvApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -17,6 +18,7 @@ import AlwaysNewFactory from "./Factory/AlwaysNewFactory";
 import MemoisedFactory from "./Factory/MemoisedFactory";
 import { filterForThoseWithLocations } from "./HasLocation";
 import { filterForThoseWithQuantities, hasQuantity } from "./HasQuantity";
+import type { InstrumentAttrs } from "./InstrumentModel";
 import type { SampleAttrs } from "./SampleModel";
 import Search from "./Search";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
@@ -252,7 +254,7 @@ export type ListOfMaterialsAttrs = {
   description: string;
   elnFieldId: number;
   materials: Array<{
-    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs;
+    invRec: ContainerAttrs | SampleAttrs | SubSampleAttrs | InstrumentAttrs;
     usedQuantity: Quantity | null;
   }>;
 };
@@ -325,7 +327,7 @@ export class ListOfMaterials {
     this.setLoading(false);
     this.pickerSearch = new Search({
       uiConfig: {
-        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "ALL"]),
+        allowedTypeFilters: new Set(["SUBSAMPLE", "SAMPLE", "CONTAINER", "INSTRUMENT", "ALL"]),
         selectionMode: "MULTIPLE",
       },
       factory: new MemoisedFactory(),
@@ -476,11 +478,15 @@ export class ListOfMaterials {
 
   trackInventoryRecordsUpdate() {
     if (this.materials.some((m) => m.updateInventoryQuantity && m.usedQuantityDelta)) {
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsInventoryQuantityEdited", {
-        lomid: this.id,
+      getRootStore().trackingStore.trackEvent("user:update_quantities:list_of_materials:document_editor", {
+        id: this.id,
         elnFieldId: this.elnFieldId,
       });
     }
+  }
+
+  get itemTypesUsed(): Array<string> {
+    return Array.from(new Set(this.materials.map((m) => m.invRec.type))).sort();
   }
 
   async create(): Promise<void> {
@@ -490,15 +496,16 @@ export class ListOfMaterials {
       this.id = data.id; // making list 'not new'
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully created.`,
+          message: i18n.t("inventory:materialsListing.alerts.created", { name: this.name }),
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsCreated", {
+      getRootStore().trackingStore.trackEvent("user:create:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -514,11 +521,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while updating ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.createFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,
@@ -555,15 +562,16 @@ export class ListOfMaterials {
 
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully updated.`,
+          message: i18n.t("inventory:materialsListing.alerts.updated", { name: this.name }),
           variant: "success",
         }),
       );
-      this.trackInventoryRecordsUpdate();
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsUpdated", {
+      getRootStore().trackingStore.trackEvent("user:update:list_of_materials:document_editor", {
         id: this.id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
+      this.trackInventoryRecordsUpdate();
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
       const errors = data
@@ -579,11 +587,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while updating ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.updateFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,
@@ -609,32 +617,36 @@ export class ListOfMaterials {
     if (!id) throw new Error("A new list cannot be deleted.");
 
     const confirmation = await getRootStore().uiStore.confirm(
-      "Are you sure you want to delete this list?",
-      "This list and information about used quantities will not be available anymore. The inventory items will not be affected by this action.",
-      "Yes",
-      "No",
+      i18n.t("inventory:materialsListing.confirmDelete.title"),
+      i18n.t("inventory:materialsListing.confirmDelete.message"),
+      i18n.t("common:actions.yes"),
+      i18n.t("common:actions.no"),
     );
     if (!confirmation) return confirmation;
 
     this.setLoading(true);
     try {
-      await showToastWhilstPending(`Deleting ${this.name}...`, InvApiService.delete<void>(`listOfMaterials`, id));
+      await showToastWhilstPending(
+        i18n.t("inventory:materialsListing.pending.deleting", { name: this.name }),
+        InvApiService.delete<void>(`listOfMaterials`, id),
+      );
       getRootStore().uiStore.addAlert(
         mkAlert({
-          message: `${this.name} was successfully deleted.`,
+          message: i18n.t("inventory:materialsListing.alerts.deleted", { name: this.name }),
           variant: "success",
         }),
       );
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsDeleted", {
-        id,
+      getRootStore().trackingStore.trackEvent("user:delete:list_of_materials:document_editor", {
+        id: id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
       return confirmation;
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while deleting ${this.name}`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:materialsListing.alerts.deleteFailed", { name: this.name }),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -675,7 +687,7 @@ export class ListOfMaterials {
         }),
       );
       const { data } = await showToastWhilstPending(
-        `Exporting ${this.name}...`,
+        i18n.t("inventory:materialsListing.pending.exporting", { name: this.name }),
         InvApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
@@ -687,9 +699,10 @@ export class ListOfMaterials {
       link.setAttribute("download", fileName);
       link.click(); // trigger download
 
-      getRootStore().trackingStore.trackEvent("ListOfMaterialsExported", {
-        id: this.id,
+      getRootStore().trackingStore.trackEvent("user:export:list_of_materials:document_editor", {
+        id: id,
         elnFieldId: this.elnFieldId,
+        types: this.itemTypesUsed,
       });
     } catch (error) {
       const data = Parsers.objectPath(["response", "data"], error).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
@@ -706,11 +719,11 @@ export class ListOfMaterials {
             .flatMap((e) => Parsers.getValueWithKey("message")(e)),
         )
         .flatMap(Parsers.isString)
-        .orElse("Unknown reason.");
+        .orElse(i18n.t("inventory:errors.unknownReason"));
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: `Something went wrong while exporting ${this.name}`,
-          message: errors.length > 0 ? "Expand for more information." : message,
+          title: i18n.t("inventory:materialsListing.alerts.exportFailed", { name: this.name }),
+          message: errors.length > 0 ? i18n.t("inventory:errors.expandForMoreDetails") : message,
           variant: "error",
           details: errors.map((e) => ({
             title: e,
@@ -744,20 +757,19 @@ export class ListOfMaterials {
     if (
       !parentIsOnBench.isEmpty &&
       (await uiStore.confirm(
-        "Some items are in containers that are already on your bench.",
+        i18n.t("inventory:materialsListing.actions.move.confirmOnBench.title"),
         <>
-          The items are:
+          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.itemsLabel")}
           <ul>
-            {parentIsOnBench.map(({ name, globalId }) => (
-              <li key={globalId}>
-                {name} ({globalId})
-              </li>
-            ))}
+            {parentIsOnBench.map(({ name, globalId }) => {
+              const title = name.trim();
+              return <li key={globalId}>{title ? `${title} (${globalId})` : `(${globalId})`}</li>;
+            })}
           </ul>
-          Do you want to move them to your bench?
+          {i18n.t("inventory:materialsListing.actions.move.confirmOnBench.prompt")}
         </>,
-        "Yes",
-        "No",
+        i18n.t("common:actions.yes"),
+        i18n.t("common:actions.no"),
       ))
     ) {
       moving = moving.union(parentIsOnBench);

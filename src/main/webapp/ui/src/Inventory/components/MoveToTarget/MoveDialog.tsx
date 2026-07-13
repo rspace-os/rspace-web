@@ -1,6 +1,8 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AlwaysNewWindowNavigationContext from "../../../components/AlwaysNewWindowNavigationContext";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -19,16 +21,18 @@ type DialogTitleArgs<RecordLike extends Record> = {
 
 const DialogTitle = <RecordLike extends Record>({ beingMoved }: DialogTitleArgs<RecordLike>): React.ReactNode => {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation("inventory");
 
   const label = () => {
     if (beingMoved.length === 0)
       // i.e. the dialog is closed
       return "";
-    if (beingMoved.length > 1) return `Moving ${beingMoved.length} items`;
+    if (beingMoved.length > 1) return t("moveToTarget.movingItems", { count: beingMoved.length });
     return (
-      <>
-        Moving <NameWithBadge record={beingMoved[0]} />
-      </>
+      <TransRichText
+        i18nKey="inventory:moveToTarget.movingItem"
+        components={{ name: <NameWithBadge record={beingMoved[0]} /> }}
+      />
     );
   };
 
@@ -38,7 +42,7 @@ const DialogTitle = <RecordLike extends Record>({ beingMoved }: DialogTitleArgs<
       <IconButtonWithTooltip
         onClick={() => setOpen(!open)}
         icon={<ExpandCollapseIcon open={open} />}
-        title={`${open ? "Hide" : "Show"} items being moved`}
+        title={open ? t("moveToTarget.hideItems") : t("moveToTarget.showItems")}
       />
       <SimpleRecordsTable records={beingMoved} open={open} />
     </>

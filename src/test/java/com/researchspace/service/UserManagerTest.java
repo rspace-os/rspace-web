@@ -66,6 +66,13 @@ public class UserManagerTest extends SpringTransactionalTest {
   }
 
   @Test
+  public void getFullNameByUsernameReturnsNullForUnknownUser() {
+    User user = userMgr.getUserByUsername(USER2);
+    assertEquals(user.getFullName(), userMgr.getFullNameByUsername(USER2));
+    assertNull(userMgr.getFullNameByUsername("nonexistent" + getRandomName(8)));
+  }
+
+  @Test
   public void testSave2UsersWithSamePasswordIsDifferentDueToSalt() throws UserExistsException {
     User u1 = TestFactory.createAnyUser("XXXXXX");
     u1.setPassword("password1");

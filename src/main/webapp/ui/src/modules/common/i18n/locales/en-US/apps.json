@@ -1,0 +1,729 @@
+{
+  "actions": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "refresh": "Refresh",
+    "test": "Test"
+  },
+  "disconnect": {
+    "error": "Could not disconnect from {appName}.",
+    "success": "Successfully disconnected from {appName}."
+  },
+  "dmpIntegrations": {
+    "argos": "Argos",
+    "dialog": {
+      "argosDocsLink": "See <externalLink href=\"https://argos.openaire.eu\">argos.openaire.eu</externalLink> and our <helpDocs docLink=\"argos\">Argos integration docs</helpDocs> for more.",
+      "argosImportDesc": "Importing a DMP from <strong>argos.openaire.eu</strong> will make it available to view and reference within RSpace.",
+      "columns": {
+        "contactAffiliation": "Contact Affiliation",
+        "contactName": "Contact Name",
+        "created": "Created",
+        "createdAt": "Created At",
+        "description": "Description",
+        "grant": "Grant",
+        "id": "Id",
+        "label": "Label",
+        "modified": "Modified",
+        "modifiedAt": "Modified At",
+        "name": "Name",
+        "select": "Select",
+        "title": "Title",
+        "updatedAt": "Updated At"
+      },
+      "dmpassistantDocsLink": "See <externalLink href=\"https://dmp-pgd.ca\">dmp-pgd.ca</externalLink> and our <helpDocs docLink=\"dmpassistant\">DMP Assistant integration docs</helpDocs> for more.",
+      "dmpassistantImportDesc": "Importing DMPs from <strong>dmp-pgd.ca</strong> will make them available to view and reference within RSpace. Select one or more and click Import.",
+      "dmponlineDocsLink": "See <externalLink href=\"https://dmponline.dcc.ac.uk\">dmponline.dcc.ac.uk</externalLink> and our <helpDocs docLink=\"dmponline\">DMPonline integration docs</helpDocs> for more.",
+      "dmponlineImportDesc": "Importing a DMP from <strong>dmponline.dcc.ac.uk</strong> will make it available to view and reference within RSpace.",
+      "dmptoolImportDescAndDocsLink": "Importing a DMP{hasAlias, select, yes { from {serverAlias}} other {}} will make it available to view and reference within RSpace. See <externalLink href=\"https://dmptool.org\">dmptool.org</externalLink> and our <helpDocs docLink=\"dmptool\">DMPTool integration docs</helpDocs> for more.",
+      "dswImportDescAndDocsLink": "Importing a project from <strong>{serverAlias}</strong> will make it available to view and reference as a DMP within RSpace. See <externalLink href=\"https://guide.ds-wizard.org/en/latest/\">https://guide.ds-wizard.org/en/latest</externalLink> and our <helpDocs docLink=\"dsw\">DSW / FAIR Wizard integration docs</helpDocs> for more.",
+      "error": {
+        "couldNotGet": "Could not get DMPs: {message}",
+        "couldNotImport": "Could not import DMP",
+        "fetchFailed": "Fetch failed.",
+        "importFailed": "Import failed.",
+        "loadFailed": "Failed to load listing of DMPs. Please try refreshing.",
+        "unableToLoad": "Unable to load DMPs.",
+        "unableToLoadProjects": "Unable to load projects.",
+        "unableToLoadProjectsMessage": "<errorMsg/><br/>For more information <helpDocs docLink=\"dsw\">visit our docs</helpDocs>."
+      },
+      "forMoreInfo": "For more information <helpDocs docLink=\"dmptoolImportingDmps\">visit our docs</helpDocs>.",
+      "helpTitle": "{name} help",
+      "importButton": "Import{count, plural, =0 {} =1 {} other { (#)}}",
+      "importButtonCount": "Import ({count})",
+      "importDmpIntoGallery": "Import a DMP into the Gallery",
+      "importDmpsIntoGallery": "Import DMPs into the Gallery",
+      "importSuccess": "Success.",
+      "importSuccessMessage": "DMP {planId} was successfully imported.",
+      "loadingDmps": "Loading listing of DMPs.",
+      "noDmpIsSelected": "No DMP is selected.",
+      "noDmps": "No DMPs",
+      "noDmpSelected": "No DMP selected.",
+      "noProjects": "No projects found",
+      "notSpecified": "Not Specified",
+      "search": {
+        "collaborators": "Collaborators",
+        "filters": "Search filters",
+        "funder": "Funder"
+      },
+      "selectAllLabel": "Select all DMPs on this page",
+      "selectColumn": "Select",
+      "selectDmpLabel": "Select {title}",
+      "selectPlanLabel": "Select plan: {label}"
+    },
+    "dmpAssistant": "DMP Assistant",
+    "dmponline": "DMPonline",
+    "dmptool": "DMPTool",
+    "dsw": "DSW / FAIR Wizard",
+    "endpoint": {
+      "importFailed": "{count, plural, one {Failed to import DMP.} other {Failed to import DMPs.}}",
+      "importSuccess": "{count, plural, one {Successfully imported DMP.} other {Successfully imported {count} DMPs.}}",
+      "listFailed": "Failed to get available DMPs."
+    },
+    "scope": {
+      "both": "Both",
+      "instructions": {
+        "selectScopeAndPlan": "Select a scope to get the latest plans. Select a plan and click \"Import\" to add it to the Gallery."
+      },
+      "mine": "Mine",
+      "name": "DMP Scope Options",
+      "public": "Public"
+    }
+  },
+  "externalWorkflows": {
+    "columns": {
+      "container": "Container/Galaxy History",
+      "created": "Invocation Created",
+      "dataUploaded": "Data Uploaded",
+      "invocation": "Invocation",
+      "status": "Invocation Status"
+    },
+    "dataUploadedDesc": "Data uploaded and workflow invocations using that data",
+    "dialogTitle": "Galaxy Workflow Data",
+    "error": {
+      "notFound": "Unable to retrieve any relevant results. Error message was: {errorMessage}",
+      "seeError": "See Galaxy error",
+      "timeout": "Request timed out.",
+      "title": "Error",
+      "unauthorized": "Invalid Galaxy API key. Please re-enter your API key on the Apps page.",
+      "unknown": "Unknown issue. Please check whether your Galaxy server is running. Error message was: {errorMessage}"
+    },
+    "loadingLabel": "Please wait while computational workflows associated with this field load.",
+    "noRows": "No data is attached to this document.",
+    "queryingLabel": "Please wait, a Galaxy query is in progress.",
+    "queryingTitle": "Galaxy Query In Progress",
+    "showWorkflowsLabel": "Show computational workflows associated with this field"
+  },
+  "integrationCard": {
+    "disable": "DISABLE",
+    "enable": "ENABLE",
+    "moreInfo": {
+      "docsOnly": "See our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more.",
+      "withWebsite": "See our <website>website</website> and our <helpDocs docLink=\"{docLink}\">{helpLinkText}</helpDocs> for more."
+    },
+    "setup": "Setup"
+  },
+  "integrations": {
+    "apiDirect": {
+      "curlExample": "cURL example:",
+      "description": "Directly interact with the RSpace API using scripts and custom applications.",
+      "helpLink": "API documentation",
+      "name": "API Direct Access",
+      "pythonSdk": "Python SDK:",
+      "setup": {
+        "generateKey": "In My RSpace → My Profile, generate an API key.",
+        "instructions": "<ol><li>In My RSpace → My Profile, generate an API key.</li><li>Use the API key in your scripts with the following example patterns:</li></ol>",
+        "useKey": "Use the API key in your scripts with the following example patterns:"
+      },
+      "usage": "Access RSpace programmatically using Python, R, or any language with HTTP capabilities to automate tasks and integrate with your own tools."
+    },
+    "argos": {
+      "description": "Create, manage and exchange Data Management Plans on an extensible open platform.",
+      "helpLink": "ARGOS integration docs",
+      "name": "ARGOS",
+      "setup": {
+        "imported": "ARGOS DMPs can now be imported through the RSpace Gallery.",
+        "instructions": "<ol><li>Enable the integration.</li><li>ARGOS DMPs can now be imported through the RSpace Gallery.</li></ol>"
+      },
+      "usage": "You can import Data Management Plans (DMPs) from ARGOS into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
+    },
+    "box": {
+      "description": "Collaborate with anyone from anywhere with a content management and workflow cloud.",
+      "helpLink": "Cloud Storage integrations docs",
+      "linkType": {
+        "ask": "Decide between live and versioned links when inserting a link.",
+        "askDescription": "This allows some links to be to live files and some to be to older versions.",
+        "live": "Live",
+        "liveDescription": "Only live links (that always point to the latest version of the file) are inserted.",
+        "versioned": "Versioned",
+        "versionedDescription": "If the file is updated in Box after you made the link, you'll still be able to download the original version. This feature only works for premium Box accounts."
+      },
+      "name": "Box",
+      "setup": {
+        "checkLinkType": "Check that the link type option below is correct.",
+        "instructions": "<ol><li>Enable the integration.</li><li>Check that the link type option below is correct.</li><li>When editing a document, click on the Box icon in the text editor toolbar.</li></ol>",
+        "toolbar": "When editing a document, click on the Box icon in the text editor toolbar."
+      },
+      "sysadminNote": "To enable the disabled options, please contact your sysadmin.",
+      "usage": "You can include files from Box in your RSpace documents. Files are embedded as links to the Box location of that file."
+    },
+    "calira": {
+      "alerts": {
+        "connectError": "Could not connect to Calira",
+        "connectSuccess": "Successfully connected to Calira."
+      },
+      "description": "Manage schedules of lab equipment, maintenance, and personnel through a web-based platform.",
+      "helpLink": "Calira integration docs",
+      "name": "Calira",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Calira account.",
+        "instructions": "<ol><li>Register for a Calira account.</li><li>Click on Connect to authorise RSpace to access your Calira account.</li><li>Enable the integration.</li><li>When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data.</li></ol>",
+        "register": "Register for a Calira account.",
+        "toolbar": "When editing a document, click on the Calira icon in the text editor toolbar to access and insert equipment data."
+      },
+      "usage": "You can view and insert your equipment bookings from Calira into RSpace documents, as data tables. These tables will contain direct links back to the bookings in Calira."
+    },
+    "chemistry": {
+      "description": "Draw and modify standard and advanced chemical structures with a web-based chemical editor.",
+      "helpLink": "Chemistry integration docs",
+      "name": "Chemistry",
+      "setup": {
+        "dragDrop": "You can also drag and drop existing chemical structure files into a document text field, and edit them.",
+        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher.</li><li>You can also drag and drop existing chemical structure files into a document text field, and edit them.</li></ol>",
+        "toolbar": "When editing a document, click on the integration's icon in the text editor toolbar to open the chemical sketcher."
+      },
+      "usage": "You can draw chemical structures and reactions in documents, search for chemical structures across your Workspace, and import or export to standard formats such as ChemDraw, mol, SMILES, and others."
+    },
+    "dataverse": {
+      "alerts": {
+        "deleteConfigError": "Could not delete configuration.",
+        "deleteConfigSuccess": "Successfully deleted configuration.",
+        "saveExistingError": "Error saving Dataverse configuration.",
+        "saveExistingSuccess": "Successfully saved Dataverse details.",
+        "saveNewError": "Could not save Dataverse details",
+        "saveNewSuccess": "Successfully saved Dataverse details",
+        "testInvalid": "Connection details are not valid.",
+        "testValid": "Connection details are valid."
+      },
+      "configuredLabel": "Configured Dataverse with name {name}",
+      "description": "Explore, analyse, and share data through an open-source research data repository software.",
+      "errorGettingConfigs": "There was an error getting the configured Dataverses.",
+      "fields": {
+        "alias": "Dataverse Name",
+        "aliasRequired": "Name is required.",
+        "apiKey": "API key",
+        "apiKeyRequired": "API key is required.",
+        "serverUrl": "Server URL",
+        "urlRequired": "URL is required."
+      },
+      "helpLink": "Dataverse integration docs",
+      "multipleConfig": "You can configure multiple Dataverses to connect to.",
+      "name": "Dataverse",
+      "setup": {
+        "enterCredentials": "Enter the required credentials and Save.",
+        "exportDialog": "Dataverse will now be available as an option in the export dialog.",
+        "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>Dataverse will now be available as an option in the export dialog.</li></ol>",
+        "test": "Click on Test to ensure your credentials are correct."
+      },
+      "usage": "You can export your files and data directly from RSpace to Dataverse. You are able to specify various metadata and controlled vocabulary terms for the deposit."
+    },
+    "digitalCommonsData": {
+      "alerts": {
+        "connectError": "Could not connect to Digital Commons Data",
+        "connectSuccess": "Successfully connected to Digital Commons Data."
+      },
+      "description": "Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation.",
+      "helpLink": "Digital Commons Data / Mendeley Data integration docs",
+      "name": "Digital Commons Data / Mendeley Data",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.",
+        "exportDialog": "Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.</li><li>Enable the integration.</li><li>Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.</li></ol>"
+      },
+      "usage": "You can export your files and data directly from RSpace to Digital Commons Data or Mendeley Data."
+    },
+    "dmpAssistant": {
+      "alerts": {
+        "connectError": "Could not connect to DMP Assistant",
+        "connectSuccess": "Successfully connected to DMP Assistant."
+      },
+      "description": "Portage Network's DMP Assistant — create and manage Data Management Plans in DMPRoadmap.",
+      "helpLink": "DMP Assistant integration docs",
+      "name": "DMP Assistant",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMP Assistant account.",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMP Assistant account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMP Assistant into RSpace, reference them in RSpace documents, and attach them to data deposits when exporting to repositories."
+    },
+    "dmponline": {
+      "alerts": {
+        "connectError": "Could not connect to DMPOnline",
+        "connectSuccess": "Successfully connected to DMPOnline."
+      },
+      "description": "Create Data Management Plans for your research.",
+      "helpLink": "DMPonline integration docs",
+      "name": "DMPonline",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMPonline account.",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPonline account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMPonline into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
+    },
+    "dmptool": {
+      "alerts": {
+        "connectError": "Could not connect to DMPTool",
+        "connectSuccess": "Successfully connected to DMPTool."
+      },
+      "description": "Create Data Management Plans for your research through a guided web-based tool with templates.",
+      "helpLink": "DMPTool integration docs",
+      "name": "DMPTool",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your DMPTool account.",
+        "gallery": "You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your DMPTool account.</li><li>Enable the integration.</li><li>You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.</li></ol>"
+      },
+      "usage": "You can import Data Management Plans (DMPs) from DMPTool into RSpace, and associate DMPs with repository exports. Exporting from RSpace automatically updates the DMP in DMPTool with a DOI of the repository deposit."
+    },
+    "dropbox": {
+      "description": "Store, access, and share your files across devices with others through online cloud storage.",
+      "helpLink": "Cloud Storage integrations docs",
+      "name": "Dropbox",
+      "setup": {
+        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Dropbox icon in the text editor toolbar.</li></ol>",
+        "toolbar": "When editing a document, click on the Dropbox icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Dropbox in your RSpace documents. Files are embedded as links to the Dropbox location of that file."
+    },
+    "dryad": {
+      "alerts": {
+        "connectError": "Could not connect to Dryad",
+        "connectSuccess": "Successfully connected to Dryad."
+      },
+      "description": "Deposit, discover, and cite research data through a curated open-access repository.",
+      "helpLink": "Dryad integration docs",
+      "name": "Dryad",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Dryad account.",
+        "exportDialog": "Dryad will now be available as an option in the export dialog.",
+        "instructions": "<ol><li>Dryad uses ORCID iD for authentication; if you don't have an ORCID iD, you can create one at <externalLink href=\"https://orcid.org/register\">orcid.org/register</externalLink></li><li>Click on Connect to authorise RSpace to access your Dryad account.</li><li>Dryad will now be available as an option in the export dialog.</li></ol>"
+      },
+      "usage": "You can export your files and data directly from RSpace to Dryad, and provide metadata for the deposit."
+    },
+    "dsw": {
+      "alerts": {
+        "deleteConfigError": "Could not delete configuration.",
+        "deleteConfigSuccess": "Successfully deleted configuration.",
+        "saveExistingError": "Error saving DSW configuration.",
+        "saveExistingSuccess": "Successfully saved DSW details.",
+        "saveNewError": "Could not save DSW details",
+        "saveNewSuccess": "Successfully saved DSW details",
+        "testInvalid": "Connection details are not valid.",
+        "testValid": "Connection details are valid."
+      },
+      "configuredLabel": "Configured DSW with label {label}",
+      "description": "Import Data Management Plans from Data Stewardship Wizard or FAIR Wizard.",
+      "errorGettingConfigs": "There was an error getting the configured DSW instances.",
+      "fields": {
+        "apiKey": "API key",
+        "apiKeyRequired": "API key is required.",
+        "label": "Label",
+        "labelRequired": "Label is required.",
+        "serverUrl": "Server URL",
+        "urlRequired": "URL is required."
+      },
+      "helpLink": "DSW integration docs",
+      "multipleConfig": "You can configure multiple DSW or FAIR Wizard instances to connect to.",
+      "name": "DSW / FAIR Wizard",
+      "setup": {
+        "enterCredentials": "Enter the required credentials and Save.",
+        "gallery": "You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.",
+        "instructions": "<ol><li>Enter the required credentials and Save.</li><li>Click on Test to ensure your credentials are correct.</li><li>Enable the integration.</li><li>You can now import a DSW or FAIR Wizard project as a DMP when in the Gallery, and associate that DMP with data when in the export dialog.</li></ol>",
+        "test": "Click on Test to ensure your credentials are correct."
+      },
+      "usage": "You can import projects from Data Stewardship Wizard or FAIR Wizard into RSpace, and associate them as Data Management Plans with repository exports."
+    },
+    "egnyte": {
+      "description": "Collaborate, sync and share your files with a security-focused enterprise solution.",
+      "fields": {
+        "domainUrl": "Egnyte Domain URL"
+      },
+      "helpLink": "Cloud Storage integrations docs",
+      "name": "Egnyte",
+      "setup": {
+        "instructions": "<ol><li>Provide your Egnyte domain URL and Save.</li><li>Enable the integration.</li><li>When editing a document, click on the Egnyte icon in the text editor toolbar.</li></ol>",
+        "provideDomain": "Provide your Egnyte domain URL and Save.",
+        "toolbar": "When editing a document, click on the Egnyte icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Egnyte in your RSpace documents. Files are embedded as links to the Egnyte location of that file."
+    },
+    "evernote": {
+      "description": "Take notes, manage tasks, and organise your notes into notebooks with embedded media.",
+      "helpLink": "Evernote integration docs",
+      "name": "Evernote",
+      "setup": {
+        "import": "In the Workspace, select Create → Import from Evernote.",
+        "instructions": "<ol><li>Enable the integration.</li><li>In the Workspace, select Create → Import from Evernote.</li></ol>"
+      },
+      "usage": "You can directly import Evernote XML exports into RSpace. The import creates a separate RSpace document for each Note, and images and attachments will also be imported."
+    },
+    "fieldmark": {
+      "description": "Collect structured, geospatial sample and fieldwork data while offline, for easy importing into Inventory.",
+      "fields": {
+        "apiKey": "API Key"
+      },
+      "helpLink": "Fieldmark integration docs",
+      "name": "Fieldmark",
+      "setup": {
+        "copyToken": "Copy the API Token into the field below, and Save.",
+        "importButton": "Use the import button in Inventory, and select Fieldmark to browse notebooks for import.",
+        "instructions": "<ol><li>Obtain an API Token from Fieldmark.</li><li>Copy the API Token into the field below, and Save.</li><li>Enable the integration.</li><li>Use the import button in Inventory, and select Fieldmark to browse notebooks for import.</li></ol>",
+        "obtainToken": "Obtain an API Token from Fieldmark."
+      },
+      "usage": "You can import your <strong>Fieldmark</strong> notebooks into Inventory"
+    },
+    "figshare": {
+      "alerts": {
+        "connectError": "Could not connect to Figshare",
+        "connectSuccess": "Successfully connected to Figshare."
+      },
+      "description": "Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner.",
+      "helpLink": "Figshare integration docs",
+      "name": "Figshare",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your Figshare account.",
+        "exportDialog": "Figshare will now be available as an option in the export dialog.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Figshare account.</li><li>Enable the integration.</li><li>Figshare will now be available as an option in the export dialog.</li></ol>"
+      },
+      "usage": "You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
+    },
+    "galaxy": {
+      "alerts": {
+        "addError": "Error added new Galaxy server.",
+        "addSuccess": "Successfully added new Galaxy server.",
+        "deleteError": "Could not delete API key.",
+        "deleteSuccess": "Successfully deleted API key.",
+        "saveError": "Error saving API key.",
+        "saveSuccess": "Successfully saved API key."
+      },
+      "apiKeyLabel": "API Key for {alias}",
+      "description": "Galaxy is a free, open-source system for data analysis, workflows, and more.",
+      "helpLink": "Galaxy integration docs",
+      "name": "Galaxy",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "chooseServer": "Choose the corresponding server from the add menu below.",
+        "enterToken": "Enter the access token into the field that appears, and save.",
+        "instructions": "<ol><li>Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the Galaxy icon in the text editor toolbar.</li></ol>",
+        "requestToken": "Request a user access token by going to username → Preferences → 'Manage API key' in Galaxy.",
+        "toolbar": "When editing a document, click on the Galaxy icon in the text editor toolbar."
+      },
+      "usage": "You can connect your Galaxy workflows and data to RSpace. This allows you to send data from RSpace to Galaxy and import results back into your notebooks."
+    },
+    "github": {
+      "alerts": {
+        "addError": "Failed to add repository.",
+        "addSuccess": "Successfully added repository.",
+        "connectError": "Could not connect to GitHub",
+        "fetchError": "Could not fetch listing of repositories",
+        "removeError": "Failed to remove repository.",
+        "removeSuccess": "Successfully removed repository."
+      },
+      "description": "Store and manage your code through a software development and Git version control platform.",
+      "helpLink": "GitHub integration docs",
+      "name": "GitHub",
+      "orElse": "Error getting configured repositories",
+      "repositories": {
+        "additionalHeading": "Link Additional Repositories",
+        "invalidState": "Repository is in an invalid state. Please remove and re-add.",
+        "linkedHeading": "Linked Repositories",
+        "loading": "Loading available repositories",
+        "nameHeader": "Repository Name",
+        "noAvailable": "There are no available repositories.",
+        "noLinked": "There are no linked repositories."
+      },
+      "setup": {
+        "authorise": "Click on Connect to authorise RSpace to access your GitHub account.",
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your GitHub account.</li><li>Select repositories you want to give RSpace access to.</li><li>Enable the integration.</li><li>When editing a document, click on the GitHub icon in the text editor toolbar.</li></ol>",
+        "select": "Select repositories you want to give RSpace access to.",
+        "toolbar": "When editing a document, click on the GitHub icon in the text editor toolbar."
+      },
+      "usage": "You can link to projects, folders, or files stored in GitHub repositories directly from RSpace."
+    },
+    "googleDrive": {
+      "description": "Create, organise, and share on your files through a collaborative cloud-based service.",
+      "helpLink": "Cloud Storage integrations docs",
+      "name": "Google Drive",
+      "setup": {
+        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li></ol>",
+        "toolbar": "When editing a document, click on the Google Drive icon in the text editor toolbar."
+      },
+      "usage": "You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
+    },
+    "jove": {
+      "description": "Embed JoVE and other video players (e.g., YouTube, TIB AV-Portal).",
+      "helpLink": "Video integration docs",
+      "name": "JoVE",
+      "setup": {
+        "instructions": "<ol><li>Open a document in the Documents Editor and click the <strong>Video</strong> button in the editor toolbar, the insert menu, or the slash menu.</li><li>Paste a full JoVE URL from a supported <code>jove.com</code> page, for example <code>https://www.jove.com/v/60908/...</code> or <code>https://app.jove.com/v/60908/...</code>.</li><li>Select <strong>Insert</strong> to place the JoVE video embed at the current cursor position.</li></ol>",
+        "noteFull": "<strong>Note:</strong> Pasting a JoVE URL directly into the document does not auto-embed it; use the Video editor action when you want an embed."
+      },
+      "usage": "Embed JoVE videos in RSpace documents by opening the Video tool from the Documents Editor, pasting a JoVE URL, and inserting the generated embed at the cursor position."
+    },
+    "jupyter": {
+      "description": "Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace.",
+      "helpLink": "RSpace Jupyter Notebook documentation",
+      "name": "Jupyter Notebook Synchronisation",
+      "setup": {
+        "instructions": "<ol><li><strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.</li><li><strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help docs to use pip to install RSpace client. Run a python cell with the following code:<strong>One time install step:</strong><installCommand/>Run the cell then <strong>restart the kernel and</strong> <strong>refresh the browser</strong> tab running Jupyter.</li><li><strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the sync_notebook script.<strong>Do this step once per notebook:</strong><notebookCommand/>Run the cell, <strong>restart the kernel and</strong> and then run the cell one more time <strong>without a kernel restart. Save the Notebook.</strong></li><li><strong>Run the code:</strong> Paste this code into <strong>the last cell in the notebook:</strong><syncCommand/></li></ol>"
+      },
+      "usage": "Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
+    },
+    "msteams": {
+      "alerts": {
+        "addError": "Failed to add channel.",
+        "addSuccess": "Successfully added channel.",
+        "removeError": "Failed to remove channel.",
+        "removeSuccess": "Successfully removed channel."
+      },
+      "description": "Message and video call your colleagues through a workspace platform with file storage.",
+      "fields": {
+        "channelName": "Channel Connector Name",
+        "webhookUrl": "Webhook URL"
+      },
+      "helpLink": "Microsoft Teams integration docs",
+      "name": "Teams",
+      "orElse": "Error getting configured channels.",
+      "setup": {
+        "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"teams\">the Microsoft Teams Integration article.</helpDocs>"
+      },
+      "tableHeader": "Channel Connector Name",
+      "usage": "You can post messages about a specific RSpace document to a Teams channel directly from RSpace."
+    },
+    "nextCloud": {
+      "alerts": {
+        "connectError": "Could not connect to Nextcloud",
+        "connectSuccess": "Successfully connected to Nextcloud."
+      },
+      "description": "Create, organise, and share your files through an open-source file hosting system.",
+      "helpLink": "Nextcloud integration docs",
+      "name": "Nextcloud",
+      "setup": {
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your Nextcloud account.</li><li>When editing a document, click on the Nextcloud icon in the text editor toolbar.</li></ol>"
+      },
+      "usage": "You can make links to Nextcloud documents directly from RSpace."
+    },
+    "omero": {
+      "alerts": {
+        "connectError": "Could not connect to OMERO",
+        "connectSuccess": "Successfully connected to OMERO."
+      },
+      "credentialsFormLabel": "OMERO credentials",
+      "description": "View, manage, and share your microscopy image data with an extensible central repository.",
+      "fields": {
+        "password": "Password",
+        "username": "Username"
+      },
+      "helpLink": "Omero integration docs",
+      "name": "OMERO",
+      "setup": {
+        "credentials": "Provide your OMERO credentials and click on Connect.",
+        "instructions": "<ol><li>Provide your OMERO credentials and click on Connect.</li><li>Enable the integration.</li><li>When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data.</li></ol>",
+        "toolbar": "When editing a document, click on the OMERO icon in the text editor toolbar to access and insert image data."
+      },
+      "usage": "You can import OMERO image thumbnails and metadata into RSpace documents."
+    },
+    "oneDrive": {
+      "description": "Store, share, and sync your files with a file hosting service integrated with Microsoft 365.",
+      "helpLink": "Cloud Storage integrations docs",
+      "name": "OneDrive",
+      "setup": {
+        "instructions": "<ol><li>Enable the integration.</li><li>When editing a document, click on the OneDrive icon in the text editor toolbar.</li></ol>",
+        "toolbar": "When editing a document, click on the OneDrive icon in the text editor toolbar."
+      },
+      "usage": "You can include files from OneDrive in your RSpace documents. Files are embedded as links to the OneDrive location of that file."
+    },
+    "ownCloud": {
+      "alerts": {
+        "connectError": "Could not connect to OwnCloud",
+        "connectSuccess": "Successfully connected to OwnCloud."
+      },
+      "description": "Create, manage, and share your files through an open-source file hosting system.",
+      "helpLink": "OwnCloud integration docs",
+      "name": "ownCloud",
+      "setup": {
+        "instructions": "<ol><li>Click on Connect to authorise RSpace to access your ownCloud account.</li><li>When editing a document, click on the ownCloud icon in the text editor toolbar.</li></ol>"
+      },
+      "usage": "You can make links to ownCloud documents directly from RSpace."
+    },
+    "protocolsIo": {
+      "alerts": {
+        "connectError": "Could not connect to Protocols IO",
+        "connectSuccess": "Successfully connected to Protocols IO."
+      },
+      "description": "Develop, organise, and share reproducible experimental protocols through a secure repository.",
+      "helpLink": "protocols.io integration docs",
+      "name": "protocols.io",
+      "setup": {
+        "connect": "Click on Connect to authorise RSpace to access your protocols.io account.",
+        "import": "You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.",
+        "instructions": "<ol><li>Register for a protocols.io account.</li><li>Click on Connect to authorise RSpace to access your protocols.io account.</li><li>Enable the integration.</li><li>You can now import protocols from the Workspace Create menu, or from the text editor toolbar when editing a document.</li></ol>",
+        "register": "Register for a protocols.io account."
+      },
+      "usage": "You can browse private and public protocols, and import them into RSpace."
+    },
+    "pyrat": {
+      "alerts": {
+        "addError": "Error added new PyRAT server.",
+        "addSuccess": "Successfully added new PyRAT server.",
+        "deleteError": "Could not delete API key.",
+        "deleteSuccess": "Successfully deleted API key.",
+        "saveError": "Error saving API key.",
+        "saveSuccess": "Successfully saved API key."
+      },
+      "apiKeyLabel": "API Key for {alias}",
+      "description": "Increase efficiency, access, and ensure compliance through a lab animal colony management software.",
+      "helpLink": "PyRAT integration docs",
+      "name": "PyRAT",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "chooseServer": "Choose the corresponding server from the add menu below.",
+        "enterToken": "Enter the access token into the field that appears, and save.",
+        "instructions": "<ol><li>Request a user access token by going to Administration → API → Request access in PyRAT.</li><li>Choose the corresponding server from the add menu below.</li><li>Enter the access token into the field that appears, and save.</li><li>Enable the integration.</li><li>When editing a document, click on the PyRAT icon in the text editor toolbar.</li></ol>",
+        "requestToken": "Request a user access token by going to Administration → API → Request access in PyRAT.",
+        "toolbar": "When editing a document, click on the PyRAT icon in the text editor toolbar."
+      },
+      "usage": "You can browse and link to animals in a PyRAT database directly from RSpace."
+    },
+    "raid": {
+      "alerts": {
+        "addError": "Could not add {alias} as a new RAiD connection.",
+        "addSuccess": "Successfully added new RAiD server.",
+        "connectAliasError": "Could not connect to {alias} RAiD server",
+        "connectError": "Could not connect to RAiD server",
+        "connectSuccess": "Successfully connected to {alias} RAiD server.",
+        "deleteError": "Could not disconnect {alias} RAiD connection.",
+        "deleteSuccess": "Successfully deleted connection.",
+        "disconnectError": "Could not disconnect {alias} RAiD connection",
+        "disconnectSuccess": "Successfully disconnected.",
+        "serverStatus": "Server responded with status {status}: {statusText}"
+      },
+      "description": "Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records.",
+      "helpLink": "documentation",
+      "multipleConfig": "Multiple service points can be added to support different RAiD registries. Each project group owner can authenticate and manage their own RAiD associations.",
+      "name": "RAiD",
+      "noServers": "No authenticated servers.",
+      "setup": {
+        "configure": "Configure your RAiD service point to enable authentication and project association:",
+        "instructions": "<ol><li>Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.</li><li>Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.</li><li>Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials.</li><li>Start associating RAiDs with your project groups.</li></ol>",
+        "startAssociating": "Start associating RAiDs with your project groups.",
+        "step1": "Ask your system administrator to set up RAiD server connections. See <helpDocs docLink=\"raid\">our documentation for system administrators</helpDocs> for more information.",
+        "step2": "Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.",
+        "step3": "Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in with your RAiD credentials."
+      },
+      "usage": "Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
+    },
+    "slack": {
+      "alerts": {
+        "addError": "Failed to add channel.",
+        "addSuccess": "Successfully added channel.",
+        "channelDetailsError": "Could not get details of new Slack channel.",
+        "connectError": "Could not connect to Slack",
+        "deleteError": "Could not delete channel.",
+        "deleteSuccess": "Successfully deleted channel.",
+        "labelError": "Failed to change label.",
+        "labelSuccess": "Successfully changed label."
+      },
+      "description": "Message and collaborate with your team with a cloud-based communication tool.",
+      "fields": {
+        "channelName": "Channel name",
+        "rspaceLabel": "RSpace Label",
+        "workspace": "Workspace"
+      },
+      "helpLink": "Slack integration docs",
+      "loadingChannel": "Loading a new channel",
+      "name": "Slack",
+      "orElse": "Error getting configured repositories",
+      "setup": {
+        "instructions": "The steps to setting up this integration are documented in <helpDocs docLink=\"slack\">the Slack Integration article.</helpDocs>"
+      },
+      "usage": "You can send messages or forward notifications to your chosen Slack channels. You can also post links to RSpace documents directly into Slack channels or private messages."
+    },
+    "zenodo": {
+      "description": "Deposit research papers and datasets into a general-purpose open repository with PIDs.",
+      "fields": {
+        "apiKey": "API Key"
+      },
+      "helpLink": "Zenodo integration docs",
+      "name": "Zenodo",
+      "setup": {
+        "copyToken": "Copy the API Token into the field below, and Save.",
+        "exportDialog": "Zenodo will now be available as an option in the export dialog.",
+        "getToken": "Obtain an API Token from Zenodo by going into Settings → Applications, and name the token \"RSpace\".",
+        "instructions": "<ol><li>Obtain an API Token from Zenodo by going into Settings → Applications, and name the token \"RSpace\".</li><li>Copy the API Token into the field below, and Save.</li><li>Zenodo will now be available as an option in the export dialog.</li></ol>"
+      },
+      "usage": "You can export your files and data directly from RSpace to Zenodo. You can specify various metadata and controlled vocabulary terms for the deposit, and reference a DMP from Argos."
+    }
+  },
+  "integrationsEndpoint": {
+    "unknownError": "Unknown error",
+    "unknownReason": "Unknown reason",
+    "updateFailed": "Update failed.",
+    "updateSuccess": "Update successful."
+  },
+  "page": {
+    "introText": "RSpace provides integrations with various third-party apps that enable extra features. Apps need to be enabled to work, and some require authentication. <helpDocs docLink=\"appsIntroduction\">See Apps Introduction to learn more.</helpDocs>",
+    "nothingHere": "Nothing here!",
+    "sections": {
+      "disabled": {
+        "description": "The following Apps are not currently enabled on this account. Click on an App card for setup instructions on how to enable the integration.",
+        "title": "Disabled"
+      },
+      "enabled": {
+        "description": "The following Apps are enabled on this account. Click on an App card to modify or disable the integration.",
+        "title": "Enabled"
+      },
+      "external": {
+        "description": "These RSpace applications have been built by partners or other external software developers. Note, ResearchSpace does not provide direct support for these integrations.",
+        "title": "Third-party RSpace Integrations"
+      },
+      "unavailable": {
+        "description": "The following Apps need to be enabled by your System Administrator before they can be used; please get in touch with them directly to set this up.",
+        "title": "Unavailable"
+      }
+    },
+    "title": "Apps"
+  },
+  "previewInfo": {
+    "chemistryStatus": {
+      "disabled": "Chemistry integration is not enabled. Please contact your administrator to enable it.",
+      "error": "Error checking chemistry integration: {error}",
+      "loading": "Checking chemistry integration status..."
+    }
+  },
+  "pyrat": {
+    "columnVisibility": {
+      "hideSettings": "Hide column visibility settings",
+      "label": "Column Visibility",
+      "selectVisibleColumns": "Select visible columns",
+      "showSettings": "Show column visibility settings"
+    },
+    "error": {
+      "apiVersion": "Only version 2 of the PyRAT API is supported.",
+      "badRequest": "Bad Request.",
+      "network": "Network Error. Please check your connections.",
+      "timeout": "Request timed out.",
+      "title": "Error",
+      "unauthorized": "Invalid PyRAT user or client token.",
+      "unknown": "Unknown error"
+    },
+    "filter": {
+      "hideOptions": "Hide filtering options",
+      "integerValidation": "Should be an integer",
+      "label": "Filter",
+      "showOptions": "Show filtering options"
+    },
+    "insertButton": "Insert"
+  }
+}

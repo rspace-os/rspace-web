@@ -37,13 +37,13 @@ describe("Omero", () => {
     );
 
     await user.click(screen.getByRole("button"));
-    expect(screen.getByRole("textbox", { name: "Username" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "apps:integrations.omero.fields.username" })).toBeVisible();
     /*
      * We have to use getByLabelText instead of getByRole because password
      * fields do not have a role. For more info, see
      * https://github.com/testing-library/dom-testing-library/issues/567
      */
-    expect(screen.getByLabelText("Password")).toBeVisible();
+    expect(screen.getByLabelText("apps:integrations.omero.fields.password")).toBeVisible();
   });
   test("Connect form should submit without opening a blank tab first.", async () => {
     const user = userEvent.setup();
@@ -60,12 +60,12 @@ describe("Omero", () => {
       );
 
       await user.click(screen.getByRole("button"));
-      await user.type(screen.getByRole("textbox", { name: "Username" }), "user");
-      await user.type(screen.getByLabelText("Password"), "password");
-      const form = screen.getByRole("form", { name: "OMERO credentials" });
+      await user.type(screen.getByRole("textbox", { name: "apps:integrations.omero.fields.username" }), "user");
+      await user.type(screen.getByLabelText("apps:integrations.omero.fields.password"), "password");
+      const form = screen.getByRole("form", { name: "apps:integrations.omero.credentialsFormLabel" });
       const submit = vi.fn((event: Event) => event.preventDefault());
       form.addEventListener("submit", submit);
-      await user.click(screen.getByRole("button", { name: "Connect" }));
+      await user.click(screen.getByRole("button", { name: "apps:actions.connect" }));
 
       expect(form).toHaveAttribute("action", "/apps/omero/connect");
       expect(form).toHaveAttribute("method", "POST");

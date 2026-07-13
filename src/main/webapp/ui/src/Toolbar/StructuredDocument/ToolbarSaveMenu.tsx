@@ -3,6 +3,7 @@ import Divider from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 /**
  * Save menu for structured document editing.
@@ -12,6 +13,7 @@ type CreateMenuProps = {
 };
 
 export default function CreateMenu(props: CreateMenuProps) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
@@ -35,7 +37,7 @@ export default function CreateMenu(props: CreateMenuProps) {
           marginRight: 5,
         }}
       >
-        Save
+        {t("actions.save")}
       </Button>
       <Menu
         anchorOrigin={{
@@ -49,26 +51,26 @@ export default function CreateMenu(props: CreateMenuProps) {
         onClose={() => setOpen(false)}
       >
         <MenuItem id="save" data-test-id="save-btn-save">
-          Save
+          {t("actions.save")}
         </MenuItem>
         <Divider />
         <MenuItem id="saveClose" data-test-id="save-btn-close">
-          Save & Close
+          {t("toolbar.saveAndClose")}
         </MenuItem>
         <MenuItem id="saveView" data-test-id="save-btn-view">
-          Save & View
+          {t("toolbar.saveAndView")}
         </MenuItem>
         {props.canCopy && (
           <span>
             <MenuItem id="saveClone" data-test-id="save-btn-clone">
-              Save & Clone
+              {t("toolbar.saveAndClone")}
             </MenuItem>
             <MenuItem id="saveNew" data-test-id="save-btn-new">
-              Save & New
+              {t("toolbar.saveAndNew")}
             </MenuItem>
             <Divider />
             <MenuItem id="saveAsTemplateSaveMenuBtn" data-test-id="save-btn-template">
-              Save as Template
+              {t("toolbar.saveAsTemplateTitle")}
             </MenuItem>
           </span>
         )}

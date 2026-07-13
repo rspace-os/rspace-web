@@ -1,7 +1,5 @@
 import "ketcher-react/dist/index.css";
 
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { createTheme, type ThemeOptions } from "@mui/material";
 import Button from "@mui/material/Button";
 import Dialog, { dialogClasses } from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -10,12 +8,13 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { paperClasses } from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
-import { ThemeProvider, useTheme } from "@mui/material/styles";
+import { createTheme, type ThemeOptions, ThemeProvider, useTheme } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import type { Ketcher } from "ketcher-core";
 import { Editor, InfoModal } from "ketcher-react";
 import { StandaloneStructServiceProvider } from "ketcher-standalone";
 import React, { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import ValidatingSubmitButton, { IsValid, type ValidationResult } from "../ValidatingSubmitButton";
 
@@ -79,6 +78,7 @@ const KetcherDialog = ({
   onChange,
   instructionText,
 }: KetcherDialogArgs): React.ReactNode => {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -187,7 +187,7 @@ const KetcherDialog = ({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleCancelClick}>Cancel</Button>
+        <Button onClick={handleCancelClick}>{t("actions.cancel")}</Button>
         {actionBtnText && (
           <ValidatingSubmitButton loading={false} validationResult={validationResult} onClick={onInsertClick}>
             {actionBtnText}
@@ -195,12 +195,12 @@ const KetcherDialog = ({
         )}
       </DialogActions>
       <Dialog open={showDiscardConfirm} onClose={() => setShowDiscardConfirm(false)}>
-        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogTitle>{t("ketcher.discardChangesDialog.title")}</DialogTitle>
         <DialogContent>
-          <DialogContentText>You have unsaved changes. Are you sure you want to discard them?</DialogContentText>
+          <DialogContentText>{t("ketcher.discardChangesDialog.text")}</DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setShowDiscardConfirm(false)}>Keep Editing</Button>
+          <Button onClick={() => setShowDiscardConfirm(false)}>{t("ketcher.discardChangesDialog.keepEditing")}</Button>
           <Button
             onClick={() => {
               setShowDiscardConfirm(false);
@@ -208,7 +208,7 @@ const KetcherDialog = ({
             }}
             color="error"
           >
-            Discard
+            {t("ketcher.discardChangesDialog.discard")}
           </Button>
         </DialogActions>
       </Dialog>

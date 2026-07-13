@@ -2,6 +2,7 @@ import AddOutlinedIcon from "@mui/icons-material/AddOutlined";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import FormControl from "../../../../components/Inputs/FormControl";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -11,6 +12,7 @@ type NewFieldArgs = {
 };
 
 function NewField({ record }: NewFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const EMPTY_FIELD = {
     id: null,
     globalId: null,
@@ -26,7 +28,11 @@ function NewField({ record }: NewFieldArgs): React.ReactNode {
   return (
     <FormControl inline>
       <CustomTooltip
-        title={record.hasUnsavedExtraField ? "You can only create one field at a time." : "Add custom field."}
+        title={
+          record.hasUnsavedExtraField
+            ? t("fields.extraFields.addOneFieldAtATime")
+            : t("fields.extraFields.addCustomField")
+        }
       >
         <Button
           color="primary"
@@ -36,7 +42,7 @@ function NewField({ record }: NewFieldArgs): React.ReactNode {
           onClick={() => record.addExtraField(EMPTY_FIELD)}
           data-test-id="AddCustomFieldButton"
         >
-          Add new field
+          {t("fields.extraFields.addNewField")}
         </Button>
       </CustomTooltip>
     </FormControl>

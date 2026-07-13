@@ -127,10 +127,6 @@ public class ExportController extends BaseController {
 
   private @Autowired RepositoryDepositHandler depositHandler;
 
-  void setDepositHandler(RepositoryDepositHandler depositHandler) {
-    this.depositHandler = depositHandler;
-  }
-
   private void validateAppIsRepository(StringBuilder erbf, App app) {
     if (!app.isRepositoryApp()) {
       erbf.append(getText("invalid.app.choice", new String[] {app.getName(), "Repository"}));

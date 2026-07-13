@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import useOauthToken from "../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../stores/contexts/Alert";
@@ -60,6 +61,7 @@ export function useIdentifiers(): {
    */
   assignIdentifier: (identifier: Identifier, record: InventoryRecord) => Promise<void>;
 } {
+  const { t } = useTranslation("inventory");
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
 
@@ -139,7 +141,7 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error fetching identifiers",
+            title: t("identifiers.alerts.fetchError"),
             message: getErrorMessage(e).elseThrow(),
           }),
         );
@@ -164,7 +166,7 @@ export function useIdentifiers(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: `Successfully registered ${count} identifiers`,
+          message: t("identifiers.alerts.registerSuccess", { count }),
         }),
       );
     } catch (e) {
@@ -172,7 +174,7 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error registering identifiers",
+            title: t("identifiers.alerts.registerError"),
             message: getErrorMessage(e).elseThrow(),
           }),
         );
@@ -202,10 +204,10 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error deleting identifiers",
-            message: "Failed to delete some of the identifiers.",
+            title: t("identifiers.alerts.deleteError"),
+            message: t("identifiers.alerts.deletePartialFailure"),
             details: failed.map((doi) => ({
-              title: `Failed to delete "${doi}"`,
+              title: t("identifiers.alerts.deleteOneFailed", { doi }),
               variant: "error",
             })),
           }),
@@ -215,9 +217,9 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully deleted the identifiers.",
+            message: t("identifiers.alerts.deleteSuccess"),
             details: success.map((doi) => ({
-              title: `Deleted "${doi}"`,
+              title: t("identifiers.alerts.deletedOne", { doi }),
               variant: "success",
             })),
           }),
@@ -228,7 +230,7 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error deleting identifiers",
+            title: t("identifiers.alerts.deleteError"),
             message: e.message,
           }),
         );
@@ -252,7 +254,7 @@ export function useIdentifiers(): {
       addAlert(
         mkAlert({
           variant: "success",
-          message: `Successfully assigned ${identifier.doi} to ${record.globalId}`,
+          message: t("identifiers.alerts.assignSuccess", { doi: identifier.doi, globalId: record.globalId }),
         }),
       );
     } catch (e) {
@@ -260,7 +262,7 @@ export function useIdentifiers(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error assigning identifier",
+            title: t("identifiers.alerts.assignError"),
             message: getErrorMessage(e).elseThrow(),
           }),
         );

@@ -8,20 +8,22 @@ import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 
-const headCells = [
-  { id: "eventType", numeric: false, label: "Action" },
-  { id: "timestamp", numeric: true, label: "Time" },
-];
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function AccountActivity(props: any) {
+  const { t } = useTranslation("common");
+  const headCells = [
+    { id: "eventType", numeric: false, label: t("profile.accountActivity.action") },
+    { id: "timestamp", numeric: true, label: t("profile.accountActivity.time") },
+  ];
   const [fetched, setFetched] = React.useState(false);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [activities, setActivities] = React.useState<any[] | null>([]);
@@ -58,13 +60,13 @@ export default function AccountActivity(props: any) {
         <Box sx={{ width: "690px", padding: "0px 15px" }}>
           {!fetched && (
             <Button color="primary" onClick={loadUserActivity}>
-              Show account activity
+              {t("profile.accountActivity.show")}
             </Button>
           )}
           {fetched && (
             <>
               <Box className="api-menu__header" sx={{ marginTop: "15px" }}>
-                User's account activity
+                {t("profile.accountActivity.title")}
               </Box>
               <br />
               <Table>
@@ -106,5 +108,9 @@ const domContainer = document.getElementById("account-activity");
 
 if (domContainer) {
   const root = createRoot(domContainer);
-  root.render(<AccountActivity userId={domContainer.dataset.userid} />);
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <AccountActivity userId={domContainer.dataset.userid} />
+    </I18nRoot>,
+  );
 }

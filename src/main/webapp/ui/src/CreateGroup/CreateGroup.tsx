@@ -14,6 +14,8 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
 import Step1 from "./CreateGroupStep1";
 import Step2 from "./CreateGroupStep2";
@@ -163,7 +165,7 @@ class CreateGroup extends React.Component<any, any> {
       })
       .catch((error) => {
         this.setState({
-          errorMessage: `Your request failed due to: ${error.message}. If this problem persists, please contact RSpace Support.`,
+          errorMessage: i18n.t("groups:createGroup.errors.requestFailed", { message: error.message }),
         });
         this.displayLoading(false);
       });
@@ -256,7 +258,7 @@ class CreateGroup extends React.Component<any, any> {
               data-test-id="createGroupOpenButton"
               onClick={this.handleClickOpen}
             >
-              Create Group
+              {i18n.t("groups:createGroup.openButton")}
             </Button>
             <Dialog
               aria-labelledby="simple-dialog-title"
@@ -265,9 +267,9 @@ class CreateGroup extends React.Component<any, any> {
               data-test-id="createGroupModal"
             >
               <DialogTitle data-test-id="modalTitle">
-                Create group
+                {i18n.t("groups:createGroup.title")}
                 <IconButton
-                  aria-label="Close"
+                  aria-label={i18n.t("common:actions.close")}
                   data-test-id="closeModal"
                   sx={{
                     position: "absolute",
@@ -310,8 +312,8 @@ class CreateGroup extends React.Component<any, any> {
                     }
                   >
                     {this.state.activeStep !== this.maxSteps - 1
-                      ? "Next"
-                      : `Create ${this.state.createGroup.groupType}`}
+                      ? i18n.t("groups:createGroup.nav.next")
+                      : i18n.t("groups:createGroup.nav.create", { groupType: this.state.createGroup.groupType })}
                   </Button>
                 }
                 backButton={
@@ -321,7 +323,7 @@ class CreateGroup extends React.Component<any, any> {
                     onClick={this.handleBack}
                     disabled={this.state.activeStep === 0}
                   >
-                    Back
+                    {i18n.t("groups:createGroup.nav.back")}
                   </Button>
                 }
               />
@@ -349,8 +351,8 @@ class CreateGroup extends React.Component<any, any> {
                 {...({ onClose: this.closeToast } as any)}
                 message={
                   this.state.createGroup.currentUser !== this.state.createGroup.selectPI.selectedUser
-                    ? `Group creation request for ${this.state.createGroup.groupName} sent successfully`
-                    : `${this.state.createGroup.groupName} group created successfully!`
+                    ? i18n.t("groups:createGroup.toast.requestSent", { groupName: this.state.createGroup.groupName })
+                    : i18n.t("groups:createGroup.toast.created", { groupName: this.state.createGroup.groupName })
                 }
                 sx={{ backgroundColor: "#4CAF50" }}
               />
@@ -366,4 +368,8 @@ const domContainer = document.getElementById("createGroup");
 const selfService = $("#selfServiceLabGroup").length !== 0;
 const projectGroup = $("#projectGroup").length !== 0;
 const root = createRoot(domContainer as HTMLElement);
-root.render(<CreateGroup />);
+root.render(
+  <I18nRoot namespaces={["groups"]}>
+    <CreateGroup />
+  </I18nRoot>,
+);

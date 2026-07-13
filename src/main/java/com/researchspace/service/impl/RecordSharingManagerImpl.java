@@ -1186,32 +1186,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   /**
-   * @param g
-   * @param groupShareCfgs
-   * @return
-   */
-  private PermissionType getOpForGroup(
-      AbstractUserOrGroupImpl g, ShareConfigElement[] groupShareCfgs) {
-    for (ShareConfigElement gsc : groupShareCfgs) {
-      if (gsc.getId().equals(g.getId())) {
-        return permissnUtils.createFromString(gsc.getOperation());
-      }
-    }
-    // fall-through default
-    return PermissionType.READ;
-  }
-
-  private Long getGroupFolderSelectedAsTarget(
-      AbstractUserOrGroupImpl g, ShareConfigElement[] groupShareCfgs) {
-    for (ShareConfigElement gsc : groupShareCfgs) {
-      if (gsc.getId().equals(g.getId()) && g.isGroup()) {
-        return gsc.getGroupFolderId();
-      }
-    }
-    return null;
-  }
-
-  /**
    * @param userOrGroup
    * @param record
    * @param subject
@@ -1235,32 +1209,6 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     } else {
       return folderDao.get(id);
     }
-  }
-
-  /**
-   * @param rgs
-   * @param userOrGroup
-   * @param toUpdate
-   * @param newPerm
-   */
-  private void updateACLPermissions(
-      RecordGroupSharing rgs,
-      AbstractUserOrGroupImpl userOrGroup,
-      ConstraintBasedPermission toUpdate,
-      ConstraintBasedPermission newPerm) {
-
-    BaseRecord br = rgs.getShared();
-    // need to create new permission objects as ACL permissions don't have
-    // any constraints beyond domain/type - we only want to compare at this level
-    ConstraintBasedPermission oldACLEl =
-        new ConstraintBasedPermission(toUpdate.getDomain(), toUpdate.getActions());
-    ACLElement toRemove = new ACLElement(userOrGroup.getUniqueName(), oldACLEl);
-    propagateACLRemoval(br, toRemove);
-
-    ConstraintBasedPermission newACLEl =
-        new ConstraintBasedPermission(newPerm.getDomain(), newPerm.getActions());
-    ACLElement toAdd = new ACLElement(userOrGroup.getUniqueName(), newACLEl);
-    propagateACLAddition(br, toAdd);
   }
 
   private void removeACLPermissions(

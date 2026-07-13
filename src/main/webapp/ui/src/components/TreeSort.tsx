@@ -7,6 +7,7 @@ import Box from "@mui/material/Box";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import AnalyticsContext from "../stores/contexts/Analytics";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -27,6 +28,7 @@ type TreeSortProps = {
 };
 
 export default function TreeSort({ justifyContent = "flex-end", selectPaddingLeft = 10 }: TreeSortProps = {}) {
+  const { t } = useTranslation("common");
   const [orderBy, setOrderBy] = React.useState("name");
   const [sortOrder, setSortOrder] = React.useState("DESC");
   const { trackEvent } = React.useContext(AnalyticsContext);
@@ -91,23 +93,23 @@ export default function TreeSort({ justifyContent = "flex-end", selectPaddingLef
         sx={{ ...selectSx, mr: "10px" }}
       >
         <MenuItem value="name" data-test-id="order-name">
-          Name
+          {t("treeSort.order.name")}
         </MenuItem>
         <MenuItem value="creationdate" data-test-id="order-creation-date">
-          Creation Date
+          {t("treeSort.order.creationDate")}
         </MenuItem>
         <MenuItem value="modificationdate" data-test-id="order-modification-date">
-          Last Modified
+          {t("treeSort.order.lastModified")}
         </MenuItem>
       </Select>
       <Select className="sortOrder" value={sortOrder} onChange={handleChangeSortOrder} variant="standard" sx={selectSx}>
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon icon={faSortAmountUpAlt} style={{ marginRight: "10px" }} />
-          Ascending
+          {t("treeSort.direction.ascending")}
         </MenuItem>
         <MenuItem value="DESC" data-test-id="sort-desc">
           <FontAwesomeIcon icon={faSortAmountDown} style={{ marginRight: "10px" }} />
-          Descending
+          {t("treeSort.direction.descending")}
         </MenuItem>
       </Select>
     </Box>

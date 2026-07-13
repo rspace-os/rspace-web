@@ -1,11 +1,12 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { createSvgIcon, Modal } from "@mui/material";
 import Badge from "@mui/material/Badge";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Fab from "@mui/material/Fab";
 import Grid from "@mui/material/Grid";
+import Modal from "@mui/material/Modal";
+import { createSvgIcon } from "@mui/material/SvgIcon";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import ExternalWorkflowDialog from "@/eln/eln-external-workflows/ExternalWorkflowDialog";
 import useLocalStorage from "../../hooks/browser/useLocalStorage";
@@ -31,6 +32,7 @@ type GalaxyUsedEventDetail = {
 const NO_DATA: InvocationsAndDataCount = { invocationCount: 0, dataCount: 0 };
 
 function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: ExternalWorkflowInvocationsArgs) {
+  const { t } = useTranslation("apps");
   const [errorReason, setErrorReason] = useState<(typeof ErrorReason)[keyof typeof ErrorReason]>(ErrorReason.None);
   const [errorMessage, setErrorMessage] = useState("");
   const [invocationsAndDataCount, setInvocationsAndDataCount] = useState<InvocationsAndDataCount>(NO_DATA);
@@ -199,7 +201,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
                 }}
                 color="primary"
                 size="medium"
-                aria-label="Show computational workflows associated with this field"
+                aria-label={t("externalWorkflows.showWorkflowsLabel")}
                 aria-haspopup="menu"
                 sx={{ zIndex: "initial" }}
               >
@@ -209,8 +211,8 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
           </Box>
           <Modal
             open={querying}
-            aria-label="Please wait, querying galaxy is in progress"
-            title={"Galaxy Query In Progress"}
+            aria-label={t("externalWorkflows.queryingLabel")}
+            title={t("externalWorkflows.queryingTitle")}
           >
             <Grid
               container
@@ -249,7 +251,7 @@ function ExternalWorkflowInvocations({ isForNotebookPage = false, fieldId }: Ext
             <Fab
               disabled={true}
               size="medium"
-              aria-label="Please wait, loading computational workflows associated with this field"
+              aria-label={t("externalWorkflows.loadingLabel")}
               aria-haspopup="menu"
               sx={{ zIndex: "initial" }}
             >

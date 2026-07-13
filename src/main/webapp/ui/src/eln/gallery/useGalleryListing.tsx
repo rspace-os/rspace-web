@@ -1,6 +1,8 @@
 import { action, makeObservable, observable } from "mobx";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as FetchingData from "../../util/fetchingData";
@@ -566,7 +568,7 @@ export class Filestore implements GalleryFile {
   }
 
   get ownerName(): string {
-    return "Unknown owner";
+    return i18n.t("gallery:unknownOwner");
   }
 
   get ownerUsername(): string | null {
@@ -754,7 +756,7 @@ export class RemoteFile implements GalleryFile {
   }
 
   get ownerName(): string {
-    return "Unknown owner";
+    return i18n.t("gallery:unknownOwner");
   }
 
   get ownerUsername(): string | null {
@@ -929,7 +931,7 @@ function parseGalleryFileFromFolderApiResponse(
         isSystemFolder,
         isSharedFolder,
         ownerId: null,
-        ownerName: "Unknown owner",
+        ownerName: i18n.t("gallery:unknownOwner"),
         ownerUsername: null,
         path,
         gallerySection: mediaType,
@@ -1009,11 +1011,12 @@ export function useGalleryListing({
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
   const [loading, setLoading] = React.useState(true);
   const [errorState, setErrorState] = React.useState(false);
   const [refreshing, setRefreshing] = React.useState(false);
   const [galleryListing, setGalleryListing] = React.useState<ReadonlyArray<GalleryFile>>([]);
-  const [api] = React.useState(
+  const [api] = React.useState(() =>
     getToken().then((token) =>
       axios.create({
         baseURL: "/api/v1",
@@ -1039,7 +1042,8 @@ export function useGalleryListing({
     if (listingOf.tag === "folder") {
       void (async () => {
         try {
-          const response = await (await api).get<unknown>(`folders/${listingOf.folderId}?includePathToRootFolder=true`);
+          const client = await api;
+          const response = await client.get<unknown>(`folders/${listingOf.folderId}?includePathToRootFolder=true`);
           const data = Parsers.isObject(response.data).flatMap(Parsers.isNotNull);
           setDirectSection(
             data
@@ -1104,8 +1108,8 @@ export function useGalleryListing({
           setErrorState(true);
           console.error(e);
           if (!(e instanceof Error)) {
-            setDirectFolderPath({ tag: "error", error: "Unknown error" });
-            setDirectSection({ tag: "error", error: "Unknown error" });
+            setDirectFolderPath({ tag: "error", error: t("errors.unknownError") });
+            setDirectSection({ tag: "error", error: t("errors.unknownError") });
             return;
           }
           setDirectFolderPath({ tag: "error", error: e.message });
@@ -1125,18 +1129,18 @@ export function useGalleryListing({
   const { login } = useFilestoreLogin();
 
   function emptyReason(): string {
-    if (errorState) return "Error loading files.";
+    if (errorState) return t("listing.empty.errorLoadingFiles");
     return Result.lift2<ReadonlyArray<GalleryFile>, GallerySection, string>((p, s) => {
       if (p.length > 0) {
         const folderName = p[p.length - 1].name;
-        if (searchTerm !== "") return `Nothing in the folder "${folderName}" matches the search term "${searchTerm}".`;
-        return `The folder "${folderName}" is empty.`;
+        if (searchTerm !== "") return t("listing.empty.folderSearch", { folderName, searchTerm });
+        return t("listing.empty.folder", { folderName });
       }
-      if (s === "NetworkFiles") return "Add a filestore in the Create menu.";
+      if (s === "NetworkFiles") return t("listing.empty.addFilestore");
       if (searchTerm !== "")
-        return `There are no top-level ${gallerySectionCollectiveNoun[s]} that match the search term "${searchTerm}".`;
-      return `There are no top-level ${gallerySectionCollectiveNoun[s]}.`;
-    })(FetchingData.getSuccessValue(path), FetchingData.getSuccessValue(section)).orElse("Loading...");
+        return t("listing.empty.sectionSearch", { section: gallerySectionCollectiveNoun[s], searchTerm });
+      return t("listing.empty.section", { section: gallerySectionCollectiveNoun[s] });
+    })(FetchingData.getSuccessValue(path), FetchingData.getSuccessValue(section)).orElse(t("listing.empty.loading"));
   }
 
   function clearAndSetGalleryListing(list: ReadonlyArray<GalleryFile>) {
@@ -1196,7 +1200,7 @@ export function useGalleryListing({
 
                   const ownerName = Parsers.getValueWithKey("ownerFullName")(obj)
                     .flatMap(Parsers.isString)
-                    .orElse("Unknown owner");
+                    .orElse(t("unknownOwner"));
 
                   const ownerUsername = Parsers.getValueWithKey("ownerUsername")(obj)
                     .flatMap(Parsers.isString)
@@ -1277,7 +1281,7 @@ export function useGalleryListing({
                     }),
                   );
                 } catch (e) {
-                  return Result.Error<GalleryFile>([e instanceof Error ? e : new Error("Unknown error")]);
+                  return Result.Error<GalleryFile>([e instanceof Error ? e : new Error(t("errors.unknownError"))]);
                 }
               }),
           ),
@@ -1285,8 +1289,8 @@ export function useGalleryListing({
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not process Gallery content.",
-              message: "Please try refreshing.",
+              title: t("listing.alerts.processFailed"),
+              message: t("errors.tryRefreshing"),
             }),
           );
           errors.forEach((e) => {
@@ -1304,7 +1308,7 @@ export function useGalleryListing({
             addAlert(
               mkAlert({
                 variant: "error",
-                title: "Error retrieving gallery files.",
+                title: t("listing.alerts.retrieveGalleryFilesFailed"),
                 message: exceptionMessage,
               }),
             );
@@ -1318,7 +1322,8 @@ export function useGalleryListing({
     clearAndSetGalleryListing([]);
     setLoading(true);
     try {
-      const { data } = await (await api).get<unknown>("gallery/filestores");
+      const client = await api;
+      const { data } = await client.get<unknown>("gallery/filestores");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -1368,7 +1373,7 @@ export function useGalleryListing({
                       }),
                     );
                   } catch (e) {
-                    return Result.Error<GalleryFile>([e instanceof Error ? e : new Error("Unknown error")]);
+                    return Result.Error<GalleryFile>([e instanceof Error ? e : new Error(t("errors.unknownError"))]);
                   }
                 }),
             ),
@@ -1388,8 +1393,8 @@ export function useGalleryListing({
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error retrieving filestores.",
-          message: "Please try refreshing.",
+          title: t("listing.alerts.retrieveFilestoresFailed"),
+          message: t("errors.tryRefreshing"),
         }),
       );
       console.error(e);
@@ -1422,7 +1427,8 @@ export function useGalleryListing({
 
     try {
       const token = await getToken();
-      const { data } = await (await api).get<unknown>(
+      const client = await api;
+      const { data } = await client.get<unknown>(
         `gallery/filestores/${idToString(filestore.id).elseThrow()}/browse?remotePath=${encodeURIComponent(
           Optional.fromNullable(pa.at(-1))
             .map((file) => file.pathAsString())
@@ -1468,7 +1474,7 @@ export function useGalleryListing({
                       }),
                     );
                   } catch (e) {
-                    return Result.Error<GalleryFile>([e instanceof Error ? e : new Error("Unknown error")]);
+                    return Result.Error<GalleryFile>([e instanceof Error ? e : new Error(t("errors.unknownError"))]);
                   }
                 }),
             ),
@@ -1518,7 +1524,7 @@ export function useGalleryListing({
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Error retrieving remote files.",
+              title: t("listing.alerts.retrieveRemoteFilesFailed"),
               message: e.message,
             }),
           );
@@ -1597,7 +1603,7 @@ export function useGalleryListing({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error retrieving gallery files.",
+            title: t("listing.alerts.retrieveGalleryFilesFailed"),
             message: e.message,
           }),
         );
@@ -1760,7 +1766,7 @@ export function useGalleryListing({
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Error refreshing Gallery listing.",
+            title: t("listing.alerts.refreshFailed"),
             message: e.message,
           }),
         );

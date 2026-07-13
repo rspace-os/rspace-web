@@ -12,8 +12,10 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer, useLocalObservable } from "mobx-react-lite";
 import React, { type FormEventHandler, type MouseEventHandler, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/raid";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { Optional } from "@/util/optional";
 import RaidIcon from "../../../../assets/branding/raid/logo.svg";
 import AlertContext, { mkAlert } from "../../../../stores/contexts/Alert";
@@ -34,6 +36,7 @@ export interface RaidConnectedMessage extends Record<string, unknown> {
 export const RAID_CONNECTION_CHANNEL = "rspace.apps.raid.connection";
 
 const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
+  const { t } = useTranslation(["apps", "common"]);
   const { saveAppOptions, deleteAppOptions } = useIntegrationsEndpoint();
   const { addAlert } = React.useContext(AlertContext);
   const authenticatedServers = useLocalObservable(() => [...integrationState.credentials.authenticatedServers]);
@@ -44,21 +47,21 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       addAlert(
         mkAlert({
           variant: "error",
-          title: e.data.alias ? `Could not connect to ${e.data.alias} RAiD server` : "Could not connect to RAiD server",
+          title: e.data.alias
+            ? t("integrations.raid.alerts.connectAliasError", { alias: e.data.alias })
+            : t("integrations.raid.alerts.connectError"),
           message: e.data.error,
         }),
       );
       return;
     }
     if (e.data?.type !== "RAID_CONNECTED" || !e.data.alias) {
-      console.log("RaidIntegrationCard: Ignoring unknown message", e.data);
       return;
     }
 
     runInAction(() => {
       const index = authenticatedServers.findIndex((s) => s.alias === e.data.alias);
       if (index === -1) {
-        console.log("RaidIntegrationCard: Could not find server with alias", e.data.alias);
         return;
       }
 
@@ -67,7 +70,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       addAlert(
         mkAlert({
           variant: "success",
-          message: `Successfully connected to ${e.data.alias} RAiD server.`,
+          message: t("integrations.raid.alerts.connectSuccess", { alias: e.data.alias }),
         }),
       );
     });
@@ -92,8 +95,11 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
           addAlert(
             mkAlert({
               variant: "error",
-              title: `Could not disconnect ${alias} RAiD connection`,
-              message: `Server responded with status ${response.status}: ${response.statusText}`,
+              title: t("integrations.raid.alerts.disconnectError", { alias }),
+              message: t("integrations.raid.alerts.serverStatus", {
+                status: response.status,
+                statusText: response.statusText,
+              }),
             }),
           );
 
@@ -106,14 +112,14 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully disconnected.",
+            message: t("integrations.raid.alerts.disconnectSuccess"),
           }),
         );
       } catch (e) {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not disconnect ${alias} RAiD connection`,
+            title: t("integrations.raid.alerts.disconnectError", { alias }),
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
         );
@@ -133,14 +139,14 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully deleted connection.",
+            message: t("integrations.raid.alerts.deleteSuccess"),
           }),
         );
       } catch (e) {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not disconnect ${alias} RAiD connection.`,
+            title: t("integrations.raid.alerts.deleteError", { alias }),
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
         );
@@ -173,14 +179,14 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
         addAlert(
           mkAlert({
             variant: "success",
-            message: "Successfully added new RAiD server.",
+            message: t("integrations.raid.alerts.addSuccess"),
           }),
         );
       } catch (e) {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not add ${alias} as a new RAiD connection.`,
+            title: t("integrations.raid.alerts.addError", { alias }),
             message: e instanceof Error ? e.message : JSON.stringify(e),
           }),
         );
@@ -196,46 +202,25 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
       }}
     >
       <IntegrationCard
-        name="RAiD"
+        name={t("integrations.raid.name")}
         integrationState={integrationState}
-        explanatoryText="Incorporate Research Activity Identifiers (RAiDs) into your projects and report your research activities to your RAiD records."
+        explanatoryText={t("integrations.raid.description")}
         image={RaidIcon}
         color={LOGO_COLOR}
-        usageText="Connect your RSpace projects to RAiD (Research Activity Identifiers) to track and report research activities such as repository exports. RAiD provides persistent identifiers for research projects, enabling seamless reporting of research activities to funders and institutions."
-        helpLinkText="documentation"
-        website="raid.org"
+        usageText={t("integrations.raid.usage")}
+        helpLinkText={t("integrations.raid.helpLink")}
+        website="https://raid.org"
         docLink="raid"
         setupSection={
           <>
-            <Typography variant="body1">
-              Configure your RAiD service point to enable authentication and project association:
-            </Typography>
-            <ol>
-              <li>
-                Ask your system administrator to set up RAiD server connections. See{" "}
-                <Link href="https://documentation.researchspace.com/article/zb4c2c8a4b-raid-integration">
-                  our documentation for system administrators
-                </Link>{" "}
-                for more information.
-              </li>
-              <li>
-                Click the <strong>Add</strong> button below and select the RAiD server you would like to connect to.
-              </li>
-              <li>
-                Once the server shows up in the server list, click on the <strong>Connect</strong> button and log in
-                with your RAiD credentials.
-              </li>
-              <li>Start associating RAiDs with your project groups.</li>
-            </ol>
-            <Typography variant="body1">
-              Multiple service points can be added to support different RAiD registries. Each project group owner can
-              authenticate and manage their own RAiD associations.
-            </Typography>
+            <Typography variant="body1">{t("integrations.raid.setup.configure")}</Typography>
+            <TransRichText i18nKey="apps:integrations.raid.setup.instructions" />
+            <Typography variant="body1">{t("integrations.raid.multipleConfig")}</Typography>
             <Card variant="outlined" sx={{ mt: 2 }}>
               <CardContent>
                 <Stack sx={{ gap: 2 }}>
                   {authenticatedServers.length === 0 && (
-                    <Typography variant="body2">No authenticated servers.</Typography>
+                    <Typography variant="body2">{t("integrations.raid.noServers")}</Typography>
                   )}
                   {authenticatedServers.map((server) => (
                     <Stack direction="row" spacing={1} key={server.alias} sx={{ justifyItems: "center" }}>
@@ -254,7 +239,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                           target="_blank"
                           rel="noopener opener"
                         >
-                          <Button type="submit">Connect</Button>
+                          <Button type="submit">{t("actions.connect")}</Button>
                         </form>
                       ) : (
                         <form
@@ -264,11 +249,11 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                           target="_blank"
                           rel="noopener opener"
                         >
-                          <Button type="submit">Disconnect</Button>
+                          <Button type="submit">{t("actions.disconnect")}</Button>
                         </form>
                       )}
                       <form onSubmit={handleDeleteConnection(server.optionsId, server.alias)}>
-                        <Button type="submit">Delete</Button>
+                        <Button type="submit">{t("common:actions.delete")}</Button>
                       </form>
                     </Stack>
                   ))}
@@ -281,7 +266,7 @@ const RaidIntegrationCard = ({ integrationState, update }: RaidArgs) => {
                   }}
                   disabled={unauthenticatedServers.length === 0}
                 >
-                  Add
+                  {t("common:actions.add")}
                 </Button>
                 <Menu
                   open={Boolean(addMenuAnchorEl)}

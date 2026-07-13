@@ -175,6 +175,9 @@
         <url-pattern>/*</url-pattern>
         <dispatcher>REQUEST</dispatcher>
         <dispatcher>FORWARD</dispatcher>
+        <!-- ERROR so container error pages (403.jsp/404.jsp) are decorated, as they were under
+             SiteMesh 2's <page:applyDecorator> (which SiteMesh 3 has no JSP-tag equivalent for). -->
+        <dispatcher>ERROR</dispatcher>
     </filter-mapping>
 
     <filter-mapping>

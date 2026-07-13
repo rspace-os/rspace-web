@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
@@ -6,7 +6,6 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import type { DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import materialTheme from "../../../theme";
@@ -41,16 +40,11 @@ const connectionSettings: DswConfig = {
   DSW_URL: "dsw.org",
 };
 
-let restoreConsole = () => {};
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
   mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData);
   mockAxios.onGet("/apps/dmptool/baseUrlHost").reply(200, "https://dmptool.org");
-  restoreConsole = silenceConsole(["info"], ["The response from this request is being discarded"]);
-});
-afterEach(() => {
-  restoreConsole();
 });
 
 describe("DSWImportDialog", () => {
@@ -67,7 +61,7 @@ describe("DSWImportDialog", () => {
       </ThemeProvider>,
     );
     await waitFor(() => {
-      expect(screen.getByText("No projects found")).toBeVisible();
+      expect(screen.getByText("apps:dmpIntegrations.dialog.noProjects")).toBeVisible();
     });
   });
 
@@ -109,9 +103,9 @@ describe("DSWImportDialog", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText("Select").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Name").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Description").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Updated At").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.name").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.description").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("apps:dmpIntegrations.dialog.columns.updatedAt").length).toBeGreaterThan(0);
 
       expect(screen.getByText("MockProject01")).toBeVisible();
       expect(screen.getByText("MockProject02")).toBeVisible();

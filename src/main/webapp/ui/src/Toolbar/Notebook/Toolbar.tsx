@@ -16,6 +16,8 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import BaseToolbar from "../../components/BaseToolbar";
 import ShareDialog from "../../components/ShareDialog";
+import i18n from "../../modules/common/i18n";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import materialTheme from "../../theme";
 import PrintButton from "../components/PrintButton";
 import CreateMenu from "../ToolbarCreateMenu";
@@ -58,7 +60,7 @@ class NotebookToolbar extends React.Component<any, any> {
             containerType: "inline-size",
           }}
         >
-          <Tooltip title="Back" enterDelay={300}>
+          <Tooltip title={i18n.t("common:actions.back")} enterDelay={300}>
             <IconButton
               id="close"
               data-test-id="structured-document-back"
@@ -82,30 +84,30 @@ class NotebookToolbar extends React.Component<any, any> {
               asposeEnabled={this.state.asposeEnabled}
             />
           )}
-          <Tooltip title="Edit" enterDelay={300}>
+          <Tooltip title={i18n.t("common:actions.edit")} enterDelay={300}>
             <IconButton data-test-id="notebooktoolbar-edit" color="inherit" id="editEntry">
               <FontAwesomeIcon icon={faEdit} />
             </IconButton>
           </Tooltip>
           {this.state.canDelete && (
-            <Tooltip title="Delete" enterDelay={300}>
+            <Tooltip title={i18n.t("common:actions.delete")} enterDelay={300}>
               <IconButton data-test-id="notebooktoolbar-delete" color="inherit" id="deleteEntry">
                 <FontAwesomeIcon icon={faTrashAlt} />
               </IconButton>
             </Tooltip>
           )}
-          <Tooltip title="Sign" enterDelay={300}>
+          <Tooltip title={i18n.t("common:actions.sign")} enterDelay={300}>
             <IconButton data-test-id="notebooktoolbar-sign" color="inherit" id="signDocument">
               <FontAwesomeIcon icon={faFileSignature} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Witness" enterDelay={300}>
+          <Tooltip title={i18n.t("common:actions.witness")} enterDelay={300}>
             <IconButton data-test-id="notebooktoolbar-witness" color="inherit" id="witnessDocument">
               <FontAwesomeIcon icon={faEye} />
             </IconButton>
           </Tooltip>
           {this.state.canShare && (
-            <Tooltip title="Share" enterDelay={300}>
+            <Tooltip title={i18n.t("common:actions.share")} enterDelay={300}>
               <IconButton data-test-id="notebooktoolbar-share" color="inherit" id="shareRecord">
                 <FontAwesomeIcon icon={faShareAlt} />
               </IconButton>
@@ -120,7 +122,7 @@ class NotebookToolbar extends React.Component<any, any> {
             }}
           ></Box>
           {this.props.conditionalRender.export && (
-            <Tooltip title="Export" enterDelay={300}>
+            <Tooltip title={i18n.t("common:actions.export")} enterDelay={300}>
               <IconButton
                 data-test-id="notebooktoolbar-export"
                 color="inherit"
@@ -200,7 +202,11 @@ window.renderToolbar = (newProps: any) => {
       ...(newProps?.eventHandlers ?? {}),
     },
   };
-  rootNode.render(<NotebookToolbar domContainer={domContainer} {...prevProps} />);
+  rootNode.render(
+    <I18nRoot namespaces={["common"]}>
+      <NotebookToolbar domContainer={domContainer} {...prevProps} />
+    </I18nRoot>,
+  );
 };
 
 /*

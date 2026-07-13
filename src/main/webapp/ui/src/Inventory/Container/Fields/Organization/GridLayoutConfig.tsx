@@ -1,6 +1,7 @@
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Container } from "@/stores/definitions/Container";
 import { type Axis, DEFAULT_COLUMN_AXIS, DEFAULT_ROW_AXIS } from "@/stores/definitions/container/types";
 import FormControl from "../../../../components/Inputs/FormControl";
@@ -18,6 +19,7 @@ type GridLayoutConfigArgs = {
 };
 
 function GridLayoutConfig({ container }: GridLayoutConfigArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const gridLayout = container.gridLayout;
   if (container.cType !== "GRID" || !gridLayout) throw new Error("Container must be a Grid Container");
 
@@ -36,7 +38,7 @@ function GridLayoutConfig({ container }: GridLayoutConfigArgs): React.ReactNode 
           md: 6,
         }}
       >
-        <FormControl label="Row Labels">
+        <FormControl label={t("container.fields.gridLayout.rowLabels")}>
           <RadioField
             name="rowsLabelType"
             value={gridLayout.rowsLabelType ?? DEFAULT_ROW_AXIS}
@@ -51,7 +53,7 @@ function GridLayoutConfig({ container }: GridLayoutConfigArgs): React.ReactNode 
           md: 6,
         }}
       >
-        <FormControl label="Column Labels">
+        <FormControl label={t("container.fields.gridLayout.columnLabels")}>
           <RadioField
             name="columnsLabelType"
             value={gridLayout.columnsLabelType ?? DEFAULT_COLUMN_AXIS}

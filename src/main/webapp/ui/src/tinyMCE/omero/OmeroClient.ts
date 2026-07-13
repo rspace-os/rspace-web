@@ -1,11 +1,16 @@
 import axios, { type AxiosPromise } from "@/common/axios";
 import type { OmeroDataList, OmeroDataTypes, OmeroItem } from "./OmeroTypes";
 
+export const OMERO_DATA_TYPE_ALL = "ALL";
+export const OMERO_DATA_TYPE_PROJECTS = "PROJECTS";
+export const OMERO_DATA_TYPE_SCREENS = "SCREENS";
+
 const getOmeroDataList = (dataTypeChoice: string): AxiosPromise<OmeroDataList> => {
-  if (dataTypeChoice === "Projects And Screens") {
+  if (dataTypeChoice === OMERO_DATA_TYPE_ALL) {
     return axios.get("/apps/omero/projects");
   }
-  return axios.get(`/apps/omero/projects/?dataType=${dataTypeChoice}`);
+  const apiDataType = dataTypeChoice === OMERO_DATA_TYPE_PROJECTS ? "Projects" : "Screens";
+  return axios.get(`/apps/omero/projects/?dataType=${apiDataType}`);
 };
 
 const getImagesList = (id: number, fetchLarge: boolean): AxiosPromise<OmeroDataList> => {

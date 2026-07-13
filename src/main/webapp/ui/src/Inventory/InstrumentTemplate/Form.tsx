@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { Person } from "../../stores/definitions/Person";
 import InstrumentTemplateModel from "../../stores/models/InstrumentTemplateModel";
 import useStores from "../../stores/use-stores";
@@ -11,6 +12,7 @@ import ImageField from "../components/Fields/Image";
 import NameField from "../components/Fields/Name";
 import OwnerField from "../components/Fields/Owner";
 import TagsField from "../components/Fields/Tags";
+import HistoricalVersionAlert from "../components/HistoricalVersionAlert";
 import LimitedAccessAlert from "../components/LimitedAccessAlert";
 import Stepper from "../components/Stepper/Stepper";
 import StepperPanel from "../components/Stepper/StepperPanel";
@@ -23,6 +25,7 @@ type OverviewSectionArgs = {
 };
 
 const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -31,7 +34,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Overview"
+      title={t("formSections.overview")}
       sectionName="overview"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -45,7 +48,7 @@ const OverviewSection = observer(({ activeResult }: OverviewSectionArgs) => {
       />
       <OwnerField fieldOwner={activeResult} />
       {activeResult.readAccessLevel !== "public" && (
-        <ImageField fieldOwner={activeResult} alt="What the instrument template looks like" />
+        <ImageField fieldOwner={activeResult} alt={t("instrumentTemplate.imageAlt")} />
       )}
     </StepperPanel>
   );
@@ -56,6 +59,7 @@ type DetailsSectionArgs = {
 };
 
 const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -64,7 +68,7 @@ const DetailsSection = observer(({ activeResult }: DetailsSectionArgs) => {
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Details"
+      title={t("formSections.details")}
       sectionName="details"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -83,6 +87,7 @@ type ExtraFieldSectionArgs = {
 };
 
 const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) => {
+  const { t } = useTranslation("inventory");
   const formSectionError = useFormSectionError({
     editing: activeResult.editing,
     globalId: activeResult.globalId,
@@ -91,7 +96,7 @@ const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) =>
   return (
     <StepperPanel
       icon="instrumentTemplate"
-      title="Custom Fields"
+      title={t("formSections.customFields")}
       sectionName="customFields"
       formSectionError={formSectionError}
       recordType="instrumentTemplate"
@@ -102,6 +107,7 @@ const CustomFieldSection = observer(({ activeResult }: ExtraFieldSectionArgs) =>
 });
 
 function InstrumentTemplateForm(): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
   } = useStores();
@@ -111,10 +117,15 @@ function InstrumentTemplateForm(): ReactNode {
   const owner: Person = activeResult.owner;
 
   return (
-    <Stepper titleText={activeResult.name} resetScrollPosition={activeResult} factory={activeResult.factory}>
+    <Stepper
+      stickyAlert={activeResult.historicalVersion ? <HistoricalVersionAlert record={activeResult} /> : null}
+      titleText={activeResult.name}
+      resetScrollPosition={activeResult}
+      factory={activeResult.factory}
+    >
       <LimitedAccessAlert
         readAccessLevel={activeResult.readAccessLevel}
-        whatLabel="instrument template"
+        whatLabel={t("recordTypes.instrumentTemplate.lower")}
         owner={owner}
       />
       <OverviewSection activeResult={activeResult} />
@@ -123,7 +134,7 @@ function InstrumentTemplateForm(): ReactNode {
           <DetailsSection activeResult={activeResult} />
           <StepperPanel
             icon="instrumentTemplate"
-            title="Barcodes"
+            title={t("formSections.barcodes")}
             sectionName="barcodes"
             recordType="instrumentTemplate"
           >
@@ -135,7 +146,7 @@ function InstrumentTemplateForm(): ReactNode {
         <>
           <StepperPanel
             icon="instrumentTemplate"
-            title="Attachments"
+            title={t("formSections.attachments")}
             sectionName="attachments"
             recordType="instrumentTemplate"
           >
@@ -143,7 +154,7 @@ function InstrumentTemplateForm(): ReactNode {
           </StepperPanel>
           <StepperPanel
             icon="instrumentTemplate"
-            title="Access Permissions"
+            title={t("formSections.accessPermissions")}
             sectionName="permissions"
             recordType="instrumentTemplate"
           >
@@ -153,7 +164,7 @@ function InstrumentTemplateForm(): ReactNode {
           {activeResult.state === "preview" && (
             <StepperPanel
               icon="instrumentTemplate"
-              title="Instruments"
+              title={t("recordTypes.instrument.plural")}
               sectionName="instruments"
               recordType="instrumentTemplate"
             >

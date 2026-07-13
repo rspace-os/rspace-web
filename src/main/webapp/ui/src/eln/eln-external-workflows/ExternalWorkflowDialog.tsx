@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { DataGridColumn } from "@/util/table";
 import type { GalaxyDataSummary } from "./GalaxyData";
 
@@ -28,12 +29,13 @@ function makeGalleryLinks(row: GalaxyDataSummary) {
 }
 
 function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: ExternalWorkflowDialogArgs) {
+  const { t } = useTranslation(["apps", "common"]);
   return (
     <Dialog open={open} fullWidth maxWidth="xl">
-      <DialogTitle>Galaxy WorkFlow Data</DialogTitle>
+      <DialogTitle>{t("externalWorkflows.dialogTitle")}</DialogTitle>
       <DialogContent>
         <Stack spacing={3}>
-          <Typography>Data uploaded and Workflow Invocations using that data</Typography>
+          <Typography>{t("externalWorkflows.dataUploadedDesc")}</Typography>
           <DataGrid
             getRowHeight={() => "auto"} //for text wrapping
             rows={galaxySummaryReport}
@@ -51,7 +53,7 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
                 "Data File Names",
                 (wf: GalaxyDataSummary) => wf.galaxyDataNames,
                 {
-                  headerName: "Data Uploaded",
+                  headerName: t("externalWorkflows.columns.dataUploaded"),
                   flex: 1,
                   sortable: false,
                   resizable: true,
@@ -59,7 +61,7 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
                 },
               ),
               DataGridColumn.newColumnWithValueGetter("Container", (wf: GalaxyDataSummary) => wf.galaxyHistoryName, {
-                headerName: "Container/Galaxy History",
+                headerName: t("externalWorkflows.columns.container"),
                 flex: 1,
                 resizable: true,
                 renderCell: ({ row }) => (
@@ -76,7 +78,7 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
                 "Invocation",
                 (wf: GalaxyDataSummary) => wf.galaxyInvocationName,
                 {
-                  headerName: "Invocation",
+                  headerName: t("externalWorkflows.columns.invocation"),
                   flex: 1,
                   resizable: true,
                   renderCell: ({ row }) => (
@@ -91,13 +93,13 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
                 },
               ),
               DataGridColumn.newColumnWithValueGetter("Status", (wf: GalaxyDataSummary) => wf.galaxyInvocationStatus, {
-                headerName: "Invocation Status",
+                headerName: t("externalWorkflows.columns.status"),
                 flex: 1,
                 resizable: true,
                 renderCell: ({ row }) => row.galaxyInvocationStatus,
               }),
               DataGridColumn.newColumnWithValueGetter("Created", (wf: GalaxyDataSummary) => new Date(wf.createdOn), {
-                headerName: "Invocation Created",
+                headerName: t("externalWorkflows.columns.created"),
                 flex: 1,
                 resizable: true,
                 renderCell: ({ row }) => (row.createdOn !== null ? new Date(row.createdOn).toLocaleString() : ""),
@@ -110,7 +112,7 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
             hideFooter
             autoHeight
             localeText={{
-              noRowsLabel: "No Data is attached to this document",
+              noRowsLabel: t("externalWorkflows.noRows"),
             }}
           />
         </Stack>
@@ -124,7 +126,7 @@ function ExternalWorkflowDialog({ open, setOpen, galaxySummaryReport }: External
             setOpen(false);
           }}
         >
-          Close
+          {t("common:actions.close")}
         </Button>
       </DialogActions>
     </Dialog>

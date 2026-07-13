@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -23,6 +24,7 @@ export default function useDocuments(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   async function move(moveRequest: MoveDocumentRequest): Promise<void> {
     try {
@@ -49,8 +51,8 @@ export default function useDocuments(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error moving document",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("apiErrors.documents.moveFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not move document", {

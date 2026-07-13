@@ -7,7 +7,10 @@ import static org.junit.Assert.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.model.ApiContainer;
+import com.researchspace.api.v1.model.ApiField.ApiFieldType;
 import com.researchspace.api.v1.model.ApiInstrument;
+import com.researchspace.api.v1.model.ApiInstrumentTemplate;
+import com.researchspace.api.v1.model.ApiInstrumentTemplatePost;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo.ApiInventoryRecordPermittedAction;
 import com.researchspace.api.v1.model.ApiInventoryRecordRevisionList;
 import com.researchspace.api.v1.model.ApiLinkItem;
@@ -513,6 +516,66 @@ public class InventoryVersionsApiMVCIT extends API_MVC_InventoryTestBase {
                 API_VERSION.ONE,
                 apiKey,
                 "/sampleTemplates/" + plainSample.getId() + "/revisions",
+                anyUser))
+        .andExpect(status().isNotFound())
+        .andReturn();
+  }
+
+  @Test
+  public void instrumentTemplateRevisionsListing() throws Exception {
+    User anyUser = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(anyUser);
+
+    // create an instrument template, then update it to bump it to version 2
+    ApiInstrumentTemplatePost templatePost = new ApiInstrumentTemplatePost();
+    templatePost.setName("instrument template version one");
+    templatePost.getFields().add(createBasicApiSampleField("F1", ApiFieldType.TEXT, "default"));
+    MvcResult result =
+        this.mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/instrumentTemplates", anyUser, templatePost))
+            .andExpect(status().is2xxSuccessful())
+            .andReturn();
+    ApiInstrumentTemplate template = getFromJsonResponseBody(result, ApiInstrumentTemplate.class);
+
+    this.mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(
+                apiKey,
+                "/instrumentTemplates/" + template.getId(),
+                anyUser,
+                "{ \"name\": \"instrument template version two\" }"))
+        .andExpect(status().isOk())
+        .andReturn();
+
+    // both versions appear in the revisions history, oldest first
+    result =
+        this.mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instrumentTemplates/" + template.getId() + "/revisions",
+                    anyUser))
+            .andExpect(status().isOk())
+            .andReturn();
+    ApiInventoryRecordRevisionList history =
+        getFromJsonResponseBody(result, ApiInventoryRecordRevisionList.class);
+    assertEquals(2, history.getRevisions().size());
+    assertEquals(
+        "instrument template version one", history.getRevisions().get(0).getRecord().getName());
+    assertEquals(
+        "instrument template version two", history.getRevisions().get(1).getRecord().getName());
+
+    // a plain sample id is not addressable through the instrument template revisions endpoint
+    ApiSampleWithFullSubSamples plainSample = createBasicSampleForUser(anyUser, "not a template");
+    this.mockMvc
+        .perform(
+            createBuilderForGet(
+                API_VERSION.ONE,
+                apiKey,
+                "/instrumentTemplates/" + plainSample.getId() + "/revisions",
                 anyUser))
         .andExpect(status().isNotFound())
         .andReturn();

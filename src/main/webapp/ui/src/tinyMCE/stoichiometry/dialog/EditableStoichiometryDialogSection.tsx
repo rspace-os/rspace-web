@@ -6,7 +6,9 @@ import DialogContent from "@mui/material/DialogContent";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/ConfirmProvider";
+import { resolveStoichiometryErrorMessage } from "@/modules/stoichiometry/utils";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import ValidatingSubmitButton, { IsValid } from "../../../components/ValidatingSubmitButton";
 import StoichiometryTable from "../StoichiometryTable";
@@ -18,10 +20,6 @@ import {
   type SetCurrentStoichiometry,
   STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX,
 } from "./shared";
-
-function getMutationErrorMessage(error: unknown, fallbackMessage: string): string {
-  return error instanceof Error ? error.message : fallbackMessage;
-}
 
 export default function EditableStoichiometryDialogSection({
   currentStoichiometry,
@@ -40,6 +38,7 @@ export default function EditableStoichiometryDialogSection({
   setCurrentStoichiometry: SetCurrentStoichiometry;
   registerCloseHandler?: RegisterCloseHandler;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const confirm = useConfirm();
   const [mutationError, setMutationError] = React.useState<string | null>(null);
@@ -59,12 +58,17 @@ export default function EditableStoichiometryDialogSection({
     }
     if (
       hasChanges &&
-      !(await confirm("Discard changes?", "Closing the dialog will discard the unsaved changes.", "Discard", "Cancel"))
+      !(await confirm(
+        t("stoichiometry.dialog.discardChangesTitle"),
+        t("stoichiometry.dialog.discardChangesMessage"),
+        t("stoichiometry.dialog.discardChangesConfirm"),
+        t("actions.cancel"),
+      ))
     ) {
       return;
     }
     onClose();
-  }, [confirm, hasChanges, isBusy, onClose]);
+  }, [confirm, hasChanges, isBusy, onClose, t]);
 
   React.useEffect(() => {
     registerCloseHandler?.(handleClose);
@@ -90,7 +94,7 @@ export default function EditableStoichiometryDialogSection({
         onSave?.(updatedStoichiometry.id, updatedStoichiometry.revision);
         console.log("Stoichiometry data saved successfully");
       } catch (error) {
-        setMutationError(getMutationErrorMessage(error, "Failed to save stoichiometry changes. Please try again."));
+        setMutationError(resolveStoichiometryErrorMessage(error, t, t("stoichiometry.dialog.saveError")));
         console.error("Save failed", error);
       }
     })();
@@ -102,10 +106,10 @@ export default function EditableStoichiometryDialogSection({
     }
 
     const shouldDelete = await confirm(
-      "Delete Stoichiometry Table",
-      "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
-      "Delete",
-      "Cancel",
+      t("stoichiometry.dialog.deleteTitle"),
+      t("stoichiometry.dialog.deleteMessage"),
+      t("actions.delete"),
+      t("actions.cancel"),
     );
 
     if (!shouldDelete) {
@@ -119,7 +123,7 @@ export default function EditableStoichiometryDialogSection({
       onDelete?.();
       setCurrentStoichiometry(null);
     } catch (error) {
-      setMutationError(getMutationErrorMessage(error, "Failed to delete this stoichiometry table. Please try again."));
+      setMutationError(resolveStoichiometryErrorMessage(error, t, t("stoichiometry.dialog.deleteError")));
       console.error("Delete failed", error);
     }
   };
@@ -129,10 +133,7 @@ export default function EditableStoichiometryDialogSection({
       <DialogContent>
         <Stack spacing={2} sx={{ flexWrap: "nowrap" }}>
           <Box>
-            <Typography variant="body2">
-              Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are
-              calculated automatically, as are each pairing of moles and mass.
-            </Typography>
+            <Typography variant="body2">{t("stoichiometry.dialog.editInstructions")}</Typography>
             <StoichiometryTable
               editable
               stoichiometryId={currentStoichiometry.id}
@@ -152,7 +153,7 @@ export default function EditableStoichiometryDialogSection({
             validationResult={IsValid()}
             sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
           >
-            Save Changes
+            {t("stoichiometry.dialog.saveChanges")}
           </ValidatingSubmitButton>
         )}
         <Button
@@ -164,7 +165,7 @@ export default function EditableStoichiometryDialogSection({
           disabled={isBusy}
           sx={STOICHIOMETRY_DIALOG_ACTION_BUTTON_SX}
         >
-          Delete
+          {t("actions.delete")}
         </Button>
         <Button
           disabled={isBusy}
@@ -173,7 +174,7 @@ export default function EditableStoichiometryDialogSection({
             void handleClose();
           }}
         >
-          Close
+          {t("actions.close")}
         </Button>
       </DialogActions>
     </StoichiometryTableControllerProvider>

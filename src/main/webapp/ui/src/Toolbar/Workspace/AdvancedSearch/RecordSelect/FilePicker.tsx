@@ -16,6 +16,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { produce } from "immer";
 import React from "react";
+import i18n from "../../../../modules/common/i18n";
 
 import RootFolder from "./RootFolder";
 
@@ -110,20 +111,19 @@ class FilePicker extends React.Component<any, any> {
             data-test-id={`selected-record-${f}`}
           />
         ))}
-        <Tooltip title="Pick files">
+        <Tooltip title={i18n.t("workspace:toolbar.filePicker.openPicker")}>
           <IconButton onClick={this.openDialog} data-test-id={`open-record-select`}>
             <FontAwesomeIcon icon={faFolderOpen} />
           </IconButton>
         </Tooltip>
         {this.props.error && (
           <Typography variant="inherit" component="span" sx={{ fontSize: "1.3em" }}>
-            Click on the folder icon to select records.
+            {i18n.t("workspace:toolbar.filePicker.clickToSelect")}
           </Typography>
         )}
         <Dialog open={this.state.dialogOpen} onClose={this.closeDialog} maxWidth="sm" fullWidth={true}>
           <DialogTitle id="form-dialog-title">
-            {this.state.globalSelect.length} record
-            {this.state.globalSelect.length !== 1 ? "s" : ""} selected
+            {i18n.t("workspace:toolbar.filePicker.dialogTitle", { count: this.state.globalSelect.length })}
           </DialogTitle>
           <DialogContent>
             <List component="nav" aria-labelledby="nested-list-subheader">
@@ -132,7 +132,7 @@ class FilePicker extends React.Component<any, any> {
           </DialogContent>
           <DialogActions>
             <Button onClick={this.closeDialog} data-test-id="close-record-select">
-              Cancel
+              {i18n.t("common:actions.cancel")}
             </Button>
             <Button
               onClick={this.confirmChoices}
@@ -140,7 +140,7 @@ class FilePicker extends React.Component<any, any> {
               color="primary"
               data-test-id="confirm-record-select"
             >
-              Confirm
+              {i18n.t("common:actions.confirm")}
             </Button>
           </DialogActions>
         </Dialog>

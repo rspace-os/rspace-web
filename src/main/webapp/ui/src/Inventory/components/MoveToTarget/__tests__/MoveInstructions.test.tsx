@@ -55,9 +55,7 @@ describe("MoveInstructions", () => {
         <MoveInstructions />
       </SearchContext.Provider>,
     );
-    expect(container).toHaveTextContent(
-      "This visual container doesn't yet have a locations image onto which locations can be marked. Please edit first.",
-    );
+    expect(container).toHaveTextContent("inventory:moveToTarget.messages.visualContainerNoImage");
   });
   test("Visual container with locations image but without locations", async () => {
     const search = new Search({
@@ -84,8 +82,6 @@ describe("MoveInstructions", () => {
         <MoveInstructions />
       </SearchContext.Provider>,
     );
-    expect(container).toHaveTextContent(
-      "This visual container doesn't yet have any marked locations into which items can be placed. Please edit first.",
-    );
+    expect(container).toHaveTextContent("inventory:moveToTarget.messages.visualContainerNoLocations");
   });
 });

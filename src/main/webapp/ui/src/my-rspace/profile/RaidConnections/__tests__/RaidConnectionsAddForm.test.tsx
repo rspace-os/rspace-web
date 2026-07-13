@@ -131,28 +131,30 @@ describe("RaidConnectionsAddForm", () => {
     it("Should render the form with autocomplete field", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByLabelText(/RAiD Identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false })).toBeInTheDocument();
     });
 
     it("Should render Add and Cancel buttons", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByRole("button", { name: /Add/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /Cancel/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.cancel" })).toBeInTheDocument();
     });
 
     it("Should display error message when query fails", () => {
       givenMockQueryError("Failed to load data");
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText(/Error loading RAiD identifier options: Failed to load data/i)).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.loadOptionsError")).toBeInTheDocument();
     });
 
     it("Should not render form when query fails", () => {
       givenMockQueryError("Failed to load data");
       renderWithProviders(defaultProps);
 
-      expect(screen.queryByLabelText(/RAiD Identifier/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByLabelText("common:profile.raidConnections.identifier", { exact: false }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -162,7 +164,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -175,14 +177,12 @@ describe("RaidConnectionsAddForm", () => {
     it("Should display no options message when list is empty", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
       await waitFor(() => {
-        expect(
-          screen.getByText(/No valid available RAiD found, or the RAiD has been used by another project group./i),
-        ).toBeInTheDocument();
+        expect(screen.getByText("common:profile.raidConnections.noOptions")).toBeInTheDocument();
       });
     });
 
@@ -191,7 +191,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
@@ -225,7 +225,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -240,7 +240,7 @@ describe("RaidConnectionsAddForm", () => {
   describe("Button State", () => {
     it("Should show submit button initially", () => {
       renderWithProviders(defaultProps);
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
 
       // Button exists in the DOM
       expect(addButton).toBeInTheDocument();
@@ -251,20 +251,20 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
       await waitFor(() => {
-        const addButton = screen.getByRole("button", { name: /Add/i });
+        const addButton = screen.getByRole("button", { name: "common:actions.add" });
         expect(addButton).toBeEnabled();
       });
     });
 
     it("Should not disable cancel button when form is idle", () => {
       renderWithProviders(defaultProps);
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
 
       expect(cancelButton).toBeEnabled();
     });
@@ -277,12 +277,12 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -299,12 +299,12 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -318,12 +318,12 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -339,16 +339,16 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /Adding.../i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "common:profile.raidConnections.adding" })).toBeInTheDocument();
       });
     });
 
@@ -358,16 +358,16 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
       await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
 
-      const addButton = screen.getByRole("button", { name: /Add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
-        const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+        const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
         expect(cancelButton).toBeDisabled();
       });
     });
@@ -377,7 +377,7 @@ describe("RaidConnectionsAddForm", () => {
     it("Should call handleCloseForm when cancel button is clicked", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
 
       await user.click(cancelButton);
 
@@ -389,7 +389,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       // Select an option
       await user.click(autocomplete);
@@ -400,7 +400,7 @@ describe("RaidConnectionsAddForm", () => {
       });
 
       // Click cancel
-      const cancelButton = screen.getByRole("button", { name: /Cancel/i });
+      const cancelButton = screen.getByRole("button", { name: "common:actions.cancel" });
       await user.click(cancelButton);
 
       // Form should be reset (handleCloseForm should be called)
@@ -416,7 +416,7 @@ describe("RaidConnectionsAddForm", () => {
       renderWithProviders(defaultProps);
 
       await waitFor(() => {
-        expect(screen.getByText(/Failed to add RAiD/i)).toBeInTheDocument();
+        expect(screen.getByText("Failed to add RAiD")).toBeInTheDocument();
       });
     });
 
@@ -425,7 +425,7 @@ describe("RaidConnectionsAddForm", () => {
       mockMutationState.error = new Error("Failed to add RAiD");
 
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       // Check if the input has error styling (aria-invalid)
       await waitFor(() => {
@@ -433,45 +433,28 @@ describe("RaidConnectionsAddForm", () => {
       });
     });
 
-    // TODO: This currently doesn't work
-    // it("Should handle network error during submission", async () => {
-    //   mockQueryData.data = [
-    //     {
-    //       raidServerAlias: "server1",
-    //       raidIdentifier: "raid-123",
-    //       raidTitle: "Test RAiD 1",
-    //     },
-    //   ];
-    //
-    //   renderWithProviders(defaultProps);
-    //   const user = userEvent.setup();
-    //   const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
-    //
-    //   await user.click(autocomplete);
-    //   await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
-    //
-    //   // Set up rejection after selection
-    //   mockMutateAsync.mockRejectedValueOnce(new Error("Network error"));
-    //
-    //   const addButton = screen.getByRole("button", { name: /Add/i });
-    //
-    //   // Suppress console errors for this test since we're expecting an error
-    //   const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    //
-    //   // Clicking will trigger the error, but it's handled internally
-    //   await user.click(addButton);
-    //
-    //   // The error will be caught by the form but handleCloseForm should not be called
-    //   await waitFor(() => {
-    //     expect(mockMutateAsync).toHaveBeenCalled();
-    //   }, { timeout: 500 });
-    //
-    //   // Give it time to not call handleCloseForm
-    //   await new Promise(resolve => setTimeout(resolve, 50));
-    //   expect(mockHandleCloseForm).not.toHaveBeenCalled();
-    //
-    //   consoleErrorSpy.mockRestore();
-    // });
+    it("Should handle network error during submission", async () => {
+      givenMockQueryData();
+      mockMutateAsync.mockRejectedValueOnce(new Error("Network error"));
+
+      renderWithProviders(defaultProps);
+      const user = userEvent.setup();
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
+
+      await user.click(autocomplete);
+      await user.click(screen.getByText("Test RAiD 1 (raid-123)"));
+
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
+      await user.click(addButton);
+
+      await waitFor(() => {
+        expect(mockMutateAsync).toHaveBeenCalled();
+      });
+
+      // The rejection is thrown from within the submit handler, so the code
+      // after mutateAsync (invalidateQueries, handleCloseForm) never runs.
+      expect(mockHandleCloseForm).not.toHaveBeenCalled();
+    });
   });
 
   describe("Props Handling", () => {
@@ -481,7 +464,7 @@ describe("RaidConnectionsAddForm", () => {
         groupId: "67890",
       });
 
-      expect(screen.getByLabelText(/RAiD Identifier/i)).toBeInTheDocument();
+      expect(screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false })).toBeInTheDocument();
     });
 
     it("Should handle special characters in RAiD titles", async () => {
@@ -498,7 +481,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -521,7 +504,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
@@ -544,13 +527,13 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 
       await waitFor(() => {
-        // When title is empty, the label will be " (raid-123)" with leading space
-        expect(screen.getByText(/^\s*\(raid-123\)$/)).toBeInTheDocument();
+        // When title is empty, the label should not include a leading space.
+        expect(screen.getByText("(raid-123)")).toBeInTheDocument();
       });
     });
   });
@@ -558,7 +541,7 @@ describe("RaidConnectionsAddForm", () => {
   describe("Form Validation", () => {
     it("Should require RAiD identifier field", () => {
       renderWithProviders(defaultProps);
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       expect(autocomplete).toBeRequired();
     });
@@ -591,7 +574,7 @@ describe("RaidConnectionsAddForm", () => {
 
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
-      const autocomplete = screen.getByLabelText(/RAiD Identifier/i);
+      const autocomplete = screen.getByLabelText("common:profile.raidConnections.identifier", { exact: false });
 
       await user.click(autocomplete);
 

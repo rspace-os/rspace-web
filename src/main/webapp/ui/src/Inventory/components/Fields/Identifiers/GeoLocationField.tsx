@@ -16,6 +16,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { type ComponentType, lazy, type ReactNode, Suspense, useState } from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../../components/Inputs/InputWrapper";
 import type GeoLocationModel from "../../../../stores/models/GeoLocationModel";
 import AmberNumberField from "./AmberNumberField";
@@ -60,12 +61,6 @@ export type PolygonMessages = {
   complete: string;
 };
 
-const POLYGON_FIELD_MESSAGES: PolygonMessages = {
-  empty: "No Polygon set yet.",
-  incomplete: "An incomplete Polygon is currently set.",
-  complete: "A complete Polygon is currently set.",
-};
-
 export const PolygonStateAlert = ({
   polygonEmpty,
   polygonComplete,
@@ -95,17 +90,24 @@ const GeoLocationField = ({
   handleUpdateValue: _handleUpdateValue,
   doUpdateIdentifiers,
 }: GeoLocationFieldArgs) => {
+  const { t } = useTranslation("inventory");
+  const polygonMessages: PolygonMessages = {
+    empty: t("fields.identifiers.geoLocationField.polygon.noneYet"),
+    incomplete: t("fields.identifiers.geoLocationField.polygon.incomplete"),
+    complete: t("fields.identifiers.geoLocationField.polygon.complete"),
+  };
+
   const PointLatitudeEditor = observer((): ReactNode => {
     const { geoLocationPoint } = geoLocation;
     return (
-      <InputWrapper label="Latitude">
+      <InputWrapper label={t("fields.identifiers.geoLocationField.point.latitude")}>
         <AmberNumberField
           slotProps={{
             htmlInput: {
               ...COORD_RANGE_Y,
             },
           }}
-          placeholder="e.g. 51.478"
+          placeholder={t("fields.identifiers.geoLocationField.point.latitudePlaceholder")}
           size="small"
           variant="standard"
           fullWidth
@@ -125,11 +127,9 @@ const GeoLocationField = ({
             isOutOfRangeY(Number(geoLocationPoint.pointLatitude))
           }
           helperText={
-            geoLocation.pointIncomplete && geoLocationPoint.pointLatitude === "" ? (
-              "Add value to enable publishing."
-            ) : (
-              <>Between &minus;90.0˚ and 90.0˚.</>
-            )
+            geoLocation.pointIncomplete && geoLocationPoint.pointLatitude === ""
+              ? t("fields.identifiers.geoLocationField.addValueToPublish")
+              : t("fields.identifiers.geoLocationField.latitudeRange")
           }
         />
       </InputWrapper>
@@ -139,14 +139,14 @@ const GeoLocationField = ({
   const PointLongitudeEditor = observer((): ReactNode => {
     const { geoLocationPoint } = geoLocation;
     return (
-      <InputWrapper label="Longitude">
+      <InputWrapper label={t("fields.identifiers.geoLocationField.point.longitude")}>
         <AmberNumberField
           slotProps={{
             htmlInput: {
               ...COORD_RANGE_X,
             },
           }}
-          placeholder="e.g. 0.0"
+          placeholder={t("fields.identifiers.geoLocationField.point.longitudePlaceholder")}
           size="small"
           variant="standard"
           fullWidth
@@ -166,11 +166,9 @@ const GeoLocationField = ({
             isOutOfRangeX(Number(geoLocationPoint.pointLongitude))
           }
           helperText={
-            geoLocation.pointIncomplete && geoLocationPoint.pointLongitude === "" ? (
-              "Add value to enable publishing."
-            ) : (
-              <>Between &minus;180.0˚ and 180.0˚.</>
-            )
+            geoLocation.pointIncomplete && geoLocationPoint.pointLongitude === ""
+              ? t("fields.identifiers.geoLocationField.addValueToPublish")
+              : t("fields.identifiers.geoLocationField.longitudeRange")
           }
         />
       </InputWrapper>
@@ -181,7 +179,7 @@ const GeoLocationField = ({
     return (
       <Grid>
         <CustomFieldset>
-          <legend>Point</legend>
+          <legend>{t("fields.identifiers.geoLocationField.point.title")}</legend>
           <Grid container direction="row" spacing={1}>
             <Grid size={6}>
               <PointLatitudeEditor />
@@ -200,11 +198,11 @@ const GeoLocationField = ({
     return (
       <Grid>
         <CustomFieldset>
-          <legend>Place</legend>
-          <InputWrapper label="Description">
+          <legend>{t("fields.identifiers.geoLocationField.place.title")}</legend>
+          <InputWrapper label={t("fields.identifiers.geoLocationField.description")}>
             <TextField
               size="small"
-              placeholder="e.g. Royal Observatory, Greenwich"
+              placeholder={t("fields.identifiers.geoLocationField.place.placeholder")}
               variant="standard"
               fullWidth
               slotProps={{
@@ -236,10 +234,10 @@ const GeoLocationField = ({
     return (
       <Grid>
         <CustomFieldset>
-          <legend>Box</legend>
+          <legend>{t("fields.identifiers.geoLocationField.box.title")}</legend>
           <Grid container direction="row" spacing={1}>
             <Grid size={6}>
-              <InputWrapper label="North Latitude">
+              <InputWrapper label={t("fields.identifiers.geoLocationField.box.northLatitude")}>
                 <AmberNumberField
                   slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
@@ -259,17 +257,15 @@ const GeoLocationField = ({
                     isOutOfRangeY(Number(geoLocationBox.northBoundLatitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete && geoLocationBox.northBoundLatitude === "" ? (
-                      "Add value to enable publishing."
-                    ) : (
-                      <>Between &minus;90.0˚ and 90.0˚.</>
-                    )
+                    geoLocation.boxIncomplete && geoLocationBox.northBoundLatitude === ""
+                      ? t("fields.identifiers.geoLocationField.addValueToPublish")
+                      : t("fields.identifiers.geoLocationField.latitudeRange")
                   }
                 />
               </InputWrapper>
             </Grid>
             <Grid size={6}>
-              <InputWrapper label="West Longitude">
+              <InputWrapper label={t("fields.identifiers.geoLocationField.box.westLongitude")}>
                 <AmberNumberField
                   slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
@@ -289,17 +285,15 @@ const GeoLocationField = ({
                     isOutOfRangeX(Number(geoLocationBox.westBoundLongitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete && geoLocationBox.westBoundLongitude === "" ? (
-                      "Add value to enable publishing."
-                    ) : (
-                      <>Between &minus;180.0˚ and 180.0˚.</>
-                    )
+                    geoLocation.boxIncomplete && geoLocationBox.westBoundLongitude === ""
+                      ? t("fields.identifiers.geoLocationField.addValueToPublish")
+                      : t("fields.identifiers.geoLocationField.longitudeRange")
                   }
                 />
               </InputWrapper>
             </Grid>
             <Grid size={6}>
-              <InputWrapper label="South Latitude">
+              <InputWrapper label={t("fields.identifiers.geoLocationField.box.southLatitude")}>
                 <AmberNumberField
                   slotProps={{ htmlInput: COORD_RANGE_Y }}
                   size="small"
@@ -319,17 +313,15 @@ const GeoLocationField = ({
                     isOutOfRangeY(Number(geoLocationBox.southBoundLatitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete && geoLocationBox.southBoundLatitude === "" ? (
-                      "Add value to enable publishing."
-                    ) : (
-                      <>Between &minus;90.0˚ and 90.0˚.</>
-                    )
+                    geoLocation.boxIncomplete && geoLocationBox.southBoundLatitude === ""
+                      ? t("fields.identifiers.geoLocationField.addValueToPublish")
+                      : t("fields.identifiers.geoLocationField.latitudeRange")
                   }
                 />
               </InputWrapper>
             </Grid>
             <Grid size={6}>
-              <InputWrapper label="East Longitude">
+              <InputWrapper label={t("fields.identifiers.geoLocationField.box.eastLongitude")}>
                 <AmberNumberField
                   slotProps={{ htmlInput: COORD_RANGE_X }}
                   size="small"
@@ -349,11 +341,9 @@ const GeoLocationField = ({
                     isOutOfRangeX(Number(geoLocationBox.eastBoundLongitude))
                   }
                   helperText={
-                    geoLocation.boxIncomplete && geoLocationBox.eastBoundLongitude === "" ? (
-                      "Add value to enable publishing."
-                    ) : (
-                      <>Between &minus;180.0˚ and 180.0˚.</>
-                    )
+                    geoLocation.boxIncomplete && geoLocationBox.eastBoundLongitude === ""
+                      ? t("fields.identifiers.geoLocationField.addValueToPublish")
+                      : t("fields.identifiers.geoLocationField.longitudeRange")
                   }
                 />
               </InputWrapper>
@@ -370,19 +360,22 @@ const GeoLocationField = ({
       return (
         <Grid onClick={() => setOpenPolygonDialog(true)}>
           <CustomFieldset>
-            <legend>Polygon</legend>
+            <legend>{t("fields.identifiers.geoLocationField.polygon.title")}</legend>
             <Grid container direction="row" sx={{ alignItems: "center" }}>
-              <IconButton title={"Open Polygon Dialog"} onClick={() => setOpenPolygonDialog(true)}>
-                <HexagonIcon color="primary" aria-label="hexagon icon" />
+              <IconButton
+                title={t("fields.identifiers.geoLocationField.openPolygonDialog")}
+                onClick={() => setOpenPolygonDialog(true)}
+              >
+                <HexagonIcon color="primary" aria-label={t("fields.identifiers.geoLocationField.hexagonIconLabel")} />
               </IconButton>
               <Typography component="span" variant="body2">
-                Create or Edit a Geolocation Polygon
+                {t("fields.identifiers.geoLocationField.createEditPolygon")}
               </Typography>
             </Grid>
             <PolygonStateAlert
               polygonEmpty={polygonEmpty}
               polygonComplete={geoLocation.geoLocationPolygon.isValid}
-              textMessages={POLYGON_FIELD_MESSAGES}
+              textMessages={polygonMessages}
             />
           </CustomFieldset>
         </Grid>
@@ -395,10 +388,7 @@ const GeoLocationField = ({
       return (
         <Card variant="outlined">
           <CardContent>
-            <Alert severity="info">
-              At least one of four elements must be completed (Point, Place, Box, Polygon). Point, Box and Polygon
-              cannot be completed partially.
-            </Alert>
+            <Alert severity="info">{t("fields.identifiers.geoLocationField.alert")}</Alert>
             <FormControl sx={{ width: "100%" }}>
               <Stack spacing={1}>
                 <PointEditor />
@@ -441,16 +431,16 @@ const GeoLocationField = ({
                 }}
               >
                 <Box component="legend" sx={{ padding: "2px 8px" }}>
-                  Point
+                  {t("fields.identifiers.geoLocationField.point.title")}
                 </Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
-                    <InputWrapper label="Latitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.point.latitude")}>
                       {geoLocationPoint.pointLatitude ? `${String(geoLocationPoint.pointLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
-                    <InputWrapper label="Longitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.point.longitude")}>
                       {geoLocationPoint.pointLongitude ? `${String(geoLocationPoint.pointLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
@@ -467,14 +457,14 @@ const GeoLocationField = ({
                 }}
               >
                 <Box component="legend" sx={{ padding: "2px 8px" }}>
-                  Place
+                  {t("fields.identifiers.geoLocationField.place.title")}
                 </Box>
-                <InputWrapper label="Description">
+                <InputWrapper label={t("fields.identifiers.geoLocationField.description")}>
                   {geoLocationPlace ? (
                     geoLocationPlace
                   ) : (
                     <Typography variant="inherit" component="em" sx={{ color: "#949494" }}>
-                      None
+                      {t("fields.identifiers.geoLocationField.none")}
                     </Typography>
                   )}
                 </InputWrapper>
@@ -490,47 +480,49 @@ const GeoLocationField = ({
                 }}
               >
                 <Box component="legend" sx={{ padding: "2px 8px" }}>
-                  Box
+                  {t("fields.identifiers.geoLocationField.box.title")}
                 </Box>
                 <Grid container direction="row" spacing={1}>
                   <Grid size={6}>
-                    <InputWrapper label="North Latitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.box.northLatitude")}>
                       {geoLocationBox.northBoundLatitude ? `${String(geoLocationBox.northBoundLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
-                    <InputWrapper label="West Longitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.box.westLongitude")}>
                       {geoLocationBox.westBoundLongitude ? `${String(geoLocationBox.westBoundLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
-                    <InputWrapper label="South Latitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.box.southLatitude")}>
                       {geoLocationBox.southBoundLatitude ? `${String(geoLocationBox.southBoundLatitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                   <Grid size={6}>
-                    <InputWrapper label="East Longitude">
+                    <InputWrapper label={t("fields.identifiers.geoLocationField.box.eastLongitude")}>
                       {geoLocationBox.eastBoundLongitude ? `${String(geoLocationBox.eastBoundLongitude)}˚` : "-"}
                     </InputWrapper>
                   </Grid>
                 </Grid>
               </Box>
               <CustomFieldset>
-                <legend>Polygon</legend>
+                <legend>{t("fields.identifiers.geoLocationField.polygon.title")}</legend>
                 <Stack direction="row">
                   {!polygonEmpty && (
                     <Button onClick={() => setOpenPolygonDialog(true)} color="callToAction" variant="outlined">
-                      View Polygon
+                      {t("fields.identifiers.geoLocationField.polygon.view")}
                     </Button>
                   )}
                   <Typography component="span" variant="body2" sx={{ m: 1 }}>
-                    {polygonEmpty ? "To create a Polygon, press Edit first." : "To modify it, press Edit first."}
+                    {polygonEmpty
+                      ? t("fields.identifiers.geoLocationField.polygon.createFirst")
+                      : t("fields.identifiers.geoLocationField.polygon.modifyFirst")}
                   </Typography>
                 </Stack>
                 <PolygonStateAlert
                   polygonEmpty={polygonEmpty}
                   polygonComplete={geoLocation.geoLocationPolygon.isValid}
-                  textMessages={POLYGON_FIELD_MESSAGES}
+                  textMessages={polygonMessages}
                 />
               </CustomFieldset>
             </Stack>

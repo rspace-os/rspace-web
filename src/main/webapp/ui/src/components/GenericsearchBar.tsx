@@ -7,6 +7,7 @@ import Paper from "@mui/material/Paper";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "./CustomTooltip";
 
 type FormArgs = {
@@ -16,6 +17,7 @@ type FormArgs = {
 };
 
 const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) => {
+  const { t } = useTranslation("common");
   const [query, setQuery] = useState("");
 
   const handleChange = ({ target: { value } }: { target: { value: string } }) => {
@@ -51,15 +53,21 @@ const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) =
           onChange={handleChange}
         />
         <CustomTooltip title={searchToolTip}>
-          <IconButton aria-label="Search" data-test-id="s-search-submit" onClick={onSearch}>
+          <IconButton aria-label={t("actions.search")} data-test-id="s-search-submit" onClick={onSearch}>
             {" "}
             <SearchOutlinedIcon />
           </IconButton>
         </CustomTooltip>
       </Box>
       {query && (
-        <CustomTooltip title="Clear search">
-          <IconButton size="small" data-test-id="reset-search" aria-label="close" color="inherit" onClick={handleReset}>
+        <CustomTooltip title={t("search.clearTooltip")}>
+          <IconButton
+            size="small"
+            data-test-id="reset-search"
+            aria-label={t("actions.close")}
+            color="inherit"
+            onClick={handleReset}
+          >
             <CloseIcon fontSize="small" />
           </IconButton>
         </CustomTooltip>
@@ -70,18 +78,16 @@ const Form = observer(({ handleSearch, placeholder, searchToolTip }: FormArgs) =
 
 type GenericsearchbarArgs = {
   handleSearch: (newQuery: string) => void;
-  placeholder: string;
-  searchToolTip: string;
+  placeholder?: string;
+  searchToolTip?: string;
 };
 
 /**
  * @deprecated
  */
-function Genericsearchbar({
-  handleSearch,
-  placeholder = "Search",
-  searchToolTip = "Search",
-}: GenericsearchbarArgs): React.ReactNode {
+function Genericsearchbar({ handleSearch, placeholder, searchToolTip }: GenericsearchbarArgs): React.ReactNode {
+  const { t } = useTranslation("common");
+  const searchLabel = t("actions.search");
   return (
     <Box sx={{ flexGrow: 1 }}>
       <Box
@@ -118,7 +124,11 @@ function Genericsearchbar({
           }}
           elevation={0}
         >
-          <Form handleSearch={handleSearch} placeholder={placeholder} searchToolTip={searchToolTip} />
+          <Form
+            handleSearch={handleSearch}
+            placeholder={placeholder ?? searchLabel}
+            searchToolTip={searchToolTip ?? searchLabel}
+          />
         </Paper>
       </Box>
     </Box>

@@ -2,7 +2,9 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
+import DOMPurify from "dompurify";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { Dialog } from "@/components/DialogBoundary";
 import useOauthToken from "@/hooks/auth/useOauthToken";
@@ -21,6 +23,7 @@ export function useSnippetPreview(): {
 }
 
 export function CallableSnippetPreview({ children }: { children: React.ReactNode }): React.ReactNode {
+  const { t } = useTranslation(["gallery", "common"]);
   const [snippetFile, setSnippetFile] = React.useState<null | GalleryFile>(null);
   const [snippetContent, setSnippetContent] = React.useState<null | string>(null);
   const [loading, setLoading] = React.useState(false);
@@ -38,7 +41,7 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
       });
       setSnippetContent(response.data);
     } catch (err) {
-      const errorMessage = getErrorMessage(err, "Failed to load snippet content");
+      const errorMessage = getErrorMessage(err, t("snippetPreview.loadError"));
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -66,20 +69,20 @@ export function CallableSnippetPreview({ children }: { children: React.ReactNode
         onClose={() => setSnippetFile(null)}
         sx={{ zIndex: 2000 }}
       >
-        <DialogTitle>Snippet Preview: {snippetFile?.name}</DialogTitle>
+        <DialogTitle>{t("snippetPreview.title", { name: snippetFile?.name })}</DialogTitle>
         <DialogContent dividers>
           {loading ? (
-            <p>Loading snippet content...</p>
+            <p>{t("snippetPreview.loading")}</p>
           ) : error ? (
-            <p>Error: {error}</p>
+            <p>{t("snippetPreview.error", { error })}</p>
           ) : snippetContent ? (
-            <div dangerouslySetInnerHTML={{ __html: snippetContent }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(snippetContent, { ADD_ATTR: ["target"] }) }} />
           ) : (
-            <p>No content available</p>
+            <p>{t("snippetPreview.noContent")}</p>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSnippetFile(null)}>Close</Button>
+          <Button onClick={() => setSnippetFile(null)}>{t("common:actions.close")}</Button>
         </DialogActions>
       </Dialog>
     </>

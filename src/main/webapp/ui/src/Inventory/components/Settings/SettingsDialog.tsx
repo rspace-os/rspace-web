@@ -9,6 +9,7 @@ import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import useStores from "../../../stores/use-stores";
 import DataciteCard from "./DataciteCard";
 
@@ -19,6 +20,7 @@ type SettingsDialogArgs = {
 
 function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode {
   const { authStore } = useStores();
+  const { t } = useTranslation(["inventory", "common"]);
 
   const [fetchingSystemSettings, setFetchingSystemSettings] = useState<
     null | { state: "loading" } | { state: "loaded" } | { state: "error"; error: string }
@@ -49,12 +51,12 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>Configure Inventory (for System Administrators)</DialogTitle>
+      <DialogTitle>{t("settings.dialog.title")}</DialogTitle>
       <DialogContent>
-        {fetchingSystemSettings?.state === "loading" && <>Loading</>}
+        {fetchingSystemSettings?.state === "loading" && <>{t("common:loading")}</>}
         {fetchingSystemSettings?.state === "error" && (
           <Alert severity="error">
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>{t("settings.dialog.error")}</AlertTitle>
             {fetchingSystemSettings.error}
           </Alert>
         )}
@@ -65,7 +67,7 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Close</Button>
+        <Button onClick={handleClose}>{t("common:actions.close")}</Button>
       </DialogActions>
     </Dialog>
   );

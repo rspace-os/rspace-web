@@ -95,4 +95,13 @@ public class ApiSampleWithFullSubSamples extends ApiSampleWithoutSubSamples {
       subSample.buildAndAddInventoryRecordLinks(inventoryApiBaseUrl);
     }
   }
+
+  @Override
+  public void removeImageLinksForLimitedView() {
+    super.removeImageLinksForLimitedView();
+
+    for (ApiSubSample subSample : getSubSamples()) {
+      subSample.removeImageLinksForLimitedView();
+    }
+  }
 }

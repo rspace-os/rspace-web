@@ -40,10 +40,10 @@ describe("EditAction", () => {
 
       const setVisiblePanelSpy = vi.spyOn(rootStore.uiStore, "setVisiblePanel");
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Edit" })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "common:actions.edit" })).toBeEnabled();
       });
 
-      fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.edit" }));
       await waitFor(() => {
         expect(setVisiblePanelSpy).toHaveBeenCalledWith("right");
       });

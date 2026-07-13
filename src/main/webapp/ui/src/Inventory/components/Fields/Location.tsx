@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import FormField from "../../../components/Inputs/FormField";
 import type { HasUneditableFields } from "../../../stores/definitions/Editable";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -11,11 +12,12 @@ export default function Location<
   },
   FieldOwner extends HasUneditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <FormField
       value={undefined}
       disabled
-      label="Location"
+      label={t("fields.location.label")}
       renderInput={() => (
         <Box>
           <Breadcrumbs record={fieldOwner.fieldValues.location} showCurrent />

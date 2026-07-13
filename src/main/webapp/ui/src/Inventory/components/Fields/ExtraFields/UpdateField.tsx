@@ -6,6 +6,7 @@ import TextField from "@mui/material/TextField";
 import { pick } from "es-toolkit";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import FormField from "../../../../components/Inputs/FormField";
 import type { ExtraField, ExtraFieldType } from "../../../../stores/definitions/ExtraField";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
@@ -52,6 +53,7 @@ function linkStateFromExtraField(extraField: ExtraField): LinkState {
 }
 
 export default function UpdateField({ extraField, index, record }: UpdateFieldArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const [fieldState, setFieldState] = useState<{
     name: string;
     type: ExtraFieldType | "";
@@ -88,8 +90,6 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
   // surface the relation error on the relation field once the user has begun entering the link
   const showRelationError =
     isLink && !relationValid && (linkState.relationType !== "" || linkState.targetGlobalId !== "");
-  // the target error shows for any non-empty invalid target, and also when an
-  // existing link's target has been removed ("Target Global ID is required")
   const showTargetError = isLink && !targetValidity.ok && (linkState.targetGlobalId !== "" || !extraField.initial);
 
   const initialLink = linkStateFromExtraField(extraField);
@@ -135,14 +135,14 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
     });
     setErrorMessage(
       match<void, string | null>([
-        [() => value === "", "Name should not be empty."],
-        [() => value.length > 255, "Name must be no longer than 255 characters."],
+        [() => value === "", t("fields.extraFields.validation.emptyName")],
+        [() => value.length > 255, t("fields.extraFields.validation.nameTooLong")],
         [
           () => {
             const unchangedName = value === extraField.name;
             return extraField.owner.fieldNamesInUse.filter((n) => n === value).length > Number(unchangedName);
           },
-          "You either already have a field with that name or that name is not permitted.",
+          t("fields.extraFields.validation.duplicateName"),
         ],
         [() => true, null],
       ])(),
@@ -183,9 +183,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
         const exists = await checkLinkTargetExists(linkState.targetGlobalId);
         setCheckingTarget(false);
         if (!exists) {
-          setTargetExistenceError(
-            `${linkState.targetGlobalId} does not exist, or you do not have permission to view it.`,
-          );
+          setTargetExistenceError(t("fields.extraFields.link.targetNotFound", { globalId: linkState.targetGlobalId }));
           return;
         }
       }
@@ -219,12 +217,16 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
       container
       spacing={1}
       role="group"
-      aria-label={extraField.id === null ? "New extra field" : `Editing extra field with name ${extraField.name}`}
+      aria-label={
+        extraField.id === null
+          ? t("fields.extraFields.groups.new")
+          : t("fields.extraFields.groups.editing", { name: extraField.name })
+      }
     >
       <Grid size={{ md: 7, xs: 12 }}>
         <FormField
           value={fieldState.name}
-          label="Field name"
+          label={t("fields.extraFields.fields.fieldName")}
           renderInput={(props) => <TextField {...props} variant="standard" onChange={handleNameChange} />}
           maxLength={255}
           error={Boolean(errorMessage)}
@@ -234,7 +236,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
       <Grid size={{ md: 5, xs: 12 }}>
         <FormField
           value={fieldState.type}
-          label="Field type"
+          label={t("fields.extraFields.fields.fieldType")}
           disabled={Boolean(extraField.id)}
           renderInput={(props) => (
             <Select
@@ -248,9 +250,9 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
                 } as React.HTMLAttributes<HTMLDivElement>
               }
             >
-              <MenuItem value="Text">Text</MenuItem>
-              <MenuItem value="Number">Number</MenuItem>
-              <MenuItem value="Link">Link</MenuItem>
+              <MenuItem value="Text">{t("fields.extraFields.fieldTypes.text")}</MenuItem>
+              <MenuItem value="Number">{t("fields.extraFields.fieldTypes.number")}</MenuItem>
+              <MenuItem value="Link">{t("fields.extraFields.fieldTypes.link")}</MenuItem>
             </Select>
           )}
         />
@@ -263,16 +265,16 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
             onRelationTypeChange={(value) => setLinkState({ ...linkState, relationType: value })}
             relationOptions={[...DATACITE_RELATION_TYPES]}
             relationFreeSolo
-            relationLabel="Relation type"
+            relationLabel={t("fields.extraFields.fields.relationType")}
             relationError={showRelationError}
-            relationHelperText={showRelationError ? "Pick a DataCite relation type" : ""}
+            relationHelperText={showRelationError ? t("fields.extraFields.link.relationHelper") : ""}
             targetGlobalId={linkState.targetGlobalId}
             targetName={linkState.targetName}
             onTargetChange={handleTargetChange}
             targetError={Boolean(targetExistenceError) || showTargetError}
             targetHelperText={
               targetExistenceError ??
-              (showTargetError ? targetValidity.reason : "Paste a Global ID, or use the Browse buttons above.")
+              (showTargetError ? targetValidity.reason : t("fields.extraFields.link.targetHelper"))
             }
             versionPin={linkState.versionPin}
             onVersionPinChange={(versionPin) => setLinkState({ ...linkState, versionPin })}
@@ -291,24 +293,24 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
           color="callToAction"
           disableElevation
           variant="contained"
-          aria-label="Update field"
+          aria-label={t("fields.extraFields.updateField.updateLabel")}
           onClick={() => {
             void update();
           }}
           disabled={!canSubmit}
           data-test-id={"ApplyOrUpdateButton"}
         >
-          {extraField.initial ? "Apply" : "Update"}
+          {extraField.initial ? t("fields.extraFields.updateField.apply") : t("fields.extraFields.updateField.update")}
         </Button>
         <Button
           style={{ marginLeft: "10px" }}
           disableElevation
           variant="text"
-          aria-label="Cancel update"
+          aria-label={t("fields.extraFields.updateField.cancelLabel")}
           onClick={() => (extraField.initial ? record.removeExtraField(null, index) : discardChanges())}
           data-test-id={"DiscardOrCancelButton"}
         >
-          {extraField.initial ? "Discard" : "Cancel"}
+          {extraField.initial ? t("fields.extraFields.updateField.discard") : t("common:actions.cancel")}
         </Button>
       </Grid>
     </Grid>

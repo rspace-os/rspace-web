@@ -1,6 +1,9 @@
 import { vi } from "vitest";
 import { type Locator, page, userEvent } from "vitest/browser";
 
+const LOADING_MOLECULE_INFO = "Loading molecule information...";
+const ADD_CHEMICAL = "Add Chemical";
+
 /**
  * Retriable locator for a raw CSS selector scoped within `root`. CSS is a
  * workaround for the third-party MUI DataGrid: a cell's column identity lives
@@ -34,10 +37,9 @@ export class StoichiometryTablePage {
       () => {
         const table = document.querySelector('[role="grid"]');
         const loading = Array.from(document.querySelectorAll('[role="dialog"]')).some((dialog) =>
-          dialog.textContent?.includes("Loading molecule information..."),
+          dialog.textContent?.includes(LOADING_MOLECULE_INFO),
         );
-        const noData = document.body.textContent?.includes("No stoichiometry data available");
-        if (!(((table && !loading) || noData) ?? false)) {
+        if (!(table && !loading)) {
           throw new Error("Stoichiometry table not loaded yet");
         }
       },
@@ -46,7 +48,7 @@ export class StoichiometryTablePage {
   }
 
   get moleculeInfoLoadingDialog(): Locator {
-    return page.getByRole("dialog").filter({ hasText: "Loading molecule information..." });
+    return page.getByRole("dialog").filter({ hasText: LOADING_MOLECULE_INFO });
   }
 
   /**
@@ -115,8 +117,8 @@ export class StoichiometryTablePage {
   }
 
   limitingReagentRadio(name: string): Locator {
-    return page.getByRole("radio", {
-      name: new RegExp(`Select ${name} as limiting reagent`),
+    return this.rowByCellValue(name).getByRole("radio", {
+      name: `Select ${name} as limiting reagent`,
     });
   }
 
@@ -125,7 +127,7 @@ export class StoichiometryTablePage {
   }
 
   get exportButton(): Locator {
-    return page.getByRole("button", { name: /Export/ });
+    return page.getByRole("button", { name: "Export" });
   }
 
   async openExportMenu(): Promise<void> {
@@ -156,7 +158,7 @@ export class StoichiometryTablePage {
     HTMLAnchorElement.prototype.click = function noop() {};
 
     try {
-      await page.getByRole("menuitem", { name: /Export to CSV/ }).click();
+      await page.getByRole("menuitem", { name: "Export to CSV" }).click();
     } finally {
       URL.createObjectURL = originalCreate;
       URL.revokeObjectURL = originalRevoke;
@@ -171,24 +173,24 @@ export class StoichiometryTablePage {
   }
 
   get addChemicalButton(): Locator {
-    return page.getByRole("button", { name: "Add Chemical" });
+    return page.getByRole("button", { name: ADD_CHEMICAL });
   }
 
   get pubChemMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: /PubChem.*Import compound from PubChem/i,
+      name: "PubChem Import compound from PubChem",
     });
   }
 
   get galleryMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: /Gallery.*Import compound from Gallery/i,
+      name: "Gallery Import compound from Gallery",
     });
   }
 
   get manualEntryMenuItem(): Locator {
     return page.getByRole("menuitem", {
-      name: /Manually.*Manually enter SMILES/i,
+      name: "Manually Manually enter SMILES",
     });
   }
 
@@ -197,20 +199,32 @@ export class StoichiometryTablePage {
   }
 
   get pubChemDialog(): Locator {
-    return page.getByRole("dialog", { name: /Insert from PubChem/i });
+    return page.getByText("Insert from PubChem");
   }
 
   get galleryDialog(): Locator {
-    return page.getByRole("dialog", { name: /Gallery Picker/i });
+    return page.getByRole("dialog", { name: "Gallery" });
   }
 
   get manualSmilesDialog(): Locator {
-    return page.getByRole("dialog", { name: /Add New Chemical/i });
+    return page.getByRole("dialog", { name: "Add New Chemical" });
   }
 
   async searchPubChem(compound: string): Promise<void> {
-    await page.getByRole("textbox", { name: /Enter a compound name/i }).fill(compound);
-    await page.getByRole("button", { name: /search/i }).click();
+    await page.getByPlaceholder("Enter a compound name or CAS number").fill(compound);
+    await page.getByRole("button", { name: "Search" }).click();
+  }
+
+  async openPubChemSource(): Promise<void> {
+    await this.pubChemMenuItem.click();
+  }
+
+  async openManualSource(): Promise<void> {
+    await this.manualEntryMenuItem.click();
+  }
+
+  async openGallerySource(): Promise<void> {
+    await this.galleryMenuItem.click();
   }
 
   async insertPubChemResult(): Promise<void> {
@@ -218,12 +232,12 @@ export class StoichiometryTablePage {
   }
 
   async enterManualSmiles({ smiles, name }: { smiles: string; name: string }): Promise<void> {
-    await page.getByRole("textbox", { name: /name/i }).fill(name);
-    await page.getByRole("textbox", { name: /smiles/i }).fill(smiles);
+    await page.getByRole("textbox", { name: "Name" }).fill(name);
+    await page.getByRole("textbox", { name: "SMILES String" }).fill(smiles);
   }
 
   async addManualReagent(): Promise<void> {
-    await page.getByRole("button", { name: /add chemical/i }).click();
+    await page.getByRole("button", { name: ADD_CHEMICAL }).click();
   }
 
   async selectGalleryFile(fileName: RegExp): Promise<void> {
@@ -231,7 +245,7 @@ export class StoichiometryTablePage {
   }
 
   async addSelectedGalleryFiles(): Promise<void> {
-    await page.getByRole("button", { name: /add/i }).click();
+    await page.getByRole("button", { name: "Add" }).click();
   }
 
   get updateInventoryStockButton(): Locator {
@@ -243,16 +257,20 @@ export class StoichiometryTablePage {
   }
 
   addInventoryLinkButton(molecule: string): Locator {
-    return page.getByLabelText(`Add inventory link for ${molecule}`);
+    return this.inventoryLinkCell(molecule).getByRole("button", {
+      name: `Add inventory link for ${molecule}`,
+    });
   }
 
   removeInventoryLinkButton(molecule: string): Locator {
-    return page.getByLabelText(`Remove inventory link for ${molecule}`);
+    return this.inventoryLinkCell(molecule).getByRole("button", {
+      name: `Remove inventory link for ${molecule}`,
+    });
   }
 
-  inventoryPickerDialog(molecule?: string): Locator {
+  inventoryPickerDialog(): Locator {
     return page.getByRole("dialog", {
-      name: molecule ? `Pick inventory item for ${molecule}` : /Pick inventory item for/i,
+      name: /^Pick inventory item for /,
     });
   }
 
@@ -279,7 +297,7 @@ export class StoichiometryTablePage {
  */
 export class InventoryUpdateDialogPage {
   readonly dialog: Locator = page.getByRole("dialog", {
-    name: /Update Inventory Stock/i,
+    name: "Update Inventory Stock",
   });
 
   columnHeader(name: string): Locator {

@@ -1,5 +1,7 @@
 import { pick } from "es-toolkit";
 import { action, computed, makeObservable, observable } from "mobx";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { IsInvalid, IsValid, type ValidationResult } from "../../components/ValidatingSubmitButton";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
 import { UnparsableString } from "../../util/error";
@@ -257,7 +259,7 @@ export default class FieldModel implements Field {
   }
 
   get renderContentAsString(): string {
-    if (hasOptions(this.type)) return (this.selectedOptions ?? []).join(", ");
+    if (hasOptions(this.type)) return formatList(this.selectedOptions ?? [], i18n.resolvedLanguage ?? i18n.language);
     return this.content.toString() ?? "";
   }
 

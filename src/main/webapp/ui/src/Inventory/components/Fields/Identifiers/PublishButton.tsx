@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "../../../../components/SubmitSpinnerButton";
 import type { Identifier } from "../../../../stores/definitions/Identifier";
 import useStores from "../../../../stores/use-stores";
@@ -10,6 +11,7 @@ type PublishButtonArgs = {
 
 export default function PublishButton({ identifier, disabled }: PublishButtonArgs): React.ReactNode {
   const [publishing, setPublishing] = React.useState(false);
+  const { t } = useTranslation("common");
   const { uiStore } = useStores();
 
   /*
@@ -43,7 +45,7 @@ export default function PublishButton({ identifier, disabled }: PublishButtonArg
         })();
       }}
       disabled={publishing || disabled || !identifier.isValid}
-      label={republish ? "Republish" : "Publish"}
+      label={republish ? t("actions.republish") : t("actions.publish")}
     />
   );
 }

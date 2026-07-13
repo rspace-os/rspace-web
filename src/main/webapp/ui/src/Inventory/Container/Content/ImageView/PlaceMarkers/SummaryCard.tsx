@@ -9,6 +9,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { Location } from "../../../../../stores/definitions/Container";
 import InventoryBaseRecord from "../../../../../stores/models/InventoryBaseRecord";
 import { preventEventBubbling } from "../../../../../util/Util";
@@ -46,9 +47,10 @@ function SummaryCard({
   onClick,
   fullWidth = false,
 }: SummaryCardArgs): React.ReactNode {
+  const { t } = useTranslation(["inventory", "common"]);
   const { navigateToRecord } = useNavigateHelpers();
 
-  const helperText = location.hasContent ? "" : "This location can be chosen as the destination in a move operation.";
+  const helperText = location.hasContent ? "" : t("container.content.placeMarkers.emptyLocationHelper");
 
   const hasImage = location.content instanceof InventoryBaseRecord && Boolean(location.content.image);
 
@@ -61,7 +63,7 @@ function SummaryCard({
               <CardContent sx={{ flex: "1 0 auto", pb: "8px !important" }}>
                 <Typography gutterBottom variant="h5" component="h2">
                   <NumberedLocation number={number} inline selected={selected === number} />
-                  {location.name ?? <em>Empty Location</em>}
+                  {location.name ?? <em>{t("container.content.placeMarkers.emptyLocation")}</em>}
                 </Typography>
                 <Typography variant="body2" color="textSecondary" component="em" gutterBottom>
                   {helperText}
@@ -70,7 +72,7 @@ function SummaryCard({
             </Box>
             <CardActions>
               {editable && !location.hasContent && (
-                <ActionButton onClick={preventEventBubbling(onRemove)}>Remove</ActionButton>
+                <ActionButton onClick={preventEventBubbling(onRemove)}>{t("common:actions.remove")}</ActionButton>
               )}
               {!editable && location.content && (
                 <ActionButton
@@ -80,7 +82,7 @@ function SummaryCard({
                     if (location.content) void navigateToRecord(location.content);
                   }}
                 >
-                  Open
+                  {t("common:actions.open")}
                 </ActionButton>
               )}
             </CardActions>
@@ -100,7 +102,7 @@ function SummaryCard({
                   maxWidth: 150,
                 }}
                 src={location.content?.image ?? ""}
-                alt={location.content?.name ?? "Empty Location"}
+                alt={location.content?.name ?? t("container.content.placeMarkers.emptyLocation")}
               />
             </Box>
           </Grid>

@@ -1,7 +1,35 @@
 import { setupWorker } from "msw/browser";
 import { afterEach, beforeAll } from "vitest";
 import { cdp, server } from "vitest/browser";
+import i18n from "@/modules/common/i18n";
+import { galleryAppShellHandlers } from "./mocks/galleryMocks";
+import { oauthTokenHandler } from "./mocks/oauthTokenMocks";
 import { appShellHandlers } from "./mswAppShellHandlers";
+
+/*
+ * Unlike the jsdom unit-test config (setup.ts), which deliberately runs in
+ * "cimode" so assertions target stable translation keys, browser-mode tests
+ * assert against real rendered copy (visible text, accessible names, axe
+ * checks) and never wrap components in an `I18nRoot`/`I18nextProvider`. They
+ * rely on the shared i18n singleton, which lazily loads each namespace's JSON
+ * on first use. Without this, a component's first render can race that
+ * async load and paint raw translation keys (e.g.
+ * "accessibilityTips.skipToContent.header") instead of real text. Preloading
+ * every namespace here, before any test file's module graph finishes
+ * evaluating, closes that race.
+ */
+await i18n.loadNamespaces([
+  "about",
+  "admin",
+  "apps",
+  "common",
+  "gallery",
+  "groups",
+  "inventory",
+  "public",
+  "system",
+  "workspace",
+]);
 
 /*
  * A single MSW worker shared by every browser-mode test. Tests register their
@@ -9,7 +37,49 @@ import { appShellHandlers } from "./mswAppShellHandlers";
  * each test so suites stay isolated (the MSW equivalent of Playwright's
  * per-test `router.route`).
  */
-export const worker = setupWorker(...appShellHandlers());
+export const worker = setupWorker(...appShellHandlers(), oauthTokenHandler(), ...galleryAppShellHandlers());
+
+type AxiosLikeRejection = {
+  isAxiosError?: boolean;
+  response?: {
+    status?: number;
+  };
+  config?: {
+    url?: string;
+  };
+};
+
+function isAxios404(reason: unknown): reason is AxiosLikeRejection {
+  return (
+    typeof reason === "object" &&
+    reason !== null &&
+    (reason as AxiosLikeRejection).isAxiosError === true &&
+    (reason as AxiosLikeRejection).response?.status === 404
+  );
+}
+
+/**
+ * Some components intentionally fire requests whose promises are not returned
+ * to the test. If the component has already unmounted, those late 404s surface
+ * as global unhandled rejections and fail Vitest even though the user-visible
+ * behaviour under test has completed. Use this only for known fire-and-forget
+ * URLs; all other unhandled rejections still fail the run.
+ */
+export function suppressFireAndForget404(matchers: ReadonlyArray<RegExp | string>): () => void {
+  const listener = (event: PromiseRejectionEvent) => {
+    const reason = event.reason;
+    const url = isAxios404(reason) ? (reason.config?.url ?? "") : "";
+    const matches = matchers.some((matcher) =>
+      typeof matcher === "string" ? url.includes(matcher) : matcher.test(url),
+    );
+    if (matches) event.preventDefault();
+  };
+
+  window.addEventListener("unhandledrejection", listener);
+  return () => {
+    window.removeEventListener("unhandledrejection", listener);
+  };
+}
 
 /*
  * Vitest browser mode runs each test file in its own isolated module graph, so
@@ -63,44 +133,3 @@ afterEach(async () => {
   localStorage.clear();
   sessionStorage.clear();
 });
-
-/*
- * Opt-in suppressor for benign "fire-and-forget" 404s.
- *
- * Some components fire requests they never await or error-handle (a folder
- * listing, a thumbnail). When such a request is still in flight as a test ends,
- * the `resetHandlers()` above removes its MSW handler before it resolves, so it
- * falls through to the real (non-existent) server and 404s after teardown.
- * Nothing awaited it, so it surfaces as an `unhandledrejection`, which Vitest
- * treats as a run failure even though every assertion passed. This only bites in
- * CI, where slower runners let more requests outlive their test.
- *
- * A suite that knowingly triggers such requests opts in by calling this in a
- * `beforeEach` and invoking the returned cleanup in its `afterEach`. It swallows
- * ONLY an AxiosError 404 whose request URL matches one of `urlMatchers`; every
- * other unhandled rejection (and any 404 a test genuinely cares about, which is
- * caught rather than unhandled) still fails the run. Scoping by URL keeps the
- * suppression narrow and explicit rather than global.
- */
-export function suppressFireAndForget404(urlMatchers: ReadonlyArray<string | RegExp>): () => void {
-  const matchesUrl = (url: unknown): boolean =>
-    typeof url === "string" && urlMatchers.some((m) => (typeof m === "string" ? url.includes(m) : m.test(url)));
-  const handler = (event: PromiseRejectionEvent): void => {
-    const reason = event.reason as
-      | {
-          name?: unknown;
-          message?: unknown;
-          response?: { status?: unknown };
-          config?: { url?: unknown };
-        }
-      | null
-      | undefined;
-    if (reason?.name !== "AxiosError") return;
-    const is404 =
-      reason.response?.status === 404 ||
-      (typeof reason.message === "string" && reason.message.includes("status code 404"));
-    if (is404 && matchesUrl(reason.config?.url)) event.preventDefault();
-  };
-  window.addEventListener("unhandledrejection", handler);
-  return () => window.removeEventListener("unhandledrejection", handler);
-}

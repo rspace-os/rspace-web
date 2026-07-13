@@ -122,10 +122,6 @@ public class WorkspaceControllerTest extends SpringTransactionalTest {
   private SystemPropertyValue existingPublicSeoValue;
   private User anyUser;
 
-  PaginationCriteria<BaseRecord> getAPgCriteria() {
-    return PaginationCriteria.createDefaultForClass(BaseRecord.class);
-  }
-
   private Principal mockPrincipal = () -> "user1a";
   private Principal mockPrincipalNonPI = () -> "user2b";
 

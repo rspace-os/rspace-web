@@ -7,7 +7,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import InputLabel from "@mui/material/InputLabel";
-import Link from "@mui/material/Link";
 import MenuItem from "@mui/material/MenuItem";
 import Select from "@mui/material/Select";
 import Stack from "@mui/material/Stack";
@@ -15,13 +14,15 @@ import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { GridToolbarColumnsButton, GridToolbarContainer } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { useConfirm } from "@/components/ConfirmProvider";
 import useOauthToken from "@/hooks/auth/useOauthToken";
+import i18n from "@/modules/common/i18n";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import Result from "@/util/result";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/fieldmark";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DataGridWithRadioSelection } from "../../components/DataGridWithRadioSelection";
 import { Dialog } from "../../components/DialogBoundary";
@@ -35,6 +36,20 @@ import { DataGridColumn } from "../../util/table";
 
 const firstResult = <T,>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
+
+const validationErrorMessages = (error: unknown): Result<ReadonlyArray<string>> =>
+  Parsers.objectPath(["response", "data", "data", "validationErrors"], error)
+    .flatMap(Parsers.isArray)
+    .flatMap((array) =>
+      Result.all(
+        ...array.map((x) =>
+          Parsers.isObject(x)
+            .flatMap(Parsers.isNotNull)
+            .flatMap(Parsers.getValueWithKey("message"))
+            .flatMap(Parsers.isString),
+        ),
+      ),
+    );
 
 /**
  * This class allows us to provide a link to the newly created container in the
@@ -52,7 +67,7 @@ class ResponseContainer implements LinkableRecord {
   }
 
   get recordTypeLabel(): string {
-    return "Container";
+    return i18n.t("inventory:recordTypes.container.singular");
   }
 
   get iconName(): string {
@@ -94,6 +109,7 @@ const GridToolbar = ({ setColumnsMenuAnchorEl }: { setColumnsMenuAnchorEl: (anch
 
 function CustomLoadingOverlay() {
   const id = React.useId();
+  const { t } = useTranslation(["inventory", "common"]);
   return (
     <Box
       sx={(theme) => ({
@@ -110,7 +126,7 @@ function CustomLoadingOverlay() {
     >
       <CircularProgress variant="indeterminate" value={1} aria-labelledby={id} />
       <Box sx={{ mt: 2 }} id={id}>
-        Fetching notebooks from Fieldmark…
+        {t("fieldmarkImport.fetchingNotebooks")}
       </Box>
     </Box>
   );
@@ -142,6 +158,7 @@ type Notebook = {
  */
 export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImportDialogArgs): React.ReactNode {
   const confirm = useConfirm();
+  const { t } = useTranslation(["inventory", "common"]);
   const { getToken } = useOauthToken();
   const { isViewportSmall } = useViewportDimensions();
   const { addAlert, removeAlert } = React.useContext(AlertContext);
@@ -177,18 +194,11 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
       } catch (e) {
         console.error(e);
         if (e instanceof Error) {
-          const message = Parsers.objectPath(["response", "data", "data", "validationErrors"], e)
-            .flatMap(Parsers.isArray)
-            .flatMap(firstResult)
-            .flatMap(Parsers.isObject)
-            .flatMap(Parsers.isNotNull)
-            .flatMap(Parsers.getValueWithKey("message"))
-            .flatMap(Parsers.isString)
-            .orElse(e.message);
+          const message = validationErrorMessages(e).flatMap(firstResult).orElse(e.message);
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not get notebooks from Fieldmark",
+              title: t("fieldmarkImport.fetchError"),
               message,
             }),
           );
@@ -203,8 +213,8 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
     setImporting(true);
     const importingAlert = mkAlert({
       variant: "notice",
-      title: "Importing notebook",
-      message: `Importing notebook "${notebook.name}" from Fieldmark.`,
+      title: t("fieldmarkImport.importNotebook.title"),
+      message: t("fieldmarkImport.importNotebook.message", { name: notebook.name }),
       isInfinite: true,
     });
     addAlert(importingAlert);
@@ -227,7 +237,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully imported notebook.",
+          message: t("fieldmarkImport.importSuccess"),
           details: [
             {
               variant: "success",
@@ -240,38 +250,28 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
           ],
         }),
       );
+      return true;
     } catch (e) {
-      console.error(e);
-      if (e instanceof Error)
-        addAlert(
-          mkAlert({
-            variant: "error",
-            ...Parsers.objectPath(["response", "data", "data", "validationErrors"], e)
-              .flatMap(Parsers.isArray)
-              .flatMap((array) =>
-                Result.all(
-                  ...array.map((x) =>
-                    Parsers.isObject(x)
-                      .flatMap(Parsers.isNotNull)
-                      .flatMap(Parsers.getValueWithKey("message"))
-                      .flatMap(Parsers.isString),
-                  ),
-                ),
-              )
-              .map((errors) => ({
-                message: "Could not import notebook.",
-                details: errors.map((error) => ({
-                  variant: "error" as const,
-                  title: error,
-                })),
-              }))
-              .orElse({
-                title: "Could not import notebook.",
-                message: e.message,
-              }),
-          }),
-        );
-      throw e;
+      const validationErrors = validationErrorMessages(e);
+      if (validationErrors.isError) console.error(e);
+      addAlert(
+        mkAlert({
+          variant: "error",
+          ...validationErrors
+            .map((errors) => ({
+              message: t("fieldmarkImport.importError"),
+              details: errors.map((error) => ({
+                variant: "error" as const,
+                title: error,
+              })),
+            }))
+            .orElse({
+              title: t("fieldmarkImport.importError"),
+              message: e instanceof Error ? e.message : String(e),
+            }),
+        }),
+      );
+      return false;
     } finally {
       setImporting(false);
       if (importingAlert) removeAlert(importingAlert);
@@ -298,21 +298,12 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
           .elseThrow(),
       );
     } catch (error: unknown) {
-      console.error(error);
+      const showIgsnIntegrationMessage = validationErrorMessages(error)
+        .map((messages) => messages.some((message) => /IGSN integration is not enabled/.test(message)))
+        .orElse(false);
+      if (!showIgsnIntegrationMessage) console.error(error);
       setIdentifierFields([]);
-      setShowIgsnMessage(
-        Parsers.objectPath(["response", "data", "data", "validationErrors"], error)
-          .flatMap(Parsers.isArray)
-          .map((validationErrors) =>
-            validationErrors.some((validationError) =>
-              Parsers.objectPath(["message"], validationError)
-                .flatMap(Parsers.isString)
-                .map((message) => /IGSN integration is not enabled/.test(message))
-                .orElse(false),
-            ),
-          )
-          .orElse(false),
-      );
+      setShowIgsnMessage(showIgsnIntegrationMessage);
     } finally {
       setFetchingIdentifierFields(false);
     }
@@ -336,10 +327,10 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
       return;
     }
     confirm(
-      "Importing in progress",
-      "Are you sure you want to close this dialog? The import will continue in the background and there will be an alert when it completes.",
-      "Yes, close",
-      "No, keep open",
+      t("fieldmarkImport.closeConfirm.title"),
+      t("fieldmarkImport.closeConfirm.message"),
+      t("fieldmarkImport.closeConfirm.confirm"),
+      t("fieldmarkImport.closeConfirm.cancel"),
     ).then((confirmed) => {
       if (confirmed) {
         onClose();
@@ -352,39 +343,36 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth fullScreen={isViewportSmall}>
         <AppBar
           variant="dialog"
-          currentPage="Fieldmark"
+          currentPage={t("fieldmarkImport.appBarTitle")}
           accessibilityTips={{
             supportsHighContrastMode: true,
           }}
           helpPage={{
-            docLink: docLinks.fieldmark,
-            title: "Fieldmark help",
+            docLink: helpDocsArticleUrl("fieldmark"),
+            title: t("fieldmarkImport.helpTitle"),
           }}
         />
-        <DialogTitle variant="h3">Import from Fieldmark</DialogTitle>
+        <DialogTitle variant="h3">{t("fieldmarkImport.title")}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ height: "100%", flexWrap: "nowrap" }}>
             <Box>
               <Typography variant="body2" sx={{ maxWidth: "54em" /* entirely arbitrary */ }}>
-                Choose a Fieldmark notebook to import into Inventory. A Sample will be created for each record inside
-                the notebook. A new list container will be placed on your bench, containing a singular subsample for
-                each sample.
+                {t("fieldmarkImport.description")}
               </Typography>
               <Typography variant="body2">
-                See <Link href="https://docs.fieldmark.au">docs.fieldmark.au</Link> and our{" "}
-                <Link href={docLinks.fieldmark}>Fieldmark integration docs</Link> for more.
+                <TransRichText i18nKey="inventory:fieldmarkImport.descriptionLinks" />
               </Typography>
             </Box>
             <Box>
               <DataGridWithRadioSelection
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"name", Notebook>("name", {
-                    headerName: "Name",
+                    headerName: t("fieldmarkImport.columns.name"),
                     flex: 1,
                     sortable: false,
                   }),
                   DataGridColumn.newColumnWithFieldName<"status", Notebook>("status", {
-                    headerName: "Status",
+                    headerName: t("fieldmarkImport.columns.status"),
                     flex: 1,
                     sortable: false,
                   }),
@@ -392,7 +380,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     "isPublic",
                     (notebook) => notebook.metadata.ispublic,
                     {
-                      headerName: "Is Public",
+                      headerName: t("fieldmarkImport.columns.isPublic"),
                       flex: 1,
                       sortable: false,
                     },
@@ -401,7 +389,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     "description",
                     (notebook) => notebook.metadata.pre_description,
                     {
-                      headerName: "Description",
+                      headerName: t("fieldmarkImport.columns.description"),
                       flex: 1,
                       sortable: false,
                     },
@@ -410,7 +398,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     "projectLead",
                     (notebook) => notebook.metadata.project_lead,
                     {
-                      headerName: "Project Lead",
+                      headerName: t("fieldmarkImport.columns.projectLead"),
                       flex: 1,
                       sortable: false,
                     },
@@ -419,7 +407,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     "id",
                     (notebook) => notebook.metadata.project_id,
                     {
-                      headerName: "Id",
+                      headerName: t("fieldmarkImport.columns.id"),
                       flex: 1,
                       sortable: false,
                     },
@@ -446,12 +434,12 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                     },
                   );
                 }}
-                selectRadioAriaLabelFunc={(row) => `Select notebook: ${row.name}`}
+                selectRadioAriaLabelFunc={(row) => t("fieldmarkImport.selectRadioLabel", { name: row.name })}
                 disableColumnFilter
                 hideFooter
                 autoHeight
                 localeText={{
-                  noRowsLabel: "No Notebooks",
+                  noRowsLabel: t("fieldmarkImport.noNotebooks"),
                 }}
                 loading={fetchingNotebooks}
                 slots={{
@@ -474,8 +462,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                 <>
                   {showIgsnMessage && (
                     <Typography variant="body2" sx={{ ml: 0.5 }}>
-                      RSpace can link pre-registered IGSN IDs with samples imported by Fieldmark. This feature requires
-                      the <Link href={docLinks.IGSNIdentifiers}>DataCite IGSN ID integration</Link> to be enabled.
+                      <TransRichText i18nKey="inventory:fieldmarkImport.igsnMessage" />
                     </Typography>
                   )}
                   {fetchingIdentifierFields ? (
@@ -488,13 +475,15 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                       }}
                     >
                       <CircularProgress size={24} />
-                      <Typography variant="body2">Loading available IGSN ID fields...</Typography>
+                      <Typography variant="body2">{t("fieldmarkImport.igsnField.loading")}</Typography>
                     </Box>
                   ) : (
                     identifierFields &&
                     identifierFields.length > 0 && (
                       <FormControl sx={{ width: "auto", minWidth: 200 }}>
-                        <InputLabel id="identifier-field-select-label">IGSN ID Field</InputLabel>
+                        <InputLabel id="identifier-field-select-label">
+                          {t("fieldmarkImport.igsnField.label")}
+                        </InputLabel>
                         <Select
                           labelId="identifier-field-select-label"
                           id="identifier-field-select"
@@ -505,7 +494,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                                 ? identifierFieldSelection.field
                                 : ""
                           }
-                          label="IGSN ID Field"
+                          label={t("fieldmarkImport.igsnField.label")}
                           onChange={(e) => {
                             const value = e.target.value;
                             if (value === "none") {
@@ -523,7 +512,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                           }}
                         >
                           <MenuItem value="none">
-                            <em>Do not use IGSN IDs</em>
+                            <em>{t("fieldmarkImport.igsnField.noIgsn")}</em>
                           </MenuItem>
                           {identifierFields.map((field) => (
                             <MenuItem key={field} value={field}>
@@ -531,10 +520,7 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
                             </MenuItem>
                           ))}
                         </Select>
-                        <FormHelperText>
-                          Select a field to use as the IGSN ID for imported samples, or select 'Do not use IGSN IDs' to
-                          import without one
-                        </FormHelperText>
+                        <FormHelperText>{t("fieldmarkImport.igsnField.helperText")}</FormHelperText>
                       </FormControl>
                     )
                   )}
@@ -545,15 +531,19 @@ export default function FieldmarkImportDialog({ open, onClose }: FieldmarkImport
         </DialogContent>
         <DialogActions>
           <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
-            <Button onClick={() => handleClose()}>Close</Button>
+            <Button onClick={() => handleClose()}>{t("common:actions.close")}</Button>
             <ValidatingSubmitButton
               onClick={() => {
-                if (selectedNotebook) void importNotebook(selectedNotebook).then(() => handleClose());
+                if (selectedNotebook) {
+                  void importNotebook(selectedNotebook).then((success) => {
+                    if (success) handleClose();
+                  });
+                }
               }}
-              validationResult={!selectedNotebook ? IsInvalid("No Notebook selected.") : IsValid()}
+              validationResult={!selectedNotebook ? IsInvalid(t("fieldmarkImport.noNotebookSelected")) : IsValid()}
               loading={importing}
             >
-              Import
+              {t("common:actions.import")}
             </ValidatingSubmitButton>
           </Stack>
         </DialogActions>

@@ -7,29 +7,31 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare const getValidationErrorString: (...args: any[]) => string;
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) {
+  const { t } = useTranslation("common");
   const [ontologiesEnforcedStatus, setOntologiesEnforcedStatus] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [waiting, setWaiting] = useState(false);
 
   const [enableDialogOpen, setEnableDialogOpen] = React.useState(false);
   const [disableDialogOpen, setDisableDialogOpen] = React.useState(false);
+  const { addAlert } = useContext(AlertContext);
 
   useEffect(() => {
     axios.get(`/groups/ajax/ontologiesEnforcedStatus/${groupId}`).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         setWaiting(false);
         return;
       }
@@ -37,7 +39,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
       setOntologiesEnforcedStatus(response.data.data);
       setLoaded(true);
     });
-  }, [ontologiesEnforcedStatus]);
+  }, [groupId]);
 
   function enforceGroupOntologies() {
     submit("/groups/ajax/enforceGroupOntologies/", true);
@@ -53,7 +55,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
     axios.post(url + groupId).then((response) => {
       if (!response.data.success) {
         const msg = getValidationErrorString(response.data.error, ",", true);
-        RS.confirm(msg, "warning", 5000, { sticky: true });
+        addAlert(mkAlert({ message: msg, variant: "warning", duration: 5000 }));
         setWaiting(false);
         return;
       }
@@ -71,8 +73,13 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
     // biome-ignore lint/suspicious/noImplicitAnyLet: initial biome migration
     let title;
     if (isCloud) {
-      title = "Only available on Enterprise";
+      title = t("profile.groups.manager.onlyEnterprise");
     }
+
+    const label =
+      props.mode === "un-enforce"
+        ? t("profile.groups.ontologies.unenforce.button")
+        : t("profile.groups.ontologies.disabledButton");
 
     return (
       <>
@@ -80,7 +87,7 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
           <Tooltip title={title} aria-label={title}>
             <div>
               <Button sx={{ margin: "0 0 0.5em 15px" }} variant="outlined" size="small" disabled>
-                {props.mode} Ontologies
+                {label}
               </Button>
             </div>
           </Tooltip>
@@ -91,11 +98,15 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
 
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   function OntologiesButton(props: any) {
+    const label =
+      props.mode === "enforce"
+        ? t("profile.groups.ontologies.enforce.button")
+        : t("profile.groups.ontologies.unenforce.button");
     return (
       <>
         {!isCloud && canManageOntologies && (
           <Button sx={{ margin: "0 0 0.5em 15px" }} onClick={props.callback} variant="outlined" size="small">
-            {props.mode} Ontologies
+            {label}
           </Button>
         )}
       </>
@@ -107,10 +118,10 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
     return (
       <>
         <Button onClick={props.onCancel} sx={{ color: "grey" }}>
-          Cancel
+          {t("profile.groups.manager.cancel")}
         </Button>
         <Button onClick={props.onConfirm} color="primary" disabled={waiting}>
-          Confirm
+          {t("profile.groups.manager.confirm")}
           {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
         </Button>
       </>
@@ -124,14 +135,11 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
           <DisabledOntologiesButton mode="un-enforce" />
           <OntologiesButton mode="enforce" callback={() => setEnableDialogOpen(true)} />
           <Dialog open={enableDialogOpen} onClose={() => setEnableDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle id="group-publication-dialog-title">Enforce ontologies for tags</DialogTitle>
+            <DialogTitle id="group-publication-dialog-title">
+              {t("profile.groups.ontologies.enforce.title")}
+            </DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from
-                ontology files. These ontology files must be shared with a Group and any user creating new tags must be
-                a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from
-                free text and will not autopopulate from existing tags.
-              </DialogContentText>
+              <DialogContentText>{t("profile.groups.ontologies.enforce.text")}</DialogContentText>
             </DialogContent>
             <DialogActions>
               <DialogButtons onCancel={() => setEnableDialogOpen(false)} onConfirm={enforceGroupOntologies} />
@@ -144,14 +152,9 @@ function GroupOntologiesManager({ groupId, isCloud, canManageOntologies }: any) 
           <DisabledOntologiesButton mode="disable" />
           <OntologiesButton mode="un-enforce" callback={() => setDisableDialogOpen(true)} />
           <Dialog open={disableDialogOpen} onClose={() => setDisableDialogOpen(false)} maxWidth="sm" fullWidth>
-            <DialogTitle id="group-sharing-dialog-title">Un-enforce use of ontologies for tags</DialogTitle>
+            <DialogTitle id="group-sharing-dialog-title">{t("profile.groups.ontologies.unenforce.title")}</DialogTitle>
             <DialogContent>
-              <DialogContentText>
-                Un-enforcing use of ontologies for tags will result in group members being able to enter free text when
-                creating new tags. They may also use values autopopulated from ontology files. These ontology files may
-                be their own, or may be files shared with them. They may also use values autopopulated from existing
-                tags.
-              </DialogContentText>
+              <DialogContentText>{t("profile.groups.ontologies.unenforce.text")}</DialogContentText>
             </DialogContent>
             <DialogActions>
               <DialogButtons onCancel={() => setDisableDialogOpen(false)} onConfirm={unenforceGroupOntologies} />

@@ -7,6 +7,7 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import type React from "react";
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import type { PageSize } from "./common";
 
 export type WordExportDetails = {
@@ -36,6 +37,7 @@ export default function WordExport({
   updateExportDetails,
   validations,
 }: WordExportArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   const pageSizeId = useId();
   return (
     <Grid container spacing={1}>
@@ -44,7 +46,8 @@ export default function WordExport({
           variant="standard"
           fullWidth
           error={validations.submitAttempt && !validations.inputValidations.exportName}
-          label="Name your file"
+          label={t("export.format.word.name")}
+          required
           value={exportName}
           onChange={({ target: { value } }) => updateExportDetails("exportName", value)}
           margin="normal"
@@ -53,7 +56,7 @@ export default function WordExport({
       </Grid>
       <Grid container>
         <Grid size={5}>
-          <InputLabel htmlFor={pageSizeId}>Page format: </InputLabel>
+          <InputLabel htmlFor={pageSizeId}>{t("export.format.word.pageFormatLabel")}</InputLabel>
           <Select
             variant="standard"
             fullWidth
@@ -63,10 +66,10 @@ export default function WordExport({
             data-test-id="word-size"
           >
             <MenuItem value={"A4"} data-test-id="word-size-a4">
-              A4
+              {t("export.format.word.pageSize.a4")}
             </MenuItem>
             <MenuItem value={"LETTER"} data-test-id="word-size-letter">
-              Letter
+              {t("export.format.word.pageSize.letter")}
             </MenuItem>
           </Select>
           {pageSize !== defaultPageSize && (
@@ -81,7 +84,7 @@ export default function WordExport({
                   data-test-id="set-size-default"
                 />
               }
-              label={`Set ${pageSize} as default.`}
+              label={t("export.format.word.setDefault", { pageSize })}
             />
           )}
         </Grid>

@@ -67,7 +67,7 @@ describe("FieldCard", () => {
         />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Remove" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [expect.objectContaining({ deleted: true })],
       });
@@ -109,7 +109,7 @@ describe("FieldCard", () => {
         />,
       );
 
-      await user.click(screen.getByRole("button", { name: "Remove" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(setFieldsDirty).toHaveBeenCalledWith({
         barcodes: [],
       });
@@ -150,7 +150,7 @@ describe("FieldCard", () => {
           factory={mockFactory()}
         />,
       );
-      expect(screen.getByLabelText("Scan a barcode to associate.")).toBeVisible();
+      expect(screen.getByLabelText("inventory:fields.barcodes.actions.scan")).toBeVisible();
     });
   });
 });

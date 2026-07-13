@@ -1,28 +1,13 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test } from "vitest";
 import { expectAccessible } from "@/__tests__/customQueries";
 import "@/__tests__/__mocks__/matchMedia";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import { SimpleCarousel } from "./Carousel.story";
 
 const mockAxios = new MockAdapter(axios);
-
-/*
- * Each preview in the carousel loads its content asynchronously after mount, so
- * those background state updates settle outside `act(...)` once the synchronous
- * assertions have run. These warnings are expected here and are silenced so
- * they don't drown out genuine failures.
- */
-let restoreConsole: () => void;
-beforeEach(() => {
-  restoreConsole = silenceConsole(["error"], [/not wrapped in act/]);
-});
-afterEach(() => {
-  restoreConsole();
-});
 
 beforeEach(() => {
   mockAxios.reset();
@@ -38,9 +23,16 @@ beforeEach(() => {
   mockAxios.onAny().reply(200, {});
 });
 
+async function waitForPreviewImages() {
+  await waitFor(() => {
+    expect(screen.getAllByRole("img", { name: "gallery:carousel.previewAlt", hidden: true })).toHaveLength(8);
+  });
+}
+
 describe("Carousel", () => {
   test("Should have no axe violations", async () => {
     const { baseElement } = render(<SimpleCarousel />);
+    await waitForPreviewImages();
 
     /*
      * The original Playwright spec filtered out the `landmark-one-main`,
@@ -55,21 +47,23 @@ describe("Carousel", () => {
   test("Should show an indicator of progress through listing.", async () => {
     const user = userEvent.setup();
     render(<SimpleCarousel />);
+    await waitForPreviewImages();
 
-    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("1 / 8");
+    expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("1 / 8");
 
-    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
-    expect(screen.getByRole("status", { name: "Current file index" })).toHaveTextContent("2 / 8");
+    expect(screen.getByRole("status", { name: "gallery:carousel.currentFileIndex" })).toHaveTextContent("2 / 8");
   });
 
   test("Moving to a different file resets the zoom level", async () => {
     const user = userEvent.setup();
     render(<SimpleCarousel />);
+    await waitForPreviewImages();
 
-    await user.click(screen.getByRole("button", { name: /zoom in/i }));
-    await user.click(screen.getByRole("button", { name: /next/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.zoomIn" }));
+    await user.click(screen.getByRole("button", { name: "gallery:carousel.next" }));
 
-    expect(screen.getByRole("button", { name: /reset zoom/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "common:actions.resetZoom" })).toBeDisabled();
   });
 });

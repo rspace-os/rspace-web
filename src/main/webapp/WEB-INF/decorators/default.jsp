@@ -8,7 +8,7 @@
       let currentUser = "${sessionScope.userInfo.username}";
 
       window.onload = function () {
-        var loadTime = window.performance.timing.domContentLoadedEventEnd-window.performance.timing.navigationStart; 
+        var loadTime = window.performance.timing.domContentLoadedEventEnd-window.performance.timing.navigationStart;
         console.log('Page load time is '+ loadTime);
       }
     </script>
@@ -35,7 +35,7 @@
     <script src="<rst:assetUrl value='/scripts/global.settingsStorage.js'/>"></script>
     <jsp:include page="/scripts/templates/blockUI.html"/>
     <link rel="stylesheet" href="<rst:assetUrl value='/styles/jquery.toastmessage.css'/>" />
-    
+
     <sitemesh:write property='head'/>
 
     <script defer src="<rst:assetUrl value='/scripts/segment.js'/>"></script>
@@ -72,7 +72,7 @@
             <jsp:include page="/common/footer.jsp" />
         </div>
     </div>
-    
+
     <div id="fade" class="black_overlay"></div>
 </body>
 </html>

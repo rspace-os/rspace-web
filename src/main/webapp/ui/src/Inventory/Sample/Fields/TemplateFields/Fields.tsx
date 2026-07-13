@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import ChoiceField from "../../../../components/Inputs/ChoiceField";
 import DateField from "../../../../components/Inputs/DateField";
 import NumberField from "../../../../components/Inputs/NumberField";
@@ -26,6 +27,7 @@ type FieldsArgs = {
 };
 
 function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (sample.fields ?? []).map((field: Field) => {
     const commonProps = {
       disabled: !sample.isFieldEditable("fields"),
@@ -310,7 +312,7 @@ function Fields({ onErrorStateChange, sample }: FieldsArgs): React.ReactNode {
       );
     }
 
-    return <Box key={field.name}>Unknown field type: {field.type}</Box>;
+    return <Box key={field.name}>{t("sample.fields.unknownFieldType", { type: field.type })}</Box>;
   });
 }
 

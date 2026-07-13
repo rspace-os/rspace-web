@@ -1,18 +1,21 @@
 import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
+import { useTranslation } from "react-i18next";
 import { ErrorReason } from "./Enums";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function ErrorView({ errorReason }: { errorReason: any }) {
+  const { t } = useTranslation("apps");
+
   return (
     <Alert severity="error">
-      <AlertTitle>Error</AlertTitle>
-      {errorReason === ErrorReason.NetworkError && <>Network Error. Please check your connections.</>}
-      {errorReason === ErrorReason.APIVersion && <>Only version 2 of the PyRAT API is supported.</>}
-      {errorReason === ErrorReason.Unauthorized && <>Invalid PyRAT user or client token.</>}
-      {errorReason === ErrorReason.Timeout && <>Request timed out.</>}
-      {errorReason === ErrorReason.BadRequest && <>Bad Request.</>}
-      {errorReason === ErrorReason.Unknown && <>Unknown error</>}
+      <AlertTitle>{t("pyrat.error.title")}</AlertTitle>
+      {errorReason === ErrorReason.NetworkError && <>{t("pyrat.error.network")}</>}
+      {errorReason === ErrorReason.APIVersion && <>{t("pyrat.error.apiVersion")}</>}
+      {errorReason === ErrorReason.Unauthorized && <>{t("pyrat.error.unauthorized")}</>}
+      {errorReason === ErrorReason.Timeout && <>{t("pyrat.error.timeout")}</>}
+      {errorReason === ErrorReason.BadRequest && <>{t("pyrat.error.badRequest")}</>}
+      {errorReason === ErrorReason.Unknown && <>{t("pyrat.error.unknown")}</>}
     </Alert>
   );
 }

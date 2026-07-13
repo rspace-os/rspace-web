@@ -1,5 +1,3 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Switch, Tooltip } from "@mui/material";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
@@ -7,16 +5,19 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
-import { switchClasses } from "@mui/material/Switch";
+import Switch, { switchClasses } from "@mui/material/Switch";
 import { ThemeProvider } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import React from "react";
+import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import TransRichText from "@/modules/common/i18n/TransRichText";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import materialTheme from "../../../theme";
 
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 declare function getValidationErrorString(...args: any[]): string;
 
@@ -30,10 +31,12 @@ function EnableAutoshareDialog({
   switchDisabledReason,
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 }: any) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const [waiting, setWaiting] = React.useState(false);
   const [done, setDone] = React.useState(false);
   const [folderName, setFolderName] = React.useState("");
+  const { addAlert } = useContext(AlertContext);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -59,24 +62,26 @@ function EnableAutoshareDialog({
       .then((response) => {
         if (!response.data.success) {
           const msg2 = getValidationErrorString(response.data.error, ",", true);
-          RS.confirm(msg2, "warning", 5000, { sticky: true });
+          addAlert(mkAlert({ message: msg2, variant: "warning", duration: 5000 }));
           return;
         }
         const async = response.data.data.async;
         const msg = async
-          ? `Autoshare for ${group.groupDisplayName} was enabled successfully. You will receive a notification once it is complete.`
-          : `Autoshare for ${group.groupDisplayName} was enabled successfully.`;
+          ? t("profile.groups.autosharing.enableAsyncSuccess", { group: group.groupDisplayName })
+          : t("profile.groups.autosharing.enableSuccess", { group: group.groupDisplayName });
 
         setDone(true);
         callback();
-        RS.confirm(msg, "notice", async ? 7000 : 3000);
+        addAlert(mkAlert({ message: msg, variant: "notice", duration: async ? 7000 : 3000 }));
       })
       // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
       .catch((error: any) => {
-        RS.confirm(
-          error.response.data || "Something went wrong. Please, contact support if the issue persists.",
-          "warning",
-          "infinite",
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, t("profile.groups.autosharing.genericError")),
+            variant: "warning",
+            isInfinite: true,
+          }),
         );
       })
       .then(() => {
@@ -93,7 +98,7 @@ function EnableAutoshareDialog({
     <>
       {!isSwitch && (
         <Button variant="outlined" size="small" onClick={handleClickOpen}>
-          Enable autosharing
+          {t("profile.groups.autosharing.enable")}
         </Button>
       )}
       {isSwitch && (
@@ -105,29 +110,23 @@ function EnableAutoshareDialog({
               checked={false}
               disabled={isSwitchDisabled}
               onChange={handleClickOpen}
-              slotProps={{ input: { "aria-label": "Enable autosharing" } }}
+              slotProps={{ input: { "aria-label": t("profile.groups.autosharing.enable") } }}
             />
           </div>
         </Tooltip>
       )}
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle id="form-dialog-title">Enable autosharing</DialogTitle>
+        <DialogTitle id="form-dialog-title">{t("profile.groups.autosharing.enable")}</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Autosharing work will ensure that all current and future documents and notebooks for user{" "}
-            <strong>{username}</strong> will be shared with group
-            <strong> {group.groupDisplayName}</strong> with the READ permission.
-            <br />
-            <br />
-            The EDIT permission can be granted or items can be unshared from the "Manage Shared Documents" section as
-            usual.
-            <br />
-            <br />
-            Please enter a name for the folder that the work will be shared into.
+            <TransRichText
+              i18nKey="common:profile.groups.autosharing.enableUserText"
+              values={{ username, group: group.groupDisplayName }}
+            />
           </DialogContentText>
           <TextField
             variant="standard"
-            label="Folder name"
+            label={t("profile.groups.autosharing.folderName")}
             placeholder={username}
             autoFocus={true}
             fullWidth
@@ -137,10 +136,10 @@ function EnableAutoshareDialog({
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} sx={{ color: "grey" }}>
-            Cancel
+            {t("actions.cancel")}
           </Button>
           <Button onClick={handleSubmit} color="primary" disabled={waiting || done}>
-            Confirm
+            {t("actions.confirm")}
             {waiting && <CircularProgress size={20} sx={{ position: "absolute", margin: "0 auto" }} />}
           </Button>
         </DialogActions>

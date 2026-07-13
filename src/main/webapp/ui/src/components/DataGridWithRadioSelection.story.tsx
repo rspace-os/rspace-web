@@ -84,9 +84,9 @@ export function ControlledDataGridWithRadioSelectionExample({
         {selectedRowId !== null ? `Selected ID: ${selectedRowId}` : "Nothing selected"}
       </div>
       {/* biome-ignore lint/a11y/useButtonType: story fixture button */}
-      <button onClick={() => setSelectedRowId(null)}>Reset Selection</button>
+      <button onClick={() => setSelectedRowId(null)}>{"Reset Selection"}</button>
       {/* biome-ignore lint/a11y/useButtonType: story fixture button */}
-      <button onClick={() => setSelectedRowId(2)}>Select Row 2</button>
+      <button onClick={() => setSelectedRowId(2)}>{"Select Row 2"}</button>
     </Box>
   );
 }

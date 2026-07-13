@@ -11,6 +11,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { FileSystem } from "../common";
 
 type FoundLinksListingArgs = {
@@ -28,20 +29,19 @@ type FoundLinksListingArgs = {
  * detailed information.
  */
 export default function FoundLinksListing({ filesCount, fileSystems }: FoundLinksListingArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = useState(false);
 
   return (
     <Card sx={{ p: 1 }}>
-      <h2>Filestore links found in exported content</h2>
-      <p>
-        Exported content contains {filesCount} filestore link from {fileSystems.length} File System.
-      </p>
+      <h2>{t("export.fileStore.foundLinks.heading")}</h2>
+      <p>{t("export.fileStore.foundLinks.summary", { filesCount, fileSystemsCount: fileSystems.length })}</p>
 
       <Button variant="outlined" color="primary" onClick={() => setOpen(true)} fullWidth>
-        Show found filestore links
+        {t("export.fileStore.foundLinks.showButton")}
       </Button>
       <Dialog onClose={() => setOpen(false)} open={open}>
-        <DialogTitle>Filestore links found in exported content</DialogTitle>
+        <DialogTitle>{t("export.fileStore.foundLinks.heading")}</DialogTitle>
         <DialogContent>
           {fileSystems.map((fileStore) => (
             <div key={`foundLinks${fileStore.id}`}>
@@ -49,9 +49,9 @@ export default function FoundLinksListing({ filesCount, fileSystems }: FoundLink
               <Table>
                 <TableHead>
                   <TableRow>
-                    <TableCell>Full path on the File System</TableCell>
-                    <TableCell align="right">Link type</TableCell>
-                    <TableCell align="right">Notes</TableCell>
+                    <TableCell>{t("export.fileStore.foundLinks.columns.path")}</TableCell>
+                    <TableCell align="right">{t("export.fileStore.foundLinks.columns.linkType")}</TableCell>
+                    <TableCell align="right">{t("export.fileStore.foundLinks.columns.notes")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -71,7 +71,7 @@ export default function FoundLinksListing({ filesCount, fileSystems }: FoundLink
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-ok-links">
-            OK
+            {t("common:actions.ok")}
           </Button>
         </DialogActions>
       </Dialog>

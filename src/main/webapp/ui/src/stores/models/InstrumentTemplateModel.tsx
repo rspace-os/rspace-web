@@ -1,7 +1,14 @@
-import { action, makeObservable, observable, override } from "mobx";
+import { action, computed, makeObservable, observable, override } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import type { _LINK } from "@/util/types";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
+import ApiService from "../../common/InvApiService";
+import HelpLinkIcon from "../../components/HelpLinkIcon";
+import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
+import { getErrorMessage } from "../../util/error";
+import { mkAlert } from "../contexts/Alert";
 import type { BarcodeAttrs } from "../definitions/Barcode";
 import { type GlobalId, type Id, inventoryRecordTypeLabels } from "../definitions/BaseRecord";
 import type { HasEditableFields, HasUneditableFields } from "../definitions/Editable";
@@ -25,6 +32,8 @@ import InventoryBaseRecord, {
 } from "./InventoryBaseRecord";
 import Search from "./Search";
 
+const mainSearch = () => getRootStore().searchStore.search;
+
 type InstrumentTemplateEditableFields = InventoryBaseRecordEditableFields;
 
 type InstrumentTemplateUneditableFields = InventoryBaseRecordUneditableFields;
@@ -38,6 +47,7 @@ export type InstrumentTemplateAttrs = {
   permittedActions: Array<Action>;
   tags: string | null;
   version?: number;
+  historicalVersion?: boolean;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
@@ -78,6 +88,8 @@ export default class InstrumentTemplateModel
       addField: action,
       removeCustomField: action,
       moveField: action,
+      update: override,
+      updateInstrumentsToLatest: action,
       paramsForBackend: override,
       populateFromJson: override,
       updateFieldsState: override,
@@ -90,13 +102,14 @@ export default class InstrumentTemplateModel
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
+      globalIdOfLatest: computed,
     });
 
     if (this.recordType === "instrumentTemplate") this.populateFromJson(factory, params, {});
 
     this.search = new Search({
       fetcherParams: {
-        parentGlobalId: this.globalId,
+        parentGlobalId: this.globalIdOfLatest,
         resultType: "INSTRUMENT",
       },
       uiConfig: {
@@ -113,7 +126,12 @@ export default class InstrumentTemplateModel
   }
 
   get cardTypeLabel(): string {
-    return "Instrument Template";
+    return inventoryRecordTypeLabels.instrumentTemplate;
+  }
+
+  get globalIdOfLatest(): GlobalId | null {
+    if (!this.id) return null;
+    return `NT${this.id}`;
   }
 
   get recordTypeLabel(): string {
@@ -146,12 +164,15 @@ export default class InstrumentTemplateModel
     });
   }
 
-  removeCustomField(id: Id, index: number): void {
+  removeCustomField(id: Id, index: number, deleteFromInstruments = false): void {
     if (!this.id || !id) {
       this.fields.splice(index, 1);
     } else {
       const field = this.fields.find((f) => f.id === id);
-      field?.setAttributesDirty({ deleteFieldRequest: true });
+      field?.setAttributesDirty({
+        deleteFieldRequest: true,
+        deleteFieldOnSampleUpdate: deleteFromInstruments,
+      });
     }
   }
 
@@ -236,11 +257,107 @@ export default class InstrumentTemplateModel
     return false;
   }
 
+  private async setActiveResultToLatest(): Promise<InstrumentTemplateModel> {
+    const id = this.id;
+    if (!id) throw new Error("id is required.");
+    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, null, this.factory.newFactory());
+    await mainSearch().setActiveResult(latest);
+    mainSearch().replaceResult(latest);
+    return latest;
+  }
+
+  async update(): Promise<void> {
+    const oldVersion = this.version;
+    await super.update(false);
+    const latest = await this.setActiveResultToLatest();
+
+    if (this.id) {
+      await this.search.fetcher.performInitialSearch(null);
+      const instrumentsToBeUpdated = this.search.fetcher.results.filter((r) => r.owner?.isCurrentUser ?? true);
+      if (this.version !== oldVersion && instrumentsToBeUpdated.length > 0) {
+        const newToast = mkAlert({
+          message: i18n.t("inventory:instrumentTemplate.alerts.updateExistingInstruments"),
+          variant: "notice",
+          isInfinite: true,
+          actionLabel: i18n.t("common:actions.yes"),
+          onActionClick: () => void this.updateInstrumentsToLatest(),
+        });
+        latest.addScopedToast(newToast);
+        getRootStore().uiStore.addAlert(newToast);
+      }
+    }
+  }
+
+  async updateInstrumentsToLatest(): Promise<void> {
+    if (!this.id) throw new Error("id is required.");
+    const id = this.id;
+
+    if (
+      !(await getRootStore().uiStore.confirm(
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "8px",
+            marginBottom: "10px",
+          }}
+        >
+          <span>{i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.title")}</span>
+          <HelpLinkIcon
+            link={helpDocsArticleUrl("updateAllSamplesOfTemplate")}
+            title={i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.helpTitle")}
+            size="small"
+          />
+        </span>,
+        <TransRichText i18nKey="inventory:instrumentTemplate.updateInstrumentsConfirm.body" />,
+        i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.confirmButton"),
+      ))
+    )
+      return;
+    try {
+      const { data } = await ApiService.post<{
+        errorCount: number;
+        results: Array<{
+          error: { errors: Array<string> };
+          record: Record<string, unknown> & { globalId: GlobalId };
+        }>;
+      }>(`instrumentTemplates/${id.toString()}/actions/updateInstrumentsToLatestTemplateVersion`, {});
+      handleDetailedErrors(
+        data.errorCount,
+        data.results.map((response) => ({ response })),
+        "update",
+        () => this.updateInstrumentsToLatest(),
+        "",
+      );
+      const factory = this.factory.newFactory();
+      handleDetailedSuccesses(
+        data.results
+          .filter((r) => !r.error)
+          .map((r) => {
+            const newRecord = factory.newRecord(r.record);
+            newRecord.populateFromJson(factory, r.record, null);
+            return newRecord;
+          }),
+        "updated",
+      );
+    } catch (error) {
+      getRootStore().uiStore.addAlert(
+        mkAlert({
+          title: i18n.t("inventory:instrumentTemplate.alerts.updateLatestFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+          variant: "error",
+        }),
+      );
+      console.error("Could not update instruments to latest template version.", error);
+    }
+  }
+
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Instrument",
-        explanation: "Create a new instrument based on this template.",
+        label: i18n.t("inventory:instrumentTemplate.createOptions.instrument.label"),
+        explanation: i18n.t("inventory:instrumentTemplate.createOptions.instrument.explanation"),
         onReset: () => {},
         onSubmit: async () => {
           void getRootStore().searchStore.createNewInstrument({

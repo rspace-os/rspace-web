@@ -1,8 +1,13 @@
 <%@ include file="/common/taglibs.jsp" %>
 
-    <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
-    <link rel="stylesheet"
-        href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
+    <%-- No <head> wrapper: this fragment is jsp:included into the body of its callers
+         (notebookFooter.jsp, structuredDocumentMainPanel.jsp). Under SiteMesh 3's
+         first-<head>-wins nesting, a second in-body <head> is silently dropped, which
+         would drop photoswipe.js and leave populatePhotoswipeImageArray undefined.
+         Body-level <link>/<script>/<style> survive inlining and load before document.ready. --%>
+        <link rel="stylesheet" href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.css'/>" />
+        <link rel="stylesheet"
+            href="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/default-skin/default-skin.css'/>" />
 
     <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe.min.js'/>"></script>
     <script src="<rst:assetUrl value='/scripts/bower_components/photoswipe/dist/photoswipe-ui-default.min.js'/>"></script>
@@ -22,17 +27,17 @@
             text-align: center;
         }
 
-        .publicNextArrowText,
-        .publicPrevArrowText {
-            background-color: white;
-            text-align: center;
-            color:white;
-            width:200px;
-            padding:15px;
-            font-size:20px;
-            line-height:18px;
-        }
-    </style>
+            .publicNextArrowText,
+            .publicPrevArrowText {
+                background-color: white;
+                text-align: center;
+                color:white;
+                width:200px;
+                padding:15px;
+                font-size:20px;
+                line-height:18px;
+            }
+        </style>
 
     <!-- Root element of PhotoSwipe. Must have class pswp. -->
     <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">

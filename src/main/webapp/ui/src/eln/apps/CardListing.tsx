@@ -3,6 +3,7 @@ import Typography from "@mui/material/Typography";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import DSW from "@/eln/apps/integrations/DSW";
 import RaidIntegrationCard from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import ApiDirect from "./integrations/ApiDirect";
@@ -53,6 +54,7 @@ type CardListingArgs = {
 };
 
 function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { update } = useIntegrationsEndpoint();
 
   /*
@@ -326,7 +328,7 @@ function CardListing({ mode, integrationStates }: CardListingArgs): React.ReactN
       .map((s) => s.mode)
       .filter((m) => m === mode).length === 0
   ) {
-    return <Typography variant="body1">Nothing here!</Typography>;
+    return <Typography variant="body1">{t("page.nothingHere")}</Typography>;
   }
 
   /*

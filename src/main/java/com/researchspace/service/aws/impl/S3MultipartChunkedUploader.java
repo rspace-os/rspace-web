@@ -67,11 +67,6 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
           .retryOnResult(resp2 -> !((UploadPartResponse) resp2).sdkHttpResponse().isSuccessful())
           .build();
 
-  // for testing
-  void setChunkSizeMb(int chunkSizeMb) {
-    this.chunkSizeMb = chunkSizeMb;
-  }
-
   @Override
   public SdkHttpResponse apply(File fToUpload) {
     if (fToUpload.length() < AWS_MIN_CHUNK_SIZE_BYTES) {
@@ -128,7 +123,15 @@ public class S3MultipartChunkedUploader extends AbstractS3Uploader
               s3Client.uploadPart(
                   uploadPartRequest1,
                   RequestBody.fromByteBuffer(
-                      bb.getByteBufferSupplier().get().orElseThrow(() -> new IOException())));
+                      bb.getByteBufferSupplier()
+                          .get()
+                          .orElseThrow(
+                              () ->
+                                  new IOException(
+                                      "Could not read part number "
+                                          + bb.getPartNo()
+                                          + " of "
+                                          + fToUpload))));
 
       up = Retry.decorateCallable(rt, up);
       UploadPartResponse uploadPartResponse = null;

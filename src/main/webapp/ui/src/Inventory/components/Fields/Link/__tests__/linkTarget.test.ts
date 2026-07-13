@@ -17,12 +17,12 @@ describe("validateTarget", () => {
   test("rejects unsupported prefixes", () => {
     const { ok, reason } = validateTarget("GF9", "SA1");
     expect(ok).toBe(false);
-    expect(reason).toMatch(/target must be/i);
+    expect(reason).toBe("inventory:fields.link.targetValidation.supportedType");
   });
 
   test("rejects malformed and empty ids as 'required'", () => {
-    expect(validateTarget("", "SA1").reason).toMatch(/required/i);
-    expect(validateTarget("not-an-id", "SA1").reason).toMatch(/required/i);
+    expect(validateTarget("", "SA1").reason).toBe("inventory:fields.link.targetValidation.required");
+    expect(validateTarget("not-an-id", "SA1").reason).toBe("inventory:fields.link.targetValidation.required");
   });
 
   test("rejects self-links, ignoring any version suffix", () => {
@@ -33,10 +33,10 @@ describe("validateTarget", () => {
   test("rejects manually-typed version suffixes: versions are pinned via the clock", () => {
     const inventory = validateTarget("SA6v1", "SA1");
     expect(inventory.ok).toBe(false);
-    expect(inventory.reason).toMatch(/clock/i);
+    expect(inventory.reason).toBe("inventory:fields.link.targetValidation.noVersionSuffix");
     const eln = validateTarget("SD7v2", "SA1");
     expect(eln.ok).toBe(false);
-    expect(eln.reason).toMatch(/clock/i);
+    expect(eln.reason).toBe("inventory:fields.link.targetValidation.noVersionSuffix");
     // the base id without a suffix remains valid
     expect(validateTarget("SA6", "SA1").ok).toBe(true);
   });

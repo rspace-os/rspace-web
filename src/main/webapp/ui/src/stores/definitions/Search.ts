@@ -440,6 +440,7 @@ export interface Search {
    */
   readonly adjustableColumnOptions: RsSet<AdjustableTableRowLabel>;
   setAdjustableColumn(value: AdjustableTableRowLabel, index: number): void;
+  resetColumnLabelSettingsIfUnknown(): void;
 
   /*
    * The model implementating this interface MAY instruct the UI to only allow

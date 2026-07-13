@@ -1,6 +1,7 @@
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
-import docLinks from "../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import HelpLinkIcon from "../../../components/HelpLinkIcon";
 import ContainerModel from "../../../stores/models/ContainerModel";
 import useStores from "../../../stores/use-stores";
@@ -10,6 +11,7 @@ import InventoryPicker from "../Picker/Picker";
 type LeftPanelArgs = Record<string, never>;
 
 function LeftPanel(_: LeftPanelArgs) {
+  const { t } = useTranslation(["inventory", "common"]);
   const { moveStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
 
@@ -17,9 +19,9 @@ function LeftPanel(_: LeftPanelArgs) {
     if (!(moveStore.search?.activeResult instanceof ContainerModel)) return null;
     if (moveStore.search.activeResult.isWorkbench && moveStore.search.fetcher.parentIsBench) {
       if (isSingleColumnLayout) {
-        return "Press 'Next', followed by 'Move', to move the selected items to this bench.";
+        return t("moveToTarget.selectionHelp.singleColumnBench");
       }
-      return "Press 'Move' in the bottom-right to move the selected items to this bench.";
+      return t("moveToTarget.selectionHelp.wideBench");
     }
     return null;
   };
@@ -37,15 +39,15 @@ function LeftPanel(_: LeftPanelArgs) {
           }}
           header={
             <Typography variant="h6" component="h3">
-              Pick Destination&nbsp;
-              <HelpLinkIcon link={docLinks.moving} title="Info on moving items." />
+              {t("moveToTarget.pickDestination")}{" "}
+              <HelpLinkIcon link={helpDocsArticleUrl("moving")} title={t("moveToTarget.helpTitle")} />
             </Typography>
           }
           selectionHelpText={selectionHelpText()}
           testId="movePicker"
         />
       ) : (
-        <Typography variant="h5">Loading</Typography>
+        <Typography variant="h5">{t("common:loading")}</Typography>
       )}
     </>
   );

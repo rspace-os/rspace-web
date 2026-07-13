@@ -1,8 +1,9 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dryad";
 import DryadIcon from "../../../assets/branding/dryad/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -46,6 +47,7 @@ export const DRYAD_CONNECTION_CHANNEL = "rspace.apps.dryad.connection";
  * ../useDryad.
  */
 function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useDryadEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -56,7 +58,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Could not connect to Dryad",
+          title: t("integrations.dryad.alerts.connectError"),
           message: e.data.error,
         }),
       );
@@ -66,7 +68,7 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
     addAlert(
       mkAlert({
         variant: "success",
-        message: "Successfully connected to Dryad.",
+        message: t("integrations.dryad.alerts.connectSuccess"),
       }),
     );
   });
@@ -80,28 +82,19 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Dryad"
+        name={t("integrations.dryad.name")}
         integrationState={integrationState}
-        explanatoryText="Deposit, discover, and cite research data through a curated open-access repository."
+        explanatoryText={t("integrations.dryad.description")}
         image={DryadIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can export your files and data directly from RSpace to Dryad, and provide metadata for the deposit."
-        helpLinkText="Dryad integration docs"
-        website="datadryad.org"
+        usageText={t("integrations.dryad.usage")}
+        helpLinkText={t("integrations.dryad.helpLink")}
+        website="https://datadryad.org"
         docLink="dryad"
         setupSection={
           <>
-            <ol>
-              <li>
-                Dryad uses ORCID iD for authentication; if you don’t have an ORCID iD, you can create one at{" "}
-                <Link href="https://orcid.org/register" target="_blank" rel="noreferrer">
-                  orcid.org/register
-                </Link>
-              </li>
-              <li>Click on Connect to authorise RSpace to access your Dryad account.</li>
-              <li>Dryad will now be available as an option in the export dialog.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dryad.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -113,13 +106,13 @@ function Dryad({ integrationState, update }: DryadArgs): React.ReactNode {
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/dryad/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

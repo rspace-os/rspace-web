@@ -2,7 +2,8 @@ import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
-import docLinks from "../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import SearchContext from "../../../stores/contexts/Search";
 import type { SearchView as SearchViewType } from "../../../stores/definitions/Search";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -26,31 +27,23 @@ function ImageContainerZoomHelpText() {
    */
   if (uiStore.isTouchDevice && isSingleColumnLayout) return null;
 
-  let zoomText: string = "Tip: Use Ctrl and the - key";
-  try {
-    // isMac relies on a deprecated browser API so the call may fail
-    if (isMac()) zoomText = "Tip: Use Command and the - key";
-  } catch (_) {
-    return null;
-  }
-  zoomText = `${zoomText} to zoom the page out to view more of the image.`;
-
-  const helpText = isSingleColumnLayout ? (
-    zoomText
-  ) : (
-    <>
-      {zoomText} The{" "}
-      <a href={docLinks.panelAdjuster} rel="noreferrer" target="_blank">
-        Panel Adjuster
-      </a>{" "}
-      can also be used to provide more room to fully display the image.
-    </>
+  return (
+    <Alert severity="info">
+      <TransRichText
+        i18nKey={isMac() ? "inventory:container.content.zoom.macTip" : "inventory:container.content.zoom.ctrlTip"}
+      />
+      {!isSingleColumnLayout && (
+        <>
+          {" "}
+          <TransRichText i18nKey="inventory:container.content.zoom.panelAdjuster" />
+        </>
+      )}
+    </Alert>
   );
-
-  return <Alert severity="info">{helpText}</Alert>;
 }
 
 function _Content() {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
   const activeResult = searchStore.activeResult;
   if (!(activeResult instanceof ContainerModel)) throw new Error("ActiveResult must be a Container");
@@ -70,16 +63,13 @@ function _Content() {
     void search.fetcher.performInitialSearch(params);
   };
 
-  const locationsAlert =
-    "Visual containers require an image with locations added to it. Click on 'Edit' (above) to complete the container's setup.";
-
   return (
     <>
       {activeResult.cType === "IMAGE" &&
         !activeResult.loading &&
         (!activeResult.locationsImage || !activeResult.locationsCount) && (
           <Alert severity="warning" sx={{ mb: 1 }}>
-            {locationsAlert}
+            {t("container.content.locationsAlert")}
           </Alert>
         )}
       <SearchContext.Provider

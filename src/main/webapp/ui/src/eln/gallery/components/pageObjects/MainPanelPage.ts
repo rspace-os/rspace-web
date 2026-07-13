@@ -83,7 +83,7 @@ export class MainPanelPage {
 
   clipboardSuccessAlert(): Locator {
     return page.getByRole("alert", {
-      name: "Link copied to clipboard successfully!",
+      name: "Link copied to clipboard successfully.",
     });
   }
 

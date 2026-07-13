@@ -35,14 +35,6 @@ public class RelnEdge {
     this.id = id;
   }
 
-  void setChild(Node child) {
-    this.child = child;
-  }
-
-  void setParent(NodeContainer parent) {
-    this.parent = parent;
-  }
-
   void setOwner(User owner) {
     this.owner = owner;
   }

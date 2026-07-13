@@ -2,6 +2,7 @@ import AddIcon from "@mui/icons-material/Add";
 import Chip from "@mui/material/Chip";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Optional } from "../../util/optional";
 import RsSet from "../../util/set";
 import TagsCombobox from "./TagsCombobox";
@@ -59,13 +60,14 @@ export default function AddTag<
         };
       },
 >({ onSelection, value, enforceOntologies = false, disabled = false }: AddTagArgs<Toggle>): React.ReactNode {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   return (
     <>
       <Chip
         icon={<AddIcon />}
         color={disabled ? "default" : "primary"}
-        label="Add Tag"
+        label={t("tags.addTag")}
         onClick={
           disabled
             ? () => {}

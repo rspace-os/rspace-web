@@ -245,10 +245,6 @@ public class SysadminApiControllerTest extends JakartaValidatorTest {
     return LocalDate.now().minusYears(1).plusDays(1);
   }
 
-  private LocalDate yearAndADayAgo() {
-    return LocalDate.now().minusYears(1).minusDays(1);
-  }
-
   private ApiSysadminUserSearchResult basicRequest(User u, ApiSystemUserSearchConfig srchConfig)
       throws BindException {
     return controller.getUsers(

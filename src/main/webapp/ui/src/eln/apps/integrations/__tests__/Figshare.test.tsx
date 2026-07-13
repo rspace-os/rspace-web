@@ -41,7 +41,7 @@ describe("Figshare", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.connect" })).toBeVisible();
   });
   test("Should have a disconnect button when the user is authenticated.", () => {
     render(
@@ -57,6 +57,6 @@ describe("Figshare", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
   });
 });

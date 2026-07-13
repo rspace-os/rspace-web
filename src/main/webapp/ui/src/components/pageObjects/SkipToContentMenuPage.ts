@@ -6,9 +6,15 @@ import { type Locator, page, userEvent } from "vitest/browser";
  * assertions live in the specs themselves.
  */
 export class SkipToContentMenuPage {
-  /** The navigation menu container (role="menu"). */
+  /** The navigation menu list (role="menu"). */
   get menu(): Locator {
     return page.getByRole("menu", { name: "Skip to content navigation" });
+  }
+
+  containerElement(): HTMLElement {
+    const box = (this.menu.element() as HTMLElement).parentElement;
+    if (!box) throw new Error("SkipToContentMenu container not found");
+    return box;
   }
 
   /** The skip button for a given landmark name. */

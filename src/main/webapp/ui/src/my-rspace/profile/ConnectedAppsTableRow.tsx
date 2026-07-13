@@ -6,7 +6,9 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { ConnectedOAuthApp } from "@/my-rspace/profile/types";
 
 const ConnectedAppsTableRow = ({
@@ -16,6 +18,7 @@ const ConnectedAppsTableRow = ({
   app: ConnectedOAuthApp;
   onConfirmDisconnectApp: (clientId: string) => Promise<void>;
 }) => {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,22 +29,25 @@ const ConnectedAppsTableRow = ({
       </TableCell>
       <TableCell align="left">{app.scope}</TableCell>
       <TableCell align="right">
-        <Tooltip title="Disconnect" enterDelay={100}>
+        <Tooltip title={t("profile.oauth.connectedApps.disconnect")} enterDelay={100}>
           <IconButton color="inherit" onClick={() => setOpen(true)} sx={{ width: "42px" }}>
             <FontAwesomeIcon icon={faUnlink} size="xs" />
           </IconButton>
         </Tooltip>
         <ConfirmationDialog
-          title="Confirm Disconnect"
+          title={t("profile.oauth.connectedApps.confirmDisconnectTitle")}
           consequences={
             <Typography variant="body1">
-              Are you sure you want to revoke access from <strong>{app.clientName}</strong>?
+              <TransRichText
+                i18nKey="common:profile.oauth.connectedApps.confirmDisconnectText"
+                values={{ clientName: app.clientName }}
+              />
             </Typography>
           }
           variant="warning"
           callback={onConfirmDisconnectApp}
           confirmText={app.appName}
-          confirmTextLabel="Type OAuth app name to confirm"
+          confirmTextLabel={t("profile.oauth.dialog.confirmAppName")}
           handleCloseDialog={() => setOpen(false)}
           open={open}
         />

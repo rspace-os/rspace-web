@@ -30,6 +30,24 @@ public class FileChunkerTest {
     assertEquals((toSplit.length() / chunk) + 1, parts.size());
   }
 
+  @ParameterizedTest
+  @ValueSource(longs = {1, 10, 8191, 8192, 8193, 65536, 100000, 136575, 200000})
+  public void reassemblyMatchesOriginalAcrossChunkSizes(long chunk) throws IOException {
+    byte[] fromFile = FileUtils.readFileToByteArray(toSplit);
+    fileChunker = new FileChunker(toSplit, chunk);
+
+    File assembled = File.createTempFile("fromChunks", ".bin");
+    assembled.deleteOnExit();
+    try (FileOutputStream fos = new FileOutputStream(assembled)) {
+      for (FilePart part : fileChunker.getParts()) {
+        ByteBuffer bb = part.getByteBufferSupplier().get().orElseThrow();
+        IOUtils.write(bb.array(), fos);
+      }
+    }
+
+    Assertions.assertArrayEquals(fromFile, FileUtils.readFileToByteArray(assembled));
+  }
+
   @Test
   public void createPartsOf1() throws IOException {
     fileChunker = new FileChunker(toSplit, 1L);

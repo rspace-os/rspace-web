@@ -2,7 +2,6 @@ import { cleanup, render } from "@testing-library/react";
 import { HttpResponse, http } from "msw";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { worker } from "@/__tests__/browserSetup";
-import { oauthTokenHandler } from "@/__tests__/mocks/inventoryMocks";
 import { clickWhenInViewport, moveToastStackIntoViewport } from "@/__tests__/pageObjects/viewport";
 import { FieldmarkImportDialogStory } from "./FieldmarkImportDialog.story";
 import { FieldmarkImportDialogPage } from "./pageObjects/FieldmarkImportDialogPage";
@@ -18,28 +17,6 @@ import { FieldmarkImportDialogPage } from "./pageObjects/FieldmarkImportDialogPa
  * endpoint wiring, IGSN message, accessibility in the base case) is covered
  * by the jsdom unit test in FieldmarkImportDialog.test.tsx.
  */
-
-/*
- * When the import endpoint returns a 400, the component catches the Axios
- * rejection inside `importNotebook`'s try/catch but the browser still fires an
- * `unhandledrejection` event before the catch handler runs. Vitest browser mode
- * surfaces that as a test-file error. We install a one-time suppressor so the
- * expected 400 rejection is absorbed without masking genuine surprises.
- */
-const suppressExpectedAxios400 = (): (() => void) => {
-  const handler = (event: PromiseRejectionEvent) => {
-    const reason: unknown = event.reason;
-    const message =
-      reason !== null && typeof reason === "object" && "message" in reason && typeof reason.message === "string"
-        ? reason.message
-        : "";
-    if (message.includes("status code 400")) {
-      event.preventDefault();
-    }
-  };
-  window.addEventListener("unhandledrejection", handler);
-  return () => window.removeEventListener("unhandledrejection", handler);
-};
 
 const NOTEBOOKS_PAYLOAD = [
   {
@@ -148,7 +125,6 @@ const dialog = new FieldmarkImportDialogPage();
 
 beforeEach(() => {
   worker.use(
-    oauthTokenHandler(),
     http.get("/api/inventory/v1/fieldmark/notebooks", () => HttpResponse.json(NOTEBOOKS_PAYLOAD)),
     ...igsnCandidateFieldsHandlers(),
     importSuccessHandler(),
@@ -196,10 +172,6 @@ describe("FieldmarkImportDialog", () => {
     });
 
     test("should show detailed error message when import fails with validation errors", async () => {
-      // Absorb the expected 400 Axios rejection so it does not surface as an
-      // unhandled-rejection error in Vitest's browser error collector.
-      const restoreSuppressor = suppressExpectedAxios400();
-
       // Override import endpoint to return a 400 with validation errors when
       // the detailed-error notebook is submitted
       worker.use(
@@ -247,50 +219,46 @@ describe("FieldmarkImportDialog", () => {
         }),
       );
 
-      try {
-        render(<FieldmarkImportDialogStory />);
+      render(<FieldmarkImportDialogStory />);
 
-        // Wait for the dialog and data grid to render
-        await expect.element(dialog.dialog).toBeVisible();
-        await expect.element(dialog.dataGrid).toBeVisible();
+      // Wait for the dialog and data grid to render
+      await expect.element(dialog.dialog).toBeVisible();
+      await expect.element(dialog.dataGrid).toBeVisible();
 
-        // Select the "Notebook Detailed Error" notebook
-        await dialog.selectNotebook("Notebook Detailed Error");
+      // Select the "Notebook Detailed Error" notebook
+      await dialog.selectNotebook("Notebook Detailed Error");
 
-        // Select an IGSN candidate field from the combobox
-        await dialog.selectIgsnOption("identifier_field");
+      // Select an IGSN candidate field from the combobox
+      await dialog.selectIgsnOption("identifier_field");
 
-        // Click Import
-        await dialog.clickImport();
+      // Click Import
+      await dialog.clickImport();
 
-        // Bring the toast stack into viewport
-        const toastsEl = document.querySelector('[data-testid="Toasts"]');
-        if (toastsEl instanceof HTMLElement) {
-          moveToastStackIntoViewport(toastsEl);
-        }
-
-        // The error alert should appear
-        const errorAlert = dialog.errorAlert();
-        await expect.element(errorAlert).toBeVisible();
-        await expect.element(errorAlert).toHaveTextContent("Could not import notebook.");
-
-        // Expand the 2 sub-messages
-        await clickWhenInViewport(dialog.subMessageToggle(2));
-
-        // Verify each detailed error message is visible
-        const firstError = errorAlert.getByRole("alert").filter({
-          hasText:
-            'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
-        });
-        await expect.element(firstError).toBeVisible();
-
-        const secondError = errorAlert.getByRole("alert").filter({
-          hasText: "Additional validation error: Sample template validation failed",
-        });
-        await expect.element(secondError).toBeVisible();
-      } finally {
-        restoreSuppressor();
+      // Bring the toast stack into viewport
+      const toastsEl = document.querySelector('[data-testid="Toasts"]');
+      if (toastsEl instanceof HTMLElement) {
+        moveToastStackIntoViewport(toastsEl);
       }
+
+      // The error alert should appear
+      const errorAlert = dialog.errorAlert();
+      await expect.element(errorAlert).toBeVisible();
+      await expect.element(errorAlert).toHaveTextContent("Could not import notebook.");
+
+      // Expand the 2 sub-messages
+      await clickWhenInViewport(dialog.subMessageToggle(2));
+
+      // Verify each detailed error message is visible
+      const firstError = errorAlert.getByRole("alert").filter({
+        hasText:
+          'Error importing notebook "1726126204618-rspace-igsn-demo" from Fieldmark: Unable to find an existing assignable identifier: 10.82316/mq1c-b544',
+      });
+      await expect.element(firstError).toBeVisible();
+
+      const secondError = errorAlert.getByRole("alert").filter({
+        hasText: "Additional validation error: Sample template validation failed",
+      });
+      await expect.element(secondError).toBeVisible();
     });
   });
 });

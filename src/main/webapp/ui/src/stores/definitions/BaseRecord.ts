@@ -1,4 +1,4 @@
-import { match } from "../../util/Util";
+import i18n from "@/modules/common/i18n";
 
 /**
  * IDs are used to identify a record within a given class of record i.e. to
@@ -28,83 +28,80 @@ export type GlobalIdPrefix = "SA" | "SS" | "IC" | "IT" | "BE" | "BA" | "IF" | "S
 
 /**
  * The Global ID pattern is a regular expression that matches all Global IDs of
- * a given class of record. This object provides a pattern for various classes
- * of record supported by the frontend code.
+ * a given class of record, paired with the two-character prefix used to build
+ * one from an id (see `globalId` below). Keeping the pattern and prefix
+ * together, rather than in two separate maps, is what makes "type + id <->
+ * Global ID" an isomorphism: there is only one place where a record class can
+ * fall out of sync with its own Global ID format.
  */
-export const globalIdPatterns: Record<string, RegExp> = {
-  // samples, subsamples, containers, and templates support an optional
-  // version suffix (e.g. SS4v1), identifying a historical version
-  sample: /^sa\d+(v\d+)?$/i,
-  subsample: /^ss\d+(v\d+)?$/i,
-  container: /^ic\d+(v\d+)?$/i,
-  sampleTemplate: /^it\d+(v\d+)?$/i,
-  bench: /^be\d+$/i,
-  basket: /^ba\d+$/i,
-  attachment: /^if\d+$/i,
-  field: /^sf\d+$/i,
-  document: /^sd\d+$/i,
-  group: /^gp\d+$/i,
-  instrument: /^in\d+$/i,
-  instrumentTemplate: /^nt\d+(v\d+)?$/i,
-};
-
-export const globalIdPrefixes: Record<string, GlobalIdPrefix> = {
-  sample: "SA",
-  subsample: "SS",
-  container: "IC",
-  sampleTemplate: "IT",
-  bench: "BE",
-  basket: "BA",
-  attachment: "IF",
-  field: "SF",
-  document: "SD",
-  group: "GP",
-  instrument: "IN",
-  instrumentTemplate: "NT",
-};
+export const globalIdDefinitions = {
+  // samples, subsamples, containers, instruments, and templates (sample and
+  // instrument) support an optional version suffix (e.g. SS4v1), identifying
+  // a historical version
+  sample: { pattern: /^sa\d+(v\d+)?$/i, prefix: "SA" },
+  subsample: { pattern: /^ss\d+(v\d+)?$/i, prefix: "SS" },
+  container: { pattern: /^ic\d+(v\d+)?$/i, prefix: "IC" },
+  sampleTemplate: { pattern: /^it\d+(v\d+)?$/i, prefix: "IT" },
+  bench: { pattern: /^be\d+$/i, prefix: "BE" },
+  basket: { pattern: /^ba\d+$/i, prefix: "BA" },
+  attachment: { pattern: /^if\d+$/i, prefix: "IF" },
+  field: { pattern: /^sf\d+$/i, prefix: "SF" },
+  document: { pattern: /^sd\d+$/i, prefix: "SD" },
+  group: { pattern: /^gp\d+$/i, prefix: "GP" },
+  instrument: { pattern: /^in\d+(v\d+)?$/i, prefix: "IN" },
+  instrumentTemplate: { pattern: /^nt\d+(v\d+)?$/i, prefix: "NT" },
+} satisfies Record<string, { pattern: RegExp; prefix: GlobalIdPrefix }>;
 
 /*
  * The corresponding label, as should be rendered by the UI, for each Inventory
  * record.
  */
 export const inventoryRecordTypeLabels = {
-  sample: "Sample",
-  subsample: "Subsample",
-  container: "Container",
-  sampleTemplate: "Sample Template",
-  bench: "Bench",
-  basket: "Basket",
-  instrument: "Instrument",
-  instrumentTemplate: "Instrument Template",
+  get sample(): string {
+    return i18n.t("inventory:recordTypes.sample.singular");
+  },
+  get subsample(): string {
+    return i18n.t("inventory:recordTypes.subsample.singular");
+  },
+  get container(): string {
+    return i18n.t("inventory:recordTypes.container.singular");
+  },
+  get sampleTemplate(): string {
+    return i18n.t("inventory:recordTypes.sampleTemplate.singular");
+  },
+  get bench(): string {
+    return i18n.t("inventory:recordTypes.bench.singular");
+  },
+  get basket(): string {
+    return i18n.t("inventory:recordTypes.basket.singular");
+  },
+  get instrument(): string {
+    return i18n.t("inventory:recordTypes.instrument.singular");
+  },
+  get instrumentTemplate(): string {
+    return i18n.t("inventory:recordTypes.instrumentTemplate.singular");
+  },
 };
 
 /**
  * Given a Global ID of an *Inventory* record, return a label for the type of
  * record.
  */
-export const globalIdToInventoryRecordTypeLabel: (
+export const globalIdToInventoryRecordTypeLabel = (
   globalId: GlobalId,
-) => (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] = match([
-  [(globalId: GlobalId) => globalIdPatterns.sample.test(globalId), inventoryRecordTypeLabels.sample],
-  [(globalId: GlobalId) => globalIdPatterns.subsample.test(globalId), inventoryRecordTypeLabels.subsample],
-  [(globalId: GlobalId) => globalIdPatterns.container.test(globalId), inventoryRecordTypeLabels.container],
-  [(globalId: GlobalId) => globalIdPatterns.sampleTemplate.test(globalId), inventoryRecordTypeLabels.sampleTemplate],
-  [(globalId: GlobalId) => globalIdPatterns.bench.test(globalId), inventoryRecordTypeLabels.bench],
-  [(globalId: GlobalId) => globalIdPatterns.basket.test(globalId), inventoryRecordTypeLabels.basket],
-  [(globalId: GlobalId) => globalIdPatterns.instrument.test(globalId), inventoryRecordTypeLabels.instrument],
-  [
-    (globalId: GlobalId) => globalIdPatterns.instrumentTemplate.test(globalId),
-    inventoryRecordTypeLabels.instrumentTemplate,
-  ],
-]);
+): (typeof inventoryRecordTypeLabels)[keyof typeof inventoryRecordTypeLabels] => {
+  const type = (Object.keys(inventoryRecordTypeLabels) as Array<keyof typeof inventoryRecordTypeLabels>).find((t) =>
+    globalIdDefinitions[t].pattern.test(globalId),
+  );
+  if (!type) throw new Error("No pattern matches");
+  return inventoryRecordTypeLabels[type];
+};
 
 /**
  * Creates the Global ID string for a given record type and ID.
- * This works because "type + id <-> Global ID" is an isomorphism
  */
-export function globalId({ type, id }: { type: keyof typeof globalIdPatterns; id: number }): GlobalId {
-  const prefix = globalIdPrefixes[type];
-  return `${prefix}${id}`;
+export function globalId({ type, id }: { type: keyof typeof globalIdDefinitions; id: number }): GlobalId {
+  return `${globalIdDefinitions[type].prefix}${id}`;
 }
 
 /**

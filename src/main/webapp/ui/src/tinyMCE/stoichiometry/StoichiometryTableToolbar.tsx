@@ -13,6 +13,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import { ColumnsPanelTrigger, type GridSlotProps, Toolbar, useGridApiContext } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { MemoryRouter } from "react-router";
 import createAccentedTheme from "@/accentedTheme";
 import { ACCENT_COLOR as CHEMISTRY_COLOR } from "@/assets/branding/chemistry";
@@ -52,15 +53,27 @@ const StoichiometryTableToolbar = ({
   linkedInventoryQuantityInfoByGlobalId,
 }: GridSlotProps["toolbar"]) => {
   const apiRef = useGridApiContext();
+  const { t } = useTranslation("common");
   const [addReagantMenuAnchorEl, setAddReagentMenuAnchorEl] = React.useState<HTMLButtonElement | null>(null);
   const [addReagentSmilesDialogOpen, setAddReagentSmilesDialogOpen] = React.useState(false);
   const [pubchemDialogOpen, setPubchemDialogOpen] = React.useState(false);
   const [galleryDialogOpen, setGalleryDialogOpen] = React.useState(false);
   const [inventoryUpdateDialogOpen, setInventoryUpdateDialogOpen] = React.useState(false);
   const [exportMenuAnchorEl, setExportMenuAnchorEl] = React.useState<HTMLButtonElement | null>(null);
+  // Gate the dialog on quantity data so it always opens with complete data
+  // and can compute its default selection on mount, with no reconciliation of
+  // late-arriving results. Failed fetches still resolve into the map (as
+  // error entries), so this only stays true while requests are in flight or
+  // the OAuth token is unavailable.
+  const isLoadingInventoryQuantities = allMolecules.some((molecule) => {
+    const globalId = molecule.inventoryLink?.inventoryItemGlobalId;
+    return globalId != null && !linkedInventoryQuantityInfoByGlobalId.has(globalId);
+  });
   const inventoryUpdateDisabledTooltip = hasChanges
-    ? "Save the stoichiometry table before updating inventory stock."
-    : "";
+    ? t("stoichiometry.inventoryUpdate.saveBeforeUpdate")
+    : isLoadingInventoryQuantities
+      ? t("stoichiometry.inventoryUpdate.loadingInventoryQuantities")
+      : "";
   return (
     <Toolbar
       style={{
@@ -70,7 +83,7 @@ const StoichiometryTableToolbar = ({
       {editable && (
         <>
           <Button
-            aria-label="Add Chemical"
+            aria-label={t("stoichiometry.addReagent.addChemical")}
             startIcon={<AddIcon />}
             onClick={(e) => setAddReagentMenuAnchorEl(e.currentTarget)}
             size="small"
@@ -78,22 +91,28 @@ const StoichiometryTableToolbar = ({
               mr: 1,
             }}
           >
-            Add Chemical
+            {t("stoichiometry.addReagent.addChemical")}
           </Button>
           <Tooltip title={inventoryUpdateDisabledTooltip}>
             <span>
               <Button
-                aria-label="Update Inventory Stock"
+                aria-label={t("stoichiometry.inventoryUpdate.updateInventoryStock")}
+                aria-busy={isLoadingInventoryQuantities}
                 size="small"
+                startIcon={
+                  isLoadingInventoryQuantities ? (
+                    <CircularProgress size={16} color="inherit" aria-hidden="true" />
+                  ) : null
+                }
                 sx={{
                   mr: 1,
                 }}
-                disabled={hasChanges}
+                disabled={hasChanges || isLoadingInventoryQuantities}
                 onClick={() => {
                   setInventoryUpdateDialogOpen(true);
                 }}
               >
-                Update Inventory Stock
+                {t("stoichiometry.inventoryUpdate.updateInventoryStock")}
               </Button>
             </span>
           </Tooltip>
@@ -113,13 +132,13 @@ const StoichiometryTableToolbar = ({
             slotProps={{
               list: {
                 disablePadding: true,
-                "aria-label": "add chemical menu",
+                "aria-label": t("stoichiometry.addReagent.menuLabel"),
               },
             }}
           >
             <AccentMenuItem
-              title="PubChem"
-              subheader="Import compound from PubChem"
+              title={t("stoichiometry.addReagent.sources.pubChem.title")}
+              subheader={t("stoichiometry.addReagent.sources.pubChem.subheader")}
               backgroundColor={PUBCHEM_ACCENT_COLOR.background}
               foregroundColor={PUBCHEM_ACCENT_COLOR.backgroundContrastText}
               avatar={<CardMedia image={PubChemLogo} />}
@@ -130,8 +149,8 @@ const StoichiometryTableToolbar = ({
             />
 
             <AccentMenuItem
-              title="Gallery"
-              subheader="Import compound from Gallery"
+              title={t("stoichiometry.addReagent.sources.gallery.title")}
+              subheader={t("stoichiometry.addReagent.sources.gallery.subheader")}
               backgroundColor={GALLERY_COLOR.main}
               foregroundColor={GALLERY_COLOR.contrastText}
               avatar={
@@ -148,8 +167,8 @@ const StoichiometryTableToolbar = ({
               }}
             />
             <AccentMenuItem
-              title="Manually"
-              subheader="Manually enter SMILES"
+              title={t("stoichiometry.addReagent.sources.manual.title")}
+              subheader={t("stoichiometry.addReagent.sources.manual.subheader")}
               backgroundColor={CHEMISTRY_COLOR.background}
               foregroundColor={CHEMISTRY_COLOR.backgroundContrastText}
               avatar={<EditIcon />}
@@ -191,8 +210,8 @@ const StoichiometryTableToolbar = ({
                   }
                 })();
               }}
-              title="Insert from PubChem"
-              submitButtonText="Insert"
+              title={t("stoichiometry.addReagent.sources.pubChem.dialogTitle")}
+              submitButtonText={t("actions.insert")}
               showPubChemInfo
               allowMultipleSelection
             />
@@ -209,7 +228,7 @@ const StoichiometryTableToolbar = ({
                         zIndex: 1,
                       }}
                     >
-                      <CircularProgress color="inherit" aria-label="Loading gallery picker" />
+                      <CircularProgress color="inherit" aria-label={t("stoichiometry.gallery.loadingPicker")} />
                     </Backdrop>
                   }
                 >
@@ -232,7 +251,7 @@ const StoichiometryTableToolbar = ({
                     }}
                     validateSelection={(file) => {
                       if (file.type !== "Chemistry")
-                        return Result.Error([new Error("Only chemistry files can be added to stoichiometry tables")]);
+                        return Result.Error([new Error(t("stoichiometry.gallery.chemistryFilesOnly"))]);
                       return Result.Ok(null);
                     }}
                   />
@@ -247,17 +266,17 @@ const StoichiometryTableToolbar = ({
           flexGrow: 1,
         }}
       ></Box>
-      <ColumnsPanelTrigger aria-label="Columns" size="small">
-        Columns
+      <ColumnsPanelTrigger aria-label={t("stoichiometry.tableToolbar.columns")} size="small">
+        {t("stoichiometry.tableToolbar.columns")}
       </ColumnsPanelTrigger>
       <Button
-        aria-label="Export"
+        aria-label={t("actions.export")}
         size="small"
         onClick={(event) => {
           setExportMenuAnchorEl(event.currentTarget);
         }}
       >
-        Export
+        {t("actions.export")}
       </Button>
       <Menu
         open={Boolean(exportMenuAnchorEl)}
@@ -280,7 +299,7 @@ const StoichiometryTableToolbar = ({
             });
           }}
         >
-          Export to CSV
+          {t("stoichiometry.tableToolbar.exportToCsv")}
         </MenuItem>
       </Menu>
     </Toolbar>

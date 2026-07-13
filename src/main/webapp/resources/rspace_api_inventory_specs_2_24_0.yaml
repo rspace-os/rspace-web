@@ -538,6 +538,20 @@ paths:
                 $ref: "#/components/schemas/InstrumentTemplate"
         "404":
           $ref: "#/components/responses/NotFound"
+  "/instrumentTemplates/{instrumentTemplateId}/revisions":
+    get:
+      summary: Gets historical revisions of the Instrument Template
+      description: Returns list of historical revisions saved for the Instrument Template,
+        starting from the earliest revision.
+      tags:
+        - Instrument Templates
+      parameters:
+        - $ref: "#/components/parameters/instrumentTemplateIdParam"
+      responses:
+        "200":
+          description: A list of revision information objects.
+        "404":
+          $ref: "#/components/responses/NotFound"
   "/instrumentTemplates/{instrumentTemplateId}/image/{timestamp}":
     get:
       summary: Get the full image attached to the Instrument Template
@@ -3073,8 +3087,6 @@ paths:
       description: >
         Publishes External Identifier (IGSN/PIDINST) and connected record.
 
-      produces:
-        - application/json
       tags:
         - External Identifiers
       parameters:
@@ -3088,8 +3100,6 @@ paths:
       description: >
         Retracts External Identifier (IGSN/PIDINST) and hides previously published connected record.
 
-      produces:
-        - application/json
       tags:
         - External Identifiers
       parameters:
@@ -3103,8 +3113,6 @@ paths:
       summary: Test connection settings saved for the DataCite IGSN integration
       description: >
         Test connection settings saved for the DataCite IGSN integration
-      produces:
-        - application/json
       tags:
         - External Identifiers
       responses:
@@ -3116,8 +3124,6 @@ paths:
       summary: Test connection settings saved for the DataCite PIDINST integration
       description: >
         Test connection settings saved for the DataCite PIDINST integration
-      produces:
-        - application/json
       tags:
         - External Identifiers
       responses:
@@ -3586,8 +3592,8 @@ components:
       in: query
       description: Must be a global id of a Container (IC), Workbench (BE), Sample
         (SA), or Sample Template (IT), or Instrument Template (NT). Limits the results
-        to items being stored inside a container (or workbench), to subsamples of a 
-        given sample, to samples created from a given template, or to instruments 
+        to items being stored inside a container (or workbench), to subsamples of a
+        given sample, to samples created from a given template, or to instruments
         created from a given template.
       schema:
         type: string

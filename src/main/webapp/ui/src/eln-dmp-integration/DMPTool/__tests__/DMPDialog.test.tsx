@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
@@ -6,7 +6,6 @@ import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import axios from "@/common/axios";
 import materialTheme from "../../../theme";
 import DMPDialog from "../DMPDialog";
@@ -33,16 +32,11 @@ const uiNavigationData = {
   operatedAs: false,
   nextMaintenance: null,
 };
-let restoreConsole = () => {};
 beforeEach(() => {
   vi.clearAllMocks();
   mockAxios.reset();
   mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData);
   mockAxios.onGet("/apps/dmptool/baseUrlHost").reply(200, "https://dmptool.org");
-  restoreConsole = silenceConsole(["info"], ["The response from this request is being discarded"]);
-});
-afterEach(() => {
-  restoreConsole();
 });
 describe("DMPDialog", () => {
   test("Label is shown when no DMPs are returned.", async () => {
@@ -56,7 +50,7 @@ describe("DMPDialog", () => {
       </ThemeProvider>,
     );
     await waitFor(() => {
-      expect(screen.getByText("No DMPs")).toBeVisible();
+      expect(screen.getByText("apps:dmpIntegrations.dialog.noDmps")).toBeVisible();
     });
   });
   test("The latest request is always the one that's shown.", async () => {
@@ -89,10 +83,10 @@ describe("DMPDialog", () => {
     );
     // public will take a second to return a listing
 
-    fireEvent.click(screen.getByRole("radio", { name: "Public" }));
+    fireEvent.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.public" }));
     // but mine will return immediately
 
-    fireEvent.click(screen.getByRole("radio", { name: "Mine" }));
+    fireEvent.click(screen.getByRole("radio", { name: "apps:dmpIntegrations.scope.mine" }));
     await waitFor(() => {
       expect(screen.getByText("mine")).toBeVisible();
     });

@@ -74,6 +74,8 @@ samples/
 .factorypath
 .java-version
 src/main/webapp/ui/junit.xml
+src/main/webapp/ui/.vitest-reports
+src/main/webapp/ui/coverage
 
 # other tooling
 /.claude/
@@ -83,3 +85,5 @@ src/main/webapp/ui/junit.xml
 # Playwright outputs (repo root; written by the component-test runner)
 /test-results/
 /playwright-report/
+# Playwright MCP output (snapshots, console logs, screenshots from browser driving)
+.playwright-mcp/

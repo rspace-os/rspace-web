@@ -115,7 +115,7 @@ describe("NewNote", () => {
 
   test("Validates empty notes", async () => {
     await mountDefaultStory();
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("Note cannot be empty");
   });
 
   describe("Validates notes that exceed character limit", () => {
@@ -132,7 +132,7 @@ describe("NewNote", () => {
        * and the error state is set (matches the original spec's approach).
        */
       await notePage.fillEditorLong(longText);
-      await notePage.expectErrorOnSubmit("Note cannot exceed 2000 characters.");
+      await notePage.expectErrorOnSubmit("Note cannot exceed");
     });
   });
 
@@ -152,7 +152,7 @@ describe("NewNote", () => {
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([false]);
     await notePage.clearEditor();
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([true]);
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("Note cannot be empty");
   });
 
   test("Handles transitioning from invalid to valid state", async () => {
@@ -160,7 +160,7 @@ describe("NewNote", () => {
     await notePage.typeInEditor("Valid note");
     await notePage.clearEditor();
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([true]);
-    await notePage.expectErrorOnSubmit("Note cannot be empty.");
+    await notePage.expectErrorOnSubmit("Note cannot be empty");
     await notePage.typeInEditor("Valid note");
     expect(onErrorStateChangeSpy.toHaveBeenLastCalledWith()).toEqual([false]);
     await notePage.expectNoErrorOnSubmit();

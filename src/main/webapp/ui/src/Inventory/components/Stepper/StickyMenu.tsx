@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import useStores from "../../../stores/use-stores";
 import type theme from "../../../theme";
 import type { RecordPalette } from "../../../theme";
@@ -62,6 +63,7 @@ type StickyMenuArgs = {
 };
 
 function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult, search },
     uiStore,
@@ -74,11 +76,8 @@ function StickyMenu({ stickyAlert }: StickyMenuArgs): React.ReactNode {
       key: "show-info",
       onClick: () => uiStore.toggleInfo(),
       icon: <InfoOutlinedIcon />,
-      label: "Info",
-      disabledHelp:
-        activeResult.readAccessLevel !== "full"
-          ? "You do not have permission to see more details about this item."
-          : "",
+      label: t("infoCard.info"),
+      disabledHelp: activeResult.readAccessLevel !== "full" ? t("infoCard.noPermission") : "",
       active: uiStore.infoVisible,
     },
   ];

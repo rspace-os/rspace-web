@@ -35,7 +35,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -318,13 +317,6 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Refresh token not found");
     }
     return optUserConnection.get().getRefreshToken();
-  }
-
-  private HttpHeaders getHttpHeadersWithToken(String accessToken) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-    headers.setBearerAuth(accessToken);
-    return headers;
   }
 
   private URL getCallbackUrl() throws MalformedURLException {

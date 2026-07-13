@@ -200,18 +200,18 @@ describe("FolderTree", () => {
   test("Initially displays root folder listing", async () => {
     render(<TestFolderTreeExample />);
 
-    expect(await screen.findByRole("treeitem", { name: /Research Projects/ })).toBeVisible();
-    expect(screen.getByRole("treeitem", { name: /Lab Notebooks/ })).toBeVisible();
+    expect(await screen.findByRole("treeitem", { name: "Research Projects" })).toBeVisible();
+    expect(screen.getByRole("treeitem", { name: "Lab Notebooks" })).toBeVisible();
   });
 
   test("Allows selecting folders", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
-    const researchProjects = getTreeItem(/Research Projects/);
+    const researchProjects = getTreeItem("Research Projects");
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     // the folder should be selected
     expect(researchProjects).toHaveAttribute("aria-checked", "true");
@@ -225,13 +225,13 @@ describe("FolderTree", () => {
   test("Allows expanding folder nodes to show subfolders", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     // Capture the node up front: once expanded, the treeitem's accessible name
     // absorbs its children's text, so a name-based re-query would fail.
-    const researchProjects = getTreeItem(/Research Projects/);
+    const researchProjects = getTreeItem("Research Projects");
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     await waitFor(() => {
       expect(researchProjects).toHaveAttribute("aria-expanded", "true");
@@ -243,24 +243,24 @@ describe("FolderTree", () => {
   test("Shows Load More button for folders with more than 20 items", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
     // 20 of 25 subfolders loaded -> a Load More button should be visible
-    expect((await screen.findAllByRole("button", { name: "Load More" }))[0]).toBeVisible();
+    expect((await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0]).toBeVisible();
   });
 
   test("Loads additional folders when Load More is clicked", async () => {
     render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     const user = userEvent.setup();
-    await user.click(getTreeItemContent(/Research Projects/));
+    await user.click(getTreeItemContent("Research Projects"));
 
-    const loadMore = (await screen.findAllByRole("button", { name: "Load More" }))[0];
+    const loadMore = (await screen.findAllByRole("button", { name: "common:folderTree.loadMore" }))[0];
     await user.click(loadMore);
 
     // page 1 brings in subfolders 21-25. Query by the label text node rather
@@ -273,14 +273,14 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
     await user.hover(researchProjects);
 
     const addButton = within(researchProjects).getByRole("button", {
-      name: "Add subfolder to Research Projects",
+      name: "common:folderTree.addSubfolder",
     });
     expect(addButton).toBeVisible();
   });
@@ -289,7 +289,7 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const notebook = await screen.findByRole("treeitem", {
-      name: /A Notebook/,
+      name: "A Notebook",
     });
 
     const user = userEvent.setup();
@@ -306,28 +306,28 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
     // the user clicks the add folder button for a folder
     await user.click(
       within(researchProjects).getByRole("button", {
-        name: "Add subfolder to Research Projects",
+        name: "common:folderTree.addSubfolder",
       }),
     );
 
     // the create folder dialog should be open
     const dialog = await screen.findByRole("dialog", {
-      name: "Create New Folder",
+      name: "common:folderTree.createFolder.title",
     });
     expect(dialog).toBeVisible();
 
     // the user enters a folder name
-    await user.type(within(dialog).getByLabelText("Folder Name"), "New Test Folder");
+    await user.type(within(dialog).getByLabelText("common:folderTree.createFolder.folderName"), "New Test Folder");
 
     // the user submits the create folder dialog
-    await user.click(within(dialog).getByRole("button", { name: "Create" }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
     // the new folder should appear in the tree and be selected. The new folder
     // is created as a child of "Research Projects", so the parent treeitem's
@@ -345,34 +345,34 @@ describe("FolderTree", () => {
     render(<TestFolderTreeExample />);
 
     const researchProjects = await screen.findByRole("treeitem", {
-      name: /Research Projects/,
+      name: "Research Projects",
     });
 
     const user = userEvent.setup();
     await user.click(
       within(researchProjects).getByRole("button", {
-        name: "Add subfolder to Research Projects",
+        name: "common:folderTree.addSubfolder",
       }),
     );
 
     const dialog = await screen.findByRole("dialog", {
-      name: "Create New Folder",
+      name: "common:folderTree.createFolder.title",
     });
     expect(dialog).toBeVisible();
 
     // the user clicks the create button without entering a name
-    await user.click(within(dialog).getByRole("button", { name: "Create" }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.create" }));
 
     // a validation error should be displayed
-    const errorAlert = await screen.findByLabelText("Warning");
+    const errorAlert = await screen.findByLabelText("common:alerts.warning");
     expect(errorAlert).toBeVisible();
-    expect(screen.getByText("Folder name is required")).toBeVisible();
+    expect(screen.getByText("common:folderTree.errors.folderNameRequired")).toBeVisible();
   });
 
   test("Should have no axe violations", async () => {
     const { baseElement } = render(<TestFolderTreeExample />);
 
-    await screen.findByRole("treeitem", { name: /Research Projects/ });
+    await screen.findByRole("treeitem", { name: "Research Projects" });
 
     await expectAccessible(baseElement);
   });

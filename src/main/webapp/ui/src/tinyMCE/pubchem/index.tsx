@@ -5,6 +5,8 @@ import { createRoot } from "react-dom/client";
 import Alerts from "@/components/Alerts/Alerts";
 import Analytics from "@/components/Analytics";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/pubchem";
 import ImportDialog from "./ImportDialog";
@@ -64,17 +66,19 @@ class PubchemPlugin {
       while (true) {
         const newProps: React.ComponentProps<typeof ImportDialog> = yield;
         root.render(
-          <StyledEngineProvider injectFirst enableCssLayer>
-            <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
-              <Analytics>
-                <ErrorBoundary>
-                  <Alerts>
-                    <ImportDialog {...newProps} />
-                  </Alerts>
-                </ErrorBoundary>
-              </Analytics>
-            </ThemeProvider>
-          </StyledEngineProvider>,
+          <I18nRoot namespaces={["common"]}>
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
+                <Analytics>
+                  <ErrorBoundary>
+                    <Alerts>
+                      <ImportDialog {...newProps} />
+                    </Alerts>
+                  </ErrorBoundary>
+                </Analytics>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </I18nRoot>,
         );
       }
     }
@@ -100,7 +104,7 @@ class PubchemPlugin {
 
     // Add a button to the toolbar
     editor.ui.registry.addButton("pubchem", {
-      tooltip: "Insert PubChem Compound",
+      tooltip: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction() {
         pubchemRenderer.next({
@@ -119,7 +123,7 @@ class PubchemPlugin {
 
     // Adds a menu item to the insert menu
     editor.ui.registry.addMenuItem("optPubchem", {
-      text: "PubChem Compound",
+      text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.dialogTitle"),
       icon: "pubchem",
       onAction() {
         pubchemRenderer.next({
@@ -141,7 +145,7 @@ class PubchemPlugin {
       window.insertActions = new Map();
     }
     window.insertActions.set("optPubchem", {
-      text: "PubChem",
+      text: i18n.t("common:stoichiometry.addReagent.sources.pubChem.title"),
       icon: "pubchem",
       action: () => {
         pubchemRenderer.next({

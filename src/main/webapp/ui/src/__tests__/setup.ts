@@ -4,7 +4,25 @@ import "@testing-library/jest-dom/vitest";
 import { setup, toBeAccessible } from "@sa11y/vitest";
 import { cleanup } from "@testing-library/react";
 import createFetchMock from "vitest-fetch-mock";
-import { silenceConsole, silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import i18n from "@/modules/common/i18n";
+
+await i18n.loadNamespaces([
+  "about",
+  "admin",
+  "apps",
+  "common",
+  "dashboard",
+  "gallery",
+  "groups",
+  "inventory",
+  "public",
+  "system",
+  "workspace",
+]);
+// Component tests assert the translation identifier, not the English copy.
+i18n.options.appendNamespaceToCIMode = true;
+await i18n.changeLanguage("cimode");
 
 function createStorageMock() {
   const storage = new Map<string, string>();
@@ -39,10 +57,8 @@ afterEach(() => {
   globalThis.sessionStorage?.clear?.();
 });
 
-const restoreConsole = silenceConsole(["error"], ["Could not fetch set of users in the same group as current user"]);
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
-  restoreConsole();
   restoreStderr();
 });
 

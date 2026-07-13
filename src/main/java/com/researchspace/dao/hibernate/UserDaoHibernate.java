@@ -130,6 +130,12 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
   }
 
   public User getUserByUsername(String username) {
+    return getOptionalUserByUsername(username)
+        .orElseThrow(() -> new ObjectRetrievalFailureException(User.class, username));
+  }
+
+  @Override
+  public Optional<User> getOptionalUserByUsername(String username) {
     CriteriaBuilder builder = getSession().getCriteriaBuilder();
 
     // eagerly fetch path usergroups.group.usergroups.user to load associated users in the same
@@ -149,13 +155,7 @@ public class UserDaoHibernate extends GenericDaoHibernate<User, Long> implements
 
     Query<User> query = getSession().createQuery(criteriaQuery);
     query.applyFetchGraph(graph);
-    User user = query.uniqueResult();
-
-    if (user == null) {
-      throw new ObjectRetrievalFailureException(User.class, username);
-    } else {
-      return user;
-    }
+    return Optional.ofNullable(query.uniqueResult());
   }
 
   @Override

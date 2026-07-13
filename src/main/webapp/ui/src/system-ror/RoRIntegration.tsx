@@ -1,16 +1,18 @@
 import { faMinus } from "@fortawesome/free-solid-svg-icons/faMinus";
 import { faPlus } from "@fortawesome/free-solid-svg-icons/faPlus";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Button } from "@mui/material";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import GenericsearchBar from "../components/GenericsearchBar";
 import materialTheme from "../theme";
 
@@ -32,6 +34,7 @@ type RoRApiResponse = RORDataV2;
 type RSpaceApiResponse = { data: { exceptionMessage?: string } };
 
 const RSPACE_ROR_FORWARD_SLASH_DELIM = "__rspacror_forsl__";
+const INVALID_ROR_EXAMPLES = ["https://ror.org/02mhbdp94", "ror.org/02mhbdp94", "02mhbdp94"] as const;
 
 function RorDetails(props: React.HTMLAttributes<HTMLDivElement>): React.ReactNode {
   return <Box {...props} sx={{ fontSize: "18px", margin: "0.5em 0.5em 0.5em 0" }} />;
@@ -55,12 +58,13 @@ function RorErrorHelpText(props: React.HTMLAttributes<HTMLSpanElement>): React.R
 }
 
 function RoRIntegration(): React.ReactNode {
+  const { t } = useTranslation("system");
   const [ror, setRor] = useState<string>("");
   const [candidateRor, setCandidateRor] = useState<string>("");
   const [rorDetails, setRorDetails] = useState<RoRApiResponse | null>(null);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const handleNetworkError = (e: Error) => {
-    setErrorMessage(e.message ? e.message : "There is a problem, please try again later");
+    setErrorMessage(e.message ? e.message : t("errors.networkProblem"));
   };
 
   useEffect(() => {
@@ -180,52 +184,34 @@ function RoRIntegration(): React.ReactNode {
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
         <div>
-          <h1>Research Organization Registry (ROR) Integration</h1>
+          <h1>{t("ror.heading")}</h1>
           <RorHelpText>
-            By associating a{" "}
-            <a target="_blank" rel="noreferrer" href="https://ror.org">
-              ROR ID
-            </a>{" "}
-            with your RSpace instance, you ensure the research outputs produced in RSpace are connected with your
-            research organisation. All research outputs with a DOI will automatically include the ROR ID in their
-            affiliation metadata.
+            <TransRichText i18nKey="system:ror.introText" />
           </RorHelpText>
         </div>
         <RorHelpText>
-          <h2>Institutional ROR ID</h2>
+          <h2>{t("ror.institutionalIdHeading")}</h2>
         </RorHelpText>
         {!ror && (
           <GenericsearchBar
             handleSearch={handleSearch}
             placeholder={"https://ror.org/038xqyz77"}
-            searchToolTip={"Search Registry"}
+            searchToolTip={t("ror.searchTooltip")}
           />
         )}
         {!rorDetails && (
           <RorHelpText>
-            You can search the{" "}
-            <a target="_blank" rel="noreferrer" href="https://ror.org/search">
-              ROR registry
-            </a>{" "}
-            to ensure you are adding the correct ROR ID. If your institution does not have a ROR ID, you can submit a{" "}
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdJYaMTCwS7muuTa-B_CnAtCSkKzt19lkirAKG4u7umH9Nosg/viewform"
-            >
-              curation request form.
-            </a>
+            <TransRichText i18nKey="system:ror.searchHelpText" />
           </RorHelpText>
         )}
         {showLinkAction && (
           <RorHelpText>
-            ROR ID found. Click <strong>Link</strong> to associate with this RSpace Instance.
+            <TransRichText i18nKey="system:ror.linkHelpText" />
           </RorHelpText>
         )}
         {showUnlinkAction && (
           <RorHelpText>
-            A ROR ID is linked to this RSpace Instance. Click on <strong>UNLINK</strong> to remove the association.
-            Future published or updated DOIs will not include the ROR ID.
+            <TransRichText i18nKey="system:ror.unlinkHelpText" />
           </RorHelpText>
         )}
         {rorDetails && (
@@ -262,16 +248,21 @@ function RoRIntegration(): React.ReactNode {
               </RorDetails>
             ))}
             <RorDetails>
-              <h5>Status: {rorDetails.status}</h5>
+              <h5>
+                {t("ror.statusLabel")} {rorDetails.status}
+              </h5>
             </RorDetails>
           </>
         )}
         {errorMessage && <Alert severity={getSeverity(errorMessage)}>{errorMessage}</Alert>}
         {errorMessage && getSeverity(errorMessage) === "error" && (
           <RorHelpText>
-            Please ensure the ROR ID is one of the following formats:
-            <RorErrorHelpText>https://ror.org/02mhbdp94</RorErrorHelpText>,{" "}
-            <RorErrorHelpText>ror.org/02mhbdp94</RorErrorHelpText>, <RorErrorHelpText>02mhbdp94</RorErrorHelpText>
+            {t("ror.invalidFormatHelp")}
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[0]}</RorErrorHelpText>
+            {", "}
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[1]}</RorErrorHelpText>
+            {", "}
+            <RorErrorHelpText>{INVALID_ROR_EXAMPLES[2]}</RorErrorHelpText>
           </RorHelpText>
         )}
         {showLinkAction && (
@@ -283,7 +274,7 @@ function RoRIntegration(): React.ReactNode {
             onClick={() => void updateRor()}
             startIcon={<FontAwesomeIcon icon={faPlus} />}
           >
-            Link
+            {t("ror.linkButton")}
           </Button>
         )}
         {showUnlinkAction && (
@@ -295,7 +286,7 @@ function RoRIntegration(): React.ReactNode {
             onClick={() => void deleteRor()}
             startIcon={<FontAwesomeIcon icon={faMinus} />}
           >
-            UnLink
+            {t("ror.unlinkButton")}
           </Button>
         )}
       </ThemeProvider>
@@ -329,7 +320,11 @@ function mountRoRIntegration(event?: Event) {
 
   const root = createRoot(domContainer);
   mainArea.rorRoot = root;
-  root.render(<RoRIntegration />);
+  root.render(
+    <I18nRoot namespaces={["system"]}>
+      <RoRIntegration />
+    </I18nRoot>,
+  );
 }
 
 window.addEventListener("load", () => {

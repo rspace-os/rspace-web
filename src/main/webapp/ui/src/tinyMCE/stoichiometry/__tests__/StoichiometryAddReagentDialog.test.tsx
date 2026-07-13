@@ -38,11 +38,11 @@ describe("StoichiometryAddReagentDialog", () => {
 
     renderDialog({ onAddReagent });
 
-    await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+    await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
 
     expect(onAddReagent).not.toHaveBeenCalled();
-    expect(await screen.findByText("SMILES string is required")).toBeVisible();
-    expect(screen.getByText("Name is required")).toBeVisible();
+    expect(await screen.findByText("common:stoichiometry.addReagent.validation.smilesRequired")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.addReagent.validation.nameRequired")).toBeVisible();
   });
 
   it("submits the SMILES string and trimmed name, then closes the dialog", async () => {
@@ -52,9 +52,9 @@ describe("StoichiometryAddReagentDialog", () => {
 
     renderDialog({ onAddReagent, onClose });
 
-    await user.type(screen.getByRole("textbox", { name: "Name" }), "  Water  ");
-    await user.type(screen.getByRole("textbox", { name: "SMILES String" }), "O");
-    await user.click(screen.getByRole("button", { name: "Add Chemical" }));
+    await user.type(screen.getByRole("textbox", { name: "common:stoichiometry.addReagent.name" }), "  Water  ");
+    await user.type(screen.getByRole("textbox", { name: "common:stoichiometry.addReagent.smilesString" }), "O");
+    await user.click(screen.getByRole("button", { name: "common:stoichiometry.addReagent.addChemical" }));
 
     await waitFor(() => {
       expect(onAddReagent).toHaveBeenCalledWith("O", "Water");
@@ -68,12 +68,12 @@ describe("StoichiometryAddReagentDialog", () => {
 
     renderDialog({ onClose });
 
-    const nameInput = screen.getByRole("textbox", { name: "Name" });
-    const smilesInput = screen.getByRole("textbox", { name: "SMILES String" });
+    const nameInput = screen.getByRole("textbox", { name: "common:stoichiometry.addReagent.name" });
+    const smilesInput = screen.getByRole("textbox", { name: "common:stoichiometry.addReagent.smilesString" });
 
     await user.type(nameInput, "Acetone");
     await user.type(smilesInput, "CC(=O)C");
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(nameInput).toHaveValue("");

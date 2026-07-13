@@ -61,7 +61,7 @@ describe("CallableSnippetPreview", () => {
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/snippet preview:/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
     });
 
     test("Should close the dialog when close button is clicked", async () => {
@@ -70,9 +70,9 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/snippet preview:/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
 
-      await user.click(screen.getByRole("button", { name: /close/i }));
+      await user.click(screen.getByRole("button", { name: "common:actions.close" }));
 
       await waitFor(() => {
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -85,7 +85,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
       expect(await screen.findByRole("dialog")).toBeVisible();
-      expect(screen.getByText(/snippet preview:/i)).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
 
       await user.keyboard("{Escape}");
 
@@ -109,7 +109,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/loading snippet content/i)).toBeVisible();
+      expect(await screen.findByText("gallery:snippetPreview.loading")).toBeVisible();
     });
 
     test("Should display snippet content after loading", async () => {
@@ -118,7 +118,7 @@ describe("CallableSnippetPreview", () => {
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/test snippet content/i)).toBeVisible();
+      expect(await screen.findByText("Test snippet content")).toBeVisible();
     });
 
     test("Should render HTML tables correctly", async () => {
@@ -137,13 +137,35 @@ describe("CallableSnippetPreview", () => {
       expect(within(dialog).getByText("Cell 1")).toBeVisible();
     });
 
+    test("Should strip script and event-handler attributes from snippet HTML", async () => {
+      const user = userEvent.setup();
+      const malicious =
+        '<p id="benign">safe text</p>' +
+        '<img id="evil" src="x" onerror="window.__xss__ = true" />' +
+        "<script>window.__xss__ = true;</script>";
+      mockAxios.onGet("/api/v1/snippets/123/content").reply(200, malicious);
+
+      render(<CallableSnippetPreviewStory />);
+      await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
+
+      const dialog = await screen.findByRole("dialog");
+      await within(dialog).findByText(/safe text/i);
+
+      /* eslint-disable testing-library/no-node-access -- asserting a non-semantic sink was sanitized */
+      const evilImg = dialog.querySelector("#evil");
+      expect(evilImg).toBeInTheDocument();
+      expect(evilImg).not.toHaveAttribute("onerror");
+      expect(dialog.querySelector("script")).not.toBeInTheDocument();
+      /* eslint-enable testing-library/no-node-access */
+    });
+
     test("Should display error message when loading fails", async () => {
       const user = userEvent.setup();
       render(<CallableSnippetPreviewWithError />);
 
       await user.click(screen.getByRole("button", { name: /open.*snippet.*preview/i }));
 
-      expect(await screen.findByText(/error.*failed to load snippet content/i)).toBeVisible();
+      expect(await screen.findByText("gallery:snippetPreview.error")).toBeVisible();
     });
   });
 
@@ -156,8 +178,8 @@ describe("CallableSnippetPreview", () => {
 
       const dialog = await screen.findByRole("dialog");
       expect(dialog).toBeVisible();
-      expect(screen.getByText(/snippet preview:/i)).toBeVisible();
-      expect(screen.getByRole("button", { name: /close/i })).toBeVisible();
+      expect(screen.getByText("gallery:snippetPreview.title")).toBeVisible();
+      expect(screen.getByRole("button", { name: "common:actions.close" })).toBeVisible();
     });
 
     test("Should have no axe violations", async () => {
@@ -168,7 +190,7 @@ describe("CallableSnippetPreview", () => {
 
       await screen.findByRole("dialog");
       // Wait for content to load so the rendered tree is stable.
-      await screen.findByText(/test snippet content/i);
+      await screen.findByText("Test snippet content");
 
       await expectAccessible(baseElement);
     });

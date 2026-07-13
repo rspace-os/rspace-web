@@ -1,7 +1,9 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/digitalcommonsdata";
 import DcdIcon from "../../../assets/branding/digitalcommonsdata/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -24,6 +26,7 @@ export const DIGITALCOMMONSDATA_CONNECTION_CHANNEL = "rspace.apps.digitalcommons
  * Digital Commons Data uses OAuth based authentication, as implemeted by the form below.
  */
 function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDigitalCommonsDataEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -36,7 +39,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to Digital Commons Data",
+            title: t("integrations.digitalCommonsData.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -46,7 +49,7 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to Digital Commons Data.",
+          message: t("integrations.digitalCommonsData.alerts.connectSuccess"),
         }),
       );
     },
@@ -61,25 +64,19 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
       }}
     >
       <IntegrationCard
-        name="Digital Commons Data / Mendeley Data"
+        name={t("integrations.digitalCommonsData.name")}
         integrationState={integrationState}
-        explanatoryText="Export datasets to the data repository, with persistent unique identifiers to enable referencing and citation."
+        explanatoryText={t("integrations.digitalCommonsData.description")}
         image={DcdIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        helpLinkText="Digital Commons Data / Mendeley Data integration docs"
-        website="elsevier.digitalcommonsdata.com"
+        helpLinkText={t("integrations.digitalCommonsData.helpLink")}
+        website="https://elsevier.digitalcommonsdata.com"
         docLink="dcd"
-        usageText="You can export your files and data directly from RSpace to Digital Commons Data or Mendeley Data."
+        usageText={t("integrations.digitalCommonsData.usage")}
         setupSection={
           <>
-            <ol>
-              <li>
-                Click on Connect to authorise RSpace to access your Digital Commons Data and Mendeley Data account.
-              </li>
-              <li>Enable the integration.</li>
-              <li>Digital Commons Data / Mendeley Data will now be available as an option in the export dialog.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.digitalCommonsData.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -91,13 +88,13 @@ function DigitalCommonsData({ integrationState, update }: DigitalCommonsDataArgs
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/digitalcommonsdata/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

@@ -2,8 +2,8 @@ import { faChevronDown } from "@fortawesome/free-solid-svg-icons/faChevronDown";
 import { faChevronUp } from "@fortawesome/free-solid-svg-icons/faChevronUp";
 import { faInfo } from "@fortawesome/free-solid-svg-icons/faInfo";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { Alert, AlertTitle } from "@mui/material";
+import Alert from "@mui/material/Alert";
+import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
@@ -14,6 +14,9 @@ import { produce } from "immer";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import i18n from "@/modules/common/i18n";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import {
   arraysEqual,
   humanize,
@@ -342,8 +345,11 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             severity="info"
           >
             <AlertTitle>
-              Instructions
-              <Tooltip title="Toggle instructions" aria-label="Toggle instructions">
+              {i18n.t("workspace:tinymce.shortcuts.instructionsTitle")}
+              <Tooltip
+                title={i18n.t("workspace:tinymce.shortcuts.toggleInstructions")}
+                aria-label={i18n.t("workspace:tinymce.shortcuts.toggleInstructions")}
+              >
                 <IconButton onClick={() => this.toggleInstructions()}>
                   {this.state.instructions && <FontAwesomeIcon icon={faChevronUp} />}
                   {!this.state.instructions && <FontAwesomeIcon icon={faChevronDown} />}
@@ -351,37 +357,14 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
               </Tooltip>
             </AlertTitle>
             {this.state.tab === 0 && this.state.instructions && (
-              <ul>
-                <li>Click on the input field next to the command you would like to configure.</li>
-                <li>On your keyboard, press the key combination you would like to use for that command.</li>
-                <li>Click on 'Save'.</li>
-              </ul>
+              <TransRichText i18nKey="workspace:tinymce.shortcuts.instructions.actions.list" />
             )}
             {this.state.tab === 1 && this.state.instructions && (
-              <ul>
-                <li>
-                  All configurable symbols are divided into sections. Click on a section to find the desired symbol. For
-                  example, Greek characters are in the 'Extended Latin' section.
-                </li>
-                <li>Click on the symbol to configure its shortcut.</li>
-                <li>Click on the input field next to the symbol you would like to configure.</li>
-                <li>On your keyboard, press the key combination you would like to use for that symbol.</li>
-                <li>Click on 'Save'.</li>
-              </ul>
+              <TransRichText i18nKey="workspace:tinymce.shortcuts.instructions.symbols.list" />
             )}
             {this.state.instructions && (
               <p>
-                Here's{" "}
-                <a
-                  target="_blank"
-                  href="https://www.tiny.cloud/docs/tinymce/latest/keyboard-shortcuts/"
-                  rel="noreferrer"
-                >
-                  a list
-                </a>{" "}
-                of reserved shortcuts already used by the editor. Please note that single keys, or Shift + single key,
-                are not accepted, as these shortcuts will interfere with editing. Good choices for shortcuts are Ctrl +
-                Shift + number/letter, or Alt + Shift + number/letter.
+                <TransRichText i18nKey="workspace:tinymce.shortcuts.reservedShortcutsNote" />
               </p>
             )}
           </Alert>
@@ -395,8 +378,8 @@ class Shortcuts extends React.Component<any, ShortcutsState> {
             sx={{ marginBottom: "15px" }}
             centered
           >
-            <Tab label="Actions" />
-            <Tab label="Symbols" />
+            <Tab label={i18n.t("workspace:tinymce.shortcuts.tabActions")} />
+            <Tab label={i18n.t("workspace:tinymce.shortcuts.tabSymbols")} />
           </Tabs>
         </Grid>
         {this.state.tab === 0 && (
@@ -431,8 +414,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const domContainer = document.getElementById("tinymce-shortcuts");
   const root = createRoot(domContainer as HTMLElement);
   root.render(
-    <MuiCssLayerProvider>
-      <Shortcuts />
-    </MuiCssLayerProvider>,
+    <I18nRoot namespaces={["workspace", "common"]}>
+      <MuiCssLayerProvider>
+        <Shortcuts />
+      </MuiCssLayerProvider>
+    </I18nRoot>,
   );
 });

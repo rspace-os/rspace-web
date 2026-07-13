@@ -10,59 +10,43 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import React, { useEffect } from "react";
+import React, { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import { getErrorMessage } from "@/util/error";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import LoadingCircular from "../../components/LoadingCircular";
 import { getSorting, paginationOptions } from "../../util/table";
 import type { Order } from "../../util/types";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
-declare const RS: any;
-
-const readingFrameOptions = {
-  ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
-  FORWARD: { label: "Forward", filter: [1, 2, 3] },
-  REVERSE: { label: "Reverse", filter: [-1, -2, -3] },
-  FIRST_FORWARD: { label: "First forward", filter: [1] },
-  FIRST_REVERSE: { label: "First reverse", filter: [-1] },
-};
-
-const headCells = [
-  {
-    id: "fullRangeBegin",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range Begin",
-  },
-  {
-    id: "fullRangeEnd",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range End",
-  },
-  {
-    id: "molecularWeight",
-    numeric: false,
-    disablePadding: false,
-    label: "Molecular Weight",
-  },
-  {
-    id: "readingFrame",
-    numeric: false,
-    disablePadding: false,
-    label: "Reading Frame",
-  },
-  {
-    id: "translation",
-    numeric: false,
-    disablePadding: false,
-    label: "Translation",
-  },
-];
-
-// biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OrfTable(props: any) {
+  const { t } = useTranslation("workspace");
+  const readingFrameOptions = {
+    ALL: { label: t("tinymce.snapGene.readingFrames.all"), filter: [-3, -2, -1, 1, 2, 3] },
+    FORWARD: { label: t("tinymce.snapGene.readingFrames.forward"), filter: [1, 2, 3] },
+    REVERSE: { label: t("tinymce.snapGene.readingFrames.reverse"), filter: [-1, -2, -3] },
+    FIRST_FORWARD: { label: t("tinymce.snapGene.readingFrames.firstForward"), filter: [1] },
+    FIRST_REVERSE: { label: t("tinymce.snapGene.readingFrames.firstReverse"), filter: [-1] },
+  };
+  const headCells = [
+    {
+      id: "fullRangeBegin",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.fullRangeBegin"),
+    },
+    { id: "fullRangeEnd", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.fullRangeEnd") },
+    {
+      id: "molecularWeight",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.molecularWeight"),
+    },
+    { id: "readingFrame", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.readingFrame") },
+    { id: "translation", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.translation") },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
@@ -75,6 +59,7 @@ export default function OrfTable(props: any) {
   const [results, setResults] = React.useState<Array<any>>([]);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [filteredResults, setFilteredResults] = React.useState<Array<any>>([]);
+  const { addAlert } = useContext(AlertContext);
 
   const fetchData = () => {
     setLoading(true);
@@ -87,7 +72,13 @@ export default function OrfTable(props: any) {
         filterResults(response.data.ORFs);
       })
       .catch((error) => {
-        RS.confirm(error.response.data, "warning", "infinite");
+        addAlert(
+          mkAlert({
+            message: getErrorMessage(error, "Could not load the ORF table."),
+            variant: "warning",
+            isInfinite: true,
+          }),
+        );
       })
       .finally(() => {
         setLoading(false);
@@ -152,7 +143,7 @@ export default function OrfTable(props: any) {
         {!loading && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table stickyHeader size="small" aria-label="ORF table">
+              <Table stickyHeader size="small" aria-label={t("tinymce.snapGene.orfTable")}>
                 <EnhancedTableHead
                   headCells={headCells}
                   order={order}
@@ -197,10 +188,10 @@ export default function OrfTable(props: any) {
       <Grid sx={{ textAlign: "right" }} size={2}>
         <FormControl component="fieldset" sx={{ mb: "30px" }}>
           <FormLabel component="legend" sx={{ mb: "10px" }}>
-            Open Reading Frames
+            {t("tinymce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinymce.snapGene.readingFrames.label")}
             name="enzymeSet"
             value={readingFrameOption}
             onChange={(event) => handleChange(event.target.value)}

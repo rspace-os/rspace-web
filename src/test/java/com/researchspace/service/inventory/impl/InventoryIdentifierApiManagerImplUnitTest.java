@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -12,11 +13,13 @@ import com.researchspace.api.v1.model.ApiInventoryDOI;
 import com.researchspace.api.v1.model.ApiInventorySystemSettings.InventorySettingType;
 import com.researchspace.b2inst.model.request.B2instDoi;
 import com.researchspace.b2inst.model.response.B2instDraftRecord;
+import com.researchspace.dao.DigitalObjectIdentifierDao;
 import com.researchspace.model.User;
 import com.researchspace.model.inventory.DigitalObjectIdentifier;
 import com.researchspace.model.inventory.DigitalObjectIdentifier.IdentifierType;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.inventory.RspaceToExternalProviderAdapter;
 import com.researchspace.webapp.integrations.b2inst.B2instConnector;
 import com.researchspace.webapp.integrations.datacite.DataCiteConnector;
@@ -151,5 +154,30 @@ class InventoryIdentifierApiManagerImplUnitTest {
     assertEquals(IdentifierType.PIDINST_B2INST.name(), result.getDoiType());
     verify(b2instConnector).registerDoi(any(B2instDoi.class));
     verify(dataCiteConnector, never()).registerDoi(any(), any());
+  }
+
+  @Test
+  void deleteUnassociatedIdentifierRejectsNonOwner() {
+    InventoryIdentifierApiManagerImpl mgr = new InventoryIdentifierApiManagerImpl();
+    DigitalObjectIdentifierDao doiDao = mock(DigitalObjectIdentifierDao.class);
+    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    ReflectionTestUtils.setField(mgr, "doiDao", doiDao);
+    ReflectionTestUtils.setField(mgr, "messages", messages);
+
+    User owner = new User("owner");
+    User attacker = new User("attacker");
+    DigitalObjectIdentifier doi = mock(DigitalObjectIdentifier.class);
+    when(doi.getOwner()).thenReturn(owner);
+    when(doiDao.get(5L)).thenReturn(doi);
+    when(messages.getMessage(anyString())).thenReturn("not owner");
+
+    ApiInventoryDOI apiDoi = mock(ApiInventoryDOI.class);
+    when(apiDoi.getId()).thenReturn(5L);
+
+    assertThrows(
+        IllegalArgumentException.class, () -> mgr.deleteUnassociatedIdentifier(apiDoi, attacker));
+
+    verify(doiDao, never()).save(any());
+    verify(doi, never()).setDeleted(true);
   }
 }

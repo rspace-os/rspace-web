@@ -2,8 +2,10 @@ import Collapse from "@mui/material/Collapse";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import Analytics from "@/components/Analytics";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import type { ElnDocumentId } from "@/stores/models/MaterialsModel";
 import NoValue from "../../components/NoValue";
@@ -16,6 +18,7 @@ type AssociatedInventoryRecordsArgs = {
 const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords({
   elnDocumentId,
 }: AssociatedInventoryRecordsArgs) {
+  const { t } = useTranslation(["inventory", "common"]);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { materialsStore } = useStores();
   const [open, setOpen] = useState(false);
@@ -58,14 +61,14 @@ const AssociatedInventoryRecords = observer(function AssociatedInventoryRecords(
         }}
         className="btn btn-primary"
       >
-        Inventory Items
+        {t("associatedRecords.button")}
       </button>
       <Collapse in={open}>
         <ul>
           {materialsStore.loading ? (
-            <NoValue label="Loading" />
+            <NoValue label={t("common:loading")} />
           ) : materialsStore.allInvRecordsFromAllDocumentLists.size === 0 ? (
-            <>The document has no connected Inventory items.</>
+            t("associatedRecords.empty")
           ) : (
             materialsStore.allInvRecordsFromAllDocumentLists.map(({ name, globalId, permalinkURL }) => (
               <li key={globalId}>
@@ -83,11 +86,13 @@ const wrapperDiv = document.getElementById("inventoryRecordList");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <Analytics>
-      <MuiCssLayerProvider>
-        <AssociatedInventoryRecords elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)} />
-      </MuiCssLayerProvider>
-    </Analytics>,
+    <I18nRoot namespaces={["inventory", "common"]}>
+      <Analytics>
+        <MuiCssLayerProvider>
+          <AssociatedInventoryRecords elnDocumentId={parseInt(wrapperDiv.dataset.documentid || "0", 10)} />
+        </MuiCssLayerProvider>
+      </Analytics>
+    </I18nRoot>,
   );
 }
 

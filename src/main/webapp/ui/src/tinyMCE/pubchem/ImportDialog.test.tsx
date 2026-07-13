@@ -81,7 +81,7 @@ async function performSearch(user: ReturnType<typeof userEvent.setup>, term: str
   await user.clear(searchInput);
   await user.click(searchInput);
   await user.paste(term);
-  await user.click(screen.getByRole("button", { name: "Search" }));
+  await user.click(screen.getByRole("button", { name: "common:actions.search" }));
 }
 
 describe("ImportDialog", () => {
@@ -101,26 +101,26 @@ describe("ImportDialog", () => {
   test("Should be a dialog header banner", async () => {
     render(<ImportDialogStory />);
     const dialogHeader = await screen.findByRole("banner", {
-      name: "dialog header",
+      name: "common:appBar.dialogHeader",
     });
     expect(dialogHeader).toBeVisible();
-    expect(dialogHeader).toHaveTextContent("PubChem");
+    expect(dialogHeader).toHaveTextContent("workspace:tinymce.pubchem.dialog.title");
   });
 
   test("Should have a title", () => {
     render(<ImportDialogStory />);
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAccessibleName("Import from PubChem");
+    expect(dialog).toHaveAccessibleName("common:pubchemImport.title");
     const title = within(dialog).getByRole("heading", { level: 3 });
     expect(title).toBeVisible();
-    expect(title).toHaveTextContent("Import from PubChem");
+    expect(title).toHaveTextContent("common:pubchemImport.title");
   });
 
   test("Should have a close button", async () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     const dialog = screen.getByRole("dialog");
-    await user.click(within(dialog).getByRole("button", { name: /cancel/i }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBe(null);
     });
@@ -133,7 +133,7 @@ describe("ImportDialog", () => {
 
   test("Should have a search type selector", () => {
     render(<ImportDialogStory />);
-    expect(screen.getByRole("combobox", { name: "Search type" })).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "workspace:tinymce.pubchem.dialog.searchTypeLabel" })).toBeVisible();
   });
 
   test("The API endpoint is called when a search is performed", async () => {
@@ -141,7 +141,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "aspirin");
     const searchResults = await screen.findByRole("region", {
-      name: /Search Results/i,
+      name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     await waitFor(() => {
       expect(searchResults).toHaveTextContent(/Aspirin/);
@@ -152,8 +152,8 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     // choose SMILES as the search type
-    await user.click(screen.getByRole("combobox", { name: "Search type" }));
-    await user.click(screen.getByRole("option", { name: "SMILES" }));
+    await user.click(screen.getByRole("combobox", { name: "workspace:tinymce.pubchem.dialog.searchTypeLabel" }));
+    await user.click(screen.getByRole("option", { name: "workspace:tinymce.pubchem.dialog.searchTypes.smiles" }));
     await performSearch(user, "aspirin");
     await waitFor(() => {
       const searchRequest = mockAxios.history.post.find(
@@ -169,7 +169,7 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "aspirin");
     const checkbox = await screen.findByRole("checkbox", {
-      name: /select compound/i,
+      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
     });
     expect(checkbox).toBeChecked();
     /*
@@ -185,10 +185,12 @@ describe("ImportDialog", () => {
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
     await waitFor(() => {
-      expect(screen.getAllByRole("checkbox", { name: /select compound/i }).length).toBe(2);
+      expect(
+        screen.getAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }).length,
+      ).toBe(2);
     });
     const checkboxes = screen.getAllByRole("checkbox", {
-      name: /select compound/i,
+      name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
     });
     for (const checkbox of checkboxes) {
       expect(checkbox).not.toBeChecked();
@@ -199,7 +201,11 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    const firstCheckbox = (await screen.findAllByRole("checkbox", { name: /select/i }))[0];
+    const firstCheckbox = (
+      await screen.findAllByRole("checkbox", {
+        name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel",
+      })
+    )[0];
     await user.click(firstCheckbox);
     await waitFor(() => {
       expect(firstCheckbox).toBeChecked();
@@ -214,19 +220,21 @@ describe("ImportDialog", () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await screen.findAllByRole("checkbox", { name: /select/i });
+    await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" });
 
     // clicking import without selecting any compounds shows a validation warning
-    await user.click(screen.getByRole("button", { name: /import selected/i }));
+    await user.click(screen.getByRole("button", { name: "common:pubchemImport.importSelected" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
-    expect(alert).toHaveTextContent(/please select at least one compound/i);
+    expect(alert).toHaveTextContent("workspace:tinymce.pubchem.dialog.validation.selectCompound");
 
     // pressing escape dismisses the validation warning
     await user.keyboard("{Escape}");
 
     // selecting a compound clears the warning
-    await user.click((await screen.findAllByRole("checkbox", { name: /select/i }))[0]);
+    await user.click(
+      (await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }))[0],
+    );
     await waitFor(() => {
       expect(screen.queryByRole("alert")).toBe(null);
     });
@@ -238,24 +246,26 @@ describe("ImportDialog", () => {
     await performSearch(user, "error");
     const alert = await screen.findByRole("alert");
     expect(alert).toBeVisible();
-    expect(alert).toHaveTextContent(/There was an error/);
+    expect(alert).toHaveTextContent("There was an error");
   });
 
   test("Should reset state when dialog is closed and reopened", async () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "multiple");
-    await user.click((await screen.findAllByRole("checkbox", { name: /select/i }))[0]);
+    await user.click(
+      (await screen.findAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }))[0],
+    );
 
     // close the dialog
     const dialog = screen.getByRole("dialog");
-    await user.click(within(dialog).getByRole("button", { name: /cancel/i }));
+    await user.click(within(dialog).getByRole("button", { name: "common:actions.cancel" }));
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).toBe(null);
     });
 
     // reopen the dialog via the story's Open button
-    await user.click(screen.getByRole("button", { name: /open/i }));
+    await user.click(screen.getByRole("button", { name: "Open" }));
     await screen.findByRole("dialog");
 
     // search input should be present and empty, with no results
@@ -264,10 +274,12 @@ describe("ImportDialog", () => {
     expect(searchInput).toHaveValue("");
 
     const resultsSection = screen.getByRole("region", {
-      name: /Search Results/i,
+      name: "workspace:tinymce.pubchem.dialog.searchResults",
     });
     expect(resultsSection).toBeVisible();
-    expect(screen.queryAllByRole("checkbox", { name: /select/i })).toHaveLength(0);
+    expect(
+      screen.queryAllByRole("checkbox", { name: "workspace:tinymce.pubchem.dialog.selectCompoundLabel" }),
+    ).toHaveLength(0);
   });
 
   test("Should not display CAS Number when it is empty", async () => {
@@ -281,21 +293,21 @@ describe("ImportDialog", () => {
     expect(compoundCard).toBeVisible();
 
     const terms = within(compoundCard).getAllByRole("term");
-    expect(terms.some((t) => /PubChem ID/i.test(t.textContent ?? ""))).toBe(true);
-    expect(terms.some((t) => /Formula/i.test(t.textContent ?? ""))).toBe(true);
-    expect(terms.some((t) => /CAS/i.test(t.textContent ?? ""))).toBe(false);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.pubchemId")).toBe(true);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.formula")).toBe(true);
+    expect(terms.some((t) => (t.textContent ?? "") === "workspace:tinymce.pubchem.casNumber")).toBe(false);
   });
 
   test("Should hide error message when typing after a no-results search", async () => {
     const user = userEvent.setup();
     render(<ImportDialogStory />);
     await performSearch(user, "noresults");
-    expect(await screen.findByText(/No compounds found for "noresults"/i)).toBeVisible();
+    expect(await screen.findByText("workspace:tinymce.pubchem.dialog.emptyState.noneFound")).toBeVisible();
 
     // modifying the search term hides the no-results message
     await user.type(screen.getByRole("textbox"), "modified");
     await waitFor(() => {
-      expect(screen.queryByText(/No compounds found for/i)).toBe(null);
+      expect(screen.queryByText("workspace:tinymce.pubchem.dialog.emptyState.noneFound")).toBe(null);
     });
   });
 });

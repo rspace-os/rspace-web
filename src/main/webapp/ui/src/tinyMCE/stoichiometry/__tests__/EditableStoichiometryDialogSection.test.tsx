@@ -1,7 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import EditableStoichiometryDialogSection from "@/tinyMCE/stoichiometry/dialog/EditableStoichiometryDialogSection";
 import type { RefreshedStoichiometry } from "@/tinyMCE/stoichiometry/useEditableStoichiometryTable";
 
@@ -35,12 +36,6 @@ type MockUseEditableStoichiometryTableArgs = {
 const mockUpdateInventoryStock = vi.fn();
 const mockUseEditableStoichiometryTable =
   vi.fn<(args: MockUseEditableStoichiometryTableArgs) => MockEditableStoichiometryTableResult>();
-
-function createConsoleErrorSpy() {
-  return vi.spyOn(console, "error").mockImplementation(() => {});
-}
-
-let consoleErrorSpy: ReturnType<typeof createConsoleErrorSpy>;
 
 vi.mock("@/tinyMCE/stoichiometry/useEditableStoichiometryTable", () => ({
   useEditableStoichiometryTable: ({
@@ -85,7 +80,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
             void tableController?.updateInventoryStock([1]);
           }}
         >
-          Trigger Inventory Save
+          {"Trigger Inventory Save"}
         </button>
       );
     },
@@ -95,7 +90,6 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTable", async () => {
 describe("EditableStoichiometryDialogSection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    consoleErrorSpy = createConsoleErrorSpy();
 
     mockUseEditableStoichiometryTable.mockImplementation(
       ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
@@ -135,10 +129,6 @@ describe("EditableStoichiometryDialogSection", () => {
         };
       },
     );
-  });
-
-  afterEach(() => {
-    consoleErrorSpy.mockRestore();
   });
 
   it("passes a stoichiometry refresh callback to the hook", () => {
@@ -187,116 +177,126 @@ describe("EditableStoichiometryDialogSection", () => {
   it("shows an inline error alert when save fails", async () => {
     const user = userEvent.setup();
     const saveError = new Error("Save mutation failed");
+    const restoreConsole = silenceConsole(["error"], ["Save failed"]);
 
-    mockUseEditableStoichiometryTable.mockImplementation(
-      ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
-        mockUpdateInventoryStock.mockImplementation(() => {
-          const refreshedStoichiometry = {
-            id: 1,
-            revision: 2,
-          };
+    try {
+      mockUseEditableStoichiometryTable.mockImplementation(
+        ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
+          mockUpdateInventoryStock.mockImplementation(() => {
+            const refreshedStoichiometry = {
+              id: 1,
+              revision: 2,
+            };
 
-          onStoichiometryRefreshed?.(refreshedStoichiometry);
+            onStoichiometryRefreshed?.(refreshedStoichiometry);
 
-          return Promise.resolve({
-            refreshedStoichiometry,
-            results: [],
+            return Promise.resolve({
+              refreshedStoichiometry,
+              results: [],
+            });
           });
-        });
 
-        return {
-          hasChanges: true,
-          isBusy: false,
-          isSaving: false,
-          save: vi.fn().mockRejectedValue(saveError),
-          deleteTable: vi.fn(),
-          tableController: {
-            allMolecules: [],
-            linkedInventoryQuantityInfoByGlobalId: new Map(),
-            isGettingMoleculeInfo: false,
-            addReagent: vi.fn(async () => {}),
-            deleteReagent: vi.fn(),
-            updateInventoryStock: mockUpdateInventoryStock,
-            pickInventoryLink: vi.fn(),
-            removeInventoryLink: vi.fn(),
-            undoRemoveInventoryLink: vi.fn(),
-            selectLimitingReagent: vi.fn(),
-            processRowUpdate: vi.fn(),
-          },
-        };
-      },
-    );
+          return {
+            hasChanges: true,
+            isBusy: false,
+            isSaving: false,
+            save: vi.fn().mockRejectedValue(saveError),
+            deleteTable: vi.fn(),
+            tableController: {
+              allMolecules: [],
+              linkedInventoryQuantityInfoByGlobalId: new Map(),
+              isGettingMoleculeInfo: false,
+              addReagent: vi.fn(async () => {}),
+              deleteReagent: vi.fn(),
+              updateInventoryStock: mockUpdateInventoryStock,
+              pickInventoryLink: vi.fn(),
+              removeInventoryLink: vi.fn(),
+              undoRemoveInventoryLink: vi.fn(),
+              selectLimitingReagent: vi.fn(),
+              processRowUpdate: vi.fn(),
+            },
+          };
+        },
+      );
 
-    render(
-      <EditableStoichiometryDialogSection
-        currentStoichiometry={{ id: 1, revision: 1 }}
-        chemId={null}
-        onClose={() => {}}
-        onDelete={() => {}}
-        setCurrentStoichiometry={vi.fn()}
-      />,
-    );
+      render(
+        <EditableStoichiometryDialogSection
+          currentStoichiometry={{ id: 1, revision: 1 }}
+          chemId={null}
+          onClose={() => {}}
+          onDelete={() => {}}
+          setCurrentStoichiometry={vi.fn()}
+        />,
+      );
 
-    await user.click(screen.getByRole("button", { name: "Save Changes" }));
+      await user.click(screen.getByRole("button", { name: "common:stoichiometry.dialog.saveChanges" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Save mutation failed");
+      expect(await screen.findByRole("alert")).toHaveTextContent("Save mutation failed");
+    } finally {
+      restoreConsole();
+    }
   });
 
   it("shows an inline error alert when delete fails", async () => {
     const user = userEvent.setup();
     const deleteError = new Error("Delete mutation failed");
+    const restoreConsole = silenceConsole(["error"], ["Delete failed"]);
 
-    mockUseEditableStoichiometryTable.mockImplementation(
-      ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
-        mockUpdateInventoryStock.mockImplementation(() => {
-          const refreshedStoichiometry = {
-            id: 1,
-            revision: 2,
-          };
+    try {
+      mockUseEditableStoichiometryTable.mockImplementation(
+        ({ onStoichiometryRefreshed }: MockUseEditableStoichiometryTableArgs) => {
+          mockUpdateInventoryStock.mockImplementation(() => {
+            const refreshedStoichiometry = {
+              id: 1,
+              revision: 2,
+            };
 
-          onStoichiometryRefreshed?.(refreshedStoichiometry);
+            onStoichiometryRefreshed?.(refreshedStoichiometry);
 
-          return Promise.resolve({
-            refreshedStoichiometry,
-            results: [],
+            return Promise.resolve({
+              refreshedStoichiometry,
+              results: [],
+            });
           });
-        });
 
-        return {
-          hasChanges: false,
-          isBusy: false,
-          isSaving: false,
-          save: vi.fn(),
-          deleteTable: vi.fn().mockRejectedValue(deleteError),
-          tableController: {
-            allMolecules: [],
-            linkedInventoryQuantityInfoByGlobalId: new Map(),
-            isGettingMoleculeInfo: false,
-            addReagent: vi.fn(async () => {}),
-            deleteReagent: vi.fn(),
-            updateInventoryStock: mockUpdateInventoryStock,
-            pickInventoryLink: vi.fn(),
-            removeInventoryLink: vi.fn(),
-            undoRemoveInventoryLink: vi.fn(),
-            selectLimitingReagent: vi.fn(),
-            processRowUpdate: vi.fn(),
-          },
-        };
-      },
-    );
+          return {
+            hasChanges: false,
+            isBusy: false,
+            isSaving: false,
+            save: vi.fn(),
+            deleteTable: vi.fn().mockRejectedValue(deleteError),
+            tableController: {
+              allMolecules: [],
+              linkedInventoryQuantityInfoByGlobalId: new Map(),
+              isGettingMoleculeInfo: false,
+              addReagent: vi.fn(async () => {}),
+              deleteReagent: vi.fn(),
+              updateInventoryStock: mockUpdateInventoryStock,
+              pickInventoryLink: vi.fn(),
+              removeInventoryLink: vi.fn(),
+              undoRemoveInventoryLink: vi.fn(),
+              selectLimitingReagent: vi.fn(),
+              processRowUpdate: vi.fn(),
+            },
+          };
+        },
+      );
 
-    render(
-      <EditableStoichiometryDialogSection
-        currentStoichiometry={{ id: 1, revision: 1 }}
-        chemId={null}
-        onClose={() => {}}
-        onDelete={() => {}}
-        setCurrentStoichiometry={vi.fn()}
-      />,
-    );
+      render(
+        <EditableStoichiometryDialogSection
+          currentStoichiometry={{ id: 1, revision: 1 }}
+          chemId={null}
+          onClose={() => {}}
+          onDelete={() => {}}
+          setCurrentStoichiometry={vi.fn()}
+        />,
+      );
 
-    await user.click(screen.getByRole("button", { name: "Delete" }));
+      await user.click(screen.getByRole("button", { name: "common:actions.delete" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
+      expect(await screen.findByRole("alert")).toHaveTextContent("Delete mutation failed");
+    } finally {
+      restoreConsole();
+    }
   });
 });

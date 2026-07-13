@@ -20,10 +20,11 @@ import { alpha } from "@mui/material/styles";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ACCENT_COLOR } from "@/assets/branding/pubchem";
 import { Dialog } from "@/components/DialogBoundary";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
-import docLinks from "../../assets/DocLinks";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import AppBar from "../../components/AppBar";
 import ValidatingSubmitButton, { IsInvalid, IsValid } from "../../components/ValidatingSubmitButton";
 
@@ -81,6 +82,7 @@ type CompoundCardProps = {
 
 function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): React.ReactNode {
   const nameId = React.useId();
+  const { t } = useTranslation(["workspace", "common"]);
   return (
     <Card
       aria-labelledby={nameId}
@@ -113,7 +115,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             onChange={(e) => onSelected(compound, e.target.checked)}
             slotProps={{
               input: {
-                "aria-label": "Select compound",
+                "aria-label": t("tinymce.pubchem.dialog.selectCompoundLabel"),
               },
             }}
           />
@@ -136,15 +138,15 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
               {compound.name}
             </Typography>
             <Dl>
-              <Dt>PubChem ID</Dt>
+              <Dt>{t("tinymce.pubchem.pubchemId")}</Dt>
               <Dd>{compound.pubchemId}</Dd>
               {compound.cas !== "" && (
                 <>
-                  <Dt>CAS Number</Dt>
+                  <Dt>{t("tinymce.pubchem.casNumber")}</Dt>
                   <Dd>{compound.cas}</Dd>
                 </>
               )}
-              <Dt>Formula</Dt>
+              <Dt>{t("tinymce.pubchem.formula")}</Dt>
               <Dd>{compound.formula}</Dd>
             </Dl>
           </CardContent>
@@ -161,7 +163,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
                 e.stopPropagation();
               }}
             >
-              View on PubChem
+              {t("tinymce.pubchem.viewOnPubChem")}
             </Link>
           </CardActions>
         </Box>
@@ -175,7 +177,7 @@ function CompoundCard({ selected, compound, onSelected }: CompoundCardProps): Re
             alignSelf: "flex-start",
           }}
           image={compound.pngImage}
-          alt={`Chemical structure of ${compound.name}`}
+          alt={t("tinymce.pubchem.dialog.chemicalStructureAlt", { name: compound.name })}
         />
       </CardActionArea>
     </Card>
@@ -200,13 +202,14 @@ export default function CompoundSearchDialog({
   open,
   onClose,
   onCompoundsSelected,
-  title = "Search PubChem",
-  submitButtonText = "Select Compounds",
+  title,
+  submitButtonText,
   showPubChemInfo = true,
   allowMultipleSelection = true,
 }: CompoundSearchDialogProps): React.ReactNode {
   const titleId = React.useId();
   const resultsId = React.useId();
+  const { t } = useTranslation(["workspace", "common"]);
   const { search } = useChemicalImport();
   const [searchTerm, setSearchTerm] = React.useState("");
   const [searchType, setSearchType] = React.useState<"NAME" | "SMILES">("NAME");
@@ -217,7 +220,7 @@ export default function CompoundSearchDialog({
   const validationResult = React.useMemo(() => {
     return Object.values(selectedCompounds).some(Boolean)
       ? IsValid()
-      : IsInvalid("Please select at least one compound.");
+      : IsInvalid(t("tinymce.pubchem.dialog.validation.selectCompound"));
   }, [selectedCompounds]);
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -269,9 +272,9 @@ export default function CompoundSearchDialog({
   }
   return (
     <Dialog open={open} onClose={onClose} aria-labelledby={titleId} maxWidth="sm" fullWidth>
-      <AppBar variant="dialog" currentPage="PubChem" accessibilityTips={{}} />
+      <AppBar variant="dialog" currentPage={t("tinymce.pubchem.dialog.title")} accessibilityTips={{}} />
       <DialogTitle id={titleId} component="h3">
-        {title}
+        {title ?? t("tinymce.pubchem.dialog.title")}
       </DialogTitle>
       <DialogContent>
         <Stack
@@ -282,15 +285,9 @@ export default function CompoundSearchDialog({
         >
           {showPubChemInfo && (
             <Box>
+              <Typography variant="body2">{t("tinymce.pubchem.dialog.intro.searchDescription")}</Typography>
               <Typography variant="body2">
-                Search PubChem for chemical compounds by name, CAS number, or SMILES string.
-              </Typography>
-              <Typography variant="body2">
-                See{" "}
-                <Link href="https://pubchem.ncbi.nlm.nih.gov/" rel="noreferrer">
-                  https://pubchem.ncbi.nlm.nih.gov/
-                </Link>{" "}
-                and our <Link href={docLinks.pubchem}>PubChem integration docs</Link> for more.
+                <TransRichText i18nKey="workspace:tinymce.pubchem.dialog.intro.moreInfo" />
               </Typography>
             </Box>
           )}
@@ -311,7 +308,11 @@ export default function CompoundSearchDialog({
                   }}
                   variant="outlined"
                   fullWidth
-                  placeholder={searchType === "NAME" ? "Enter a compound name or CAS number" : "Enter a SMILES string"}
+                  placeholder={
+                    searchType === "NAME"
+                      ? t("tinymce.pubchem.dialog.searchPlaceholders.nameCas")
+                      : t("tinymce.pubchem.dialog.searchPlaceholders.smiles")
+                  }
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -319,7 +320,7 @@ export default function CompoundSearchDialog({
                           <FormControl variant="standard" size="small">
                             <Select
                               inputProps={{
-                                "aria-label": "Search type",
+                                "aria-label": t("tinymce.pubchem.dialog.searchTypeLabel"),
                                 name: "search-type",
                               }}
                               value={searchType}
@@ -333,8 +334,8 @@ export default function CompoundSearchDialog({
                                 },
                               }}
                             >
-                              <MenuItem value="NAME">Name/CAS</MenuItem>
-                              <MenuItem value="SMILES">SMILES</MenuItem>
+                              <MenuItem value="NAME">{t("tinymce.pubchem.dialog.searchTypes.nameCas")}</MenuItem>
+                              <MenuItem value="SMILES">{t("tinymce.pubchem.dialog.searchTypes.smiles")}</MenuItem>
                             </Select>
                           </FormControl>
                         </InputAdornment>
@@ -344,26 +345,26 @@ export default function CompoundSearchDialog({
                 />
               </Grid>
               <Grid>
-                <Button type="submit">Search</Button>
+                <Button type="submit">{t("common:actions.search")}</Button>
               </Grid>
             </Grid>
           </form>
           <section aria-labelledby={resultsId} aria-live="polite">
             <Typography id={resultsId} variant="h6" component="h4">
-              Search Results
+              {t("tinymce.pubchem.dialog.searchResults")}
             </Typography>
             <Grid container spacing={2}>
               {!hasSearched && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    Enter a search term and click Search to find chemical compounds.
+                    {t("tinymce.pubchem.dialog.emptyState.initial")}
                   </Typography>
                 </Grid>
               )}
               {hasSearched && results.length === 0 && (
                 <Grid size={12}>
                   <Typography variant="body2" color="text.secondary">
-                    No compounds found for "{displayedSearchTerm}". Try a different search term.
+                    {t("tinymce.pubchem.dialog.emptyState.noneFound", { searchTerm: displayedSearchTerm })}
                   </Typography>
                 </Grid>
               )}
@@ -381,9 +382,9 @@ export default function CompoundSearchDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => onClose()}>Cancel</Button>
+        <Button onClick={() => onClose()}>{t("common:actions.cancel")}</Button>
         <ValidatingSubmitButton validationResult={validationResult} loading={false} onClick={handleSubmit}>
-          {submitButtonText}
+          {submitButtonText ?? t("tinymce.pubchem.dialog.submitButton")}
         </ValidatingSubmitButton>
       </DialogActions>
     </Dialog>

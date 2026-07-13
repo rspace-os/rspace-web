@@ -24,7 +24,7 @@ export class StoichiometryDialogPage {
   }
 
   get deleteConfirmationDialog(): Locator {
-    return page.getByRole("dialog", { name: /Delete Stoichiometry Table/ });
+    return page.getByRole("dialog", { name: "Delete Stoichiometry Table" });
   }
 
   inlineError(message: string): Locator {
@@ -42,7 +42,7 @@ export class StoichiometryDialogPage {
       .getByRole("columnheader")
       .elements()
       .map((el) => el.textContent ?? "");
-    const indexOfMassColumn = headerTexts.findIndex((text) => /mass \(g\)/i.test(text));
+    const indexOfMassColumn = headerTexts.indexOf("Mass (g)");
 
     if (indexOfMassColumn < 0) {
       throw new Error("Mass column not found");
@@ -58,10 +58,10 @@ export class StoichiometryDialogPage {
   }
 
   async selectLimitingReagent(name: string): Promise<void> {
-    await page
-      .getByRole("radio", {
-        name: new RegExp(`Select ${name} as limiting reagent`),
-      })
+    await this.table
+      .getByRole("row")
+      .filter({ has: page.getByRole("gridcell", { name, exact: true }) })
+      .getByRole("radio", { name: `Select ${name} as limiting reagent` })
       .click();
   }
 

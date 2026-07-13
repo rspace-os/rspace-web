@@ -59,9 +59,10 @@ vi.mock("../RaidConnectionsAddForm", () => {
     }) {
       return (
         <div data-testid="raid-connections-add-form">
-          Add Form for group {groupId}
+          {"Add Form for group "}
+          {groupId}
           {/** biome-ignore lint/a11y/useButtonType: initial biome migration */}
-          <button onClick={handleCloseForm}>Close Form</button>
+          <button onClick={handleCloseForm}>{"Close Form"}</button>
         </div>
       );
     },
@@ -81,7 +82,11 @@ vi.mock("../RaidConnectionsDisassociateButton", () => {
       return (
         // biome-ignore lint/a11y/useButtonType: initial biome migration
         <button data-testid="disassociate-button">
-          Disassociate {raidTitle} ({raidIdentifier})
+          {"Disassociate "}
+          {raidTitle}
+          {" ("}
+          {raidIdentifier}
+          {")"}
         </button>
       );
     },
@@ -159,7 +164,7 @@ describe("RaidConnectionsEntry", () => {
       const { baseElement } = renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
@@ -199,7 +204,7 @@ describe("RaidConnectionsEntry", () => {
     it("Should not render add button when RAiD is connected", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.queryByRole("button", { name: /add/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "common:actions.add" })).not.toBeInTheDocument();
     });
 
     it("Should display full RAiD information in correct format", () => {
@@ -226,13 +231,13 @@ describe("RaidConnectionsEntry", () => {
     it("Should render 'Not connected' message when no RAiD", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should render add button when not connected", () => {
       renderWithProviders(defaultProps);
 
-      expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeInTheDocument();
     });
 
     it("Should not render disassociate button when not connected", () => {
@@ -251,7 +256,7 @@ describe("RaidConnectionsEntry", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       expect(screen.getByTestId("raid-connections-add-form")).toBeInTheDocument();
@@ -261,21 +266,21 @@ describe("RaidConnectionsEntry", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
-      expect(screen.queryByText("Not connected")).not.toBeInTheDocument();
+      expect(screen.queryByText("common:profile.raidConnections.notConnected")).not.toBeInTheDocument();
     });
 
     it("Should hide add button when in editing mode", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       await waitFor(() => {
-        expect(screen.queryByRole("button", { name: /^add$/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "add" })).not.toBeInTheDocument();
       });
     });
 
@@ -283,17 +288,17 @@ describe("RaidConnectionsEntry", () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
-      expect(screen.getByText(/Add Form for group 12345/i)).toBeInTheDocument();
+      expect(screen.getByText("Add Form for group 12345")).toBeInTheDocument();
     });
 
     it("Should close add form when handleCloseForm is called", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       const closeFormButton = screen.getByText("Close Form");
@@ -304,15 +309,15 @@ describe("RaidConnectionsEntry", () => {
       });
 
       // Should return to initial state
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeInTheDocument();
     });
 
     it("Should show loading spinner in Suspense fallback", async () => {
       renderWithProviders(defaultProps);
       const user = userEvent.setup();
 
-      const addButton = screen.getByRole("button", { name: /add/i });
+      const addButton = screen.getByRole("button", { name: "common:actions.add" });
       await user.click(addButton);
 
       // The form should render immediately with our mock, but Suspense is present
@@ -329,7 +334,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should handle empty raid identifier", () => {
@@ -342,8 +347,8 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeInTheDocument();
     });
 
     it("Should handle partial raid data with identifier but no title", () => {
@@ -406,8 +411,7 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      // Should show "Not connected" when data is undefined
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
     });
 
     it("Should handle undefined group data", () => {
@@ -415,8 +419,8 @@ describe("RaidConnectionsEntry", () => {
 
       renderWithProviders(defaultProps);
 
-      expect(screen.getByText("Not connected")).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /add/i })).toBeInTheDocument();
+      expect(screen.getByText("common:profile.raidConnections.notConnected")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeInTheDocument();
     });
   });
 
@@ -438,7 +442,7 @@ describe("RaidConnectionsEntry", () => {
       const user = userEvent.setup();
 
       // Enter editing mode
-      await user.click(screen.getByRole("button", { name: /add/i }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       expect(screen.getByTestId("raid-connections-add-form")).toBeInTheDocument();
 
       // Exit editing mode
@@ -448,7 +452,7 @@ describe("RaidConnectionsEntry", () => {
       });
 
       // Enter editing mode again
-      await user.click(screen.getByRole("button", { name: /add/i }));
+      await user.click(screen.getByRole("button", { name: "common:actions.add" }));
       expect(screen.getByTestId("raid-connections-add-form")).toBeInTheDocument();
     });
   });

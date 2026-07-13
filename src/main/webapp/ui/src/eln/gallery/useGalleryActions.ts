@@ -1,5 +1,7 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -37,7 +39,7 @@ function firstErrorMessage(e: unknown): string {
     .flatMap(firstResult)
     .flatMap(Parsers.isString)
     .flatMap((s) => (s.trim().length > 0 ? Result.Ok(s) : Result.Error<string>([new Error("blank")])))
-    .orElse(getErrorMessage(e, "Unknown error"));
+    .orElse(getErrorMessage(e, i18n.t("gallery:errors.unknownError")));
 }
 
 /**
@@ -158,6 +160,7 @@ export function useGalleryActions(): {
   const { addAlert, removeAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation("gallery");
 
   /*
    * We create these axios objects because the global axios object is polluted
@@ -181,7 +184,7 @@ export function useGalleryActions(): {
 
   async function uploadFiles(parentId: Id, files: ReadonlyArray<File>, options?: { originalImageId: Id }) {
     const uploadingAlert = mkAlert({
-      message: "Uploading...",
+      message: t("actions.inProgress.uploading"),
       variant: "notice",
       isInfinite: true,
     });
@@ -214,7 +217,7 @@ export function useGalleryActions(): {
         Result.any(...data.map((d) => Parsers.objectPath(["data", "exceptionMessage"], d).flatMap(Parsers.isString)))
           .map((exceptionMessages) =>
             mkAlert({
-              message: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
+              message: t("actions.upload.failed", { count: files.length }),
               variant: "error",
               details: exceptionMessages.map((m) => ({
                 title: m,
@@ -224,7 +227,7 @@ export function useGalleryActions(): {
           )
           .orElse(
             mkAlert({
-              message: `Successfully uploaded file${files.length === 1 ? "" : "s"}.`,
+              message: t("actions.upload.success", { count: files.length }),
               variant: "success",
             }),
           ),
@@ -238,7 +241,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Failed to upload file${files.length === 1 ? "" : "s"}.`,
+            title: t("actions.upload.failed", { count: files.length }),
             message,
           }),
         );
@@ -268,14 +271,14 @@ export function useGalleryActions(): {
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
-              title: `Failed to create new folder.`,
+              title: t("actions.folder.createFailed"),
               message: exceptionMessage,
               variant: "error",
             }),
           )
           .orElse(
             mkAlert({
-              message: `Successfully created new folder.`,
+              message: t("actions.folder.createSuccess"),
               variant: "success",
             }),
           ),
@@ -285,7 +288,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to create new folder.`,
+          title: t("actions.folder.createFailed"),
           message: e.message,
         }),
       );
@@ -299,7 +302,7 @@ export function useGalleryActions(): {
       await api.post<unknown>(`filestores/${filestoreId}/folder`, { path, name });
       addAlert(
         mkAlert({
-          message: "Successfully created new folder.",
+          message: t("actions.folder.createSuccess"),
           variant: "success",
         }),
       );
@@ -307,7 +310,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to create new folder.",
+          title: t("actions.folder.createFailed"),
           message: firstErrorMessage(e),
         }),
       );
@@ -324,8 +327,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to move files.",
-          message: "Some of the selected files cannot be moved.",
+          title: t("actions.move.filesFailed"),
+          message: t("actions.move.filesCannotBeMoved"),
         }),
       );
       throw new Error("Some of the files cannot be moved");
@@ -334,14 +337,14 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Cannot move files into SNIPPETS folders.",
-          message: "Share them and they will automatically appear in these folders.",
+          title: t("actions.move.snippetsFolderFailed"),
+          message: t("actions.move.snippetsFolderMessage"),
         }),
       );
       return;
     }
     const movingAlert = mkAlert({
-      message: "Moving...",
+      message: t("actions.inProgress.moving"),
       variant: "notice",
       isInfinite: true,
     });
@@ -365,14 +368,14 @@ export function useGalleryActions(): {
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
-              title: `Failed to move item.`,
+              title: t("actions.move.itemFailed"),
               message: exceptionMessage,
               variant: "error",
             }),
           )
           .orElse(
             mkAlert({
-              message: `Successfully moved item${files.size > 0 ? "s" : ""}.`,
+              message: t("actions.move.itemsSuccess", { count: files.size }),
               variant: "success",
             }),
           ),
@@ -382,7 +385,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to move item${files.size > 0 ? "s" : ""}.`,
+          title: t("actions.move.itemsFailed", { count: files.size }),
           message: e.message,
         }),
       );
@@ -394,7 +397,7 @@ export function useGalleryActions(): {
 
   async function deleteLocalFiles(files: RsSet<LocalGalleryFile>) {
     const deletingAlert = mkAlert({
-      message: "Deleting...",
+      message: t("actions.inProgress.deleting"),
       variant: "notice",
       isInfinite: true,
     });
@@ -415,14 +418,14 @@ export function useGalleryActions(): {
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
-              title: `Failed to delete item.`,
+              title: t("actions.delete.itemFailed"),
               message: exceptionMessage,
               variant: "error",
             }),
           )
           .orElse(
             mkAlert({
-              message: `Successfully deleted item${files.size > 0 ? "s" : ""}.`,
+              message: t("actions.delete.itemsSuccess", { count: files.size }),
               variant: "success",
             }),
           ),
@@ -488,9 +491,9 @@ export function useGalleryActions(): {
     await runPerItemFilestoreOp(
       files.toArray(),
       {
-        inProgress: "Deleting...",
-        success: (count) => (count === 1 ? "Successfully deleted 1 item." : `Successfully deleted ${count} items.`),
-        failure: (count) => (count === 1 ? "Failed to delete 1 item." : `Failed to delete ${count} items.`),
+        inProgress: t("actions.inProgress.deleting"),
+        success: (count) => t("actions.delete.remoteSuccess", { count }),
+        failure: (count) => t("actions.delete.remoteFailed", { count }),
       },
       (api, file) =>
         api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/delete`, { path: file.remotePath }),
@@ -502,9 +505,9 @@ export function useGalleryActions(): {
     await runPerItemFilestoreOp(
       sources,
       {
-        inProgress: "Moving...",
-        success: (count) => (count === 1 ? "Successfully moved 1 item." : `Successfully moved ${count} items.`),
-        failure: (count) => (count === 1 ? "Failed to move 1 item." : `Failed to move ${count} items.`),
+        inProgress: t("actions.inProgress.moving"),
+        success: (count) => t("actions.move.remoteSuccess", { count }),
+        failure: (count) => t("actions.move.remoteFailed", { count }),
       },
       (api, file) =>
         api.post<unknown>(`filestores/${idToString(file.path[0].id).elseThrow()}/move`, {
@@ -520,7 +523,7 @@ export function useGalleryActions(): {
       await api.delete<unknown>(`filestores/${idToString(filestore.id).elseThrow()}`);
       addAlert(
         mkAlert({
-          message: "Successfully deleted filestore.",
+          message: t("actions.delete.filestoreSuccess"),
           variant: "success",
         }),
       );
@@ -529,7 +532,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to delete filestore.",
+          title: t("actions.delete.filestoreFailed"),
           message: e.message,
         }),
       );
@@ -542,8 +545,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to delete files.",
-          message: "Some of the selected files cannot be deleted.",
+          title: t("actions.delete.filesFailed"),
+          message: t("actions.delete.filesCannotBeDeleted"),
         }),
       );
       throw new Error("Some of the files cannot be deleted");
@@ -564,7 +567,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to delete item${files.size > 0 ? "s" : ""}.`,
+          title: t("actions.delete.itemsFailed", { count: files.size }),
           message: e.message,
         }),
       );
@@ -577,8 +580,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to duplicate files.",
-          message: "Some of the selected files cannot be duplicated.",
+          title: t("actions.duplicate.filesFailed"),
+          message: t("actions.duplicate.filesCannotBeDuplicated"),
         }),
       );
       throw new Error("Some of the files cannot be duplicated");
@@ -592,7 +595,7 @@ export function useGalleryActions(): {
       );
     }
     const duplicatingAlert = mkAlert({
-      message: "Duplicating...",
+      message: t("actions.inProgress.duplicating"),
       variant: "notice",
       isInfinite: true,
     });
@@ -611,14 +614,14 @@ export function useGalleryActions(): {
           .flatMap(Parsers.isString)
           .map((exceptionMessage) =>
             mkAlert({
-              title: `Failed to duplicate item.`,
+              title: t("actions.duplicate.itemFailed"),
               message: exceptionMessage,
               variant: "error",
             }),
           )
           .orElse(
             mkAlert({
-              message: `Successfully duplicated item${files.size > 0 ? "s" : ""}.`,
+              message: t("actions.duplicate.itemsSuccess", { count: files.size }),
               variant: "success",
             }),
           ),
@@ -628,7 +631,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to duplicate item${files.size > 0 ? "s" : ""}.`,
+          title: t("actions.duplicate.itemsFailed", { count: files.size }),
           message: e.message,
         }),
       );
@@ -643,14 +646,14 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to rename file.",
-          message: "The selected file cannot be renamed.",
+          title: t("actions.rename.fileFailed"),
+          message: t("actions.rename.fileCannotBeRenamed"),
         }),
       );
       throw new Error("The file cannot be renamed");
     }
     const renamingAlert = mkAlert({
-      message: "Renaming...",
+      message: t("actions.inProgress.renaming"),
       variant: "notice",
       isInfinite: true,
     });
@@ -678,7 +681,7 @@ export function useGalleryActions(): {
 
       addAlert(
         mkAlert({
-          message: `Successfully renamed item.`,
+          message: t("actions.rename.success"),
           variant: "success",
         }),
       );
@@ -689,7 +692,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to rename item.`,
+          title: t("actions.rename.failed"),
           message: e.message,
         }),
       );
@@ -704,8 +707,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to upload new version for the file.",
-          message: "A new version for this file cannot be set.",
+          title: t("actions.uploadNewVersion.fileFailed"),
+          message: t("actions.uploadNewVersion.cannotBeSet"),
         }),
       );
       throw new Error("The selected file cannot be updated with a new version");
@@ -715,7 +718,7 @@ export function useGalleryActions(): {
     formData.append("xfile", newFile);
     formData.append("targetFolderId", idToString(folderId).elseThrow());
     const uploadingAlert = mkAlert({
-      message: "Uploading...",
+      message: t("actions.inProgress.uploading"),
       variant: "notice",
       isInfinite: true,
     });
@@ -733,14 +736,14 @@ export function useGalleryActions(): {
           .orElseTry(() => Parsers.objectPath(["exceptionMessage"], data).flatMap(Parsers.isString))
           .map((exceptionMessage) =>
             mkAlert({
-              title: `Failed to upload new version.`,
+              title: t("actions.uploadNewVersion.failed"),
               message: exceptionMessage,
               variant: "error",
             }),
           )
           .orElse(
             mkAlert({
-              message: `Successfully uploaded new version.`,
+              message: t("actions.uploadNewVersion.success"),
               variant: "success",
             }),
           ),
@@ -750,7 +753,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to upload new version.`,
+          title: t("actions.uploadNewVersion.failed"),
           message: e.message,
         }),
       );
@@ -771,8 +774,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to change file description.",
-          message: "The file does not have a description.",
+          title: t("actions.description.changeFailed"),
+          message: t("actions.description.missing"),
         }),
       );
       throw new Error("The file does not have a description");
@@ -806,7 +809,7 @@ export function useGalleryActions(): {
 
       addAlert(
         mkAlert({
-          message: `Successfully updated description.`,
+          message: t("actions.description.updateSuccess"),
           variant: "success",
         }),
       );
@@ -819,8 +822,8 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: `Failed to update description.`,
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("actions.description.updateFailed"),
+          message: getErrorMessage(e, t("errors.unknownError")),
         }),
       );
       throw e;
@@ -845,7 +848,7 @@ export function useGalleryActions(): {
         addAlert(
           mkAlert({
             variant: "success",
-            message: `Successfully downloaded ${rejected.length > 0 ? "some of " : ""}the files.`,
+            message: t("actions.download.success", { partial: rejected.length > 0 }),
             ...(rejected.length > 0
               ? {
                   details: fulfilled.map((f) => ({
@@ -869,14 +872,14 @@ export function useGalleryActions(): {
               if (e instanceof Error) {
                 return Promise.resolve(e.message);
               }
-              return Promise.resolve("Unknown error");
+              return Promise.resolve(t("errors.unknownError"));
             }
           }),
         );
         addAlert(
           mkAlert({
             variant: "error",
-            message: `Failed to download ${fulfilled.length > 0 ? "some of " : ""}the files.`,
+            message: t("actions.download.failed", { partial: fulfilled.length > 0 }),
             details: rejectedResponses.map((errorMsg) => ({
               variant: "error",
               title: errorMsg,
@@ -889,7 +892,7 @@ export function useGalleryActions(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Failed to download all the files.",
+          title: t("actions.download.allFailed"),
           message: e.message,
         }),
       );

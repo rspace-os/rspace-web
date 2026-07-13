@@ -169,10 +169,6 @@ public class StructuredDocumentController extends BaseController {
 
   private @Autowired WorkspaceHandler workspaceHandler;
 
-  void setWorkspaceHandler(WorkspaceHandler workspaceHandler) {
-    this.workspaceHandler = workspaceHandler;
-  }
-
   @PostMapping("/ajax/createFromWord/{parentId}")
   @ResponseBody
   public AjaxReturnObject<List<RecordInformation>> createSDFromWordFile(

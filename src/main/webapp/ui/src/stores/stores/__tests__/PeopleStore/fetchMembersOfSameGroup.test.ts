@@ -26,7 +26,10 @@ vi.mock("../../../../common/ElnApiService", () => ({
 }));
 describe("fetchMembersOfSameGroup", () => {
   test("Error message should be returned as promise.reject", async () => {
-    const restoreConsole = silenceConsole(["error"], [/./]);
+    const restoreConsole = silenceConsole(
+      ["error"],
+      ["Could not fetch set of users in the same group as current user"],
+    );
     const { peopleStore } = getRootStore();
     runInAction(() => {
       peopleStore.currentUser = new PersonModel(PersonMocking.personAttrs());

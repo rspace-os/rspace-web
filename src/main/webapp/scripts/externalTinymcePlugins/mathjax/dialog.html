@@ -3,7 +3,18 @@
   <head>
       <title>MathJax demo</title>
 
-      <link rel="stylesheet" href='/styles/simplicity/typo.css' />
+      <!-- base typography, own copy of the rules this dialog needs from styles/simplicity/typo.css (RSDEV-1227) -->
+      <style>
+        body {
+          text-align: left;
+          font-family: arial, sans-serif;
+          font-size: 76%;
+          color: #444;
+        }
+        a, a:link, a:active {
+          text-decoration: none;
+        }
+      </style>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js">
         MathJax.Hub.Config({
           extensions: ['tex2jax.js',"TeX/AMSmath.js","TeX/AMSsymbols.js","TeX/mhchem.js"],

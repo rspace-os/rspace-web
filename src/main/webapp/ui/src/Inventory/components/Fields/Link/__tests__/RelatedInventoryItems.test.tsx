@@ -58,7 +58,6 @@ describe("RelatedInventoryItems", () => {
     renderSection();
 
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
-    const duplicateKeyWarnings = errorSpy.mock.calls.filter((args) => String(args[0]).includes("same key"));
-    expect(duplicateKeyWarnings).toHaveLength(0);
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });

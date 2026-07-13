@@ -52,7 +52,7 @@ describe("ExtraFields new-field name typing", () => {
       </ThemeProvider>,
     );
 
-    const nameField = () => screen.getByRole("textbox", { name: /field name/i });
+    const nameField = () => screen.getByRole("textbox", { name: "inventory:fields.extraFields.fields.fieldName" });
     await user.click(nameField());
     await user.keyboard("name");
 
@@ -63,7 +63,7 @@ describe("ExtraFields new-field name typing", () => {
     expect(sample.extraFields[0].name).toBe("");
     expect(sample.extraFields[0].isValid.isOk).toBe(false);
     // and the user can carry on to Apply the new field
-    const applyButton = screen.getByRole("button", { name: /update field/i });
+    const applyButton = screen.getByRole("button", { name: "inventory:fields.extraFields.updateField.updateLabel" });
     expect(applyButton).toBeEnabled();
 
     await user.click(applyButton);

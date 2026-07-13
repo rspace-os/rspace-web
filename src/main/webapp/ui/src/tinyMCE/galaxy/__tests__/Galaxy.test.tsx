@@ -43,7 +43,7 @@ describe("Galaxy Upload Data tests", () => {
     windowParentPostMessageSpy = vi.spyOn(window.parent, "postMessage");
     mockAxios.onGet("/integration/integrationInfo").reply(200, {
       data: {
-        name: "GALAXY",
+        name: "apps:integrations.galaxy.name",
         displayName: "Galaxy",
         available: true,
         enabled: true,
@@ -80,38 +80,38 @@ describe("Galaxy Upload Data tests", () => {
     test("renders radio button server choice with eu as default", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]} />);
       const radios = await screen.findByRole("radio", {
-        name: /galaxy eu server/,
+        name: "galaxy eu server",
       });
       expect(radios).toBeInTheDocument();
     });
     test("displays empty table when there is no attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={[]} />);
       await screen.findByRole("radio", {
-        name: /galaxy eu server/,
+        name: "galaxy eu server",
       });
       const columnHeadings = await screen.findAllByRole("columnheader");
-      expect(columnHeadings[1]).toHaveTextContent("File");
+      expect(columnHeadings[1]).toHaveTextContent("workspace:tinymce.galaxy.columns.file");
     });
     test("displays attached data", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
       await screen.findByRole("radio", {
-        name: /galaxy eu server/,
+        name: "galaxy eu server",
       });
       const gridCells = await screen.findAllByRole("gridcell");
       expect(gridCells[1]).toContainHTML(attachedRecords[0].html.outerHTML);
     });
     test("initial rendering posts no data selected", async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
-      await screen.findByRole("radio", { name: /galaxy eu server/ });
+      await screen.findByRole("radio", { name: "galaxy eu server" });
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "no-data-selected" }, "*");
       expect(windowParentPostMessageSpy).not.toHaveBeenCalledWith({ mceAction: "data-selected" }, "*");
     });
     test("selecting data posts  data selected", async () => {
       const user = userEvent.setup();
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
-      await screen.findByRole("radio", { name: /galaxy eu server/ });
+      await screen.findByRole("radio", { name: "galaxy eu server" });
       const checkBoxes = screen.getAllByRole("checkbox", {
-        name: /select row/i,
+        name: "Select row",
       });
       const checkBox = checkBoxes[0];
       await user.click(checkBox);
@@ -124,8 +124,8 @@ describe("Galaxy Upload Data tests", () => {
     const renderGalaxy = async () => {
       mockAxios.onPost("/apps/galaxy/setUpDataInGalaxyFor").reply(200, createdGalaxyHistory);
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
-      await screen.findByRole("radio", { name: /galaxy eu server/ });
-      const checkBox = screen.getByRole("checkbox", { name: /select row/i });
+      await screen.findByRole("radio", { name: "galaxy eu server" });
+      const checkBox = screen.getByRole("checkbox", { name: "Select row" });
       fireEvent.click(checkBox);
     };
 
@@ -144,7 +144,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
+      expect(await screen.findByText("workspace:tinymce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(
         await screen.findByRole("link", { name: "RSPACE_Untitled document_SD375v4_Data_FD229379_1" }),
       ).toHaveAttribute("href", "https://usegalaxy.org/histories/view?id=f8e722da311b8793");
@@ -156,7 +156,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText(/Your new history can be viewed here/i)).toBeInTheDocument();
+      expect(await screen.findByText("workspace:tinymce.galaxy.historyViewedHere")).toBeInTheDocument();
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "uploading-complete" }, "*");
       expect(windowParentPostMessageSpy).toHaveBeenCalledWith({ mceAction: "enableClose" }, "*");
     });
@@ -164,8 +164,8 @@ describe("Galaxy Upload Data tests", () => {
   describe("Handles errors", () => {
     const renderGalaxy = async () => {
       render(<Galaxy fieldId="1" recordId="2" attachedFileInfo={attachedRecords} />);
-      await screen.findByRole("radio", { name: /galaxy eu server/ });
-      const checkBox = screen.getByRole("checkbox", { name: /select row/i });
+      await screen.findByRole("radio", { name: "galaxy eu server" });
+      const checkBox = screen.getByRole("checkbox", { name: "Select row" });
       fireEvent.click(checkBox);
     };
 
@@ -175,10 +175,8 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
-      expect(
-        await screen.findByText(/Invalid Galaxy API Key Please re-enter your API Key on the Apps page/i),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.unauthorized")).toBeInTheDocument();
     });
 
     test("displays error message if 500 returned", async () => {
@@ -187,7 +185,7 @@ describe("Galaxy Upload Data tests", () => {
       await act(async () => {
         await activeEditorMock.handleEvent("galaxy-used");
       });
-      expect(await screen.findByText("Error")).toBeInTheDocument();
+      expect(await screen.findByText("apps:externalWorkflows.error.title")).toBeInTheDocument();
       expect(await screen.findByRole("alert")).toBeInTheDocument();
     });
   });

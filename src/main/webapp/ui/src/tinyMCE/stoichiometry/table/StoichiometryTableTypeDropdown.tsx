@@ -1,26 +1,9 @@
 import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent } from "@mui/material/Select";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { STOICHIOMETRY_ROLES } from "@/modules/stoichiometry/schema";
 import type { EditableMolecule } from "@/tinyMCE/stoichiometry/types";
-
-const STOICHIOMETRY_TYPE_OPTIONS = [
-  {
-    value: STOICHIOMETRY_ROLES.REACTANT,
-    label: "Reactant",
-  },
-  {
-    value: STOICHIOMETRY_ROLES.PRODUCT,
-    label: "Product",
-  },
-  {
-    value: STOICHIOMETRY_ROLES.AGENT,
-    label: "Reagent",
-  },
-] as const satisfies ReadonlyArray<{
-  value: EditableMolecule["role"];
-  label: string;
-}>;
 
 type StoichiometryTableTypeDropdownProps = {
   rowName?: string | null;
@@ -35,7 +18,27 @@ export default function StoichiometryTableTypeDropdown({
   onChangeValue,
   onClose,
 }: StoichiometryTableTypeDropdownProps): React.ReactNode {
-  const ariaLabel = `Select type for ${rowName ?? "molecule"}`;
+  const { t } = useTranslation("common");
+  const ariaLabel = t("stoichiometry.table.label.typeSelect", {
+    name: rowName ?? t("stoichiometry.inventoryUpdate.unnamedMolecule"),
+  });
+  const options = [
+    {
+      value: STOICHIOMETRY_ROLES.REACTANT,
+      label: t("stoichiometry.table.roles.reactant"),
+    },
+    {
+      value: STOICHIOMETRY_ROLES.PRODUCT,
+      label: t("stoichiometry.table.roles.product"),
+    },
+    {
+      value: STOICHIOMETRY_ROLES.AGENT,
+      label: t("stoichiometry.table.roles.reagent"),
+    },
+  ] as const satisfies ReadonlyArray<{
+    value: EditableMolecule["role"];
+    label: string;
+  }>;
 
   const handleChange = (event: SelectChangeEvent<EditableMolecule["role"]>) => {
     const nextValue = event.target.value;
@@ -54,7 +57,7 @@ export default function StoichiometryTableTypeDropdown({
       onClose={onClose}
       onChange={handleChange}
     >
-      {STOICHIOMETRY_TYPE_OPTIONS.map((option) => (
+      {options.map((option) => (
         <MenuItem key={option.value} value={option.value}>
           {option.label}
         </MenuItem>

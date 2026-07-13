@@ -1,8 +1,8 @@
-// biome-ignore lint/style/noRestrictedImports: initial biome migration
-import { FormControlLabel, Modal } from "@mui/material";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import Grid from "@mui/material/Grid";
+import Modal from "@mui/material/Modal";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
@@ -11,6 +11,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { DataGrid, type GridRowId, type GridRowSelectionModel } from "@mui/x-data-grid";
 import DOMPurify from "dompurify";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
 import TitledBox from "@/components/TitledBox";
@@ -36,6 +37,7 @@ export type RSpaceErrorResponse = {
 export type RSpaceError = { message: string; response: RSpaceErrorResponse };
 
 function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
+  const { t } = useTranslation("workspace");
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   (parent as any).tinymce.activeEditor?.on("galaxy-used", () => {
     setDoUpload(true);
@@ -208,15 +210,19 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
 
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
-      <link rel="stylesheet" href="/styles/simplicity/typo.css" />
+      {/* base typography, own copy of the rules this page needs from styles/simplicity/typo.css (RSDEV-1227) */}
+      <style>{`
+        body { text-align: left; font-family: arial, sans-serif; font-size: 76%; color: #444; }
+        a, a:link, a:active { text-decoration: none; }
+      `}</style>
       <link rel="stylesheet" href="/styles/simplicity/typoEdit.css" />
       <CssBaseline />
       <ThemeProvider theme={materialTheme}>
         <HeadingContext level={3}>
           {historyId && (
-            <TitledBox title="View Workflow in Galaxy" border>
+            <TitledBox title={t("tinymce.galaxy.viewWorkflowTitle")} border>
               <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
-                <p>Your new history can be viewed here: </p>
+                <p>{t("tinymce.galaxy.historyViewedHere")} </p>
                 <p>
                   <a
                     href={`${getGalaxyUrl()}/histories/view?id=${historyId}`}
@@ -225,38 +231,29 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                   >
                     {historyName}
                   </a>{" "}
-                  (Opens in new tab.) (You must be logged into Galaxy or you will see 'Unnamed History'){" "}
+                  {t("tinymce.galaxy.opensInNewTab")}{" "}
                 </p>
                 <p>
-                  <strong>
-                    {" "}
-                    The data you have uploaded to Galaxy has links back to RSpace present in its 'annotation' metadata.
-                  </strong>
+                  <strong> {t("tinymce.galaxy.annotationMetadata")}</strong>
                 </p>
                 <p>
-                  <strong>
-                    {" "}
-                    Data uploaded to this history is now viewable by clicking on the 'workflow' icon which will appear
-                    in your document. Any invocations in Galaxy which use this data will be tracked in RSpace, the data
-                    being updated whenever you click on this 'workflow' icon. The badge count on the workflow icon
-                    indicates how many Galaxy Invocations are using the uploaded data.
-                  </strong>
+                  <strong> {t("tinymce.galaxy.workflowIconNote")}</strong>
                 </p>
               </Stack>
             </TitledBox>
           )}
           {!historyId && (
             <>
-              <TitledBox title="Choose Data" border>
+              <TitledBox title={t("tinymce.galaxy.chooseDataTitle")} border>
                 <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
                   {servers && (
                     <>
-                      <label htmlFor="serverChoice">Choose a Galaxy Server</label>
+                      <label htmlFor="serverChoice">{t("tinymce.galaxy.chooseGalaxyServer")}</label>
                       <RadioGroup
                         id="serverChoice"
                         row
-                        aria-label="Choose Galaxy Server"
-                        name="Choose Galaxy Server"
+                        aria-label={t("tinymce.galaxy.chooseGalaxyServer")}
+                        name={t("tinymce.galaxy.chooseGalaxyServer")}
                         defaultValue={targetAlias}
                         value={targetAlias}
                         onChange={handleDataTypeChange}
@@ -273,31 +270,22 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                       </RadioGroup>
                     </>
                   )}
-                  <p>Choose attached files to be uploaded to Galaxy.</p>
-                  All selected files will be combined into a 'list dataset', which will be available for immediate use.
-                  The list dataset will be named after this RSpace document, using the format:
+                  <p>{t("tinymce.galaxy.chooseAttachedFiles")}</p>
+                  {t("tinymce.galaxy.allSelectedFilesCombined")}
                   <p>
-                    <strong>
-                      "RSPACE_" + document name + "_" + global ID of document + "_" + name of field data was attached to
-                      + "_" + global ID of that field.
-                    </strong>
+                    <strong>{t("tinymce.galaxy.datasetNameFormat")}</strong>
                   </p>
-                  When you click 'Upload to Galaxy', a new history will be created in Galaxy named after your RSpace
-                  document with the same name as the 'list dataset' described above. Your chosen data will be uploaded
-                  to this new history. You can make this history active in Galaxy by switching to it.
+                  {t("tinymce.galaxy.uploadToGalaxyNote")}
                   <p>
-                    <strong>
-                      RSpace will store the details of the files you have uploaded and also any use of these files on
-                      Galaxy in Invocations will be tracked.
-                    </strong>
+                    <strong>{t("tinymce.galaxy.rspaceWillStoreDetails")}</strong>
                   </p>
                   {errorMessage && (
                     <ErrorView errorReason={errorReason} errorMessage={errorMessage} WorkFlowIcon={WorkFlowIcon} />
                   )}
                   <Modal
                     open={uploading}
-                    aria-label="Please wait, uploading data to galaxy is in progress"
-                    title={"Galaxy Upload In Progress"}
+                    aria-label={t("tinymce.galaxy.uploadInProgressLabel")}
+                    title={t("tinymce.galaxy.uploadInProgressTitle")}
                   >
                     <Grid
                       container
@@ -327,7 +315,7 @@ function Galaxy({ fieldId, recordId, attachedFileInfo }: GalaxyArgs) {
                 columns={[
                   DataGridColumn.newColumnWithFieldName<"html", AttachedRecords>("html", {
                     maxWidth: 370,
-                    headerName: "File",
+                    headerName: t("tinymce.galaxy.columns.file"),
                     flex: 1,
                     sortable: false,
                     renderCell: ({ row }) => (

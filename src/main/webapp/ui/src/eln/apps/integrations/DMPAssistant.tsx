@@ -2,7 +2,9 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dmpassistant";
 import DMPAssistantIcon from "../../../assets/branding/dmpassistant/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -22,6 +24,7 @@ export interface DMPAssistantConnectedMessage extends Record<string, unknown> {
 export const DMPASSISTANT_CONNECTION_CHANNEL = "rspace.apps.dmpassistant.connection";
 
 function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpAssistantEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -34,7 +37,7 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to DMP Assistant",
+            title: t("integrations.dmpAssistant.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -44,7 +47,7 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to DMP Assistant.",
+          message: t("integrations.dmpAssistant.alerts.connectSuccess"),
         }),
       );
     },
@@ -59,23 +62,17 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
       }}
     >
       <IntegrationCard
-        name="DMP Assistant"
-        explanatoryText="Portage Network's DMP Assistant — create and manage Data Management Plans in DMPRoadmap."
+        name={t("integrations.dmpAssistant.name")}
+        explanatoryText={t("integrations.dmpAssistant.description")}
         image={DMPAssistantIcon}
         color={LOGO_COLOR}
-        usageText="You can import Data Management Plans (DMPs) from DMP Assistant into RSpace, reference them in RSpace documents, and attach them to data deposits when exporting to repositories."
-        helpLinkText="DMP Assistant integration docs"
-        website="dmp-pgd.ca"
+        usageText={t("integrations.dmpAssistant.usage")}
+        helpLinkText={t("integrations.dmpAssistant.helpLink")}
+        website="https://dmp-pgd.ca"
         docLink="dmpassistant"
         setupSection={
           <>
-            <ol>
-              <li>Click on Connect to authorise RSpace to access your DMP Assistant account.</li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.
-              </li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dmpAssistant.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -87,13 +84,13 @@ function DMPAssistant({ integrationState, update }: DMPAssistantArgs): React.Rea
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/dmpassistant/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

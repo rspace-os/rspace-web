@@ -57,7 +57,7 @@ describe("GitHub", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
-      expect(screen.getByText("There are no linked repositories.")).toBeVisible();
+      expect(screen.getByText("apps:integrations.github.repositories.noLinked")).toBeVisible();
     });
     test("The names of repositories should be shown in a table.", () => {
       render(
@@ -98,7 +98,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
       expect(within(screen.getByRole("table")).getByText("username/someRepo")).toBeVisible();
-      expect(screen.getByText("Repository is in an invalid state. Please remove and re-add.")).toBeVisible();
+      expect(screen.getByText("apps:integrations.github.repositories.invalidState")).toBeVisible();
     });
   });
   describe("Adding repositories", () => {
@@ -133,7 +133,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -151,7 +151,7 @@ describe("GitHub", () => {
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(newReposTable).findTableCell({
-          columnHeading: "Repository Name",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("a repo");
@@ -188,7 +188,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -205,7 +205,7 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       expect(mockAxios.history.post.length).toBe(1);
@@ -260,7 +260,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -277,27 +277,27 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       await waitFor(() => {
-        expect(screen.queryByText("There are no linked repositories.")).not.toBeInTheDocument();
+        expect(screen.queryByText("apps:integrations.github.repositories.noLinked")).not.toBeInTheDocument();
       });
       const connectedReposTable = screen.getAllByRole("table")[0];
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(connectedReposTable).findTableCell({
-          columnHeading: "Repository Name",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
       ).toHaveTextContent("a repo");
       expect(
         // @ts-expect-error findTableCell comes from customQueries
         await within(allReposTable).findTableCell({
-          columnHeading: "Repository Name",
+          columnHeading: "apps:integrations.github.repositories.nameHeader",
           rowIndex: 0,
         }),
-      ).toHaveTextContent("There are no available repositories.");
+      ).toHaveTextContent("apps:integrations.github.repositories.noAvailable");
     });
     test("Adding a repository should mutate the integration state being passed as a prop.", async () => {
       const integrationState = observable<IntegrationStates["GITHUB"]>({
@@ -341,7 +341,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
 
       act(() => {
         // biome-ignore lint/suspicious/useIterableCallbackReturn: initial biome migration
@@ -358,11 +358,11 @@ describe("GitHub", () => {
       const allReposTable = screen.getAllByRole("table")[1];
       fireEvent.click(
         within(within(within(allReposTable).getAllByRole("row")[1]).getAllByRole("cell")[1]).getByRole("button", {
-          name: /add/i,
+          name: "common:actions.add",
         }),
       );
       await waitFor(() => {
-        expect(screen.queryByText("There are no linked repositories.")).not.toBeInTheDocument();
+        expect(screen.queryByText("apps:integrations.github.repositories.noLinked")).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(1);
     });
@@ -397,7 +397,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("GITHUB");
 
@@ -434,7 +434,7 @@ describe("GitHub", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /remove/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.remove" }));
       await waitFor(() => {
         expect(screen.queryByText("username/someRepo")).not.toBeInTheDocument();
       });

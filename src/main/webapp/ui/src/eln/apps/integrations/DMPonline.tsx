@@ -2,7 +2,9 @@ import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/dmponline";
 import DMPonlineIcon from "../../../assets/branding/dmponline/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -26,6 +28,7 @@ export const DMPONLINE_CONNECTION_CHANNEL = "rspace.apps.dmponline.connection";
  * simply enabling the integration users can import those DMPs into the Gallery
  */
 function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = React.useContext(AlertContext);
   const { disconnect } = useDmpOnlineEndpoint();
   const [connected, setConnected] = React.useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -38,7 +41,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to DMPOnline",
+            title: t("integrations.dmponline.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -48,7 +51,7 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to DMPOnline.",
+          message: t("integrations.dmponline.alerts.connectSuccess"),
         }),
       );
     },
@@ -63,23 +66,17 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
       }}
     >
       <IntegrationCard
-        name="DMPonline"
-        explanatoryText="Create Data Management Plans for your research."
+        name={t("integrations.dmponline.name")}
+        explanatoryText={t("integrations.dmponline.description")}
         image={DMPonlineIcon}
         color={LOGO_COLOR}
-        usageText="You can import Data Management Plans (DMPs) from DMPonline into RSpace. You can then reference DMPs in RSpace documents, and attach DMPs to data deposits when exporting to repositories."
-        helpLinkText="DMPonline integration docs"
-        website="dmponline.dcc.ac.uk"
+        usageText={t("integrations.dmponline.usage")}
+        helpLinkText={t("integrations.dmponline.helpLink")}
+        website="https://dmponline.dcc.ac.uk"
         docLink="dmponline"
         setupSection={
           <>
-            <ol>
-              <li>Click on Connect to authorise RSpace to access your DMPonline account.</li>
-              <li>Enable the integration.</li>
-              <li>
-                You can now import a DMP when in the Gallery, and associate a DMP with data when in the export dialog.
-              </li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.dmponline.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -91,13 +88,13 @@ function DMPOnline({ integrationState, update }: DMPOnlineArgs): React.ReactNode
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/dmponline/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

@@ -7,6 +7,7 @@ import Grid from "@mui/material/Grid";
 import InputBase from "@mui/material/InputBase";
 import { observer } from "mobx-react-lite";
 import React, { forwardRef, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import BigIconButton from "../BigIconButton";
 import SelectedFileInfo from "./SelectedFileInfo";
@@ -118,7 +119,7 @@ function FileField({
   name,
   accept,
   id: passedId,
-  buttonLabel = "Upload",
+  buttonLabel,
   icon = <PublishOutlinedIcon />,
   warningAlert = "",
   showSelectedFilename = false,
@@ -131,6 +132,7 @@ function FileField({
   containerProps,
   slotProps,
 }: FileFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const generatedId = React.useId();
   const id = passedId ?? generatedId;
 
@@ -160,7 +162,7 @@ function FileField({
     reader.readAsDataURL(file);
   };
 
-  const helperText = failedToLoad ? "Failed to load file. Please try again." : "";
+  const helperText = failedToLoad ? t("inputs.fileField.loadFailed") : "";
   return (
     <>
       <input
@@ -187,7 +189,7 @@ function FileField({
               return (
                 <ButtonThatTriggersInvisibleInput
                   disabled={disabled}
-                  buttonLabel={buttonLabel}
+                  buttonLabel={buttonLabel ?? t("actions.upload")}
                   slotProps={slotProps}
                   id={id}
                   icon={icon}

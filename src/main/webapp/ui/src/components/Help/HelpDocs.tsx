@@ -1,4 +1,4 @@
-import Intercom from "@intercom/messenger-js-sdk";
+import { Intercom } from "@intercom/messenger-js-sdk";
 import HelpIcon from "@mui/icons-material/Help";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -7,6 +7,7 @@ import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useId, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
@@ -46,6 +47,9 @@ declare global {
 
 const ONE_MINUTE_IN_MS = 60 * 60 * 1000;
 
+// Fallback destination when the external Lighthouse help widget fails to load.
+const RSPACE_DOCS_URL = "https://researchspace.helpdocs.io";
+
 function loadScript(url: string): void {
   const s = document.createElement("script");
   s.type = "text/javascript";
@@ -63,6 +67,7 @@ function loadScript(url: string): void {
  * Displays the HelpDocs popup window.
  */
 function HelpDocs() {
+  const { t } = useTranslation("common");
   const uiNavigationData = useUiNavigationData();
   const api = useRef(
     axios.create({
@@ -133,24 +138,30 @@ function HelpDocs() {
       disable_authorship: true,
       suggestions: ["article:pfsj1e1u7j", "article:xw0ds8tee1", "article:bzgr8ea9e3", "article:dagfzhl3yw"],
       i18n: {
-        contact_button: "Chat with us",
-        search_placeholder: "Type to search for articles...",
-        view_all: "View All Articles",
-        suggested_articles: "Suggested Articles",
+        contact_button: t("helpDocs.chatWithUs"),
+        search_placeholder: t("helpDocs.searchPlaceholder"),
+        view_all: t("helpDocs.viewAllArticles"),
+        suggested_articles: t("helpDocs.suggestedArticles"),
       },
       onReady() {
-        if (typeof window.Intercom !== "undefined") {
-          const intercom = window.Intercom;
-          (intercom as unknown as (event: "onShow", cb: () => void) => void)("onShow", () => {
-            window.Lighthouse.hide();
-            window.Lighthouse.showButton();
-          });
-          (intercom as unknown as (event: "onHide", cb: () => void) => void)("onHide", () => {
-            window.Lighthouse.show();
-          });
-          if (document.getElementById("intercom-container")) {
-            window.Lighthouse.showButton();
+        try {
+          if (typeof window.Intercom !== "undefined") {
+            const intercom = window.Intercom;
+            (intercom as unknown as (event: "onShow", cb: () => void) => void)("onShow", () => {
+              window.Lighthouse.hide();
+              window.Lighthouse.showButton();
+            });
+            (intercom as unknown as (event: "onHide", cb: () => void) => void)("onHide", () => {
+              window.Lighthouse.show();
+            });
+            if (document.getElementById("intercom-container")) {
+              window.Lighthouse.showButton();
+            }
           }
+        } catch (e) {
+          // Wiring up the optional Intercom live-chat integration must never
+          // block the help button from becoming usable.
+          console.warn("Failed to wire up Intercom with the help widget", e);
         }
         setLighthouseIsLoaded(true);
       },
@@ -170,10 +181,18 @@ function HelpDocs() {
   }, []);
 
   const _showLighthouse = () => {
+    trackEvent("NeedHelpClicked");
+    // The Lighthouse widget is loaded from an external script that can fail to
+    // initialise on some deployments (e.g. a blocked third-party script). When
+    // it isn't available, fall back to opening the documentation site directly
+    // so the help link still works.
+    if (!window.Lighthouse) {
+      window.open(RSPACE_DOCS_URL, "_blank", "noopener,noreferrer");
+      return;
+    }
     // To show Lighthouse panel, Lighthouse button must be shown first
     window.Lighthouse.showButton();
     window.Lighthouse.show();
-    trackEvent("NeedHelpClicked");
   };
 
   const handleMenuButtonClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -202,8 +221,7 @@ function HelpDocs() {
         size="small"
         onClick={handleMenuButtonClick}
         icon={<HelpIcon />}
-        title="Open Help"
-        disabled={!window.Lighthouse}
+        title={t("helpDocs.openHelp")}
         aria-controls={open ? menuId : undefined}
         aria-haspopup={hasExtraHelpLinks ? "menu" : undefined}
         aria-expanded={open ? "true" : undefined}
@@ -226,16 +244,21 @@ function HelpDocs() {
         {hasExtraHelpLinks &&
           uiNavigationData.value.extraHelpLinks.map(({ label, url }) => (
             <MenuItem key={`${label}${url}`} component="a" href={url} rel="noreferrer">
-              <ListItemIcon>&nbsp;</ListItemIcon>
+              <ListItemIcon> </ListItemIcon>
               <ListItemText>{label}</ListItemText>
             </MenuItem>
           ))}
         <Divider />
         <MenuItem onClick={handleHelpButtonClicked}>
           <ListItemIcon>
-            <Box component="img" sx={{ height: 24, width: 24 }} alt="RSpace" src="/images/icons/rspaceIcon2.svg" />
+            <Box
+              component="img"
+              sx={{ height: 24, width: 24 }}
+              alt={t("helpDocs.rspaceAlt")}
+              src="/images/icons/rspaceIcon2.svg"
+            />
           </ListItemIcon>
-          <ListItemText>RSpace Documentation</ListItemText>
+          <ListItemText>{t("helpDocs.documentation")}</ListItemText>
         </MenuItem>
       </Menu>
     </div>

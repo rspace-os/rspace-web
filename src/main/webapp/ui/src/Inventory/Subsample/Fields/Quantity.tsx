@@ -5,6 +5,7 @@ import { textFieldClasses } from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
@@ -54,6 +55,7 @@ function QuantityField<
   parentSample?: Sample;
 }): React.ReactNode {
   const { useNavigate } = React.useContext(NavigateContext);
+  const { t } = useTranslation("inventory");
   const navigate = useNavigate();
   const quantityValue = getValue(fieldOwner.fieldValues.quantity);
   const quantityUnitId = getUnitId(fieldOwner.fieldValues.quantity);
@@ -104,13 +106,13 @@ function QuantityField<
     });
   };
 
-  const errorMessage = () => (valid ? null : "Should be a positive number or zero.");
+  const errorMessage = () => (valid ? null : t("fields.quantity.validation.positiveOrZero"));
 
   return (
     <>
       {editable ? (
         <CustomBatchFormField<string | number>
-          label="Quantity"
+          label={t("fields.quantity.label")}
           value={amount}
           error={!valid}
           helperText={errorMessage()}
@@ -147,7 +149,7 @@ function QuantityField<
         />
       ) : (
         <CustomBatchFormField
-          label="Quantity"
+          label={t("fields.quantity.label")}
           value={quantityLabel}
           disabled
           setDisabled={(checked) => {
@@ -167,18 +169,13 @@ function QuantityField<
                       if (parentSample.globalId) navigate(`/inventory/search?parentGlobalId=${parentSample.globalId}`);
                     }}
                   >
-                    {parentSample.subSamplesCount === 1 ? (
-                      `The parent sample only has one ${parentSample.subSampleAlias.alias}.`
-                    ) : (
-                      <>
-                        There {parentSample.subSamplesCount === 2 ? "is" : "are"} {parentSample.subSamplesCount - 1}{" "}
-                        other{" "}
-                        {parentSample.subSamplesCount === 2
-                          ? parentSample.subSampleAlias.alias
-                          : parentSample.subSampleAlias.plural}
-                        .
-                      </>
-                    )}
+                    {parentSample.subSamplesCount === 1
+                      ? t("fields.quantity.parentSampleOnly", { alias: parentSample.subSampleAlias.alias })
+                      : t("fields.quantity.parentSampleOthers", {
+                          count: parentSample.subSamplesCount - 1,
+                          alias: parentSample.subSampleAlias.alias,
+                          plural: parentSample.subSampleAlias.plural,
+                        })}
                   </Link>
                 </Typography>
               )}

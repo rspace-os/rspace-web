@@ -19,9 +19,10 @@ import Typography, { typographyClasses } from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Hsl } from "../../accentedTheme";
-import docLinks from "../../assets/DocLinks";
 import { Dialog } from "../../components/DialogBoundary";
+import TransRichText, { type HelpDocsArticle } from "../../modules/common/i18n/TransRichText";
 import AnalyticsContext from "../../stores/contexts/Analytics";
 import type { IntegrationState } from "./useIntegrationsEndpoint";
 
@@ -46,9 +47,9 @@ type IntegrationCardArgs<Credentials> = {
   // brief as it will be shown both in the card and in the header of the dialog
   explanatoryText: string;
 
-  // The website of the integration's service. Format like as `example.com`, as
-  // `https://` will be prefixed when used as a `href` property, and will be
-  // displayed in the UI as passed.
+  // The website of the integration's service, as a full URL
+  // (`https://example.com`) or a root-relative path (`/public/apiDocs`). Used
+  // directly as the link's `href`; displayed in the UI without the scheme.
   website?: string;
 
   // Logo, or similar image. This MUST be an SVG. Try to make any new images
@@ -70,10 +71,8 @@ type IntegrationCardArgs<Credentials> = {
   // Describe the behaviour of RSpace when the integration is enabled.
   usageText: React.ReactNode;
 
-  // The name of a link in ../../assets/DocLinks to our user-facing
-  // documentation. We cannot infer this from `name` because some very similar
-  // integrations share a single page of documentation.
-  docLink: string;
+  // The common:help key for this integration's user-facing documentation.
+  docLink: HelpDocsArticle;
 
   // The text that should be shown when linking to our user-facing
   // documentation. This string should follow accessibility best-practices, in
@@ -118,6 +117,7 @@ function IntegrationCard<Credentials>({
   website,
   setupSection,
 }: IntegrationCardArgs<Credentials>): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [open, setOpen] = useState(false);
   const mode = integrationState.mode;
   const theme = useTheme();
@@ -353,6 +353,7 @@ function IntegrationCard<Credentials>({
         }}
       >
         <CardActionArea
+          aria-label={name}
           disabled={mode === "UNAVAILABLE"}
           onClick={() => {
             setOpen(true);
@@ -453,20 +454,24 @@ function IntegrationCard<Credentials>({
               <Typography variant="body2">{usageText}</Typography>
               {typeof website === "string" ? (
                 <Typography variant="body2">
-                  See <Link href={website.startsWith("/") ? website : `https://${website}`}>{website}</Link>
-                  {" and our "}
-                  <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                  <TransRichText
+                    i18nKey="apps:integrationCard.moreInfo.withWebsite"
+                    values={{ helpLinkText, docLink }}
+                    components={{
+                      website: <Link href={website} />,
+                    }}
+                  />
                 </Typography>
               ) : (
                 <Typography variant="body2">
-                  See our <Link href={docLinks[docLink]}>{helpLinkText}</Link> for more.
+                  <TransRichText i18nKey="apps:integrationCard.moreInfo.docsOnly" values={{ helpLinkText, docLink }} />
                 </Typography>
               )}
             </section>
             <Divider orientation="horizontal" sx={{ gap: 0 }} />
             <section>
               <Typography variant="subtitle1" component="h4">
-                Setup
+                {t("integrationCard.setup")}
               </Typography>
               {setupSection}
             </section>
@@ -478,7 +483,7 @@ function IntegrationCard<Credentials>({
               setOpen(false);
             }}
           >
-            Close
+            {t("common:actions.close")}
           </Button>
           {integrationState.mode !== "EXTERNAL" && (
             <Button
@@ -490,7 +495,7 @@ function IntegrationCard<Credentials>({
                 }
               }}
             >
-              {mode === "ENABLED" ? "DISABLE" : "ENABLE"}
+              {mode === "ENABLED" ? t("integrationCard.disable") : t("integrationCard.enable")}
             </Button>
           )}
         </DialogActions>

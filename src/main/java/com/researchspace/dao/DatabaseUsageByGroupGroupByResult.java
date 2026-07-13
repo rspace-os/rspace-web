@@ -46,6 +46,8 @@ public class DatabaseUsageByGroupGroupByResult {
     this.groupId = groupId;
   }
 
+  // Called reflectively by Hibernate's AliasToBeanResultTransformer via the "fileusage" column
+  // alias in FileMetadataHibernate group-usage queries; not a statically-referenced setter.
   void setFileusage(Double usage) {
     if (usage == null) {
       this.fileusage = 0d;
@@ -55,14 +57,6 @@ public class DatabaseUsageByGroupGroupByResult {
   }
 
   private Double countLong;
-
-  Double getCountLong() {
-    return countLong;
-  }
-
-  void setCountLong(Double countLong) {
-    this.countLong = countLong;
-  }
 
   @Override
   public int hashCode() {

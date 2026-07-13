@@ -16,7 +16,7 @@ function Child1({ validator }: { validator: Validator }) {
   }, [state.text.length, validator]);
   return (
     <>
-      <h1>Child 1</h1>
+      <h1>{"Child 1"}</h1>
       <TextField
         value={state.text}
         onChange={({ target: { value } }) => {
@@ -29,7 +29,7 @@ function Child1({ validator }: { validator: Validator }) {
   );
 }
 function Child2() {
-  return <h1>Child 2</h1>;
+  return <h1>{"Child 2"}</h1>;
 }
 function ParentComponent() {
   const [activePane, setActivePane] = useState(0);
@@ -46,7 +46,7 @@ function ParentComponent() {
           })();
         }}
       >
-        Next
+        {"Next"}
       </Button>
     </>
   );

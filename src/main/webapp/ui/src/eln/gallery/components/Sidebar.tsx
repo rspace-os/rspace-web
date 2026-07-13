@@ -17,6 +17,7 @@ import TextField from "@mui/material/TextField";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import DSWAccentMenuItem, { type DswConfig } from "@/eln-dmp-integration/DSW/DSWAccentMenuItem";
 import AccentMenuItem from "../../../components/AccentMenuItem";
@@ -39,7 +40,7 @@ import * as FetchingData from "../../../util/fetchingData";
 import * as Parsers from "../../../util/parsers";
 import Result from "../../../util/result";
 import type { FetchedState, Integration } from "../../apps/useIntegrationsEndpoint";
-import { type GallerySection, gallerySectionIcon, gallerySectionLabel } from "../common";
+import { type GallerySection, gallerySectionIcon } from "../common";
 import { useGalleryActions } from "../useGalleryActions";
 import { asWritableS3Filestore, type GalleryFile, type Id, RemoteFile } from "../useGalleryListing";
 import AddFilestoreDialog from "./AddFilestoreDialog";
@@ -62,6 +63,7 @@ const UploadMenuItem = ({
   tabIndex?: number;
 }) => {
   const { uploadFiles } = useGalleryActions();
+  const { t } = useTranslation("gallery");
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const { trackEvent } = React.useContext(AnalyticsContext);
 
@@ -78,7 +80,7 @@ const UploadMenuItem = ({
   return (
     <>
       <AccentMenuItem
-        title="Upload Files"
+        title={t("sidebar.uploadFiles")}
         avatar={<UploadFileIcon />}
         onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
           if (e.key === " ") inputRef.current?.click();
@@ -146,6 +148,7 @@ const NewFolderMenuItem = ({
   }, [path]);
   const [submitting, setSubmitting] = React.useState(false);
   const { trackEvent } = React.useContext(AnalyticsContext);
+  const { t } = useTranslation(["gallery", "common"]);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   React.useEffect(() => {
     setTimeout(() => {
@@ -163,13 +166,11 @@ const NewFolderMenuItem = ({
           }}
         >
           <form /* onSubmit is handled by ValidatingSubmitButton */>
-            <DialogTitle>{s3Target ? "New Filestore Folder" : "New Folder"}</DialogTitle>
+            <DialogTitle>{s3Target ? t("sidebar.createFilestoreFolder") : t("sidebar.createFolder")}</DialogTitle>
             <DialogContent>
               {s3Target && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Note that S3 has no native concept of folders: they can be emulated with an empty placeholder object,
-                  and the hierarchy is expressed purely through object-name prefixes. For many cases a flat list of
-                  files will be easier to manage than a folder structure.
+                  {t("sidebar.s3FolderNote")}
                 </Alert>
               )}
               <DialogContentText
@@ -178,12 +179,12 @@ const NewFolderMenuItem = ({
                   mb: 2,
                 }}
               >
-                Please give the new folder a name.
+                {t("sidebar.createFolderPrompt")}
               </DialogContentText>
               <TextField
                 size="small"
+                label={t("sidebar.createFolderLabel")}
                 fullWidth
-                label="Name"
                 onChange={({ target: { value } }) => setName(value)}
                 slotProps={{
                   htmlInput: {
@@ -200,11 +201,11 @@ const NewFolderMenuItem = ({
                   onDialogClose(false);
                 }}
               >
-                Cancel
+                {t("common:actions.cancel")}
               </Button>
               <ValidatingSubmitButton
                 loading={submitting}
-                validationResult={name.trim().length > 0 ? IsValid() : IsInvalid("A name is required.")}
+                validationResult={name.trim().length > 0 ? IsValid() : IsInvalid(t("sidebar.createFolderNameRequired"))}
                 onClick={() => {
                   setSubmitting(true);
                   const create = s3Target
@@ -220,14 +221,14 @@ const NewFolderMenuItem = ({
                     });
                 }}
               >
-                Create
+                {t("common:actions.create")}
               </ValidatingSubmitButton>
             </DialogActions>
           </form>
         </Dialog>
       </EventBoundary>
       <AccentMenuItem
-        title="New Folder"
+        title={t("sidebar.createFolder")}
         avatar={<CreateNewFolderIcon />}
         onClick={() => {
           setOpen(true);
@@ -254,6 +255,7 @@ const AddFilestoreMenuItem = ({
   tabIndex?: number;
 }) => {
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const { t } = useTranslation("gallery");
   const [open, setOpen] = React.useState(false);
   const [filesystems, setFilesystems] = React.useState<null | ReadonlyArray<{
     id: number;
@@ -273,7 +275,8 @@ const AddFilestoreMenuItem = ({
   );
   React.useEffect(() => {
     void (async () => {
-      const { data } = await (await api.current).get<unknown>("filesystems");
+      const client = await api.current;
+      const { data } = await client.get<unknown>("filesystems");
       Parsers.isArray(data)
         .flatMap((array) =>
           Result.all(
@@ -319,10 +322,8 @@ const AddFilestoreMenuItem = ({
         .map(() => (
           <AccentMenuItem
             key={null}
-            title="Add a Filestore"
-            subheader={
-              (filesystems ?? []).length === 0 ? "System Admin has not configured any external filestores." : null
-            }
+            title={t("sidebar.addFilestore")}
+            subheader={(filesystems ?? []).length === 0 ? t("sidebar.noFilestoresConfigured") : null}
             avatar={<DnsIcon />}
             onClick={() => {
               setOpen(true);
@@ -395,11 +396,12 @@ const DmpMenuSection = ({ onDialogClose, showDmpPanel }: DmpMenuSectionArgs) => 
     })();
   }, []);
 
+  const { t } = useTranslation("gallery");
   if (!showArgos && !showDmpAssistant && !showDmponline && !showDmptool && !showDsw) return null;
   return (
     <>
-      <Divider textAlign="left" aria-label="DMPs">
-        DMP Import
+      <Divider textAlign="left" aria-label={t("sidebar.dmpsLabel")}>
+        {t("sidebar.dmpImport")}
       </Divider>
       {showArgos && <ArgosAccentMenuItem onDialogClose={onDialogClose} />}
       {showDmpAssistant && <DMPAssistantAccentMenuItem onDialogClose={onDialogClose} />}
@@ -436,6 +438,7 @@ const Sidebar = ({
   const [newMenuAnchorEl, setNewMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const viewport = useViewportDimensions();
   const filestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const { t } = useTranslation(["gallery", "common"]);
   React.useEffect(() => {
     autorun(() => {
       if (viewport.isViewportSmall) setDrawerOpen(false);
@@ -457,7 +460,7 @@ const Sidebar = ({
         if (viewport.isViewportSmall) setDrawerOpen(false);
       }}
       role="region"
-      aria-label="gallery sections drawer"
+      aria-label={t("sidebar.sectionsDrawerLabel")}
       id={id}
       ref={sidebarRef as React.Ref<HTMLDivElement>}
       sx={{
@@ -489,7 +492,7 @@ const Sidebar = ({
           }
           sx={{ minWidth: "unset", overflowX: "hidden", height: "32px" }}
         >
-          {drawerOpen && <div>Create</div>}
+          {drawerOpen && <div>{t("common:actions.create")}</div>}
         </Button>
         <Menu
           open={Boolean(newMenuAnchorEl)}
@@ -575,7 +578,7 @@ const Sidebar = ({
             }}
           >
             <DrawerTab
-              label={gallerySectionLabel.Images}
+              label={t("sections.images")}
               icon={gallerySectionIcon.Images}
               index={0}
               tabIndex={getTabIndex(0)}
@@ -588,7 +591,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Audios}
+              label={t("sections.audios")}
               icon={gallerySectionIcon.Audios}
               index={1}
               tabIndex={getTabIndex(1)}
@@ -601,7 +604,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Videos}
+              label={t("sections.videos")}
               icon={gallerySectionIcon.Videos}
               index={2}
               tabIndex={getTabIndex(2)}
@@ -614,7 +617,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Documents}
+              label={t("sections.documents")}
               icon={gallerySectionIcon.Documents}
               index={3}
               tabIndex={getTabIndex(3)}
@@ -627,7 +630,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Chemistry}
+              label={t("sections.chemistry")}
               icon={gallerySectionIcon.Chemistry}
               index={4}
               tabIndex={getTabIndex(4)}
@@ -640,7 +643,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Miscellaneous}
+              label={t("sections.miscellaneous")}
               icon={gallerySectionIcon.Miscellaneous}
               index={5}
               tabIndex={getTabIndex(5)}
@@ -653,7 +656,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.Snippets}
+              label={t("sections.snippets")}
               icon={gallerySectionIcon.Snippets}
               index={6}
               tabIndex={getTabIndex(6)}
@@ -675,7 +678,7 @@ const Sidebar = ({
             {showFilestores && (
               <DrawerTab
                 key={null}
-                label={gallerySectionLabel.NetworkFiles}
+                label={t("sections.networkFiles")}
                 icon={gallerySectionIcon.NetworkFiles}
                 index={7}
                 tabIndex={getTabIndex(7)}
@@ -689,7 +692,7 @@ const Sidebar = ({
               />
             )}
             <DrawerTab
-              label={gallerySectionLabel.DMPs}
+              label={t("sections.dmps")}
               icon={gallerySectionIcon.DMPs}
               index={showFilestores ? 8 : 7}
               tabIndex={getTabIndex(showFilestores ? 8 : 7)}
@@ -702,7 +705,7 @@ const Sidebar = ({
               }}
             />
             <DrawerTab
-              label={gallerySectionLabel.PdfDocuments}
+              label={t("sections.pdfDocuments")}
               icon={gallerySectionIcon.PdfDocuments}
               index={showFilestores ? 9 : 8}
               tabIndex={getTabIndex(showFilestores ? 9 : 8)}

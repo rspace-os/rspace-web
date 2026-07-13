@@ -8,6 +8,7 @@ import Stack from "@mui/material/Stack";
 import Switch from "@mui/material/Switch";
 import TextField from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import type { PageSize } from "./common";
 
 export type PdfExportDetails = {
@@ -40,27 +41,29 @@ type PdfExportArgs = PdfExportDetailsArgs & {
 };
 
 const checkboxes = {
-  provenance: "Include provenance information",
-  comments: "Include comments",
-  annotations: "Include image annotations",
-  includeFieldLastModifiedDate: "Include last modified dates for fields",
-  restartPageNumberPerDoc: "Restart page numbering for each document",
-  includeFooterAtEndOnly: "Insert date footer at file end only",
-};
+  provenance: "export.format.pdf.checkboxes.provenance",
+  comments: "export.format.pdf.checkboxes.comments",
+  annotations: "export.format.pdf.checkboxes.annotations",
+  includeFieldLastModifiedDate: "export.format.pdf.checkboxes.lastModified",
+  restartPageNumberPerDoc: "export.format.pdf.checkboxes.restartPageNumbers",
+  includeFooterAtEndOnly: "export.format.pdf.checkboxes.footerEndOnly",
+} as const;
 
 export default function PdfExport({
   exportDetails: { exportName, pageSize, defaultPageSize, setPageSizeAsDefault, dateType, ...rest },
   validations,
   updateExportDetails,
 }: PdfExportArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   return (
     <Stack spacing={2}>
       <TextField
         variant="standard"
         error={validations.submitAttempt && !validations.inputValidations.exportName}
         id="name"
-        label="File name *"
-        helperText="Name your file"
+        label={t("export.format.pdf.name")}
+        required
+        helperText={t("export.format.pdf.nameHelper")}
         value={exportName}
         onChange={({ target: { value } }) => updateExportDetails("exportName", value)}
         margin="normal"
@@ -69,7 +72,7 @@ export default function PdfExport({
       />
       <Grid container>
         <Grid sx={{ mt: 2 }} size={5}>
-          <InputLabel htmlFor="pageSize">Page format: </InputLabel>
+          <InputLabel htmlFor="pageSize">{t("export.format.pdf.pageFormatLabel")}</InputLabel>
           <Select
             variant="standard"
             fullWidth
@@ -79,10 +82,10 @@ export default function PdfExport({
             data-test-id="pdf-size"
           >
             <MenuItem value={"A4"} data-test-id="size-a4">
-              A4
+              {t("export.format.pdf.pageSize.a4")}
             </MenuItem>
             <MenuItem value={"LETTER"} data-test-id="size-letter">
-              Letter
+              {t("export.format.pdf.pageSize.letter")}
             </MenuItem>
           </Select>
           {pageSize !== defaultPageSize && (
@@ -95,13 +98,13 @@ export default function PdfExport({
                   data-test-id="set-size-default"
                 />
               }
-              label={`Set ${pageSize} as default`}
+              label={t("export.format.pdf.setDefault", { pageSize })}
             />
           )}
         </Grid>
         <Grid sx={{ mt: 2 }} size={2}></Grid>
         <Grid sx={{ mt: 2 }} size={5}>
-          <InputLabel htmlFor="dateType">Date on page footer</InputLabel>
+          <InputLabel htmlFor="dateType">{t("export.format.pdf.dateFooterLabel")}</InputLabel>
           <Select
             variant="standard"
             fullWidth
@@ -111,13 +114,13 @@ export default function PdfExport({
             data-test-id="date-type"
           >
             <MenuItem value={"EXP"} data-test-id="date-type-exp">
-              Exported
+              {t("export.format.pdf.dateType.exported")}
             </MenuItem>
             <MenuItem value={"NEW"} data-test-id="date-type-new">
-              Created
+              {t("export.format.pdf.dateType.created")}
             </MenuItem>
             <MenuItem value={"UPD"} data-test-id="ddate-type-upd">
-              Last modified date
+              {t("export.format.pdf.dateType.lastModified")}
             </MenuItem>
           </Select>
         </Grid>
@@ -135,7 +138,7 @@ export default function PdfExport({
                 slotProps={{ input: { role: "checkbox" } }}
               />
             }
-            label={checkboxes[k]}
+            label={t(checkboxes[k])}
           />
         ))}
       </Stack>
