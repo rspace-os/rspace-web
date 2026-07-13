@@ -80,6 +80,27 @@ function BaseSearch(props: {
   );
 }
 
+/** I18nRoot fallback: a disabled lookalike so the search bar's footprint doesn't shift once it mounts. */
+function BaseSearchFallback({ placeholder, variant }: { placeholder: string; variant?: "elevation" | "outlined" }) {
+  return (
+    <Paper sx={{ boxShadow: "none" }} variant={variant} data-test-id="base-search-content">
+      <Box
+        sx={{
+          display: "flex",
+          width: "100%",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <InputBase placeholder={placeholder} disabled sx={{ pl: 1, flexGrow: 1 }} />
+        <IconButton disabled>
+          <SearchIcon />
+        </IconButton>
+      </Box>
+    </Paper>
+  );
+}
+
 /*
  * This is necessary because as of MUI v5 useStyles cannot be used in the same
  * component as the root MuiThemeProvider
@@ -88,7 +109,12 @@ export default function WrappedBaseSearch(props: React.ComponentProps<typeof Bas
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <BaseSearch {...props} />
+        <I18nRoot
+          namespaces={["common"]}
+          fallback={<BaseSearchFallback placeholder={props.placeholder} variant={props.variant} />}
+        >
+          <BaseSearch {...props} />
+        </I18nRoot>
       </ThemeProvider>
     </StyledEngineProvider>
   );
@@ -104,14 +130,12 @@ function renderElements() {
         const variant = dataset.variant === "outlined" || dataset.variant === "elevation" ? dataset.variant : undefined;
         const root = createRoot(container);
         root.render(
-          <I18nRoot namespaces={["common"]}>
-            <WrappedBaseSearch
-              placeholder={dataset.placeholder ?? ""}
-              onSubmit={dataset.onsubmit}
-              elId={dataset.elid ?? "base-search"}
-              variant={variant}
-            />
-          </I18nRoot>,
+          <WrappedBaseSearch
+            placeholder={dataset.placeholder ?? ""}
+            onSubmit={dataset.onsubmit}
+            elId={dataset.elid ?? "base-search"}
+            variant={variant}
+          />,
         );
       });
     }

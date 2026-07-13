@@ -1,6 +1,7 @@
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import CssBaseline from "@mui/material/CssBaseline";
+import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -161,6 +162,17 @@ function PreviewInfoFrame({ children, isTableOnly = false }: { children: React.R
   );
 }
 
+/** I18nRoot fallback: reuses PreviewInfoFrame's chrome sized to the source img's height, so document text doesn't shift. */
+function PreviewInfoFallback({ isTableOnly, height }: { isTableOnly?: boolean; height: number }) {
+  return (
+    <PreviewInfoFrame isTableOnly={isTableOnly}>
+      <Box sx={{ p: 1 }}>
+        <Skeleton variant="rectangular" height={height} />
+      </Box>
+    </PreviewInfoFrame>
+  );
+}
+
 export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
   const stoichiometryReference = getStoichiometryReference(item["data-stoichiometry-table"]);
   const isTableOnly = item[STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE] === "true";
@@ -220,8 +232,12 @@ export default function PreviewInfo({ item }: { item: PreviewInfoItem }) {
 
 function render(attributes: PreviewInfoItem, element: Element) {
   const root = getPreviewInfoRoot(element);
+  const isTableOnly = attributes[STOICHIOMETRY_TABLE_ONLY_ATTRIBUTE] === "true";
   root.render(
-    <I18nRoot namespaces={["apps", "common", "workspace"]}>
+    <I18nRoot
+      namespaces={["apps", "common", "workspace"]}
+      fallback={<PreviewInfoFallback isTableOnly={isTableOnly} height={Number(attributes.height) || 200} />}
+    >
       <PreviewInfo item={{ ...attributes }} />
     </I18nRoot>,
   );
@@ -241,7 +257,10 @@ function renderChemPreview(domContainer: HTMLImageElement) {
 
   const root = getPreviewInfoRoot(parent);
   root.render(
-    <I18nRoot namespaces={["apps", "common", "workspace"]}>
+    <I18nRoot
+      namespaces={["apps", "common", "workspace"]}
+      fallback={<PreviewInfoFallback height={Number(attributes.height) || 200} />}
+    >
       <PreviewInfo item={{ ...attributes }} />
     </I18nRoot>,
   );

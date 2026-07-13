@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import Alerts from "../../components/Alerts/Alerts";
 import Analytics from "../../components/Analytics";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import LoaderCircular from "../../components/LoadingCircular";
 import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import materialTheme, { COLORS } from "../../theme";
 import { hslToHex } from "../../util/colors";
@@ -61,7 +62,7 @@ window.addEventListener("load", () => {
             <QueryClientProvider client={queryClient}>
               <Analytics>
                 <ErrorBoundary>
-                  <I18nRoot namespaces={["apps", "common"]}>
+                  <I18nRoot namespaces={["apps", "common", "about"]} fallback={<LoaderCircular />}>
                     <Alerts>
                       <App />
                     </Alerts>

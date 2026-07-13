@@ -10,6 +10,7 @@ import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/invent
 import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
+import LoaderCircular from "./components/LoadingCircular";
 import I18nRoot from "./modules/common/i18n/I18nRoot";
 import Router from "./Router";
 import useStores from "./stores/use-stores";
@@ -63,7 +64,7 @@ window.addEventListener("load", () => {
   if (domContainer) {
     const root = createRoot(domContainer);
     root.render(
-      <I18nRoot namespaces={["inventory", "common"]}>
+      <I18nRoot namespaces={["inventory", "common", "about"]} fallback={<LoaderCircular />}>
         <App />
       </I18nRoot>,
     );

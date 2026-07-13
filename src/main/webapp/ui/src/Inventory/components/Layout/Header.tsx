@@ -23,6 +23,7 @@ function Header({ sidebarId }: HeaderArgs): React.ReactNode {
       <AppBar
         variant="page"
         currentPage="inventory"
+        ambientI18n
         sidebarToggle={
           <SidebarToggle sidebarId={sidebarId} setSidebarOpen={handleToggleOpen} sidebarOpen={uiStore.sidebarOpen} />
         }

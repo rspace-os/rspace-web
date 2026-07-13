@@ -19,6 +19,7 @@ import SidebarToggle from "../../components/AppBar/SidebarToggle";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
 import { LandmarksProvider } from "../../components/LandmarksContext";
+import LoaderCircular from "../../components/LoadingCircular";
 import SkipToContentMenu from "../../components/SkipToContentMenu";
 import { useDeploymentProperty } from "../../hooks/api/useDeploymentProperty";
 import useUiPreference, { PREFERENCES, UiPreferences } from "../../hooks/api/useUiPreference";
@@ -190,6 +191,7 @@ const WholePage = ({
                     <AppBar
                       variant="page"
                       currentPage="gallery"
+                      ambientI18n
                       sidebarToggle={
                         <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                       }
@@ -486,7 +488,7 @@ window.addEventListener("load", () => {
     const root = createRoot(domContainer);
     root.render(
       <React.StrictMode>
-        <I18nRoot namespaces={["gallery", "common"]}>
+        <I18nRoot namespaces={["gallery", "common", "about"]} fallback={<LoaderCircular />}>
           <BrowserRouter>
             <Gallery />
           </BrowserRouter>

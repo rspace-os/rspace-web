@@ -75,6 +75,7 @@ import CustomTooltip from "../../../components/CustomTooltip";
 import ErrorBoundary from "../../../components/ErrorBoundary";
 import ExportMenuItem from "../../../components/ExportMenuItem";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
+import LoaderCircular from "../../../components/LoadingCircular";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import ExportDialog from "../../../Export/ExportDialog";
 import useCheckVerificationPasswordNeeded from "../../../hooks/api/useCheckVerificationPasswordNeeded";
@@ -1977,7 +1978,7 @@ const wrapperDiv = document.getElementById("sysadminUsers");
 if (wrapperDiv) {
   const root = createRoot(wrapperDiv);
   root.render(
-    <I18nRoot namespaces={["system", "common"]}>
+    <I18nRoot namespaces={["system", "common"]} fallback={<LoaderCircular />}>
       <QueryClientProvider client={queryClient}>
         <StyledEngineProvider injectFirst enableCssLayer>
           <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>

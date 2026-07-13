@@ -16,6 +16,7 @@ import Analytics from "../../components/Analytics";
 import { AboutRSpaceContent } from "../../components/AppBar/AboutRSpaceDialog";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import LoaderCircular from "../../components/LoadingCircular";
 
 const queryClient = new QueryClient();
 
@@ -66,7 +67,7 @@ window.addEventListener("load", () => {
             <ErrorBoundary>
               <CssBaseline />
               <ThemeProvider theme={createAccentedTheme(OTHER_COLOR)}>
-                <I18nRoot namespaces={["about"]}>
+                <I18nRoot namespaces={["about"]} fallback={<LoaderCircular />}>
                   <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
                     <DialogBoundary>
                       <Container maxWidth="sm">

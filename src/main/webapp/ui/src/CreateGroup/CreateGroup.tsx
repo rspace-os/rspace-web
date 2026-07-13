@@ -14,6 +14,7 @@ import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import axios from "@/common/axios";
+import LoaderCircular from "@/components/LoadingCircular";
 import i18n from "@/modules/common/i18n";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import materialTheme from "../theme";
@@ -369,7 +370,7 @@ const selfService = $("#selfServiceLabGroup").length !== 0;
 const projectGroup = $("#projectGroup").length !== 0;
 const root = createRoot(domContainer as HTMLElement);
 root.render(
-  <I18nRoot namespaces={["groups"]}>
+  <I18nRoot namespaces={["groups"]} fallback={<LoaderCircular />}>
     <CreateGroup />
   </I18nRoot>,
 );
