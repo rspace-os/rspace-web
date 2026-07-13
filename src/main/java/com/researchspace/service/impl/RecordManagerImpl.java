@@ -645,11 +645,18 @@ public class RecordManagerImpl implements RecordManager {
     return structuredDocument;
   }
 
+  /**
+   * H6: {@link Record#getTempRecord()} returns a lazy {@code Record} proxy, so casting it directly
+   * to {@link StructuredDocument} throws {@code ClassCastException}. Unproxy first to reach the
+   * real subclass. Null-safe: returns {@code null} when the document has no temp record.
+   */
+  private static StructuredDocument tempRecordOf(StructuredDocument doc) {
+    return (StructuredDocument) Hibernate.unproxy(doc.getTempRecord());
+  }
+
   private StructuredDocument saveTempRecord(Long recordId, User user) {
     StructuredDocument record = (StructuredDocument) getRecordWithFields(recordId, user);
-    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
-    // StructuredDocument
-    StructuredDocument tempRecord = (StructuredDocument) Hibernate.unproxy(record.getTempRecord());
+    StructuredDocument tempRecord = tempRecordOf(record);
     if (tempRecord == null) {
       tempRecord = record.copyNoFields();
       tempRecord.setTemporaryDoc(true);
@@ -747,10 +754,7 @@ public class RecordManagerImpl implements RecordManager {
       warningList.addErrorMsg("content.not.changed");
     }
 
-    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
-    // StructuredDocument
-    StructuredDocument temp =
-        (StructuredDocument) Hibernate.unproxy(structuredDocument.getTempRecord());
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setModificationDate(temp.getModificationDate());
       structuredDocument.setModifiedBy(temp.getModifiedBy(), IActiveUserStrategy.CHECK_OPERATE_AS);
@@ -811,10 +815,7 @@ public class RecordManagerImpl implements RecordManager {
     }
     fieldContentSynchroniser.revertSyncDocumentWithEntitiesOnCancel(
         structuredDocument, fieldChanges);
-    // H6: getTempRecord() returns a Record proxy; Hibernate.unproxy() gives the real
-    // StructuredDocument
-    StructuredDocument temp =
-        (StructuredDocument) Hibernate.unproxy(structuredDocument.getTempRecord());
+    StructuredDocument temp = tempRecordOf(structuredDocument);
     if (temp != null) {
       structuredDocument.setTempRecord(null);
     }
