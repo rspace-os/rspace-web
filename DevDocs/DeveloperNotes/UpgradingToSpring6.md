@@ -1,16 +1,19 @@
-# Upgrading to RSpace 3.0 (Spring 6 / Hibernate 6 / Jakarta)
+# Upgrading to the Spring 6 / Jakarta stack
 
-RSpace 3.0 upgrades the platform from Spring 5.3 / Hibernate ORM 5.6 / Hibernate Search 5 /
+This release upgrades the platform from Spring 5.3 / Hibernate ORM 5.6 / Hibernate Search 5 /
 Shiro 1.13 / the `javax.*` (Java EE) APIs to Spring 6.2 / Hibernate ORM 6.4 / Hibernate
-Search 7 / Shiro 2.1 / the `jakarta.*` (Jakarta EE 10) APIs. This is a coordinated major
-version bump across rspace-web and all of the rspace-os libraries it depends on.
+Search 7 / Shiro 2.1 / the `jakarta.*` (Jakarta EE 10) APIs. It is a coordinated upgrade of
+rspace-web and all of the rspace-os libraries it depends on; each library carries a major
+version bump. Although the rspace-web version number itself stays on its normal release
+train, this is NOT a routine upgrade for operators: the deployment prerequisites change and
+the data migration is one-way, as detailed below.
 
 This page covers what operators need to do to upgrade an existing deployment, what the
 upgrade changes in the database, and what developers should know about the new stack.
 
 ## Requirements
 
-| Component | 2.x | 3.0 |
+| Component | Before | After |
 |---|---|---|
 | JVM | Java 17 | Java 17 |
 | Servlet container | Tomcat 9 | **Tomcat 10.1** (Jakarta servlet API; Tomcat 9 cannot run this WAR) |
