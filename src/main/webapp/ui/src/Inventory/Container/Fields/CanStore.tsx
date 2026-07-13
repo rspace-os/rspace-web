@@ -56,7 +56,7 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
     },
     {
       value: "instrument",
-      label: "Instruments",
+      label: t("recordTypes.instrument.plural"),
       disabled: orElseIfNoAccess(
         mapPermissioned(container.contentSummary, ({ instrumentCount }) => instrumentCount > 0),
         true,
