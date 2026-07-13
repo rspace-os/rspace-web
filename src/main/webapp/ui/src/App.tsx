@@ -37,24 +37,34 @@ function App(): React.ReactNode {
     })();
   }, []);
 
-  return loadingDone ? (
-    (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
-      <>
-        <GoogleLoginProvider />
-        <StyledEngineProvider injectFirst enableCssLayer>
-          <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
-            <QueryClientProvider client={queryClient}>
-              <Analytics>
-                <Router />
-              </Analytics>
-            </QueryClientProvider>
-          </ThemeProvider>
-        </StyledEngineProvider>
-      </>
-    ) : (
-      ERROR_MSG
-    )
-  ) : null;
+  return (
+    <>
+      {window.location.pathname.startsWith("/inventory") && (
+        <meta
+          name="theme-color"
+          content={`hsl(${INVENTORY_COLOR.background.hue}, ${INVENTORY_COLOR.background.saturation}%, ${INVENTORY_COLOR.background.lightness}%)`}
+        />
+      )}
+      {loadingDone ? (
+        (authStore.isAuthenticated || authStore.isSigningOut) && peopleStore.currentUser ? (
+          <>
+            <GoogleLoginProvider />
+            <StyledEngineProvider injectFirst enableCssLayer>
+              <ThemeProvider theme={createAccentedTheme(INVENTORY_COLOR)}>
+                <QueryClientProvider client={queryClient}>
+                  <Analytics>
+                    <Router />
+                  </Analytics>
+                </QueryClientProvider>
+              </ThemeProvider>
+            </StyledEngineProvider>
+          </>
+        ) : (
+          ERROR_MSG
+        )
+      ) : null}
+    </>
+  );
 }
 
 window.addEventListener("load", () => {
@@ -68,13 +78,6 @@ window.addEventListener("load", () => {
         <App />
       </I18nRoot>,
     );
-  }
-
-  if (window.location.pathname.startsWith("/inventory")) {
-    const meta = document.createElement("meta");
-    meta.name = "theme-color";
-    meta.content = `hsl(${INVENTORY_COLOR.background.hue}, ${INVENTORY_COLOR.background.saturation}%, ${INVENTORY_COLOR.background.lightness}%)`;
-    document.head?.appendChild(meta);
   }
 });
 
