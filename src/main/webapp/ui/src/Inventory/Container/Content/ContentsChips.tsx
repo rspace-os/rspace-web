@@ -11,6 +11,7 @@ export default function ContentsChips({ record }: ContentsChipsArgs): React.Reac
     <>
       {record.canStoreContainers && <CountChip type="container" record={record} />}
       {record.canStoreSamples && <CountChip type="subSample" record={record} />}
+      {record.canStoreInstruments && <CountChip type="instrument" record={record} />}
     </>
   );
 }

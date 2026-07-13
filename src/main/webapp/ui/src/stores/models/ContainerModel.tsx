@@ -863,7 +863,7 @@ export default class ContainerModel
   validate(): ValidationResult {
     const validateCanStore = () => {
       if (this.canStoreContainers || this.canStoreSamples || this.canStoreInstruments) return IsValid();
-      return IsInvalid("Select at least one.");
+      return IsInvalid("Must be permitted to contain at least one of containers, subsamples or instruments.");
     };
 
     const validateGridLayout = () => {
