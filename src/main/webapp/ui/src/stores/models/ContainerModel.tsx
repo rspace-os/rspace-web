@@ -864,7 +864,7 @@ export default class ContainerModel
   validate(): ValidationResult {
     const validateCanStore = () => {
       if (this.canStoreContainers || this.canStoreSamples || this.canStoreInstruments) return IsValid();
-      return IsInvalid(i18n.t("inventory:instrument.createOptions.location.mustStoreTypes"));
+      return IsInvalid(i18n.t("inventory:container.createOptions.location.mustStoreTypes"));
     };
 
     const validateGridLayout = () => {
@@ -1082,7 +1082,7 @@ export default class ContainerModel
         },
       },
       {
-        label: "Instrument",
+        label: i18n.t("inventory:container.createOptions.newInstrument.label"),
         explanation: newInstrumentExplanation,
         parameters: [
           {
