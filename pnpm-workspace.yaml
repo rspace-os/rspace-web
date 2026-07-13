@@ -39,5 +39,5 @@ strictPeerDependencies: true
 peerDependencyRules:
   allowedVersions:
     # @sa11y/vitest pulls an older vitest, which wants the matching UI+browser packages.
-    'vitest>@vitest/ui': 4.1.9
-    'vitest>@vitest/browser': 4.1.9
+    'vitest>@vitest/ui': 4.1.10
+    'vitest>@vitest/browser': 4.1.10
