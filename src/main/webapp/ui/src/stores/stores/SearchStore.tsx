@@ -387,7 +387,9 @@ export default class SearchStore {
     if (template) {
       await instrument.setTemplate(template);
     }
-    const locationIsDefined = parentContainerDetails && Object.keys(parentContainerDetails.parentLocation).length > 0;
+    const locationIsDefined = parentContainerDetails
+      ? Object.keys(parentContainerDetails.parentLocation).length > 0
+      : false;
     if (parentContainerDetails) {
       instrument.setAttributes({
         parentContainers: parentContainerDetails.parentContainers,
