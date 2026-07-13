@@ -10,10 +10,7 @@ import {
 const queryKeys = {
   all: ["rspace.common.auth"] as const,
   oauthToken: () => [...queryKeys.all, "oauthToken"] as const,
-  whoami: () => [...queryKeys.all, "whoami"] as const,
 };
-
-const API_BASE_URL = "/api/v1";
 
 /**
  * Fetches a new OAuth token from the server.
@@ -60,7 +57,7 @@ async function fetchToken(): Promise<string> {
  *   const { data: token, error } = useOauthTokenQuery();
  *
  *   // Use the token in fetch requests
- *   const response = await fetch(`/api/v1/inventory/samples`, {
+ *   const response = await fetch(`/api/v2/maintenances`, {
  *     headers: {
  *       Authorization: "Bearer " + token,
  *     },
@@ -90,42 +87,6 @@ export function useOauthTokenQuery() {
       // Subtract the buffer time (5 minutes) to ensure we refresh before expiry
       const staleTimeSeconds = Math.max(0, secondsUntilExpiry - TOKEN_EXPIRY_BUFFER_SECONDS);
       return staleTimeSeconds * 1000; // Convert to milliseconds
-    },
-    // Keep the token in cache indefinitely while the app is open
-    gcTime: Infinity,
-    // Refetch in the background when the token is stale
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-    // Retry on failure
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-  });
-}
-
-async function getWhoami(token?: string) {
-  const response = await fetch(`${API_BASE_URL}/userDetails/whoami`, {
-    method: "GET",
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
-
-  const data: unknown = await response.json();
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch whoami info: ${response.statusText}`);
-  }
-
-  return data;
-}
-
-export function useWhoamiQuery(token?: string) {
-  return useSuspenseQuery({
-    queryKey: queryKeys.whoami(),
-    queryFn: async () => {
-      return getWhoami(token);
     },
     // Keep the token in cache indefinitely while the app is open
     gcTime: Infinity,

@@ -32,9 +32,9 @@ describe("getBaseUrl", () => {
 describe("createApiDocsConfiguration", () => {
   const config = createApiDocsConfiguration("https://example.com");
 
-  test("declares both API specs with the expected URLs", () => {
-    expect(config.sources).toHaveLength(2);
-    const [eln, inventory] = config.sources ?? [];
+  test("declares the API specs with the expected URLs", () => {
+    expect(config.sources).toHaveLength(3);
+    const [eln, inventory, v2] = config.sources ?? [];
     expect(eln).toMatchObject({
       title: "common:apiDocs.sources.eln",
       slug: "rspace-eln",
@@ -46,8 +46,14 @@ describe("createApiDocsConfiguration", () => {
       slug: "rspace-inventory",
       url: "https://example.com/resources/rspace_api_inventory_specs_2_25_0.yaml",
     });
+    expect(v2).toMatchObject({
+      title: "common:apiDocs.sources.v2",
+      slug: "rspace-v2",
+      url: "https://example.com/resources/rspace_api_specs_v2_0_0.yaml",
+    });
     // Only the ELN spec is the default document.
     expect(inventory).not.toHaveProperty("default", true);
+    expect(v2).not.toHaveProperty("default", true);
   });
 
   test("resolves relative servers against the deployment base", () => {
@@ -95,7 +101,7 @@ describe("createApiDocsConfiguration", () => {
 });
 
 describe("ApiDocsPage", () => {
-  test("renders Scalar with a configuration containing both specs", () => {
+  test("renders Scalar with a configuration containing every spec", () => {
     render(<ApiDocsPage />);
     const mounted = screen.getByTestId("mock-scalar");
     const passed = JSON.parse(mounted.getAttribute("data-configuration") ?? "{}") as ReturnType<
@@ -104,6 +110,7 @@ describe("ApiDocsPage", () => {
     expect(passed.sources?.map((s) => s.title)).toEqual([
       "common:apiDocs.sources.eln",
       "common:apiDocs.sources.inventory",
+      "common:apiDocs.sources.v2",
     ]);
   });
 });

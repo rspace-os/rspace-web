@@ -9,7 +9,7 @@ import "@scalar/api-reference-react/style.css";
  * a servlet context path) so the spec URLs and the specs' relative `servers`
  * resolve correctly. This mirrors the trick the previous swagger-ui JSP used.
  */
-export function getBaseUrl(href: string = window.location.href): string {
+export function getBaseUrl(href: string = window.location.href) {
   const index = href.indexOf("/public/apiDocs");
   return index === -1 ? "" : href.substring(0, index);
 }
@@ -65,6 +65,12 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
         url: `${baseUrl}/resources/rspace_api_inventory_specs_2_25_0.yaml`,
         agent: DISABLED_AGENT,
       },
+      {
+        title: i18n.t("common:apiDocs.sources.v2"),
+        slug: "rspace-v2",
+        url: `${baseUrl}/resources/rspace_api_specs_v2_0_0.yaml`,
+        agent: DISABLED_AGENT,
+      },
     ],
     // Resolves the specs' relative servers (/api/v1, /api/inventory/v1) against
     // the deployment base so "try it out" requests target the right origin.
@@ -98,7 +104,7 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
  * the public, interactive API documentation that replaces the legacy swagger-ui
  * page at /public/apiDocs.
  */
-export default function ApiDocsPage(): React.ReactNode {
+export default function ApiDocsPage() {
   const configuration = React.useMemo(() => createApiDocsConfiguration(getBaseUrl()), []);
   return <ApiReferenceReact configuration={configuration} />;
 }

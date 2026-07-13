@@ -90,7 +90,7 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addInterceptor(defaultConfig.apiAuthenticationInterceptor())
         .addPathPatterns("/api/**")
-        .excludePathPatterns("/api/inventory/v1/public/**");
+        .excludePathPatterns("/api/inventory/v1/public/**", "/api/v2/config");
     registry.addInterceptor(wopiAuthorisation).addPathPatterns("/wopi/files/**");
     registry.addInterceptor(wopiProofKeyValidation).addPathPatterns("/wopi/files/**");
   }
@@ -111,9 +111,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
     registry
         .addViewController("/public/requestUsernameReminder")
         .setViewName("public/requestUsernameReminder");
-    registry
-        .addViewController("/public/maintenanceInProgress")
-        .setViewName("public/maintenanceInProgress");
     registry.addViewController("/public/terms").setViewName("public/terms");
     registry.addViewController("/public/ssoinfo").setViewName("public/ssoinfo");
     registry.addViewController("/public/noldapsignup").setViewName("public/noLdapSignUp");

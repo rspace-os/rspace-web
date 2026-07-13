@@ -101,7 +101,8 @@
   "apiDocs": {
     "sources": {
       "eln": "RSpace ELN",
-      "inventory": "RSpace Inventory"
+      "inventory": "RSpace Inventory",
+      "v2": "RSpace v2 (beta)"
     }
   },
   "apiErrors": {
@@ -143,6 +144,7 @@
     "dialogHeader": "dialog header",
     "errorLoadingDetails": "Error loading your details",
     "goTo": "Go to...",
+    "logIn": "Log In",
     "logOut": "Log Out",
     "mainLinks": "main links",
     "mainNavigation": "Main Navigation",
@@ -157,6 +159,10 @@
     "published": "Published",
     "release": "Release",
     "sections": {
+      "booking": {
+        "subheader": "Reserve instruments and equipment",
+        "title": "Booking"
+      },
       "gallery": {
         "subheader": "Your files in RSpace and connected filestores",
         "title": "Gallery"
@@ -177,7 +183,9 @@
         "subheader": "Notebooks and documents",
         "title": "Workspace"
       }
-    }
+    },
+    "switchSection": "Switch section",
+    "userIdentity": "{fullName} ({username})"
   },
   "confirmationDialog": {
     "inputMismatch": "Input does not match confirmation text"
@@ -287,6 +295,7 @@
     "zenodo": "8i37k8kjqz-zenodo-integration"
   },
   "helpDocs": {
+    "brand": "Support",
     "chatWithUs": "Chat with us",
     "documentation": "RSpace Documentation",
     "openHelp": "Open Help",
@@ -361,6 +370,17 @@
     "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
   },
   "loading": "Loading",
+  "maintenanceMode": {
+    "description": "Scheduled maintenance is in progress now. Please try again later.",
+    "heading": "Maintenance mode",
+    "recheckNotice": "This page rechecks automatically every 30 seconds, or you can <internalLink to=\"/login\">check the status now</internalLink>."
+  },
+  "notFound": {
+    "message": "Page not found"
+  },
+  "pageTitles": {
+    "withProduct": "{pageTitle} | RSpace"
+  },
   "profile": {
     "accountActivity": {
       "action": "Action",

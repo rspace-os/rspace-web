@@ -7,7 +7,7 @@
     "defaultBranch": "main"
   },
   "files": {
-    "includes": ["**/*.ts", "**/*.tsx", "**/*.css"]
+    "includes": ["**/*.ts", "**/*.tsx", "**/*.css", "!src/modules/common/ui"]
   },
   "formatter": {
     "enabled": true,
@@ -21,6 +21,9 @@
     }
   },
   "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
     "formatter": {
       "indentStyle": "space",
       "lineWidth": 120
