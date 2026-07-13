@@ -115,12 +115,11 @@ public class GenericDaoHibernate<T, PK extends Serializable> implements GenericD
   }
 
   /**
-   * Replaces Hibernate 5's {@code Session.saveOrUpdate()}, which was removed in Hibernate 6. {@code
-   * saveOrUpdate()} kept the original Java instance managed for both new and detached entities.
-   * {@code merge()} cannot do this — it returns a copy, which causes {@code EntityExistsException}
-   * when the original is already referenced by a parent collection in the session. So we use {@code
-   * persist()} for new/managed entities (same-instance semantics) and {@code merge()} only for
-   * detached entities.
+   * Replaces the previous {@code merge()}-only implementation. Under Hibernate 6, {@code merge()}
+   * of a new entity that a parent collection in the session already references throws {@code
+   * EntityExistsException}, because merge returns a managed copy rather than adopting the passed
+   * instance (Hibernate 5 tolerated this usage). So we use {@code persist()} for new/managed
+   * entities (same-instance semantics) and {@code merge()} only for detached entities.
    *
    * <p>Note: a NEW entity with an application-assigned id (no {@code @GeneratedValue}, e.g. {@code
    * ArchivalCheckSum}) has a non-null id while still transient, so it is indistinguishable from a
