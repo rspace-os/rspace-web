@@ -21,7 +21,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
             });
           }}
         >
-          Export CSV
+          {"Export CSV"}
         </button>
       </div>
     );
@@ -29,7 +29,7 @@ vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableToolbar", () => ({
 }));
 
 vi.mock("@/tinyMCE/stoichiometry/StoichiometryTableInventoryLinkCell", () => ({
-  default: () => <div>Inventory link cell</div>,
+  default: () => <div>{"Inventory link cell"}</div>,
 }));
 
 globalThis.Blob = NodeBlob as unknown as typeof Blob;
@@ -90,8 +90,8 @@ describe("StoichiometryTableGrid", () => {
     const grid = await screen.findByRole("grid");
     expect(grid).toBeVisible();
     expect(screen.getByText("No rows")).toBeVisible();
-    expect(screen.getByRole("columnheader", { name: "Name" })).toBeVisible();
-    expect(screen.getByRole("columnheader", { name: "Type" })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "common:stoichiometry.table.columns.name" })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: "common:stoichiometry.table.columns.type" })).toBeVisible();
   });
 
   it("always renders the Type dropdown when the role is editable", () => {
@@ -99,7 +99,7 @@ describe("StoichiometryTableGrid", () => {
 
     expect(
       screen.getByRole("combobox", {
-        name: "Select type for Cyclopentane",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     ).toBeVisible();
   });
@@ -109,11 +109,11 @@ describe("StoichiometryTableGrid", () => {
 
     expect(
       screen.queryByRole("combobox", {
-        name: "Select type for Cyclopentane",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     ).not.toBeInTheDocument();
 
-    expect(screen.getByText("reactant")).toBeVisible();
+    expect(screen.getByText("common:stoichiometry.table.roles.reactant")).toBeVisible();
   });
 
   it("updates the molecule role when a new type is selected", async () => {
@@ -124,10 +124,10 @@ describe("StoichiometryTableGrid", () => {
 
     await user.click(
       screen.getByRole("combobox", {
-        name: "Select type for Cyclopentane",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     );
-    await user.click(await screen.findByRole("option", { name: "Product" }));
+    await user.click(await screen.findByRole("option", { name: "common:stoichiometry.table.roles.product" }));
 
     await waitFor(() => {
       expect(onProcessRowUpdate).toHaveBeenCalledWith(
@@ -147,17 +147,17 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "reactant",
       molecule: makeMolecule(),
-      buttonName: "Delete reagent Cyclopentane",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "product",
       molecule: makeProductMolecule(),
-      buttonName: "Delete reagent Cyclohexanone",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "agent",
       molecule: makeAgentMolecule(),
-      buttonName: "Delete reagent Water",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows an enabled delete button for $label rows when there is no active chemId", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} />);
@@ -170,12 +170,12 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "reactant",
       molecule: makeMolecule(),
-      buttonName: "Delete reagent Cyclopentane",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
     {
       label: "product",
       molecule: makeProductMolecule(),
-      buttonName: "Delete reagent Cyclohexanone",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows a disabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);
@@ -187,7 +187,7 @@ describe("StoichiometryTableGrid", () => {
     {
       label: "agent",
       molecule: makeAgentMolecule(),
-      buttonName: "Delete reagent Water",
+      buttonName: "common:stoichiometry.table.label.deleteReagent",
     },
   ])("shows an enabled delete button for $label rows when an active chemId is present", ({ molecule, buttonName }) => {
     render(<StoichiometryTableGrid editable allMolecules={[molecule]} activeChemId={123} />);
@@ -228,9 +228,9 @@ describe("StoichiometryTableGrid", () => {
 
     const csv = await blob?.text();
 
-    expect(csv).toContain("Inventory Link");
+    expect(csv).toContain("common:stoichiometry.table.columns.inventoryLink");
     expect(csv).toContain("SS123");
-    expect(csv).toContain("Reactant");
+    expect(csv).toContain("common:stoichiometry.table.roles.reactant");
     expect(csv).not.toContain("[object Object]");
   });
 

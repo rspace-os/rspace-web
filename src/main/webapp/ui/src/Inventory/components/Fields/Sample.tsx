@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import FormField from "../../../components/Inputs/FormField";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import type { HasUneditableFields } from "../../../stores/definitions/Editable";
@@ -14,6 +15,7 @@ export default function SampleField<
   },
   FieldOwner extends HasUneditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const sample = fieldOwner.fieldValues.sample;
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ export default function SampleField<
   return (
     <FormField
       value={undefined}
-      label="Parent Sample"
+      label={t("formSections.parentSample")}
       disabled
       renderInput={() => (
         <>
@@ -37,14 +39,12 @@ export default function SampleField<
                   if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
                 }}
               >
-                {sample.subSamplesCount === 1 ? (
-                  `The parent sample only has one ${sample.subSampleAlias.alias}.`
-                ) : (
-                  <>
-                    There {sample.subSamplesCount === 2 ? "is" : "are"} {sample.subSamplesCount - 1} other{" "}
-                    {sample.subSamplesCount === 2 ? sample.subSampleAlias.alias : sample.subSampleAlias.plural}.
-                  </>
-                )}
+                {sample.subSamplesCount === 1
+                  ? t("fields.sample.parentOnlyOne", { alias: sample.subSampleAlias.alias })
+                  : t("fields.sample.parentOthers", {
+                      otherCount: sample.subSamplesCount - 1,
+                      noun: sample.subSamplesCount === 2 ? sample.subSampleAlias.alias : sample.subSampleAlias.plural,
+                    })}
               </Link>
             </Typography>
           )}

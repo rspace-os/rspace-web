@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import * as ArrayUtils from "../../util/ArrayUtils";
@@ -1311,6 +1312,7 @@ export function useIntegrationsEndpoint(): {
     timeout: ONE_MINUTE_IN_MS,
   });
   const { addAlert } = useContext(AlertContext);
+  const { t } = useTranslation("apps");
 
   const allIntegrations = async (): Promise<IntegrationStates> => {
     const states = await api.get<
@@ -1356,15 +1358,15 @@ export function useIntegrationsEndpoint(): {
             if (typeof errorMsg === "string") {
               throw new Error(errorMsg);
             } else {
-              throw new Error(errorMsg.errorMessages.at(0) ?? "Unknown reason");
+              throw new Error(errorMsg.errorMessages.at(0) ?? t("integrationsEndpoint.unknownReason"));
             }
           }
-          throw new Error("Unknown error");
+          throw new Error(t("integrationsEndpoint.unknownError"));
         } else {
           addAlert(
             mkAlert({
               variant: "success",
-              message: "Update successful.",
+              message: t("integrationsEndpoint.updateSuccess"),
             }),
           );
           switch (integration) {
@@ -1435,14 +1437,14 @@ export function useIntegrationsEndpoint(): {
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Update failed.",
+              title: t("integrationsEndpoint.updateFailed"),
               message: e.message,
             }),
           );
         throw e;
       }
     },
-    [],
+    [t],
   );
 
   const saveAppOptions = async <I extends Integration>(
@@ -1467,7 +1469,7 @@ export function useIntegrationsEndpoint(): {
       if (response.data.errorMsg !== null && typeof response.data.errorMsg !== "undefined") {
         throw new Error(response.data.errorMsg);
       }
-      throw new Error("Unknown reason");
+      throw new Error(t("integrationsEndpoint.unknownReason"));
     } else {
       switch (appName) {
         case "ARGOS":

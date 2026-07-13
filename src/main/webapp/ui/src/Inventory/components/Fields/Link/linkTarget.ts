@@ -1,3 +1,5 @@
+import i18n from "@/modules/common/i18n";
+
 /**
  * Shared client-side validation for link targets, used by both the extra-field
  * link editor (UpdateField) and the template-field link editor (LinkFieldValue).
@@ -35,11 +37,11 @@ export function isSelfLink(sourceGlobalId: string, targetGlobalId: string): bool
 /** Validates only the target Global ID; relation-type validity is reported on its own field. */
 export function validateTarget(targetGlobalId: string, sourceGlobalId: string): { ok: boolean; reason: string } {
   const parsed = GLOBAL_ID_PATTERN.exec(targetGlobalId);
-  if (!parsed) return { ok: false, reason: "Target Global ID is required" };
+  if (!parsed) return { ok: false, reason: i18n.t("inventory:fields.link.targetValidation.required") };
   if (!ALLOWED_TARGET_PREFIXES.has(parsed[1]))
     return {
       ok: false,
-      reason: "Target must be an Inventory item or an ELN document, notebook or gallery file",
+      reason: i18n.t("inventory:fields.link.targetValidation.supportedType"),
     };
   if (parsed[3] !== undefined)
     // versions are pinned through the version dialog, never typed: the dialog
@@ -47,8 +49,9 @@ export function validateTarget(targetGlobalId: string, sourceGlobalId: string): 
     // the matching audit revision
     return {
       ok: false,
-      reason: "Enter the Global ID without a version. To pin the link to a version, use the clock icon.",
+      reason: i18n.t("inventory:fields.link.targetValidation.noVersionSuffix"),
     };
-  if (isSelfLink(sourceGlobalId, targetGlobalId)) return { ok: false, reason: "An item cannot link to itself." };
+  if (isSelfLink(sourceGlobalId, targetGlobalId))
+    return { ok: false, reason: i18n.t("inventory:fields.link.targetValidation.selfLink") };
   return { ok: true, reason: "" };
 }

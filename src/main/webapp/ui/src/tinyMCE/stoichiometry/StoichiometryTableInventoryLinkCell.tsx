@@ -16,6 +16,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import InventoryPicker from "@/Inventory/components/Picker/Picker";
 import { RecordLink } from "@/Inventory/components/RecordLink";
 import type { InventoryLink } from "@/modules/stoichiometry/schema";
@@ -36,7 +37,7 @@ const INVENTORY_PICKER_SEARCH_PARAMS = {
   permalink: null,
 };
 
-function createInventoryPickerSearch(): Search {
+function createInventoryPickerSearch(alwaysFilteredOutReason: string): Search {
   return new Search({
     factory: new MemoisedFactory(),
     fetcherParams: {
@@ -50,7 +51,7 @@ function createInventoryPickerSearch(): Search {
       selectionMode: "SINGLE",
       instantConfirm: false,
       requiredPermissions: ["UPDATE"],
-      alwaysFilteredOutReason: "The inventory item is already linked.",
+      alwaysFilteredOutReason,
     },
   });
 }
@@ -67,7 +68,7 @@ type StoichiometryTableInventoryLinkCellProps = {
   onUndoRemoveInventoryLink?: () => void;
 };
 
-function toLinkedSubsampleRecord(inventoryLink: InventoryLink): InventoryRecord {
+function toLinkedSubsampleRecord(inventoryLink: InventoryLink, recordTypeLabel: string): InventoryRecord {
   const id = Number.parseInt(inventoryLink.inventoryItemGlobalId.slice(2), 10);
 
   return {
@@ -75,7 +76,7 @@ function toLinkedSubsampleRecord(inventoryLink: InventoryLink): InventoryRecord 
     name: inventoryLink.inventoryItemGlobalId,
     globalId: inventoryLink.inventoryItemGlobalId,
     iconName: "subsample",
-    recordTypeLabel: "Subsample",
+    recordTypeLabel,
     permalinkURL: Number.isNaN(id) ? null : `/inventory/subsample/${id}`,
     recordLinkLabel: inventoryLink.inventoryItemGlobalId,
     showRecordOnNavigate: true,
@@ -98,12 +99,13 @@ const StoichiometryTableInventoryLinkCell = ({
   onRemoveInventoryLink,
   onUndoRemoveInventoryLink,
 }: StoichiometryTableInventoryLinkCellProps) => {
+  const { t } = useTranslation(["common", "inventory"]);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickerSearch] = useState(createInventoryPickerSearch);
+  const [pickerSearch] = useState(() => createInventoryPickerSearch(t("stoichiometry.inventoryLink.alreadyLinked")));
   const linkedInventoryItemGlobalIdSet = new Set(linkedInventoryItemGlobalIds);
 
-  const moleculeLabel = moleculeName ?? "molecule";
-  const pickerTitle = `Pick inventory item for ${moleculeLabel}`;
+  const moleculeLabel = moleculeName ?? t("stoichiometry.inventoryUpdate.unnamedMolecule");
+  const pickerTitle = t("stoichiometry.inventoryLink.pickerTitle", { molecule: moleculeLabel });
 
   const openPicker = () => {
     setPickerOpen(true);
@@ -151,7 +153,7 @@ const StoichiometryTableInventoryLinkCell = ({
         <Chip
           size="small"
           variant="outlined"
-          label="Link Deleted"
+          label={t("stoichiometry.inventoryLink.deleted")}
           icon={<FontAwesomeIcon icon={faTrashAlt} size="2xs" />}
           sx={(theme) => ({
             fontSize: theme.typography.caption.fontSize,
@@ -164,11 +166,11 @@ const StoichiometryTableInventoryLinkCell = ({
           })}
         />
         {editable && (
-          <Tooltip title="Undo deleting link">
+          <Tooltip title={t("stoichiometry.inventoryLink.undo")}>
             <span>
               <IconButton
                 size="small"
-                aria-label={`Undo deleting inventory link for ${moleculeLabel}`}
+                aria-label={t("stoichiometry.inventoryLink.undoForMolecule", { molecule: moleculeLabel })}
                 onClick={onUndoRemoveInventoryLink}
               >
                 <FontAwesomeIcon icon={faClockRotateLeft} size="sm" />
@@ -181,7 +183,7 @@ const StoichiometryTableInventoryLinkCell = ({
   }
 
   if (inventoryLink) {
-    const record = toLinkedSubsampleRecord(inventoryLink);
+    const record = toLinkedSubsampleRecord(inventoryLink, t("inventory:recordTypes.subsample.singular"));
     const showStockDeductedIndicator = inventoryLink.stockDeducted === true;
     const showInsufficientStockIndicator = showInsufficientStockWarning && !showStockDeductedIndicator;
 
@@ -189,25 +191,33 @@ const StoichiometryTableInventoryLinkCell = ({
       <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", height: "100%" }}>
         <RecordLink record={record} disableNavigationContext={true} hideRecordTypeTooltip={true} newTab={true} />
         {showStockDeductedIndicator && (
-          <Tooltip title="Stock deducted">
+          <Tooltip title={t("stoichiometry.inventoryLink.stockDeducted")}>
             <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}>
-              <CheckCircleOutlineIcon fontSize="small" sx={{ color: "success.main" }} />
+              <CheckCircleOutlineIcon
+                fontSize="small"
+                sx={{ color: "success.main" }}
+                aria-label={t("stoichiometry.inventoryLink.stockDeducted")}
+              />
             </Box>
           </Tooltip>
         )}
         {showInsufficientStockIndicator && (
-          <Tooltip title="Insufficient Stock">
+          <Tooltip title={t("stoichiometry.inventoryLink.insufficientStock")}>
             <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.25 }}>
-              <WarningAmberIcon titleAccess="Insufficient Stock" fontSize="small" sx={{ color: "warning.main" }} />
+              <WarningAmberIcon
+                titleAccess={t("stoichiometry.inventoryLink.insufficientStock")}
+                fontSize="small"
+                sx={{ color: "warning.main" }}
+              />
             </Box>
           </Tooltip>
         )}
         {editable && (
-          <Tooltip title="Remove inventory link">
+          <Tooltip title={t("stoichiometry.inventoryLink.remove")}>
             <span>
               <IconButton
                 size="small"
-                aria-label={`Remove inventory link for ${moleculeLabel}`}
+                aria-label={t("stoichiometry.inventoryLink.removeForMolecule", { molecule: moleculeLabel })}
                 onClick={onRemoveInventoryLink}
               >
                 <DeleteOutlineIcon fontSize="small" />
@@ -221,11 +231,11 @@ const StoichiometryTableInventoryLinkCell = ({
 
   return (
     <>
-      <Tooltip title="Add inventory link">
+      <Tooltip title={t("stoichiometry.inventoryLink.add")}>
         <span>
           <IconButton
             size="small"
-            aria-label={`Add inventory link for ${moleculeLabel}`}
+            aria-label={t("stoichiometry.inventoryLink.addForMolecule", { molecule: moleculeLabel })}
             disabled={!editable}
             onClick={() => void openPicker()}
           >

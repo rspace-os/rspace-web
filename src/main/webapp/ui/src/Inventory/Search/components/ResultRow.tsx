@@ -7,6 +7,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import NavigateContext from "../../../stores/contexts/Navigate";
 import SearchContext from "../../../stores/contexts/Search";
 import { hasRequiredPermissions, type InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -24,9 +25,8 @@ type ResultRowArgs = {
   adjustableColumns: Array<AdjustableTableRowLabel>;
 };
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
-
 function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { isChild, differentSearchForSettingActiveResult, search, scopedResult } = useContext(SearchContext);
   const multiSelect = search.uiConfig.selectionMode === "MULTIPLE";
   const singleSelect = search.uiConfig.selectionMode === "SINGLE";
@@ -39,7 +39,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNod
   const hasPermission = hasRequiredPermissions(result.permittedActions, search.uiConfig?.requiredPermissions);
   const rowIsFilteredOut = isFilteredOut || !hasPermission;
   const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
-  const tooltipText = filteredOutReason ?? (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const tooltipText = filteredOutReason ?? (!hasPermission ? t("detailedListing.card.requiredPermissions") : undefined);
   const rowIsSelected = Boolean(
     search.activeResult && result.globalId === search.activeResult.globalId && search.uiConfig.highlightActiveResult,
   );
@@ -140,7 +140,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNod
             onChange={() => result.toggleSelected()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            slotProps={{ input: { "aria-label": "Select result item" } }}
+            slotProps={{ input: { "aria-label": t("search.results.selectResultItem") } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>
@@ -159,7 +159,7 @@ function ResultRow({ result, adjustableColumns }: ResultRowArgs): React.ReactNod
             onChange={() => activateResult()}
             onClick={(e) => e.stopPropagation()}
             name={`Select result ${result.globalId}`}
-            slotProps={{ input: { "aria-label": "Select result item" } }}
+            slotProps={{ input: { "aria-label": t("search.results.selectResultItem") } }}
             sx={{ cursor: "default" }}
           />
         </TableCell>

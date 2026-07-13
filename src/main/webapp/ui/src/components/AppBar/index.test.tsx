@@ -26,7 +26,7 @@ function stubEndpoints(visibleTabs?: Partial<VisibleTabs>) {
  */
 async function waitForLoaded() {
   await waitFor(() => {
-    expect(screen.getByRole("button", { name: "Account Menu" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "common:appBar.accountMenu" })).toBeEnabled();
   });
 }
 
@@ -45,33 +45,33 @@ describe("App Bar", () => {
      * screen readers when we don't show the heading to all users.
      */
     test("On Workspace, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Workspace" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="workspace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
-      expect(heading).toHaveTextContent("Workspace");
+      expect(heading).toHaveTextContent("common:appBar.sections.workspace.title");
     });
 
     test("On Inventory, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Inventory" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="inventory" />);
       const heading = await screen.findByRole("heading", { level: 1 });
-      expect(heading).toHaveTextContent("Inventory");
+      expect(heading).toHaveTextContent("common:appBar.sections.inventory.title");
     });
 
     test("On Gallery, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="Gallery" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="gallery" />);
       const heading = await screen.findByRole("heading", { level: 1 });
-      expect(heading).toHaveTextContent("Gallery");
+      expect(heading).toHaveTextContent("common:appBar.sections.gallery.title");
     });
 
     test("On System, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="System" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="system" />);
       const heading = await screen.findByRole("heading", { level: 1 });
-      expect(heading).toHaveTextContent("System");
+      expect(heading).toHaveTextContent("common:appBar.sections.system.title");
     });
 
     test("On My RSpace, a hidden heading should be shown", async () => {
-      render(<SimplePageWithAppBar variant="page" currentPage="My RSpace" />);
+      render(<SimplePageWithAppBar variant="page" currentPage="myRSpace" />);
       const heading = await screen.findByRole("heading", { level: 1 });
-      expect(heading).toHaveTextContent("My RSpace");
+      expect(heading).toHaveTextContent("common:appBar.sections.myRSpace.title");
     });
 
     test("On any other page, a hidden heading should not be shown", async () => {
@@ -96,14 +96,14 @@ describe("App Bar", () => {
     render(<SimplePageWithAppBar variant="page" currentPage="Test Page" />);
     await waitForLoaded();
 
-    await user.click(screen.getByRole("button", { name: "Account Menu" }));
+    await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
 
     const accountMenu = await screen.findByRole("menu", {
-      name: /account menu/i,
+      name: "common:appBar.accountMenu",
     });
-    expect(accountMenu).toHaveTextContent(/user user/i);
+    expect(accountMenu).toHaveTextContent("user user");
     const logoutOption = await screen.findByRole("menuitem", {
-      name: /log out/i,
+      name: "common:appBar.logOut",
     });
     expect(logoutOption).toBeVisible();
   });
@@ -124,7 +124,7 @@ describe("App Bar", () => {
       });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      expect(screen.queryByRole("link", { name: /inventory/i })).toBe(null);
+      expect(screen.queryByRole("link", { name: "common:appBar.sections.inventory.title" })).toBe(null);
       /*
        * This is when the sysadmin has disallowed Inventory entirely.
        */
@@ -140,7 +140,7 @@ describe("App Bar", () => {
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
       const myRSpaceLink = await screen.findByRole("link", {
-        name: /my rspace/i,
+        name: "common:appBar.sections.myRSpace.title",
       });
       expect(myRSpaceLink.getAttribute("href")).toBe("/groups/viewPIGroup");
       /*
@@ -159,7 +159,7 @@ describe("App Bar", () => {
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
       const myRSpaceLink = await screen.findByRole("link", {
-        name: /my rspace/i,
+        name: "common:appBar.sections.myRSpace.title",
       });
       expect(myRSpaceLink.getAttribute("href")).toBe("/userform");
       /*
@@ -177,7 +177,7 @@ describe("App Bar", () => {
       });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      expect(screen.queryByRole("link", { name: /system/i })).toBe(null);
+      expect(screen.queryByRole("link", { name: "common:appBar.sections.system.title" })).toBe(null);
       /*
        * The System page is only available to sysadmins, so if the user does not
        * have the permissions to view it, it should not be shown.
@@ -194,9 +194,9 @@ describe("App Bar", () => {
       });
       render(<SimplePageWithAppBar variant="page" />);
       await waitForLoaded();
-      await user.click(screen.getByRole("button", { name: "Account Menu" }));
-      await screen.findByRole("menu", { name: /account menu/i });
-      expect(screen.queryByRole("menuitem", { name: /published/i })).toBe(null);
+      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+      await screen.findByRole("menu", { name: "common:appBar.accountMenu" });
+      expect(screen.queryByRole("menuitem", { name: "common:appBar.published" })).toBe(null);
       /*
        * The published page is another piece of functionality that the sysadmin
        * can disable for all users, so if it has not been enabled then the
@@ -210,10 +210,10 @@ describe("App Bar", () => {
     await waitForLoaded();
 
     const accountMenuButton = screen.getByRole("button", {
-      name: "Account Menu",
+      name: "common:appBar.accountMenu",
     });
     expect(accountMenuButton).toBeVisible();
-    const helpMenuButton = screen.getByRole("button", { name: "Open Help" });
+    const helpMenuButton = screen.getByRole("button", { name: "common:helpDocs.openHelp" });
     expect(helpMenuButton).toBeVisible();
 
     const accountBeforeHelp = Boolean(
@@ -231,10 +231,10 @@ describe("App Bar", () => {
     render(<SimplePageWithAppBar variant="dialog" accessibilityTips={{ supportsHighContrastMode: true }} />);
 
     const accessibilityTipsButton = await screen.findByRole("button", {
-      name: /accessibility tips/i,
+      name: "common:accessibilityTips.buttonLabel",
     });
     expect(accessibilityTipsButton).toBeVisible();
-    const helpMenuButton = screen.getByRole("button", { name: "Open Help" });
+    const helpMenuButton = screen.getByRole("button", { name: "common:helpDocs.openHelp" });
     expect(helpMenuButton).toBeVisible();
 
     const accessibilityTipsBeforeHelp = Boolean(

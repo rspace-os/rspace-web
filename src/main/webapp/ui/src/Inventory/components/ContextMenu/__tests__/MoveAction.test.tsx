@@ -64,9 +64,9 @@ describe("MoveAction", () => {
         </storesContext.Provider>
       </ThemeProvider>,
     );
-    await user.click(screen.getAllByRole("button", { name: "Move" })[0]);
+    await user.click(screen.getAllByRole("button", { name: "common:actions.move" })[0]);
 
-    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     expect(closeMenu).toHaveBeenCalled();
   });
 });

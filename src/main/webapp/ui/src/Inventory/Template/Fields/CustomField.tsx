@@ -3,30 +3,33 @@ import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Switch from "@mui/material/Switch";
 import Typography from "@mui/material/Typography";
+import type { TFunction } from "i18next";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useId } from "react";
+import { useTranslation } from "react-i18next";
 import InputWrapper from "../../../components/Inputs/InputWrapper";
 import RemoveButton from "../../../components/RemoveButton";
 import type FieldModel from "../../../stores/models/FieldModel";
 import { FIELD_LABEL, type FieldType, FieldTypes, fieldTypeToApiString } from "../../../stores/models/FieldTypes";
-import { match, toYesNo } from "../../../util/Util";
+import { match } from "../../../util/Util";
 import RemoveMenu, { type DeleteOption } from "../../components/Fields/RemoveMenu";
 import NameField from "./CustomFieldNameField";
 import DefaultValueField from "./DefaultValueField";
 import FieldTypeMenu from "./FieldTypeMenu";
 import MoveButtons from "./MoveButtons";
 
-function makeDeleteOptions(recordTypeName: "sample" | "instrument"): Array<DeleteOption> {
+function makeDeleteOptions(t: TFunction<"inventory">, recordType: string): Array<DeleteOption> {
   return [
-    { value: false, label: `Keep field in existing ${recordTypeName}s` },
-    { value: true, label: `Remove field from existing ${recordTypeName}s` },
+    { value: false, label: t("fields.templateFields.customField.deleteOptions.keep", { recordType }) },
+    { value: true, label: t("fields.templateFields.customField.deleteOptions.remove", { recordType }) },
   ];
 }
 
 const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
+  const { t } = useTranslation("inventory");
   return (
-    <InputWrapper label="Type">
+    <InputWrapper label={t("fields.templateFields.customField.type")}>
       <FieldTypeMenu
         fieldType={field.fieldType}
         onChange={(fieldType) => {
@@ -46,8 +49,10 @@ const FieldTypeSelector = observer(({ field }: { field: FieldModel }) => {
 });
 
 const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: boolean }) => {
+  const { t } = useTranslation(["inventory", "common"]);
+  const mandatoryLabel = field.mandatory ? t("common:actions.yes") : t("common:actions.no");
   return (
-    <InputWrapper label="Mandatory">
+    <InputWrapper label={t("fields.templateFields.customField.mandatory")}>
       {editing ? (
         <Switch
           checked={field.mandatory}
@@ -59,7 +64,7 @@ const Mandatory = observer(({ field, editing }: { field: FieldModel; editing: bo
           edge="start"
         />
       ) : (
-        toYesNo(field.mandatory)
+        mandatoryLabel
       )}
     </InputWrapper>
   );
@@ -86,7 +91,9 @@ function CustomField({
   onMove,
   recordTypeName = "sample",
 }: CustomFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const nameFieldId = useId();
+  const recordType = t(`recordTypes.${recordTypeName}.lowerPlural`);
 
   return (
     <Grid role="region" aria-labelledby={nameFieldId}>
@@ -95,13 +102,14 @@ function CustomField({
           {field.deleteFieldRequest ? (
             <Box sx={{ p: 2 }}>
               <Typography variant="subtitle1">
-                <strong>{field.name}</strong> {FIELD_LABEL[field.fieldType]} field will be deleted from this template.
+                <strong>{field.name}</strong>{" "}
+                {t("template.fields.customField.deleteField", { fieldType: FIELD_LABEL[field.fieldType] })}
               </Typography>
               <p>
-                New {recordTypeName}s will not include this field.{" "}
+                {t("template.fields.customField.newSamplesExclusion", { recordType })}{" "}
                 {field.deleteFieldOnSampleUpdate
-                  ? `The field will also be deleted from existing ${recordTypeName}s made with this template after the ${recordTypeName}s are updated to the latest template version.`
-                  : `The field will not be deleted from existing ${recordTypeName}s even if the ${recordTypeName}s are updated to the latest template version.`}
+                  ? t("template.fields.customField.deleteFieldOnUpdate", { recordType })
+                  : t("template.fields.customField.deleteFieldOnUpdateNot", { recordType })}
               </p>
             </Box>
           ) : (
@@ -133,12 +141,15 @@ function CustomField({
                   {editable && (
                     <Box sx={{ ml: 0.75, mb: 0.75 }}>
                       {field.initial ? (
-                        <RemoveButton onClick={() => onRemove()} title="Delete new field" />
+                        <RemoveButton
+                          onClick={() => onRemove()}
+                          title={t("fields.templateFields.customField.deleteNewField")}
+                        />
                       ) : (
                         <RemoveMenu
-                          deleteOptions={makeDeleteOptions(recordTypeName)}
+                          deleteOptions={makeDeleteOptions(t, recordType)}
                           onClick={(b) => onRemove(b)}
-                          tooltipTitle="Delete field"
+                          tooltipTitle={t("fields.templateFields.customField.deleteField", { fieldName: field.name })}
                         />
                       )}
                     </Box>

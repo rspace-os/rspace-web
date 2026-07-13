@@ -4,6 +4,7 @@ import { StyledEngineProvider, ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React from "react";
+import i18n from "@/modules/common/i18n";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import { StoichiometryTableControllerProvider } from "@/tinyMCE/stoichiometry/StoichiometryTableControllerContext";
 import { createStoichiometryTheme } from "@/tinyMCE/stoichiometry/theme";
@@ -11,6 +12,8 @@ import { useEditableStoichiometryTable } from "@/tinyMCE/stoichiometry/useEditab
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/chemistry";
 import Alerts from "../../../components/Alerts/Alerts";
+
+const stoichiometryLoadingLabel = i18n.t("common:stoichiometry.dialog.loadingTable");
 
 function TestProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = React.useState(
@@ -57,9 +60,9 @@ export const StoichiometryTableWithDataStory = () => {
                     gap: 1,
                   }}
                 >
-                  <CircularProgress size={24} aria-label="Loading stoichiometry table" />
+                  <CircularProgress size={24} aria-label={stoichiometryLoadingLabel} />
                   <Typography variant="body2" color="textSecondary">
-                    Loading stoichiometry table...
+                    {stoichiometryLoadingLabel}
                   </Typography>
                 </Box>
               }
@@ -92,9 +95,9 @@ export function ReadOnlyStoichiometryTableStory(): React.ReactNode {
                     gap: 1,
                   }}
                 >
-                  <CircularProgress size={24} aria-label="Loading stoichiometry table" />
+                  <CircularProgress size={24} aria-label={stoichiometryLoadingLabel} />
                   <Typography variant="body2" color="textSecondary">
-                    Loading stoichiometry table...
+                    {stoichiometryLoadingLabel}
                   </Typography>
                 </Box>
               }

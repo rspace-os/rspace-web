@@ -6,37 +6,37 @@ import { Heading, HeadingContext } from "../DynamicHeadingLevel";
 
 describe("DynamicHeadingLevel", () => {
   test("Should default to level 1", () => {
-    render(<Heading>Test</Heading>);
-    expect(screen.getByRole("heading", { name: /Test/, level: 1 })).toBeInTheDocument();
+    render(<Heading>{"Test"}</Heading>);
+    expect(screen.getByRole("heading", { name: "Test", level: 1 })).toBeInTheDocument();
   });
   test("Using a HeadingContext should result in a level 2", () => {
     render(
       <HeadingContext>
-        <Heading>Test</Heading>
+        <Heading>{"Test"}</Heading>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 2 })).toBeInTheDocument();
   });
   test("Nesting HeadingContexts should increment the level.", () => {
     render(
       <HeadingContext>
         <HeadingContext>
-          <Heading>Test</Heading>
+          <Heading>{"Test"}</Heading>
         </HeadingContext>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 3 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 3 })).toBeInTheDocument();
   });
   test("Specifying level allows skipping levels.", () => {
     render(
       <>
-        <h1>Top-level heading</h1>
+        <h1>{"Top-level heading"}</h1>
         <HeadingContext level={2}>
-          <Heading>Test</Heading>
+          <Heading>{"Test"}</Heading>
         </HeadingContext>
       </>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 2 })).toBeInTheDocument();
   });
   test("Specifying level on a nested HeadingContext is not allowed.", () => {
     const restoreConsole = silenceConsole(
@@ -48,7 +48,7 @@ describe("DynamicHeadingLevel", () => {
         render(
           <HeadingContext>
             <HeadingContext level={1}>
-              <Heading>Test</Heading>
+              <Heading>{"Test"}</Heading>
             </HeadingContext>
           </HeadingContext>,
         );
@@ -71,7 +71,7 @@ describe("DynamicHeadingLevel", () => {
                         <HeadingContext>
                           <HeadingContext>
                             <HeadingContext>
-                              <Heading>Test</Heading>
+                              <Heading>{"Test"}</Heading>
                             </HeadingContext>
                           </HeadingContext>
                         </HeadingContext>
@@ -85,12 +85,12 @@ describe("DynamicHeadingLevel", () => {
         </HeadingContext>
       </HeadingContext>,
     );
-    expect(screen.getByRole("heading", { name: /Test/, level: 6 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Test", level: 6 })).toBeInTheDocument();
   });
   test("Variant should change css styles but leave element type untouched.", () => {
     render(
       <HeadingContext>
-        <Heading variant="h5">Test</Heading>
+        <Heading variant="h5">{"Test"}</Heading>
       </HeadingContext>,
     );
     expect(screen.getByRole("heading", { name: /Test/, level: 2 }).className).toMatch(typographyClasses.h5);
@@ -99,7 +99,7 @@ describe("DynamicHeadingLevel", () => {
     render(
       <HeadingContext>
         <HeadingContext>
-          <Heading>Test</Heading>
+          <Heading>{"Test"}</Heading>
         </HeadingContext>
       </HeadingContext>,
     );

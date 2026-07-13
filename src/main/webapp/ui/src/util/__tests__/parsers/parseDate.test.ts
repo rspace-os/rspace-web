@@ -34,7 +34,7 @@ describe("parseDate", () => {
     const input = "2021-13-02T00:00:00.000Z";
     const d = parseDate(input);
     d.mapError(([e]) => {
-      expect(e.message).toMatch(/not a valid date/);
+      expect(e.message).toContain("not a valid date");
       return e;
     }).do(() => {
       throw new Error("Should not have parsed");

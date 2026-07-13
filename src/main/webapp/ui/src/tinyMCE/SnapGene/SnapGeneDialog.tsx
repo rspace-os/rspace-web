@@ -8,8 +8,10 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import Alerts from "@/components/Alerts/Alerts";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import DnaPreview from "./DnaPreview";
 import EnzymeTable from "./EnzymeTable";
 import FastaView from "./FastaView";
@@ -29,6 +31,7 @@ function a11yProps(index: number) {
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SnapGeneDialog(props: any) {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = React.useState(true);
   const [tab, setTab] = React.useState(0);
   const [disabled, setDisabled] = React.useState(false);
@@ -57,15 +60,15 @@ export default function SnapGeneDialog(props: any) {
 
   return (
     <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" fullWidth={true} maxWidth="xl">
-      <DialogTitle id="form-dialog-title">SnapGene</DialogTitle>
+      <DialogTitle id="form-dialog-title">{t("tinymce.snapGene.dialogTitle")}</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
           <Grid size={2}>
             <Tabs orientation="vertical" variant="scrollable" value={tab} onChange={switchTab}>
-              <Tab label="DNA preview" {...a11yProps(0)} />
-              <Tab label="Enzyme sites" {...a11yProps(1)} />
-              <Tab label="View as FASTA" {...a11yProps(2)} />
-              <Tab label="ORF table" {...a11yProps(3)} />
+              <Tab label={t("tinymce.snapGene.tabDnaPreview")} {...a11yProps(0)} />
+              <Tab label={t("tinymce.snapGene.enzymeSites")} {...a11yProps(1)} />
+              <Tab label={t("tinymce.snapGene.viewAsFasta")} {...a11yProps(2)} />
+              <Tab label={t("tinymce.snapGene.orfTable")} {...a11yProps(3)} />
             </Tabs>
           </Grid>
           {tab === 0 && <DnaPreview id={props.id} clicked={clicked["0"]} setDisabled={(d) => setDisabled(d)} />}
@@ -78,10 +81,10 @@ export default function SnapGeneDialog(props: any) {
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="primary">
-          Close
+          {t("common:actions.close")}
         </Button>
         <Button onClick={handleApply} color="primary" variant="outlined" disabled={disabled}>
-          Apply Settings
+          {t("tinymce.snapGene.applySettings")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -119,10 +122,12 @@ function renderDialog(target_id: any) {
   const container = $(".snapgene-dialog")[0];
   const root = createRoot(container);
   root.render(
-    <MuiCssLayerProvider>
-      <Alerts>
-        <SnapGeneDialog id={target_id} />
-      </Alerts>
-    </MuiCssLayerProvider>,
+    <I18nRoot namespaces={["workspace", "common"]}>
+      <MuiCssLayerProvider>
+        <Alerts>
+          <SnapGeneDialog id={target_id} />
+        </Alerts>
+      </MuiCssLayerProvider>
+    </I18nRoot>,
   );
 }

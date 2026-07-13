@@ -45,7 +45,7 @@ export async function getStoichiometry({
   const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw toStoichiometryError(data, `Failed to fetch stoichiometry: ${response.statusText}`);
+    throw toStoichiometryError(data, "stoichiometry.errors.fetchFailed", { status: response.statusText });
   }
 
   return parseOrThrow(StoichiometryResponseSchema, data);

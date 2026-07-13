@@ -144,7 +144,7 @@ describe("InputWrapper", () => {
         const { container } = render(
           <ThemeProvider theme={materialTheme}>
             <InputWrapper disabled={disabled} maxLength={maxLength} error={error} value={value} helperText={helperText}>
-              <div>Nothing here</div>
+              <div>{"Nothing here"}</div>
             </InputWrapper>
           </ThemeProvider>,
         );

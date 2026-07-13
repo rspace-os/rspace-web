@@ -8,6 +8,7 @@ import { faShapes } from "@fortawesome/free-solid-svg-icons/faShapes";
 import { faVolumeLow } from "@fortawesome/free-solid-svg-icons/faVolumeLow";
 import { FontAwesomeIcon as FaIcon } from "@fortawesome/react-fontawesome";
 import type React from "react";
+import type Resources from "@/modules/common/i18n/resources";
 import { COLORS as baseThemeColors } from "../../theme";
 import * as Parsers from "../../util/parsers";
 import Result from "../../util/result";
@@ -77,21 +78,25 @@ export const parseGallerySectionFromUrlSearchParams = (searchParams: URLSearchPa
     parseGallerySection,
   );
 
-/**
- * Mapping of gallery sections to a label that can be shown in the UI.
- */
-export const gallerySectionLabel = {
-  Images: "Images",
-  Audios: "Audio",
-  Videos: "Videos",
-  Documents: "Documents",
-  Chemistry: "Chemistry",
-  DMPs: "DMPs",
-  NetworkFiles: "Filestores",
-  Snippets: "Snippets",
-  Miscellaneous: "Miscellaneous",
-  PdfDocuments: "Exports",
-};
+type GallerySectionLabelKey = `sections.${keyof Resources["gallery"]["sections"]}`;
+
+const gallerySectionLabelKeys = {
+  Images: "sections.images",
+  Audios: "sections.audios",
+  Videos: "sections.videos",
+  Documents: "sections.documents",
+  Chemistry: "sections.chemistry",
+  DMPs: "sections.dmps",
+  NetworkFiles: "sections.networkFiles",
+  Snippets: "sections.snippets",
+  Miscellaneous: "sections.miscellaneous",
+  PdfDocuments: "sections.pdfDocuments",
+} satisfies Record<GallerySection, GallerySectionLabelKey>;
+
+export const translateGallerySectionLabel = (
+  section: GallerySection,
+  t: (key: GallerySectionLabelKey) => string,
+): string => t(gallerySectionLabelKeys[section]);
 
 /**
  * Mapping of gallery sections to icons that can be shown in the UI.

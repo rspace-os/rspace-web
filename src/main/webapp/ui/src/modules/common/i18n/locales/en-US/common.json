@@ -1,0 +1,936 @@
+{
+  "accessibilityTips": {
+    "buttonLabel": "Accessibility tips",
+    "elementTypes": {
+      "dialog": "dialog",
+      "page": "page"
+    },
+    "highContrast": {
+      "body": {
+        "disable": "To disable, turn off your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>",
+        "enable": "To enable, turn on your device's high contrast setting:<br/><externalLink href=\"https://support.microsoft.com/en-us/windows/change-color-contrast-in-windows-fedc744c-90ac-69df-aed5-c8a90125e696\">Windows</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/unac089/mac\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-us/111773\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
+      },
+      "enabled": "High contrast mode is enabled.",
+      "supported": "This {elementType} supports a high contrast mode."
+    },
+    "menuLabel": "Accessibility Tips",
+    "reducedMotion": {
+      "body": {
+        "disable": "To disable, turn off your device's reduced motion setting:<br/><externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>",
+        "enable": "To enable, turn on your device's reduced motion setting:<br/><externalLink href=\"https://support.apple.com/en-gb/guide/mac-help/mchlc03f57a1/14.0/mac/14.0\">macOS</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/iphone/iph0b691d3ed/ios\">iOS</externalLink>, <externalLink href=\"https://support.google.com/accessibility/android/answer/11183305\">Android</externalLink>"
+      },
+      "enabled": "Reduced motion mode is enabled.",
+      "supported": "This {elementType} supports a reduced motion mode."
+    },
+    "skipToContent": {
+      "instructions": "Press the \"Tab\" key to access skip links that allow you to jump directly to main page sections like navigation, content, and other landmarks.",
+      "navigation": "Skip to content navigation",
+      "skipToLandmark": "Skip to {landmark}",
+      "supported": "This {elementType} supports a skip-to-content menu for easier navigation."
+    },
+    "tip": "Tip",
+    "zoom": {
+      "body": "To enable, adjust your browser's settings:<br/><externalLink href=\"https://support.google.com/chrome/answer/96810?hl=en&co=GENIE.Platform%3DDesktop\">Chrome</externalLink>, <externalLink href=\"https://support.apple.com/en-gb/guide/safari/ibrw1068/mac\">Safari</externalLink>, <externalLink href=\"https://support.microsoft.com/en-us/microsoft-edge/accessibility-features-in-microsoft-edge-4c696192-338e-9465-b2cd-bd9b698ad19a\">Edge</externalLink>, <externalLink href=\"https://support.mozilla.org/en-US/kb/font-size-and-zoom-increase-size-of-web-pages\">Firefox</externalLink>",
+      "supported": "This {elementType} supports up to 200% zoom magnification."
+    }
+  },
+  "actions": {
+    "add": "Add",
+    "back": "Back",
+    "cancel": "Cancel",
+    "choose": "Choose",
+    "clear": "Clear",
+    "close": "Close",
+    "collapse": "Collapse",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "copy": "Copy",
+    "create": "Create",
+    "created": "Created",
+    "delete": "Delete",
+    "dismiss": "Dismiss",
+    "done": "Done",
+    "download": "Download",
+    "duplicate": "Duplicate",
+    "edit": "Edit",
+    "expand": "Expand",
+    "export": "Export",
+    "import": "Import",
+    "insert": "Insert",
+    "invite": "Invite",
+    "login": "Login",
+    "logOut": "Log Out",
+    "move": "Move",
+    "next": "Next",
+    "no": "No",
+    "none": "None",
+    "ok": "OK",
+    "open": "Open",
+    "publish": "Publish",
+    "remove": "Remove",
+    "republish": "Republish",
+    "resetZoom": "reset zoom",
+    "restore": "Restore",
+    "retry": "Retry",
+    "save": "Save",
+    "search": "Search",
+    "select": "Select",
+    "share": "Share",
+    "sign": "Sign",
+    "submit": "Submit",
+    "transfer": "Transfer",
+    "trash": "Trash",
+    "updated": "Updated",
+    "upload": "Upload",
+    "witness": "Witness",
+    "yes": "Yes",
+    "zoomIn": "zoom in",
+    "zoomOut": "zoom out"
+  },
+  "alerts": {
+    "countLabel": "There are currently {count} alerts.",
+    "detailsToggleLabel": "{count} sub-messages. Toggle to {expanded, select, true {hide} other {show}}",
+    "moreDetails": "And {count} more...",
+    "toastLabel": "{variant, select, success {success} warning {warning} error {error} notice {notice} other {alert}} alert",
+    "warning": "Warning"
+  },
+  "apiAuthentication": {
+    "warningMessage": "Some functionality will not be available until an authenticated session can be established. Please try logging in again in another window. If the issue persists, please contact support.",
+    "warningTitle": "Could not authenticate via API"
+  },
+  "apiDocs": {
+    "sources": {
+      "eln": "RSpace ELN",
+      "inventory": "RSpace Inventory"
+    }
+  },
+  "apiErrors": {
+    "chemicals": {
+      "loadElementFailed": "Problem loading chemical element.",
+      "loadElementsFailed": "Loading chemical elements failed.",
+      "saveFailed": "Error saving chemical compounds",
+      "searchFailed": "Error searching for chemical compounds"
+    },
+    "documents": {
+      "moveFailed": "Error moving document"
+    },
+    "folders": {
+      "createFailed": "Error creating folder",
+      "fetchFailed": "Error fetching folder",
+      "fetchTreeFailed": "Error fetching folder tree"
+    },
+    "groups": {
+      "fetchManyFailed": "Error fetching groups",
+      "fetchOneFailed": "Error fetching group"
+    },
+    "share": {
+      "createFailed": "Error creating share",
+      "deleteFailed": "Error deleting share",
+      "fetchFailed": "Error fetching sharing information",
+      "updateFailed": "Error updating share"
+    },
+    "unknown": "An unknown error occurred.",
+    "users": {
+      "fetchGroupMembersFailed": "Error fetching group members"
+    }
+  },
+  "appBar": {
+    "aboutRSpace": "About RSpace",
+    "accountMenu": "Account Menu",
+    "apps": "Apps",
+    "brandingAlt": "branding",
+    "closeSidebar": "close sidebar",
+    "dialogHeader": "dialog header",
+    "errorLoadingDetails": "Error loading your details",
+    "goTo": "Go to...",
+    "logOut": "Log Out",
+    "mainLinks": "main links",
+    "mainNavigation": "Main Navigation",
+    "maintenancePopup": "A scheduled maintenance window begins {relativeTime}.",
+    "messaging": "Messaging",
+    "notifications": "Notifications",
+    "notificationsAndMessages": "notifications and messages",
+    "openSidebar": "open sidebar",
+    "operatingAs": "Operating as:",
+    "orcidAdd": "Add an ORCID iD to your <internalLink to=\"/userform\">profile</internalLink>.",
+    "pageHeader": "page header",
+    "published": "Published",
+    "release": "Release",
+    "sections": {
+      "gallery": {
+        "subheader": "Your files in RSpace and connected filestores",
+        "title": "Gallery"
+      },
+      "inventory": {
+        "subheader": "Samples and laboratory resources",
+        "title": "Inventory"
+      },
+      "myRSpace": {
+        "subheader": "Your profile details, labgroups, and preferences",
+        "title": "My RSpace"
+      },
+      "system": {
+        "subheader": "System administration",
+        "title": "System"
+      },
+      "workspace": {
+        "subheader": "Notebooks and documents",
+        "title": "Workspace"
+      }
+    }
+  },
+  "confirmationDialog": {
+    "inputMismatch": "Input does not match confirmation text"
+  },
+  "dirtyNavigation": {
+    "leave": "Leave",
+    "message": "Changes that you made will not be saved.",
+    "title": "Leave the editor?"
+  },
+  "enhancedTableHead": {
+    "selectAllLabel": "select/deselect all"
+  },
+  "errorBoundary": {
+    "message": "Something went wrong! Please refresh the page. If this error persists, please contact <externalLink href=\"mailto:support@researchspace.com\">support@researchspace.com</externalLink> with details of when the issue happens."
+  },
+  "folderSelectionDialog": {
+    "selectedFolder": "Selected folder",
+    "selectedFolderWithColon": "Selected folder:",
+    "title": "Select Folder"
+  },
+  "folderTree": {
+    "addSubfolder": "Add subfolder to {folderName}",
+    "createFolder": {
+      "folderName": "Folder Name",
+      "title": "Create New Folder"
+    },
+    "errors": {
+      "failedFolders": "Failed to load folders",
+      "failedSubfolders": "Failed to load subfolders",
+      "folderNameRequired": "Folder name is required"
+    },
+    "loading": "Loading...",
+    "loadMore": "Load More",
+    "sharedFolderLabel": "tree view of shared folder"
+  },
+  "galleryPicker": {
+    "selectionRequired": "Select at least one file to proceed."
+  },
+  "groupDetails": {
+    "members": "Members",
+    "principalInvestigators": "Principal Investigators",
+    "users": "Users",
+    "viewGroup": "View Group"
+  },
+  "help": {
+    "apiDirect": "v0dxtfvj7u-api-direct-access",
+    "appsIntroduction": "08ky7o0l1y-apps-introduction",
+    "argos": "vkd8mt2ffb-argos-integration",
+    "attachments": "ory7fu1uw9-attachments",
+    "barcodes": "nr29uf0fdr-scan-and-use-barcodes",
+    "barcodesPrinting": "nr29uf0fdr-scan-and-use-barcodes#barcode_printing",
+    "changelog": "mx11qvqg0i-changelog",
+    "chemistry": "wfxm4xwtio-chemistry-integration",
+    "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
+    "clustermarket": "e6pb7y8ak1-calira-integration",
+    "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
+    "createContainer": "e5v4bvcl61-create-a-container",
+    "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
+    "createInstrument": "ct15xwb13m-create-an-instrument",
+    "createInstrumentTemplate": "5f0lakn5nl-create-an-instrument-template",
+    "createSample": "gb3r1lgm5g-create-a-sample",
+    "createTemplate": "c8sxesdqpy-create-a-template",
+    "createTemplateFromSample": "c8sxesdqpy-create-a-template#create_a_template_from_a_sample",
+    "dataverse": "h14qd5tvjj-dataverse-integration",
+    "dcd": "jj6grnzbdl-digital-commons-data-integration",
+    "dmpassistant": "n88a3g86e0-dmp-assistant-integration",
+    "dmponline": "pd84qoylzy-dmponline-integration",
+    "dmptool": "o0wlhlgxnr-dmptool-integration",
+    "dmptoolImportingDmps": "o0wlhlgxnr-dmptool-integration#importing_dmps_into_rspace",
+    "dryad": "i1xvubndhm-dryad-integration",
+    "dsw": "6adimrmy9m-dsw-fair-wizard-integration",
+    "editLocationsInVisualContainers": "jya8j336dt-edit-locations-in-visual-containers",
+    "evernote": "9ckpmfdq8m-evernote-integration",
+    "fieldmark": "idbaaggghu-fieldmark-integration",
+    "figshare": "ir4ybsamcn-figshare-integration",
+    "galaxy": "zzsl46jo5y-galaxy-integration",
+    "gallery": "sl6mo1i9do-gallery",
+    "gettingStarted": "tffkwcpizj-getting-started",
+    "github": "y2080yw30x-github-integration",
+    "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
+    "import": "a5zm2c3vtw-import-records",
+    "irods": "xt21074dln-irods-integration",
+    "jupyter": "gg0ao0rqpt-jupyter-integration",
+    "listOfMaterials": "cdrc4ed67l-list-of-materials",
+    "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
+    "moving": "dncoti2i4t-moving-items",
+    "nextcloud": "na3hn8ilee-nextcloud-integration",
+    "omero": "bwwbpkll90-omero-integration",
+    "orcid": "yhkbtnj61a-orcid-integration",
+    "owncloud": "v8ss2uso0a-owncloud-integration",
+    "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
+    "permissions": "n09nmg4ax7-permissions",
+    "protocolsio": "nid9q64pas-protocols-io-integration",
+    "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
+    "pyrat": "9kkeooveia-pyrat-integration",
+    "pyratCors": "9kkeooveia-pyrat-integration#cors",
+    "raid": "zb4c2c8a4b-raid-integration",
+    "search": "e0fngo8a5s-search-inventory",
+    "slack": "74r6scvv8g-slack-integration",
+    "taggingUsers": "zw6o5uh4qv-tagging-users",
+    "tags": "8ujmvpa1no-controlled-vocabularies",
+    "teams": "i95u9itfgu-microsoft-teams-integration",
+    "updateAllSamplesOfTemplate": "c8sxesdqpy-create-a-template#update_all_of_your_samples_to_latest_template_version",
+    "videoIntegration": "cdzdub1ykw-video-integrations",
+    "zebraPrinter": "nr29uf0fdr-scan-and-use-barcodes#using_a_zebra_printer",
+    "zenodo": "8i37k8kjqz-zenodo-integration"
+  },
+  "helpDocs": {
+    "chatWithUs": "Chat with us",
+    "documentation": "RSpace Documentation",
+    "openHelp": "Open Help",
+    "rspaceAlt": "RSpace",
+    "searchPlaceholder": "Type to search for articles...",
+    "suggestedArticles": "Suggested Articles",
+    "viewAllArticles": "View All Articles"
+  },
+  "imageEditingDialog": {
+    "rotateClockwise": "rotate clockwise",
+    "rotateCounterClockwise": "rotate counter clockwise",
+    "title": "Edit Image"
+  },
+  "inputs": {
+    "chooseToEdit": {
+      "label": "Batch edit this field"
+    },
+    "dateField": {
+      "invalidDate": "Invalid date."
+    },
+    "dynamicallyLoadedImageEditor": {
+      "loadError": "Could not load the image editor at this time. Please check your network connection and refresh."
+    },
+    "fileField": {
+      "loadFailed": "Failed to load file. Please try again."
+    },
+    "imageField": {
+      "addImage": "Add Image",
+      "replaceImage": "Replace Image"
+    },
+    "optionField": {
+      "deleteNewOption": "Delete New Option",
+      "deleteOption": "Delete Option: {option}",
+      "emptyOption": "Option value cannot be empty",
+      "noOptionSelected": "No option selected",
+      "placeholder": "Option {index}"
+    },
+    "referenceField": {
+      "notYetSupported": "Not yet supported."
+    },
+    "selectedFileInfo": {
+      "invalidFile": "Invalid file.",
+      "label": "File selected:"
+    },
+    "unitSelect": {
+      "quantityUnits": "Quantity units"
+    }
+  },
+  "integrationErrors": {
+    "calira": {
+      "invalidToken": "Invalid Calira user or client token. Please re-connect to Calira.",
+      "notFound": "Please contact an Admin: Calira returned HTTP status 404. Is Calira endpoint set correctly?"
+    },
+    "omero": {
+      "notFound": "The requested data was not found on this instance of Omero",
+      "sessionExpired": "Your session with Omero has expired. Please re-connect to Omero on the Apps page."
+    },
+    "serverUnavailable": "The {appName} server at <serverLink>{url}</serverLink> is down, or CORS for this server has not been configured properly. If you are responsible for setting up the {appName} integration, open developer tools and have a look at the console and/or the network tab to find out what the issue is.",
+    "timeout": "Request timed out.",
+    "title": "Error",
+    "tryAgainLater": "There is a problem, please try again later",
+    "unknownRelogin": "Unknown issue, please attempt to relogin to RSpace."
+  },
+  "ketcher": {
+    "discardChangesDialog": {
+      "discard": "Discard",
+      "keepEditing": "Keep Editing",
+      "text": "You have unsaved changes. Are you sure you want to discard them?",
+      "title": "Discard changes?"
+    },
+    "insertChemicalTitle": "Ketcher Insert Chemical",
+    "viewerTitle": "Ketcher Chemical Viewer (Read-Only)"
+  },
+  "loading": "Loading",
+  "profile": {
+    "accountActivity": {
+      "action": "Action",
+      "show": "Show account activity",
+      "time": "Time",
+      "title": "User's account activity"
+    },
+    "groups": {
+      "activity": {
+        "action": "Action",
+        "show": "Show group activity",
+        "time": "Time",
+        "title": "User's group activity"
+      },
+      "autosharing": {
+        "additionalInfo": {
+          "body": "<p>Enabling autosharing for a member will ensure that all their current and future documents and notebooks will be shared automatically with the \"read\" permission with this group.</p><p>Edit permission can be granted or items can be unshared through the \"Manage Shared Documents\" section as usual.</p><p>This setting is revertible and you can always manually change the autoshare status of any non-PI member in your lab group.</p>",
+          "title": "Additional Information",
+          "toggle": "Toggle additional information"
+        },
+        "disable": "Disable autosharing",
+        "disabled": "Disabled",
+        "disableGroup": {
+          "button": "disable autosharing",
+          "text": "Disabling group-wide autosharing will unshare all work shared by non-PI members in the <strong>{groupDisplayName}</strong> group. Once disabled, new non-PI members will no longer have autosharing automatically enabled on joining.",
+          "title": "Disable group-wide autosharing"
+        },
+        "disableStarted": "Reverting autoshare for {group} started successfully. You will receive a notification once it is complete.",
+        "disableSuccess": "Autoshare for {group} was disabled successfully.",
+        "disableUserText": "Disabling autosharing will unshare all work for user <strong>{username}</strong> from group <strong>{group}</strong>.<br/><br/>Individual documents and notebooks can still be shared as usual.",
+        "enable": "Enable autosharing",
+        "enableAsyncSuccess": "Autoshare for {group} was enabled successfully. You will receive a notification once it is complete.",
+        "enabled": "Enabled",
+        "enableGroup": {
+          "button": "enable autosharing",
+          "text": "Enabling group-wide autosharing will enable autosharing for all non-PI members in the <strong>{groupDisplayName}</strong> group. Once enabled, new non-PI members will have autosharing automatically enabled on joining.",
+          "title": "Enable group-wide autosharing"
+        },
+        "enableSuccess": "Autoshare for {group} was enabled successfully.",
+        "enableUserText": "Autosharing work will ensure that all current and future documents and notebooks for user <strong>{username}</strong> will be shared with group<strong> {group}</strong> with the READ permission.<br/><br/>The EDIT permission can be granted or items can be unshared from the \"Manage Shared Documents\" section as usual.<br/><br/>Please enter a name for the folder that the work will be shared into.",
+        "folderName": "Folder name",
+        "genericError": "Something went wrong. Please, contact support if the issue persists.",
+        "inProgress": "Autosharing is in progress",
+        "memberStatus": {
+          "notApplicable": "n/a"
+        },
+        "notApplicable": "n/a",
+        "onlyLabGroups": "Autosharing is only possible for LabGroups",
+        "settingInProgress": "Please allow some time for the setting to take into-effect. You will receive a notification when it is complete"
+      },
+      "bioOntologies": {
+        "allow": {
+          "button": "allow BioPortal Ontologies",
+          "citation": "Whetzel PL, Noy NF, Shah NH, Alexander PR, Nyulas C, Tudorache T, Musen MA. BioPortal: enhanced functionality via new Web services from the National Center for Biomedical Ontology to access and use ontologies in software applications. Nucleic Acids Res. 2011 Jul;39(Web Server issue):W541-5. Epub 2011 Jun 14.",
+          "text": "Allowing BioPortal Ontologies for tags will query data from the <externalLink href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</externalLink> and use the values to generate tag suggestions",
+          "title": "Allow BioPortal Ontologies to be used for tag suggestions"
+        },
+        "disabledButton": "disallow Ontologies",
+        "disallow": {
+          "button": "disallow BioPortal Ontologies",
+          "text": "Disallowing use of BioPortal Ontologies will restrict tag suggestions: values from the <externalLink href=\"https://bioportal.bioontology.org/ontologies\"> BioPortal Ontologies Portal</externalLink> will no longer be suggested.",
+          "title": "Disallow BioPortal Ontologies to be used for tag suggestions"
+        }
+      },
+      "dialog": {
+        "addError": "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
+        "availableUsers": "Available users",
+        "membersTitle": "{action} members",
+        "selectedUsers": "Selected users"
+      },
+      "editBar": {
+        "cancel": "Cancel",
+        "editTooltip": "Edit profile settings",
+        "errorMessage": "Your request failed: {error}. Please contact support if this problem persists.",
+        "hideGroup": "Hide the group from public listings",
+        "noProfile": "There is no profile information for this group.",
+        "piCanEdit": "PI can edit all work in this lab group.",
+        "placeholder": "Please enter a short description of this group...",
+        "profileDescription": "Profile description",
+        "save": "Save",
+        "subheader": "Profile"
+      },
+      "groupActivity": {
+        "title": "Group Activity",
+        "user": "User"
+      },
+      "manager": {
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "contactAdmin": "Please contact your system administrator to enable this feature",
+        "notAvailableForCollaboration": "Not available for collaboration groups",
+        "onlyEnterprise": "Only available on Enterprise"
+      },
+      "members": "Members",
+      "ontologies": {
+        "disabledButton": "disable Ontologies",
+        "enforce": {
+          "button": "enforce Ontologies",
+          "text": "Enforcing ontologies for tags will result in all new tags coming from autopopulated values read from ontology files. These ontology files must be shared with a Group and any user creating new tags must be a member of that Group. Collaboration Groups can be used for this purpose. Tags can not be created from free text and will not autopopulate from existing tags.",
+          "title": "Enforce ontologies for tags"
+        },
+        "unenforce": {
+          "button": "un-enforce Ontologies",
+          "text": "Un-enforcing use of ontologies for tags will result in group members being able to enter free text when creating new tags. They may also use values autopopulated from ontology files. These ontology files may be their own, or may be files shared with them. They may also use values autopopulated from existing tags.",
+          "title": "Un-enforce use of ontologies for tags"
+        }
+      },
+      "publication": {
+        "disable": {
+          "button": "disable publication",
+          "text": "Disabling group-wide publication will prevent non PI members of the <strong>{groupDisplayName}</strong> group publishing their own documents. They may still unpublish previously published documents.",
+          "title": "Disable group-wide publication"
+        },
+        "disabledButton": "disable publication",
+        "enable": {
+          "button": "enable publication",
+          "text": "Enabling group-wide publication will allow non-PI members in the <strong>{groupDisplayName}</strong> group to publish and unpublish their own documents. PIs can also unpublish these documents.",
+          "title": "Enable group publication"
+        }
+      },
+      "seo": {
+        "disable": {
+          "button": "disable published seo",
+          "text": "Disabling group-wide SEO of public documents will prevent non PI members of the <strong>{groupDisplayName}</strong> group from allowing SEO bots to index their documents. Their published documents will not appear on the 'Published' page visible to the public.",
+          "title": "Disable group-wide SEO of public documents"
+        },
+        "disabledButton": "disable published seo",
+        "enable": {
+          "button": "enable published seo",
+          "text": "Enabling group-wide SEO for published documents will allow non-PI members in the <strong>{groupDisplayName}</strong> group to choose to have their documents indexed by SEO bots. These documents will also be shown on the 'Published' page visible to the public.",
+          "title": "Enable group-wide SEO for published documents"
+        }
+      },
+      "table": {
+        "actions": "Actions",
+        "autosharing": "Autosharing",
+        "group": "Group",
+        "label": "enhanced table",
+        "role": "Role"
+      },
+      "title": "Groups",
+      "userList": {
+        "search": "Search..."
+      }
+    },
+    "oauth": {
+      "connectedApps": {
+        "confirmDisconnectText": "Are you sure you want to revoke access from <strong>{clientName}</strong>?",
+        "confirmDisconnectTitle": "Confirm Disconnect",
+        "disconnect": "Disconnect",
+        "disconnectErrorMessage": "There was a problem disconnecting app with client ID {clientId}. Please contact support if the problem persists.",
+        "disconnectErrorTitle": "Unable to disconnect app",
+        "disconnectSuccessMessage": "App with client ID {clientId} was successfully disconnected.",
+        "disconnectSuccessTitle": "App disconnected",
+        "show": "Show Connected Apps",
+        "title": "Connected Apps"
+      },
+      "createdApps": {
+        "confirmDeleteText": "Are you sure you want to delete <strong>{appName}</strong>? All access and refresh tokens will be revoked.",
+        "confirmDeleteTitle": "Confirm Deletion",
+        "deleteErrorMessage": "There was a problem deleting app with client ID {clientId}.",
+        "deleteErrorTitle": "Unable to delete app",
+        "deleteExceptionMessage": "There was a problem deleting app with client ID {clientId}: {error}.",
+        "deleteSuccessMessage": "App with client ID {clientId} was successfully deleted.",
+        "deleteSuccessTitle": "App successfully deleted",
+        "show": "Show Created OAuth Apps",
+        "title": "OAuth Apps"
+      },
+      "dialog": {
+        "addNewApp": "Add a new app",
+        "appName": "App name",
+        "clientSecret": "Client Secret",
+        "confirmAppName": "Type OAuth app name to confirm",
+        "copy": "Copy",
+        "copyError": "Couldn't copy to clipboard. Try again manually.",
+        "copySuccess": "Copied to clipboard",
+        "createdTitle": "App Successfully Created",
+        "createError": "There was a problem while creating your application. Please, try again later or contact support.",
+        "createTitle": "Create an OAuth application",
+        "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
+        "validation": {
+          "alphanumeric": "The application name should only contain alphanumeric symbols.",
+          "maxLength": "The application name should be less than 100 symbols."
+        }
+      },
+      "fetchError": "There was a problem fetching your apps. Please, try again.",
+      "table": {
+        "actions": "Actions",
+        "appName": "App Name",
+        "clientId": "Client ID",
+        "label": "enhanced table",
+        "scope": "Scope"
+      }
+    },
+    "raidConnections": {
+      "adding": "Adding...",
+      "confirmDisassociateText": "Are you sure you want to disassociate the RAiD identifier <strong>{raidTitle}</strong> ({raidIdentifier}) from this project group?",
+      "confirmDisassociateTitle": "Confirm Disassociation",
+      "currentlyConnectedTo": "<strong>Currently connected to:</strong> {raid}",
+      "disabledForProjectType": "RAiD is disabled for this project - only project groups can have RAiD connections.",
+      "disassociate": "Disassociate",
+      "errorLoadingGroupInfo": "Error loading group info: {error}",
+      "errorLoadingIntegrationInfo": "Error loading RAiD integration info: {error}",
+      "errorPrefix": "Error: {error}",
+      "groupNotFound": "Group not found, or you may not have permission to view this group.",
+      "identifier": "RAiD Identifier",
+      "loadOptionsError": "Error loading RAiD identifier options: {error}",
+      "noConnectedServers": "RAiD has been enabled, but no RAiD servers have been connected yet. Please go to the <internalLink to=\"/apps\">Apps page</internalLink> and add a RAiD server.",
+      "noOptions": "No valid available RAiD found, or the RAiD has been used by another project group.",
+      "notAvailable": "RAiD is not available for this RSpace instance. Please contact your system administrator to enable RAiD.",
+      "notConnected": "Not connected",
+      "notEnabled": "RAiD is not enabled for your account. To add or change RAiD connections, go to the <internalLink to=\"/apps\">Apps page</internalLink> and enable RAiD.",
+      "previouslyConnectedTo": "<strong>Previously connected to:</strong> {raid}",
+      "title": "RAiD Connections",
+      "validation": {
+        "identifierMinLength": "RAiD identifier must be at least 3 characters",
+        "identifierRequired": "RAiD identifier is required"
+      }
+    }
+  },
+  "pubchemImport": {
+    "importing": "Importing...",
+    "importSelected": "Import Selected",
+    "title": "Import from PubChem"
+  },
+  "recordTypes": {
+    "document": {
+      "lower": "document",
+      "singular": "Document"
+    },
+    "galleryFile": {
+      "lower": "gallery file",
+      "singular": "Gallery file"
+    },
+    "item": {
+      "lower": "item",
+      "singular": "Item"
+    },
+    "notebook": {
+      "lower": "notebook",
+      "singular": "Notebook"
+    },
+    "record": {
+      "lower": "record",
+      "singular": "Record"
+    }
+  },
+  "search": {
+    "clearTooltip": "Clear search",
+    "placeholder": "Search..."
+  },
+  "searchDialog": {
+    "advancedSearch": "advanced search",
+    "apachePage": "Apache page",
+    "expandField": "Expand field",
+    "luceneTip": "Tip: Create powerful Lucene queries by prefixing your query with <code>l:</code>",
+    "moreInfo": "For more information, see <helpDocs docLink=\"luceneSyntax\">advanced search</helpDocs> and the related <externalLink href=\"https://lucene.apache.org/core/2_9_4/queryparsersyntax.html\">Apache page</externalLink>.",
+    "query": "Search query"
+  },
+  "sections": {
+    "audios": "Audio",
+    "chemistry": "Chemistry",
+    "dmps": "DMPs",
+    "documents": "Documents",
+    "images": "Images",
+    "miscellaneous": "Miscellaneous",
+    "networkFiles": "Filestores",
+    "pdfDocuments": "Exports",
+    "snippets": "Snippets",
+    "videos": "Videos"
+  },
+  "shareDialog": {
+    "addUsersOrGroups": "Add users or groups to share with",
+    "autocomplete": {
+      "label": "Add RSpace users or groups",
+      "noMatches": "No matches found. You can only share with groups you are in, and users in groups you are in.",
+      "placeholder": "Type to filter groups and users..."
+    },
+    "changeFolder": "Change Folder",
+    "changeLocation": "Change",
+    "columns": {
+      "location": "Location",
+      "notebook": "Notebook",
+      "permission": "Permission",
+      "sharedWith": "Shared With",
+      "type": "Type"
+    },
+    "locationLabel": "Location: {location}",
+    "multipleSelection": {
+      "allItems": "All {count} {itemType, select, snippet {snippets} other {documents}}",
+      "description": "Use the field above to add new shares. The share status of multiple {itemType, select, snippet {snippets} other {documents}} can be edited on the <internalLink to=\"/record/share/manage\">shared {itemType, select, snippet {snippets} other {documents}} page</internalLink>.",
+      "heading": "Adding shares to {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
+      "newSharesHeading": "New shares to be added:",
+      "someItems": "{documentCount} of {totalCount} {itemType, select, snippet {snippets} other {documents}}"
+    },
+    "noDirectShares": "This {itemType, select, snippet {snippet} other {document}} is not directly shared with anyone.",
+    "notebookShares": {
+      "heading": "As {docName} is shared into Notebooks, it is also shared with:",
+      "inheritedPermissions": "Items in Notebooks inherit the Notebook's permissions. Contact the notebook's owner to alter the notebook's permissions."
+    },
+    "optionDescriptions": {
+      "alreadyShared": "All of the {itemType, select, snippet {snippets} other {documents}} have already been shared with {recipientName}",
+      "group": "{type} • {memberCount} members",
+      "user": "User • {username} • {email}"
+    },
+    "permissions": {
+      "edit": "Edit",
+      "read": "Read",
+      "remove": "Remove",
+      "unshare": "Unshare"
+    },
+    "permissionSelectLabel": "Set permission for sharing with {recipientName}",
+    "selectSharedFolderLocation": "Select Shared Folder Location",
+    "snippetsSharedNote": "Shared snippets can be found in the <strong>SNIPPETS_Shared</strong> folder, inside the Snippets section of the Gallery.",
+    "thisItem": "this {itemType, select, snippet {snippet} other {document}}",
+    "titleMultiple": "Share {count, plural, one {# {itemType, select, snippet {snippet} other {document}}} other {# {itemType, select, snippet {snippets} other {documents}}}}",
+    "titleSingle": "Share <strong>{name}</strong>",
+    "updatedSuccessfully": "Shares updated successfully."
+  },
+  "stoichiometry": {
+    "addReagent": {
+      "addChemical": "Add Chemical",
+      "menuLabel": "add chemical menu",
+      "name": "Name",
+      "smilesString": "SMILES String",
+      "sources": {
+        "gallery": {
+          "subheader": "Import compound from Gallery",
+          "title": "Gallery"
+        },
+        "manual": {
+          "subheader": "Manually enter SMILES",
+          "title": "Manually"
+        },
+        "pubChem": {
+          "dialogTitle": "Insert from PubChem",
+          "subheader": "Import compound from PubChem",
+          "title": "PubChem"
+        }
+      },
+      "title": "Add New Chemical",
+      "validation": {
+        "busy": "Please wait for the current reagent to be processed before adding another.",
+        "nameRequired": "Name is required",
+        "smilesRequired": "SMILES string is required"
+      }
+    },
+    "dialog": {
+      "calculate": "Calculate Stoichiometry",
+      "calculatePrompt": "Click the button below to calculate the stoichiometry data for this chemical compound.",
+      "calculating": "Calculating...",
+      "chemistryDisabledTitle": "Chemistry Integration Disabled",
+      "chemistryStatusErrorTitle": "Error Checking Chemistry Integration",
+      "deleteError": "Failed to delete this stoichiometry table. Please try again.",
+      "deleteMessage": "Are you sure you want to delete this stoichiometry table? This action cannot be undone.",
+      "deleteTitle": "Delete Stoichiometry Table",
+      "discardChangesConfirm": "Discard",
+      "discardChangesMessage": "Closing the dialog will discard the unsaved changes.",
+      "discardChangesTitle": "Discard changes?",
+      "editInstructions": "Double-click to edit Equivalent, Mass, Moles, Actual Mass, Actual Moles, or Notes. Yield/Excess values are calculated automatically, as are each pairing of moles and mass.",
+      "loadingMoleculeInformation": "Loading molecule information...",
+      "loadingTable": "Loading stoichiometry table...",
+      "reactionTable": "Reaction Table",
+      "saveChanges": "Save Changes",
+      "saveError": "Failed to save stoichiometry changes. Please try again."
+    },
+    "errors": {
+      "calculateFailed": "Failed to calculate stoichiometry: {status}",
+      "deductStockFailed": "Failed to deduct stock: {status}",
+      "deleteFailed": "Failed to delete stoichiometry: {status}",
+      "fetchFailed": "Failed to fetch stoichiometry: {status}",
+      "moleculeInfoFailed": "Failed to retrieve molecule information: {status}",
+      "updateFailed": "Failed to update stoichiometry: {status}"
+    },
+    "gallery": {
+      "chemistryFilesOnly": "Only chemistry files can be added to stoichiometry tables",
+      "loadingPicker": "Loading gallery picker"
+    },
+    "inventoryLink": {
+      "add": "Add inventory link",
+      "addForMolecule": "Add inventory link for {molecule}",
+      "alreadyLinked": "The inventory item is already linked.",
+      "deleted": "Link Deleted",
+      "insufficientStock": "Insufficient Stock",
+      "pickerTitle": "Pick inventory item for {molecule}",
+      "remove": "Remove inventory link",
+      "removeForMolecule": "Remove inventory link for {molecule}",
+      "stockDeducted": "Stock deducted",
+      "undo": "Undo deleting link",
+      "undoForMolecule": "Undo deleting inventory link for {molecule}"
+    },
+    "inventoryUpdate": {
+      "cannotReplenish": "Stock cannot be automatically replenished if you change quantities later, delete this stoichiometry table, delete the document, or unlink samples.",
+      "dialogTitle": "Update Inventory Stock",
+      "inStock": "In Stock",
+      "irreversibleTitle": "WARNING: This action is irreversible",
+      "irreversibleWarningLabel": "Action irreversible warning",
+      "linkedStockUnavailable": "Linked stock information is unavailable, so this molecule cannot be updated.",
+      "linkRequired": "Link an inventory item before updating stock.",
+      "loadingInventoryQuantities": "Loading inventory stock information...",
+      "missingActualMass": "Define actual mass before updating linked inventory stock.",
+      "molecule": "Molecule",
+      "moleculeCannotBeUpdated": "This molecule cannot be updated.",
+      "negativeFieldError": "{field} cannot be negative",
+      "noDataToSave": "No stoichiometry data to save",
+      "noDataToUpdateStock": "No stoichiometry data available to update stock",
+      "nonMassInventoryQuantity": "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
+      "permanentlyReduceWarning": "This will permanently reduce inventory quantities.",
+      "proceedIfUsed": "Only proceed if you have actually used these materials in your experiment.",
+      "remaining": "Remaining",
+      "saveBeforeUpdate": "Save the stoichiometry table before updating inventory stock.",
+      "saveError": "{message} Current stock amounts were refreshed where possible.",
+      "saveFeedback": "Current stock amounts were refreshed. Re-select any remaining molecules to retry.",
+      "saving": "Saving...",
+      "selectionError": "Re-select any invalid molecules before saving.",
+      "selectMoleculeLabel": "Select molecule",
+      "selectMolecules": "Select the molecules from this stoichiometry table whose linked inventory stock should be updated.",
+      "stockDeductedWarning": "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule.",
+      "unnamedMolecule": "Unnamed molecule",
+      "updateInventoryStock": "Update Inventory Stock",
+      "updateStockError": "Failed to update inventory stock.",
+      "willUse": "Will Use"
+    },
+    "plugin": {
+      "emptyTablePlaceholder": "Empty Stoichiometry Table",
+      "insertActionAlias": "Stoichiometry",
+      "insertActionText": "Stoichiometry Table",
+      "insertTooltip": "Insert reaction table",
+      "noPreview": "Stoichiometry Table (no preview)"
+    },
+    "table": {
+      "columns": {
+        "actions": "Actions",
+        "actualMass": "Actual Mass (g)",
+        "actualMoles": "Actual Moles (mol)",
+        "equivalent": "Equivalent",
+        "inventoryLink": "Inventory Link",
+        "limitingReagent": "Limiting Reagent",
+        "mass": "Mass (g)",
+        "molecularWeight": "Molecular Weight (g/mol)",
+        "moles": "Moles (mol)",
+        "name": "Name",
+        "notes": "Notes",
+        "type": "Type",
+        "yieldExcess": "Yield/Excess (%)"
+      },
+      "label": {
+        "deleteReagent": "Delete reagent {name}",
+        "selectLimitingReagent": "Select {name} as limiting reagent",
+        "typeSelect": "Select type for {name}"
+      },
+      "roles": {
+        "product": "Product",
+        "reactant": "Reactant",
+        "reagent": "Reagent"
+      }
+    },
+    "tableToolbar": {
+      "columns": "Columns",
+      "exportToCsv": "Export to CSV"
+    }
+  },
+  "tags": {
+    "addTag": "Add Tag",
+    "checkOntologyFiles": "Please check that the ontology files are correctly configured.",
+    "errorFetchingTags": "Error fetching tags",
+    "filterSuggestedTags": "Filter suggested tags",
+    "label": "Tags",
+    "loading": "Loading...",
+    "metadata": {
+      "controlledVocabularyName": "Controlled Vocabulary Name",
+      "controlledVocabularyVersion": "Controlled Vocabulary Version",
+      "term": "Term",
+      "termUri": "Term's URI",
+      "view": "View metadata"
+    },
+    "noMatchingSuggestions": "No matching tag suggestions.",
+    "noMatchingSuggestionsFromOntologies": "No matching tag suggestions from ontologies.",
+    "noName": "no name",
+    "noTagsAvailable": "No tags available",
+    "tryAgain": "Please try again.",
+    "typeTagInstead": "Simply type in the tag and press enter instead.",
+    "useNewTagHint": "To use a new tag, press Enter.",
+    "validation": {
+      "alreadySelected": "Tag is already selected.",
+      "fromSource": "From version {version} of {filename}",
+      "invalidChar": "Tag contains invalid character \"{char}\".",
+      "notFromOntology": "Not from an ontology",
+      "tooLong": "Tag cannot exceed {maxLength} characters.",
+      "tooShort": "Tag must be at least {minLength} characters long.",
+      "whitespaceConsecutive": "Tags cannot contain consecutive whitespace characters.",
+      "whitespacePrefix": "Tags cannot start with whitespace characters.",
+      "whitespaceSuffix": "Tags cannot end with whitespace characters."
+    }
+  },
+  "timeAgo": {
+    "inLessThanOneMinute": "in < 1 minute",
+    "lessThanOneMinuteAgo": "< 1 minute ago"
+  },
+  "toolbar": {
+    "createDocument": "CREATE DOCUMENT",
+    "createRecord": "Create a record",
+    "displayingLockedVersion": "Displaying version {version} of the document - this is locked for editing.",
+    "folder": "Folder",
+    "folderIcon": "Folder icon",
+    "fromEvernote": "From Evernote",
+    "fromForm": "From Form",
+    "fromProtocolsIo": "From Protocols.io",
+    "fromTemplate": "From Template",
+    "fromWord": "From Word",
+    "hideTreeBrowser": "Hide tree browser",
+    "microsoftTeams": "Microsoft Teams",
+    "newEntry": "New entry",
+    "newForm": "New Form",
+    "notebook": "Notebook",
+    "notebookIcon": "Notebook Icon",
+    "notifications": "Notifications",
+    "print": "Print",
+    "protocolsIoIcon": "Protocols.io Icon",
+    "receivedMessages": "Received messages",
+    "saveAndClone": "Save & Clone",
+    "saveAndClose": "Save & Close",
+    "saveAndNew": "Save & New",
+    "saveAndView": "Save & View",
+    "saveAsTemplate": "SAVE AS TEMPLATE",
+    "saveAsTemplateTitle": "Save as Template",
+    "sendMessage": "Send a message",
+    "sendMessageOnMicrosoftTeams": "Send message on MicrosoftTeams",
+    "sendMessageOnSlack": "Send message on Slack",
+    "slack": "Slack"
+  },
+  "treeSort": {
+    "direction": {
+      "ascending": "Ascending",
+      "descending": "Descending"
+    },
+    "order": {
+      "creationDate": "Creation Date",
+      "lastModified": "Last Modified",
+      "name": "Name"
+    }
+  },
+  "userDetails": {
+    "accountDisabled": "Disabled",
+    "accountEnabled": "Enabled",
+    "accountStatus": "Account Status",
+    "email": "Email",
+    "lastLogin": "Last login:",
+    "openProfile": "Open profile",
+    "roleAt": "{role} at",
+    "roles": {
+      "pi": "PI",
+      "user": "User"
+    },
+    "sendMessage": "Send a message"
+  },
+  "values": {
+    "none": "None",
+    "noValue": "No Value",
+    "unknown": "Unknown"
+  },
+  "versionLockPicker": {
+    "columns": {
+      "modified": "Modified",
+      "version": "Version"
+    },
+    "label": "Version Lock Picker",
+    "latest": "Latest",
+    "versionValue": "Version {version}"
+  },
+  "warningBar": {
+    "unsavedChanges": "Unsaved changes"
+  }
+}

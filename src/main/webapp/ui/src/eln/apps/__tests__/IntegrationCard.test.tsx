@@ -20,7 +20,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -41,7 +41,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -62,7 +62,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -83,7 +83,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -93,7 +93,7 @@ describe("IntegrationCard", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
   test("DialogContent should be shown once card has been tapped.", () => {
@@ -108,7 +108,7 @@ describe("IntegrationCard", () => {
           update={() => {}}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           setupSection="Some dialog content"
         />
@@ -117,7 +117,7 @@ describe("IntegrationCard", () => {
 
     expect(screen.queryByText("Some dialog content")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
     expect(screen.getByText("Some dialog content")).toBeInTheDocument();
   });
   test("When tapped, the enable button should invoke update.", () => {
@@ -133,7 +133,7 @@ describe("IntegrationCard", () => {
           update={update}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -141,9 +141,9 @@ describe("IntegrationCard", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "ENABLE" }));
+    fireEvent.click(screen.getByRole("button", { name: "apps:integrationCard.enable" }));
     expect(update).toHaveBeenCalledWith("ENABLED");
   });
   test("When tapped, the disable button should invoke update.", () => {
@@ -159,7 +159,7 @@ describe("IntegrationCard", () => {
           update={update}
           usageText=""
           helpLinkText="test"
-          docLink=""
+          docLink="teams"
           website=""
           // biome-ignore lint/complexity/noUselessFragments: initial biome migration
           setupSection={<></>}
@@ -167,9 +167,9 @@ describe("IntegrationCard", () => {
       </ThemeProvider>,
     );
 
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByRole("button", { name: "SomeIntegration" }));
 
-    fireEvent.click(screen.getByRole("button", { name: "DISABLE" }));
+    fireEvent.click(screen.getByRole("button", { name: "apps:integrationCard.disable" }));
     expect(update).toHaveBeenCalledWith("DISABLED");
   });
 });

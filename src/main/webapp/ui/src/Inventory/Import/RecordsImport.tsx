@@ -6,9 +6,11 @@ import Tabs from "@mui/material/Tabs";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { HeadingContext } from "@/components/DynamicHeadingLevel";
-import docLinks from "../../assets/DocLinks";
+import { makeListFormatter } from "@/modules/common/i18n/listFormat";
+import { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import CustomTooltip from "../../components/CustomTooltip";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
 import SubmitSpinner from "../../components/SubmitSpinnerButton";
@@ -17,18 +19,22 @@ import NavigateContext from "../../stores/contexts/Navigate";
 import type { ImportRecordType } from "../../stores/stores/ImportStore";
 import useStores from "../../stores/use-stores";
 import type { URL } from "../../util/types";
-import { capitaliseJustFirstChar } from "../../util/Util";
 import ColumnFieldMapping from "./Fields/ColumnFieldMapping";
 import FileForImport from "./Fields/File";
 import TemplateDetails from "./Fields/TemplateDetails";
 
-function RecordsImport(): React.ReactNode {
-  const { importStore } = useStores();
-  const importData = importStore.importData;
+const IMPORT_RECORD_TYPES = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"] as const satisfies readonly ImportRecordType[];
 
-  const onTypeSelect = (newValue: ImportRecordType): URL => {
-    return `/inventory/import?recordType=${newValue}`;
-  };
+const onTypeSelect = (newValue: ImportRecordType): URL => {
+  return `/inventory/import?recordType=${newValue}`;
+};
+
+function RecordsImport(): React.ReactNode {
+  const { t, i18n } = useTranslation("inventory");
+  const { importStore } = useStores();
+  const { useNavigate } = useContext(NavigateContext);
+  const navigate = useNavigate();
+  const importData = importStore.importData;
 
   const recordType = importData?.recordType;
   const isSamplesImport = importData?.isSamplesImport;
@@ -38,97 +44,104 @@ function RecordsImport(): React.ReactNode {
 
   const importSubmittable = importData?.importSubmittable;
 
-  const showFooterAlert =
-    Boolean(importData?.containersFile && !importData.containersSubmittable) ||
-    Boolean(importData?.samplesFile && !importData.samplesSubmittable) ||
-    Boolean(importData?.subSamplesFile && !importData.subSamplesSubmittable);
-
-  const notImportable = () => {
-    const types: string[] = [];
-    if (importData?.containersFile && !importData.containersSubmittable) types.push("Containers");
-    if (importData?.samplesFile && !importData.samplesSubmittable) types.push("Samples");
-    if (importData?.subSamplesFile && !importData.subSamplesSubmittable) types.push("Subsamples");
-    return types;
+  const recordTypeLabels: Record<ImportRecordType, string> = {
+    CONTAINERS: t("recordTypes.container.plural"),
+    SAMPLES: t("recordTypes.sample.plural"),
+    SUBSAMPLES: t("recordTypes.subsample.plural"),
   };
+  const listFormatter = makeListFormatter(i18n.resolvedLanguage ?? i18n.language);
 
-  const importButtonLabel = `Import ${[
-    ...(importData?.containersSubmittable ? ["Containers"] : []),
-    ...(importData?.samplesSubmittable ? ["Samples"] : []),
-    ...(importData?.subSamplesSubmittable ? ["Subsamples"] : []),
-  ].join(" + ")}`;
+  const recordTypeStates: Array<{ route: ImportRecordType; label: string; file: File | null; submittable: boolean }> = [
+    {
+      route: "CONTAINERS",
+      label: recordTypeLabels.CONTAINERS,
+      file: importData?.containersFile ?? null,
+      submittable: importData?.containersSubmittable ?? false,
+    },
+    {
+      route: "SAMPLES",
+      label: recordTypeLabels.SAMPLES,
+      file: importData?.samplesFile ?? null,
+      submittable: importData?.samplesSubmittable ?? false,
+    },
+    {
+      route: "SUBSAMPLES",
+      label: recordTypeLabels.SUBSAMPLES,
+      file: importData?.subSamplesFile ?? null,
+      submittable: importData?.subSamplesSubmittable ?? false,
+    },
+  ];
 
-  function ImportTabs(_: Record<string, never>) {
-    const importRecordTypes = ["CONTAINERS", "SAMPLES", "SUBSAMPLES"];
-    const { useNavigate } = useContext(NavigateContext);
-    const navigate = useNavigate();
+  const notImportableTypes = recordTypeStates.filter(({ file, submittable }) => file && !submittable);
+  const notImportableTypeParts = listFormatter.formatToParts(notImportableTypes.map(({ label }) => label));
+  let notImportableTypeIndex = 0;
 
-    return (
-      <Box
-        sx={{
-          backgroundColor: "primary.main",
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-          pr: 2,
-          pl: 2,
-          borderRadius: 0.5,
-          color: "white",
-        }}
-      >
-        <Box sx={{ mr: 1, fontWeight: "bold" }}>IMPORT</Box>
-        <Tabs
-          value={recordType}
-          onChange={(_event, newRecordType: ImportRecordType) => {
-            navigate(onTypeSelect(newRecordType));
-          }}
-          textColor="inherit"
-          indicatorColor="secondary"
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          {importRecordTypes.map((value) => (
-            <Tab
-              sx={{ fontWeight: "bold" }}
-              key={value}
-              label={value}
-              value={value}
-              data-test-id={`${capitaliseJustFirstChar(value)}ImportTab`}
-            />
-          ))}
-        </Tabs>
-        <Box
-          sx={{
-            backgroundColor: "white",
-            borderRadius: 1,
-            ml: 1,
-            pt: 0.25,
-            px: 0.25,
-          }}
-        >
-          <CustomTooltip title="Import Documentation" enterDelay={200}>
-            <HelpLinkIcon link={docLinks.import} title="Info on importing." />
-          </CustomTooltip>
-        </Box>
-      </Box>
-    );
-  }
+  const importButtonLabel = t("import.actions.importSelected", {
+    types: listFormatter.format(recordTypeStates.filter(({ submittable }) => submittable).map(({ label }) => label)),
+  });
 
   return (
     <HeadingContext level={3}>
       <Box sx={{ overflowY: "auto", height: "100%", mx: 1, mt: 0.5, pb: 3 }}>
-        <ImportTabs />
+        <Box
+          sx={{
+            backgroundColor: "primary.main",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            pr: 2,
+            pl: 2,
+            borderRadius: 0.5,
+            color: "white",
+          }}
+        >
+          <Box sx={{ mr: 1, fontWeight: "bold" }}>{t("import.title")}</Box>
+          <Tabs
+            value={recordType}
+            onChange={(_event, newRecordType: ImportRecordType) => {
+              navigate(onTypeSelect(newRecordType));
+            }}
+            textColor="inherit"
+            indicatorColor="secondary"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            {IMPORT_RECORD_TYPES.map((value) => (
+              <Tab
+                sx={{ fontWeight: "bold" }}
+                key={value}
+                label={recordTypeLabels[value]}
+                value={value}
+                data-test-id={`${value}ImportTab`}
+              />
+            ))}
+          </Tabs>
+          <Box
+            sx={{
+              backgroundColor: "white",
+              borderRadius: 1,
+              ml: 1,
+              pt: 0.25,
+              px: 0.25,
+            }}
+          >
+            <CustomTooltip title={t("import.importDocumentation")} enterDelay={200}>
+              <HelpLinkIcon link={helpDocsArticleUrl("import")} title={t("import.helpTitle")} />
+            </CustomTooltip>
+          </Box>
+        </Box>
         <Grid container sx={{ flexDirection: "row", width: "100%", flexGrow: 1, flexWrap: "nowrap" }}>
           <FileForImport loadedFile={loadedFileByRecordType} />
         </Grid>
 
         {/* Only samples need template handling */}
         {isSamplesImport && (
-          <TitledBox title="Template Details" border>
+          <TitledBox title={t("import.sections.templateDetails")} border>
             <TemplateDetails />
           </TitledBox>
         )}
-        <TitledBox title="CSV Column Conversion Settings" border>
+        <TitledBox title={t("import.sections.columnConversion")} border>
           <ColumnFieldMapping onTypeSelect={onTypeSelect} />
         </TitledBox>
         <Grid
@@ -144,20 +157,25 @@ function RecordsImport(): React.ReactNode {
           }}
         >
           <Grid sx={{ flexGrow: 1 }}>
-            {showFooterAlert ? (
+            {notImportableTypes.length > 0 ? (
               <Alert severity="warning">
-                Some csv documents cannot be imported: check Settings in the{" "}
-                {notImportable().map((t, i) => (
-                  <span key={i}>
-                    {i > 0 && <>, </>}
-                    {t.toUpperCase() !== recordType ? (
-                      <Link to={onTypeSelect(t.toUpperCase() as ImportRecordType)}>{t}</Link>
-                    ) : (
-                      t
-                    )}
-                  </span>
-                ))}
-                {notImportable().length === 1 ? <> tab.</> : <> tabs.</>}
+                {t("import.cannotImport.message", { count: notImportableTypes.length })}{" "}
+                {notImportableTypeParts.map((part, i) => {
+                  const item = part.type === "element" ? notImportableTypes[notImportableTypeIndex++] : undefined;
+                  return (
+                    <span key={i}>
+                      {item ? (
+                        item.route !== recordType ? (
+                          <Link to={onTypeSelect(item.route)}>{item.label}</Link>
+                        ) : (
+                          item.label
+                        )
+                      ) : (
+                        part.value
+                      )}
+                    </span>
+                  );
+                })}
               </Alert>
             ) : null}
           </Grid>

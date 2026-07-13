@@ -188,9 +188,7 @@ describe("InventoryInfoDialog", () => {
     );
 
     await screen.findByTestId("sidebar-body");
-    expect(screen.getByRole("note")).toHaveTextContent(
-      "The information below describes version 1 of a sample SA42, which may not be the latest version.",
-    );
+    expect(screen.getByRole("note")).toHaveTextContent("fields.link.infoDialog.versionNote");
   });
 
   it("shows no historic-version note when the link is not pinned", async () => {

@@ -1,6 +1,7 @@
 import { inputBaseClasses } from "@mui/material/InputBase";
 import TextField, { type TextFieldProps } from "@mui/material/TextField";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NoValue from "../../components/NoValue";
 
 export type StringFieldArgs = {
@@ -37,8 +38,9 @@ export default function StringField({
   variant = disabled ? "standard" : "outlined",
   ...props
 }: StringFieldArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   return disabled && !value ? (
-    <NoValue label={noValueLabel ?? "None"} />
+    <NoValue label={noValueLabel ?? t("values.none")} />
   ) : (
     <TextField
       onBlur={onBlur}

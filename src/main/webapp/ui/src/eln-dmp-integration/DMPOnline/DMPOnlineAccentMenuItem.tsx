@@ -1,5 +1,6 @@
 import CardMedia from "@mui/material/CardMedia";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "../../assets/branding/dmponline";
 import DMPonlineIcon from "../../assets/branding/dmponline/logo.svg";
 import AccentMenuItem from "../../components/AccentMenuItem";
@@ -14,12 +15,13 @@ type DMPonlineAccentMenuItemArgs = {
  * The menu item for the create menu for importing DMPs from DMPonline.
  */
 export default function DMPonlineAccentMenuItem({ onDialogClose }: DMPonlineAccentMenuItemArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const [showDMPDialog, setShowDMPDialog] = React.useState(false);
 
   return (
     <>
       <AccentMenuItem
-        title="DMPonline"
+        title={t("dmpIntegrations.dmponline")}
         avatar={<CardMedia image={DMPonlineIcon} />}
         backgroundColor={LOGO_COLOR}
         foregroundColor={{ ...LOGO_COLOR, lightness: 30 }}

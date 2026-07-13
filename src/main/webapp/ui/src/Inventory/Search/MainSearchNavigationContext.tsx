@@ -1,5 +1,6 @@
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { mkAlert } from "../../stores/contexts/Alert";
 import NavigateContext from "../../stores/contexts/Navigate";
 import SearchContext from "../../stores/contexts/Search";
@@ -20,6 +21,7 @@ type MainSearchNavigationContextArgs = {
  *     ultimately resulting in react-router updating the browser's URL.
  */
 export default function MainSearchNavigationContext({ children }: MainSearchNavigationContextArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const { uiStore } = useStores();
   const { useNavigate, useLocation } = useContext(NavigateContext);
@@ -34,8 +36,8 @@ export default function MainSearchNavigationContext({ children }: MainSearchNavi
       console.error(error);
       uiStore.addAlert(
         mkAlert({
-          title: "Search failed.",
-          message: getErrorMessage(error, "Unknown reason."),
+          title: t("search.errors.searchFailed"),
+          message: getErrorMessage(error, t("errors.unknownReason")),
           variant: "error",
           isInfinite: true,
         }),

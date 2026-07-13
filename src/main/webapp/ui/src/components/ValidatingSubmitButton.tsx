@@ -5,6 +5,7 @@ import Popover from "@mui/material/Popover";
 import Stack from "@mui/material/Stack";
 import type { SxProps, Theme } from "@mui/material/styles";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import type { Progress } from "@/util/progress";
 import Result from "../util/result";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
@@ -41,6 +42,7 @@ export default function ValidatingSubmitButton({
   sx,
   disabled = false,
 }: ValidatingSubmitButtonArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<Element | null>(null);
   const [playAnimation, setPlayAnimation] = React.useState(false);
   return (
@@ -135,7 +137,7 @@ export default function ValidatingSubmitButton({
                 <Alert
                   severity="warning"
                   elevation={0}
-                  aria-label="Warning"
+                  aria-label={t("alerts.warning")}
                   sx={{
                     transitionDelay: `${(errors.length - i) * 0.04 + 0.2}s !important`,
                   }}

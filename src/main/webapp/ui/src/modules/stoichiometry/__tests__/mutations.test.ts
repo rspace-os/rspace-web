@@ -304,9 +304,10 @@ describe("deleteStoichiometry", () => {
       statusText: "Internal Server Error",
     });
 
-    await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toThrow(
-      "Failed to delete stoichiometry: Internal Server Error",
-    );
+    await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toMatchObject({
+      key: "stoichiometry.errors.deleteFailed",
+      values: { status: "Internal Server Error" },
+    });
   });
 
   it("bubbles up network failures during deletion", async () => {

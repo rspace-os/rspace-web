@@ -51,7 +51,7 @@ const mockSnippetFile: GalleryFile = {
 function TestComponent() {
   const { openSnippetPreview } = useSnippetPreview();
 
-  return <Button onClick={() => openSnippetPreview(mockSnippetFile)}>Open Snippet Preview</Button>;
+  return <Button onClick={() => openSnippetPreview(mockSnippetFile)}>{"Open Snippet Preview"}</Button>;
 }
 
 export function CallableSnippetPreviewStory() {
@@ -72,7 +72,7 @@ export function CallableSnippetPreviewWithTableContent() {
   function TestComponentWithTable() {
     const { openSnippetPreview } = useSnippetPreview();
 
-    return <Button onClick={() => openSnippetPreview(mockFileWithTable)}>Open Table Snippet Preview</Button>;
+    return <Button onClick={() => openSnippetPreview(mockFileWithTable)}>{"Open Table Snippet Preview"}</Button>;
   }
 
   return (
@@ -92,7 +92,7 @@ export function CallableSnippetPreviewWithError() {
   function TestComponentWithError() {
     const { openSnippetPreview } = useSnippetPreview();
 
-    return <Button onClick={() => openSnippetPreview(mockFileWithError)}>Open Error Snippet Preview</Button>;
+    return <Button onClick={() => openSnippetPreview(mockFileWithError)}>{"Open Error Snippet Preview"}</Button>;
   }
 
   return (

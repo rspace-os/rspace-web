@@ -8,14 +8,17 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import { useTranslation } from "react-i18next";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function SimpleSearchScopeDialog(props: any) {
+  const { t } = useTranslation("workspace");
+
   return (
     <Dialog open={props.open}>
-      <DialogTitle>Scope search within records</DialogTitle>
+      <DialogTitle>{t("toolbar.simpleSearch.scopeDialog.title")}</DialogTitle>
       <DialogContent>
-        <DialogContentText>You have selected the records listed below.</DialogContentText>
+        <DialogContentText>{t("toolbar.simpleSearch.scopeDialog.selectedRecords")}</DialogContentText>
         {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
         {props.selectedRecords.map((r: any) => (
           <Chip
@@ -30,7 +33,7 @@ export default function SimpleSearchScopeDialog(props: any) {
           />
         ))}
         <DialogContentText sx={{ marginTop: "1.5em" }}>
-          Click "Within selected" if you wish to search within the specified records, or "Search everywhere" otherwise.
+          {t("toolbar.simpleSearch.scopeDialog.instructions")}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
@@ -40,7 +43,7 @@ export default function SimpleSearchScopeDialog(props: any) {
           variant={props.selectedRecords.length ? "text" : "contained"}
           data-test-id="s-search-scoped-everywhere"
         >
-          Search everywhere
+          {t("toolbar.simpleSearch.scopeDialog.searchEverywhere")}
         </Button>
         <Button
           onClick={props.submit}
@@ -50,7 +53,7 @@ export default function SimpleSearchScopeDialog(props: any) {
           autoFocus
           data-test-id="s-search-scoped-within"
         >
-          Within selected
+          {t("toolbar.simpleSearch.scopeDialog.withinSelected")}
         </Button>
       </DialogActions>
     </Dialog>

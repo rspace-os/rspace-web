@@ -1,6 +1,7 @@
 import FormLabel from "@mui/material/FormLabel";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import FormControl from "../../../../components/Inputs/FormControl";
 import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import NewNote from "./NewNote";
@@ -13,9 +14,10 @@ type NotesArgs = {
 };
 
 function Notes({ record, onErrorStateChange, hideLabel = false }: NotesArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <FormControl>
-      {!hideLabel && <FormLabel>Notes</FormLabel>}
+      {!hideLabel && <FormLabel>{t("fields.notes.label")}</FormLabel>}
       {record.isFieldEditable("notes") && record.isFieldVisible("notes") && (
         <NewNote record={record} onErrorStateChange={onErrorStateChange} />
       )}

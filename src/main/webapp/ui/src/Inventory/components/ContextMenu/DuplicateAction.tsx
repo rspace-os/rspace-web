@@ -2,6 +2,7 @@ import AddToPhotosIcon from "@mui/icons-material/AddToPhotos";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import SubSampleModel from "../../../stores/models/SubSampleModel";
@@ -17,6 +18,7 @@ type DuplicateActionArgs = {
 
 const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, DuplicateActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }: DuplicateActionArgs, ref) => {
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
 
     const disabledHelp = match<void, string>([
@@ -41,7 +43,7 @@ const DuplicateAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, D
               closeMenu();
             }}
             icon={<AddToPhotosIcon />}
-            label="Duplicate"
+            label={t("common:actions.duplicate")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

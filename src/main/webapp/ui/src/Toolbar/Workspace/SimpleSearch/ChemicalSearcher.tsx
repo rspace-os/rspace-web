@@ -15,6 +15,7 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import { DataGrid } from "@mui/x-data-grid";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { IsInvalid, IsValid } from "../../../components/ValidatingSubmitButton";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
@@ -24,6 +25,7 @@ const KetcherDialog = React.lazy(() => import("../../../components/Ketcher/Ketch
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) => {
+  const { t } = useTranslation(["workspace", "common"]);
   const { trackEvent } = React.useContext(AnalyticsContext);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [showKetcherDialog, setShowKetcherDialog] = useState(false);
@@ -64,7 +66,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
         });
       })
       .catch((error) => {
-        setErrorMessage(`Error fetching search results: ${error.message}`);
+        setErrorMessage(t("toolbar.chemicalSearch.errorFetching", { message: (error as Error).message }));
       })
       .finally(() => {
         setLoading(false);
@@ -100,15 +102,11 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
     ketcher.getKet().then((ketData: any) => {
       const molecules = Object.keys(JSON.parse(ketData)).filter((key) => key.startsWith("mol"));
       if (molecules.length === 0) {
-        setIsValid(IsInvalid("Please draw, paste, or open a molecule to start your search"));
+        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationNoMolecule")));
         return;
       }
       if (molecules.length > 1) {
-        setIsValid(
-          IsInvalid(
-            "Chemical search currently supports a single molecule. Please remove extra molecules from the canvas.",
-          ),
-        );
+        setIsValid(IsInvalid(t("toolbar.chemicalSearch.validationMultipleMolecules")));
         return;
       }
       setIsValid(IsValid());
@@ -133,12 +131,12 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
       ({ breadcrumb, chemId }: any) =>
         breadcrumb.startsWith("/Gallery") ? "/images/icons/chemistry-file.png" : `/chemical/getImageChem/${chemId}/1`,
       {
-        headerName: "Preview",
+        headerName: t("toolbar.chemicalSearch.columnHeaders.preview"),
         renderCell: (params) => (
           <Box
             component="img"
             src={params.value}
-            alt="Chemical Preview"
+            alt={t("toolbar.chemicalSearch.chemicalPreviewAlt")}
             sx={{ width: "150px", height: "150px", marginTop: "8px" }}
           />
         ),
@@ -162,7 +160,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
         };
       },
       {
-        headerName: "Name",
+        headerName: t("toolbar.chemicalSearch.columnHeaders.name"),
         renderCell: (params) => (
           <Link href={params.value.href} target="_blank" rel="noreferrer">
             {params.value.text}
@@ -173,12 +171,12 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
       },
     ),
     DataGridColumn.newColumnWithFieldName("owner", {
-      headerName: "Owner",
+      headerName: t("toolbar.chemicalSearch.columnHeaders.owner"),
       sortable: false,
       flex: 1,
     }),
     DataGridColumn.newColumnWithFieldName("lastModified", {
-      headerName: "Last Modified",
+      headerName: t("toolbar.chemicalSearch.columnHeaders.lastModified"),
       sortable: true,
       flex: 1,
     }),
@@ -202,19 +200,19 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
         >
           <KetcherDialog
             isOpen
-            title={"Chemistry Search"}
+            title={t("toolbar.chemicalSearch.ketcherTitle")}
             handleInsert={handleInsert}
-            actionBtnText="Search"
+            actionBtnText={t("common:actions.search")}
             handleClose={closeAndReset}
             existingChem={searchSmiles}
             validationResult={isValid}
-            instructionText="Draw a single molecule below to search"
+            instructionText={t("toolbar.chemicalSearch.drawInstruction")}
             onChange={() => {
               validate(window.ketcher);
             }}
             additionalControls={
               <FormControl>
-                <FormLabel id="search-type">Search Type</FormLabel>
+                <FormLabel id="search-type">{t("toolbar.chemicalSearch.searchType")}</FormLabel>
                 <RadioGroup
                   row
                   aria-labelledby="search-type"
@@ -224,8 +222,16 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
                     setSearchType(e.target.value);
                   }}
                 >
-                  <FormControlLabel value="SUBSTRUCTURE" control={<Radio />} label="Substructure" />
-                  <FormControlLabel value="EXACT" control={<Radio />} label="Exact" />
+                  <FormControlLabel
+                    value="SUBSTRUCTURE"
+                    control={<Radio />}
+                    label={t("toolbar.chemicalSearch.searchTypeSubstructure")}
+                  />
+                  <FormControlLabel
+                    value="EXACT"
+                    control={<Radio />}
+                    label={t("toolbar.chemicalSearch.searchTypeExact")}
+                  />
                 </RadioGroup>
               </FormControl>
             }
@@ -240,12 +246,12 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
           paper: { style: { maxHeight: "90vh", minHeight: "90vh" } },
         }}
       >
-        <DialogTitle>Chemical Search</DialogTitle>
+        <DialogTitle>{t("toolbar.chemicalSearch.dialogTitle")}</DialogTitle>
         <DialogContent>
           <div className="search-results-dialog">
             {loading || typeof errorMessage === "string" ? (
               <Box sx={{ textAlign: "center", width: "100%" }}>
-                <Typography>{errorMessage ?? "Loading..."}</Typography>
+                <Typography>{errorMessage ?? t("toolbar.chemicalSearch.loading")}</Typography>
               </Box>
             ) : (
               <DataGrid
@@ -266,7 +272,7 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
                 rowHeight={150 + 2 * 8}
                 autoHeight
                 localeText={{
-                  noRowsLabel: "No Search Results",
+                  noRowsLabel: t("toolbar.chemicalSearch.noResults"),
                 }}
                 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
                 getRowId={(row: any) => row.chemId}
@@ -284,8 +290,8 @@ const ChemicalSearcher = ({ isOpen, onClose }: { isOpen: any; onClose: any }) =>
           </div>
         </DialogContent>
         <DialogActions>
-          <Button onClick={goBackToSearch}>Back</Button>
-          <Button onClick={closeAndReset}>Close</Button>
+          <Button onClick={goBackToSearch}>{t("toolbar.chemicalSearch.back")}</Button>
+          <Button onClick={closeAndReset}>{t("common:actions.close")}</Button>
         </DialogActions>
       </Dialog>
     </div>

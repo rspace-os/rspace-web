@@ -4,6 +4,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import GlobalId from "../../../components/GlobalId";
 import type { Template } from "../../../stores/definitions/Template";
 
@@ -14,6 +15,7 @@ type VersionInfoArgs = {
 };
 
 function VersionInfo({ template, onUpdate, disabled }: VersionInfoArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   React.useEffect(() => {
     template.getLatest();
   }, []);
@@ -25,16 +27,16 @@ function VersionInfo({ template, onUpdate, disabled }: VersionInfoArgs): React.R
         onUpdate && (
           <Box sx={{ mr: 2 }}>
             <Button color="inherit" size="small" variant="outlined" onClick={onUpdate} disabled={disabled}>
-              Update
+              {t("template.fields.versionInfo.update")}
             </Button>
           </Box>
         )
       }
     >
-      <AlertTitle>This is version {template.version} of the template.</AlertTitle>
+      <AlertTitle>{t("template.fields.versionInfo.version", { version: template.version })}</AlertTitle>
       {template.latest && (
         <span>
-          Latest version: <GlobalId record={template.latest} />
+          {t("template.fields.versionInfo.latestVersion")} <GlobalId record={template.latest} />
         </span>
       )}
     </Alert>

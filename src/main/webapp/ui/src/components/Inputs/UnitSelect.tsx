@@ -4,6 +4,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Select, { type SelectChangeEvent, selectClasses } from "@mui/material/Select";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import useStores from "../../stores/use-stores";
 
 type UnitSelectArgs = {
@@ -26,6 +27,7 @@ type UnitSelectArgs = {
 };
 
 function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const { unitStore } = useStores();
 
   return (
@@ -35,7 +37,7 @@ function UnitSelect({ disabled, handleChange, value, categories }: UnitSelectArg
           disabled={disabled}
           onChange={handleChange}
           inputProps={{
-            "aria-label": "Quantity units",
+            "aria-label": t("inputs.unitSelect.quantityUnits"),
           }}
           value={value}
           size="small"

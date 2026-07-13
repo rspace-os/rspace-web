@@ -6,6 +6,7 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import { useTheme } from "@mui/material/styles";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import { match } from "../../util/Util";
 
 function StatusChip({
@@ -17,6 +18,7 @@ function StatusChip({
   selectedFilename: string | null;
   loading: boolean;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   const color = match<void, string>([
     [() => loading, theme.palette.text.secondary],
@@ -33,9 +35,9 @@ function StatusChip({
   const spinnerIcon = <FontAwesomeIcon icon={faSpinner} spin size="sm" />;
   const label = match<void, React.ReactNode>([
     [() => loading, spinnerIcon],
-    [() => error, "Invalid file."],
+    [() => error, t("inputs.selectedFileInfo.invalidFile")],
     [() => Boolean(selectedFilename), selectedFilename],
-    [() => true, "None"],
+    [() => true, t("values.none")],
   ])();
   const iconStyle = {
     width: 18,
@@ -80,6 +82,7 @@ type SelectedFileInfoArgs = {
 };
 
 function SelectedFileInfo({ selectedFilename, error, loading }: SelectedFileInfoArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const theme = useTheme();
   return (
     <Box
@@ -90,7 +93,7 @@ function SelectedFileInfo({ selectedFilename, error, loading }: SelectedFileInfo
       }}
     >
       <Box component="dt" sx={{ color: theme.palette.text.secondary }}>
-        File selected:
+        {t("inputs.selectedFileInfo.label")}
       </Box>
       <Box component="dd" sx={{ marginLeft: theme.spacing(1) }}>
         <StatusChip selectedFilename={selectedFilename} error={error} loading={loading} />

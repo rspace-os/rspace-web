@@ -8,26 +8,29 @@ import TableRow from "@mui/material/TableRow";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import EnhancedTableHead from "../../components/EnhancedTableHead";
 import materialTheme from "../../theme";
 import { getSorting } from "../../util/table";
 import type { Order } from "../../util/types";
 
-const headCells = [
-  { id: "groupName", numeric: false, label: "Group" },
-  { id: "eventType", numeric: false, label: "Action" },
-  { id: "timestamp", numeric: true, label: "Time" },
-];
-
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function GroupActivity(props: any) {
+  const { t } = useTranslation("common");
   const [fetched, setFetched] = React.useState(false);
   // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
   const [activities, setActivities] = React.useState<any[] | null>([]);
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("timestamp");
+
+  const headCells = [
+    { id: "groupName", numeric: false, label: t("profile.groups.table.group") },
+    { id: "eventType", numeric: false, label: t("profile.groups.activity.action") },
+    { id: "timestamp", numeric: true, label: t("profile.groups.activity.time") },
+  ];
 
   const loadUserActivity = () => {
     const url = `/groups/ajax/membershipEventsByUser/${props.userId}`;
@@ -59,12 +62,12 @@ export default function GroupActivity(props: any) {
         <Box sx={{ width: "690px", padding: "0px 15px" }}>
           {!fetched && (
             <Button color="primary" onClick={loadUserActivity}>
-              Show group activity
+              {t("profile.groups.activity.show")}
             </Button>
           )}
           {fetched && (
             <>
-              <div className="api-menu__header">User's group activity</div>
+              <div className="api-menu__header">{t("profile.groups.activity.title")}</div>
               <br />
               <Table>
                 <EnhancedTableHead
@@ -105,5 +108,9 @@ const domContainer = document.getElementById("group-activity");
 
 if (domContainer) {
   const root = createRoot(domContainer);
-  root.render(<GroupActivity userId={domContainer.dataset.userid} />);
+  root.render(
+    <I18nRoot namespaces={["common"]}>
+      <GroupActivity userId={domContainer.dataset.userid} />
+    </I18nRoot>,
+  );
 }

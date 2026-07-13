@@ -8,6 +8,7 @@ import { paperClasses } from "@mui/material/Paper";
 import { ThemeProvider, useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { FilestoreLoginProvider } from "@/eln/gallery/components/FilestoreLoginDialog";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/rspace/gallery";
@@ -47,6 +48,7 @@ const Picker = observer(
     const sidebarId = React.useId();
     const viewport = useViewportDimensions();
     const selection = useGallerySelection();
+    const { t } = useTranslation("common");
     const theme = useTheme();
     // Float the info panel above this dialog, but keep its menus/dialogs above
     // the panel: drawer just over the dialog, modal just over the drawer.
@@ -139,7 +141,7 @@ const Picker = observer(
                   })}
                   slotProps={{
                     paper: {
-                      "aria-label": "Gallery Picker",
+                      "aria-label": t("appBar.sections.gallery.title"),
                     },
                     transition: {
                       timeout: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 300,
@@ -155,7 +157,7 @@ const Picker = observer(
                 >
                   <AppBar
                     variant="dialog"
-                    currentPage="Gallery"
+                    currentPage={t("appBar.sections.gallery.title")}
                     sidebarToggle={
                       <SidebarToggle setSidebarOpen={setDrawerOpen} sidebarOpen={drawerOpen} sidebarId={sidebarId} />
                     }
@@ -214,19 +216,19 @@ const Picker = observer(
                           setAppliedSearchTerm={setAppliedSearchTerm}
                         />
                         <DialogActions>
-                          <Button onClick={() => onClose()}>Cancel</Button>
+                          <Button onClick={() => onClose()}>{t("actions.cancel")}</Button>
                           <ValidatingSubmitButton
                             validationResult={
                               selection.size > 0
                                 ? Result.all(...selection.asSet().map(validateSelection)).map(() => null)
-                                : Result.Error([new Error("Select at least one file to proceed.")])
+                                : Result.Error([new Error(t("galleryPicker.selectionRequired"))])
                             }
                             loading={false}
                             onClick={() => {
                               onSubmit(selection.asSet());
                             }}
                           >
-                            Add
+                            {t("actions.add")}
                           </ValidatingSubmitButton>
                         </DialogActions>
                       </Box>

@@ -22,6 +22,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { produce } from "immer";
 import React from "react";
 import DateField from "../../../components/Inputs/DateField";
+import i18n from "../../../modules/common/i18n";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import { CardWrapper } from "../../../styles/CommonStyles";
 import FilePicker from "./RecordSelect/FilePicker";
@@ -68,18 +69,33 @@ function QueryRow(props: any) {
   return <Box component="tr" {...props} sx={{ ...queryRowSx, ...props.sx }} />;
 }
 
-const SEARCH_TYPES: Record<string, string> = {
-  fullText: "Text",
-  tag: "Tag(s)",
-  name: "Name",
-  form: "Form",
-  template: "Template",
-  created: "Creation date",
-  lastModified: "Last modified",
-  owner: "Owner(s)",
-  attachment: "Attachment",
-  records: "Within records",
-};
+const SEARCH_TYPE_KEYS = [
+  "fullText",
+  "tag",
+  "name",
+  "form",
+  "template",
+  "created",
+  "lastModified",
+  "owner",
+  "attachment",
+  "records",
+] as const;
+
+function getSearchTypes(): Record<string, string> {
+  return {
+    fullText: i18n.t("workspace:toolbar.advancedSearch.searchTypes.fullText"),
+    tag: i18n.t("workspace:toolbar.advancedSearch.searchTypes.tag"),
+    name: i18n.t("workspace:toolbar.advancedSearch.searchTypes.name"),
+    form: i18n.t("workspace:toolbar.advancedSearch.searchTypes.form"),
+    template: i18n.t("workspace:toolbar.advancedSearch.searchTypes.template"),
+    created: i18n.t("workspace:toolbar.advancedSearch.searchTypes.created"),
+    lastModified: i18n.t("workspace:toolbar.advancedSearch.searchTypes.lastModified"),
+    owner: i18n.t("workspace:toolbar.advancedSearch.searchTypes.owner"),
+    attachment: i18n.t("workspace:toolbar.advancedSearch.searchTypes.attachment"),
+    records: i18n.t("workspace:toolbar.advancedSearch.searchTypes.records"),
+  };
+}
 
 // Filters grouped by how their term is entered and validated
 const SIMPLE_FILTERS = ["fullText", "name", "form", "template", "attachment"];
@@ -263,7 +279,7 @@ class AdvancedSearch extends React.Component<any, any> {
             oneValid = true;
             draft[idx].error = null;
           } else {
-            draft[idx].error = "The term should be at least 2 symbols";
+            draft[idx].error = i18n.t("workspace:toolbar.advancedSearch.validation.termTooShort");
             if (query.term.length || draft.length === 1) valid = false;
           }
         } else if (isSelectable || isScopeRecords) {
@@ -271,7 +287,9 @@ class AdvancedSearch extends React.Component<any, any> {
             oneValid = true;
             draft[idx].error = null;
           } else {
-            draft[idx].error = `Include at least one ${query.filter}`;
+            draft[idx].error = i18n.t("workspace:toolbar.advancedSearch.validation.includeAtLeastOne", {
+              filter: getSearchTypes()[query.filter] ?? query.filter,
+            });
             if (draft.length === 1) valid = false;
           }
         } else {
@@ -304,9 +322,9 @@ class AdvancedSearch extends React.Component<any, any> {
               paddingTop: DATE_FILTERS.includes(query.filter) ? "16px" : "0px",
             }}
           >
-            {Object.keys(SEARCH_TYPES).map((key) => (
+            {SEARCH_TYPE_KEYS.map((key) => (
               <MenuItem key={key} value={key} data-test-id={`a-search-option-${key}`}>
-                {SEARCH_TYPES[key]}
+                {getSearchTypes()[key]}
               </MenuItem>
             ))}
           </Select>
@@ -345,10 +363,10 @@ class AdvancedSearch extends React.Component<any, any> {
               <Grid>
                 <DateField
                   data-test-id={`a-search-input-${idx}-from`}
-                  label="From"
+                  label={i18n.t("workspace:toolbar.advancedSearch.dateFrom")}
                   value={query.from}
                   disableFuture
-                  placeholder="the beginning"
+                  placeholder={i18n.t("workspace:toolbar.advancedSearch.datePlaceholderFrom")}
                   onChange={({ target: { value } }) => this.handleDateChange(idx, "from", value)}
                   maxDate={query.to}
                   // @ts-expect-error pragmatic jsx->tsx conversion: outputFormat is not a typed DateField prop
@@ -358,10 +376,10 @@ class AdvancedSearch extends React.Component<any, any> {
               <Grid>
                 <DateField
                   data-test-id={`a-search-input-${idx}-to`}
-                  label="To"
+                  label={i18n.t("workspace:toolbar.advancedSearch.dateTo")}
                   value={query.to}
                   disableFuture
-                  placeholder="now"
+                  placeholder={i18n.t("workspace:toolbar.advancedSearch.datePlaceholderTo")}
                   onChange={({ target: { value } }) => this.handleDateChange(idx, "to", value)}
                   minDate={query.from}
                   // @ts-expect-error pragmatic jsx->tsx conversion: outputFormat is not a typed DateField prop
@@ -381,14 +399,14 @@ class AdvancedSearch extends React.Component<any, any> {
         </td>
         <td className="actions">
           {this.state.queries.length > 1 && (
-            <Tooltip title="Remove condition">
+            <Tooltip title={i18n.t("workspace:toolbar.advancedSearch.removeCondition")}>
               <IconButton onClick={() => this.deleteQuery(idx)} data-test-id={`a-search-rmv-${idx}`}>
                 <FontAwesomeIcon icon={faTrashAlt} />
               </IconButton>
             </Tooltip>
           )}
           {this.state.queries.length === idx + 1 && (
-            <Tooltip title="Add new condition">
+            <Tooltip title={i18n.t("workspace:toolbar.advancedSearch.addCondition")}>
               <IconButton onClick={this.addNewQuery} data-test-id={`a-search-query-add`}>
                 <FontAwesomeIcon icon={faPlus} />
               </IconButton>
@@ -411,7 +429,7 @@ class AdvancedSearch extends React.Component<any, any> {
           {label}
           {/** biome-ignore lint/suspicious/noExplicitAny: initial biome migration */}
           {this.state.queries.some((q: any) => q.filter === "records") && (
-            <Tooltip title="At least one of the 'Within records' conditions will always be satisfied.">
+            <Tooltip title={i18n.t("workspace:toolbar.advancedSearch.recordsConditionInfo")}>
               <IconButton
                 data-test-id="show-condition-info"
                 sx={{
@@ -435,7 +453,7 @@ class AdvancedSearch extends React.Component<any, any> {
     return (
       <CardWrapper>
         <Card sx={{ overflow: "visible" }}>
-          <CardHeader subheader="Advanced search" />
+          <CardHeader subheader={i18n.t("workspace:toolbar.advancedSearch.cardSubheader")} />
           <CardContent>
             <Box component="table" sx={{ width: "80%", marginBottom: "0px" }}>
               <tbody>{this.searchQueries()}</tbody>
@@ -447,8 +465,16 @@ class AdvancedSearch extends React.Component<any, any> {
                 // @ts-expect-error pragmatic jsx->tsx conversion
                 margin="dense"
               >
-                {this.renderFulfillOption("true", "fullfill-all", "Satisfy all conditions")}
-                {this.renderFulfillOption("false", "fullfill-one", "Satisfy at least one condition")}
+                {this.renderFulfillOption(
+                  "true",
+                  "fullfill-all",
+                  i18n.t("workspace:toolbar.advancedSearch.satisfyAll"),
+                )}
+                {this.renderFulfillOption(
+                  "false",
+                  "fullfill-one",
+                  i18n.t("workspace:toolbar.advancedSearch.satisfyOne"),
+                )}
               </RadioGroup>
             )}
           </CardContent>
@@ -456,10 +482,10 @@ class AdvancedSearch extends React.Component<any, any> {
             <span></span>
             <span className="group-right">
               <Button onClick={this.reset} data-test-id="a-search-reset">
-                Reset
+                {i18n.t("workspace:toolbar.advancedSearch.reset")}
               </Button>
               <Button onClick={this.validateQueries} variant="contained" color="primary" data-test-id="a-search-submit">
-                Search
+                {i18n.t("common:actions.search")}
               </Button>
             </span>
           </CardActions>

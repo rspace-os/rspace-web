@@ -1,7 +1,8 @@
-import { action, makeObservable, observable, override } from "mobx";
+import { action, computed, makeObservable, observable, override } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
+import TransRichText, { helpDocsArticleUrl } from "@/modules/common/i18n/TransRichText";
 import type { _LINK } from "@/util/types";
-import docLinks from "../../assets/DocLinks";
 import TemplateIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/Template";
 import ApiService from "../../common/InvApiService";
 import HelpLinkIcon from "../../components/HelpLinkIcon";
@@ -46,6 +47,7 @@ export type InstrumentTemplateAttrs = {
   permittedActions: Array<Action>;
   tags: string | null;
   version?: number;
+  historicalVersion?: boolean;
   iconId?: string;
   newBase64Image?: string;
   image?: string;
@@ -100,13 +102,14 @@ export default class InstrumentTemplateModel
       supportsBatchEditing: override,
       showNewlyCreatedRecordSearchParams: override,
       fieldNamesInUse: override,
+      globalIdOfLatest: computed,
     });
 
     if (this.recordType === "instrumentTemplate") this.populateFromJson(factory, params, {});
 
     this.search = new Search({
       fetcherParams: {
-        parentGlobalId: this.globalId,
+        parentGlobalId: this.globalIdOfLatest,
         resultType: "INSTRUMENT",
       },
       uiConfig: {
@@ -123,7 +126,12 @@ export default class InstrumentTemplateModel
   }
 
   get cardTypeLabel(): string {
-    return "Instrument Template";
+    return inventoryRecordTypeLabels.instrumentTemplate;
+  }
+
+  get globalIdOfLatest(): GlobalId | null {
+    if (!this.id) return null;
+    return `NT${this.id}`;
   }
 
   get recordTypeLabel(): string {
@@ -252,7 +260,7 @@ export default class InstrumentTemplateModel
   private async setActiveResultToLatest(): Promise<InstrumentTemplateModel> {
     const id = this.id;
     if (!id) throw new Error("id is required.");
-    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, this.factory.newFactory());
+    const latest = await getRootStore().searchStore.getInstrumentTemplate(id, null, this.factory.newFactory());
     await mainSearch().setActiveResult(latest);
     mainSearch().replaceResult(latest);
     return latest;
@@ -268,10 +276,10 @@ export default class InstrumentTemplateModel
       const instrumentsToBeUpdated = this.search.fetcher.results.filter((r) => r.owner?.isCurrentUser ?? true);
       if (this.version !== oldVersion && instrumentsToBeUpdated.length > 0) {
         const newToast = mkAlert({
-          message: "Update existing instruments?",
+          message: i18n.t("inventory:instrumentTemplate.alerts.updateExistingInstruments"),
           variant: "notice",
           isInfinite: true,
-          actionLabel: "yes",
+          actionLabel: i18n.t("common:actions.yes"),
           onActionClick: () => void this.updateInstrumentsToLatest(),
         });
         latest.addScopedToast(newToast);
@@ -295,20 +303,15 @@ export default class InstrumentTemplateModel
             marginBottom: "10px",
           }}
         >
-          <span>Update all instruments to latest template version?</span>
+          <span>{i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.title")}</span>
           <HelpLinkIcon
-            link={docLinks.updateAllSamplesOfTemplate}
-            title="Info on updating instruments to latest template version."
+            link={helpDocsArticleUrl("updateAllSamplesOfTemplate")}
+            title={i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.helpTitle")}
             size="small"
           />
         </span>,
-        <>
-          All of your instruments created from this template will be updated to pick up the structural changes that have
-          been made to the template since the instrument was created or last updated, such as the addition, deletion and
-          reordering of fields, and the change to available options in choice and radio fields.&nbsp;
-          <strong>This action cannot be undone.</strong>
-        </>,
-        "Update all",
+        <TransRichText i18nKey="inventory:instrumentTemplate.updateInstrumentsConfirm.body" />,
+        i18n.t("inventory:instrumentTemplate.updateInstrumentsConfirm.confirmButton"),
       ))
     )
       return;
@@ -341,8 +344,8 @@ export default class InstrumentTemplateModel
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Updating instruments to latest template version failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:instrumentTemplate.alerts.updateLatestFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -353,8 +356,8 @@ export default class InstrumentTemplateModel
   get createOptions(): ReadonlyArray<CreateOption> {
     return [
       {
-        label: "Instrument",
-        explanation: "Create a new instrument based on this template.",
+        label: i18n.t("inventory:instrumentTemplate.createOptions.instrument.label"),
+        explanation: i18n.t("inventory:instrumentTemplate.createOptions.instrument.explanation"),
         onReset: () => {},
         onSubmit: async () => {
           void getRootStore().searchStore.createNewInstrument({

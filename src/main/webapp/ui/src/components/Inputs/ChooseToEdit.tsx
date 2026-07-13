@@ -1,6 +1,7 @@
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 type ChooseToEditArgs = {
   checked: boolean;
@@ -14,6 +15,7 @@ type ChooseToEditArgs = {
  * to all of the records being edited.
  */
 export default function ChooseToEdit({ checked, onChange, ariaControls }: ChooseToEditArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const id = React.useId();
 
   return (
@@ -30,7 +32,7 @@ export default function ChooseToEdit({ checked, onChange, ariaControls }: Choose
         right: 0,
       })}
     >
-      Batch edit this field
+      {t("inputs.chooseToEdit.label")}
       <Checkbox
         id={id}
         aria-controls={ariaControls}

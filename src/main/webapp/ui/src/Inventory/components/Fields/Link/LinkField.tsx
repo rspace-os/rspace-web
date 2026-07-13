@@ -12,6 +12,7 @@ import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../../components/RecordTypeIcon";
 import type { ExtraInventoryLink } from "../../../../stores/definitions/ExtraField";
 import ElnRecordInfoDialog from "./ElnRecordInfoDialog";
@@ -63,7 +64,11 @@ export interface LinkFieldProps {
 }
 
 export default function LinkField(props: LinkFieldProps): React.ReactElement {
-  const versionLabel = props.link.versionPin != null ? `Pinned to v${props.link.versionPin}` : "Latest";
+  const { t } = useTranslation(["inventory", "common"]);
+  const versionLabel =
+    props.link.versionPin != null
+      ? t("fields.link.editor.pinnedVersion", { version: props.link.versionPin })
+      : t("fields.link.editor.latest");
   const iconData = iconForGlobalId(props.link.targetGlobalId);
   const targetIsInventory = isInventoryGlobalId(props.link.targetGlobalId);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -108,7 +113,7 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           />
           <IconButton
             size="small"
-            aria-label={`Show info for ${props.link.targetGlobalId}`}
+            aria-label={t("fields.link.linkField.showInfoLabel", { globalId: props.link.targetGlobalId })}
             // an unreadable ("No access") target has nothing to show and its
             // info route is just an error page, so grey out info alongside the
             // (already-disabled) version-pin clock. Recomputed from the target
@@ -124,9 +129,13 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
             // the pin is changed in the link editor (Edit) and committed
             // with Update, not directly from the view card. The tooltip
             // wrapper says so, since a disabled button cannot.
-            <Tooltip title="Edit the link to change the pinned version">
+            <Tooltip title={t("fields.link.linkField.editToChangePinned")}>
               <span>
-                <IconButton size="small" aria-label={`Pin version for ${props.link.targetGlobalId}`} disabled>
+                <IconButton
+                  size="small"
+                  aria-label={t("fields.link.linkField.pinVersionLabel", { globalId: props.link.targetGlobalId })}
+                  disabled
+                >
                   <HistoryIcon fontSize="small" />
                 </IconButton>
               </span>
@@ -134,13 +143,23 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
           )}
           <Chip size="small" variant="outlined" label={versionLabel} data-test-id="LinkField-version" />
           {targetDeleted && (
-            <Chip size="small" color="warning" label="Target deleted" data-test-id="LinkField-targetDeleted" />
+            <Chip
+              size="small"
+              color="warning"
+              label={t("fields.link.linkField.targetDeleted")}
+              data-test-id="LinkField-targetDeleted"
+            />
           )}
           {noAccess && (
             // no "no longer" in the tooltip: the pill also shows for
             // viewers who never had access (ADR-0002)
-            <Tooltip title="You do not have permission to view this item">
-              <Chip size="small" color="warning" label="No access" data-test-id="LinkField-noAccess" />
+            <Tooltip title={t("fields.link.linkField.noPermission")}>
+              <Chip
+                size="small"
+                color="warning"
+                label={t("fields.link.linkField.noAccess")}
+                data-test-id="LinkField-noAccess"
+              />
             </Tooltip>
           )}
           {!openBlocked && (
@@ -150,14 +169,19 @@ export default function LinkField(props: LinkFieldProps): React.ReactElement {
               href={openHref}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`Open ${props.link.targetGlobalId}`}
+              aria-label={t("fields.link.linkField.openLabel", { globalId: props.link.targetGlobalId })}
             >
-              Open
+              {t("common:actions.open")}
             </Button>
           )}
           {props.editable && props.onEdit && (
-            <Button size="small" startIcon={<EditIcon />} onClick={props.onEdit} aria-label="Edit link">
-              Edit
+            <Button
+              size="small"
+              startIcon={<EditIcon />}
+              onClick={props.onEdit}
+              aria-label={t("fields.link.linkField.editLink")}
+            >
+              {t("common:actions.edit")}
             </Button>
           )}
         </Box>

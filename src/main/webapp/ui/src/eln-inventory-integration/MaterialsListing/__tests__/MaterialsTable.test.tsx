@@ -41,7 +41,7 @@ const material1 = {
 };
 describe("MaterialsTable", () => {
   describe("Location column", () => {
-    test("When the record is deleted, In Trash should be shown.", () => {
+    test("When the record is deleted, the in-trash identifier should be shown.", () => {
       const mockList = new ListOfMaterials({
         materials: [material1],
         id: 1,
@@ -55,7 +55,7 @@ describe("MaterialsTable", () => {
         </ThemeProvider>,
       );
       // second cell because the MaterialTable row has only 2 cells in a row, despite what would be visually intuitive
-      expect(screen.getAllByRole("cell")[1]).toHaveTextContent("In Trash");
+      expect(screen.getAllByRole("cell")[1]).toHaveTextContent("inventory:search.controls.status.inTrash");
     });
   });
 });

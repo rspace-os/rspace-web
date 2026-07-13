@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import useChemicalImport, { type ChemicalCompound } from "@/hooks/api/useChemicalImport";
 import AnalyticsContext from "@/stores/contexts/Analytics";
 import type { Editor } from ".";
@@ -17,6 +18,7 @@ export default function ImportDialog({
   onClose: () => void;
   editor: Editor;
 }): React.ReactNode {
+  const { t } = useTranslation("common");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const { saveSmilesString, formatAsHtml } = useChemicalImport();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -58,8 +60,8 @@ export default function ImportDialog({
       open={open}
       onClose={onClose}
       onCompoundsSelected={handleCompoundsSelected}
-      title="Import from PubChem"
-      submitButtonText={isSubmitting ? "Importing..." : "Import Selected"}
+      title={t("pubchemImport.title")}
+      submitButtonText={isSubmitting ? t("pubchemImport.importing") : t("pubchemImport.importSelected")}
       showPubChemInfo={true}
       allowMultipleSelection={true}
     />

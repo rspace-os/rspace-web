@@ -55,7 +55,7 @@ function GroupsField({ onSelection, label, getOptionDisabled }: GroupsFieldArgs)
             ...inputSlotProps,
             input: {
               ...inputSlotProps?.input,
-              startAdornment: <InputAdornment position="start">&nbsp;{label}</InputAdornment>,
+              startAdornment: <InputAdornment position="start"> {label}</InputAdornment>,
               endAdornment: inputSlotProps?.input.endAdornment ?? null,
             },
           }}

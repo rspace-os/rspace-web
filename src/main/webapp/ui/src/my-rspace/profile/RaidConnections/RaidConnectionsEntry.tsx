@@ -4,12 +4,15 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { Suspense, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { useGetGroupByIdQuery } from "@/modules/groups/queries";
+import { formatRaidConnectionLabel } from "@/my-rspace/profile/RaidConnections/formatRaidConnectionLabel";
 import RaidConnectionsAddForm from "@/my-rspace/profile/RaidConnections/RaidConnectionsAddForm";
 import RaidConnectionsDisassociateButton from "@/my-rspace/profile/RaidConnections/RaidConnectionsDisassociateButton";
 
 const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
+  const { t } = useTranslation("common");
   const [isEditing, setIsEditing] = useState(false);
   const { data: token } = useOauthTokenQuery();
   const { data: groupData } = useGetGroupByIdQuery({ id: groupId, token });
@@ -26,13 +29,9 @@ const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
       ) : (
         <>
           <Typography variant="body2">
-            {raidIdentifier ? (
-              <>
-                {raidTitle} ({raidIdentifier})
-              </>
-            ) : (
-              "Not connected"
-            )}
+            {raidIdentifier
+              ? formatRaidConnectionLabel({ raidIdentifier, raidTitle })
+              : t("profile.raidConnections.notConnected")}
           </Typography>
           {raidIdentifier ? (
             <RaidConnectionsDisassociateButton
@@ -42,7 +41,7 @@ const RaidConnectionsEntry = ({ groupId }: { groupId: string }) => {
             />
           ) : (
             <Button type="button" variant="outlined" onClick={() => setIsEditing(true)}>
-              Add
+              {t("actions.add")}
             </Button>
           )}
         </>

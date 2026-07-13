@@ -28,6 +28,7 @@ import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import createAccentedTheme from "../../../accentedTheme";
 import { ACCENT_COLOR } from "../../../assets/branding/snapgene";
@@ -50,6 +51,7 @@ function DnaPreview({
   file: GalleryFile;
   idOfDnaPreviewTab: string;
 }) {
+  const { t } = useTranslation(["workspace", "common"]);
   const [image, setImage] = React.useState<null | string>(null);
   const [linear, setLinear] = React.useState(false);
   const [showEnzymes, setShowEnzymes] = React.useState(true);
@@ -93,31 +95,30 @@ function DnaPreview({
     >
       <Stack direction="row" spacing={1}>
         <Select value={linear} onChange={(e) => setLinear(e.target.value === "true")} size="small">
-          <MenuItem value={"false"}>Circular</MenuItem>
-          <MenuItem value={"true"}>Linear</MenuItem>
+          <MenuItem value={"false"}>{t("tinymce.snapGene.circular")}</MenuItem>
+          <MenuItem value={"true"}>{t("tinymce.snapGene.linear")}</MenuItem>
         </Select>
         <FormControlLabel
           control={<Switch checked={showEnzymes} onChange={({ target: { checked } }) => setShowEnzymes(checked)} />}
-          label="Show restriction sites"
+          label={t("tinymce.snapGene.showRestrictionSites")}
         />
         <FormControlLabel
           control={<Switch checked={showORFs} onChange={({ target: { checked } }) => setShowORFs(checked)} />}
-          label="Show ORFs"
+          label={t("tinymce.snapGene.showORFs")}
         />
         <Box sx={{ flexGrow: 1 }} />
         <ButtonGroup>
-          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label="zoom in">
+          <IconButton onClick={() => setZoom((z) => z * 1.1)} aria-label={t("common:actions.zoomIn")}>
             <ZoomInIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label="zoom out">
+          <IconButton onClick={() => setZoom((z) => z / 1.1)} aria-label={t("common:actions.zoomOut")}>
             <ZoomOutIcon />
           </IconButton>
-          <IconButton onClick={() => setZoom(1)} aria-label="reset zoom">
+          <IconButton onClick={() => setZoom(1)} aria-label={t("common:actions.resetZoom")}>
             <ResetZoomIcon />
           </IconButton>
         </ButtonGroup>
       </Stack>
-      {}
       <Box
         sx={{
           borderRadius: "3px",
@@ -162,10 +163,10 @@ function DnaPreview({
         ) : (
           <Box
             component="img"
-            alt={`DNA preview of ${file.name}`}
+            alt={t("tinymce.snapGene.dnaPreviewAlt", { name: file.name })}
             {...(image !== null ? { src: image } : {})}
             onError={() => {
-              setError("Coult not load DNA preview image.");
+              setError(t("tinymce.snapGene.couldNotLoadDnaPreviewImage"));
             }}
             sx={{
               maxHeight: "100%",
@@ -182,30 +183,6 @@ function DnaPreview({
   );
 }
 
-const enzymeSetOptions = {
-  UNIQUE_SIX_PLUS: "Unique six plus",
-  UNIQUE: "Unique",
-  SIX_PLUS: "Six plus",
-  UNIQUE_AND_DUAL: "Unique and dual",
-  COMMERCIAL_NONREDUNDANT: "Commercial nonredundant",
-};
-
-const enzymeHeadCells = [
-  { id: "name", numeric: false, disablePadding: false, label: "Enzyme" },
-  {
-    id: "bottomCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Bottom cut position",
-  },
-  {
-    id: "topCutPosition",
-    numeric: true,
-    disablePadding: false,
-    label: "Top cut position",
-  },
-];
-
 function RestrictionSites({
   show,
   file,
@@ -215,6 +192,29 @@ function RestrictionSites({
   file: GalleryFile;
   idOfRestrictionSitesTab: string;
 }) {
+  const { t } = useTranslation("workspace");
+  const enzymeSetOptions = {
+    UNIQUE_SIX_PLUS: t("tinymce.snapGene.enzymeSetOptions.uniqueSixPlus"),
+    UNIQUE: t("tinymce.snapGene.enzymeSetOptions.unique"),
+    SIX_PLUS: t("tinymce.snapGene.enzymeSetOptions.sixPlus"),
+    UNIQUE_AND_DUAL: t("tinymce.snapGene.enzymeSetOptions.uniqueAndDual"),
+    COMMERCIAL_NONREDUNDANT: t("tinymce.snapGene.enzymeSetOptions.commercialNonredundant"),
+  };
+  const enzymeHeadCells = [
+    { id: "name", numeric: false, disablePadding: false, label: t("tinymce.snapGene.columns.enzyme") },
+    {
+      id: "bottomCutPosition",
+      numeric: true,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.bottomCutPosition"),
+    },
+    {
+      id: "topCutPosition",
+      numeric: true,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.topCutPosition"),
+    },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("enzyme");
   const [page, setPage] = React.useState(0);
@@ -315,7 +315,7 @@ function RestrictionSites({
         {!error && !loading && (
           <>
             <TableContainer sx={{ maxHeight: "387px" }}>
-              <Table stickyHeader size="small" aria-label="Enzyme table">
+              <Table stickyHeader size="small" aria-label={t("tinymce.snapGene.enzymeTableLabel")}>
                 <EnhancedTableHead
                   headCells={enzymeHeadCells}
                   order={order}
@@ -362,10 +362,10 @@ function RestrictionSites({
       <Grid>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
-            Enzyme Sets
+            {t("tinymce.snapGene.enzymeSets")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinymce.snapGene.enzymeTypeLabel")}
             name="enzymeSet"
             value={enzymeSet}
             onChange={(event) => setEnzymeSet(event.target.value)}
@@ -428,45 +428,12 @@ function ViewAsFasta({
 }
 
 const readingFrameOptions = {
-  ALL: { label: "All", filter: [-3, -2, -1, 1, 2, 3] },
-  FORWARD: { label: "Forward", filter: [1, 2, 3] },
-  REVERSE: { label: "Reverse", filter: [-1, -2, -3] },
-  FIRST_FORWARD: { label: "First forward", filter: [1] },
-  FIRST_REVERSE: { label: "First reverse", filter: [-1] },
+  ALL: { filter: [-3, -2, -1, 1, 2, 3] },
+  FORWARD: { filter: [1, 2, 3] },
+  REVERSE: { filter: [-1, -2, -3] },
+  FIRST_FORWARD: { filter: [1] },
+  FIRST_REVERSE: { filter: [-1] },
 };
-
-const orfHeadCells = [
-  {
-    id: "fullRangeBegin",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range Begin",
-  },
-  {
-    id: "fullRangeEnd",
-    numeric: false,
-    disablePadding: false,
-    label: "Full Range End",
-  },
-  {
-    id: "molecularWeight",
-    numeric: false,
-    disablePadding: false,
-    label: "Molecular Weight",
-  },
-  {
-    id: "readingFrame",
-    numeric: false,
-    disablePadding: false,
-    label: "Reading Frame",
-  },
-  {
-    id: "translation",
-    numeric: false,
-    disablePadding: false,
-    label: "Translation",
-  },
-];
 
 type Orf = {
   id: number;
@@ -478,6 +445,46 @@ type Orf = {
 };
 
 function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: GalleryFile; idOfOrfTableTab: string }) {
+  const { t } = useTranslation("workspace");
+  const readingFrameLabels: Record<keyof typeof readingFrameOptions, string> = {
+    ALL: t("tinymce.snapGene.readingFrames.all"),
+    FORWARD: t("tinymce.snapGene.readingFrames.forward"),
+    REVERSE: t("tinymce.snapGene.readingFrames.reverse"),
+    FIRST_FORWARD: t("tinymce.snapGene.readingFrames.firstForward"),
+    FIRST_REVERSE: t("tinymce.snapGene.readingFrames.firstReverse"),
+  };
+  const orfHeadCells = [
+    {
+      id: "fullRangeBegin",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.fullRangeBegin"),
+    },
+    {
+      id: "fullRangeEnd",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.fullRangeEnd"),
+    },
+    {
+      id: "molecularWeight",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.molecularWeight"),
+    },
+    {
+      id: "readingFrame",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.readingFrame"),
+    },
+    {
+      id: "translation",
+      numeric: false,
+      disablePadding: false,
+      label: t("tinymce.snapGene.columns.translation"),
+    },
+  ];
   const [order, setOrder] = React.useState<Order>("desc");
   const [orderBy, setOrderBy] = React.useState("version");
   const [page, setPage] = React.useState(0);
@@ -553,7 +560,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
         {!loading && !error && (
           <>
             <TableContainer sx={{ maxHeight: "449px" }}>
-              <Table stickyHeader size="small" aria-label="ORF table">
+              <Table stickyHeader size="small" aria-label={t("tinymce.snapGene.orfTable")}>
                 <EnhancedTableHead
                   headCells={orfHeadCells}
                   order={order}
@@ -598,10 +605,10 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
       <Grid sx={{ minWidth: "200px" }}>
         <FormControl component="fieldset">
           <FormLabel component="legend" sx={{ textAlign: "right" }}>
-            Open Reading Frames
+            {t("tinymce.snapGene.openReadingFrames")}
           </FormLabel>
           <RadioGroup
-            aria-label="Enzyme type"
+            aria-label={t("tinymce.snapGene.readingFrames.label")}
             name="enzymeSet"
             value={readingFrameOption}
             onChange={(event) => setReadingFrameOption(event.target.value as keyof typeof readingFrameOptions)}
@@ -611,7 +618,7 @@ function OrfTable({ show, file, idOfOrfTableTab }: { show: boolean; file: Galler
                 value={key}
                 key={key}
                 control={<Radio color="primary" />}
-                label={readingFrameOptions[key].label}
+                label={readingFrameLabels[key]}
                 labelPlacement="start"
               />
             ))}
@@ -662,6 +669,7 @@ export function useSnapGenePreview(): {
 export function CallableSnapGenePreview({ children }: { children: React.ReactNode }): React.ReactNode {
   const [file, setFile] = React.useState<GalleryFile | null>(null);
   const [tab, setTab] = React.useState("DNA preview");
+  const { t } = useTranslation(["workspace", "common"]);
   const idOfDnaPreviewTab = React.useId();
   const idOfRestrictionSitesTab = React.useId();
   const idOfViewAsFastaTab = React.useId();
@@ -713,18 +721,18 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="DNA preview"
+                  aria-label={t("tinymce.snapGene.tabDnaPreview")}
                   aria-selected={tab === "DNA preview"}
                   id={idOfDnaPreviewTab}
                 >
                   <ListItemButton selected={tab === "DNA preview"} onClick={(e) => switchTab(e, "DNA preview")}>
-                    <ListItemText primary="DNA Preview" />
+                    <ListItemText primary={t("tinymce.snapGene.tabDnaPreview")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="Restriction sites"
+                  aria-label={t("tinymce.snapGene.enzymeSites")}
                   aria-selected={tab === "Restriction sites"}
                   id={idOfRestrictionSitesTab}
                 >
@@ -732,29 +740,29 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                     selected={tab === "Restriction sites"}
                     onClick={(e) => switchTab(e, "Restriction sites")}
                   >
-                    <ListItemText primary="Restriction Sites" />
+                    <ListItemText primary={t("tinymce.snapGene.enzymeSites")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="FASTA"
+                  aria-label={t("tinymce.snapGene.viewAsFasta")}
                   aria-selected={tab === "View as FASTA"}
                   id={idOfViewAsFastaTab}
                 >
                   <ListItemButton selected={tab === "View as FASTA"} onClick={(e) => switchTab(e, "View as FASTA")}>
-                    <ListItemText primary="FASTA" />
+                    <ListItemText primary={t("tinymce.snapGene.viewAsFasta")} />
                   </ListItemButton>
                 </ListItem>
                 <ListItem
                   disablePadding
                   role="tab"
-                  aria-label="ORF table"
+                  aria-label={t("tinymce.snapGene.orfTable")}
                   aria-selected={tab === "ORF table"}
                   id={idOfOrfTableTab}
                 >
                   <ListItemButton selected={tab === "ORF table"} onClick={(e) => switchTab(e, "ORF table")}>
-                    <ListItemText primary="ORF Table" />
+                    <ListItemText primary={t("tinymce.snapGene.orfTable")} />
                   </ListItemButton>
                 </ListItem>
               </Drawer>
@@ -770,7 +778,7 @@ export function CallableSnapGenePreview({ children }: { children: React.ReactNod
                   <OrfTable show={tab === "ORF table"} file={file} idOfOrfTableTab={idOfOrfTableTab} />
                 </DialogContent>
                 <DialogActions>
-                  <Button onClick={() => setFile(null)}>Close</Button>
+                  <Button onClick={() => setFile(null)}>{t("common:actions.close")}</Button>
                 </DialogActions>
               </Stack>
             </Stack>

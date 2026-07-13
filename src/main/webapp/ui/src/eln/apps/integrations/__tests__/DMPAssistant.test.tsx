@@ -55,7 +55,7 @@ describe("DMPAssistant", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.connect" })).toBeVisible();
   });
   test("Should have a disconnect button when the user is authenticated.", () => {
     render(
@@ -71,7 +71,7 @@ describe("DMPAssistant", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /disconnect/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
   });
   test("Should flip to connected when the DMPASSISTANT_CONNECTED event fires.", async () => {
     render(
@@ -87,7 +87,7 @@ describe("DMPAssistant", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    expect(screen.getByRole("button", { name: /connect/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: "apps:actions.connect" })).toBeVisible();
 
     // the OAuth popup's shared result page posts this over the BroadcastChannel
     act(() => {
@@ -96,7 +96,7 @@ describe("DMPAssistant", () => {
       });
     });
 
-    expect(await screen.findByRole("button", { name: /disconnect/i })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "apps:actions.disconnect" })).toBeVisible();
   });
   test("Clicking disconnect issues the DELETE call and flips back to connect.", async () => {
     const mockAxios = new MockAdapter(axios);
@@ -114,9 +114,9 @@ describe("DMPAssistant", () => {
     );
 
     fireEvent.click(screen.getByRole("button"));
-    fireEvent.click(screen.getByRole("button", { name: /disconnect/i }));
+    fireEvent.click(screen.getByRole("button", { name: "apps:actions.disconnect" }));
 
     await waitFor(() => expect(mockAxios.history.delete.length).toBe(1));
-    expect(await screen.findByRole("button", { name: /connect/i })).toBeVisible();
+    expect(await screen.findByRole("button", { name: "apps:actions.connect" })).toBeVisible();
   });
 });

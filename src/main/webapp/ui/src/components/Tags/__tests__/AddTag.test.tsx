@@ -1,5 +1,5 @@
 import "@/__tests__/__mocks__/muiTransitions";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import AddTag from "../AddTag";
@@ -30,14 +30,16 @@ describe("AddTag", () => {
 
     render(<AddTag enforceOntologies={false} onSelection={() => {}} value={[]} />);
 
-    await user.click(screen.getByText("Add Tag"));
+    await user.click(screen.getByText("common:tags.addTag"));
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Filter suggested tags")).toBeVisible();
+      expect(screen.getByLabelText("common:tags.filterSuggestedTags")).toBeVisible();
     });
 
-    // give effects a tick to flush
-    await new Promise((r) => setTimeout(r, 50));
+    // give effects a tick to flush, wrapped so any resulting state updates are captured
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
 
     const messages = errorSpy.mock.calls.map((c) => c.map((arg) => String(arg)).join(" "));
 

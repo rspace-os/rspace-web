@@ -45,7 +45,7 @@ describe("Tags", () => {
             />
           </ThemeProvider>,
         );
-        expect(container).toHaveTextContent("Tags must be no longer than 8000 characters.");
+        expect(container).toHaveTextContent("inventory:fields.tags.validation.maxLength");
       }),
       { numRuns: 10 },
     );

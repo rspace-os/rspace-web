@@ -8,7 +8,9 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import TimeAgoCustom from "@/components/TimeAgoCustom";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import CustomTooltip from "../../../components/CustomTooltip";
 import DescriptionList from "../../../components/DescriptionList";
 import ImagePreview from "../../../components/ImagePreview";
@@ -32,8 +34,6 @@ import contextActions from "../ContextMenu/ContextActions";
 import { RecordLink } from "../RecordLink";
 import CardStructure from "./CardStructure";
 
-const REQUIRED_PERMISSIONS_TOOLTIP = "You do not have permission to select this item.";
-
 type CardArgs = {
   record: InventoryRecord;
 };
@@ -46,6 +46,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const { useNavigate } = useContext(NavigateContext);
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation("inventory");
 
   const activateResult = (r: InventoryRecord) => {
     differentSearchForSettingActiveResult
@@ -95,13 +96,13 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const hasPermission = hasRequiredPermissions(record.permittedActions, search.uiConfig?.requiredPermissions);
   const cardIsGreyedOut = isFilteredOut || !hasPermission;
   const filteredOutReason = isFilteredOut ? search.uiConfig?.alwaysFilteredOutReason : undefined;
-  const tooltipText = filteredOutReason ?? (!hasPermission ? REQUIRED_PERMISSIONS_TOOLTIP : undefined);
+  const tooltipText = filteredOutReason ?? (!hasPermission ? t("detailedListing.card.requiredPermissions") : undefined);
 
   const menuItems = contextActions({
     selectedResults: [record],
     menuID: menuIDs.CARD,
     closeMenu: () => setAnchorEl(null),
-    forceDisabled: search.processingContextActions ? "Action in Progress" : "",
+    forceDisabled: search.processingContextActions ? t("contextMenu.actionInProgress") : "",
     basketSearch: search.fetcher.basketSearch,
   })("menuitem");
 
@@ -113,26 +114,26 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
   const contentItems: Array<ContentItem> = [];
   if (fullAccess && record instanceof ContainerModel) {
     contentItems.push({
-      label: "Contents",
+      label: t("detailedListing.card.contentLabels.contents"),
       value: <ContentsChips record={record} />,
     });
   }
   if (fullAccess && record instanceof SampleModel) {
-    contentItems.push({ label: "Total Quantity", value: record.quantityLabel });
+    contentItems.push({ label: t("detailedListing.card.contentLabels.totalQuantity"), value: record.quantityLabel });
   }
   if (fullAccess && record instanceof SubSampleModel) {
-    contentItems.push({ label: "Quantity", value: record.quantityLabel });
+    contentItems.push({ label: t("detailedListing.card.contentLabels.quantity"), value: record.quantityLabel });
   }
   if (notPublic && record instanceof SubSampleModel) {
     contentItems.push({
-      label: "Sample",
+      label: t("detailedListing.card.contentLabels.sample"),
       value: <RecordLink record={record.sample} overflow />,
       reducedPadding: true,
     });
   }
   if (record.owner) {
     contentItems.push({
-      label: "Owner",
+      label: t("detailedListing.card.contentLabels.owner"),
       value: <UserDetails userId={record.owner.id} fullName={record.owner.fullName} position={["bottom", "right"]} />,
       reducedPadding: true,
     });
@@ -143,7 +144,7 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
     record.immediateParentContainer
   ) {
     contentItems.push({
-      label: "Location",
+      label: t("detailedListing.card.contentLabels.location"),
       value: (
         <Box sx={{ mt: 0.5 }}>
           <RecordLink record={record.immediateParentContainer} overflow />
@@ -224,13 +225,13 @@ function RecordCard({ record }: CardArgs): React.ReactNode {
               fontSize: "0.8em",
             }}
           >
-            <span>Modified </span>
-            <TimeAgoCustom
-              time={record.lastModified}
-              formatter={(value, unit, suffix) => `${value}${unit[0]} ${suffix}`}
+            <TransRichText
+              i18nKey="inventory:detailedListing.card.modifiedBy"
+              values={{ name: record.modifiedByFullName }}
+              components={{
+                timeAgo: <TimeAgoCustom time={record.lastModified} compact />,
+              }}
             />
-            <span> by </span>
-            {record.modifiedByFullName}
           </Box>
         ) : null
       }

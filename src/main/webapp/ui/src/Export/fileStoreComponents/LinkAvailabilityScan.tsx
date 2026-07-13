@@ -12,6 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import { isNotNil } from "es-toolkit";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import LoadingFade from "../../components/LoadingFade";
 import { formatFileSize } from "../../util/files";
 import type { FileSystem } from "../common";
@@ -39,34 +40,26 @@ export default function LinkAvailabilityScan({
   loadingScanResults,
   checkedFileSystems,
 }: FoundLinksListingArgs): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = useState(false);
 
   return (
     <Card sx={{ p: 1 }}>
-      <h2>Link availability scan</h2>
+      <h2>{t("export.fileStore.scan.heading")}</h2>
       {scanResultsPresent === false ? (
-        <p>
-          Before continuing please run the filestore links availability scan, which will report on any unaccessible or
-          filtered links.
-        </p>
+        <p>{t("export.fileStore.scan.runHint")}</p>
       ) : (
         <p>
-          {scanResultsAvailableCount === 0 ? (
-            <span>
-              Export <strong>will not include any filestore files</strong>.
-            </span>
-          ) : (
-            <span>
-              Export will include <strong>{scanResultsAvailableCount} filestore file(s) </strong>
-              of total size <strong>{formatFileSize(scanResultsTotalFileSize)}</strong>.{" "}
-            </span>
-          )}
-          {scanResultsAvailableCount > 0 && scanResultsOmittedCount > 0 && (
-            <span>
-              <strong>{scanResultsOmittedCount} file(s) or folder(s) will be skipped</strong>.{" "}
-            </span>
-          )}
-          {scanResultsOmittedCount > 0 && <span>Please check the scan results for details.</span>}
+          {scanResultsAvailableCount === 0
+            ? t("export.fileStore.scan.noFilesIncluded")
+            : t("export.fileStore.scan.filesIncluded", {
+                count: scanResultsAvailableCount,
+                size: formatFileSize(scanResultsTotalFileSize),
+              })}
+          {scanResultsAvailableCount > 0 &&
+            scanResultsOmittedCount > 0 &&
+            t("export.fileStore.scan.filesSkipped", { count: scanResultsOmittedCount })}
+          {scanResultsOmittedCount > 0 && t("export.fileStore.scan.checkResults")}
         </p>
       )}
       <Button
@@ -79,11 +72,11 @@ export default function LinkAvailabilityScan({
         data-test-id="scan-links"
         fullWidth
       >
-        Scan filestore links
+        {t("export.fileStore.scan.scanButton")}
       </Button>
       {scanResultsPresent && (
         <Button variant="outlined" onClick={() => setOpen(true)} data-test-id="show-last-scan" fullWidth>
-          Show last scan results
+          {t("export.fileStore.scan.showLastButton")}
         </Button>
       )}
       <Dialog onClose={() => setOpen(false)} open={open}>
@@ -93,7 +86,7 @@ export default function LinkAvailabilityScan({
           </div>
         ) : (
           <>
-            <DialogTitle>Availability scan results</DialogTitle>
+            <DialogTitle>{t("export.fileStore.scan.dialogTitle")}</DialogTitle>
             <DialogContent>
               {checkedFileSystems.map((fileSystem) => {
                 const issues = Object.entries(fileSystem.checkedNfsLinkMessages);
@@ -102,12 +95,12 @@ export default function LinkAvailabilityScan({
                   <div key={`skippedLinks${fileSystem.id}`}>
                     {issues.length > 0 ? (
                       <div>
-                        <h3>Skipped files from {fileSystem.name}</h3>
+                        <h3>{t("export.fileStore.scan.skippedHeading", { name: fileSystem.name })}</h3>
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableCell>Full path on the File System</TableCell>
-                              <TableCell align="right">Reason</TableCell>
+                              <TableCell>{t("export.fileStore.scan.columns.path")}</TableCell>
+                              <TableCell align="right">{t("export.fileStore.scan.columns.reason")}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -129,13 +122,13 @@ export default function LinkAvailabilityScan({
                     )}
                     {checkedFiles.length > 0 ? (
                       <div>
-                        <h3>Included files from {fileSystem.name}</h3>
+                        <h3>{t("export.fileStore.scan.includedHeading", { name: fileSystem.name })}</h3>
                         <Table>
                           <TableHead>
                             <TableRow>
-                              <TableCell>Full path on the File System</TableCell>
-                              <TableCell align="right">Type</TableCell>
-                              <TableCell align="right">Size</TableCell>
+                              <TableCell>{t("export.fileStore.scan.columns.path")}</TableCell>
+                              <TableCell align="right">{t("export.fileStore.scan.columns.type")}</TableCell>
+                              <TableCell align="right">{t("export.fileStore.scan.columns.size")}</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -184,7 +177,7 @@ export default function LinkAvailabilityScan({
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpen(false)} color="primary" data-test-id="button-loading-scan-ok">
-                OK
+                {t("common:actions.ok")}
               </Button>
             </DialogActions>
           </>

@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import FormField from "../../../components/Inputs/FormField";
 import NoValue from "../../../components/NoValue";
 import UserDetails from "../../../components/UserDetails";
@@ -12,14 +13,15 @@ export default function Owner<
   },
   FieldOwner extends HasUneditableFields<Fields>,
 >({ fieldOwner }: { fieldOwner: FieldOwner }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const owner: Person | null = fieldOwner.fieldValues.owner;
 
   return (
     <FormField
       value={void 0}
-      label="Owner"
+      label={t("fields.owner.label")}
       renderInput={() => {
-        if (!owner) return <NoValue label={fieldOwner.noValueLabel.owner ?? "Unknown Owner"} />;
+        if (!owner) return <NoValue label={fieldOwner.noValueLabel.owner ?? t("fields.owner.unknownOwner")} />;
         const { id, fullName } = owner;
         return (
           <Box>

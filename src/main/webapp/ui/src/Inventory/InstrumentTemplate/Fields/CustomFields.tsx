@@ -4,6 +4,7 @@ import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import FormControl from "../../../components/Inputs/FormControl";
 import NoValue from "../../../components/NoValue";
@@ -28,6 +29,7 @@ type CustomFieldsArgs = {
 };
 
 function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
+  const { t } = useTranslation("inventory");
   const {
     searchStore: { activeResult },
     uiStore,
@@ -71,19 +73,19 @@ function CustomFields({ onErrorStateChange }: CustomFieldsArgs): ReactNode {
         <TemplateFields editable={editable} />
       ) : (
         <Box sx={{ mt: 2, mb: 1 }}>
-          <NoValue label="No custom fields" />
+          <NoValue label={t("instrumentTemplate.customFields.noCustomFields")} />
         </Box>
       )}
       {editable && (
         <FormControl inline>
-          <CustomTooltip title="Add field">
+          <CustomTooltip title={t("instrumentTemplate.customFields.addFieldTooltip")}>
             <Button
               color="primary"
               startIcon={<AddOutlinedIcon />}
               variant="outlined"
               onClick={() => activeResult.addField(EMPTY_FIELD)}
             >
-              Add new field
+              {t("fields.extraFields.addNewField")}
             </Button>
           </CustomTooltip>
         </FormControl>

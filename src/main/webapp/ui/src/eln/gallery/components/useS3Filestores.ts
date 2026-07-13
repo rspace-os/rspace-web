@@ -1,5 +1,7 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import useOauthToken from "../../../hooks/auth/useOauthToken";
 import AlertContext, { type Alert, mkAlert } from "../../../stores/contexts/Alert";
 import type * as FetchingData from "../../../util/fetchingData";
@@ -9,11 +11,7 @@ import Result from "../../../util/result";
 const firstResult = <T>(items: ReadonlyArray<T>): Result<T> =>
   Result.fromNullable(items.at(0), new Error("Array is empty"));
 
-function handleErrors(
-  response: unknown,
-  successMessage = "Successfully moved the files to S3.",
-  partialFailureMessage = "Moving some files to S3 failed.",
-): Alert {
+function handleErrors(response: unknown, successMessage: string, partialFailureMessage: string): Alert {
   const data = Parsers.objectPath(["data"], response).flatMap(Parsers.isObject).flatMap(Parsers.isNotNull);
 
   return data
@@ -79,7 +77,7 @@ function handleErrors(
     .orElse(
       mkAlert({
         variant: "error",
-        message: "Could not parse response.",
+        message: i18n.t("gallery:errors.parseResponse"),
       }),
     );
 }
@@ -115,6 +113,7 @@ export type S3Filestore = {
 export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3Filestore>> {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
   const [loading, setLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
   const [filestores, setFilestores] = React.useState<Result<ReadonlyArray<S3Filestore>>>(Result.Ok([]));
@@ -135,8 +134,8 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
         addAlert(
           handleErrors(
             response,
-            operation === "copy" ? "Successfully copied the files to S3." : "Successfully moved the files to S3.",
-            operation === "copy" ? "Copying some files to S3 failed." : "Moving some files to S3 failed.",
+            operation === "copy" ? t("s3.success.copied") : t("s3.success.moved"),
+            operation === "copy" ? t("s3.errors.partialCopyFailed") : t("s3.errors.partialMoveFailed"),
           ),
         );
       } catch (e) {
@@ -145,11 +144,11 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Unknown error");
+          .orElse(t("errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: `Could not ${operation} files to S3.`,
+            title: operation === "copy" ? t("s3.errors.copyFailed") : t("s3.errors.moveFailed"),
             message: errorMsg,
           }),
         );
@@ -176,13 +175,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
             destPath,
             deleteSource,
           });
-          addAlert(
-            handleErrors(
-              response,
-              "Successfully transferred the files to S3.",
-              "Transferring some files to S3 failed.",
-            ),
-          );
+          addAlert(handleErrors(response, t("s3.success.transferred"), t("s3.errors.partialTransferFailed")));
         }
       } catch (e) {
         console.error(e);
@@ -190,11 +183,11 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Unknown error");
+          .orElse(t("errors.unknownError"));
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not transfer files to S3.",
+            title: t("s3.errors.transferFailed"),
             message: errorMsg,
           }),
         );
@@ -278,7 +271,7 @@ export default function useS3Filestores(): FetchingData.Fetched<ReadonlyArray<S3
           .flatMap(Parsers.isArray)
           .flatMap(firstResult)
           .flatMap(Parsers.isString)
-          .orElse("Error loading S3 filestores"),
+          .orElse(t("listing.alerts.retrieveFilestoresFailed")),
       );
       console.error(e);
     } finally {

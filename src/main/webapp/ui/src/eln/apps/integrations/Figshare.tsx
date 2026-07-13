@@ -1,7 +1,9 @@
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import React, { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBroadcastChannel } from "@/modules/common/hooks/broadcast";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/figshare";
 import FigshareIcon from "../../../assets/branding/figshare/logo.svg";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
@@ -45,6 +47,7 @@ export const FIGSHARE_CONNECTION_CHANNEL = "rspace.apps.figshare.connection";
  * ../useFigshare.
  */
 function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { addAlert } = useContext(AlertContext);
   const { disconnect } = useFigshareEndpoint();
   const [connected, setConnected] = useState(integrationState.credentials.ACCESS_TOKEN.isPresent());
@@ -57,7 +60,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
         addAlert(
           mkAlert({
             variant: "error",
-            title: "Could not connect to Figshare",
+            title: t("integrations.figshare.alerts.connectError"),
             message: e.data.error,
           }),
         );
@@ -67,7 +70,7 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
       addAlert(
         mkAlert({
           variant: "success",
-          message: "Successfully connected to Figshare.",
+          message: t("integrations.figshare.alerts.connectSuccess"),
         }),
       );
     },
@@ -82,23 +85,19 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Figshare"
+        name={t("integrations.figshare.name")}
         integrationState={integrationState}
-        explanatoryText="Easily manage all your research outputs and make them available in a citable, shareable and discoverable manner."
+        explanatoryText={t("integrations.figshare.description")}
         image={FigshareIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can export your files and data directly from RSpace to Figshare. You are able to specify various metadata, and associate a DMP from DMPTool with the deposit."
-        helpLinkText="Figshare integration docs"
-        website="figshare.com"
+        usageText={t("integrations.figshare.usage")}
+        helpLinkText={t("integrations.figshare.helpLink")}
+        website="https://figshare.com"
         docLink="figshare"
         setupSection={
           <>
-            <ol>
-              <li>Click on Connect to authorise RSpace to access your Figshare account.</li>
-              <li>Enable the integration.</li>
-              <li>Figshare will now be available as an option in the export dialog.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.figshare.setup.instructions" />
             {connected ? (
               <form
                 onSubmit={(e) => {
@@ -110,13 +109,13 @@ function Figshare({ integrationState, update }: FigshareArgs): React.ReactNode {
                 }}
               >
                 <Button type="submit" sx={{ mt: 1 }}>
-                  Disconnect
+                  {t("actions.disconnect")}
                 </Button>
               </form>
             ) : (
               <form action="/apps/figshare/connect" method="POST" target="_blank" rel="noopener opener">
                 <Button type="submit" sx={{ mt: 1 }} value="Connect">
-                  Connect
+                  {t("actions.connect")}
                 </Button>
               </form>
             )}

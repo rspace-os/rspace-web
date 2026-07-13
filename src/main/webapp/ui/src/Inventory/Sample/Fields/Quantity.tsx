@@ -6,6 +6,8 @@ import type { SelectChangeEvent } from "@mui/material/Select";
 import { textFieldClasses } from "@mui/material/TextField";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import NumberField from "../../../components/Inputs/NumberField";
 import StringField from "../../../components/Inputs/StringField";
 import UnitSelect from "../../../components/Inputs/UnitSelect";
@@ -13,6 +15,7 @@ import NavigateContext from "../../../stores/contexts/Navigate";
 import type SampleModel from "../../../stores/models/SampleModel";
 import useStores from "../../../stores/use-stores";
 import { Optional } from "../../../util/optional";
+import { isPlainLeftClick } from "../../../util/Util";
 import FormField from "../../components/Inputs/FormField";
 
 type QuantityArgs = {
@@ -21,6 +24,7 @@ type QuantityArgs = {
 };
 
 function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { useNavigate } = React.useContext(NavigateContext);
   const navigate = useNavigate();
   const { unitStore } = useStores();
@@ -74,7 +78,10 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     if (unitStore.units.length) {
       const totalQuantity = sample.quantityValue * count;
       return Optional.present(
-        `${totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2)} ${sample.quantityUnitLabel} in total`,
+        t("sample.fields.quantity.total", {
+          quantity: totalQuantity.toFixed(totalQuantity % 1 === 0 ? 0 : 2),
+          unit: sample.quantityUnitLabel,
+        }),
       );
     }
 
@@ -85,7 +92,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     if (valid) {
       return null;
     }
-    return "Should be a positive value, of no more than 3 decimal places, or zero.";
+    return t("sample.fields.quantity.validation");
   };
 
   const alias = sample.subSampleAlias;
@@ -100,7 +107,7 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
     return ["dimensionless", "volume", "mass"];
   };
 
-  const totalQuantityString = `${sample.quantityLabel} in total`;
+  const totalQuantityString = t("sample.fields.quantity.totalLabel", { quantity: sample.quantityLabel });
 
   return (
     <>
@@ -116,8 +123,12 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
           }}
         >
           <FormField
-            label={`Quantity${(sample.newSampleSubSamplesCount ?? 2) > 1 ? ` per ${alias.alias}` : ""}`}
-            explanation="Quantity units can also be changed by editing templates."
+            label={
+              (sample.newSampleSubSamplesCount ?? 2) > 1
+                ? t("sample.fields.quantity.perAlias", { alias: alias.alias })
+                : t("sample.fields.quantity.label")
+            }
+            explanation={t("sample.fields.quantity.templateUnitsExplanation")}
             value={amount}
             error={!valid}
             helperText={errorMessage()}
@@ -143,8 +154,9 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
                         />
                         {(sample.newSampleSubSamplesCount ?? 2) > 1 && (
                           <InputAdornment position="start">
-                            {"per "}
-                            {sample.template ? alias.alias : "subsample"}
+                            {t("fields.quantity.perAlias", {
+                              alias: sample.template ? alias.alias : t("recordTypes.subsample.lower"),
+                            })}
                           </InputAdornment>
                         )}
                       </>
@@ -158,28 +170,33 @@ function Quantity({ onErrorStateChange, sample }: QuantityArgs): React.ReactNode
       )}
       {sample.id !== null && typeof sample.id !== "undefined" && Boolean(sample.quantity) && (
         <FormField
-          label="Total Quantity"
+          label={t("fields.quantity.totalLabel")}
           value={totalQuantityString}
           disabled
           explanation={
             sample.subSamplesCount === 1 ? (
-              `There is only one ${sample.subSampleAlias.alias}.`
+              t("fields.quantity.totalSingle", { alias: sample.subSampleAlias.alias })
             ) : (
-              <>
-                Total is calculated from the quantites of{" "}
-                <Link
-                  href={
-                    typeof sample.globalId === "string" ? `/inventory/search?parentGlobalId=${sample.globalId}` : "#"
-                  }
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
-                  }}
-                >
-                  all {sample.subSamplesCount} {sample.subSampleAlias.plural}
-                </Link>
-                , which can be changed by editing the {sample.subSampleAlias.plural} individually.
-              </>
+              <TransRichText
+                i18nKey="inventory:fields.quantity.totalCalculated"
+                values={{ count: sample.subSamplesCount, plural: sample.subSampleAlias.plural }}
+                components={{
+                  internalLink: (
+                    <Link
+                      href={
+                        typeof sample.globalId === "string"
+                          ? `/inventory/search?parentGlobalId=${sample.globalId}`
+                          : "#"
+                      }
+                      onClick={(e) => {
+                        if (!isPlainLeftClick(e)) return;
+                        e.preventDefault();
+                        if (sample.globalId) navigate(`/inventory/search?parentGlobalId=${sample.globalId}`);
+                      }}
+                    />
+                  ),
+                }}
+              />
             )
           }
           renderInput={() => <StringField disabled={true} value={totalQuantityString} />}

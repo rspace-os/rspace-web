@@ -56,15 +56,7 @@ export function SharedSnippetWithAGroup() {
       <Portal>
         <Alerts>
           <DialogBoundary>
-            <ShareDialog
-              open
-              onClose={() => {}}
-              globalIds={["SD3"]}
-              names={["Another shared snippet"]}
-              singularName="snippet"
-              pluralName="snippets"
-              isSnippet
-            />
+            <ShareDialog open onClose={() => {}} globalIds={["SD3"]} names={["Another shared snippet"]} isSnippet />
           </DialogBoundary>
         </Alerts>
       </Portal>
@@ -113,10 +105,10 @@ export function SharedWithAControlledOpenState() {
       <Portal>
         <Alerts>
           <button type="button" onClick={() => setOpen(true)}>
-            Open share dialog
+            {"Open share dialog"}
           </button>
           <button type="button" onClick={() => setOpen(false)}>
-            Close share dialog
+            {"Close share dialog"}
           </button>
           <DialogBoundary>
             <ShareDialog open={open} onClose={() => setOpen(false)} globalIds={["SD1"]} names={["Sample Document 1"]} />

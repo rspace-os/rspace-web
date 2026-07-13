@@ -5,10 +5,12 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import type React from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import useOneDimensionalRovingTabIndex from "../hooks/ui/useOneDimensionalRovingTabIndex";
 import { useLandmarksList } from "./LandmarksContext";
 
 const SkipToContentButton: React.FC = () => {
+  const { t } = useTranslation("common");
   const { landmarks } = useLandmarksList();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -84,7 +86,7 @@ const SkipToContentButton: React.FC = () => {
         dense
         disablePadding
         role="menu"
-        aria-label="Skip to content navigation"
+        aria-label={t("accessibilityTips.skipToContent.navigation")}
         sx={{ display: "flex", flexDirection: "column", gap: 1 }}
       >
         {landmarks.map((landmark, index) => (
@@ -109,7 +111,9 @@ const SkipToContentButton: React.FC = () => {
                 }
               }}
             >
-              <ListItemText primary={`Skip to ${landmark.name}`} />
+              <ListItemText
+                primary={t("accessibilityTips.skipToContent.skipToLandmark", { landmark: landmark.name })}
+              />
             </ListItemButton>
           </ListItem>
         ))}

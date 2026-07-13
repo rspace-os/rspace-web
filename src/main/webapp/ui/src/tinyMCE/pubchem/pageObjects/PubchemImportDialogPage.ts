@@ -18,11 +18,15 @@ export class PubchemImportDialogPage {
   }
 
   get firstCompoundCheckbox(): Locator {
-    return page.getByRole("checkbox", { name: /select/i }).first();
+    return page
+      .getByRole("checkbox", {
+        name: "Select compound",
+      })
+      .first();
   }
 
   get firstViewOnPubchemLink(): Locator {
-    return page.getByRole("link", { name: /View on PubChem/i }).first();
+    return page.getByRole("link", { name: "View on PubChem" }).first();
   }
 
   compoundCard(name: string): Locator {
@@ -34,7 +38,9 @@ export class PubchemImportDialogPage {
   }
 
   compoundCardCheckbox(name: string): Locator {
-    return this.compoundCard(name).getByRole("checkbox");
+    return this.compoundCard(name).getByRole("checkbox", {
+      name: "Select compound",
+    });
   }
 
   /**

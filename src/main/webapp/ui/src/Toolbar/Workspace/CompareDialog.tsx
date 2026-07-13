@@ -21,6 +21,7 @@ import {
   useGridApiContext,
 } from "@mui/x-data-grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { GlobalId } from "@/stores/definitions/BaseRecord";
 import createAccentedTheme from "../../accentedTheme";
@@ -92,6 +93,7 @@ function CircularProgressWithLabel(props: { value: number }) {
 }
 
 function CustomLoadingOverlay({ loadedCount, documentCount }: { loadedCount: number; documentCount: number }) {
+  const { t } = useTranslation("workspace");
   return (
     <Box
       sx={(theme) => ({
@@ -107,7 +109,7 @@ function CustomLoadingOverlay({ loadedCount, documentCount }: { loadedCount: num
       })}
     >
       <CircularProgressWithLabel value={(loadedCount / documentCount) * 100} />
-      <Box sx={{ mt: 2 }}>Reading documents…</Box>
+      <Box sx={{ mt: 2 }}>{t("toolbar.compareDialog.loadingDocuments")}</Box>
     </Box>
   );
 }
@@ -149,6 +151,7 @@ const CompareToolbar = ({
   rowSelectionModel: GridRowSelectionModel;
   setColumnsMenuAnchorEl: (anchorEl: HTMLElement) => void;
 }) => {
+  const { t } = useTranslation("workspace");
   const { trackEvent } = React.useContext(AnalyticsContext);
   const apiRef = useGridApiContext();
 
@@ -188,7 +191,9 @@ const CompareToolbar = ({
             return Promise.resolve();
           }}
         >
-          Export {rowSelectionModel.ids.size > 0 ? "selected" : "all"} rows to CSV
+          {t("toolbar.compareDialog.exportRows", {
+            selection: rowSelectionModel.ids.size > 0 ? "selected" : "other",
+          })}
         </ExportMenuItem>
       </GridToolbarExportContainer>
     </DataGridToolbar>
@@ -196,6 +201,7 @@ const CompareToolbar = ({
 };
 
 function CompareDialog(): React.ReactNode {
+  const { t } = useTranslation(["workspace", "common"]);
   const analytics = React.useContext(AnalyticsContext);
   const { addAlert } = React.useContext(AlertContext);
   const { getToken } = useOauthToken();
@@ -285,11 +291,11 @@ function CompareDialog(): React.ReactNode {
           const message = Parsers.objectPath(["response", "data", "message"], e)
             .orElseTry(() => Parsers.objectPath(["message"], e))
             .flatMap(Parsers.isString)
-            .orElse("Unknown reason");
+            .orElse(t("toolbar.compareDialog.unknownError"));
           addAlert(
             mkAlert({
               variant: "error",
-              title: "Could not read all of the documents",
+              title: t("toolbar.compareDialog.readError"),
               message,
             }),
           );
@@ -304,12 +310,12 @@ function CompareDialog(): React.ReactNode {
 
   const columns = [
     DataGridColumn.newColumnWithFieldName<"name", Document>("name", {
-      headerName: "Name",
+      headerName: t("toolbar.compareDialog.columnHeaders.name"),
       flex: 1,
       sortable: false,
     }),
     DataGridColumn.newColumnWithFieldName<"globalId", Document>("globalId", {
-      headerName: "Global ID",
+      headerName: t("toolbar.compareDialog.columnHeaders.globalId"),
       flex: 1,
       sortable: false,
     }),
@@ -319,7 +325,7 @@ function CompareDialog(): React.ReactNode {
         return doc.owner.username;
       },
       {
-        headerName: "Owner",
+        headerName: t("toolbar.compareDialog.columnHeaders.owner"),
         flex: 1,
         sortable: false,
         renderCell: ({ row }: { row: Document }) => (
@@ -332,7 +338,7 @@ function CompareDialog(): React.ReactNode {
       },
     ),
     DataGridColumn.newColumnWithFieldName<"created", Document>("created", {
-      headerName: "Created Date",
+      headerName: t("toolbar.compareDialog.columnHeaders.createdDate"),
       flex: 1,
       valueFormatter: (value: string) =>
         Parsers.parseDate(value)
@@ -340,7 +346,7 @@ function CompareDialog(): React.ReactNode {
           .orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"lastModified", Document>("lastModified", {
-      headerName: "Modified Date",
+      headerName: t("toolbar.compareDialog.columnHeaders.modifiedDate"),
       flex: 1,
       valueFormatter: (value: string) =>
         Parsers.parseDate(value)
@@ -348,20 +354,20 @@ function CompareDialog(): React.ReactNode {
           .orElse("—"),
     }),
     DataGridColumn.newColumnWithFieldName<"signed", Document>("signed", {
-      headerName: "Signed",
+      headerName: t("toolbar.compareDialog.columnHeaders.signed"),
       flex: 1,
       sortable: false,
       // for CSVs
       valueFormatter: (signed) => (signed ? "true" : "false"),
       renderCell: ({ value }: GridRenderCellParams) =>
         value ? (
-          <TickIcon color="success" aria-label="Signed" aria-hidden="false" />
+          <TickIcon color="success" aria-label={t("toolbar.compareDialog.columnHeaders.signed")} aria-hidden="false" />
         ) : (
-          <CrossIcon color="error" aria-label="Unsigned" aria-hidden="false" />
+          <CrossIcon color="error" aria-label={t("toolbar.compareDialog.columnHeaders.unsigned")} aria-hidden="false" />
         ),
     }),
     DataGridColumn.newColumnWithFieldName<"tags", Document>("tags", {
-      headerName: "Tags",
+      headerName: t("toolbar.compareDialog.columnHeaders.tags"),
       flex: 1,
       sortable: false,
     }),
@@ -393,17 +399,13 @@ function CompareDialog(): React.ReactNode {
         setDocuments([]);
       }}
     >
-      <DialogTitle>Export Documents to CSV</DialogTitle>
+      <DialogTitle>{t("toolbar.compareDialog.title")}</DialogTitle>
       <DialogContent>
         <Stack spacing={2}>
-          <Typography variant="body2">
-            Select the documents you want to combine into a single CSV file. Documents with identical structures will be
-            automatically aligned, including form data and content. If documents have different structures, additional
-            columns will be created to accommodate all information.
-          </Typography>
+          <Typography variant="body2">{t("toolbar.compareDialog.description")}</Typography>
           <Box sx={{ width: "100%" }}>
             <DataGrid
-              aria-label="documents"
+              aria-label={t("toolbar.compareDialog.labels.documentsTable")}
               autoHeight
               columns={columns}
               rows={documents}
@@ -452,7 +454,7 @@ function CompareDialog(): React.ReactNode {
             setDocumentCount(0);
           }}
         >
-          Close
+          {t("common:actions.close")}
         </Button>
       </DialogActions>
     </Dialog>

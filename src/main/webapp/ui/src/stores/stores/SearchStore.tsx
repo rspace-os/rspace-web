@@ -1,4 +1,6 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { WorkbenchId } from "@/stores/definitions/container/types";
 import ApiService from "../../common/InvApiService";
 import { showToastWhilstPending } from "../../util/alerts";
@@ -169,7 +171,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error retrieving Baskets.",
+          title: i18n.t("inventory:baskets.alerts.fetchFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -188,7 +190,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: `Error retrieving Basket.`,
+          title: i18n.t("inventory:baskets.alerts.fetchOneFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -201,7 +203,7 @@ export default class SearchStore {
     const { uiStore } = this.rootStore;
     try {
       const res = await showToastWhilstPending(
-        "Creating Basket...",
+        i18n.t("inventory:baskets.pending.creating"),
         ApiService.post<BasketAttrs>("baskets", { name, globalIds: items }),
       );
       if (res.status === 201 && res.data) {
@@ -209,8 +211,8 @@ export default class SearchStore {
         await this.getBaskets();
         uiStore.addAlert(
           mkAlert({
-            title: `${res.data.name} has been created.`,
-            message: items ? "The selected items have been added to it." : "",
+            title: i18n.t("inventory:baskets.alerts.created", { name: res.data.name }),
+            message: items ? i18n.t("inventory:baskets.alerts.selectedItemsAdded") : "",
             variant: "success",
             isInfinite: false,
           }),
@@ -219,7 +221,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error creating Basket.",
+          title: i18n.t("inventory:baskets.alerts.createFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -232,27 +234,26 @@ export default class SearchStore {
     const { uiStore } = this.rootStore;
     try {
       if (id) {
-        const name = this.savedBaskets.find((b) => b.id === id)?.name ?? "The Basket";
+        const name = this.savedBaskets.find((b) => b.id === id)?.name ?? i18n.t("inventory:baskets.fallbackName");
         if (
           await uiStore.confirm(
-            `Deleting Basket`,
-            <>
-              You are about to delete {name}.
-              <br />
-              The contents of the Basket will not be affected.
-            </>,
-            "OK",
-            "CANCEL",
+            i18n.t("inventory:baskets.delete.title"),
+            <TransRichText i18nKey="inventory:baskets.delete.body" values={{ name }} />,
+            i18n.t("common:actions.ok"),
+            i18n.t("common:actions.cancel"),
           )
         ) {
-          const res = await showToastWhilstPending("Deleting Basket...", ApiService.delete<void>(`baskets`, id));
+          const res = await showToastWhilstPending(
+            i18n.t("inventory:baskets.pending.deleting"),
+            ApiService.delete<void>(`baskets`, id),
+          );
           if (res.status === 200) {
             // refetch to update list
             await this.getBaskets();
             uiStore.addAlert(
               mkAlert({
-                title: `${name} has been deleted.`,
-                message: "Its contents have not been affected.",
+                title: i18n.t("inventory:baskets.alerts.deleted", { name }),
+                message: i18n.t("inventory:baskets.alerts.contentsUnaffected"),
                 variant: "success",
                 isInfinite: false,
               }),
@@ -265,7 +266,7 @@ export default class SearchStore {
     } catch (e) {
       uiStore.addAlert(
         mkAlert({
-          title: "Error deleting Basket.",
+          title: i18n.t("inventory:baskets.alerts.deleteFailed"),
           message: (e as Error).message || "",
           variant: "error",
           isInfinite: true,
@@ -454,8 +455,15 @@ export default class SearchStore {
     return new TemplateModel(factory, data);
   }
 
-  async getInstrumentTemplate(id: number, factory: Factory): Promise<InstrumentTemplateModel> {
-    const { data } = await ApiService.get<InstrumentTemplateAttrs>("instrumentTemplates", `${id}`);
+  async getInstrumentTemplate(
+    id: number,
+    version: number | null | undefined,
+    factory: Factory,
+  ): Promise<InstrumentTemplateModel> {
+    const { data } = await ApiService.get<InstrumentTemplateAttrs>(
+      "instrumentTemplates",
+      typeof version === "number" ? `${id}/versions/${version}` : `${id}`,
+    );
     return new InstrumentTemplateModel(factory, data);
   }
 

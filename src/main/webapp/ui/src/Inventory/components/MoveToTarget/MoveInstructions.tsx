@@ -7,6 +7,8 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import SearchContext from "../../../stores/contexts/Search";
@@ -17,6 +19,7 @@ import { match } from "../../../util/Util";
 import RecordDetails from "../RecordDetails";
 
 function MoveInstructions(): React.ReactNode {
+  const { t, i18n } = useTranslation(["inventory", "common"]);
   const { scopedResult } = useContext(SearchContext);
   if (!(scopedResult && scopedResult instanceof ContainerModel))
     throw new Error("Search context's scopedResult must be a ContainerModel");
@@ -29,9 +32,10 @@ function MoveInstructions(): React.ReactNode {
     const numOfSelectedLocations = moveStore.targetLocations?.length ?? 0;
     const infiniteContainer = container.cType === "LIST" || container.cType === "WORKBENCH";
     const moreToSelect = numOfSelectedResults - numOfSelectedLocations;
-    const canStoreLabel = (container.isWorkbench ? ["samples", "containers"] : container.canStore).join(" and ");
-    const plural = (l: number) => `location${l === 1 ? "" : "s"}`;
-    const placedLabel = `(${numOfSelectedLocations}/${numOfSelectedResults} placed)`;
+    const canStoreLabel = formatList(
+      container.isWorkbench ? ["samples", "containers"] : container.canStore,
+      i18n.resolvedLanguage ?? i18n.language,
+    );
     const {
       message,
       severity,
@@ -44,69 +48,74 @@ function MoveInstructions(): React.ReactNode {
         action?: boolean;
       }
     >([
-      [() => moveStore.loading || container.loading, { message: "Loading...", severity: "info" }],
+      [() => moveStore.loading || container.loading, { message: t("moveToTarget.loadingEllipsis"), severity: "info" }],
       [
         () => container.movingIntoItself,
         {
-          message: "A container can't be moved into itself or a subcontainer.",
+          message: t("moveToTarget.messages.movingIntoItself"),
           severity: "error",
         },
       ],
       [
         () => container.deleted,
         {
-          message: "Can't move items into deleted containers.",
+          message: t("moveToTarget.messages.deletedDestination"),
           severity: "error",
         },
       ],
       [
         () => !container.canEdit,
         {
-          message: "You do not have permission to place items in this container.",
+          message: t("moveToTarget.messages.noPermission"),
           severity: "error",
         },
       ],
       [
         () => container.cType === "IMAGE" && !container.locationsImage,
         {
-          message:
-            "This visual container doesn't yet have a locations image onto which locations can be marked. Please edit first.",
+          message: t("moveToTarget.messages.visualContainerNoImage"),
           severity: "warning",
         },
       ],
       [
         () => container.cType === "IMAGE" && Boolean(container.locationsImage) && container.locationsCount === 0,
         {
-          message:
-            "This visual container doesn't yet have any marked locations into which items can be placed. Please edit first.",
+          message: t("moveToTarget.messages.visualContainerNoLocations"),
           severity: "warning",
         },
       ],
       [
         () => !container.hasEnoughSpace,
         {
-          message: "This container does not have enough space.",
+          message: t("moveToTarget.messages.notEnoughSpace"),
           severity: "warning",
         },
       ],
       [
         () => !container.canStoreRecords,
         {
-          message: `This container can store ${canStoreLabel} only.`,
+          message: t("moveToTarget.messages.canStoreOnly", { types: canStoreLabel }),
           severity: "warning",
         },
       ],
       [
         () => infiniteContainer,
         {
-          message: `Destination  selected (${container.cType === "WORKBENCH" ? "Bench" : "Container"}).`,
+          message:
+            container.cType === "WORKBENCH"
+              ? t("moveToTarget.messages.benchSelected")
+              : t("moveToTarget.messages.containerSelected"),
           severity: "success",
         },
       ],
       [
         () => numOfSelectedLocations === 0,
         {
-          message: `Select ${numOfSelectedResults} ${plural(numOfSelectedResults)}. ${placedLabel}`,
+          message: t("moveToTarget.messages.selectLocations", {
+            count: numOfSelectedResults,
+            placed: numOfSelectedLocations,
+            total: numOfSelectedResults,
+          }),
           severity: "info",
           action: true,
         },
@@ -114,12 +123,16 @@ function MoveInstructions(): React.ReactNode {
       [
         () => moreToSelect !== 0,
         {
-          message: `Select ${moreToSelect} more ${plural(moreToSelect)}. ${placedLabel}`,
+          message: t("moveToTarget.messages.selectMoreLocations", {
+            count: moreToSelect,
+            placed: numOfSelectedLocations,
+            total: numOfSelectedResults,
+          }),
           severity: "info",
           action: true,
         },
       ],
-      [() => true, { message: "Selection complete.", severity: "success" }],
+      [() => true, { message: t("moveToTarget.messages.selectionComplete"), severity: "success" }],
     ])();
 
     return { message, severity, action };
@@ -133,7 +146,7 @@ function MoveInstructions(): React.ReactNode {
         action={
           action && (
             <IconButtonWithTooltip
-              title={expand ? "Collapse" : "Expand"}
+              title={expand ? t("common:actions.collapse") : t("common:actions.expand")}
               icon={<ExpandCollapseIcon open={expand} />}
               onClick={() => setExpand(!expand)}
               size="small"
@@ -168,7 +181,7 @@ function MoveInstructions(): React.ReactNode {
       <Card variant="outlined">
         <CardContent sx={{ paddingBottom: 0 }}>
           <Typography variant="h6" gutterBottom>
-            Next item to be placed:
+            {t("moveToTarget.nextItem")}
           </Typography>
           <RecordDetails record={nextRecord} />
         </CardContent>
@@ -186,12 +199,8 @@ function MoveInstructions(): React.ReactNode {
       {action && expand && nextDetails()}
       {showDragAndDropTip && (
         <Alert severity="info" sx={{ fontSize: "0.8rem", letterSpacing: "0.015em" }}>
-          <AlertTitle sx={{ fontSize: "0.85rem" }}>
-            Tip: when rearranging the contents of grid containers you can simply drag-and-drop them into their new
-            locations.
-          </AlertTitle>
-          Select one or more grid cells in the container&apos;s &quot;Locations and Content&quot; section and then tap
-          and hold to enter drag-and-drop mode.
+          <AlertTitle sx={{ fontSize: "0.85rem" }}>{t("moveToTarget.dragDropTip")}</AlertTitle>
+          {t("moveToTarget.dragDropInstructions")}
         </Alert>
       )}
     </Stack>

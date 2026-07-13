@@ -6,7 +6,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import docLinks from "../../../../assets/DocLinks";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import ChooseToEdit from "../../../../components/Inputs/ChooseToEdit";
 import FormControl from "../../../../components/Inputs/FormControl";
 import { OptionExplanation, OptionHeading } from "../../../../components/Inputs/RadioField";
@@ -33,6 +34,7 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
   hideOwnersGroups = false,
   additionalExplanation,
 }: AccessPermissionsArgs<FieldOwner>): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const onCheckboxClick = (checkedGroup: Group) => {
     if (!fieldOwner.fieldValues.sharedWith) throw new Error("sharedWith must be set");
     const sharedWith = fieldOwner.fieldValues.sharedWith;
@@ -58,18 +60,13 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
 
   return (
     <>
-      {notEditable && <Alert severity="info">You need to be in Edit mode to edit permissions.</Alert>}
+      {notEditable && <Alert severity="info">{t("fields.accessPermissions.editFirst")}</Alert>}
       <FormControl
-        aria-label="Access Permission Setting"
+        aria-label={t("fields.accessPermissions.label")}
         label=""
         explanation={
           <>
-            Specify who will have full view and edit access to this item using the options below. See the documentation
-            for information on{" "}
-            <a href={docLinks.permissions} target="_blank" rel="noreferrer">
-              access permissions
-            </a>
-            , including under what circumstances some infomation may be more widely shared.
+            <TransRichText i18nKey="inventory:fields.accessPermissions.explanation" />
             <br />
             <p>{additionalExplanation}</p>
           </>
@@ -104,10 +101,11 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                   <Box sx={{ m: 1, mt: 0.5 }}>
                     <Stack spacing={1}>
                       <Box>
-                        <OptionHeading>Owner&apos;s groups</OptionHeading>
+                        <OptionHeading>{t("fields.accessPermissions.ownerGroups.title")}</OptionHeading>
                         <OptionExplanation>
-                          Accessible to only those who are in a lab or collaboration group with the owner.{" "}
-                          {!hideOwnersGroups && <>This table lists the groups that the owner is a member of.</>}
+                          {t("fields.accessPermissions.ownerGroups.description", {
+                            tableNote: hideOwnersGroups ? "" : t("fields.accessPermissions.ownerGroups.tableNote"),
+                          })}
                         </OptionExplanation>
                       </Box>
                       {!hideOwnersGroups && (
@@ -131,10 +129,9 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                   <Box sx={{ m: 1, mt: 0.5 }}>
                     <Stack spacing={1}>
                       <Box>
-                        <OptionHeading>Explicit access list</OptionHeading>
+                        <OptionHeading>{t("fields.accessPermissions.explicitAccess.title")}</OptionHeading>
                         <OptionExplanation>
-                          Accessible to only those who are in a lab or collaboration group that is listed in the table
-                          below, which can be any group in the system.
+                          {t("fields.accessPermissions.explicitAccess.description")}
                         </OptionExplanation>
                       </Box>
                       <AccessListTable
@@ -155,8 +152,8 @@ function AccessPermissions<FieldOwner extends HasEditableFields<Fields>>({
                 control={<Radio color="primary" disabled={!fieldOwner.isFieldEditable("sharingMode")} />}
                 label={
                   <Box sx={{ m: 1, mt: 0.5 }}>
-                    <OptionHeading>Only the Owner</OptionHeading>
-                    <OptionExplanation>Accessible to the item&apos;s owner, and the PI.</OptionExplanation>
+                    <OptionHeading>{t("fields.accessPermissions.ownerOnly.title")}</OptionHeading>
+                    <OptionExplanation>{t("fields.accessPermissions.ownerOnly.description")}</OptionExplanation>
                   </Box>
                 }
               />

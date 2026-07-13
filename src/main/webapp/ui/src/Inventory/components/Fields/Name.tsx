@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import FormControl from "@mui/material/FormControl";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Heading } from "@/components/DynamicHeadingLevel";
 import GlobalId from "../../../components/GlobalId";
 import StringField from "../../../components/Inputs/StringField";
@@ -26,6 +27,7 @@ function Name<
   record?: Record;
   onErrorStateChange: (isError: boolean) => void;
 }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const [initial, setInitial] = useState(true);
 
   const handleChange = ({ target: { value: name } }: { target: { value: string } }) => {
@@ -35,10 +37,9 @@ function Name<
   };
 
   const errorMessage = () => {
-    if (fieldOwner.fieldValues.name.trim().length === 0 && !initial)
-      return "Name must include at least one non-whitespace character.";
-    if (fieldOwner.fieldValues.name.length < MIN && !initial) return `Name must be at least ${MIN} characters.`;
-    if (fieldOwner.fieldValues.name.length > MAX) return `Name must be no longer than ${MAX} characters.`;
+    if (fieldOwner.fieldValues.name.trim().length === 0 && !initial) return t("fields.name.nonWhitespace");
+    if (fieldOwner.fieldValues.name.length < MIN && !initial) return t("fields.name.minLength", { min: MIN });
+    if (fieldOwner.fieldValues.name.length > MAX) return t("fields.name.maxLength", { max: MAX });
     return null;
   };
 
@@ -58,7 +59,7 @@ function Name<
          * heading is more appropriate when the form is not ediable.
          */}
         <Heading sx={{ mt: 0 }} id={labelId}>
-          Name
+          {t("fields.name.label")}
         </Heading>
         <Box sx={{ wordBreak: "break-all" }}>
           {fieldOwner.fieldValues.name}
@@ -70,7 +71,7 @@ function Name<
 
   return (
     <FormField
-      label="Name"
+      label={t("fields.name.label")}
       value={fieldOwner.fieldValues.name || ""}
       maxLength={MAX}
       disabled={!fieldOwner.isFieldEditable("name")}

@@ -6,6 +6,7 @@ import { TreeItem, treeItemClasses } from "@mui/x-tree-view/TreeItem";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import RecordTypeIcon from "../../../components/RecordTypeIcon";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -18,6 +19,7 @@ type TreeNodeArgs = {
 };
 
 export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const theme = useTheme();
 
@@ -41,7 +43,7 @@ export default function TreeNode({ node }: TreeNodeArgs): React.ReactNode {
           component="img"
           sx={{ width: theme.spacing(5), maxHeight: "44px" }}
           src={node.thumbnail || ""}
-          alt="Record thumbnail"
+          alt={t("recordTree.thumbnailAlt")}
           key={2}
         />,
       ],

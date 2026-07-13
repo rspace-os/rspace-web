@@ -1,0 +1,21 @@
+{
+  "copyright": "© 2026 ResearchSpace",
+  "license": "RSpace is open-source under AGPL, and powered by open-source libraries.",
+  "links": {
+    "changelog": "Changelog",
+    "sourceCode": "Source Code",
+    "website": "Website"
+  },
+  "logo": {
+    "alt": "RSpace Logo"
+  },
+  "support": {
+    "accountLabel": "For account and group queries, email:",
+    "generalLabel": "For general support, email:"
+  },
+  "title": "About RSpace",
+  "version": {
+    "loading": "Loading version...",
+    "unavailable": "Version unavailable"
+  }
+}

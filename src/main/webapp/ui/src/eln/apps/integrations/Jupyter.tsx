@@ -1,13 +1,15 @@
-import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
+import { ChatCodeBlock } from "@mui/x-chat";
 import { observer } from "mobx-react-lite";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { LOGO_COLOR } from "@/assets/branding/Jupyter";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import JupyterIcon from "../../../assets/branding/Jupyter/logo.svg";
 import IntegrationCard from "../IntegrationCard";
 
 function Jupyter(): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -17,76 +19,33 @@ function Jupyter(): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Jupyter Notebook Synchronisation"
-        explanatoryText="Save Jupyter notebooks and attached data to RSpace automatically. On each run, save version, attach updated data, and view notebooks directly in RSpace."
+        name={t("integrations.jupyter.name")}
+        explanatoryText={t("integrations.jupyter.description")}
         image={JupyterIcon}
         color={LOGO_COLOR}
-        usageText="Use RSpace python client >=v2.6.2 to send data from Jupyter Notebooks to RSpace. This allows you to use Jupyter Notebooks to create and share data-driven documents."
-        helpLinkText="RSpace Jupyter Notebook documentation"
-        website="docs.jupyter.org/en/latest/"
+        usageText={t("integrations.jupyter.usage")}
+        helpLinkText={t("integrations.jupyter.helpLink")}
+        website="https://docs.jupyter.org/en/latest/"
         docLink="jupyter"
         setupSection={
-          <ol>
-            <li>
-              <strong>Enable API access:</strong> Generate your API key in My RSpace → My Profile.
-            </li>
-            <li>
-              <strong>Configure Jupyter instance for all notebooks:</strong> Follow the instructions in RSpace help docs
-              to use pip to install RSpace client. Run a python cell with the following code:
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                <strong>One time install step:</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
-                  {`%pip install rspace-client==2.6.2`}
-                </Box>
-              </Typography>
-              Run the cell then <strong>restart the kernel</strong> and <strong>refresh the browser </strong> tab
-              running Jupyter.
-            </li>
-            <li>
-              <strong>Configure notebook:</strong> Follow the instructions in RSpace help docs to import the
-              sync_notebook script.
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                <strong>Do this step once per notebook:</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
-                  {`from rspace_client.notebook_sync import sync_notebook`}
-                </Box>
-              </Typography>
-              Run the cell, <strong>restart the kernel</strong> and then run the cell one more time{" "}
-              <strong>without a kernel restart. Save the Notebook.</strong>
-            </li>
-            <li>
-              <strong>Run the code:</strong>
-              <Typography variant="body2" component="div" sx={{ mt: 2, mb: 1 }}>
-                Paste this code into <strong>the last cell in the notebook:</strong>
-                <Box
-                  component="pre"
-                  sx={{
-                    background: "#f5f5f5",
-                    padding: "8px",
-                    overflowX: "auto",
-                  }}
-                >
+          <TransRichText
+            i18nKey="apps:integrations.jupyter.setup.instructions"
+            components={{
+              installCommand: <ChatCodeBlock language="bash">{"%pip install rspace-client==2.6.2"}</ChatCodeBlock>,
+              notebookCommand: (
+                <ChatCodeBlock language="python">
+                  {"from rspace_client.notebook_sync import sync_notebook"}
+                </ChatCodeBlock>
+              ),
+              syncCommand: (
+                <ChatCodeBlock language="python">
                   {`await sync_notebook.sync_notebook_to_rspace(
 rspace_url="https://researchspace2.eu.ngrok.io/",
 rspace_username="user1a")`}
-                </Box>
-              </Typography>
-            </li>
-          </ol>
+                </ChatCodeBlock>
+              ),
+            }}
+          />
         }
         update={() => {}}
         integrationState={{

@@ -43,7 +43,7 @@ export type IdentifierField = {
 
   handler?: (v: unknown) => void;
   options?: Array<DropdownOption>;
-  selectAriaLabel?: string;
+  selectLabelLabel?: string;
   radioOptions?: Array<RadioOption<string>>;
   isValid?: (v: unknown) => boolean;
 };

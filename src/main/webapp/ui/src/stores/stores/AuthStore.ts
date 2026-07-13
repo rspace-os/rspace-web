@@ -1,5 +1,6 @@
 import { action, makeObservable, observable } from "mobx";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import ElnApiService from "../../common/ElnApiService";
 import InvApiService from "../../common/InvApiService";
 import JwtService from "../../common/JwtService";
@@ -122,8 +123,8 @@ export default class AuthStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not get System Settings.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:settings.alerts.fetchFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -147,15 +148,15 @@ export default class AuthStore {
       await InvApiService.put<void>("system/settings", dataciteSettingsToIgsnPayload(newSettings));
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          message: `System Settings have been updated.`,
+          message: i18n.t("inventory:settings.alerts.updateSuccess"),
           variant: "success",
         }),
       );
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: `Could not update System Settings.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:settings.alerts.updateFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );

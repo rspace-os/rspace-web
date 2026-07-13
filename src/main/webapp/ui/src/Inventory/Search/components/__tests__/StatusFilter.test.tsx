@@ -15,7 +15,7 @@ describe("StatusFilter", () => {
     );
     expect(
       screen.getByRole("menuitem", {
-        name: "Current",
+        name: "inventory:search.controls.status.current",
       }),
     ).toHaveAttribute("aria-current", "true");
   });

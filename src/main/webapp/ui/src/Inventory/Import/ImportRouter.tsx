@@ -1,5 +1,6 @@
 import Box from "@mui/material/Box";
 import React, { useContext, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 import { useLandmark } from "@/components/LandmarksContext";
 import NavigateContext from "../../stores/contexts/Navigate";
@@ -11,6 +12,7 @@ import NavigationContext from "./NavigationContext";
 import RecordsImport from "./RecordsImport";
 
 export default function ImportRouter(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { importStore } = useStores();
   const { useLocation } = useContext(NavigateContext);
   const location = useLocation();
@@ -25,11 +27,11 @@ export default function ImportRouter(): React.ReactNode {
   }, [location.search]);
 
   useEffect(() => {
-    document.title = "Import CSV | RSpace Inventory";
+    document.title = t("import.browserTitle");
   }, []);
 
   const sidebarId = React.useId();
-  const mainContentRef = useLandmark("Import main content");
+  const mainContentRef = useLandmark(t("import.landmark"));
 
   const recordType = importStore.importData?.recordType;
   if (recordType === "SAMPLES" || recordType === "CONTAINERS" || recordType === "SUBSAMPLES") {
@@ -38,7 +40,7 @@ export default function ImportRouter(): React.ReactNode {
         <Header sidebarId={sidebarId} />
         <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
           <Sidebar id={sidebarId} />
-          <Main aria-label="Import main content" ref={mainContentRef}>
+          <Main aria-label={t("import.landmark")} ref={mainContentRef}>
             <RecordsImport />
           </Main>
         </Box>

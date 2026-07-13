@@ -38,10 +38,10 @@ describe("StoichiometryTableTypeDropdown", () => {
 
     await user.click(
       screen.getByRole("combobox", {
-        name: "Select type for Cyclopentane",
+        name: "common:stoichiometry.table.label.typeSelect",
       }),
     );
-    await user.click(await screen.findByRole("option", { name: "Product" }));
+    await user.click(await screen.findByRole("option", { name: "common:stoichiometry.table.roles.product" }));
 
     await waitFor(() => {
       expect(onChangeValue).toHaveBeenCalledWith("PRODUCT");

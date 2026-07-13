@@ -7,6 +7,7 @@ import FormControl from "@mui/material/FormControl";
 import FormHelperText from "@mui/material/FormHelperText";
 import TextField from "@mui/material/TextField";
 import React, { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "../../../components/SubmitSpinnerButton";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 
@@ -16,6 +17,7 @@ declare const $: any;
 declare const workspaceSettings: any;
 
 export default function NewNotebook() {
+  const { t } = useTranslation(["workspace", "common"]);
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
@@ -32,7 +34,7 @@ export default function NewNotebook() {
   function validateForm(e: any) {
     e.preventDefault();
     if (name.trim().length === 0 || name.match(/\//)) {
-      setError("Please enter a name - excluding '/' characters.");
+      setError(t("toolbar.newNotebook.validation.nameRequired"));
     } else {
       setError(null);
       handleSubmit();
@@ -59,7 +61,7 @@ export default function NewNotebook() {
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby="form-dialog-title" fullWidth>
-      <DialogTitle id="form-dialog-title">Create a notebook</DialogTitle>
+      <DialogTitle id="form-dialog-title">{t("toolbar.newNotebook.title")}</DialogTitle>
       <DialogContent>
         <form onSubmit={validateForm}>
           <FormControl error={error != null} fullWidth>
@@ -67,14 +69,14 @@ export default function NewNotebook() {
               variant="standard"
               inputRef={focusUsernameInputField}
               margin="dense"
-              placeholder="New notebook name"
+              placeholder={t("toolbar.newNotebook.name")}
               fullWidth
               value={name}
               onChange={(e) => setName(e.target.value)}
               aria-describedby="component-error-text"
               data-test-id="new-notebook-name"
               slotProps={{
-                htmlInput: { "aria-label": "New notebook name" },
+                htmlInput: { "aria-label": t("toolbar.newNotebook.name") },
               }}
             />
             <FormHelperText id="component-error-text">{error}</FormHelperText>
@@ -83,9 +85,14 @@ export default function NewNotebook() {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)} sx={{ color: "grey" }} data-test-id="new-notebook-cancel">
-          Cancel
+          {t("common:actions.cancel")}
         </Button>
-        <SubmitSpinnerButton label="Create" loading={loading} disabled={loading} onClick={validateForm} />
+        <SubmitSpinnerButton
+          label={t("common:actions.create")}
+          loading={loading}
+          disabled={loading}
+          onClick={validateForm}
+        />
       </DialogActions>
     </Dialog>
   );

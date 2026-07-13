@@ -1,5 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/onedrive";
 import OneDriveIcon from "../../../assets/branding/onedrive/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -21,6 +23,7 @@ type OneDriveArgs = {
  * document editor.
  */
 function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -30,22 +33,17 @@ function OneDrive({ integrationState, update }: OneDriveArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="OneDrive"
+        name={t("integrations.oneDrive.name")}
         integrationState={integrationState}
-        explanatoryText="Store, share, and sync your files with a file hosting service integrated with Microsoft 365."
+        explanatoryText={t("integrations.oneDrive.description")}
         image={OneDriveIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: {} })}
-        usageText="You can include files from OneDrive in your RSpace documents. Files are embedded as links to the OneDrive location of that file."
-        helpLinkText="Cloud Storage integrations docs"
-        website="onedrive.live.com"
+        usageText={t("integrations.oneDrive.usage")}
+        helpLinkText={t("integrations.oneDrive.helpLink")}
+        website="https://onedrive.live.com"
         docLink="cloudstorage"
-        setupSection={
-          <ol>
-            <li>Enable the integration.</li>
-            <li>When editing a document, click on the OneDrive icon in the text editor toolbar.</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.oneDrive.setup.instructions" />}
       />
     </Grid>
   );

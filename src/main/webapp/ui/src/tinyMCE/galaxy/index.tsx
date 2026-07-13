@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import I18nRoot from "../../modules/common/i18n/I18nRoot";
 import Galaxy from "./Galaxy";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -6,17 +7,19 @@ document.addEventListener("DOMContentLoaded", () => {
   if (domContainer) {
     const root = createRoot(domContainer);
     root.render(
-      <Galaxy
-        fieldId={parent.tinymce.activeEditor?.id.substring(4)}
-        recordId={
-          // @ts-expect-error
-          parent.tinymce.activeEditor?.settings?.recordId
-        }
-        attachedFileInfo={
-          // @ts-expect-error
-          parent.tinymce.activeEditor?.attachedFileRecordIdsToHtml
-        }
-      />,
+      <I18nRoot namespaces={["workspace", "common"]}>
+        <Galaxy
+          fieldId={parent.tinymce.activeEditor?.id.substring(4)}
+          recordId={
+            // @ts-expect-error
+            parent.tinymce.activeEditor?.settings?.recordId
+          }
+          attachedFileInfo={
+            // @ts-expect-error
+            parent.tinymce.activeEditor?.attachedFileRecordIdsToHtml
+          }
+        />
+      </I18nRoot>,
     );
   }
 });

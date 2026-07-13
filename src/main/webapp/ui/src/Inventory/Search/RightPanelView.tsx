@@ -2,6 +2,7 @@ import Box from "@mui/material/Box";
 import type { Theme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import { useLandmark } from "../../components/LandmarksContext";
 import LoadingCircular from "../../components/LoadingCircular";
@@ -78,6 +79,7 @@ const BorderContainer = React.forwardRef<
 BorderContainer.displayName = "BorderContainer";
 
 function RightPanelView(): ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore, uiStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const mainContentRef = useLandmark("Details Panel");
@@ -100,7 +102,7 @@ function RightPanelView(): ReactNode {
     const search = searchStore.search;
 
     // check if the reason for there being no single active result is because of batch editing
-    if (search.loadingBatchEditing) return <LoadingCircular message="Loading batch editing" />;
+    if (search.loadingBatchEditing) return <LoadingCircular message={t("search.details.loadingBatchEditing")} />;
     if (search.batchEditingRecordsByType?.type === "container")
       return <ContainerBatchForm records={search.batchEditingRecordsByType.records} />;
     if (search.batchEditingRecordsByType?.type === "sample")

@@ -4,6 +4,7 @@ import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import ApiService from "../../../../common/InvApiService";
 import VersionLockPicker, {
@@ -87,6 +88,7 @@ interface ElnRevisionHistoryResponse {
  * latest.
  */
 export default function VersionLockDialog(props: VersionLockDialogProps): React.ReactElement | null {
+  const { t } = useTranslation(["inventory", "common"]);
   const parsed = React.useMemo(() => parseGlobalId(props.globalId), [props.globalId]);
   const initialSelection: VersionLockSelection =
     props.currentVersionPin == null ? LATEST_SELECTION : props.currentVersionPin;
@@ -153,10 +155,10 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
   if (!parsed || !isSupportedTarget(parsed)) {
     return (
       <Dialog open onClose={props.onCancel} fullWidth maxWidth="sm">
-        <DialogTitle>Version history</DialogTitle>
-        <DialogContent>Cannot resolve version history for {props.globalId}.</DialogContent>
+        <DialogTitle>{t("fields.link.versionLock.title")}</DialogTitle>
+        <DialogContent>{t("fields.link.versionLock.cannotResolve", { globalId: props.globalId })}</DialogContent>
         <DialogActions>
-          <Button onClick={props.onCancel}>Close</Button>
+          <Button onClick={props.onCancel}>{t("common:actions.close")}</Button>
         </DialogActions>
       </Dialog>
     );
@@ -166,11 +168,11 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
     <Dialog
       open={props.open}
       onClose={props.onCancel}
-      aria-label={`Version history for ${props.globalId}`}
+      aria-label={t("fields.link.versionLock.label", { globalId: props.globalId })}
       fullWidth
       maxWidth="md"
     >
-      <DialogTitle>Version history for {props.globalId}</DialogTitle>
+      <DialogTitle>{t("fields.link.versionLock.titleFor", { globalId: props.globalId })}</DialogTitle>
       <DialogContent>
         <VersionLockPicker
           recordId={parsed.id}
@@ -180,14 +182,14 @@ export default function VersionLockDialog(props: VersionLockDialogProps): React.
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={props.onCancel}>Cancel</Button>
+        <Button onClick={props.onCancel}>{t("common:actions.cancel")}</Button>
         <Button
           color="callToAction"
           disableElevation
           variant="contained"
           onClick={() => props.onConfirm(selection === LATEST_SELECTION ? null : selection)}
         >
-          Lock to selected version
+          {t("fields.link.versionLock.lockToSelectedVersion")}
         </Button>
       </DialogActions>
     </Dialog>

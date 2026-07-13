@@ -7,6 +7,7 @@ import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Heading } from "../../../components/DynamicHeadingLevel";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
@@ -62,6 +63,7 @@ function StepperPanelHeader_({
   recordType,
   icon,
 }: StepperPanelHeaderArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const numberInErrorState = formSectionError ? formSectionError[0].size : 0;
   const showErrorIndicator = numberInErrorState > 0 && !open;
   const [allBtn, setAllBtn] = useState(false);
@@ -89,7 +91,7 @@ function StepperPanelHeader_({
       <Grid container direction="row" spacing={1} sx={{ alignItems: "center" }}>
         <Grid>
           <IconButtonWithTooltip
-            title={open ? "Collapse section" : "Expand section"}
+            title={open ? t("formSections.collapseSection") : t("formSections.expandSection")}
             onClick={(e) => {
               e.stopPropagation();
               onToggle(!open);
@@ -146,7 +148,7 @@ function StepperPanelHeader_({
         <Grid>
           <Slide direction="left" in={allBtn}>
             <Chip
-              label={open ? "Expand All" : "Collapse All"}
+              label={open ? t("formSections.expandAll") : t("formSections.collapseAll")}
               onClick={preventEventBubbling(() => {
                 formSectionContext.setAllExpanded(recordType, open);
               })}

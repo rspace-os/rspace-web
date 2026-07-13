@@ -329,10 +329,10 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(1), user));
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
-            anotherUserNotAssociated.get(0), user));
+            anotherUserNotAssociated.get(0), anotherUser));
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
-            anotherUserNotAssociated.get(1), user));
+            anotherUserNotAssociated.get(1), anotherUser));
   }
 
   @Test
@@ -404,10 +404,10 @@ public class InventoryIdentifierApiManagerTest extends SpringTransactionalTest {
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(userNotAssociated.get(1), user));
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
-            anotherUserNotAssociated.get(0), user));
+            anotherUserNotAssociated.get(0), anotherUser));
     assertTrue(
         inventoryIdentifierApiMgr.deleteUnassociatedIdentifier(
-            anotherUserNotAssociated.get(1), user));
+            anotherUserNotAssociated.get(1), anotherUser));
   }
 
   @Test

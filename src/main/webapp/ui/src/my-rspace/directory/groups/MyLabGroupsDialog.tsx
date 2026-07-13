@@ -16,6 +16,7 @@ import { produce } from "immer";
 import React from "react";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
+import i18n from "../../../modules/common/i18n";
 import UserListComponent from "./UserList";
 
 // UserList is an untyped JS->TSX class component; cast at the call site to
@@ -91,8 +92,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
         console.error(`couldn't add users: ${error}`);
         this.context.addAlert(
           mkAlert({
-            message:
-              "Unable to add/invite the user(s). Please check browser console for error details, and contact support if the problem persists.",
+            message: i18n.t("profile.groups.dialog.addError"),
             variant: "error",
             isInfinite: true,
           }),
@@ -216,11 +216,11 @@ class MyLabGroupsDialog extends React.Component<any, any> {
 
   submitButtonTitle = () => {
     // sysadmin/community admin can directly add other people to a group
-    if (this.props.role === "admin") return "Add";
+    if (this.props.role === "admin") return i18n.t("actions.add");
 
     // PIs, as admins of LabGroups, or regular users, as owners of Project
     // Groups, can invite others to their respective groups.
-    return "Invite";
+    return i18n.t("actions.invite");
   };
 
   closeUsersAddedToast = () => {
@@ -235,7 +235,9 @@ class MyLabGroupsDialog extends React.Component<any, any> {
     return (
       <div>
         <Dialog open={this.state.dialogOpen} onClose={this.closeDialog} maxWidth="md" fullWidth={true}>
-          <DialogTitle id="form-dialog-title">{this.submitButtonTitle()} members</DialogTitle>
+          <DialogTitle id="form-dialog-title">
+            {i18n.t("profile.groups.dialog.membersTitle", { action: this.submitButtonTitle() })}
+          </DialogTitle>
           <DialogContent>
             <Grid container direction="row" sx={{ alignItems: "center" }}>
               <Grid size={5}>
@@ -244,7 +246,7 @@ class MyLabGroupsDialog extends React.Component<any, any> {
                   users={this.state.availableUsers}
                   selected={this.state.selectedUsers.add}
                   handleSelect={this.handleSelected("add")}
-                  listTitle="Available users"
+                  listTitle={i18n.t("profile.groups.dialog.availableUsers")}
                 />
               </Grid>
               <Grid size={2}>
@@ -289,14 +291,14 @@ class MyLabGroupsDialog extends React.Component<any, any> {
                   users={this.state.chosenUsers}
                   selected={this.state.selectedUsers.remove}
                   handleSelect={this.handleSelected("remove")}
-                  listTitle="Selected users"
+                  listTitle={i18n.t("profile.groups.dialog.selectedUsers")}
                 />
               </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
             <Button onClick={this.closeDialog} data-test-id="button-close-dialog">
-              Cancel
+              {i18n.t("actions.cancel")}
             </Button>
             <Button
               disabled={!this.state.chosenUsers.length}

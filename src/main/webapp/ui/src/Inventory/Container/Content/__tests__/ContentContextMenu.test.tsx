@@ -60,8 +60,8 @@ describe("ContentContextMenu", () => {
       );
       expect(ContextMenuButton).toHaveBeenCalledWith(
         expect.objectContaining({
-          disabledHelp: "Nothing selected.",
-          label: "Open",
+          disabledHelp: "inventory:container.content.contextMenu.nothingSelected",
+          label: "common:actions.open",
         }),
         undefined,
       );

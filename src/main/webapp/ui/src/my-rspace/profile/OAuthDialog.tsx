@@ -14,6 +14,7 @@ import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import React, { useContext, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "@/stores/contexts/Alert";
 import { getErrorMessage } from "@/util/error";
@@ -21,6 +22,7 @@ import materialTheme from "../../theme";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
 export default function OAuthDialog(props: any) {
+  const { t } = useTranslation("common");
   const [open, setOpen] = React.useState(false);
   const { addAlert } = useContext(AlertContext);
   const [appName, setAppName] = React.useState("");
@@ -80,8 +82,7 @@ export default function OAuthDialog(props: any) {
           } else {
             addAlert(
               mkAlert({
-                message:
-                  "There was a problem while creating your application. Please, try again later or contact support.",
+                message: t("profile.oauth.dialog.createError"),
                 variant: "warning",
                 isInfinite: true,
               }),
@@ -104,12 +105,12 @@ export default function OAuthDialog(props: any) {
   const isNameValid = () => {
     if (!/[\w-\\s]/.test(appName)) {
       setHasError(true);
-      setErrorMessage("The application name should only contain alphanumeric symbols.");
+      setErrorMessage(t("profile.oauth.dialog.validation.alphanumeric"));
       return false;
     }
     if (appName.length >= 100) {
       setHasError(true);
-      setErrorMessage("The application name should be less than 100 symbols.");
+      setErrorMessage(t("profile.oauth.dialog.validation.maxLength"));
       return false;
     }
     setHasError(false);
@@ -127,16 +128,12 @@ export default function OAuthDialog(props: any) {
     try {
       const successful = document.execCommand("copy");
       if (successful) {
-        addAlert(mkAlert({ message: "Copied to clipboard", variant: "notice", duration: 3000 }));
+        addAlert(mkAlert({ message: t("profile.oauth.dialog.copySuccess"), variant: "notice", duration: 3000 }));
       } else {
-        addAlert(
-          mkAlert({ message: "Couldn't copy to clipboard. Try again manually.", variant: "warning", duration: 5000 }),
-        );
+        addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
       }
     } catch (_err) {
-      addAlert(
-        mkAlert({ message: "Couldn't copy to clipboard. Try again manually.", variant: "warning", duration: 5000 }),
-      );
+      addAlert(mkAlert({ message: t("profile.oauth.dialog.copyError"), variant: "warning", duration: 5000 }));
     }
   };
 
@@ -150,24 +147,17 @@ export default function OAuthDialog(props: any) {
   return (
     <StyledEngineProvider injectFirst enableCssLayer>
       <ThemeProvider theme={materialTheme}>
-        <Tooltip title="Add a new app" enterDelay={100}>
+        <Tooltip title={t("profile.oauth.dialog.addNewApp")} enterDelay={100}>
           <IconButton color="inherit" onClick={handleClickOpen}>
             <FontAwesomeIcon icon={faPlus} size="xs" />
           </IconButton>
         </Tooltip>
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
           <DialogTitle id="form-dialog-title">
-            {created ? "App Successfully Created" : "Create an OAuth application"}
+            {created ? t("profile.oauth.dialog.createdTitle") : t("profile.oauth.dialog.createTitle")}
           </DialogTitle>
           <DialogContent>
-            <DialogContentText>
-              {created && (
-                <>
-                  Please write down the client secret.{" "}
-                  <strong>It will not be available once you close this window.</strong>
-                </>
-              )}
-            </DialogContentText>
+            <DialogContentText>{created && t("profile.oauth.dialog.secretWarning")}</DialogContentText>
             {!created && (
               <form onSubmit={handleSubmit}>
                 <TextField
@@ -177,13 +167,13 @@ export default function OAuthDialog(props: any) {
                   helperText={errorMessage}
                   autoFocus
                   id="name"
-                  placeholder="App name"
+                  placeholder={t("profile.oauth.dialog.appName")}
                   type="text"
                   fullWidth
                   value={appName}
                   onChange={handleChange}
                   slotProps={{
-                    htmlInput: { "aria-label": "App name" },
+                    htmlInput: { "aria-label": t("profile.oauth.dialog.appName") },
                   }}
                 />
               </form>
@@ -193,15 +183,15 @@ export default function OAuthDialog(props: any) {
                 <Grid size={12}>
                   <TextField
                     inputRef={clientIdRef}
-                    label="Client ID"
+                    label={t("profile.oauth.table.clientId")}
                     variant="filled"
                     value={clientId}
                     sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
-                      htmlInput: { "aria-label": "Client ID" },
+                      htmlInput: { "aria-label": t("profile.oauth.table.clientId") },
                     }}
                   />
-                  <Tooltip title="Copy" enterDelay={100}>
+                  <Tooltip title={t("profile.oauth.dialog.copy")} enterDelay={100}>
                     <IconButton color="inherit" onClick={(e) => copyToClipboard(e, 1)}>
                       <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
@@ -210,15 +200,15 @@ export default function OAuthDialog(props: any) {
                 <Grid sx={{ marginTop: "10px" }} size={12}>
                   <TextField
                     inputRef={clientSecretRef}
-                    label="Client Secret"
+                    label={t("profile.oauth.dialog.clientSecret")}
                     variant="filled"
                     value={unhashedClientSecret}
                     sx={{ marginRight: "10px", width: "calc(100% - 55px)" }}
                     slotProps={{
-                      htmlInput: { "aria-label": "Client secret" },
+                      htmlInput: { "aria-label": t("profile.oauth.dialog.clientSecret") },
                     }}
                   />
-                  <Tooltip title="Copy" enterDelay={100}>
+                  <Tooltip title={t("profile.oauth.dialog.copy")} enterDelay={100}>
                     <IconButton color="inherit" onClick={(e) => copyToClipboard(e, 2)}>
                       <FontAwesomeIcon icon={faCopy} />
                     </IconButton>
@@ -229,11 +219,11 @@ export default function OAuthDialog(props: any) {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} sx={{ color: "grey" }}>
-              {created ? "Close" : "Cancel"}
+              {created ? t("actions.close") : t("actions.cancel")}
             </Button>
             {!created && (
               <Button onClick={handleSubmit} color="primary">
-                Create
+                {t("actions.create")}
               </Button>
             )}
           </DialogActions>

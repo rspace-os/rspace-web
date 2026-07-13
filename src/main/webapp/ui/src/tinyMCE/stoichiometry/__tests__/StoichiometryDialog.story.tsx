@@ -63,7 +63,7 @@ export const StoichiometryDialogClosedStory = () => {
 
   return (
     <>
-      <div>Dialog is closed</div>
+      <div>{"Dialog is closed"}</div>
       <StoichiometryDialogEntrypoint
         open={false}
         onClose={() => {}}

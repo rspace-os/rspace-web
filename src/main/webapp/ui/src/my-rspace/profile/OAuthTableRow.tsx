@@ -7,10 +7,13 @@ import TableRow from "@mui/material/TableRow";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import type { OAuthApp } from "@/my-rspace/profile/types";
 
 const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clientId: string) => Promise<void> }) => {
+  const { t } = useTranslation("common");
   const [open, setOpen] = useState(false);
 
   return (
@@ -26,23 +29,25 @@ const OAuthTableRow = ({ app, onDeleteApp }: { app: OAuthApp; onDeleteApp: (clie
             justifyContent: "flex-end",
           }}
         >
-          <Tooltip title="Delete" enterDelay={100}>
+          <Tooltip title={t("actions.delete")} enterDelay={100}>
             <IconButton color="inherit" onClick={() => setOpen(true)} sx={{ width: "42px" }}>
               <FontAwesomeIcon icon={faTrashAlt} size="xs" />
             </IconButton>
           </Tooltip>
           <ConfirmationDialog
-            title="Confirm Deletion"
+            title={t("profile.oauth.createdApps.confirmDeleteTitle")}
             consequences={
               <Typography variant="body1">
-                Are you sure you want to delete <strong>{app.appName}</strong>? All access and refresh tokens will be
-                revoked.
+                <TransRichText
+                  i18nKey="common:profile.oauth.createdApps.confirmDeleteText"
+                  values={{ appName: app.appName }}
+                />
               </Typography>
             }
             variant="warning"
             callback={onDeleteApp}
             confirmText={app.appName}
-            confirmTextLabel="Type OAuth app name to confirm"
+            confirmTextLabel={t("profile.oauth.dialog.confirmAppName")}
             handleCloseDialog={() => setOpen(false)}
             open={open}
           />

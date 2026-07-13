@@ -4,6 +4,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AlwaysNewWindowNavigationContext from "../../../../components/AlwaysNewWindowNavigationContext";
 import type { InventoryRecord } from "../../../../stores/definitions/InventoryRecord";
 import AlwaysNewFactory from "../../../../stores/models/Factory/AlwaysNewFactory";
@@ -17,6 +18,8 @@ export interface LinkTargetBrowserProps {
 }
 
 function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
+  const { t } = useTranslation("inventory");
+
   // lazy initializer: Search sets up the store/fetcher chain, which must not
   // be re-done (and discarded) on every render
   const [search] = useState(
@@ -64,9 +67,9 @@ function LinkTargetBrowser(props: LinkTargetBrowserProps): React.ReactElement {
       onClose={props.onCancel}
       fullWidth
       maxWidth="md"
-      aria-label="Browse Inventory for link target"
+      aria-label={t("fields.link.targetBrowser.label")}
     >
-      <DialogTitle>Browse Inventory</DialogTitle>
+      <DialogTitle>{t("fields.link.targetBrowser.title")}</DialogTitle>
       <DialogContent sx={{ height: "60vh", p: 1 }}>
         <AlwaysNewWindowNavigationContext>
           <InventoryPicker

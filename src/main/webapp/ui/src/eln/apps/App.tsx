@@ -1,8 +1,6 @@
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
 import Grid from "@mui/material/Grid";
-import Link from "@mui/material/Link";
 import Skeleton from "@mui/material/Skeleton";
 import Stack from "@mui/material/Stack";
 import { ThemeProvider } from "@mui/material/styles";
@@ -12,9 +10,10 @@ import { observable } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/other";
-import docLinks from "../../assets/DocLinks";
 import AppBar from "../../components/AppBar";
 import { DialogBoundary } from "../../components/DialogBoundary";
 import GoogleLoginProvider from "../../components/GoogleLoginProvider";
@@ -67,18 +66,6 @@ function LoadingSkeleton() {
   );
 }
 
-function ErrorMessage() {
-  return (
-    <Alert severity="error">
-      Something went wrong! Please refresh the page. If this error persists, please contact{" "}
-      <a href="mailto:support@researchspace.com" rel="noreferrer" target="_blank">
-        support@researchspace.com
-      </a>{" "}
-      with details of when the issue happens.
-    </Alert>
-  );
-}
-
 type AppsSectionArgs = {
   id: string;
   title: string;
@@ -120,7 +107,9 @@ function AppsSection({ id, title, description, mode, allStates }: AppsSectionArg
         {FetchingData.match(allStates, {
           success: (integrationStates) => <CardListing mode={mode} integrationStates={integrationStates} />,
           loading: () => <LoadingSkeleton />,
-          error: () => <ErrorMessage />,
+          error: (error) => {
+            throw new Error(error);
+          },
         })}
       </Box>
     </Box>
@@ -128,6 +117,7 @@ function AppsSection({ id, title, description, mode, allStates }: AppsSectionArg
 }
 
 function App(): React.ReactNode {
+  const { t } = useTranslation("apps");
   const { allIntegrations } = useIntegrationsEndpoint();
   const { trackEvent, isAvailable: analyticsIsAvailable } = useContext(AnalyticsContext);
   const [, setLastDialogOpened] = useState<string | null>(null);
@@ -192,60 +182,36 @@ function App(): React.ReactNode {
               }}
             >
               <Box sx={{ my: 4 }}>
-                <Typography variant="h1">Apps</Typography>
+                <Typography variant="h1">{t("page.title")}</Typography>
                 <Typography variant="body1">
-                  RSpace provides integrations with various third-party apps that enable extra features. Apps need to be
-                  enabled to work, and some require authentication.{" "}
-                  <Link href={docLinks.appsIntroduction} target="_blank" rel="noreferrer">
-                    See Apps Introduction to learn more.
-                  </Link>
+                  <TransRichText i18nKey="apps:page.introText" />
                 </Typography>
                 <Stack spacing={6} sx={{ mt: 1 }}>
                   <AppsSection
                     id="enabled"
-                    title="Enabled"
-                    description={
-                      <>
-                        The following Apps are enabled on this account. Click on an App card to modify or disable the
-                        integration.
-                      </>
-                    }
+                    title={t("page.sections.enabled.title")}
+                    description={t("page.sections.enabled.description")}
                     mode="ENABLED"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="disabled"
-                    title="Disabled"
-                    description={
-                      <>
-                        The following Apps are not currently enabled on this account. Click on an App card for setup
-                        instructions on how to enable the integration.
-                      </>
-                    }
+                    title={t("page.sections.disabled.title")}
+                    description={t("page.sections.disabled.description")}
                     mode="DISABLED"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="unavailable"
-                    title="Unavailable"
-                    description={
-                      <>
-                        The following Apps need to be enabled by your System Administrator before they can be used;
-                        please get in touch with them directly to set this up.
-                      </>
-                    }
+                    title={t("page.sections.unavailable.title")}
+                    description={t("page.sections.unavailable.description")}
                     mode="UNAVAILABLE"
                     allStates={allStates}
                   />
                   <AppsSection
                     id="third-party-rspace-integrations"
-                    title="Third-party RSpace Integrations"
-                    description={
-                      <>
-                        These RSpace applications have been built by partners or other external software developers.
-                        Note, ResearchSpace does not provide direct support for these integrations.
-                      </>
-                    }
+                    title={t("page.sections.external.title")}
+                    description={t("page.sections.external.description")}
                     mode="EXTERNAL"
                     allStates={allStates}
                   />

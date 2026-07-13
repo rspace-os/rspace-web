@@ -18,6 +18,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AddButton from "../../../../components/AddButton";
 import CustomTooltip from "../../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../../components/ExpandCollapseIcon";
@@ -66,6 +67,7 @@ const CollapseContents = observer(
     editable: boolean;
     connectedItem?: InventoryRecord;
   }): ReactNode => {
+    const { t } = useTranslation(["inventory", "common"]);
     const { uiStore } = useStores();
     const barcodes = fieldOwner.fieldValues.barcodes;
     const imgUrlsAvailable = Boolean(connectedItem) && barcodes.every((b) => b.imageUrl);
@@ -107,7 +109,7 @@ const CollapseContents = observer(
       } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
-            title: "Unable to retrieve barcode image.",
+            title: t("fields.barcodes.alerts.unableToRetrieveBarcodeImage"),
             message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
@@ -129,7 +131,7 @@ const CollapseContents = observer(
       } catch (e: unknown) {
         uiStore.addAlert(
           mkAlert({
-            title: "Unable to retrieve barcode images.",
+            title: t("fields.barcodes.alerts.unableToRetrieveBarcodeImages"),
             message: e instanceof Error ? e.message : String(e),
             variant: "error",
             isInfinite: true,
@@ -148,7 +150,7 @@ const CollapseContents = observer(
         } catch (e: unknown) {
           uiStore.addAlert(
             mkAlert({
-              title: "Unable to retrieve barcode image.",
+              title: t("fields.barcodes.alerts.unableToRetrieveBarcodeImage"),
               message: e instanceof Error ? e.message : String(e),
               variant: "error",
             }),
@@ -167,8 +169,8 @@ const CollapseContents = observer(
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Description</TableCell>
-                  <TableCell>Actions</TableCell>
+                  <TableCell>{t("fields.barcodes.columns.description")}</TableCell>
+                  <TableCell>{t("fields.barcodes.columns.actions")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -189,11 +191,11 @@ const CollapseContents = observer(
                               onChange={({ target: { value } }) => changeDescription(b, value)}
                               variant="standard"
                               disabled={b.isDeleted}
-                              noValueLabel="No description"
+                              noValueLabel={t("fields.barcodes.noDescription")}
                             />
                           </InputWrapper>
                         ) : (
-                          b.renderedDescription || <NoValue label="No description" />
+                          b.renderedDescription || <NoValue label={t("fields.barcodes.noDescription")} />
                         )}
                       </DescriptionWrapper>
                     </TableCell>
@@ -205,8 +207,8 @@ const CollapseContents = observer(
                             color="primary"
                             title={
                               b.imageUrl && connectedItem?.canRead
-                                ? "Print QR code"
-                                : "Barcode print is not supported or you do not have permission."
+                                ? t("fields.barcodes.actions.printQrCode")
+                                : t("fields.barcodes.actions.printUnsupported")
                             }
                             icon={b.imageUrl ? <PrintIcon /> : <PrintDisabledIcon />}
                             disabled={!connectedItem?.canRead || !b.imageUrl}
@@ -217,7 +219,11 @@ const CollapseContents = observer(
                           <IconButtonWithTooltip
                             size="small"
                             color="primary"
-                            title={b.imageUrl ? "Preview as QR code" : "QR code preview is not supported."}
+                            title={
+                              b.imageUrl
+                                ? t("fields.barcodes.actions.previewQrCode")
+                                : t("fields.barcodes.actions.previewUnsupported")
+                            }
                             icon={b.imageUrl ? <PreviewIcon /> : <NoPreviewIcon />}
                             disabled={!b.imageUrl}
                             onClick={() => void handlePreview(b)}
@@ -227,12 +233,12 @@ const CollapseContents = observer(
                           <DeleteButton
                             onClick={() => remove(b)}
                             disabled={!editable || !b.isDeletable}
-                            tooltipAfterClicked="Barcode will be deleted once this item is saved."
-                            tooltipBeforeClicked="Remove"
+                            tooltipAfterClicked={t("fields.barcodes.actions.deleteAfterClicked")}
+                            tooltipBeforeClicked={t("common:actions.remove")}
                             tooltipWhenDisabled={
                               b.isDeletable
-                                ? "First press Edit to remove this barcode."
-                                : "Cannot delete generated barcodes"
+                                ? t("fields.barcodes.actions.removeNeedsEdit")
+                                : t("fields.barcodes.actions.cannotDeleteGenerated")
                             }
                           />
                         </Grid>
@@ -242,15 +248,15 @@ const CollapseContents = observer(
                 ))}
                 {barcodes.length > 1 && (
                   <TableRow>
-                    <TableCell>&nbsp;</TableCell>
+                    <TableCell> </TableCell>
                     <TableCell>
                       <IconButtonWithTooltip
                         size="small"
                         color="primary"
                         title={
                           imgUrlsAvailable && connectedItem?.canRead
-                            ? "Print all barcodes"
-                            : "Barcode print is not supported or you do not have permission."
+                            ? t("fields.barcodes.actions.printAllBarcodes")
+                            : t("fields.barcodes.actions.printUnsupported")
                         }
                         icon={imgUrlsAvailable ? <PrintIcon /> : <PrintDisabledIcon />}
                         disabled={!imgUrlsAvailable}
@@ -262,7 +268,7 @@ const CollapseContents = observer(
                           marginLeft: "8px",
                         }}
                       >
-                        Print All
+                        {t("fields.barcodes.actions.printAll")}
                       </Box>
                     </TableCell>
                   </TableRow>
@@ -318,6 +324,7 @@ function FieldCard<
 }): ReactNode {
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<EventTarget | null>(null);
+  const { t } = useTranslation(["inventory", "common"]);
   const { uiStore } = useStores();
   const editable = fieldOwner.isFieldEditable("barcodes");
   const barcodes = fieldOwner.fieldValues.barcodes;
@@ -335,13 +342,13 @@ function FieldCard<
               variant: "body2",
             },
           }}
-          subheader="Scan an existing barcode and associate it with this item."
+          subheader={t("fields.barcodes.summary")}
           action={
             <>
               <AddButton
                 disabled={!editable}
                 onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
-                title={editable ? "Scan a barcode to associate." : "Press Edit to scan a barcode."}
+                title={editable ? t("fields.barcodes.actions.scan") : t("fields.barcodes.actions.scanNeedsEdit")}
               />
               <Popover
                 open={Boolean(anchorEl)}
@@ -372,8 +379,8 @@ function FieldCard<
                     if (barcode.rawValue.length > 255) {
                       uiStore.addAlert(
                         mkAlert({
-                          title: "Unsupported barcode",
-                          message: "Data is too long.",
+                          title: t("fields.barcodes.alerts.unsupportedBarcode"),
+                          message: t("fields.barcodes.alerts.dataTooLong"),
                           variant: "error",
                         }),
                       );
@@ -385,19 +392,22 @@ function FieldCard<
                         factory.newBarcode({
                           data: barcode.rawValue,
                           newBarcodeRequest: true,
-                          description: `Scanned ${barcodeFormatAsString(barcode.format)}: ${barcode.rawValue}`,
+                          description: t("fields.barcodes.scannedDescription", {
+                            format: barcodeFormatAsString(barcode.format),
+                            value: barcode.rawValue,
+                          }),
                         }),
                       ],
                     });
                   }}
-                  buttonPrefix="Save"
+                  buttonPrefix={t("common:actions.save")}
                 />
               </Popover>
               <CustomTooltip
                 title={match<void, string>([
-                  [() => barcodes.length === 0, "No current barcodes"],
-                  [() => open, "Hide barcodes listing"],
-                  [() => true, "Show barcodes listing"],
+                  [() => barcodes.length === 0, t("fields.barcodes.toggle.none")],
+                  [() => open, t("fields.barcodes.toggle.hide")],
+                  [() => true, t("fields.barcodes.toggle.show")],
                 ])()}
               >
                 <IconButton onClick={() => setOpen(!open)} disabled={barcodes.length === 0}>

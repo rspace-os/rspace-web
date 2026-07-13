@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import AlertContext, { mkAlert } from "../../../stores/contexts/Alert";
 import * as Parsers from "../../../util/parsers";
@@ -79,6 +80,7 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
   const [loading, setLoading] = React.useState(false);
   const { openPdfPreview } = usePdfPreview();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation("gallery");
 
   const openConvertedFile = React.useCallback(
     async ({ documentId, fileExtension, revisionId = null, publicView = false }: AsposePreviewDetails) => {
@@ -111,9 +113,9 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
         .do((msg) => {
           throw new Error(msg);
         });
-      throw new Error(`Could not generate a PDF preview for .${fileExtension} documents.`);
+      throw new Error(t("callableAsposePreview.generatePdfError", { fileExtension }));
     },
-    [openPdfPreview],
+    [openPdfPreview, t],
   );
 
   const setDetails = async (details: AsposePreviewDetails) => {
@@ -121,12 +123,12 @@ export function CallableAsposePreview({ children }: { children: React.ReactNode 
     try {
       await openConvertedFile(details);
     } catch (e) {
-      if (!(e instanceof Error)) throw new Error("Unknown error");
+      if (!(e instanceof Error)) throw new Error(t("errors.unknownError"));
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Could not generate preview.",
-          message: e.message ?? "Unknown reason",
+          title: t("callableAsposePreview.previewError"),
+          message: e.message ?? t("errors.unknownReason"),
         }),
       );
     } finally {

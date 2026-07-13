@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import { getErrorMessage } from "@/util/error";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -84,6 +85,7 @@ export default function useChemicalImport(): {
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
+  const { t } = useTranslation();
 
   async function search({
     searchType,
@@ -113,8 +115,8 @@ export default function useChemicalImport(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error searching for chemical compounds",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("apiErrors.chemicals.searchFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not search for chemical compounds", {
@@ -161,8 +163,8 @@ export default function useChemicalImport(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error saving chemical compounds",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("apiErrors.chemicals.saveFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not save chemical compounds", { cause: e });
@@ -194,8 +196,8 @@ export default function useChemicalImport(): {
       addAlert(
         mkAlert({
           variant: "error",
-          title: "Error saving chemical compounds",
-          message: getErrorMessage(e, "An unknown error occurred."),
+          title: t("apiErrors.chemicals.saveFailed"),
+          message: getErrorMessage(e, t("apiErrors.unknown")),
         }),
       );
       throw new Error("Could not save chemical compounds", { cause: e });

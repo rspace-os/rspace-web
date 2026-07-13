@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import type React from "react";
@@ -149,6 +150,14 @@ function renderDialog(props: Partial<React.ComponentProps<typeof VersionLockDial
   );
 }
 
+function getVersionRadio(value: string): HTMLInputElement {
+  const radio = screen.getAllByRole("radio").find((candidate) => candidate.getAttribute("value") === value);
+  if (!(radio instanceof HTMLInputElement)) {
+    throw new Error(`Version radio not found: ${value}`);
+  }
+  return radio;
+}
+
 describe("VersionLockDialog", () => {
   afterEach(() => {
     cleanup();
@@ -160,12 +169,14 @@ describe("VersionLockDialog", () => {
     const apiGet = InvApiService.get;
     vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
     renderDialog();
-    expect(await screen.findByText("Version 1")).toBeInTheDocument();
-    expect(await screen.findByText("Version 2")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
     // the raw Envers revision ids must NOT be presented as versions
-    expect(screen.queryByText("Version 10")).not.toBeInTheDocument();
-    expect(screen.queryByText("Version 11")).not.toBeInTheDocument();
-    expect(screen.queryByText("Version 22")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "10")).toHaveLength(0);
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "11")).toHaveLength(0);
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "22")).toHaveLength(0);
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/revisions");
   });
 
@@ -177,9 +188,11 @@ describe("VersionLockDialog", () => {
     const user = userEvent.setup();
     renderDialog({ onConfirm });
 
-    const row = await screen.findByText("Version 2");
-    await user.click(row);
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    await user.click(getVersionRadio("2"));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.versionLock.lockToSelectedVersion" }));
 
     expect(onConfirm).toHaveBeenCalledWith(2);
   });
@@ -201,7 +214,10 @@ describe("VersionLockDialog", () => {
     );
 
     // abandon an edit: select Version 1, then close without confirming
-    await user.click(await screen.findByText("Version 1"));
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+    });
+    await user.click(getVersionRadio("1"));
     rerender(
       <ThemeProvider theme={materialTheme}>
         <VersionLockDialog open={false} currentVersionPin={null} {...stableProps} />
@@ -217,8 +233,10 @@ describe("VersionLockDialog", () => {
     );
 
     // wait for the version rows to load before inspecting the radios
-    expect(await screen.findByText("Version 2")).toBeInTheDocument();
-    const version2Radio = screen.getAllByRole("radio").find((radio) => radio.getAttribute("value") === "2");
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    const version2Radio = getVersionRadio("2");
     expect(version2Radio).toBeChecked();
   });
 
@@ -230,9 +248,9 @@ describe("VersionLockDialog", () => {
     const user = userEvent.setup();
     renderDialog({ onConfirm, currentVersionPin: 1 });
 
-    const latestRow = await screen.findByText(/^latest$/i);
-    await user.click(latestRow);
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await screen.findByText("common:versionLockPicker.latest");
+    await user.click(getVersionRadio("__latest__"));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.versionLock.lockToSelectedVersion" }));
 
     expect(onConfirm).toHaveBeenCalledWith(null);
   });
@@ -250,8 +268,10 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     vi.mocked(axiosGet).mockResolvedValue(elnRevisionsResponse);
     renderDialog({ globalId: "SD55" });
 
-    expect(await screen.findByText("Version 1")).toBeInTheDocument();
-    expect(await screen.findByText("Version 2")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
     expect(vi.mocked(axiosGet)).toHaveBeenCalledWith("/workspace/revisionHistory/ajax/55/versions");
   });
 
@@ -263,8 +283,11 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     const user = userEvent.setup();
     renderDialog({ globalId: "SD55", onConfirm });
 
-    await user.click(await screen.findByText("Version 2"));
-    await user.click(screen.getByRole("button", { name: /lock to selected/i }));
+    await waitFor(() => {
+      expect(getVersionRadio("2")).toBeInTheDocument();
+    });
+    await user.click(getVersionRadio("2"));
+    await user.click(screen.getByRole("button", { name: "inventory:fields.link.versionLock.lockToSelectedVersion" }));
 
     // version 2 maps to audit revision 202; the pin must be the version number (2).
     expect(onConfirm).toHaveBeenCalledWith(2);
@@ -277,7 +300,9 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     renderDialog({ globalId: "SD55" });
 
     // wait for the version rows to load (version 1 is unique)
-    expect(await screen.findByText("Version 1")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+    });
     // version 2 is returned twice (final edit + soft-delete MOD) but must render once
     const version2Radios = screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "2");
     expect(version2Radios).toHaveLength(1);
@@ -288,7 +313,7 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     const axiosGet = axios.get;
     renderDialog({ globalId: "NB9" });
 
-    expect(screen.getByText(/cannot resolve version history for NB9/i)).toBeInTheDocument();
+    expect(screen.getByText("inventory:fields.link.versionLock.cannotResolve")).toBeInTheDocument();
     expect(vi.mocked(axiosGet)).not.toHaveBeenCalled();
   });
 
@@ -299,9 +324,9 @@ describe("VersionLockDialog (SD/ELN document target)", () => {
     renderDialog({ globalId: "SD55" });
 
     // SD is a supported target, so this is NOT the cannot-resolve fallback...
-    expect(screen.queryByText(/cannot resolve version history/i)).not.toBeInTheDocument();
+    expect(screen.queryByText("inventory:fields.link.versionLock.cannotResolve")).not.toBeInTheDocument();
     // ...the picker still renders with the Latest option and no version rows.
-    expect(await screen.findByText(/^latest$/i)).toBeInTheDocument();
-    expect(screen.queryByText("Version 1")).not.toBeInTheDocument();
+    expect(await screen.findByText("common:versionLockPicker.latest")).toBeInTheDocument();
+    expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "1")).toHaveLength(0);
   });
 });

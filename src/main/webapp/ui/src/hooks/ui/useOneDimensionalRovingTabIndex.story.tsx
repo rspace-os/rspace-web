@@ -15,7 +15,7 @@ export function SimpleExample(): React.ReactNode {
   const { getTabIndex, getRef, eventHandlers } = useOneDimensionalRovingTabIndex<HTMLDivElement>({ max: 1 });
   return (
     <>
-      <Button>Before the list</Button>
+      <Button>{"Before the list"}</Button>
       <List {...eventHandlers}>
         <ListItem>
           <ListItemButton tabIndex={getTabIndex(0)} ref={getRef(0)} onClick={() => {}}>
@@ -28,7 +28,7 @@ export function SimpleExample(): React.ReactNode {
           </ListItemButton>
         </ListItem>
       </List>
-      <Button>After the list</Button>
+      <Button>{"After the list"}</Button>
     </>
   );
 }
@@ -43,12 +43,12 @@ export function HorizontalExample(): React.ReactNode {
   });
   return (
     <>
-      <Button>Before the list</Button>
+      <Button>{"Before the list"}</Button>
       <Breadcrumbs {...eventHandlers}>
         <Chip ref={getRef(0)} tabIndex={getTabIndex(0)} clickable label="One Thing" />
         <Chip ref={getRef(1)} tabIndex={getTabIndex(1)} clickable label="Two Thing" />
       </Breadcrumbs>
-      <Button>After the list</Button>
+      <Button>{"After the list"}</Button>
     </>
   );
 }

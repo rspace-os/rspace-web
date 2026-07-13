@@ -1,15 +1,13 @@
 import Box from "@mui/material/Box";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function PageNotFoundScreen(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   return (
     <Box sx={{ p: 1 }}>
-      <h1>Page not found.</h1>
-      <p>
-        The page was not found. You can try again, or use your ‘back’ button to return to your previous location and
-        navigate from there, or use the sidebar to navigate to your samples and containers. If you can’t resolve the
-        problem, please contact an administrator.
-      </p>
+      <h1>{t("layout.pageNotFound.heading")}</h1>
+      <p>{t("layout.pageNotFound.message")}</p>
     </Box>
   );
 }

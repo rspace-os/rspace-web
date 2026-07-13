@@ -10,6 +10,8 @@ import Typography from "@mui/material/Typography";
 import { Observer } from "mobx-react-lite";
 import type React from "react";
 import { forwardRef, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import SubmitSpinner from "../../../components/SubmitSpinnerButton";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -38,6 +40,7 @@ type TransferActionArgs = {
 const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, TransferActionArgs>(
   ({ as, selectedResults, disabled, closeMenu }, ref) => {
     const { search } = useContext(SearchContext);
+    const { t } = useTranslation(["inventory", "common"]);
     const [btnPos, setBtnPos] = useState<{ top: number; left: number } | null>(null);
     const [recipient, setRecipient] = useState<PersonModel | null>(null);
 
@@ -72,13 +75,10 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
 
     const disabledHelp = match<void, string>([
       [() => disabled !== "", disabled],
-      [
-        () => selectedResults.some((s) => s.recordType === "subSample"),
-        "Only whole samples can be transferred, not individual subsamples.",
-      ],
+      [() => selectedResults.some((s) => s.recordType === "subSample"), t("contextMenu.transfer.disabled.subSamples")],
       [
         () => selectedResults.some((r) => !r.canTransfer),
-        `You do not have permission to transfer ${selectedResults.length > 1 ? "these items" : "this item"}.`,
+        t("contextMenu.transfer.disabled.noPermission", { count: selectedResults.length }),
       ],
       [() => true, ""],
     ])();
@@ -88,27 +88,26 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
           <ContextMenuAction
             onClick={handleOpen}
             icon={icon}
-            label="Transfer"
+            label={t("common:actions.transfer")}
             as={as}
             ref={ref}
             disabledHelp={disabledHelp}
           >
             <ContextDialog open={Boolean(btnPos)} onClose={handleClose}>
-              <DialogTitle>Transfer Ownership</DialogTitle>
+              <DialogTitle>{t("contextMenu.transfer.dialog.title")}</DialogTitle>
               <DialogContent>
                 <DialogContentText component="span">
                   <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    Select someone to transfer ownership to. By performing this action you will give the new owner full
-                    control over the item. <strong>This action can only be undone by the recipient or their PI.</strong>
+                    <TransRichText i18nKey="inventory:contextMenu.transfer.dialog.body" />
                   </Typography>
                   <Typography component="p" variant="body1" sx={{ mb: 2 }}>
-                    If the desired recipient cannot be found in this list, try searching for their name or username.
+                    {t("contextMenu.transfer.dialog.recipientSearchHint")}
                   </Typography>
                 </DialogContentText>
                 <FormControl component="fieldset" fullWidth>
                   <PeopleField
                     onSelection={(person) => setRecipient(person as PersonModel)}
-                    label="Recipient"
+                    label={t("contextMenu.transfer.dialog.recipientLabel")}
                     recipient={recipient}
                     excludedUsernames={excludedFromSelection}
                   />
@@ -116,13 +115,13 @@ const TransferAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Tr
               </DialogContent>
               <DialogActions>
                 <Button onClick={handleClose} disabled={false}>
-                  Cancel
+                  {t("common:actions.cancel")}
                 </Button>
                 <SubmitSpinner
                   onClick={onSubmitHandler}
                   disabled={recipient === null}
                   loading={false}
-                  label="Transfer"
+                  label={t("common:actions.transfer")}
                 />
               </DialogActions>
             </ContextDialog>

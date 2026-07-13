@@ -1,35 +1,42 @@
-import { render } from "@testing-library/react";
-import type React from "react";
-import { describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { render, screen } from "@/__tests__/customQueries";
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-import ErrorBoundary from "../ErrorBoundary";
+import ErrorBoundary, { MessageBoundary } from "../ErrorBoundary";
+import { ErrorComponent } from "../ErrorBoundary.story";
 
-function AlwaysError(): React.ReactNode {
-  throw new Error("foo");
-}
 describe("ErrorBoundary", () => {
-  test("Reports the support email address.", () => {
-    /*
-     * This is needed because the `render` function will report any errors
-     * using console.error, even though the ErrorBoundary catches them, which
-     * just pollutes the output of the vitest CLI runner
-     */
+  let restoreConsole: () => void;
+  beforeEach(() => {
+    // React logs the caught render error via console.error; that noise is
+    // expected here (and in the intentionally-throwing MessageBoundary case
+    // below) and would otherwise clutter the test output.
+    restoreConsole = silenceConsole(
+      ["error"],
+      ["Error: Error", "ErrorComponent", "message render failed", "ThrowingMessage"],
+    );
+  });
+  afterEach(() => {
+    restoreConsole();
+  });
 
-    const restoreConsole = silenceConsole(["error"], ["Error: foo", "AlwaysError"]);
-    const errorHandler = (event: ErrorEvent) => {
-      event.preventDefault();
+  test("When there is an error rendering one of its descendent components, ErrorBoundary should show an error message.", () => {
+    render(
+      <ErrorBoundary message="Something went wrong.">
+        <ErrorComponent />
+      </ErrorBoundary>,
+    );
+    expect(screen.getByText("Something went wrong.")).toBeVisible();
+  });
+
+  test("When rendering the error message itself throws, MessageBoundary falls back to plain untranslated text.", () => {
+    const ThrowingMessage = (): never => {
+      throw new Error("message render failed");
     };
-    window.addEventListener("error", errorHandler);
-    try {
-      const { container } = render(
-        <ErrorBoundary>
-          <AlwaysError />
-        </ErrorBoundary>,
-      );
-      expect(container).toHaveTextContent("support@researchspace.com");
-    } finally {
-      window.removeEventListener("error", errorHandler);
-      restoreConsole();
-    }
+    render(
+      <MessageBoundary>
+        <ThrowingMessage />
+      </MessageBoundary>,
+    );
+    expect(screen.getByText(/Something went wrong! Please refresh the page/)).toBeVisible();
   });
 });

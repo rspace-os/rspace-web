@@ -74,20 +74,20 @@ describe("Has defaultOrder", () => {
 describe("Renders page with booking data", () => {
   test("displays booking table headers", async () => {
     getWrapper();
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
   });
 
   test("displays booking type radio and maintenance checkbox", async () => {
     getWrapper();
-    await findFirstByText("Booked");
-    await findFirstByText("Booked and Completed");
-    await findFirstByText("Booked Equipment");
-    await findFirstByText("maintenance only");
+    await findFirstByText("workspace:tinymce.clustermarket.bookingTypes.booked");
+    await findFirstByText("workspace:tinymce.clustermarket.bookingTypes.all");
+    await findFirstByText("workspace:tinymce.clustermarket.bookingTypes.equipment");
+    await findFirstByText("workspace:tinymce.clustermarket.maintenanceOnly");
   });
 
   test('displays bookings of type "booked"', async () => {
     getWrapper();
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
     await findFirstByText("CURRENT_2");
     expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
     expect(screen.getByTestId("status0")).toHaveTextContent("Booked");
@@ -100,7 +100,7 @@ describe("Renders page with booking data", () => {
 
   test('displays bookings of type "booked and completed"', async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
     screen.getByText("CURRENT_2");
     expect(screen.getByText("CURRENT_2")).toBeInTheDocument();
     expect(screen.getByText("COMPLETED_3")).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe("Renders page with booking data", () => {
   test("bookings are ordered by start date, ascending", async () => {
     getWrapper({ defaultBookingType: BookingType.ALL });
 
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
     await findFirstByText("2022-01-28 07:30:00");
     const startTimes = screen.getAllByTestId(/start_time/).map((cell) => cell.textContent);
     expect(startTimes).toEqual(
@@ -128,7 +128,7 @@ describe("Renders page with booking data", () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper({ defaultBookingType: BookingType.ALL });
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();
@@ -138,7 +138,7 @@ describe("Renders page with booking data", () => {
     mockAxios.resetHandlers();
     mockAxios.onGet("/apps/clustermarket/bookings").reply(200, []);
     getWrapper();
-    await findFirstByText("Booking ID");
+    await findFirstByText("workspace:tinymce.clustermarket.columns.bookingId");
     expect(screen.queryAllByText("CURRENT_2")).toHaveLength(0);
     expect(screen.queryByText("COMPLETED_3")).not.toBeInTheDocument();
     expect(screen.queryByText("COMPLETED_1")).not.toBeInTheDocument();

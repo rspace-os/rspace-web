@@ -1,6 +1,7 @@
 import GetApp from "@mui/icons-material/GetApp";
 import { Observer } from "mobx-react-lite";
 import React, { forwardRef, useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AnalyticsContext from "../../../stores/contexts/Analytics";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
@@ -17,6 +18,7 @@ type ExportActionArgs = {
 
 const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, ExportActionArgs>(
   ({ as, closeMenu, disabled, selectedResults }: ExportActionArgs, ref) => {
+    const { t } = useTranslation(["inventory", "common"]);
     const { search } = useContext(SearchContext);
     const [openExportDialog, setOpenExportDialog] = useState(false);
     const { trackEvent } = React.useContext(AnalyticsContext);
@@ -41,7 +43,7 @@ const ExportAction = forwardRef<React.ElementRef<typeof ContextMenuAction>, Expo
           <ContextMenuAction
             onClick={handleOpen}
             icon={<GetApp />}
-            label="Export"
+            label={t("common:actions.export")}
             disabledHelp={disabledHelp}
             as={as}
             ref={ref}

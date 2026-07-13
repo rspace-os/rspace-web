@@ -144,6 +144,15 @@ public class InventoryVersionEndpointsNotFoundTest {
         NotFoundException.class, () -> controller.getSampleTemplateVersionById(1L, 9L, user));
   }
 
+  @Test
+  public void instrumentTemplateVersionEndpointThrows404ForMissingVersion() {
+    InstrumentTemplatesApiController controller = wireBase(new InstrumentTemplatesApiController());
+    when(instrumentMgr.getApiInstrumentTemplateVersion(1L, 9L, user)).thenReturn(null);
+
+    assertThrows(
+        NotFoundException.class, () -> controller.getInstrumentTemplateVersionById(1L, 9L, user));
+  }
+
   private InstrumentsApiController wiredInstrumentsController() {
     return wire(new InstrumentsApiController());
   }

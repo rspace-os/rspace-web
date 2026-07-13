@@ -8,6 +8,8 @@ import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import Typography from "@mui/material/Typography";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/box";
 import BoxIcon from "../../../assets/branding/box/logo.svg";
 import { Optional } from "../../../util/optional";
@@ -30,6 +32,7 @@ type BoxArgs = {
  * document editor.
  */
 function Box({ integrationState, update }: BoxArgs): React.ReactNode {
+  const { t } = useTranslation(["apps", "common"]);
   const [linkType, setLinkType] = React.useState(integrationState.credentials.BOX_LINK_TYPE.orElse("LIVE"));
 
   return (
@@ -41,8 +44,8 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
       }}
     >
       <IntegrationCard
-        name="Box"
-        explanatoryText="Collaborate with anyone from anywhere with a content management and workflow cloud."
+        name={t("integrations.box.name")}
+        explanatoryText={t("integrations.box.description")}
         image={BoxIcon}
         color={LOGO_COLOR}
         update={(newMode) =>
@@ -52,14 +55,10 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
           })
         }
         integrationState={integrationState}
-        usageText="You can include files from Box in your RSpace documents. Files are embedded as links to the Box location of that file."
+        usageText={t("integrations.box.usage")}
         setupSection={
           <>
-            <ol>
-              <li>Enable the integration.</li>
-              <li>Check that the link type option below is correct.</li>
-              <li>When editing a document, click on the Box icon in the text editor toolbar.</li>
-            </ol>
+            <TransRichText i18nKey="apps:integrations.box.setup.instructions" />
             <Card variant="outlined" sx={{ mt: 2 }}>
               <form
                 onSubmit={(event) => {
@@ -75,9 +74,7 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
               >
                 <CardContent>
                   {!integrationState.credentials["box.api.enabled"].orElse(false) && (
-                    <Typography variant="body2">
-                      To enable the disabled options, please contact your sysadmin.
-                    </Typography>
+                    <Typography variant="body2">{t("integrations.box.sysadminNote")}</Typography>
                   )}
                   <RadioGroup
                     value={linkType}
@@ -91,9 +88,9 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                       control={<Radio />}
                       label={
                         <>
-                          <Typography variant="body1">Live</Typography>
+                          <Typography variant="body1">{t("integrations.box.linkType.live")}</Typography>
                           <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            Only live links (that always point to the latest version of the file) are inserted.
+                            {t("integrations.box.linkType.liveDescription")}
                           </Typography>
                         </>
                       }
@@ -105,10 +102,9 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                       control={<Radio />}
                       label={
                         <>
-                          <Typography variant="body1">Versioned</Typography>
+                          <Typography variant="body1">{t("integrations.box.linkType.versioned")}</Typography>
                           <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            If the file is updated in Box after you made the link, you&apos;ll still be able to download
-                            the original version. This feature only works for premium Box accounts.
+                            {t("integrations.box.linkType.versionedDescription")}
                           </Typography>
                         </>
                       }
@@ -120,11 +116,9 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                       control={<Radio />}
                       label={
                         <>
-                          <Typography variant="body1">
-                            Decide between live and versioned links when inserting a link.
-                          </Typography>
+                          <Typography variant="body1">{t("integrations.box.linkType.ask")}</Typography>
                           <Typography variant="body2" sx={{ fontSize: "0.825em" }}>
-                            This allows some links to be to live files and some to be to older versions.
+                            {t("integrations.box.linkType.askDescription")}
                           </Typography>
                         </>
                       }
@@ -132,14 +126,14 @@ function Box({ integrationState, update }: BoxArgs): React.ReactNode {
                   </RadioGroup>
                 </CardContent>
                 <CardActions>
-                  <Button type="submit">Save</Button>
+                  <Button type="submit">{t("common:actions.save")}</Button>
                 </CardActions>
               </form>
             </Card>
           </>
         }
-        helpLinkText="Cloud Storage integrations docs"
-        website="box.com"
+        helpLinkText={t("integrations.box.helpLink")}
+        website="https://box.com"
         docLink="cloudstorage"
       />
     </Grid>

@@ -12,6 +12,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import { observer } from "mobx-react-lite";
 import React, { createRef, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import TitledBox from "../../../components/TitledBox";
 import type { Location } from "../../../stores/definitions/Container";
 import ContainerModel from "../../../stores/models/ContainerModel";
@@ -36,6 +37,7 @@ type LocationsImageMarkersDialogArgs = {
 };
 
 function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialogArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { searchStore } = useStores();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const activeResult = searchStore.activeResult;
@@ -63,7 +65,7 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
     activeResult.locations === null ||
     typeof activeResult.locations === "undefined" ||
     activeResult.locations.length === 0 ? (
-      <Alert severity="warning">No marked locations yet; click on the image to add a location marker.</Alert>
+      <Alert severity="warning">{t("container.fields.locationsImage.noMarkers")}</Alert>
     ) : null;
 
   const onLocationTap = (mark: TappedLocationData) => {
@@ -118,9 +120,9 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
       <Grid container sx={{ flexDirection: "column" }}>
         <Grid>
           <DialogContentText>
-            Tap on the image to add a location marker.
+            {t("container.fields.locationsImage.tapInstruction")}
             <br />
-            Tap and hold on a marker, and then drag to adjust the marked location.
+            {t("container.fields.locationsImage.dragInstruction")}
           </DialogContentText>
         </Grid>
         <Grid size={12}>
@@ -145,10 +147,25 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
             indicatorColor="primary"
             textColor="primary"
           >
-            <Tab icon={<ViewHeadlineIcon />} label="Compact" iconPosition="start" value={COMPACT_VIEW} />
-            <Tab icon={<ViewAgendaOutlinedIcon />} label="Detailed" iconPosition="start" value={DETAILED_VIEW} />
+            <Tab
+              icon={<ViewHeadlineIcon />}
+              label={t("container.fields.locationsMarkersDialog.compact")}
+              iconPosition="start"
+              value={COMPACT_VIEW}
+            />
+            <Tab
+              icon={<ViewAgendaOutlinedIcon />}
+              label={t("container.fields.locationsMarkersDialog.detailed")}
+              iconPosition="start"
+              value={DETAILED_VIEW}
+            />
             {isSingleColumnLayout && (
-              <Tab icon={<ImageOutlinedIcon />} label="Image" iconPosition="start" value={IMAGE_VIEW} />
+              <Tab
+                icon={<ImageOutlinedIcon />}
+                label={t("container.fields.locationsMarkersDialog.image")}
+                iconPosition="start"
+                value={IMAGE_VIEW}
+              />
             )}
           </Tabs>
           {rightView === COMPACT_VIEW && (
@@ -180,10 +197,10 @@ function LocationsImageMarkersDialog({ open, close }: LocationsImageMarkersDialo
       colRight={colRight()}
       open={open}
       onClose={close}
-      dialogTitle={"Edit Locations"}
+      dialogTitle={t("container.fields.locationsMarkersDialog.dialogTitle")}
       actions={
         <Button onClick={close} color="primary">
-          Done
+          {t("container.fields.locationsMarkersDialog.done")}
         </Button>
       }
     />

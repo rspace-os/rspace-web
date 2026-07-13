@@ -5,7 +5,9 @@ import TableRow from "@mui/material/TableRow";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import AdjustableHeadCell from "@/Inventory/components/Tables/AdjustableHeadCell";
+import { translateAdjustableTableLabel } from "@/Inventory/components/Tables/adjustableTableLabels";
 import { isSortable, sortProperties } from "@/stores/models/InventoryBaseRecord";
 import IconButtonWithTooltip from "../../../components/IconButtonWithTooltip";
 import useViewportDimensions from "../../../hooks/browser/useViewportDimensions";
@@ -25,6 +27,7 @@ type TableHeadArgs = {
 };
 
 function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMenuId }: TableHeadArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { isViewportSmall, isViewportLarge } = useViewportDimensions();
   const isSingleColumnLayout = useIsSingleColumnLayout();
   const { search } = useContext(SearchContext);
@@ -54,19 +57,19 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
             {multiSelect && (
               <TableCell variant="head" sx={{ pl: 0.75, pr: 0, py: 0 }}>
                 <IconButtonWithTooltip
-                  title="Select all"
+                  title={t("search.resultsTable.selectAll")}
                   icon={<SelectAllIcon />}
                   onClick={toggleAll}
                   sx={{ p: 0.75 }}
                 />
               </TableCell>
             )}
-            {singleSelect && <TableCell variant="head">Select</TableCell>}
+            {singleSelect && <TableCell variant="head">{t("search.resultsTable.select")}</TableCell>}
             <TableCell variant="head" padding="normal" sortDirection={order}>
               {isSortable(mainProperty.key) ? (
                 <SortableProperty property={mainProperty} />
               ) : (
-                <span>{search.uiConfig.mainColumn}</span>
+                <span>{translateAdjustableTableLabel(search.uiConfig.mainColumn, t)}</span>
               )}
             </TableCell>
             <AdjustableHeadCell
@@ -98,7 +101,7 @@ function CustomTableHead({ selectedCount, onSelectOptions, toggleAll, contextMen
               menuID={contextMenuId}
               selectedResults={search.selectedResults}
               onSelectOptions={onSelectOptions}
-              forceDisabled={search.processingContextActions ? "Action In Progress" : ""}
+              forceDisabled={search.processingContextActions ? t("search.resultsTable.actionInProgress") : ""}
               paddingTop
               basketSearch={search.fetcher.basketSearch}
             />

@@ -4,12 +4,14 @@ import SvgIcon from "@mui/material/SvgIcon";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DropdownButton from "../../../components/DropdownButton";
 import StyledMenu from "../../../components/StyledMenu";
 import SearchContext from "../../../stores/contexts/Search";
 import type { AdjustableTableRowLabel } from "../../../stores/definitions/Tables";
 import { sortProperties } from "../../../stores/models/InventoryBaseRecord";
-import { match, toTitleCase } from "../../../util/Util";
+import { match } from "../../../util/Util";
+import { translateAdjustableTableLabel } from "../../components/Tables/adjustableTableLabels";
 import type { SortProperty } from "../../components/Tables/SortableProperty";
 
 const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
@@ -34,6 +36,7 @@ const SortAZIcon = ({ disabled }: { disabled: boolean }) => (
 );
 
 function SortControls(): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -56,11 +59,16 @@ function SortControls(): React.ReactNode {
   };
 
   const menuItemLabel = (key: string, label: AdjustableTableRowLabel) =>
-    `${label} ${match<string, string>([
+    `${translateAdjustableTableLabel(label, t)} ${match<string, string>([
       [(k) => !search.fetcher.isCurrentSort(k), ""],
-      [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, "(A-Z)"],
-      [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, "(Z-A)"],
+      [(k) => search.fetcher.isCurrentSort(k) && search.fetcher.isOrderDesc, t("search.controls.sort.ascending")],
+      [(k) => search.fetcher.isCurrentSort(k) && !search.fetcher.isOrderDesc, t("search.controls.sort.descending")],
     ])(key)}`;
+  const searchViewLabel = match<string, string>([
+    [(view) => view === "GRID", t("search.controls.sort.views.grid")],
+    [(view) => view === "IMAGE", t("search.controls.sort.views.image")],
+    [() => true, search.searchView],
+  ]);
 
   const disabled = search.searchView === "IMAGE" || search.searchView === "GRID";
   return (
@@ -68,7 +76,11 @@ function SortControls(): React.ReactNode {
       name={<SortAZIcon disabled={disabled} />}
       onClick={handleClick}
       disabled={disabled}
-      title={disabled ? `Cannot sort ${toTitleCase(search.searchView)} view.` : "Sort by"}
+      title={
+        disabled
+          ? t("search.controls.sort.cannotSortView", { view: searchViewLabel(search.searchView) })
+          : t("search.controls.sort.sortBy")
+      }
     >
       <StyledMenu anchorEl={anchorEl} keepMounted open={Boolean(anchorEl)} onClose={handleClose}>
         {sortProperties.map(({ key, label, adjustColumn }) => {

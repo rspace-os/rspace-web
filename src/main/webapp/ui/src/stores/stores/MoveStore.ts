@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
 import { handleDetailedErrors, handleDetailedSuccesses } from "../../util/alerts";
 import { getErrorMessage } from "../../util/error";
@@ -271,8 +272,8 @@ export default class MoveStore {
     } catch (error) {
       this.rootStore.uiStore.addAlert(
         mkAlert({
-          title: "Move failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:moveToTarget.errors.moveFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );

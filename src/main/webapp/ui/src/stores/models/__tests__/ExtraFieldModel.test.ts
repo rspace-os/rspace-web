@@ -59,7 +59,7 @@ describe("ExtraFieldModel link validation", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/target global id/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.linkTargetRequired");
   });
 
   it("treats an unset link as a valid empty field rather than blocking Save", () => {
@@ -111,7 +111,7 @@ describe("ExtraFieldModel editing blocks record save for any open editor (RSDEV-
     });
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/update or cancel/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.fieldBeingEdited");
   });
 
   it("blocks Save while a Number field's editor is open", () => {
@@ -119,7 +119,7 @@ describe("ExtraFieldModel editing blocks record save for any open editor (RSDEV-
       {
         id: 9,
         globalId: "EF9",
-        name: "Count",
+        name: "inventory:contextMenu.createDialog.fields.count",
         lastModified: null,
         type: "number",
         content: "42",
@@ -130,7 +130,7 @@ describe("ExtraFieldModel editing blocks record save for any open editor (RSDEV-
     );
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/update or cancel/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.fieldBeingEdited");
   });
 
   it("does NOT block Save when only the field value is edited inline (editor closed)", () => {
@@ -164,7 +164,7 @@ describe("ExtraFieldModel editing blocks record save", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/update or cancel/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.fieldBeingEdited");
 
     field.setEditing(false);
     expect(field.isValid.isOk).toBe(true);
@@ -188,7 +188,7 @@ describe("ExtraFieldModel editing blocks record save", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/new field is being added/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.newFieldBeingAdded");
   });
 
   it("blocks Save for a brand-new unapplied field of any type via the edit-mode rule", () => {
@@ -212,7 +212,7 @@ describe("ExtraFieldModel editing blocks record save", () => {
 
     expect(field.isValid.isOk).toBe(false);
     const message = field.isValid.orElseGet((errors) => errors.map((e) => e.message).join(" "));
-    expect(message).toMatch(/new field is being added/i);
+    expect(message).toContain("inventory:fields.extraFields.validation.newFieldBeingAdded");
   });
 });
 

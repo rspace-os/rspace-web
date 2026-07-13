@@ -16,6 +16,8 @@
  */
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { getErrorMessage } from "@/util/error";
 import type InvApiService from "../../common/InvApiService";
 import type { RadioOption } from "../../components/Inputs/RadioField";
@@ -55,33 +57,40 @@ export type IdentifierGeoLocation = {
   geoLocationPolygon: GeoLocationPolygon;
 };
 
-const creatorTypeOptions: Array<RadioOption<string>> = [
+/*
+ * These are functions rather than module constants so the labels resolve when
+ * the fields are rendered (after i18n has initialised and the inventory
+ * namespace has loaded, and re-resolving on a language change via the consuming
+ * component's `useTranslation`) instead of being frozen to whatever was
+ * available at import time.
+ */
+const getCreatorTypeOptions = (): Array<RadioOption<string>> => [
   {
     value: "Personal",
-    label: "Personal",
+    label: i18n.t("inventory:identifierModel.creatorTypes.personal"),
   },
   {
     value: "Organizational",
-    label: "Organizational",
+    label: i18n.t("inventory:identifierModel.creatorTypes.organizational"),
   },
 ];
 
-const identifierDescriptionOptions: Array<DropdownOption> = [
-  { value: "ABSTRACT", label: "Abstract" },
-  { value: "METHODS", label: "Methods" },
+const getIdentifierDescriptionOptions = (): Array<DropdownOption> => [
+  { value: "ABSTRACT", label: i18n.t("inventory:identifierModel.descriptionTypes.abstract") },
+  { value: "METHODS", label: i18n.t("inventory:identifierModel.descriptionTypes.methods") },
 ];
-const identifierDateOptions: Array<DropdownOption> = [
-  { value: "ACCEPTED", label: "Accepted" },
-  { value: "AVAILABLE", label: "Available" },
-  { value: "COPYRIGHTED", label: "Copyrighted" },
-  { value: "COLLECTED", label: "Collected" },
-  { value: "CREATED", label: "Created" },
-  { value: "ISSUED", label: "Issued" },
-  { value: "SUBMITTED", label: "Submitted" },
-  { value: "UPDATED", label: "Updated" },
-  { value: "VALID", label: "Valid" },
-  { value: "WITHDRAWN", label: "Withdrawn" },
-  { value: "OTHER", label: "Other" },
+const getIdentifierDateOptions = (): Array<DropdownOption> => [
+  { value: "ACCEPTED", label: i18n.t("inventory:identifierModel.dateTypes.accepted") },
+  { value: "AVAILABLE", label: i18n.t("inventory:identifierModel.dateTypes.available") },
+  { value: "COPYRIGHTED", label: i18n.t("inventory:identifierModel.dateTypes.copyrighted") },
+  { value: "COLLECTED", label: i18n.t("inventory:identifierModel.dateTypes.collected") },
+  { value: "CREATED", label: i18n.t("inventory:identifierModel.dateTypes.created") },
+  { value: "ISSUED", label: i18n.t("inventory:identifierModel.dateTypes.issued") },
+  { value: "SUBMITTED", label: i18n.t("inventory:identifierModel.dateTypes.submitted") },
+  { value: "UPDATED", label: i18n.t("inventory:identifierModel.dateTypes.updated") },
+  { value: "VALID", label: i18n.t("inventory:identifierModel.dateTypes.valid") },
+  { value: "WITHDRAWN", label: i18n.t("inventory:identifierModel.dateTypes.withdrawn") },
+  { value: "OTHER", label: i18n.t("inventory:identifierModel.dateTypes.other") },
 ];
 
 /**
@@ -112,6 +121,15 @@ export const subFieldsForNew: object = {
   },
 };
 
+/*
+ * DataCite identifier-metadata field labels. These are intentionally NOT
+ * translated and must stay in English: `subjectScheme`, `schemeURI`, `valueURI`
+ * and `classificationCode` are verbatim DataCite Metadata Schema attribute names
+ * (Subject property), and "Type" corresponds to DataCite's alternateIdentifierType.
+ * Keeping them in English preserves consistency with the DataCite schema and the
+ * export/deposit metadata that references these terms.
+ * See https://datacite-metadata-schema.readthedocs.io/ (6. Subject).
+ */
 export const RECOMMENDED_FIELDS_LABELS = {
   type: "Type",
   freeType: "Type",
@@ -247,7 +265,7 @@ export default class IdentifierModel implements Identifier {
         key: "Creator Type",
         value: this.creatorType,
         handler: (v) => this.setCreatorType(v as CreatorType),
-        radioOptions: creatorTypeOptions,
+        radioOptions: getCreatorTypeOptions(),
       },
       {
         key: "Name",
@@ -308,8 +326,8 @@ export default class IdentifierModel implements Identifier {
         key: "Descriptions",
         value: this.descriptions,
         handler: (v) => this.setDescriptions(v as Array<IdentifierDescription>),
-        options: identifierDescriptionOptions,
-        selectAriaLabel: "Description Type",
+        options: getIdentifierDescriptionOptions(),
+        selectLabelLabel: "Description Type",
       },
       {
         key: "Alternate Identifiers",
@@ -320,8 +338,8 @@ export default class IdentifierModel implements Identifier {
         key: "Dates",
         value: this.dates,
         handler: (v) => this.setDates(v as Array<IdentifierDate>),
-        options: identifierDateOptions,
-        selectAriaLabel: "Event Type",
+        options: getIdentifierDateOptions(),
+        selectLabelLabel: "Event Type",
       },
       {
         key: "Geolocations",
@@ -415,21 +433,10 @@ export default class IdentifierModel implements Identifier {
     try {
       if (
         await confirm(
-          "You are about to publish this Identifier",
-          <>
-            The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.
-            <br />
-            <br />
-            <strong>
-              Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make
-              public before publishing, as this action cannot be fully undone.
-            </strong>
-            <br />
-            <br />
-            Do you want to proceed?
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("inventory:identifierConfirm.publish.title"),
+          <TransRichText i18nKey="inventory:identifierConfirm.publish.body" />,
+          i18n.t("common:actions.ok"),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -452,7 +459,7 @@ export default class IdentifierModel implements Identifier {
         });
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been published.`,
+            message: i18n.t("inventory:identifierModel.alerts.published", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -461,8 +468,8 @@ export default class IdentifierModel implements Identifier {
       // in case of errors like 422 the server provides a specific response message that we want to display
       addAlert(
         mkAlert({
-          title: `The identifier could not be published.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifierModel.alerts.publishFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -489,19 +496,10 @@ export default class IdentifierModel implements Identifier {
     try {
       if (
         await confirm(
-          "You are about to retract this Identifier",
-          <>
-            The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the
-            Public API, and the landing page will not display any metadata.
-            <br />
-            <br />
-            <strong>The metadata will remain visible to other DataCite Members via the Member API.</strong>
-            <br />
-            <br />
-            Do you want to proceed?
-          </>,
-          "OK",
-          "CANCEL",
+          i18n.t("inventory:identifierConfirm.retract.title"),
+          <TransRichText i18nKey="inventory:identifierConfirm.retract.body" />,
+          i18n.t("common:actions.ok"),
+          i18n.t("common:actions.cancel"),
         )
       ) {
         if (!this.id) throw new Error("DOI Id must be known.");
@@ -511,7 +509,7 @@ export default class IdentifierModel implements Identifier {
         this.updateState(response.data.state);
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been retracted.`,
+            message: i18n.t("inventory:identifierModel.alerts.retracted", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -519,8 +517,8 @@ export default class IdentifierModel implements Identifier {
     } catch (error) {
       addAlert(
         mkAlert({
-          title: `The identifier could not be retracted.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:identifierModel.alerts.retractFailed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -550,8 +548,8 @@ export default class IdentifierModel implements Identifier {
     if (this.id === null || typeof this.id === "undefined") {
       addAlert(
         mkAlert({
-          title: "Identifier could not be re-published",
-          message: "DOI must be known",
+          title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+          message: i18n.t("inventory:identifierModel.alerts.doiRequired"),
           variant: "error",
         }),
       );
@@ -567,8 +565,8 @@ export default class IdentifierModel implements Identifier {
       } catch (error) {
         addAlert(
           mkAlert({
-            title: `The identifier could not be republished.`,
-            message: getErrorMessage(error, "Unknown reason."),
+            title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+            message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
             variant: "error",
           }),
         );
@@ -598,7 +596,7 @@ export default class IdentifierModel implements Identifier {
         });
         addAlert(
           mkAlert({
-            message: `The identifier ${this.doi} has been republished.`,
+            message: i18n.t("inventory:identifierModel.alerts.republished", { doi: this.doi }),
             variant: "success",
           }),
         );
@@ -610,8 +608,10 @@ export default class IdentifierModel implements Identifier {
          */
         addAlert(
           mkAlert({
-            title: `The identifier could not be republished.`,
-            message: `Identifier has been retracted. Tap publish to try again.\n${getErrorMessage(error, "Unknown reason.")}`,
+            title: i18n.t("inventory:identifierModel.alerts.republishFailed"),
+            message: i18n.t("inventory:identifierModel.alerts.republishAfterRetractFailed", {
+              reason: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
+            }),
             variant: "error",
           }),
         );

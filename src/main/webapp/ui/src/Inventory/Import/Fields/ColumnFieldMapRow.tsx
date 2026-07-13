@@ -10,6 +10,7 @@ import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import CustomTooltip from "../../../components/CustomTooltip";
 import ExpandCollapseIcon from "../../../components/ExpandCollapseIcon";
 import { FIELD_DATA } from "../../../stores/models/FieldTypes";
@@ -27,6 +28,7 @@ type ColumnFieldMapRowArgs = {
 };
 
 function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
+  const { t } = useTranslation("inventory");
   const [open, setOpen] = useState(false);
   const theme = useTheme();
 
@@ -57,7 +59,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
             checked={columnFieldMap.selected}
             onChange={() => columnFieldMap.toggleSelected()}
             color="default"
-            name={`Select mapping for ${columnFieldMap.fieldName}`}
+            name={t("import.columnMapping.selectMapping", { fieldName: columnFieldMap.fieldName })}
             data-test-id={columnFieldMap.fieldName}
           />
         </TableCell>
@@ -65,8 +67,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
           {columnFieldMap.fieldName}
           {columnFieldMap.columnName !== columnFieldMap.fieldName && (
             <Typography color="textSecondary" component="span" variant="caption">
-              {" "}
-              ({columnFieldMap.columnName})
+              {` (${columnFieldMap.columnName})`}
             </Typography>
           )}
         </TableCell>
@@ -96,7 +97,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
           </Select>
         </TableCell>
         <TableCell nopadding={true} padding="none" align="left" width={1}>
-          <CustomTooltip title="Custom details">
+          <CustomTooltip title={t("import.customDetails")}>
             <IconButton
               onClick={() => setOpen(!open)}
               disabled={existingTemplate || columnFieldMap.field !== Fields.custom}
@@ -121,7 +122,7 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
                   }}
                 >
                   <Box sx={{ p: 1 }}>
-                    <UploadFormControl label="Custom Field Name" error={false}>
+                    <UploadFormControl label={t("import.customFieldName")} error={false}>
                       <FieldNameStringField columnFieldMap={columnFieldMap} />
                     </UploadFormControl>
                   </Box>

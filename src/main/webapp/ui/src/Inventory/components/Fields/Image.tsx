@@ -2,6 +2,7 @@ import Alert from "@mui/material/Alert";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import ImageField from "../../../components/Inputs/ImageField";
 import SearchContext from "../../../stores/contexts/Search";
 import type { HasEditableFields } from "../../../stores/definitions/Editable";
@@ -18,6 +19,7 @@ function Image<
   },
   FieldOwner extends HasEditableFields<Fields>,
 >({ fieldOwner, alt }: { fieldOwner: FieldOwner; alt: string }): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const { search } = useContext(SearchContext);
   const isFieldEditable = fieldOwner.isFieldEditable("image");
   let tooManytoBatchThis = false;
@@ -29,9 +31,9 @@ function Image<
   return (
     <BatchFormField
       value={itemImage}
-      label="Preview Image"
+      label={t("fields.image.label")}
       disabled={!fieldOwner.isFieldEditable("image")}
-      explanation={itemImage ? <>Tap to view at full resolution, scroll to exit (or pinch on mobile)</> : null}
+      explanation={itemImage ? t("fields.image.explanation") : null}
       canChooseWhichToEdit={fieldOwner.canChooseWhichToEdit && !tooManytoBatchThis}
       setDisabled={(checked) => {
         fieldOwner.setFieldEditable("image", checked);
@@ -56,9 +58,7 @@ function Image<
             noValueLabel={fieldOwner.noValueLabel.image}
             alt={alt}
           />
-          {tooManytoBatchThis && (
-            <Alert severity="info">The image can only be edited when no more than 25 items are selected.</Alert>
-          )}
+          {tooManytoBatchThis && <Alert severity="info">{t("fields.image.tooManyToEdit", { max: MAX })}</Alert>}
         </>
       )}
     />

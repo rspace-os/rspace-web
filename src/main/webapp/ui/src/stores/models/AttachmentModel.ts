@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
 import { getErrorMessage } from "@/util/error";
 import ApiService from "../../common/InvApiService";
 import type { GalleryFile } from "../../eln/gallery/useGalleryListing";
@@ -100,7 +101,7 @@ class LinkableGalleryFile implements LinkableRecord {
   }
 
   get recordTypeLabel(): string {
-    return "Gallery File";
+    return i18n.t("inventory:recordDetails.labels.galleryFile");
   }
 
   get iconName(): string {
@@ -303,8 +304,8 @@ export class ExistingAttachment implements Attachment {
         .catch((error) => {
           getRootStore().uiStore.addAlert(
             mkAlert({
-              title: "Fetching chemical file failed.",
-              message: getErrorMessage(error, "Unknown reason."),
+              title: i18n.t("inventory:fields.attachments.errors.fetchChemicalFileFailed"),
+              message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
               variant: "error",
             }),
           );
@@ -317,7 +318,7 @@ export class ExistingAttachment implements Attachment {
   }
 
   get cardTypeLabel(): string {
-    return "Attachment";
+    return i18n.t("inventory:recordTypes.attachment.singular");
   }
 
   get deleted(): boolean {
@@ -590,8 +591,8 @@ export class NewlyUploadedAttachment implements Attachment {
         .catch((error) => {
           getRootStore().uiStore.addAlert(
             mkAlert({
-              title: "Fetching chemical file failed.",
-              message: error?.response?.data.message ?? error.message ?? "Unknown reason.",
+              title: i18n.t("inventory:fields.attachments.errors.fetchChemicalFileFailed"),
+              message: error?.response?.data.message ?? error.message ?? i18n.t("inventory:errors.unknownReason"),
               variant: "error",
             }),
           );
@@ -604,7 +605,7 @@ export class NewlyUploadedAttachment implements Attachment {
   }
 
   get cardTypeLabel(): string {
-    return "Attachment";
+    return i18n.t("inventory:recordTypes.attachment.singular");
   }
 
   get deleted(): boolean {
@@ -792,7 +793,7 @@ export class NewGalleryAttachment implements Attachment {
   }
 
   get cardTypeLabel(): string {
-    return "Attachment";
+    return i18n.t("inventory:recordTypes.attachment.singular");
   }
 
   get deleted(): boolean {

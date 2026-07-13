@@ -1,5 +1,7 @@
 import { groupBy, isEqual, isNotNil, mapValues, omitBy } from "es-toolkit";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
+import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import type { Instrument } from "@/stores/definitions/Instrument";
 import type { InstrumentTemplateAttrs } from "@/stores/models/InstrumentTemplateModel";
 import ApiService, { type BulkEndpointRecordSerialisation } from "../../common/InvApiService";
@@ -15,7 +17,7 @@ import Result from "../../util/result";
 import RsSet from "../../util/set";
 import { match } from "../../util/Util";
 import { mkAlert } from "../contexts/Alert";
-import { type GlobalId, getSavedGlobalId, globalIdPatterns, type Id } from "../definitions/BaseRecord";
+import { type GlobalId, getSavedGlobalId, globalIdDefinitions, type Id } from "../definitions/BaseRecord";
 import type { Basket } from "../definitions/Basket";
 import type { Editable } from "../definitions/Editable";
 import type { Factory } from "../definitions/Factory";
@@ -44,7 +46,7 @@ import ContainerModel from "./ContainerModel";
 import CacheFetcher from "./Fetcher/CacheFetcher";
 import CoreFetcher from "./Fetcher/CoreFetcher";
 import DynamicFetcher from "./Fetcher/DynamicFetcher";
-import InventoryBaseRecord from "./InventoryBaseRecord";
+import InventoryBaseRecord, { sortProperties } from "./InventoryBaseRecord";
 import SampleModel from "./SampleModel";
 import SubSampleModel, { type SubSampleAttrs } from "./SubSampleModel";
 import type { TemplateAttrs } from "./TemplateModel";
@@ -52,6 +54,26 @@ import TreeModel, { type TreeAttrs } from "./TreeModel";
 
 const DYNAMIC_VIEWS = ["TREE", "CARD"];
 const CACHE_VIEWS = ["IMAGE", "GRID"];
+const DEFAULT_MAIN_COLUMN = "name";
+const DEFAULT_ADJUSTABLE_COLUMNS: Array<AdjustableTableRowLabel> = ["globalId", "owner", "lastModified"];
+const VALID_MAIN_COLUMNS = new Set<AdjustableTableRowLabel>(sortProperties.map(({ label }) => label));
+const BUILT_IN_ADJUSTABLE_COLUMNS = new Set<AdjustableTableRowLabel>([
+  ...VALID_MAIN_COLUMNS,
+  "containerType",
+  "contents",
+  "currentLocation",
+  "expiryDate",
+  "gridCoordinates",
+  "lastMoved",
+  "numberOfEmptyLocations",
+  "owner",
+  "previousLocation",
+  "quantity",
+  "sample",
+  "subsamplesCount",
+  "tags",
+  "version",
+]);
 
 export const getViewGroup = (view: SearchView): "dynamic" | "cache" | "static" =>
   match<SearchView, "dynamic" | "cache" | "static">([
@@ -95,9 +117,8 @@ const DEFAULT_UI_CONFIG: UiConfig = {
     "SAMPLE_TEMPLATE",
     "INSTRUMENT_TEMPLATE",
   ]),
-  mainColumn: "Name",
-  // note: there is a non-breaking space (U+00A0) between "Global" and "ID"
-  adjustableColumns: ["Global ID", "Owner", "Last Modified"],
+  mainColumn: DEFAULT_MAIN_COLUMN,
+  adjustableColumns: [...DEFAULT_ADJUSTABLE_COLUMNS],
   selectionMode: "MULTIPLE",
   instantConfirm: true,
   highlightActiveResult: true,
@@ -169,6 +190,7 @@ export default class Search implements SearchInterface {
       setSearchView: action,
       refetchActiveResult: action,
       setAdjustableColumn: action,
+      resetColumnLabelSettingsIfUnknown: action,
       setOwner: action,
       setBench: action,
       setTypeFilter: action,
@@ -216,7 +238,9 @@ export default class Search implements SearchInterface {
     this.uiConfig = {
       ...DEFAULT_UI_CONFIG,
       ...uiConfig,
+      adjustableColumns: [...(uiConfig?.adjustableColumns ?? DEFAULT_UI_CONFIG.adjustableColumns)],
     };
+    this.resetColumnLabelSettingsIfUnknown();
     this.overrideSearchOnFilter = null;
 
     this.batchEditingRecords = null;
@@ -411,7 +435,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Sending to trash...",
+        i18n.t("inventory:search.actions.trash.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -470,14 +494,21 @@ export default class Search implements SearchInterface {
         uiStore.addAlert(
           mkAlert({
             variant: "error",
-            title: "Some of the samples could not be trashed because the subsamples are in containers.",
-            message: "Please move them to the trash first.",
+            title: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.title"),
+            message: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.message"),
             details: subsamplesThatPreventedSampleDeletion.map(([s, ss]) => {
               const parentContainer = ss.parentContainers.at(0);
               return {
-                title: `Could not trash "${ss.name ?? "UNKNOWN"}" ${
-                  parentContainer ? `(in ${parentContainer.name} ${parentContainer.globalId ?? ""})` : ""
-                }`,
+                title: i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.detail", {
+                  name: ss.name ?? "UNKNOWN",
+                  container:
+                    parentContainer !== undefined
+                      ? i18n.t("inventory:search.actions.trash.samplesWithStoredSubsamples.container", {
+                          name: parentContainer.name,
+                          globalId: parentContainer.globalId ?? "",
+                        })
+                      : "",
+                }),
                 variant: "error",
                 record: factory.newRecord({
                   ...ss,
@@ -486,7 +517,7 @@ export default class Search implements SearchInterface {
                 } as any as Record<string, unknown> & { globalId: GlobalId }),
               };
             }),
-            actionLabel: "Move all to trash",
+            actionLabel: i18n.t("inventory:search.actions.trash.moveAllToTrash"),
             onActionClick: () => {
               void this.deleteRecords(records, { forceDelete: true });
             },
@@ -517,8 +548,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Sending to trash failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.trash.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -582,10 +613,10 @@ export default class Search implements SearchInterface {
     for (const sample of nowEmptySamples) {
       uiStore.addAlert(
         mkAlert({
-          message: `Send Sample ${sample.name} to trash too?`,
+          message: i18n.t("inventory:search.actions.trash.emptySamplePrompt", { name: sample.name }),
           variant: "notice",
           isInfinite: true,
-          actionLabel: "yes",
+          actionLabel: i18n.t("common:actions.yes"),
           onActionClick: () => {
             void (async () => {
               await this.deleteRecords([sample]);
@@ -608,7 +639,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Restoring...",
+        i18n.t("inventory:search.actions.restore.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -641,8 +672,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Restore failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.restore.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -684,7 +715,7 @@ export default class Search implements SearchInterface {
     const { peopleStore, uiStore } = getRootStore();
     try {
       const { data } = await showToastWhilstPending(
-        "Duplicating...",
+        i18n.t("inventory:search.actions.duplicate.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -728,7 +759,11 @@ export default class Search implements SearchInterface {
         newRecords,
         "duplicated",
         () => "created",
-        newBenchItems.length > 0 ? `Newly created ${newBenchItems.join(" and ")} are placed on your Bench.` : null,
+        newBenchItems.length > 0
+          ? i18n.t("inventory:search.actions.duplicate.newBenchItems", {
+              items: formatList(newBenchItems, i18n.resolvedLanguage ?? i18n.language),
+            })
+          : null,
       );
       if (peopleStore.currentUser) void peopleStore.currentUser.getBench();
       await this.fetcher.performInitialSearch(null);
@@ -738,8 +773,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Duplication failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.duplicate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -758,7 +793,7 @@ export default class Search implements SearchInterface {
     const { peopleStore, uiStore } = getRootStore();
     try {
       const { data } = await showToastWhilstPending(
-        "Splitting...",
+        i18n.t("inventory:search.actions.split.inProgress"),
         ApiService.post<Array<SubSampleAttrs>>(`subSamples/${id}/actions/split`, {
           split: true,
           numSubSamples: `${copies}`,
@@ -779,16 +814,16 @@ export default class Search implements SearchInterface {
           }),
         ],
         "split",
-        (r) => (r === subsample ? "Updated" : "Created"),
-        "Newly created subsamples are placed on your Bench.",
+        (r) => (r === subsample ? i18n.t("common:actions.updated") : i18n.t("common:actions.created")),
+        i18n.t("inventory:search.actions.split.newSubsamplesOnBench"),
       );
       await this.updateStateAfterSplit(subsample);
     } catch (error) {
       console.error(error);
       uiStore.addAlert(
         mkAlert({
-          title: "Splitting subsample failed.",
-          message: getErrorMessage(error, "Unknown reason"),
+          title: i18n.t("inventory:search.actions.split.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           duration: 8000,
         }),
@@ -842,7 +877,7 @@ export default class Search implements SearchInterface {
 
     try {
       const { data } = await showToastWhilstPending(
-        "Transferring...",
+        i18n.t("inventory:search.actions.transfer.inProgress"),
         ApiService.bulk<{
           results: Array<{
             error: { errors: Array<string> };
@@ -863,7 +898,9 @@ export default class Search implements SearchInterface {
       const recordsOnBench = successfullyTranferred.every(
         (r) => (r instanceof ContainerModel || r instanceof SubSampleModel) && r.isDirectlyOnWorkbench,
       );
-      const helpMessage = recordsOnBench ? `The records have been moved to ${username}'s bench` : null;
+      const translatedHelpMessage = recordsOnBench
+        ? i18n.t("inventory:search.actions.transfer.movedToBench", { username })
+        : null;
 
       handleDetailedErrors(
         data.errorCount,
@@ -874,13 +911,13 @@ export default class Search implements SearchInterface {
         "transfer",
         (erroredRecords) => this.transferRecords(username, erroredRecords),
       );
-      handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", helpMessage);
+      handleDetailedSuccesses(successfullyTranferred, "transferred", () => "transferred", translatedHelpMessage);
       await this.updateStateAfterTransfer(new RsSet(successfullyTranferred));
     } catch (error) {
       getRootStore().uiStore.addAlert(
         mkAlert({
-          title: "Transfer failed.",
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.transfer.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -942,7 +979,7 @@ export default class Search implements SearchInterface {
       const template = factory.newRecord(data);
       uiStore.addAlert(
         mkAlert({
-          message: `Template created successfully.`,
+          message: i18n.t("inventory:search.actions.createTemplate.success"),
           variant: "success",
           details: [
             {
@@ -957,8 +994,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Template creation failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createTemplate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1023,7 +1060,7 @@ export default class Search implements SearchInterface {
       const template = factory.newRecord(data);
       uiStore.addAlert(
         mkAlert({
-          message: `Instrument template created successfully.`,
+          message: i18n.t("inventory:search.actions.createInstrumentTemplate.success"),
           variant: "success",
           details: [
             {
@@ -1039,8 +1076,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Instrument template creation failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createInstrumentTemplate.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1089,7 +1126,7 @@ export default class Search implements SearchInterface {
 
       uiStore.addAlert(
         mkAlert({
-          message: "Successfully created new subsamples.",
+          message: i18n.t("inventory:search.actions.createSubsamples.success"),
           variant: "success",
           details: successfullyCreated.map((r) => ({
             title: r.name,
@@ -1101,8 +1138,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: "Subsample creation failed.",
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.createSubsamples.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
           details: Parsers.objectPath(["response", "data", "errors"], error)
             .flatMap(Parsers.isArray)
@@ -1150,7 +1187,7 @@ export default class Search implements SearchInterface {
         }),
       );
       const { data } = await showToastWhilstPending(
-        "Exporting...",
+        i18n.t("inventory:search.actions.export.inProgress"),
         ApiService.post<{ _links: Array<{ link: string; rel: string }> }>("export", params),
       );
       const downloadLink = data._links[1];
@@ -1174,8 +1211,8 @@ export default class Search implements SearchInterface {
     } catch (error) {
       uiStore.addAlert(
         mkAlert({
-          title: `Data export failed.`,
-          message: getErrorMessage(error, "Unknown reason."),
+          title: i18n.t("inventory:search.actions.export.failed"),
+          message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
           variant: "error",
         }),
       );
@@ -1281,6 +1318,22 @@ export default class Search implements SearchInterface {
     this.uiConfig.adjustableColumns[index] = value;
   }
 
+  resetColumnLabelSettingsIfUnknown(): void {
+    const hasUnknownMainColumn = !VALID_MAIN_COLUMNS.has(this.uiConfig.mainColumn);
+    const adjustableColumnOptions = this.adjustableColumnOptions;
+    const hasUnknownAdjustableColumn = this.uiConfig.adjustableColumns.some(
+      (column) =>
+        !BUILT_IN_ADJUSTABLE_COLUMNS.has(column) &&
+        adjustableColumnOptions.size > 0 &&
+        !adjustableColumnOptions.has(column),
+    );
+
+    if (hasUnknownMainColumn || hasUnknownAdjustableColumn) {
+      this.uiConfig.mainColumn = DEFAULT_MAIN_COLUMN;
+      this.uiConfig.adjustableColumns = [...DEFAULT_ADJUSTABLE_COLUMNS];
+    }
+  }
+
   performSearch() {
     this.fetcher.pageNumber = 0; // setPage performs network activity
     const searchParams = this.fetcher.generateParams({});
@@ -1345,7 +1398,7 @@ export default class Search implements SearchInterface {
   }
 
   get benchSearch(): boolean {
-    return globalIdPatterns.bench.test(this.fetcher.parentGlobalId ?? "");
+    return globalIdDefinitions.bench.pattern.test(this.fetcher.parentGlobalId ?? "");
   }
 
   onUsersBench(user: Person): boolean {
@@ -1468,7 +1521,7 @@ export default class Search implements SearchInterface {
       loading: this.editLoading === "batch",
       cancel: () =>
         showToastWhilstPending<void>(
-          "Cancelling...",
+          i18n.t("inventory:search.actions.cancel.inProgress"),
           new Promise((resolve) =>
             (async () => {
               this.editLoading = "batch";
@@ -1530,8 +1583,8 @@ export default class Search implements SearchInterface {
         } catch (error) {
           uiStore.addAlert(
             mkAlert({
-              title: "Update failed.",
-              message: getErrorMessage(error, "Unknown reason"),
+              title: i18n.t("inventory:search.actions.update.failed"),
+              message: getErrorMessage(error, i18n.t("inventory:errors.unknownReason")),
               variant: "error",
             }),
           );

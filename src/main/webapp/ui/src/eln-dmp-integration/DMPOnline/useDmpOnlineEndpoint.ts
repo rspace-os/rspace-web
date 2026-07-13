@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import i18n from "@/modules/common/i18n";
 import AlertContext, { type Alert, mkAlert } from "../../stores/contexts/Alert";
 import type * as FetchingData from "../../util/fetchingData";
 import { Optional } from "../../util/optional";
@@ -74,7 +75,7 @@ export class DmpSummary {
       );
       this.#addAlert(
         mkAlert({
-          message: "Successfully imported DMP.",
+          message: i18n.t("apps:dmpIntegrations.endpoint.importSuccess", { count: 1 }),
           variant: "success",
         }),
       );
@@ -82,7 +83,7 @@ export class DmpSummary {
       if (error instanceof Error) {
         this.#addAlert(
           mkAlert({
-            title: "Failed to import DMP.",
+            title: i18n.t("apps:dmpIntegrations.endpoint.importFailed", { count: 1 }),
             message: error.message,
             variant: "error",
           }),
@@ -157,14 +158,14 @@ async function listPlans(
     if (error instanceof Error) {
       addAlert(
         mkAlert({
-          title: "Failed to get available dmps.",
+          title: i18n.t("apps:dmpIntegrations.endpoint.listFailed"),
           message: error.message,
           variant: "error",
         }),
       );
       throw new Error(error.message);
     }
-    throw new Error("Unknown error");
+    throw new Error(i18n.t("common:apiErrors.unknown"));
   }
 }
 

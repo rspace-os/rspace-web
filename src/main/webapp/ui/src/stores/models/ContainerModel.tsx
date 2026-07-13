@@ -1,6 +1,7 @@
 import { clamp, isNotNil, pick } from "es-toolkit";
 import { action, computed, makeObservable, observable, override, runInAction } from "mobx";
 import type React from "react";
+import i18n from "@/modules/common/i18n";
 import type { ContainerType, ContentSummary, GridLayout } from "@/stores/definitions/container/types";
 import { layoutToLabels } from "@/util/labels";
 import GridContainerIllustration from "../../assets/graphics/RecordTypeGraphics/HeaderIllustrations/GridContainer";
@@ -756,10 +757,10 @@ export default class ContainerModel
 
   get containerTypeLabel(): string {
     return match<ContainerType, string>([
-      [(t) => t === "IMAGE", "Visual"],
-      [(t) => t === "LIST", "List"],
-      [(t) => t === "GRID", "Grid"],
-      [(t) => t === "WORKBENCH", "Bench"],
+      [(t) => t === "IMAGE", i18n.t("inventory:container.types.visual")],
+      [(t) => t === "LIST", i18n.t("inventory:container.types.list")],
+      [(t) => t === "GRID", i18n.t("inventory:container.types.grid")],
+      [(t) => t === "WORKBENCH", i18n.t("inventory:container.types.bench")],
     ])(this.cType);
   }
 
@@ -791,7 +792,7 @@ export default class ContainerModel
     return (
       super.contextMenuDisabled() ??
       (listViewAndASelectedRecord || gridOrImageViewAndSelectedLocation
-        ? "Cannot modify this container whilst its contents are selected."
+        ? i18n.t("inventory:container.contextMenu.contentsSelected")
         : null)
     );
   }
@@ -804,29 +805,29 @@ export default class ContainerModel
     const renderAvailableLocations = (): string | null => {
       if (!this.availableLocations.isAccessible) return null;
       if (Number.isFinite(this.availableLocations.value)) return `${this.availableLocations.value}`;
-      return "Unlimited";
+      return i18n.t("inventory:container.availableLocations.unlimited");
     };
 
     const options: AdjustableTableRowOptions<string> = new Map([...super.adjustableTableOptions()]);
     if (this.readAccessLevel !== "full") {
-      options.set("Contents", () => ({ renderOption: "node", data: null }));
+      options.set("contents", () => ({ renderOption: "node", data: null }));
     } else {
-      options.set("Contents", () => ({
+      options.set("contents", () => ({
         renderOption: "node",
         data: <ContentsChips record={this} />,
       }));
     }
-    options.set("Number of Empty Locations", () => ({
+    options.set("numberOfEmptyLocations", () => ({
       renderOption: "node",
       data: renderAvailableLocations(),
     }));
     if (this.readAccessLevel === "public") {
-      options.set("Container Type", () => ({
+      options.set("containerType", () => ({
         renderOption: "node",
         data: null,
       }));
     } else {
-      options.set("Container Type", () => ({
+      options.set("containerType", () => ({
         renderOption: "node",
         data: this.containerTypeLabel,
       }));
@@ -991,13 +992,14 @@ export default class ContainerModel
   }
 
   get createOptions(): ReadonlyArray<CreateOption> {
-    let newContainerExplanation = "The container will be automatically added to this container.";
-    if (!this.canStoreContainers) newContainerExplanation = "Containers cannot be stored inside this container.";
-    if (!this.canEdit) newContainerExplanation = "You do not have permission to edit the contents of this container.";
+    let newContainerExplanation: string = i18n.t("inventory:container.createOptions.newContainer.explanation");
+    if (!this.canStoreContainers)
+      newContainerExplanation = i18n.t("inventory:container.createOptions.newContainer.cannotStore");
+    if (!this.canEdit) newContainerExplanation = i18n.t("inventory:container.createOptions.noEditPermission");
 
-    let newSampleExplanation = "The subsample will be automatically added to this container.";
-    if (!this.canStoreSamples) newSampleExplanation = "Subsamples cannot be stored inside this container.";
-    if (!this.canEdit) newSampleExplanation = "You do not have permission to edit the contents of this container.";
+    let newSampleExplanation: string = i18n.t("inventory:container.createOptions.newSample.explanation");
+    if (!this.canStoreSamples) newSampleExplanation = i18n.t("inventory:container.createOptions.newSample.cannotStore");
+    if (!this.canEdit) newSampleExplanation = i18n.t("inventory:container.createOptions.noEditPermission");
 
     let newInstrumentExplanation = "The instrument will be automatically added to this container.";
     if (!this.canStoreInstruments) newInstrumentExplanation = "Instruments cannot be stored inside this container.";
@@ -1005,15 +1007,15 @@ export default class ContainerModel
 
     return [
       {
-        label: "Container",
+        label: i18n.t("inventory:container.createOptions.newContainer.label"),
         explanation: newContainerExplanation,
         parameters: [
           {
-            label: "Location",
+            label: i18n.t("inventory:container.createOptions.location.label"),
             explanation:
               this.cType === "LIST"
-                ? "No location selection required for list containers."
-                : "Specify a single location for where the new container should be placed.",
+                ? i18n.t("inventory:container.createOptions.location.listExplanation")
+                : i18n.t("inventory:container.createOptions.location.specificExplanation"),
             state: { key: "location", container: this },
             validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
           },
@@ -1042,15 +1044,15 @@ export default class ContainerModel
         },
       },
       {
-        label: "Sample",
+        label: i18n.t("inventory:container.createOptions.newSample.label"),
         explanation: newSampleExplanation,
         parameters: [
           {
-            label: "Location",
+            label: i18n.t("inventory:container.createOptions.location.label"),
             explanation:
               this.cType === "LIST"
-                ? "No location selection required for list containers."
-                : "Specify a single location for where the new container should be placed.",
+                ? i18n.t("inventory:container.createOptions.location.listExplanation")
+                : i18n.t("inventory:container.createOptions.location.specificExplanation"),
             state: { key: "location", container: this },
             validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
           },

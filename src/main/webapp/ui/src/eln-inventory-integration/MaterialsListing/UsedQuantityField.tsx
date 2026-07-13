@@ -1,6 +1,7 @@
 import { inputBaseClasses } from "@mui/material/InputBase";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useTranslation } from "react-i18next";
 import NumberField from "../../components/Inputs/NumberField";
 import UnitSelect from "../../components/Inputs/UnitSelect";
 import { hasQuantity } from "../../stores/models/HasQuantity";
@@ -12,6 +13,7 @@ type UsedQuantityFieldArgs = {
 };
 
 function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): React.ReactNode {
+  const { t } = useTranslation("inventory");
   const globalId = material.invRec.globalId;
   if (!globalId) throw new Error("Item Global ID must be known");
 
@@ -20,11 +22,11 @@ function UsedQuantityField({ material, list }: UsedQuantityFieldArgs): React.Rea
   const enoughLeft = material.enoughLeft;
 
   const errorMessage = mixedSelectedCategories
-    ? "Unit categories must match"
+    ? t("materialsListing.errors.unitCategoriesMustMatch")
     : notValidAmount
-      ? "Enter a positive or zero"
+      ? t("materialsListing.errors.positiveOrZero")
       : !enoughLeft
-        ? "Not enough left, reduce or unselect"
+        ? t("materialsListing.errors.notEnoughLeft")
         : null;
 
   const getNumericValue = () => {

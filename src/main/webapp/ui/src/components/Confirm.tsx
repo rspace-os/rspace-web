@@ -15,11 +15,13 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import { observer } from "mobx-react-lite";
 import { default as React } from "react";
+import { useTranslation } from "react-i18next";
 import useStores from "../stores/use-stores";
 import SubmitSpinnerButton from "./SubmitSpinnerButton";
 
 function Confirm(): React.ReactNode {
   const [open, setOpen] = React.useState(false);
+  const { t } = useTranslation("common");
   const { uiStore } = useStores();
 
   React.useEffect(() => {
@@ -53,7 +55,7 @@ function Confirm(): React.ReactNode {
           }}
           loading={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
           disabled={Boolean(uiStore.confirmationDialogProps?.confirmationSpinner)}
-          label={uiStore.confirmationDialogProps?.yesLabel ?? "OK"}
+          label={uiStore.confirmationDialogProps?.yesLabel ?? t("actions.ok")}
         />
       </DialogActions>
     </Dialog>

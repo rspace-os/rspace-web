@@ -8,6 +8,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import TextField from "@mui/material/TextField";
 import React from "react";
+import i18n from "../../../modules/common/i18n";
 import { stripDiacritics } from "../../../util/StringUtils";
 
 // biome-ignore lint/suspicious/noExplicitAny: initial biome migration
@@ -57,7 +58,7 @@ class UserList extends React.Component<any, any> {
             variant="standard"
             fullWidth
             id="userSearch"
-            label="Search..."
+            label={i18n.t("profile.groups.userList.search")}
             type="search"
             margin="dense"
             value={this.state.searchTerm}

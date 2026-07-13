@@ -60,18 +60,18 @@ describe("Export Tests", () => {
       );
 
       expect(screen.getAllByRole("radio")).toHaveLength(6); // containers options rendered when no selected results
-      const fullOption = screen.getByLabelText("Full");
+      const fullOption = screen.getByLabelText("inventory:export.dialog.options.full");
       expect(fullOption).toBeInTheDocument();
       expect(fullOption).toBeChecked();
-      const compactOption = screen.getByLabelText("Compact");
+      const compactOption = screen.getByLabelText("inventory:export.dialog.options.compact");
       expect(compactOption).toBeInTheDocument();
       expect(compactOption).not.toBeChecked();
-      const includeContentOption = screen.getByLabelText("Include Content");
+      const includeContentOption = screen.getByLabelText("inventory:export.dialog.options.containerContentInclude");
       expect(includeContentOption).toBeInTheDocument();
 
       expect(includeContentOption).not.toBeChecked();
       /* assert help text for default option */
-      const defaultContainersHint = "Containers only, without their content.";
+      const defaultContainersHint = "inventory:export.exporter.containerContent.exclude";
       expect(screen.getByText(defaultContainersHint)).toBeInTheDocument();
     });
   });
@@ -89,15 +89,15 @@ describe("Export Tests", () => {
         </storesContext.Provider>,
       );
       expect(screen.getAllByRole("radio")).toHaveLength(6);
-      const includeOption = screen.getByLabelText("Include Subsamples");
+      const includeOption = screen.getByLabelText("inventory:export.dialog.options.subsamplesInclude");
       expect(includeOption).toBeInTheDocument();
       expect(includeOption).toBeChecked();
-      const excludeOption = screen.getByLabelText("Exclude Subsamples");
+      const excludeOption = screen.getByLabelText("inventory:export.dialog.options.subsamplesExclude");
       expect(excludeOption).toBeInTheDocument();
 
       expect(excludeOption).not.toBeChecked();
       /* assert help text for default option */
-      const defaultSamplesHint = "All data, including custom and template fields.";
+      const defaultSamplesHint = "inventory:export.dialog.modeAllData";
       expect(screen.getByText(defaultSamplesHint)).toBeInTheDocument();
     });
     test("renders, has radio options for exportMode, samples and containers", () => {

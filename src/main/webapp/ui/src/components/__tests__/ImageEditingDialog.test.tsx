@@ -92,7 +92,10 @@ describe("ImageEditingDialog", () => {
             expect(image.naturalHeight).toBeGreaterThan(0);
           });
           const rotateButton = screen.getByRole("button", {
-            name: `rotate ${direction}`,
+            name:
+              direction === "clockwise"
+                ? "common:imageEditingDialog.rotateClockwise"
+                : "common:imageEditingDialog.rotateCounterClockwise",
           });
           for (let i = 0; i < number; i++) {
             await user.click(rotateButton);
@@ -102,7 +105,7 @@ describe("ImageEditingDialog", () => {
               expect(image.complete).toBe(true);
             });
           }
-          await user.click(screen.getByRole("button", { name: /done/i }));
+          await user.click(screen.getByRole("button", { name: "common:actions.done" }));
           await waitFor(() => {
             expect(submitHandler).toHaveBeenCalled();
           });
@@ -152,7 +155,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate clockwise",
+      name: "common:imageEditingDialog.rotateClockwise",
     });
 
     await user.click(rotateButton);
@@ -163,7 +166,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
@@ -207,7 +210,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate counter clockwise",
+      name: "common:imageEditingDialog.rotateCounterClockwise",
     });
 
     await user.click(rotateButton);
@@ -217,7 +220,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     await waitFor(() => {
       expect(submitHandler).toHaveBeenCalled();
     });
@@ -254,7 +257,7 @@ describe("ImageEditingDialog", () => {
     );
 
     (await screen.findByRole("img")) as HTMLImageElement;
-    await user.click(screen.getByRole("button", { name: /done/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.done" }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });
@@ -305,7 +308,7 @@ describe("ImageEditingDialog", () => {
       expect(image.naturalHeight).toBeGreaterThan(0);
     });
     const rotateButton = screen.getByRole("button", {
-      name: "rotate clockwise",
+      name: "common:imageEditingDialog.rotateClockwise",
     });
 
     await user.click(rotateButton);
@@ -316,7 +319,7 @@ describe("ImageEditingDialog", () => {
       expect(image.complete).toBe(true);
     });
 
-    await user.click(screen.getByRole("button", { name: /cancel/i }));
+    await user.click(screen.getByRole("button", { name: "common:actions.cancel" }));
     expect(close).toHaveBeenCalled();
     expect(submitHandler).not.toHaveBeenCalled();
   });

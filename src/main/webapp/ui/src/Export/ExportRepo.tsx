@@ -13,6 +13,7 @@ import { observable, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import type { DEFAULT_STATE } from "@/Export/constants";
 import DMPTableSmall from "../eln-dmp-integration/DMPTool/DMPTableSmall";
@@ -58,6 +59,7 @@ const DmpSelector = observer(
     handleSwitch: (foo: "linkDMP") => (event: { target: { checked: boolean } }) => void;
     repo: Repo;
   }) => {
+    const { t } = useTranslation("workspace");
     const addSelectedPlan = (id: DMPUserInternalId) => {
       if (!state.selectedPlans.includes(id)) {
         runInAction(() => {
@@ -87,7 +89,7 @@ const DmpSelector = observer(
                   slotProps={{ input: { role: "checkbox" } }}
                 />
               }
-              label={"Associate export with a Data Management Plans (DMPs)"}
+              label={t("export.repositories.dmp.associateLabel")}
             />
           </Grid>
           <Grid size={12}>
@@ -99,7 +101,7 @@ const DmpSelector = observer(
                 removeSelectedPlan={removeSelectedPlan}
               />
               {repo.repoName === "app.zenodo" && state.selectedPlans.length > 1 && (
-                <Alert severity="error">Only one DMP can be associated with an export to Zenodo.</Alert>
+                <Alert severity="error">{t("export.repositories.dmp.zenodoLimit")}</Alert>
               )}
             </Collapse>
           </Grid>
@@ -118,6 +120,7 @@ function ExportRepo({
   updateRepoConfig,
   fetchTags,
 }: ExportRepoArgs): React.ReactNode {
+  const { t } = useTranslation("workspace");
   const [state] = useState(
     observable({
       inputValidations: STANDARD_VALIDATIONS,
@@ -296,11 +299,9 @@ function ExportRepo({
     <Grid container sx={{ flexDirection: "column", width: "100%" }} spacing={1}>
       <Grid size={12}>
         <FormControl component="fieldset">
-          <FormLabel component="legend">
-            Please choose one of your configured repositories to submit your export to:
-          </FormLabel>
+          <FormLabel component="legend">{t("export.repositories.choiceLabel")}</FormLabel>
           <RadioGroup
-            aria-label="Repository choice"
+            aria-label={t("export.repositories.labels.choice")}
             name="repoChoice"
             value={state.repoChoice.toString()}
             // @ts-expect-error React event handlers are not parameterised by the name prop

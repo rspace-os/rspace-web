@@ -22,7 +22,7 @@ function Header({ sidebarId }: HeaderArgs): React.ReactNode {
     <ThemeProvider theme={createAccentedTheme(ACCENT_COLOR)}>
       <AppBar
         variant="page"
-        currentPage="Inventory"
+        currentPage="inventory"
         sidebarToggle={
           <SidebarToggle sidebarId={sidebarId} setSidebarOpen={handleToggleOpen} sidebarOpen={uiStore.sidebarOpen} />
         }

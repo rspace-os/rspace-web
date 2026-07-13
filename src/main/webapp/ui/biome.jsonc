@@ -31,6 +31,7 @@
     "rules": {
       "preset": "recommended",
       "style": {
+        "noJsxLiterals": "error",
         "noRestrictedImports": {
           "level": "error",
           "options": {
@@ -48,5 +49,33 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/components/PublicPages/IdentifierPublicPage.tsx"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noJsxLiterals": {
+              "level": "error",
+              "options": { "allowedStrings": ["˚"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/modules/common/i18n/resources.d.ts"],
+      "formatter": {
+        "enabled": false
+      },
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noBannedTypes": "off"
+          }
+        }
+      }
+    }
+  ]
 }

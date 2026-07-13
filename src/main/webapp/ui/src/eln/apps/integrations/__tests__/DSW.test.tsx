@@ -44,10 +44,10 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      expect(screen.getByRole("button", { name: /add/i })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeEnabled();
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      expect(screen.getByRole("button", { name: /add/i })).toBeDisabled();
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      expect(screen.getByRole("button", { name: "common:actions.add" })).toBeDisabled();
     });
     test("Adding a configuration should mutate the integration state being passed as a prop.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -78,21 +78,21 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.label" }), {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getByRole("textbox", { name: /server url/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.serverUrl" }), {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
       await screen.findByRole("alert", {
-        name: /Successfully saved DSW details/,
+        name: "apps:integrations.dsw.alerts.saveNewSuccess",
       });
       expect(integrationState.credentials.length).toBe(1);
     });
@@ -120,11 +120,11 @@ describe("DSW", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.label" }), {
         target: { value: "new name" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(mockAxios.history.post[0].params.get("optionsId")).toEqual("4");
@@ -150,19 +150,19 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.label" }), {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getByRole("textbox", { name: /Server URL/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.serverUrl" }), {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getByLabelText("API key"), {
+      fireEvent.input(screen.getByLabelText("apps:integrations.dsw.fields.apiKey"), {
         target: { value: "new api key" },
       });
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
       expect(JSON.parse(mockAxios.history.post[0].data)).toEqual({
@@ -219,17 +219,19 @@ describe("DSW", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[0], {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[1], {
         target: { value: "unsaved new name" },
       });
 
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
+      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.save" })[0]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue("unsaved new name");
+      await screen.findByRole("alert", { name: "apps:integrations.dsw.alerts.saveExistingSuccess" });
+      expect(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[1]).toHaveValue(
+        "unsaved new name",
+      );
     });
     test("Saving one config should not discard changes to a new config.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -269,18 +271,20 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[0], {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[1], {
         target: { value: "unsaved new name" },
       });
 
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[0]);
+      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.save" })[0]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[1]).toHaveValue("unsaved new name");
+      await screen.findByRole("alert", { name: "apps:integrations.dsw.alerts.saveExistingSuccess" });
+      expect(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[1]).toHaveValue(
+        "unsaved new name",
+      );
     });
     test("Saving a new config should not discard changes to an existing one.", async () => {
       const mockAxios = new MockAdapter(axios);
@@ -320,25 +324,27 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /add/i }));
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[0], {
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.add" }));
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[0], {
         target: { value: "unsaved new name" },
       });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /label/i })[1], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[1], {
         target: { value: "new name" },
       });
-      fireEvent.input(screen.getAllByRole("textbox", { name: /Server URL/i })[1], {
+      fireEvent.input(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.serverUrl" })[1], {
         target: { value: "new url" },
       });
       // see https://github.com/testing-library/dom-testing-library/issues/567
-      fireEvent.input(screen.getAllByLabelText("API key")[1], {
+      fireEvent.input(screen.getAllByLabelText("apps:integrations.dsw.fields.apiKey")[1], {
         target: { value: "new api key" },
       });
 
-      fireEvent.click(screen.getAllByRole("button", { name: /save/i })[1]);
+      fireEvent.click(screen.getAllByRole("button", { name: "common:actions.save" })[1]);
 
-      await screen.findByRole("alert", { name: /Successfully/ });
-      expect(screen.getAllByRole("textbox", { name: /label/i })[0]).toHaveValue("unsaved new name");
+      await screen.findByRole("alert", { name: "apps:integrations.dsw.alerts.saveNewSuccess" });
+      expect(screen.getAllByRole("textbox", { name: "apps:integrations.dsw.fields.label" })[0]).toHaveValue(
+        "unsaved new name",
+      );
     });
   });
   describe("Testing", () => {
@@ -377,21 +383,21 @@ describe("DSW", () => {
       );
 
       fireEvent.click(screen.getByRole("button"));
-      fireEvent.input(screen.getByRole("textbox", { name: /label/i }), {
+      fireEvent.input(screen.getByRole("textbox", { name: "apps:integrations.dsw.fields.label" }), {
         target: { value: "new name" },
       });
 
-      expect(screen.getByRole("button", { name: /test/i })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "apps:actions.test" })).toBeDisabled();
 
-      fireEvent.click(screen.getByRole("button", { name: /save/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.save" }));
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /test/i })).toBeEnabled();
+        expect(screen.getByRole("button", { name: "apps:actions.test" })).toBeEnabled();
       });
     });
     test("The test button should make the right API call.", async () => {
       const mockAxios = new MockAdapter(axios);
       mockAxios
-        .onGet(/apps\/dsw\/.*/)
+        .onGet("/currentUser?serverAlias=name")
 
         .reply(200, "Success! Test connection OK!");
       render(
@@ -415,10 +421,10 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /test/i }));
+      fireEvent.click(screen.getByRole("button", { name: "apps:actions.test" }));
       expect(
         await screen.findByRole("alert", {
-          name: /Connection details are valid/,
+          name: "apps:integrations.dsw.alerts.testValid",
         }),
       ).toBeVisible();
       expect(mockAxios.history.get.length).toBe(1);
@@ -458,13 +464,13 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.delete" }));
       expect(mockAxios.history.post.length).toBe(1);
       expect(mockAxios.history.post[0].params.get("appName")).toEqual("DSW");
 
       expect(mockAxios.history.post[0].data.get("optionsId")).toBe("1");
       await waitFor(() => {
-        expect(screen.queryByRole("textbox", { name: /label/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("textbox", { name: "apps:integrations.dsw.fields.label" })).not.toBeInTheDocument();
       });
     });
     test("Deleting a config should mutate the integration state being passed as a prop.", async () => {
@@ -497,9 +503,9 @@ describe("DSW", () => {
 
       fireEvent.click(screen.getByRole("button"));
 
-      fireEvent.click(screen.getByRole("button", { name: /delete/i }));
+      fireEvent.click(screen.getByRole("button", { name: "common:actions.delete" }));
       await waitFor(() => {
-        expect(screen.queryByRole("textbox", { name: /label/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("textbox", { name: "apps:integrations.dsw.fields.label" })).not.toBeInTheDocument();
       });
       expect(integrationState.credentials.length).toBe(0);
     });

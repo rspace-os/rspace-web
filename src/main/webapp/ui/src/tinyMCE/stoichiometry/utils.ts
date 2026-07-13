@@ -1,4 +1,5 @@
 import { produce } from "immer";
+import i18n from "@/modules/common/i18n";
 import type { InventoryQuantityQueryResult } from "@/modules/inventory/queries";
 import { convertFromGrams, getQuantityUnitSymbol, isMassUnit } from "@/modules/inventory/utils";
 import type { EditableMolecule } from "./types";
@@ -124,19 +125,19 @@ function buildInventoryUpdateStockDisplay(
     willUse: makeStockMetric(willUseValue, unitLabel),
     remaining: makeStockMetric(remainingValue, unitLabel),
     remainingStatus,
-    warningText: remainingStatus === "negative" ? "Insufficient Stock" : null,
+    warningText: remainingStatus === "negative" ? i18n.t("common:stoichiometry.inventoryLink.insufficientStock") : null,
   };
 }
 
 function getInventoryUpdateDisabledReasonText(reason: InventoryUpdateSelectionDisabledReason): string {
-  return {
-    missingInventoryLink: "Link an inventory item before updating stock.",
-    linkedStockUnavailable: "Linked stock information is unavailable, so this molecule cannot be updated.",
-    nonMassInventoryQuantity:
-      "Inventory stock updates are currently only supported for item quantities expressed in mass (e.g. grams). Volumetric quantities (e.g. mL) are not yet supported.",
-    missingActualMass: "Define actual mass before updating linked inventory stock.",
-    insufficientStock: "There is insufficient linked stock for this molecule's actual mass.",
-  }[reason];
+  const keys = {
+    missingInventoryLink: "common:stoichiometry.inventoryUpdate.linkRequired",
+    linkedStockUnavailable: "common:stoichiometry.inventoryUpdate.linkedStockUnavailable",
+    nonMassInventoryQuantity: "common:stoichiometry.inventoryUpdate.nonMassInventoryQuantity",
+    missingActualMass: "common:stoichiometry.inventoryUpdate.missingActualMass",
+    insufficientStock: "common:stoichiometry.inventoryLink.insufficientStock",
+  } as const;
+  return i18n.t(keys[reason]);
 }
 
 export function getInventoryUpdateEligibility(
@@ -184,7 +185,7 @@ export function getInventoryUpdateEligibility(
   return {
     disabledReason,
     helperText: stockDeducted
-      ? "Stock has already been deducted for this molecule. To reduce the stock again, select this molecule."
+      ? i18n.t("common:stoichiometry.inventoryUpdate.stockDeductedWarning")
       : disabledReason === null || disabledReason === "insufficientStock"
         ? null
         : getInventoryUpdateDisabledReasonText(disabledReason),

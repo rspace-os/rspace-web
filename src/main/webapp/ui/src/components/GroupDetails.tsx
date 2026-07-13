@@ -12,6 +12,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableRow from "@mui/material/TableRow";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import useGroups, { type GroupDetail } from "../hooks/api/useGroups";
 
 type GroupDetailsArgs = {
@@ -21,6 +22,7 @@ type GroupDetailsArgs = {
 };
 
 export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
+  const { t } = useTranslation("common");
   const [anchorEl, setAnchorEl] = React.useState<null | Element>(null);
   const [groupData, setGroupData] = React.useState<GroupDetail | null>(null);
   const [fetched, setFetched] = React.useState(false);
@@ -104,19 +106,19 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
               <TableBody>
                 <TableRow data-test-id="row-members">
                   <TableCell component="th" scope="row">
-                    Members
+                    {t("groupDetails.members")}
                   </TableCell>
                   <TableCell align="right">{displayData.members.length}</TableCell>
                 </TableRow>
                 <TableRow data-test-id="row-pis">
                   <TableCell component="th" scope="row">
-                    Principal Investigators
+                    {t("groupDetails.principalInvestigators")}
                   </TableCell>
                   <TableCell align="right">{displayData.members.filter((m) => m.role === "PI").length}</TableCell>
                 </TableRow>
                 <TableRow data-test-id="row-users">
                   <TableCell component="th" scope="row">
-                    Users
+                    {t("groupDetails.users")}
                   </TableCell>
                   <TableCell align="right">{displayData.members.filter((m) => m.role === "USER").length}</TableCell>
                 </TableRow>
@@ -132,7 +134,7 @@ export default function GroupDetails(props: GroupDetailsArgs): React.ReactNode {
               data-test-id="open-group"
               sx={{ cursor: "pointer" }}
             >
-              View Group
+              {t("groupDetails.viewGroup")}
             </Button>
           </CardActions>
         </Card>

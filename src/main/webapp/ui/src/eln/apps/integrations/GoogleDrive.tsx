@@ -1,5 +1,7 @@
 import Grid from "@mui/material/Grid";
 import React from "react";
+import { useTranslation } from "react-i18next";
+import TransRichText from "@/modules/common/i18n/TransRichText";
 import { LOGO_COLOR } from "../../../assets/branding/googledrive";
 import GoogleDriveIcon from "../../../assets/branding/googledrive/logo.svg";
 import IntegrationCard from "../IntegrationCard";
@@ -14,6 +16,7 @@ type GoogleDriveArgs = {
  * Authentication with Google happens when the user uses the dialog on the document editor page.
  */
 function GoogleDrive({ integrationState, update }: GoogleDriveArgs): React.ReactNode {
+  const { t } = useTranslation("apps");
   return (
     <Grid
       sx={{ display: "flex" }}
@@ -23,22 +26,17 @@ function GoogleDrive({ integrationState, update }: GoogleDriveArgs): React.React
       }}
     >
       <IntegrationCard
-        name="Google Drive"
+        name={t("integrations.googleDrive.name")}
         integrationState={integrationState}
-        explanatoryText="Create, organise, and share on your files through a collaborative cloud-based service."
+        explanatoryText={t("integrations.googleDrive.description")}
         image={GoogleDriveIcon}
         color={LOGO_COLOR}
         update={(newMode) => update({ mode: newMode, credentials: integrationState.credentials })}
-        usageText="You can include files from Google Drive in your RSpace documents. Files are embedded as links to the Google Drive location of that file."
-        helpLinkText="Cloud Storage integrations docs"
-        website="drive.google.com"
+        usageText={t("integrations.googleDrive.usage")}
+        helpLinkText={t("integrations.googleDrive.helpLink")}
+        website="https://drive.google.com"
         docLink="cloudstorage"
-        setupSection={
-          <ol>
-            <li>Enable the integration.</li>
-            <li>When editing a document, click on the Google Drive icon in the text editor toolbar.</li>
-          </ol>
-        }
+        setupSection={<TransRichText i18nKey="apps:integrations.googleDrive.setup.instructions" />}
       />
     </Grid>
   );

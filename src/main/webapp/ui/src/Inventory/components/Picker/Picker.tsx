@@ -8,6 +8,7 @@ import CardHeader from "@mui/material/CardHeader";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import SearchContext from "../../../stores/contexts/Search";
 import type { InventoryRecord } from "../../../stores/definitions/InventoryRecord";
 import type { CoreFetcherArgs, SearchView as SearchViewType } from "../../../stores/definitions/Search";
@@ -105,6 +106,7 @@ function InventoryPicker({
 
   const selectedRecords = getSelectedRecords();
   const hasDisallowedSelection = selectedRecords.some((record) => search.alwaysFilterOut(record));
+  const { t } = useTranslation(["inventory", "common"]);
 
   return (
     <Card
@@ -172,9 +174,9 @@ function InventoryPicker({
             }}
             disabled={selectedRecords.length === 0 || hasDisallowedSelection}
           >
-            Choose
+            {t("common:actions.choose")}
           </Button>
-          <Button onClick={handleCancel}>Cancel</Button>
+          <Button onClick={handleCancel}>{t("common:actions.cancel")}</Button>
         </CardActions>
       )}
     </Card>
