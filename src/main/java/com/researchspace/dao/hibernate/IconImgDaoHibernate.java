@@ -24,17 +24,10 @@ public class IconImgDaoHibernate extends GenericDaoHibernate<ImageBlob, Long>
 
   @Override
   public IconEntity saveIconEntity(IconEntity iconEntity, boolean updateRSFormIcon) {
-    Session session = getSession();
-    Object id = session.getSessionFactory().getPersistenceUnitUtil().getIdentifier(iconEntity);
-    IconEntity iconx;
-    if (id == null) {
-      session.persist(iconEntity);
-      iconx = iconEntity;
-    } else {
-      iconx = (IconEntity) session.merge(iconEntity);
-    }
+    IconEntity iconx = persistOrMerge(iconEntity);
 
     if (updateRSFormIcon) {
+      Session session = getSession();
       String q1 = "UPDATE RSForm SET iconId=:iconId  WHERE id =:id ";
       NativeQuery<?> query = session.createNativeQuery(q1);
       query.setParameter("iconId", iconx.getId());
