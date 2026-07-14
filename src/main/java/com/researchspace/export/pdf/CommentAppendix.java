@@ -34,18 +34,6 @@ public class CommentAppendix {
     return itemContents.get(idx);
   }
 
-  public void setItemName(String lst) {
-    itemNames.add(lst);
-  }
-
-  public void setItemDate(String lst) {
-    itemDates.add(lst);
-  }
-
-  public void setItemContent(String lst) {
-    itemContents.add(lst);
-  }
-
   public int getSize() {
     return itemNames.size();
   }

@@ -280,11 +280,10 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
             .andExpect(status().isOk())
             .andReturn();
 
+    String result2Response = result2.getResponse().getContentAsString();
     assertTrue(
-        result2
-            .getResponse()
-            .getContentAsString()
-            .contains(getMsgFromResourceBundler("errors.invalidpwd").substring(0, 10)));
+        "unexpected: " + result2Response,
+        result2Response.contains(getMsgFromResourceBundler("errors.invalidpwd").substring(0, 10)));
 
     String newPassword3 = RandomStringUtils.randomAlphanumeric(10);
     MvcResult result3 =
