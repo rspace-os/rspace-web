@@ -28,8 +28,14 @@
     			hibernate.cache.use_second_level_cache=true
     			hibernate.cache.use_query_cache=true
     			hibernate.cache.region.factory_class=org.hibernate.cache.jcache.JCacheRegionFactory
-    			hibernate.cache.jakarta.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
-    			hibernate.cache.jcache.config_uri=classpath:ehcache.xml
+    			<!-- hibernate-jcache only reads the hibernate.javax.cache.* keys (JCache itself was
+    			     never migrated to the jakarta namespace). The uri is resolved as a classpath
+    			     resource by Hibernate's ClassLoaderService, so no classpath: prefix. With a wrong
+    			     key/uri Hibernate silently falls back to an EMPTY default CacheManager and every
+    			     region becomes an untuned create-warn default (unlimited size, no expiry);
+    			     SecondLevelCacheTestIT guards this wiring. -->
+    			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
+    			hibernate.javax.cache.uri=ehcache.xml
 			hibernate.search.indexing.plan.synchronization.strategy=sync
     			<!-- Id generation for bare @GeneratedValue(strategy=TABLE) entities.
     			     Hibernate 6's enhanced TableGenerator allocates ids for all such entities from a
