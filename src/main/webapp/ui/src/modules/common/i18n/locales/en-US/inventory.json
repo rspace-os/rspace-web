@@ -1597,6 +1597,75 @@
     },
     "showItems": "Show items being moved"
   },
+  "operations": {
+    "action": {
+      "process": "Process",
+      "singleSubsampleOnly": "Select a single subsample to process.",
+      "subsampleOnly": "Operations can only be run on a subsample."
+    },
+    "confirm": {
+      "amountTaken": "Amount taken from original: {amount} {unit}.",
+      "created": "with {count} new subsample(s) of {amount} {unit} each.",
+      "documentation": "Documented by: {name}.",
+      "link": "Links new records back to the origin ({name}).",
+      "newSample": "Creates a new sample “{name}”."
+    },
+    "cryopreserve": {
+      "cryomediumField": "Cryomedium",
+      "description": "Freeze material into new vials at a chosen storage temperature.",
+      "label": "Cryopreserve",
+      "linkFieldName": "Frozen from"
+    },
+    "derive": {
+      "description": "Extract or process material into a new sample, recording a derivation.",
+      "label": "Derive",
+      "linkFieldName": "Is Derived From using process: {processName}"
+    },
+    "documentation": {
+      "choose": "Choose document",
+      "description": "Optionally link this operation to an ELN document, such as a protocol (SOP).",
+      "fieldName": "Documented by",
+      "none": "No document linked.",
+      "remember": "Remember this document as my default for this operation",
+      "selected": "Linked document: {name}"
+    },
+    "fields": {
+      "amountTaken": "Amount taken from original",
+      "count": "Number of new subsamples",
+      "cryomedium": "Cryomedium",
+      "eachAmount": "Amount per new subsample",
+      "processName": "Process name",
+      "sampleName": "New sample name",
+      "storageTemp": "Storage temperature",
+      "temperatureUnit": "°C"
+    },
+    "template": {
+      "checking": "Checking template…",
+      "derivedName": "{name} (template)",
+      "description": "Optionally choose a template for the new sample.",
+      "fromSample": "Use the parent sample template (create one if it has none)",
+      "mandatoryFieldsError": "This template cannot be used: the required field(s) {fields} have no default value. Choose another template.",
+      "none": "No template",
+      "pick": "Choose an existing template",
+      "remember": "Remember this choice for future runs",
+      "selectedLabel": "Selected template",
+      "summaryFromSample": "Template: from {name}",
+      "summaryNone": "Template: none (ad-hoc sample)",
+      "summaryPick": "Template: {name}"
+    },
+    "wizard": {
+      "failed": "The operation could not be completed",
+      "inProgress": "Performing operation…",
+      "perform": "Perform",
+      "step": {
+        "confirm": "Confirm",
+        "details": "Details",
+        "documentation": "Documentation",
+        "template": "Template"
+      },
+      "title": "Process subsample"
+    }
+  },
   "pageTitle": "RSpace Inventory",
   "pageTitleWithContext": "{pageContext} | RSpace Inventory",
   "peopleField": {

@@ -37,3 +37,43 @@ resolved during design. This file is a glossary only — no implementation detai
 - **No-orchestration gap** — the period before Weblate is connected. While the
   product is English-only, this gap is invisible: every string falls back to its
   English default.
+
+## Inventory operations wizard
+
+- **Operation** — a user-initiated Inventory action that consumes one or more
+  origin subsamples and produces one new Sample parenting N new subsamples, while
+  recording a typed relation link from the new records back to the origin(s), and
+  optionally changing the origin's quantity. Named instances: Derive,
+  Cryopreserve, Aliquot, Pool, Revive, Passage, Dispose.
+- **Origin** — the existing subsample(s) selected as input to an Operation. Only
+  subsamples are eligible; never a Sample, Container, or Instrument. An Operation
+  may decrement, increment, or leave unchanged an Origin's quantity.
+- **Derived Sample** — the single new Sample an Operation creates, and the parent
+  of every subsample that Operation creates. Distinct from the Origin's own parent
+  Sample.
+- **Template choice** — the user's per-run decision about the Derived Sample's
+  template: none (ad-hoc), an existing template, or a template created from the
+  Origin's parent Sample. May be remembered per user, per Operation.
+- **Created subsample** — a new subsample produced by an Operation, parented by the
+  Derived Sample.
+- **Created amount** — the quantity assigned to each Created subsample. Independent
+  of the Origin's quantity change (material may be added or removed during the
+  operation), and expressed in the same measurement unit as the Origin.
+- **Amount taken** — the quantity removed from the Origin by the Operation (a
+  **positive** decrement; must be > 0). The backend reduces the Origin by it, clamped
+  at zero, so an Operation can never increase the Origin. Independent of the Created
+  total (material may be added during the operation).
+- **Relation link** — a typed link (a DataCite relation such as IsDerivedFrom,
+  IsPartOf, HasPart) held on the Derived Sample and pointing back to the Origin(s).
+  Links are one-directional: only the newly created records link to the Origin; the
+  Origin's back-references are shown by the existing "items that link to" panel, not
+  by a reciprocal link.
+- **Operation definition** — the declarative description of one Operation: its
+  applicability, wizard inputs, and effects. Authored as data, not code, so a new
+  Operation is a new definition rather than new program logic.
+- **Documentation link** — an optional typed link (relation IsDocumentedBy) from
+  the Derived Sample to an ELN document, typically a standard operating procedure,
+  captured during an Operation's documentation step.
+- **Remembered documentation default** — a per-user, per-Operation preference: the
+  ELN document to pre-fill as the Documentation link on that user's future runs of
+  that Operation. Overridable on any run.
