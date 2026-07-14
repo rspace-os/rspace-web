@@ -31,32 +31,27 @@
         <aop:advisor id="searchManagerTx" advice-ref="txAdvice" pointcut="execution(* *..search.SearchManager.*(..))" order="2"/>
         <aop:advisor id="validatorTx" advice-ref="txAdvice" pointcut="execution(* *..service.*Validator.*(..))" order="2"/>
         <aop:advisor id="recordAdapterTx" advice-ref="txAdvice" pointcut="execution(* *..BaseRecordAdapter.*(..))" order="2"/>
-        <!-- Explicit advisors for service-layer beans not matching the *Manager patterns
-             above. Historically these were REQUIRED because class-level @Transactional
-             was unreliable: shiroFilter (ShiroFilterFactoryBean, security.xml) is a
-             BeanPostProcessor, and its securityManager reference used to eagerly
-             instantiate the realms' entire service-bean dependency graph (~200 beans)
-             before context refresh completed. In that window the <tx:annotation-driven>
-             advisor (internalTransactionAdvisor) is itself still mid-creation and Spring's
+        <!-- Service-layer beans not matching the pattern advisors above declare their
+             transactions with class-level @Transactional. Historically that was
+             unreliable and a list of per-interface advisors lived here instead:
+             shiroFilter (ShiroFilterFactoryBean, security.xml) is a BeanPostProcessor,
+             and its securityManager reference used to eagerly instantiate the realms'
+             entire service-bean dependency graph (~200 beans) before context refresh
+             completed. In that window the <tx:annotation-driven> advisor
+             (internalTransactionAdvisor) is itself still mid-creation and Spring's
              advisor retrieval SKIPS in-creation advisors ("Skipping currently created
              advisor" at TRACE), so every @Transactional bean created there was proxied
              permanently WITHOUT transaction advice (SHIRO-829). Plain XML advisors finish
-             creating instantly and are immune.
+             creating instantly and are immune, hence the old list.
              That window is now closed: the Shiro beans in security.xml resolve the
              securityManager lazily (see the LazySecurityManager* subclasses), so the
-             realm graph initialises just AFTER refresh, when annotation advisors work, and
-             TransactionAdviceStartupCheck both triggers that initialisation and fails
-             startup if an early-instantiated bean is still missing transaction advice.
-             New service beans can therefore rely on @Transactional. The advisors below
-             remain because the classes they cover carry no annotations. Verify any change
-             to this wiring in the running app, not tests: the test context uses
-             applicationContext-test-service.xml and never loads security.xml. -->
-        <aop:advisor id="contentInitializerTx" advice-ref="txAdvice" pointcut="execution(* *..service.IContentInitializer.*(..))" order="2"/>
-        <aop:advisor id="shareApiTx" advice-ref="txAdvice" pointcut="execution(* *..service.ShareApiService.*(..))" order="2"/>
-        <aop:advisor id="contentUpdaterTx" advice-ref="txAdvice" pointcut="execution(* *..service.impl.UserContentUpdater.*(..))" order="2"/>
-        <aop:advisor id="appInitialisorTx" advice-ref="txAdvice" pointcut="execution(* *..service.IApplicationInitialisor.*(..))" order="2"/>
-        <aop:advisor id="archiveExportPlannerTx" advice-ref="txAdvice" pointcut="execution(* *..service.archive.export.ArchiveExportPlanner.*(..))" order="2"/>
-        <aop:advisor id="internalFileStoreTx" advice-ref="txAdvice" pointcut="execution(* *..files.service.InternalFileStore.*(..))" order="2"/>
+             realm graph initialises just AFTER refresh, when annotation advisors work,
+             and TransactionAdviceStartupCheck both triggers that initialisation and
+             fails startup if an early-instantiated bean is missing transaction advice.
+             The pattern advisors above remain because many *Manager classes carry no
+             annotations at all. Verify any change to this wiring in the running app, not
+             tests: the test context uses applicationContext-test-service.xml and never
+             loads security.xml. -->
     </aop:config>
 
     <!-- Enable @AspectJ support -->

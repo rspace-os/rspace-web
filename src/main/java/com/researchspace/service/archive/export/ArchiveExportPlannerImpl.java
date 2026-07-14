@@ -49,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Slf4j
+@Transactional
 public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
 
   private @Autowired RecordManager recordManager;

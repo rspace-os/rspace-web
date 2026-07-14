@@ -56,6 +56,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindException;
 
 @Service
+@Transactional
 public class ShareApiServiceImpl extends BaseApiController implements ShareApiService {
 
   private static final Logger log = LoggerFactory.getLogger(ShareApiServiceImpl.class);
