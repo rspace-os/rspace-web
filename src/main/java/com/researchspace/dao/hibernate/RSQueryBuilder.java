@@ -133,7 +133,7 @@ class RSQueryBuilder {
       for (BaseRecord bs : cfg.getRecordFilterList()) {
         baseRecordFilter = baseRecordFilter.should(f.match().field("id").matching(bs.getId()));
       }
-      // HS7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+      // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
       baseRecordFilter = baseRecordFilter.minimumShouldMatchNumber(1);
       BooleanPredicateClausesStep<?> recordsBooleanQuery = f.bool();
       predicate = recordsBooleanQuery.must(baseRecordFilter).must(predicate).toPredicate();
@@ -190,7 +190,7 @@ class RSQueryBuilder {
         userFilter =
             userFilter.should(f.wildcard().field("sharedWith").matching("*" + sharedWith + "*"));
       }
-      // HS7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+      // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
       userFilter = userFilter.minimumShouldMatchNumber(1);
       BooleanPredicateClausesStep<?> allUsers = f.bool();
       predicate = allUsers.must(userFilter).must(predicate).toPredicate();
@@ -262,7 +262,8 @@ class RSQueryBuilder {
     for (SearchPredicate predicate : predicates) {
       shouldClauses = shouldClauses.should(predicate);
     }
-    // HS7 requires explicit minimumShouldMatch for SHOULD-only boolean queries (OR semantics)
+    // Hibernate Search 7 requires explicit minimumShouldMatch for SHOULD-only boolean queries
+    // (OR semantics)
     return shouldClauses.minimumShouldMatchNumber(1).toPredicate();
   }
 
@@ -321,8 +322,9 @@ class RSQueryBuilder {
 
       } else {
         // For fields.fieldData, also search fields_fieldData (contains description + globalId on
-        // BaseRecord, and itemContent on EcatCommentItem) — HS7 uses two separate index fields
-        // where HS5 used one field name for both embedded and flat content.
+        // BaseRecord, and itemContent on EcatCommentItem): Hibernate Search 7 uses two separate
+        // index fields where Hibernate Search 5 used one field name for both embedded and flat
+        // content.
         // Wrap in try-catch: fields may not exist on all entity types (e.g. fields.fieldData
         // doesn't exist on inventory entities) — skip gracefully rather than failing the whole
         // query.

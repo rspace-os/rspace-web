@@ -31,16 +31,17 @@
     			hibernate.cache.jakarta.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
     			hibernate.cache.jcache.config_uri=classpath:ehcache.xml
 			hibernate.search.indexing.plan.synchronization.strategy=sync
-    			<!-- RSDEV-444 (B1): id generation for bare @GeneratedValue(strategy=TABLE) entities.
+    			<!-- Id generation for bare @GeneratedValue(strategy=TABLE) entities.
     			     Hibernate 6's enhanced TableGenerator allocates ids for all such entities from a
-    			     single shared "default" row in hibernate_sequences (verified on a populated DB,
-    			     2026-06-06; prefer_entity_table_as_segment_value is a generator-local parameter,
-    			     not a hibernate.* setting, so it cannot be enabled here). The legacy per-entity
+    			     single shared "default" row in hibernate_sequences
+    			     (prefer_entity_table_as_segment_value is a generator-local parameter, not a
+    			     hibernate.* setting, so it cannot be enabled here). The legacy per-entity
     			     rows remain in use only by the two explicit @TableGenerator hierarchies
     			     (AbstractUserOrGroupImpl, Communication). changeLog-rsdev-444.xml seeds the
     			     "default" row above the global MAX(id) and re-seeds the per-entity rows, so no
-    			     allocation path can collide with pre-upgrade ids. See B1/B1a in
-    			     investigations/RSDEV-444-spring6-review.md. -->
+    			     allocation path can collide with pre-upgrade ids. See
+    			     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
+    			     database"). -->
     		</value>
     		<!-- Turn batching off for better error messages under PostgreSQL -->
     		<!-- hibernate.jdbc.batch_size=0 -->

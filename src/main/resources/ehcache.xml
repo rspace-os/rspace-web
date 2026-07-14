@@ -96,8 +96,8 @@
 
   <!--
     No key-type/value-type: Hibernate 6 L2 entity keys are BasicCacheKeyImplementation
-    (not java.lang.Long), so a typed region throws ClassCastException at runtime. See
-    RSDEV-444 review B4; EhcacheL2RuntimeTest guards that these regions accept composite keys.
+    (not java.lang.Long), so a typed region throws ClassCastException at runtime.
+    EhcacheL2RuntimeTest guards that these regions accept composite keys.
   -->
   <cache alias="com.researchspace.model.ImageBlob">
     <expiry>
@@ -287,7 +287,7 @@
     </resources>
   </cache>
 
-  <!-- No key-type/value-type: Hibernate 6 L2 keys are BasicCacheKeyImplementation. See review B4. -->
+  <!-- No key-type/value-type: Hibernate 6 L2 keys are BasicCacheKeyImplementation. -->
   <cache alias="com.researchspace.model.FileProperty">
     <expiry>
       <ttl unit="seconds">3600</ttl>
@@ -381,8 +381,9 @@
   <!--
     Entity regions for @Cache-annotated entities that previously had no explicit region.
     Under Hibernate 6 create-warn these were silently given untuned default regions, losing
-    the legacy defaultCache template behaviour. Added with conservative sizing. See RSDEV-444
-    review M15; EhcacheRegionConfigTest guards that every @Cache entity has a region here.
+    the legacy defaultCache template behaviour. Added with conservative sizing during the
+    Spring 6 migration. EhcacheRegionConfigTest guards that every @Cache entity has a region
+    here.
   -->
   <cache alias="com.researchspace.model.UserApiKey">
     <expiry>

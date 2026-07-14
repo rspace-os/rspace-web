@@ -285,7 +285,8 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     assertNull(result.getResolvedException(), "unexpected: " + result.getResolvedException());
     ApiContainer retrievedContainer = getFromJsonResponseBody(result, ApiContainer.class);
-    // H6: POST returns in-memory state (full ms precision, parentLocation.id=null before flush),
+    // Under Hibernate 6, POST returns in-memory state (full ms precision, parentLocation.id=null
+    // before flush),
     // GET returns DB-loaded state (datetime truncated to seconds, parentLocation.id populated).
     // Compare meaningful fields instead of full object equality.
     assertEquals(defaultContainer.getId(), retrievedContainer.getId());

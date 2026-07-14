@@ -90,7 +90,7 @@ public class SearchUtils {
           Collections.reverse(list);
         }
       } else {
-        // No orderBy specified — preserve HS7's natural BM25 score order.
+        // No orderBy specified: preserve Hibernate Search's natural BM25 score order.
         // Only apply explicit sorting when an orderBy field is provided.
       }
     }

@@ -195,9 +195,10 @@ public class MediaManagerTest extends SpringTransactionalTest {
     assertNotNull(image.getId());
     assertEquals(1, image.getVersion());
 
-    // Capture state before the update. In H6 with persist()-based save(), the entity returned
-    // from saveNewImage is the same managed 1st-level-cache instance that updateMediaFile will
-    // later modify in-place, so comparing image.getXxx() after the update would see new values.
+    // Capture state before the update. In Hibernate 6 with persist()-based save(), the entity
+    // returned from saveNewImage is the same managed 1st-level-cache instance that
+    // updateMediaFile will later modify in-place, so comparing image.getXxx() after the update
+    // would see new values.
     String imageNameBefore = image.getName();
     java.util.Date imageModDateBefore = image.getEditInfo().getModificationDate();
     Long imageSizeBefore = image.getSize();

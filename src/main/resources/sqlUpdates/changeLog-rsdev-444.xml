@@ -25,7 +25,7 @@
             </and>
         </preConditions>
         <comment>
-            RSDEV-444 (B1): re-seed the Hibernate TABLE-generator counters after the Hibernate 5 to 6 upgrade.
+            Re-seed the Hibernate TABLE-generator counters after the Hibernate 5 to 6 upgrade.
 
             Under Hibernate 5 (new_generator_mappings=false) the entities annotated
             @GeneratedValue(strategy=TABLE) used the legacy MultipleHiLoPerTableGenerator, whose stored value
@@ -57,9 +57,9 @@
             which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running
             never lowers an existing value, and empty tables (MAX 0) are left for Hibernate to create lazily.
 
-            VERIFIED on populated DBs 2026-06-06 and 2026-06-09 (see investigations/RSDEV-444-spring6-review.md,
-            B1/B1a): changeset applied, all segments reseeded above MAX(id), live inserts allocated from the
-            "default" segment above the global max with no collision and no unexpected new rows.
+            Verified on populated databases during the Spring 6 migration: changeset applied, all segments
+            reseeded above MAX(id), live inserts allocated from the "default" segment above the global max
+            with no collision and no unexpected new rows.
         </comment>
         <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
         <sql splitStatements="false" stripComments="false"><![CDATA[
@@ -209,7 +209,7 @@ END
             </and>
         </preConditions>
         <comment>
-            RSDEV-444 (B2): migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
+            Migrate the Spring Batch metadata tables from the Batch 3 layout to Batch 5 on
             existing deployments.
 
             The fresh-install baseline (initial-seed-changeLog.xml) only creates these tables when

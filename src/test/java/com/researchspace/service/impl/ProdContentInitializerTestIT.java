@@ -115,9 +115,6 @@ public class ProdContentInitializerTestIT extends RealTransactionSpringTestBase 
 
     user = createAndSaveUser(getRandomAlphabeticString("any"));
     logoutAndLoginAs(user);
-    // The initializer is constructed manually (not a Spring proxy), so init() joins the
-    // test-managed transaction. Assert in a SEPARATE transaction so the test verifies the
-    // initialized content was genuinely committed and is visible to a fresh session.
     doInTransaction(() -> initializer.init(user.getId()));
     doInTransaction(
         () -> {

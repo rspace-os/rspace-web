@@ -84,7 +84,7 @@ public class GlobalInitManagerImpl implements GlobalInitManager {
     realms.add(sysadminRealm);
     sn.setRealms(realms);
     SecurityUtils.setSecurityManager(sn);
-    // H6: Clear any stale ThreadContext subject from a previous Spring test context to avoid
+    // Clear any stale ThreadContext subject from a previous Spring test context to avoid
     // GlobalInitSysadminAuthenticationToken being rejected when run in the full test suite.
     ThreadContext.remove();
     // creates an on-the-fly subject and session

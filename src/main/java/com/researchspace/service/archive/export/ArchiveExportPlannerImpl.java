@@ -63,7 +63,8 @@ public class ArchiveExportPlannerImpl implements ArchiveExportPlanner {
   private @Autowired IGroupPermissionUtils groupPermUtils;
   private @Autowired @Lazy GroupManager grpMgr;
 
-  // H6: Folder.children is lazy; @Transactional ensures session is open for traversal
+  // Folder.children is lazy under Hibernate 6; @Transactional ensures session is open for
+  // traversal
   @Override
   @Transactional(readOnly = true)
   public ExportRecordList createExportRecordList(

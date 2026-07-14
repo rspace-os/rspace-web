@@ -4,8 +4,9 @@ package com.axiope.search;
 public class FieldNames {
 
   public static final String FIELD_DATA = "fields.fieldData";
-  // Flat HS7 field combining description and globalIdentifier (BaseRecord.getSearchableContent())
-  // and EcatCommentItem content. Full-text search must cover both this and FIELD_DATA.
+  // Flat Hibernate Search field combining description and globalIdentifier
+  // (BaseRecord.getSearchableContent()) and EcatCommentItem content. Full-text search must
+  // cover both this and FIELD_DATA.
   public static final String FLAT_FIELD_DATA = "fields_fieldData";
 
   public static final String DOC_TAG = "docTag";
@@ -42,8 +43,9 @@ public class FieldNames {
   // SubSample note content (indexed via @IndexedEmbedded with "notes." prefix on SubSample)
   public static final String NOTES_FIELD_DATA = "notes.fieldData";
 
-  // Attachment filenames on Sample, SubSample and Container (indexed via @IndexedEmbedded with
-  // "files." prefix; InventoryFile.fileName -> files.fieldData)
+  // Attachment filenames (names only, not file contents) on Sample, SubSample and Container
+  // (indexed via @IndexedEmbedded with "files." prefix; InventoryFile.fileName ->
+  // files.fieldData)
   public static final String FILES_FIELD_DATA = "files.fieldData";
 
   /* for searching items by the id of the container they belong to */

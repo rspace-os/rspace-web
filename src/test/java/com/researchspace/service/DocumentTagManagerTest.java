@@ -66,7 +66,8 @@ public class DocumentTagManagerTest extends SpringTransactionalTest {
     // being missing.
     Object realBean = AopProxyUtils.getSingletonTarget(customFormAppInitialiser);
     if (realBean == null) {
-      // In Spring 6, bean may not be proxied; use it directly
+      // getSingletonTarget returns null when the bean is not an AOP proxy (Spring 6 does not
+      // proxy it in this context), so the injected bean is already the raw instance.
       realBean = customFormAppInitialiser;
     }
     // NOTE - in these test that use TransactionalTestExecutionListener, transaction boundary is per

@@ -285,12 +285,12 @@ public class FullTextSearcherTest extends BaseDaoTestCase {
   }
 
   /**
-   * Guards against the regression fixed alongside RSDEV-444 (review finding M12): an inventory
-   * record's attachment filenames are indexed under {@code files.fieldData}, and that field must be
-   * one of the targets of an INVENTORY_SEARCH_OPTION search so attachments remain findable by
-   * filename. On `main` filenames were indexed under {@code fields.fieldData} (the search already
-   * covered it); the Hibernate Search 6 split into named {@code @IndexedEmbedded} prefixes moved
-   * them to {@code files.fieldData}, which the search query was not updated to include.
+   * Guards against a regression fixed during the Spring 6 migration: an inventory record's
+   * attachment filenames are indexed under {@code files.fieldData}, and that field must be one of
+   * the targets of an INVENTORY_SEARCH_OPTION search so attachments remain findable by filename.
+   * Previously filenames were indexed under {@code fields.fieldData} (the search already covered
+   * it); the Hibernate Search 6 split into named {@code @IndexedEmbedded} prefixes moved them to
+   * {@code files.fieldData}, which the search query was not updated to include.
    */
   @Test
   public void testInventoryAttachmentFilenameSearch() throws IOException, InterruptedException {

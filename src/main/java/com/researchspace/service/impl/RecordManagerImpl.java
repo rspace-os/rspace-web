@@ -584,7 +584,7 @@ public class RecordManagerImpl implements RecordManager {
     BaseRecord rec =
         getRecordWithLazyLoadedProperties(
             recordId, user, new DocumentFieldInitializationPolicy(), false);
-    // H6: getTempRecord() is now a lazy proxy. Initialise it inside this
+    // Under Hibernate 6, getTempRecord() is a lazy proxy. Initialise it inside this
     // transactional method so callers (e.g. StructuredDocumentController.
     // prepareDocumentForView) can read its properties after the session closes.
     if (rec instanceof StructuredDocument) {
@@ -646,9 +646,10 @@ public class RecordManagerImpl implements RecordManager {
   }
 
   /**
-   * H6: {@link Record#getTempRecord()} returns a lazy {@code Record} proxy, so casting it directly
-   * to {@link StructuredDocument} throws {@code ClassCastException}. Unproxy first to reach the
-   * real subclass. Null-safe: returns {@code null} when the document has no temp record.
+   * Under Hibernate 6, {@link Record#getTempRecord()} returns a lazy {@code Record} proxy, so
+   * casting it directly to {@link StructuredDocument} throws {@code ClassCastException}. Unproxy
+   * first to reach the real subclass. Null-safe: returns {@code null} when the document has no temp
+   * record.
    */
   private static StructuredDocument tempRecordOf(StructuredDocument doc) {
     return (StructuredDocument) Hibernate.unproxy(doc.getTempRecord());

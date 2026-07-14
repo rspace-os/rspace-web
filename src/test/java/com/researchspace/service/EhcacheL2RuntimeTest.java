@@ -31,11 +31,12 @@ import org.junit.jupiter.api.Test;
  * {@link EhcacheRegionConfigTest} (which checks region <em>names</em>) by checking the regions
  * actually <em>instantiate and operate</em> under EhCache 3.
  *
- * <p>It specifically guards RSDEV-444 review B4: the {@code ImageBlob} and {@code FileProperty}
- * regions previously declared {@code <key-type>java.lang.Long</key-type>}, but Hibernate 6 entity
- * L2 keys are {@code BasicCacheKeyImplementation} (not {@code Long}). A typed region (a) cannot be
- * fetched via single-arg {@code getCache} and (b) throws {@code ClassCastException} when Hibernate
- * stores its composite key - which would surface only in production.
+ * <p>It specifically guards a regression found during the Spring 6 migration: the {@code ImageBlob}
+ * and {@code FileProperty} regions previously declared {@code <key-type>java.lang.Long</key-type>},
+ * but Hibernate 6 entity L2 keys are {@code BasicCacheKeyImplementation} (not {@code Long}). A
+ * typed region (a) cannot be fetched via single-arg {@code getCache} and (b) throws {@code
+ * ClassCastException} when Hibernate stores its composite key - which would surface only in
+ * production.
  */
 public class EhcacheL2RuntimeTest {
 
@@ -81,21 +82,21 @@ public class EhcacheL2RuntimeTest {
   public void everyEntityRegionInstantiatesUntyped() throws IOException {
     for (String region : readEntityRegionAliases()) {
       // Single-arg getCache only succeeds for an untyped (Object/Object) cache. A region declaring
-      // key-type/value-type would throw IllegalArgumentException here - the B4 failure mode.
+      // key-type/value-type would throw IllegalArgumentException here.
       assertNotNull(
           cacheManager.getCache(region),
           () ->
               region
                   + " did not instantiate as an untyped cache. If it declares <key-type>/"
-                  + "<value-type> in ehcache.xml, remove them: Hibernate 6 L2 keys are not Long "
-                  + "(see review B4).");
+                  + "<value-type> in ehcache.xml, remove them: Hibernate 6 L2 keys are not"
+                  + " Long.");
     }
   }
 
   @Test
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void cachedRegionsAcceptHibernateCompositeKeys() throws IOException {
-    // The two regions that previously pinned key-type=Long (B4). Putting a non-Long key must not
+    // The two regions that previously pinned key-type=Long. Putting a non-Long key must not
     // throw - proving Hibernate's BasicCacheKeyImplementation would be accepted at runtime.
     for (String region :
         new String[] {
@@ -105,9 +106,7 @@ public class EhcacheL2RuntimeTest {
       assertNotNull(cache, region + " missing from ehcache.xml");
       assertDoesNotThrow(
           () -> cache.put(HIBERNATE_STYLE_KEY, "anyEntityValue"),
-          region
-              + " rejected a non-Long composite key - it still restricts key/value types (review"
-              + " B4).");
+          region + " rejected a non-Long composite key - it still restricts key/value types.");
     }
   }
 

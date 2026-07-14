@@ -686,10 +686,10 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       if (selectedTargetFolder.isNotebook()) {
         aclPolicy = ACLPropagationPolicy.SHARE_INTO_NOTEBOOK_POLICY;
       }
-      // H6: use skipAddingToChildren=false so the new RecordToFolder is added to
+      // Use skipAddingToChildren=false so the new RecordToFolder is added to
       // selectedTargetFolder.children (a tracked PersistentSet). We then call
       // folderDao.save() to cascade-persist the new RTF. The prior true relied on
-      // H5's SAVE_UPDATE reachability which no longer exists in H6 JPA.
+      // Hibernate 5's SAVE_UPDATE reachability which no longer exists in Hibernate 6 JPA.
       selectedTargetFolder.addChild(
           docOrNotebook, ChildAddPolicy.DEFAULT, subject, aclPolicy, false);
       folderDao.save(selectedTargetFolder);

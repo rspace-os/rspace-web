@@ -271,7 +271,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
    */
   @SuppressWarnings("unchecked")
   // All @Indexed entity types that participate in ELN full-text search.
-  // Mirrors the original HS5 scope of BaseRecord subclasses + EcatCommentItem.
+  // Mirrors the original Hibernate Search 5 scope of BaseRecord subclasses + EcatCommentItem.
   private static final List<Class<? extends IFieldLinkableElement>> ELN_SEARCH_CLASSES =
       List.of(
           StructuredDocument.class,

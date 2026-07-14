@@ -384,10 +384,10 @@ public class DocumentCopyManagerImpl implements DocumentCopyManager {
     copy = recordDao.save(copy);
 
     if (targetFolder != null && targetFolder.isFolder()) {
-      // H6: use skipAddingToChildren=false so the new RecordToFolder is added to
+      // Use skipAddingToChildren=false so the new RecordToFolder is added to
       // targetFolder.children (a tracked PersistentSet) and then cascade-persisted
-      // via folderDao.save(). The prior skipAddingToChildren=true relied on H5's
-      // SAVE_UPDATE cascade reachability which no longer exists in H6 JPA.
+      // via folderDao.save(). The prior skipAddingToChildren=true relied on Hibernate 5's
+      // SAVE_UPDATE cascade reachability which no longer exists in Hibernate 6 JPA.
       targetFolder.addChild(copy, user, false);
       folderDao.save(targetFolder);
     }

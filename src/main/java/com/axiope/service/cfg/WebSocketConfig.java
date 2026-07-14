@@ -37,6 +37,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     }
   }
 
+  /**
+   * Spring 6's StandardWebSocketUpgradeStrategy needs ServerContainer.upgradeHttpToWebSocket, added
+   * in Jakarta WebSocket 2.1 (EE 10). Tomcat 10.1 provides it; Jetty 11 only implements WebSocket
+   * 2.0, so a native handshake under the dev Jetty throws NoSuchMethodError. When not on Tomcat we
+   * disable the native transport and let SockJS fall back to its HTTP transports. Remove this guard
+   * once the dev container is Jetty 12 (EE10 environment) or later.
+   */
   private boolean isTomcatContainer() {
     try {
       Class.forName("org.apache.tomcat.websocket.server.WsServerContainer");

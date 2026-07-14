@@ -16,7 +16,6 @@
         <!-- RSPAC-22 -->
         <property name="hibernate.envers.autoRegisterListeners">false</property>
   
-        <!-- hibernate.id.new_generator_mappings removed in Hibernate 6 (always uses new generators) -->
         <property name="hibernate.connection.CharSet">utf8</property>
         <property name="hibernate.connection.characterEncoding">utf8</property>
         

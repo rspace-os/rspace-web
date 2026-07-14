@@ -31,8 +31,9 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
  * <p>Hibernate 6 requires {@code @Cache} on the <em>root</em> entity of an inheritance hierarchy,
  * and names the region after that root entity (or its explicit {@code region} attribute). This test
  * asserts every {@code @Cache}-annotated entity has a matching {@code <cache alias=...>} in {@code
- * ehcache.xml}. It would have caught the RSDEV-444 regression where {@code @Cache} was moved from
- * the {@code RSForm} leaf onto the {@code AbstractForm} root but the region kept the old leaf name.
+ * ehcache.xml}. It would have caught the Spring 6 migration regression where {@code @Cache} was
+ * moved from the {@code RSForm} leaf onto the {@code AbstractForm} root but the region kept the old
+ * leaf name.
  */
 public class EhcacheRegionConfigTest {
 

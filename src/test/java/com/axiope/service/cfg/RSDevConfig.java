@@ -56,7 +56,9 @@ import org.springframework.mock.web.MockMultipartFile;
  * Activate using property -Dspring.profiles.active=dev (which is active in Spring test classes)
  */
 @Configuration
-// @EnableAsync - TEMPORARILY DISABLED for Spring 6 migration testing
+// No @EnableAsync: the dev profile deliberately runs async work synchronously for
+// deterministic tests (every task executor below is a SyncTaskExecutor). Async proxying
+// itself is exercised by the contexts that load TestAppConfig/ProductionConfig.
 @Profile("dev")
 public class RSDevConfig extends BaseConfig {
 
@@ -184,6 +186,8 @@ public class RSDevConfig extends BaseConfig {
   }
 
   @Bean
+  // Disambiguates against the component-scanned @Service InternalFileStoreImpl so the
+  // temp-dir test file store wins injection.
   @Primary
   public InternalFileStore internalFileStore() throws IOException {
     File tempDir = FileUtils.getTempDirectory();
