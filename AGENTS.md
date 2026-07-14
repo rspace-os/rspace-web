@@ -209,6 +209,29 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 
 ### Internationalization (i18n)
 
+#### Frontend
+
+Frontend English catalogs live in
+`src/main/webapp/ui/src/modules/common/i18n/locales/en-US/`. Finished code uses
+semantic keys rather than English strings. See
+`DevDocs/DeveloperNotes/FrontendI18nKeys.md` for naming and namespace rules.
+
+Developers may work key-first, or temporarily author English in an explicit
+`defaultValue` passed to a literal `t()` call. For the English-first workflow:
+
+1. Add `t("feature.role", { defaultValue: "English text" })`.
+2. Run `pnpm run i18n:extract --sync-primary` from the repository root.
+3. Review the catalog diff because `--sync-primary` can update existing English
+   values. Do not use `--sync-all`; it also clears matching secondary-locale
+   values.
+4. Remove `defaultValue` from the source, leaving only the key.
+5. Run `pnpm run i18n:types`, `pnpm run i18n:lint`, and `pnpm run tsc`.
+
+Raw JSX text is not extracted by `i18n:extract`; wrap it in `t()` first. Use ICU
+syntax in `defaultValue` for interpolation and plurals.
+
+#### Backend
+
 Message bundles live in `src/main/resources/bundles/` with subdirectories per module (`dashboard/`, `workspace/`, `gallery/`, `groups/`, `inventory/`, `admin/`, `apps/`, `system/`, `public/`). Spring's `ReloadableResourceBundleMessageSource` loads them. The main bundle is `ApplicationResources.properties`.
 
 **Rule — externalize all user-displayed text in backend code.** Any string that can reach a user must be resolved from a message bundle key, not hard-coded as a Java string literal. This covers, at minimum: validation and error messages, exception messages surfaced to the UI or API, email subjects and bodies, notification text, audit/event descriptions shown to users, and API error responses.
