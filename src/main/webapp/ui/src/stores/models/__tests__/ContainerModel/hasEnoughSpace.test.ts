@@ -29,6 +29,7 @@ describe("computed: hasEnoughSpace", () => {
         totalCount: 2,
         subSampleCount: 0,
         containerCount: 2,
+        instrumentCount: 0,
       },
     });
     const two = makeMockContainer({
@@ -68,6 +69,7 @@ describe("computed: hasEnoughSpace", () => {
         totalCount: 1,
         subSampleCount: 0,
         containerCount: 1,
+        instrumentCount: 0,
       },
     });
     const child = makeMockContainer({
@@ -102,6 +104,7 @@ describe("computed: hasEnoughSpace", () => {
         totalCount: 2,
         subSampleCount: 0,
         containerCount: 2,
+        instrumentCount: 0,
       },
     });
     const three = makeMockContainer({

@@ -60,6 +60,7 @@ describe("computed: availableLocations", () => {
           totalCount: 1,
           subSampleCount: 0,
           containerCount: 0,
+          instrumentCount: 0,
         },
       });
       expect(container.availableLocations).toEqual({

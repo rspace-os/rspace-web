@@ -64,6 +64,7 @@ export type ContainerAttrs = {
   name: string;
   canStoreContainers: boolean;
   canStoreSamples: boolean;
+  canStoreInstruments: boolean;
   description: string;
   permittedActions: Array<Action>;
   quantity: null;
@@ -105,6 +106,7 @@ const DEFAULT_CONTAINER: ContainerAttrs = {
   name: "",
   canStoreContainers: true,
   canStoreSamples: true,
+  canStoreInstruments: true,
   description: "",
   permittedActions: ["READ", "UPDATE", "CHANGE_OWNER"],
   quantity: null,
@@ -113,7 +115,7 @@ const DEFAULT_CONTAINER: ContainerAttrs = {
   gridLayout: null,
   cType: "LIST",
   locationsCount: Infinity,
-  contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0 },
+  contentSummary: { totalCount: 0, subSampleCount: 0, containerCount: 0, instrumentCount: 0 },
   // user bench is added to parentConatiners for new Movable
   parentContainers: [],
   parentLocation: null,
@@ -136,6 +138,7 @@ const FIELDS = new Set([
   ...RESULT_FIELDS,
   "canStoreContainers",
   "canStoreSamples",
+  "canStoreInstruments",
   "quantity",
   "locations",
   "organization",
@@ -151,6 +154,7 @@ export default class ContainerModel
 {
   canStoreContainers: boolean = true;
   canStoreSamples: boolean = true;
+  canStoreInstruments: boolean = true;
   quantity: null = null; // Could this be removed from the API?
   locations: Array<Location> | null = [];
   unchangedLocationsIds: ReadonlyArray<number> = [];
@@ -177,6 +181,7 @@ export default class ContainerModel
     makeObservable(this, {
       canStoreContainers: observable,
       canStoreSamples: observable,
+      canStoreInstruments: observable,
       quantity: observable,
       locations: observable,
       unchangedLocationsIds: observable,
@@ -251,6 +256,7 @@ export default class ContainerModel
     };
     this.canStoreContainers = params.canStoreContainers;
     this.canStoreSamples = params.canStoreSamples;
+    this.canStoreInstruments = params.canStoreInstruments;
     this.quantity = params.quantity;
     this.locationsImage = null;
     this.gridLayout = params.gridLayout;
@@ -323,6 +329,7 @@ export default class ContainerModel
     const set: AllowedTypeFilters = new Set();
     if (this.canStoreContainers) set.add("CONTAINER");
     if (this.canStoreSamples) set.add("SUBSAMPLE");
+    if (this.canStoreInstruments) set.add("INSTRUMENT");
     if (set.size > 1) set.add("ALL");
     // set will be empty in public view case
     return set;
@@ -340,7 +347,7 @@ export default class ContainerModel
     if (this.cType === "LIST") return true;
     if (this.cType === "WORKBENCH") return true;
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
 
     const selectedResults = new RsSet(getRootStore().moveStore.selectedResults);
     const gIdsOfItemsBeingMoved = selectedResults.map((rec) => rec.globalId);
@@ -365,7 +372,8 @@ export default class ContainerModel
     const moveStore = getRootStore().moveStore;
     return (
       (!moveStore.selectedResultsIncludesContainers || this.canStoreContainers) &&
-      (!moveStore.selectedResultsIncludesSubSamples || this.canStoreSamples)
+      (!moveStore.selectedResultsIncludesSubSamples || this.canStoreSamples) &&
+      (!moveStore.selectedResultsIncludesInstruments || this.canStoreInstruments)
     );
   }
 
@@ -403,10 +411,11 @@ export default class ContainerModel
     return mapPermissioned(this.contentCount, (contentCount) => this.locationsCount - contentCount);
   }
 
-  get canStore(): Array<"containers" | "samples"> {
+  get canStore(): Array<"containers" | "samples" | "instruments"> {
     return [
       ...(this.canStoreContainers ? ["containers" as const] : []),
       ...(this.canStoreSamples ? ["samples" as const] : []),
+      ...(this.canStoreInstruments ? ["instruments" as const] : []),
     ];
   }
 
@@ -425,13 +434,13 @@ export default class ContainerModel
 
   shallowSelected(search: Search): Array<Location> {
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
     return locations.filter((l: Location) => l.isShallowSelected(search));
   }
 
   shallowUnselected(search: Search): Array<Location> {
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
     return locations.filter((l: Location) => l.isShallowUnselected(search));
   }
 
@@ -473,7 +482,7 @@ export default class ContainerModel
     const locationModelToObject = (l: Location) => pick(l, ["id", "coordX", "coordY"]);
 
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
 
     const newLocations = locations.filter((l) => !l.id);
     const existingLocations = locations.filter((l) => Boolean(l.id));
@@ -496,7 +505,7 @@ export default class ContainerModel
 
   get siblingGroups(): RsSet<Id> {
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
     return new RsSet(locations)
       .map(({ content }) => content)
       .filterClass(SubSampleModel)
@@ -626,6 +635,7 @@ export default class ContainerModel
     const params = { ...super.paramsForBackend };
     if (this.currentlyEditableFields.has("canStoreContainers")) params.canStoreContainers = this.canStoreContainers;
     if (this.currentlyEditableFields.has("canStoreSamples")) params.canStoreSamples = this.canStoreSamples;
+    if (this.currentlyEditableFields.has("canStoreInstruments")) params.canStoreInstruments = this.canStoreInstruments;
     if (this.cType === "IMAGE") params.locations = this.getLocationsForApi;
     if (this.currentlyEditableFields.has("locationsImage"))
       params.newBase64LocationsImage = this.newBase64LocationsImage;
@@ -703,7 +713,7 @@ export default class ContainerModel
 
   stopSelection(search: SearchInterface): void {
     const locations = this.locations;
-    if (!locations) throw new Error("Locations of container must be known.");
+    if (!locations) throw new Error(i18n.t("inventory:locations.unknown"));
     locations
       .filter((loc) => loc.isShallow(search) && loc.isSelectable(search))
       .map((loc) => this.onSelect(loc, search));
@@ -711,7 +721,7 @@ export default class ContainerModel
   }
 
   onSelect(location: Location, search: SearchInterface): void {
-    if (!this.selectedLocations) throw new Error("Locations of container must be known.");
+    if (!this.selectedLocations) throw new Error(i18n.t("inventory:locations.unknown"));
     const selectedLocations = this.selectedLocations;
 
     if (location.selected) {
@@ -732,7 +742,7 @@ export default class ContainerModel
 
   // have to delete by index of sortedLocations because new locations don't yet have an id
   deleteSortedLocation(index: number): void {
-    if (!this.sortedLocations) throw new Error("Locations of container must be known.");
+    if (!this.sortedLocations) throw new Error(i18n.t("inventory:locations.unknown"));
     const sortedLocations = this.sortedLocations;
     sortedLocations.splice(index, 1);
     this.updateLocationsCount(-1);
@@ -765,7 +775,7 @@ export default class ContainerModel
   }
 
   get hasSelectedLocation(): boolean {
-    if (!this.selectedLocations) throw new Error("Locations of container must be known.");
+    if (!this.selectedLocations) throw new Error(i18n.t("inventory:locations.unknown"));
     const selectedLocations = this.selectedLocations;
     return Boolean(selectedLocations[0]);
   }
@@ -853,8 +863,8 @@ export default class ContainerModel
 
   validate(): ValidationResult {
     const validateCanStore = () => {
-      if (this.canStoreContainers || this.canStoreSamples) return IsValid();
-      return IsInvalid("Must be permitted to contain either containers or subsamples.");
+      if (this.canStoreContainers || this.canStoreSamples || this.canStoreInstruments) return IsValid();
+      return IsInvalid(i18n.t("inventory:container.createOptions.location.mustStoreTypes"));
     };
 
     const validateGridLayout = () => {
@@ -877,14 +887,14 @@ export default class ContainerModel
        */
       return allAreValid([
         Parsers.isNumber(columnsNumber)
-          .mapError(() => new Error("Number of columns is invalid."))
+          .mapError(() => new Error(i18n.t("inventory:container.fields.gridDimensions.numColumnsInvalid")))
           .flatMap((cols) => {
             if (cols <= 0) return IsInvalid("Number of columns must be a positive value.");
             if (cols > 24) return IsInvalid("Number of columns cannot be greater than 24.");
             return IsValid();
           }),
         Parsers.isNumber(rowsNumber)
-          .mapError(() => new Error("Number of rows is invalid."))
+          .mapError(() => new Error(i18n.t("inventory:container.fields.gridDimensions.numRowsInvalid")))
           .flatMap((rows) => {
             if (rows <= 0) return IsInvalid("Number of rows must be a positive value.");
             if (rows > 24) return IsInvalid("Number of rows cannot be greater than 24.");
@@ -991,6 +1001,11 @@ export default class ContainerModel
     if (!this.canStoreSamples) newSampleExplanation = i18n.t("inventory:container.createOptions.newSample.cannotStore");
     if (!this.canEdit) newSampleExplanation = i18n.t("inventory:container.createOptions.noEditPermission");
 
+    let newInstrumentExplanation: string = i18n.t("inventory:container.createOptions.newInstrument.explanation");
+    if (!this.canStoreInstruments)
+      newInstrumentExplanation = i18n.t("inventory:container.createOptions.newInstrument.cannotStore");
+    if (!this.canEdit) newInstrumentExplanation = i18n.t("inventory:container.createOptions.noEditPermission");
+
     return [
       {
         label: i18n.t("inventory:container.createOptions.newContainer.label"),
@@ -1034,11 +1049,11 @@ export default class ContainerModel
         explanation: newSampleExplanation,
         parameters: [
           {
-            label: i18n.t("inventory:container.createOptions.location.label"),
+            label: i18n.t("inventory:sample.createOptions.location.label"),
             explanation:
               this.cType === "LIST"
-                ? i18n.t("inventory:container.createOptions.location.listExplanation")
-                : i18n.t("inventory:container.createOptions.location.specificExplanation"),
+                ? i18n.t("inventory:sample.createOptions.location.listExplanation")
+                : i18n.t("inventory:sample.createOptions.location.specificExplanation"),
             state: { key: "location", container: this },
             validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
           },
@@ -1064,6 +1079,49 @@ export default class ContainerModel
               coordY: location.coordY,
             },
           });
+        },
+      },
+      {
+        label: i18n.t("inventory:container.createOptions.newInstrument.label"),
+        explanation: newInstrumentExplanation,
+        parameters: [
+          {
+            label: i18n.t("inventory:instrument.createOptions.location.label"),
+            explanation:
+              this.cType === "LIST"
+                ? i18n.t("inventory:instrument.createOptions.location.listExplanation")
+                : i18n.t("inventory:instrument.createOptions.location.specificExplanation"),
+            state: { key: "location", container: this },
+            validState: () => this.cType === "LIST" || this.selectedLocations?.length === 1,
+          },
+        ],
+        disabled: !this.canStoreInstruments || !this.canEdit,
+        onReset: () => {
+          // nothing to reset
+        },
+        onSubmit: async () => {
+          if (this.cType === "LIST") {
+            await getRootStore().searchStore.createNewInstrument(
+              {},
+              {
+                parentContainers: [this],
+                parentLocation: {},
+              },
+            );
+            return;
+          }
+          if (this.selectedLocations?.length !== 1) throw new Error(i18n.t("inventory:locations.maxAllowed"));
+          const location = this.selectedLocations[0];
+          await getRootStore().searchStore.createNewInstrument(
+            {},
+            {
+              parentContainers: [this],
+              parentLocation: {
+                coordX: location.coordX,
+                coordY: location.coordY,
+              },
+            },
+          );
         },
       },
     ];

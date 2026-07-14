@@ -19,4 +19,5 @@ export type ContentSummary = {
   totalCount: number;
   subSampleCount: number;
   containerCount: number;
+  instrumentCount: number;
 };

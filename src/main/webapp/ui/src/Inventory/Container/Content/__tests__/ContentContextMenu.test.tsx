@@ -29,6 +29,7 @@ describe("ContentContextMenu", () => {
           totalCount: 0,
           subSampleCount: 0,
           containerCount: 0,
+          instrumentCount: 0,
         },
       });
       container.locations = [
@@ -94,6 +95,7 @@ describe("ContentContextMenu", () => {
               totalCount: width * height,
               subSampleCount: 0,
               containerCount: width * height,
+              instrumentCount: 0,
             },
           });
           for (const loc of container.locations ?? []) {

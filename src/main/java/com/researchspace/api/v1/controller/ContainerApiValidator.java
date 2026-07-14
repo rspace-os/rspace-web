@@ -83,7 +83,10 @@ public abstract class ContainerApiValidator extends InventoryRecordValidator imp
   private void validateCanStoreFlags(ApiContainer incomingContainer, Errors errors) {
     Boolean canStoreSamples = incomingContainer.getCanStoreSamples();
     Boolean canStoreContainers = incomingContainer.getCanStoreContainers();
-    if (BooleanUtils.isFalse(canStoreSamples) && BooleanUtils.isFalse(canStoreContainers)) {
+    Boolean canStoreInstruments = incomingContainer.getCanStoreInstruments();
+    if (BooleanUtils.isFalse(canStoreSamples)
+        && BooleanUtils.isFalse(canStoreContainers)
+        && BooleanUtils.isFalse(canStoreInstruments)) {
       errors.rejectValue("canStoreSamples", "errors.inventory.container.invalidCanStoreFlags");
       return;
     }

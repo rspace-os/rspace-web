@@ -129,6 +129,7 @@ public class ContainerApiPostValidatorTest extends InventoryRecordValidationTest
     assertEquals(0, e.getErrorCount());
 
     container.setCanStoreSamples(false);
+    container.setCanStoreInstruments(false);
     e = resetErrorsAndValidate(container);
     assertEquals(1, e.getErrorCount());
     assertEquals("errors.inventory.container.invalidCanStoreFlags", e.getFieldError().getCode());
