@@ -182,8 +182,8 @@ const { t } = useTranslation("inventory");
 return <Button>{t("samples.createDialog.submit")}</Button>;
 ```
 
-Run `i18n:check`. The extractor creates the matching empty entry in
-`locales/en-US/inventory.json`:
+Run `i18n:extract`. The extractor creates the matching empty entry in
+`src/modules/common/i18n/locales/en-US/inventory.json`:
 
 ```json
 {
@@ -207,19 +207,22 @@ Fill in the English value in the catalog, leaving the component unchanged:
 }
 ```
 
-Run from `src/main/webapp/ui` (the root `i18n:*` scripts `cd` here for you):
+Run from the repository root (the `i18n:*` scripts change to
+`src/main/webapp/ui` for you):
 
 ```bash
-pnpm run i18n:check   # extract: writes new keys (empty) into the catalogs
+pnpm run i18n:extract # writes new keys (empty) into the catalogs
 # fill in the English text in locales/en-US/<namespace>.json
 pnpm run i18n:types   # regenerate i18next.d.ts / resources.d.ts
 pnpm run i18n:lint    # flag missing / malformed keys
+pnpm run i18n:check   # confirm extraction would make no further changes
 pnpm run tsc          # confirm key references type-check
 ```
 
-`i18n:check` does not overwrite existing English values or delete unused keys,
-so it is safe to run often. Extraction and lint ignore keys in `__tests__`,
-`*.test.*`, `*.spec.*`, and `*.story.*`.
+`i18n:extract` does not overwrite existing English values or delete unused
+keys, so it is safe to run often. `i18n:check` is the CI-style verification
+command. Extraction and lint ignore keys in `__tests__`, `*.test.*`,
+`*.spec.*`, and `*.story.*`.
 
 ### English-first: write the copy, then extract it
 
