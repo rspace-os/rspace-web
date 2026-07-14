@@ -22,6 +22,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentTagManager;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordEditorTracker;
@@ -53,6 +54,7 @@ public class RecordApiManagerImpl implements RecordApiManager {
   private @Autowired DocumentTagManager documentTagManager;
   private @Autowired SharingHandler recordShareHandler;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public Long createNewDocument(ApiDocument apiDocument, RSForm docForm, User user) {
@@ -169,8 +171,6 @@ public class RecordApiManagerImpl implements RecordApiManager {
     }
   }
 
-  //  private @Autowired MessageSourceAccessor messages;
-  //
   private void throwDocumentEditConflictException(StructuredDocument doc, String editor)
       throws DocumentAlreadyEditedException {
     String msg =
@@ -181,7 +181,6 @@ public class RecordApiManagerImpl implements RecordApiManager {
   }
 
   private String createNotFoundMessage(String resourceType, Long id) {
-    return "test"; // FIXME messages.getMessage("record.inaccessible", new Object []{resourceType,
-    // id});
+    return messages.getResourceNotFoundMessage(resourceType, id);
   }
 }
