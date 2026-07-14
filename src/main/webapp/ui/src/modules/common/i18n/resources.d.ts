@@ -3766,6 +3766,8 @@ export default interface Resources {
       },
       "showItems": "Show items being moved"
     },
+    "pageTitle": "RSpace Inventory",
+    "pageTitleWithContext": "{pageContext} | RSpace Inventory",
     "peopleField": {
       "errors": {
         "couldNotGetGroupMembers": "Could not get group members."

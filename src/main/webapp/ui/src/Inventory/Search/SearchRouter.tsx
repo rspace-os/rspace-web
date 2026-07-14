@@ -85,11 +85,13 @@ const SearchRouter = observer(({ paramsOverride }: SearchRouterArgs) => {
     <>
       <title>
         {paramsOverride?.permalink
-          ? `${globalId({
-              type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
-              id: paramsOverride.permalink.id,
-            })} | RSpace Inventory`
-          : "RSpace Inventory"}
+          ? t("pageTitleWithContext", {
+              pageContext: globalId({
+                type: permalinkTypeToGlobalIdType[paramsOverride.permalink.type],
+                id: paramsOverride.permalink.id,
+              }),
+            })
+          : t("pageTitle")}
       </title>
       <Header sidebarId={sidebarId} />
       <Box sx={{ display: "flex", height: "calc(100% - 48px)" }}>
