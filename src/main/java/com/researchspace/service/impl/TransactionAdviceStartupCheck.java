@@ -31,12 +31,13 @@ import org.springframework.transaction.interceptor.TransactionInterceptor;
  * advice and fail only at runtime ("Could not obtain transaction-synchronized Session"). See the
  * AOP notes in applicationContext-service.xml.
  *
- * <p>On refresh this listener first initialises the real {@code securityManager} (deliberately
- * behind a lazy proxy in security.xml so its large service-bean dependency graph is created only
- * now, when all advisors are available), then inspects every already-instantiated singleton and
- * fails startup if any {@code @Transactional} bean lacks a {@link TransactionInterceptor} in its
- * advice chain. In contexts without the real securityManager (tests), offenders are logged as
- * errors instead of failing, since only the running application wires security.xml.
+ * <p>On refresh this listener first initialises the real {@code securityManager} (the Shiro beans
+ * in security.xml deliberately resolve it lazily so its large service-bean dependency graph is
+ * created only now, when all advisors are available), then inspects every already-instantiated
+ * singleton and fails startup if any {@code @Transactional} bean lacks a {@link
+ * TransactionInterceptor} in its advice chain. In contexts without the real securityManager
+ * (tests), offenders are logged as errors instead of failing, since only the running application
+ * wires security.xml.
  */
 @Component
 public class TransactionAdviceStartupCheck
