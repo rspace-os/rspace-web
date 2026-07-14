@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.servlet.DispatcherServlet;
@@ -47,6 +48,27 @@ public class DispatcherServletInitializer implements ServletContextListener {
   static final String PROPERTY_FILE_DIR = "propertyFileDir";
   static final String DEPLOYMENT_PROPERTIES_FILE = "deployment.properties";
 
+  /**
+   * Public URL prefixes that can receive multipart uploads. UrlRewriteFilter forwards every public
+   * URL to {@code /app/*}, where this dispatcher handles it — but Tomcat resolves a request's
+   * multipart configuration from the servlet the request was <em>originally</em> mapped to, not the
+   * forward target (Jetty uses the forward target's servlet, which masks this difference under
+   * jetty:run). Without these extra mappings, the original match for a public URL is the
+   * container's default servlet, which has no multipart config, so Tomcat silently parses the
+   * request as having no parts and every upload fails with "Required part ... is not present".
+   *
+   * <p>Mapping the upload-receiving prefixes to this servlet attaches the {@link
+   * MultipartConfigElement} to the originally-matched servlet for those URLs. Routing is unchanged:
+   * the rewrite filter still forwards to {@code /app/*} before any servlet is invoked, so these
+   * mappings only ever influence multipart parsing.
+   *
+   * <p>A unit test scans all controllers and fails if a multipart-accepting controller's URL prefix
+   * is not covered by this list — extend the list when it does.
+   */
+  static final String[] MULTIPART_SOURCE_PATTERNS = {
+    "/api/*", "/gallery/*", "/export/*", "/workspace/*", "/system/*", "/userform/*"
+  };
+
   @Override
   public void contextInitialized(ServletContextEvent sce) {
     ServletContext ctx = sce.getServletContext();
@@ -58,6 +80,13 @@ public class DispatcherServletInitializer implements ServletContextListener {
     dispatcher.setLoadOnStartup(1);
     dispatcher.setAsyncSupported(true);
     dispatcher.addMapping("/app/*");
+    Set<String> conflicts = dispatcher.addMapping(MULTIPART_SOURCE_PATTERNS);
+    if (!conflicts.isEmpty()) {
+      log.warn(
+          "Could not map multipart source patterns {} — already mapped to another servlet;"
+              + " uploads on those paths will fail under Tomcat",
+          conflicts);
+    }
     dispatcher.setMultipartConfig(new MultipartConfigElement("", maxFileSize, maxRequestSize, 0));
 
     log.info("Registered DispatcherServlet with multipart max-file-size={} bytes", maxFileSize);
