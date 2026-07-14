@@ -42,12 +42,10 @@ public class EmailBroadcasterConfigTest {
     public EmailConfig() {}
 
     @Bean
-    EmailBroadcastImpl emailBroadcastImpl() {
+    EmailBroadcastImpl emailBroadcastImpl(StrictEmailContentGenerator strictEmailContentGenerator) {
       Integer millis = env.getProperty("mail.maxEmailsPerSecond", Integer.class);
       Integer addressChunkSize = env.getProperty("mail.addressChunkSize", Integer.class);
-      EmailBroadcastImpl rc =
-          new EmailBroadcastImpl(millis, addressChunkSize, new StrictEmailContentGenerator());
-      return rc;
+      return new EmailBroadcastImpl(millis, addressChunkSize, strictEmailContentGenerator);
     }
 
     @Bean(name = "velocityEngine")
