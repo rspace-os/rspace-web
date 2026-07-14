@@ -183,6 +183,7 @@ export default class InstrumentModel
   populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as InstrumentAttrs;
+    this.parentContainers = (params.parentContainers ?? []) as unknown as Array<import("./ContainerModel").default>;
     const [firstParent] = params.parentContainers ?? [];
     this.immediateParentContainer = firstParent
       ? (factory.newRecord(firstParent as Record<string, unknown> & { globalId: GlobalId }) as Container)
@@ -298,6 +299,7 @@ export default class InstrumentModel
             columnIndex: fm.columnIndex,
             attachment: null,
             mandatory: fm.mandatory,
+            allowedRelationTypes: [...(fm.allowedRelationTypes ?? [])],
           },
           this,
         );
