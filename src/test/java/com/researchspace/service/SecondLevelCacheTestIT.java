@@ -59,7 +59,7 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
   @Before
   public void setUpL2SessionFactory() throws Exception {
     super.setUp();
-    StandardServiceRegistry registry =
+    StandardServiceRegistryBuilder registryBuilder =
         new StandardServiceRegistryBuilder()
             .applySetting(AvailableSettings.DATASOURCE, dataSource)
             .applySetting(AvailableSettings.USE_SECOND_LEVEL_CACHE, "true")
@@ -69,8 +69,15 @@ public class SecondLevelCacheTestIT extends RealTransactionSpringTestBase {
             .applySetting("hibernate.javax.cache.provider", EHCACHE3_PROVIDER)
             .applySetting("hibernate.javax.cache.uri", "ehcache.xml")
             .applySetting(AvailableSettings.GENERATE_STATISTICS, "true")
-            .applySetting("hibernate.search.enabled", "false")
-            .build();
+            .applySetting("hibernate.search.enabled", "false");
+    // Inherit the shared test SessionFactory's explicit dialect: Hibernate's metadata-based
+    // dialect detection fails on DB versions newer than it knows (e.g. MariaDB 12 on
+    // Hibernate 6.4), which is why the rest of the stack never relies on it.
+    Object dialect = sessionFactory.getProperties().get(AvailableSettings.DIALECT);
+    if (dialect != null) {
+      registryBuilder.applySetting(AvailableSettings.DIALECT, dialect);
+    }
+    StandardServiceRegistry registry = registryBuilder.build();
     l2SessionFactory =
         new MetadataSources(registry)
             .addAnnotatedClass(IconEntity.class)
