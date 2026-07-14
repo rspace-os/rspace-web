@@ -8,7 +8,7 @@ import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import java.util.Arrays;
 import java.util.HashMap;

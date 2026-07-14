@@ -181,7 +181,7 @@ import com.researchspace.service.impl.DetailedRecordInformationProviderImpl;
 import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.service.impl.DocumentHTMLPreviewHandlerImpl;
-import com.researchspace.service.impl.EmailBroadcastImp;
+import com.researchspace.service.impl.EmailBroadcastImpl;
 import com.researchspace.service.impl.ExampleContentAction;
 import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
@@ -1130,7 +1130,8 @@ public abstract class BaseConfig {
   @Bean
   public EmailBroadcast emailBroadcast() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImp(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
+      return new EmailBroadcastImpl(
+          getMaxEmailsPerSecond(), getEmailAddressChunkSize(), strictEmailContentGenerator());
     }
     return new DevEmailSenderImpl();
   }
@@ -1138,7 +1139,8 @@ public abstract class BaseConfig {
   @Bean
   public Broadcaster broadcaster() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImp(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
+      return new EmailBroadcastImpl(
+          getMaxEmailsPerSecond(), getEmailAddressChunkSize(), strictEmailContentGenerator());
     } else {
       return new DevBroadCaster();
     }
