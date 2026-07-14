@@ -461,12 +461,12 @@ describe("MainPanel", () => {
         // Before selection: unselected colours
         const nameEl = panel.gridCell("Image0.jpg").getByRole("paragraph");
         await expect.element(nameEl).toHaveStyle({ color: "rgb(75, 71, 77)" });
-        await expect.element(nameEl).toHaveStyle({ "background-color": "rgba(0, 0, 0, 0)" });
+        await expect.element(nameEl).toHaveStyle({ backgroundColor: "rgba(0, 0, 0, 0)" });
 
         // After selecting Image0.jpg: selected colours
         await panel.clickFile("Image0.jpg");
         await expect.element(nameEl).toHaveStyle({ color: "rgb(38, 75, 88)" });
-        await expect.element(nameEl).toHaveStyle({ "background-color": "rgb(147, 198, 240)" });
+        await expect.element(nameEl).toHaveStyle({ backgroundColor: "rgb(147, 198, 240)" });
 
         /*
          * This is done to ensure that we are not using colour alone to indicate

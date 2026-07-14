@@ -34,6 +34,12 @@ allowBuilds:
 # against supply-chain attacks that are typically caught within that window.
 # Stricter than pnpm 11's 1440-minute (1 day) default.
 minimumReleaseAge: 10080
+# Requested releases published 2026-07-08/09 are <7 days old — REMOVE after ~2026-07-17
+minimumReleaseAgeExclude:
+  - typescript
+  - '@typescript/typescript-*'
+  - i18next
+  - react-i18next
 strictPeerDependencies: true
 
 peerDependencyRules:

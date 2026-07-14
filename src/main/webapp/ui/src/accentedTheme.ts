@@ -52,17 +52,6 @@ declare module "@mui/material/Button" {
 }
 declare module "@mui/material/styles" {
   interface Components {
-    MuiDataGrid?: {
-      defaultProps?: {
-        getRowClassName: (params: { indexRelativeToCurrentPage: number }) => string;
-      };
-      styleOverrides?: {
-        root: unknown;
-        paper: unknown;
-        menu: unknown;
-      };
-      variants?: object;
-    };
     MuiTreeItem?: {
       styleOverrides?: {
         root: unknown;

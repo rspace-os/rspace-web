@@ -1,8 +1,10 @@
 import { TextDecoder, TextEncoder } from "node:util";
-import { afterAll, afterEach, expect, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import { setup, toBeAccessible } from "@sa11y/vitest";
+// Use the bare matchers entry point: the /vitest entry's module augmentation
+// conflicts with the jest-dom types bundled in @vitest/browser under TS 7.
+import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
+import { afterAll, afterEach, expect, vi } from "vitest";
 import createFetchMock from "vitest-fetch-mock";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
 import i18n from "@/modules/common/i18n";
@@ -43,6 +45,7 @@ function createStorageMock() {
 
 setup();
 
+expect.extend(jestDomMatchers);
 expect.extend({ toBeAccessible });
 
 const fetchMocker = createFetchMock(vi);

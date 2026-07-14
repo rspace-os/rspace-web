@@ -1,8 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
-import { afterEach, describe, expect, test, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import type { AxiosResponse } from "axios";
 import type { ComponentProps } from "react";
+import { afterEach, describe, expect, test, vi } from "vitest";
 import { renderWithRealI18n, wrapWithRealI18n } from "@/__tests__/helpers/realI18n";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";

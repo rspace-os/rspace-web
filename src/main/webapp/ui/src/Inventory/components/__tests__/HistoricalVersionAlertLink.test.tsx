@@ -8,7 +8,6 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import { renderWithRealI18n, setupRealAppI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "@/theme";
