@@ -30,8 +30,7 @@
 	</build>
 
 	<dependencies>
-		<!-- requires implementation on classpath. e.g. hibernate validator 1.1.0
-			is used by HibernateValidator 5.3 -->
+		<!-- requires a Jakarta Validation implementation on the classpath -->
 		<dependency>
 			<groupId>jakarta.validation</groupId>
 			<artifactId>jakarta.validation-api</artifactId>
