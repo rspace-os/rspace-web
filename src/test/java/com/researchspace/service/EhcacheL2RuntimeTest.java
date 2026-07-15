@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.TreeSet;
@@ -54,27 +56,28 @@ public class EhcacheL2RuntimeTest {
         }
       };
 
-  private CachingProvider provider;
   private CacheManager cacheManager;
 
   @BeforeEach
   public void setUp() throws URISyntaxException {
-    provider = Caching.getCachingProvider(EHCACHE3_PROVIDER);
+    CachingProvider provider = Caching.getCachingProvider(EHCACHE3_PROVIDER);
+    // Key the manager under a throwaway classloader: the provider caches managers per
+    // (URI, classloader), and the (ehcache.xml, app classloader) pair is the JVM-shared
+    // instance that CacheConfig wraps for @Cacheable (the singleton-close hazard
+    // documented in applicationContext-dao.xml). A private instance lets tearDown close
+    // it without poisoning cached Spring test contexts elsewhere in the same fork.
     cacheManager =
         provider.getCacheManager(
             getClass().getClassLoader().getResource(EHCACHE_RESOURCE).toURI(),
-            getClass().getClassLoader());
+            new URLClassLoader(new URL[0], getClass().getClassLoader()));
   }
 
   @AfterEach
   public void tearDown() {
-    // Safe to close here: tests run with L2 disabled, so no Spring-managed SessionFactory shares
-    // this CacheManager (the singleton-close hazard documented in applicationContext-dao.xml).
+    // Close only this test's manager - never CachingProvider.close(), which closes every
+    // CacheManager of the JVM-wide Ehcache provider, including the shared one.
     if (cacheManager != null) {
       cacheManager.close();
-    }
-    if (provider != null) {
-      provider.close();
     }
   }
 
