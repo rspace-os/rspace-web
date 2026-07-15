@@ -320,6 +320,64 @@ All schema changes via Liquibase changesets in `src/main/resources/sqlUpdates/`.
 
 STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWebSocketMessageBroker` with simple broker for `/topic` prefixed destinations. Origin validation via `OriginRefererChecker`.
 
+## Isolated Database (Agent Tasks)
+
+When running tests that require a database (Spring integration tests or IT tests — not
+pure unit tests with `-Dfast=true`) or running the application during a task from a **git
+worktree**, spin up an isolated MariaDB container so your work doesn't touch the
+developer's local database.
+
+This applies **only to worktrees** (detected via `git rev-parse`). In the main checkout,
+use the developer's local MariaDB instance and do **not** run `drop-recreate-db`.
+
+### Helper script
+
+All lifecycle management is handled by `.agents/scripts/agent-db.sh`:
+
+```bash
+# Before DB-needing work — idempotent, reuses existing container
+.agents/scripts/agent-db.sh start
+
+# When done (or on failure) — stops container, cleans state
+.agents/scripts/agent-db.sh stop
+
+# Check current state
+.agents/scripts/agent-db.sh status
+```
+
+**What `start` does:**
+1. Verifies you're in a git worktree and Docker is available
+2. Garbage-collects orphaned containers from deleted worktrees
+3. If a container already exists for this worktree, reuses it
+4. Otherwise: starts a MariaDB 10.11 container named `rspace-agent-db-<worktree-name>`
+   on a random free port
+5. Patches `deployment.properties` with the container's JDBC URL
+6. Initialises the schema via `drop-recreate-db`
+7. Writes state to `.agent-db.env` in the worktree root
+
+After `start`, run Maven commands normally — no `-Denvironment` flag needed.
+
+**What `stop` does:**
+1. Stops and removes the container
+2. Removes the patched `jdbc.url` from `deployment.properties`
+3. Removes the `.agent-db.env` state file
+
+### Container lifecycle
+
+Containers are scoped **per worktree**, not per session or test run. If a second session
+starts in the same worktree, `start` detects the existing container and reuses it.
+Orphaned containers (from deleted worktrees or crashes) are automatically cleaned up
+when any agent runs `start` or `gc`.
+
+### Fallback (Docker unavailable)
+
+If Docker is not available, the script will exit with an error. In that case, assume a
+local MariaDB instance is running with the defaults in `defaultDeployment.properties`:
+- DB: `rspace`, User: `rspacedbuser` / `rspacedbpwd`
+- URL: `jdbc:mysql://localhost:3306/rspace`
+
+Do **not** drop or recreate this database to preserve the developer's existing data.
+
 ## Common Development Pitfalls
 
 1. **Java language level:** Source and runtime are both Java 17 (`<release>17</release>`); Java 17 language features (records, sealed classes, text blocks, pattern matching) are allowed.

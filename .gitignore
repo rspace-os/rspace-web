@@ -78,6 +78,7 @@ src/main/webapp/ui/coverage
 
 # other tooling
 /.claude/
+.agent-db.env
 .worktrees/
 
 .pnpm-store
