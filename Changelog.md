@@ -1,6 +1,6 @@
 # Changes
 
-## 2.0.0 2026-04-29
+## 3.0.0 2026-04-29
 - Spring 6 / Hibernate 6 / Jakarta namespace migration
 - Switch to rspace-parent 3.0.0
 
