@@ -562,7 +562,7 @@ public class FormControllerAcceptanceMVCIT extends MVCTestBase {
   private RSForm getNewForm(User u) throws Exception {
     MvcResult result =
         mockMvc
-            .perform(post(formUrlBase).principal(u::getUsername))
+            .perform(post("/workspace/editor/form").principal(u::getUsername))
             .andExpect(status().is2xxSuccessful())
             .andReturn();
     return (RSForm) result.getModelAndView().getModelMap().get("template");

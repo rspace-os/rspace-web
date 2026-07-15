@@ -94,7 +94,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     super.tearDown();
   }
 
-  String NEW_GROUP_PAGE = "/groups/admin/";
+  String NEW_GROUP_PAGE = "/groups/admin";
 
   private final String ADMIN_UNAME = "admin";
 
@@ -257,7 +257,7 @@ public class GroupControllerMVCIT extends MVCTestBase {
     User piOfNewGroup = createAndSaveUser("pi" + getRandomName(8), Constants.PI_ROLE);
     User user = createAndSaveUser("member" + getRandomName(8));
     initUsers(piOfNewGroup, user);
-    final String NEW_GROUP_PAGE = "/groups/admin/";
+    final String NEW_GROUP_PAGE = "/groups/admin";
     Group g = createNewGroupViaURL(NEW_GROUP_PAGE);
 
     final String GROUP_DISPLAY_NAME = "groupnameXXX";

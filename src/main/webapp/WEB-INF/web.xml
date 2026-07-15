@@ -146,6 +146,11 @@
         <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
+    <filter>
+        <filter-name>trailingSlashCompatibilityFilter</filter-name>
+        <filter-class>com.researchspace.webapp.filter.TrailingSlashCompatibilityFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 
     <!--  this has to go first to secure subsequent URLs in filters -->
     <filter-mapping>
@@ -186,6 +191,11 @@
     </filter-mapping>
     <filter-mapping>
         <filter-name>anonymousUserFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+    <!-- Must precede rewriteFilter so its forward target is already slash-less -->
+    <filter-mapping>
+        <filter-name>trailingSlashCompatibilityFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
     <filter-mapping>

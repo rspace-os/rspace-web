@@ -89,7 +89,7 @@ public class RSFormController extends BaseController {
   private @Autowired RSFormApiHandler formHandler;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
 
-  @PostMapping("/")
+  @PostMapping
   // permissions checking handled in service methos
   public ModelAndView createForm(Model model) throws IOException {
     final int height = 32;

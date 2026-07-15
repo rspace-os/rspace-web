@@ -168,7 +168,7 @@ public class JournalControllerMVCIT extends MVCTestBase {
   private void saveEntry(Long entryId, User user) throws Exception {
     this.mockMvc
         .perform(
-            post("/workspace/editor/structuredDocument/ajax/saveStructuredDocument/")
+            post("/workspace/editor/structuredDocument/ajax/saveStructuredDocument")
                 .param("structuredDocumentId", entryId + "")
                 .param("unlock", "true")
                 .principal(new MockPrincipal(user.getUsername())))

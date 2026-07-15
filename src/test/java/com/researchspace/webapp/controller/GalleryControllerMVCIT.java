@@ -613,7 +613,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     MvcResult res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "")
                     .param("revision[]", ""))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
@@ -624,7 +624,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ","))
             .andExpect(jsonPath("$.data").exists())
@@ -636,7 +636,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/").param("id[]", "").param("revision[]", ""))
+                get("/gallery/getMediaFileSummaryInfo").param("id[]", "").param("revision[]", ""))
             .andExpect(MockMvcResultMatchers.status().is2xxSuccessful())
             .andExpect(jsonPath("$.data").exists())
             .andReturn();
@@ -644,7 +644,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", attachment.getId() + "," + attachment2.getId())
                     .param("revision[]", ",,,,"))
             .andReturn();
@@ -654,7 +654,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
     res =
         mockMvc
             .perform(
-                get("/gallery/getMediaFileSummaryInfo/")
+                get("/gallery/getMediaFileSummaryInfo")
                     .param("id[]", -2L + "," + attachment2.getId())
                     .param("revision[]", ","))
             .andExpect(jsonPath("$.data").exists())

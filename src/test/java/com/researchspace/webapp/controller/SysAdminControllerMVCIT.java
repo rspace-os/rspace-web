@@ -339,7 +339,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
   @Test
   public void testListingSystem() throws Exception {
     this.mockMvc
-        .perform(get("/system/").principal(sysAdminPrincipal))
+        .perform(get("/system").principal(sysAdminPrincipal))
         .andExpect(status().isOk())
         .andExpect(model().attributeExists("publish_allowed"))
         .andReturn();

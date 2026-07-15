@@ -209,7 +209,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     // now, let's access another user's profile - their profile should load OK (RSPAC-208)
     mockMvc
         .perform(
-            get("/userform/")
+            get("/userform")
                 .param("userId", user.getId() + "")
                 .principal(new MockPrincipal(user2.getUniqueName())))
         .andExpect(status().isOk())
@@ -422,7 +422,7 @@ public class UserProfileControllerMVCIT extends MVCTestBase {
     MvcResult result3 =
         mockMvc
             .perform(
-                get("/userform/")
+                get("/userform")
                     .param("userId", user.getId() + "")
                     .principal(new MockPrincipal(user.getUsername())))
             .andReturn();

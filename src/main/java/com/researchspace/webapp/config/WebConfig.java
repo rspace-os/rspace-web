@@ -20,7 +20,6 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
-import org.springframework.web.servlet.config.annotation.PathMatchConfigurer;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurationSupport;
 
@@ -198,16 +197,5 @@ public class WebConfig extends WebMvcConfigurationSupport {
     f.addConverter(new InventoryImportApiController.ApiInventoryImportPostConverter());
     f.addConverter(new InventoryExportApiController.ApiInventoryExportPostConverter());
     return f;
-  }
-
-  /**
-   * Re-enable trailing slash matching for backward compatibility. Spring 6.0+ disabled this by
-   * default, but many existing test URLs and potentially some client integrations use trailing
-   * slashes. Deprecated in Spring 6.1 but still functional.
-   */
-  @Override
-  @SuppressWarnings("deprecation")
-  protected void configurePathMatch(PathMatchConfigurer configurer) {
-    configurer.setUseTrailingSlashMatch(true);
   }
 }
