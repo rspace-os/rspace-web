@@ -838,7 +838,6 @@
       <groupId>org.sitemesh</groupId>
       <artifactId>sitemesh</artifactId>
       <version>${sitemesh.version}</version>
-      <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>org.aspectj</groupId>

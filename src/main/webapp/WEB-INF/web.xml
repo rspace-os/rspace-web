@@ -104,7 +104,7 @@
 
     <filter>
         <filter-name>sitemesh</filter-name>
-        <filter-class>org.sitemesh.config.ConfigurableSiteMeshFilter</filter-class>
+        <filter-class>com.researchspace.webapp.filter.FullPathSiteMeshFilter</filter-class>
         <async-supported>true</async-supported>
     </filter>
     <filter>
