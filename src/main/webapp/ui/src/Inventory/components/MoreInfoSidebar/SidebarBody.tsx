@@ -47,9 +47,8 @@ function SidebarBody({ record, factory }: SidebarBodyArgs): React.ReactNode {
       {/* templates cannot appear in a List of Materials, but they are valid
           link targets, so the linked-documents dialog (which also lists the
           inventory items linking here) applies to them like every other type */}
-      {(record.usableInLoM || record.recordType === "sampleTemplate") && record.globalId && (
-        <LinkedDocuments globalId={record.globalId} factory={factory} />
-      )}
+      {(record.usableInLoM || record.recordType === "sampleTemplate" || record.recordType === "instrumentTemplate") &&
+        record.globalId && <LinkedDocuments globalId={record.globalId} factory={factory} />}
     </Stack>
   );
 }

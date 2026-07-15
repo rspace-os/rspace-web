@@ -23,7 +23,7 @@ export const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
     },
   },
   IN: {
-    iconName: "container",
+    iconName: "instrument",
     get recordTypeLabel() {
       return i18n.t("inventory:recordTypes.instrument.singular");
     },
@@ -32,6 +32,12 @@ export const INVENTORY_PREFIX_ICON_DATA: Record<string, RecordIconData> = {
     iconName: "template",
     get recordTypeLabel() {
       return i18n.t("inventory:recordTypes.sampleTemplate.singular");
+    },
+  },
+  NT: {
+    iconName: "instrumentTemplate",
+    get recordTypeLabel() {
+      return i18n.t("inventory:recordTypes.instrumentTemplate.singular");
     },
   },
 };
@@ -85,7 +91,10 @@ export function iconForGlobalId(globalId: string): RecordIconData | null {
   return INVENTORY_PREFIX_ICON_DATA[prefix] ?? ELN_PREFIX_ICON_DATA[prefix] ?? null;
 }
 
-/** True when the Global ID is an Inventory item (sample, subsample, container, instrument). */
+/**
+ * True when the Global ID is an Inventory item (sample, subsample, container, instrument,
+ * sample/instrument template).
+ */
 export function isInventoryGlobalId(globalId: string): boolean {
   const prefix = prefixOf(globalId);
   return prefix != null && prefix in INVENTORY_PREFIX_ICON_DATA;

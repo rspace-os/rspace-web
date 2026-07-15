@@ -238,6 +238,30 @@ describe("LinkField", () => {
     expect(openLink).toHaveAttribute("target", "_blank");
   });
 
+  it("links Open to the versioned viewer for a pinned instrument target", () => {
+    renderField({
+      link: { ...baseLink, targetGlobalId: "IN42", versionPin: 3 },
+    });
+
+    // exercises INVENTORY_PREFIX_TO_ROUTE.IN: a pinned instrument link opens the
+    // read-only versioned instrument viewer, not the live record.
+    const openLink = screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" });
+    expect(openLink).toHaveAttribute("href", "/inventory/instrument/42?version=3");
+    expect(openLink).toHaveAttribute("target", "_blank");
+  });
+
+  it("links Open to the versioned viewer for a pinned instrument-template target", () => {
+    renderField({
+      link: { ...baseLink, targetGlobalId: "NT42", versionPin: 3 },
+    });
+
+    // exercises INVENTORY_PREFIX_TO_ROUTE.NT: a pinned instrument-template link
+    // opens the read-only versioned template viewer, not the live template.
+    const openLink = screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" });
+    expect(openLink).toHaveAttribute("href", "/inventory/instrumenttemplate/42?version=3");
+    expect(openLink).toHaveAttribute("target", "_blank");
+  });
+
   it("keeps Open enabled when no versionPin is set", () => {
     renderField({ link: { ...baseLink, versionPin: null } });
     expect(screen.getByRole("link", { name: "inventory:fields.link.linkField.openLabel" })).toHaveAttribute(

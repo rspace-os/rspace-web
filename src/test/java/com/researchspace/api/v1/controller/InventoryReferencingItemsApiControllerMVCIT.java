@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.api.v1.model.ApiInstrument;
 import com.researchspace.api.v1.model.ApiInventoryReferencingItems;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.model.User;
@@ -65,6 +66,46 @@ public class InventoryReferencingItemsApiControllerMVCIT extends API_MVC_Invento
                     API_VERSION.ONE,
                     apiKey,
                     "/samples/{id}/referencingItems",
+                    user,
+                    target.getId()))
+            .andExpect(status().isOk())
+            .andReturn();
+
+    ApiInventoryReferencingItems body =
+        getFromJsonResponseBody(result, ApiInventoryReferencingItems.class);
+    assertEquals(1, body.getReferencingItems().size());
+    assertEquals("IsCalibratedBy", body.getReferencingItems().get(0).getRelationType());
+    assertEquals(source.getGlobalId(), body.getReferencingItems().get(0).getSourceGlobalId());
+  }
+
+  @Test
+  public void instrumentReferencingItemsSurfacesSourcesLinkingToInstrument() throws Exception {
+    User user = createInitAndLoginAnyUser();
+    String apiKey = createNewApiKeyForUser(user);
+
+    MvcResult created =
+        mockMvc
+            .perform(
+                createBuilderForPostWithJSONBody(
+                    apiKey, "/instruments", user, "{ \"name\": \"link target instrument\" }"))
+            .andExpect(status().isCreated())
+            .andReturn();
+    ApiInstrument target = getFromJsonResponseBody(created, ApiInstrument.class);
+
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(user);
+    String updateJson = buildLinkExtraFieldUpdate(target.getGlobalId(), "IsCalibratedBy");
+    mockMvc
+        .perform(
+            createBuilderForPutWithJSONBody(apiKey, "/samples/" + source.getId(), user, updateJson))
+        .andExpect(status().isOk());
+
+    MvcResult result =
+        mockMvc
+            .perform(
+                createBuilderForGet(
+                    API_VERSION.ONE,
+                    apiKey,
+                    "/instruments/{id}/referencingItems",
                     user,
                     target.getId()))
             .andExpect(status().isOk())
