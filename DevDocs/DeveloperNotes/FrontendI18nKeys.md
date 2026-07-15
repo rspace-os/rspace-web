@@ -157,19 +157,134 @@ message, click through the feature in a browser.**
 
 ## 6. Workflow when you add or change keys
 
-Run from `src/main/webapp/ui` (the root `i18n:*` scripts `cd` here for you):
+Both workflows below produce the same final result: semantic keys in code and
+English in the `en-US` catalog. Choose based on where the work starts:
+
+| Situation | Choose | Example |
+| --------- | ------ | ------- |
+| Reusing an existing message | Key-first | A new button can use `t("actions.save")`; no English needs to be authored. |
+| Changing existing wording | Key-first | Keep `dialog.delete.title` in code and edit its catalog value. |
+| Adding copy whose wording is agreed | Key-first | Add `samples.emptyState.title`, extract it empty, then fill the catalog. |
+| Drafting copy while building a component | English-first | Keep `"No samples match these filters"` beside its temporary key while iterating. |
+| Adding several one-off messages | English-first | Draft a dialog title, explanation, and confirmation label, then extract them as a batch. |
+| Writing a new ICU message | English-first | Draft the full plural or interpolation expression beside its placeholder values. |
+
+If either workflow is equally convenient, use key-first. It needs no temporary
+defaults and cannot overwrite existing English catalog values.
+
+### Key-first: add the key, then the English
+
+Start with a semantic key in the component:
+
+```tsx
+const { t } = useTranslation("inventory");
+
+return <Button>{t("samples.createDialog.submit")}</Button>;
+```
+
+Run `i18n:extract`. The extractor creates the matching empty entry in
+`src/modules/common/i18n/locales/en-US/inventory.json`:
+
+```json
+{
+  "samples": {
+    "createDialog": {
+      "submit": ""
+    }
+  }
+}
+```
+
+Fill in the English value in the catalog, leaving the component unchanged:
+
+```json
+{
+  "samples": {
+    "createDialog": {
+      "submit": "Create sample"
+    }
+  }
+}
+```
+
+Run from the repository root (the `i18n:*` scripts change to
+`src/main/webapp/ui` for you):
 
 ```bash
-pnpm run i18n:check   # extract: writes new keys (empty) into the catalogs
+pnpm run i18n:extract # writes new keys (empty) into the catalogs
 # fill in the English text in locales/en-US/<namespace>.json
 pnpm run i18n:types   # regenerate i18next.d.ts / resources.d.ts
 pnpm run i18n:lint    # flag missing / malformed keys
+pnpm run i18n:check   # confirm extraction would make no further changes
 pnpm run tsc          # confirm key references type-check
 ```
 
-`i18n:check` does not overwrite existing English values or delete unused keys,
-so it is safe to run often. Extraction and lint ignore keys in `__tests__`,
-`*.test.*`, `*.spec.*`, and `*.story.*`.
+`i18n:extract` does not overwrite existing English values or delete unused
+keys, so it is safe to run often. `i18n:check` is the CI-style verification
+command. Extraction and lint ignore keys in `__tests__`, `*.test.*`,
+`*.spec.*`, and `*.story.*`.
+
+### English-first: write the copy, then extract it
+
+If it is easier to draft the UI text in the component, add it temporarily as
+an explicit `defaultValue`. Still choose the final semantic key at this point;
+the extractor cannot turn an English sentence into a good key automatically.
+
+```tsx
+const { t } = useTranslation("inventory");
+
+return t("samples.createDialog.title", {
+  defaultValue: "Create a sample",
+});
+```
+
+For an interpolated message, put the ICU text in `defaultValue` and pass the
+placeholder value alongside it:
+
+```tsx
+t("samples.resultsCount", {
+  defaultValue: "{count, plural, one {# result} other {# results}}",
+  count,
+});
+```
+
+From the repository root, extract the explicit defaults into the `en-US`
+catalogs:
+
+```bash
+pnpm run i18n:extract --sync-primary
+```
+
+`--sync-primary` can update existing English values as well as add new ones.
+Review the catalog diff and confirm that only the intended messages changed.
+Do not add `--sync-all`, because that also clears matching secondary-locale
+values.
+
+Once the English is in the catalog, remove `defaultValue` from the source so
+the finished code contains only keys:
+
+```tsx
+return t("samples.createDialog.title");
+```
+
+Then regenerate and verify the generated types and catalogs:
+
+```bash
+pnpm run i18n:types
+pnpm run i18n:lint
+pnpm run tsc
+```
+
+For a batch of strings, the same extraction can run in watch mode and update
+types after each catalog change:
+
+```bash
+pnpm run i18n:extract --sync-primary --watch --with-types
+```
+
+Stop the watcher, remove the temporary defaults, and run `i18n:lint` and `tsc`
+before finishing. Raw JSX text is not an input format for `i18n:extract`; wrap
+each English string in a literal `t()` call as shown above.
 
 ## 7. Translator workflow
 
@@ -281,9 +396,9 @@ you want to disable the rule for real words, add a translation key instead.
   message.
 - **Forgetting `i18n:types` after editing JSON.** `tsc` can then pass against
   stale key names or fail on a key that exists.
-- **Hand-typing a new key into JSON first.** Write the `t()` call, then run
-  `i18n:check` or `i18n:extract`. This avoids typos, wrong nesting, and keys
-  that do not match the code.
+- **Hand-typing a new key into JSON first.** Write the `t()` call, then use the
+  key-first workflow or the English-first `defaultValue` workflow in section
+  6. This avoids typos, wrong nesting, and keys that do not match the code.
 
 ## Checklist for a new string
 
@@ -292,4 +407,5 @@ you want to disable the rule for real words, add a translation key instead.
 3. Name it `feature.subFeature.roleOfText` in `camelCase`.
 4. Reference via `t()` (component) or `i18n.t("ns:key")` (outside React).
 5. Interpolate variables; do not concatenate.
-6. Run `i18n:check` → fill English → `i18n:types` → `i18n:lint` → `tsc`.
+6. Run the key-first workflow, or extract a temporary English `defaultValue`
+   with `i18n:extract --sync-primary`; then run types, lint, and `tsc`.
