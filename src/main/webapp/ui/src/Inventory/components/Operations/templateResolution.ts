@@ -15,8 +15,9 @@ import { omit } from "es-toolkit";
 
 // "remembered" is a specific template restored from the user's saved default: it resolves to a
 // concrete templateId like "pick", but is presented as a banner with no radio selected so the user
-// can override it (adr/0003).
-export type TemplateMode = "none" | "pick" | "fromSample" | "remembered";
+// can override it. "unselected" is the initial state when nothing is remembered: no radio is selected
+// and the user must make an explicit choice before Next is enabled (adr/0003).
+export type TemplateMode = "none" | "pick" | "fromSample" | "remembered" | "unselected";
 
 export type TemplateSelectionLike = {
   mode: TemplateMode;
@@ -80,6 +81,34 @@ export function templateDefaultsAfterPerform(
   };
 }
 
+/**
+ * The template-step selection to show for a stored default (or its absence). Nothing remembered
+ * (first run, or the previous run left "remember" unticked) yields "unselected": no radio selected,
+ * so the user must make an explicit choice before Next is enabled. A remembered specific template is
+ * shown as a banner ("remembered", no radio); a remembered "none"/"fromSample" is applied as that
+ * radio directly (adr/0003).
+ */
+export function templateSelectionFor(remembered: TemplateDefault | undefined): TemplateSelectionLike {
+  if (!remembered) return { mode: "unselected", templateId: null, remember: false };
+  const isSpecific = remembered.mode === "pick" && remembered.templateId !== null;
+  return {
+    mode: isSpecific ? "remembered" : remembered.mode,
+    templateId: remembered.templateId,
+    templateName: remembered.templateName,
+    remember: true,
+  };
+}
+
+/**
+ * Whether the template step is complete enough to advance: the user has made a choice (not the
+ * initial "unselected" state), and a picked template has finished validating (its id is set).
+ */
+export function templateStepValid(selection: { mode: TemplateMode; templateId: number | null }): boolean {
+  if (selection.mode === "unselected") return false;
+  if (selection.mode === "pick") return selection.templateId !== null;
+  return true;
+}
+
 export async function resolveTemplateId(params: {
   mode: TemplateMode;
   pickedTemplateId: number | null;
@@ -87,7 +116,9 @@ export async function resolveTemplateId(params: {
   createTemplate: () => Promise<number>;
 }): Promise<number | null> {
   const { mode, pickedTemplateId, originSampleTemplateId, createTemplate } = params;
-  if (mode === "none") return null;
+  // "unselected" is unreachable here (Next is disabled until the user chooses), but treat it as "no
+  // template" defensively rather than falling through to the create-a-template branch.
+  if (mode === "none" || mode === "unselected") return null;
   // "remembered" is a concrete template restored from the saved default, so it resolves like "pick".
   if (mode === "pick" || mode === "remembered") return pickedTemplateId;
   // fromSample: reuse the origin sample's own template if it has one; create only when it has none.

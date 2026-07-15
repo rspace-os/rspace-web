@@ -2,7 +2,11 @@ package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,5 +75,47 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(used.getValue().getNumericValue()));
     assertEquals(Integer.valueOf(3), used.getValue().getUnitId());
+  }
+
+  @Test
+  void abortsBeforeAnyMutationWhenAnOriginIsNotEditable() {
+    // Validate-before-mutate (adr/0001): if the permission check on any origin fails, nothing must
+    // be written - neither the new sample created nor any origin reduced.
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+    doThrow(new RuntimeException("no permission"))
+        .when(subSampleApiMgr)
+        .assertUserCanEditSubSample(100L, user);
+
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
+
+    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void reducesEveryOriginByItsOwnAmountTaken() {
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(
+        List.of(
+            origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3)),
+            origin(200L, new ApiQuantityInfo(new BigDecimal("1.5"), 3))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    manager.performOperation(request, user);
+
+    // both origins are permission-checked and each is reduced by its own amount
+    verify(subSampleApiMgr).assertUserCanEditSubSample(100L, user);
+    verify(subSampleApiMgr).assertUserCanEditSubSample(200L, user);
+    ArgumentCaptor<QuantityInfo> first = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), first.capture(), eq(user));
+    assertEquals(0, new BigDecimal("0.6").compareTo(first.getValue().getNumericValue()));
+    ArgumentCaptor<QuantityInfo> second = ArgumentCaptor.forClass(QuantityInfo.class);
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(200L), second.capture(), eq(user));
+    assertEquals(0, new BigDecimal("1.5").compareTo(second.getValue().getNumericValue()));
   }
 }

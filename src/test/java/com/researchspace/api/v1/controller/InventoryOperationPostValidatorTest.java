@@ -82,4 +82,18 @@ class InventoryOperationPostValidatorTest {
     request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(BigDecimal.ZERO, 3));
     assertTrue(validate(request).hasErrors());
   }
+
+  @Test
+  void rejectsMissingAmountTaken() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(null);
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsAmountTakenWithoutNumericValue() {
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(null, 3));
+    assertTrue(validate(request).hasErrors());
+  }
 }

@@ -4,6 +4,8 @@ import {
   selectionToRemember,
   templateDefaultsAfterPerform,
   templateSelectionBlock,
+  templateSelectionFor,
+  templateStepValid,
 } from "../templateResolution";
 
 describe("resolveTemplateId", () => {
@@ -165,5 +167,47 @@ describe("templateSelectionBlock", () => {
     ]);
     expect(result.blocked).toBe(true);
     expect(result.missingFields).toEqual(["Concentration", "Passage"]);
+  });
+});
+
+describe("templateSelectionFor", () => {
+  it("is 'unselected' when nothing is remembered, so the user must choose", () => {
+    expect(templateSelectionFor(undefined)).toEqual({ mode: "unselected", templateId: null, remember: false });
+  });
+
+  it("restores a remembered specific template as a 'remembered' banner", () => {
+    expect(templateSelectionFor({ mode: "pick", templateId: 5, templateName: "T5" })).toEqual({
+      mode: "remembered",
+      templateId: 5,
+      templateName: "T5",
+      remember: true,
+    });
+  });
+
+  it("restores a remembered 'none' / 'fromSample' choice as that radio directly", () => {
+    expect(templateSelectionFor({ mode: "none", templateId: null })).toEqual({
+      mode: "none",
+      templateId: null,
+      templateName: undefined,
+      remember: true,
+    });
+    expect(templateSelectionFor({ mode: "fromSample", templateId: null }).mode).toBe("fromSample");
+  });
+});
+
+describe("templateStepValid", () => {
+  it("is invalid while nothing is chosen ('unselected'), so Next stays disabled", () => {
+    expect(templateStepValid({ mode: "unselected", templateId: null })).toBe(false);
+  });
+
+  it("requires a picked template to have finished validating (id set)", () => {
+    expect(templateStepValid({ mode: "pick", templateId: null })).toBe(false);
+    expect(templateStepValid({ mode: "pick", templateId: 5 })).toBe(true);
+  });
+
+  it("is valid for none / fromSample / remembered", () => {
+    expect(templateStepValid({ mode: "none", templateId: null })).toBe(true);
+    expect(templateStepValid({ mode: "fromSample", templateId: null })).toBe(true);
+    expect(templateStepValid({ mode: "remembered", templateId: 5 })).toBe(true);
   });
 });

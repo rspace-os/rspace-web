@@ -1,3 +1,4 @@
+import Alert from "@mui/material/Alert";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
@@ -33,6 +34,7 @@ function OperationConfirmation({
   const each = values[effect.eachAmountFrom] as OperationQuantity;
   const after = effect.amountTakenFrom ? (values[effect.amountTakenFrom] as OperationQuantity) : null;
   const name = String(values[effect.nameFrom]);
+  const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
   const linkName = resolveLabel(effect.links[0].fieldNameKey, values);
   const templateSummary =
     templateSelection.mode === "none"
@@ -42,29 +44,34 @@ function OperationConfirmation({
         : t("operations.template.summaryPick", { name: templateSelection.templateName ?? "" });
 
   return (
-    <Stack spacing={0.5}>
-      <Typography variant="body2">{t("operations.confirm.newSample", { name })}</Typography>
-      <Typography variant="body2">{templateSummary}</Typography>
-      <Typography variant="body2">
-        {t("operations.confirm.created", {
-          count,
-          amount: each.numericValue,
-          unit: unitLabel(each.unitId),
-        })}
-      </Typography>
-      {after ? (
+    <Alert severity="info">
+      <Stack spacing={0.5}>
+        <Typography variant="body2">{t("operations.confirm.newSample", { name })}</Typography>
+        {processName ? (
+          <Typography variant="body2">{t("operations.confirm.process", { name: processName })}</Typography>
+        ) : null}
+        <Typography variant="body2">{templateSummary}</Typography>
         <Typography variant="body2">
-          {t("operations.confirm.amountTaken", {
-            amount: after.numericValue,
-            unit: unitLabel(after.unitId),
+          {t("operations.confirm.created", {
+            count,
+            amount: each.numericValue,
+            unit: unitLabel(each.unitId),
           })}
         </Typography>
-      ) : null}
-      <Typography variant="body2">{t("operations.confirm.link", { name: linkName })}</Typography>
-      {documentation ? (
-        <Typography variant="body2">{t("operations.confirm.documentation", { name: documentation.name })}</Typography>
-      ) : null}
-    </Stack>
+        {after ? (
+          <Typography variant="body2">
+            {t("operations.confirm.amountTaken", {
+              amount: after.numericValue,
+              unit: unitLabel(after.unitId),
+            })}
+          </Typography>
+        ) : null}
+        <Typography variant="body2">{t("operations.confirm.link", { name: linkName })}</Typography>
+        {documentation ? (
+          <Typography variant="body2">{t("operations.confirm.documentation", { name: documentation.name })}</Typography>
+        ) : null}
+      </Stack>
+    </Alert>
   );
 }
 

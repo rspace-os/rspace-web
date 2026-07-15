@@ -18,6 +18,7 @@
       "countFrom": "count",
       "eachAmountFrom": "eachAmount",
       "amountTakenFrom": "amountTaken",
+      "processNameFrom": "processName",
       "links": [
         { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.derive.linkFieldName" }
       ]

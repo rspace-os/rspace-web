@@ -91,4 +91,76 @@ describe("OperationDetailsStep", () => {
       }),
     );
   });
+
+  const processOperation = {
+    ...operation,
+    inputs: [
+      { key: "processName", type: "text", labelKey: "operations.fields.processName", required: true },
+      ...operation.inputs,
+    ],
+    effect: { ...operation.effect, processNameFrom: "processName" },
+  } as unknown as InventoryOperation;
+
+  it("reports a typed process name through onChange (controlled free-solo field)", async () => {
+    const onChange = vi.fn();
+    render(<OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={onChange} />);
+    await userEvent.setup().type(screen.getByRole("combobox", { name: /fields\.processName/i }), "x");
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ processName: "x" }));
+  });
+
+  it("shows the current process name and a remember checkbox that toggles", async () => {
+    const onRemember = vi.fn();
+    render(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna" }}
+        onChange={() => undefined}
+        rememberProcessName={false}
+        onRememberProcessNameChange={onRemember}
+      />,
+    );
+    // the process-name field reflects the current value (so it survives navigation within a run)
+    expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toHaveValue("dna");
+    await userEvent.setup().click(screen.getByRole("checkbox"));
+    expect(onRemember).toHaveBeenCalledWith(true);
+  });
+
+  it("omits the process-name remember checkbox when no handler is provided", () => {
+    render(
+      <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
+    );
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("shows an amounts remember checkbox that names the process and toggles", async () => {
+    const onRememberAmounts = vi.fn();
+    render(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna" }}
+        onChange={() => undefined}
+        rememberAmounts
+        onRememberAmountsChange={onRememberAmounts}
+      />,
+    );
+    // the label references the chosen process name (persisted per process name)
+    expect(screen.getByText(/rememberAmountsForProcess/)).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("checkbox"));
+    expect(onRememberAmounts).toHaveBeenCalledWith(false);
+  });
+
+  it("uses a generic amounts remember label when the operation has no process name", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        onRememberAmountsChange={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/fields\.rememberAmounts$/)).toBeInTheDocument();
+  });
 });

@@ -3794,7 +3794,8 @@ export default interface Resources {
         "created": "with {count} new subsample(s) of {amount} {unit} each.",
         "documentation": "Documented by: {name}.",
         "link": "Links new records back to the origin ({name}).",
-        "newSample": "Creates a new sample “{name}”."
+        "newSample": "Creates a new sample “{name}”.",
+        "process": "Process: {name}."
       },
       "cryopreserve": {
         "cryomediumField": "Cryomedium",
@@ -3813,6 +3814,7 @@ export default interface Resources {
         "fieldName": "Documented by",
         "none": "No document linked.",
         "remember": "Remember this document as my default for this operation",
+        "rememberForProcess": "Remember this document as the default for process “{name}”",
         "selected": "Linked document: {name}"
       },
       "fields": {
@@ -3821,6 +3823,9 @@ export default interface Resources {
         "cryomedium": "Cryomedium",
         "eachAmount": "Amount per new subsample",
         "processName": "Process name",
+        "rememberAmounts": "Remember these amounts as the default",
+        "rememberAmountsForProcess": "Remember these amounts as the default for process “{name}”",
+        "rememberProcessName": "Remember this process name for future runs",
         "sampleName": "New sample name",
         "storageTemp": "Storage temperature",
         "temperatureUnit": "°C"
@@ -3830,10 +3835,14 @@ export default interface Resources {
         "derivedName": "{name} (template)",
         "description": "Optionally choose a template for the new sample.",
         "fromSample": "Use the parent sample template (create one if it has none)",
+        "loadingTemplates": "Loading templates…",
         "mandatoryFieldsError": "This template cannot be used: the required field(s) {fields} have no default value. Choose another template.",
+        "noTemplates": "No templates found",
         "none": "No template",
         "pick": "Choose an existing template",
         "remember": "Remember this choice for future runs",
+        "rememberForProcess": "Remember this template as the default for process “{name}”",
+        "searchLabel": "Search templates",
         "selectedLabel": "Selected template",
         "summaryFromSample": "Template: from {name}",
         "summaryNone": "Template: none (ad-hoc sample)",

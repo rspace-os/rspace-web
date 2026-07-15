@@ -31,6 +31,9 @@ const EffectSchema = v.object({
   countFrom: v.string(),
   eachAmountFrom: v.string(),
   amountTakenFrom: v.optional(v.string()),
+  // input key holding the process name; when set, the operation's "remember" defaults are scoped
+  // per process name (see processNames.ts) and the field becomes an autocomplete of saved names.
+  processNameFrom: v.optional(v.string()),
   storageTempFrom: v.optional(v.string()),
   links: v.array(LinkSpecSchema),
   textFields: v.optional(v.array(TextFieldSpecSchema)),

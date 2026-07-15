@@ -19,12 +19,12 @@ type FakeTemplate = {
 
 let currentTemplate: FakeTemplate;
 // Records the setTemplate prop passed on each render, so a test can assert its identity is stable
-// (an unstable one drives Picker's selection effect into an infinite loop).
+// across re-renders.
 const capturedSetTemplate: Array<(t: FakeTemplate) => void> = [];
 
-// Stub the picker so this test does not mount its real Search/fetcher; clicking it plays back the
-// current fake template through the setTemplate prop.
-vi.mock("@/Inventory/components/Picker/TemplatePicker", () => ({
+// Stub the wizard's template picker so this test does not mount its real Search/fetcher; clicking
+// it plays back the current fake template through the setTemplate prop.
+vi.mock("../WizardTemplatePicker", () => ({
   default: ({ setTemplate }: { setTemplate: (t: FakeTemplate) => void }) => {
     capturedSetTemplate.push(setTemplate);
     return <button type="button" data-testid="template-picker" onClick={() => setTemplate(currentTemplate)} />;
@@ -72,6 +72,11 @@ describe("TemplateStep", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ remember: true }));
   });
 
+  it("names the process in the remember label when a process name is given", () => {
+    render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" processName="dna extraction" />);
+    expect(screen.getByText(/template\.rememberForProcess/)).toBeInTheDocument();
+  });
+
   it("shows a remembered template as a banner with its name and no radio selected", () => {
     render(
       <TemplateStep
@@ -85,6 +90,18 @@ describe("TemplateStep", () => {
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
     // and the picker is not open
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
+  });
+
+  it("selects no radio and shows no banner when nothing is chosen yet ('unselected')", () => {
+    render(
+      <TemplateStep
+        value={{ mode: "unselected", templateId: null, remember: false }}
+        onChange={() => undefined}
+        originSampleName="S1"
+      />,
+    );
+    for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("shows the template picker when 'pick' is the current mode", () => {

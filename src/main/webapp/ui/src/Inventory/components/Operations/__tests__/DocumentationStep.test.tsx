@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render } from "@/__tests__/customQueries";
 import DocumentationStep from "../DocumentationStep";
 
@@ -13,53 +13,50 @@ vi.mock("@/Inventory/components/Fields/Link/ElnRecordPicker", () => ({
     ) : null,
 }));
 
-let mockDefaults: Record<string, { globalId: string; name: string } | null>;
-const mockSetDefaults = vi.fn();
-vi.mock("@/hooks/api/useUiPreference", () => ({
-  PREFERENCES: { INVENTORY_OPERATION_DOC_DEFAULTS: Symbol.for("INVENTORY_OPERATION_DOC_DEFAULTS") },
-  default: () => [mockDefaults, mockSetDefaults],
-}));
-
-const remembered = { globalId: "SD1", name: "My SOP" };
+const doc = { globalId: "SD1", name: "My SOP" };
 
 describe("DocumentationStep", () => {
-  beforeEach(() => {
-    mockDefaults = {};
-    mockSetDefaults.mockClear();
-  });
-
-  it("pre-checks remember and auto-applies the remembered document, with no 'use remembered' button", () => {
-    mockDefaults = { derive: remembered };
-    const onChange = vi.fn();
-    render(<DocumentationStep operationKey="derive" value={null} onChange={onChange} />);
+  it("shows the selected-document state and reflects the remember flag", () => {
+    render(<DocumentationStep value={doc} onChange={vi.fn()} remember onRememberChange={vi.fn()} />);
+    // the "selected" line (not the "none" line) is shown, and a Clear button appears
+    expect(screen.getByText(/documentation\.selected/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /clear|actions\.clear/i })).toBeInTheDocument();
     expect(screen.getByRole("checkbox")).toBeChecked();
-    expect(onChange).toHaveBeenCalledWith(remembered);
-    expect(screen.queryByRole("button", { name: /use remembered|useRemembered/i })).not.toBeInTheDocument();
   });
 
-  it("persists a newly chosen document while remember is on", async () => {
-    mockDefaults = { derive: remembered };
-    render(<DocumentationStep operationKey="derive" value={remembered} onChange={vi.fn()} />);
+  it("reports a chosen document through onChange", async () => {
+    const onChange = vi.fn();
+    render(<DocumentationStep value={null} onChange={onChange} remember={false} onRememberChange={vi.fn()} />);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: /choose|documentation\.choose/i }));
     await user.click(screen.getByTestId("eln-pick"));
-    expect(mockSetDefaults).toHaveBeenCalledWith(
-      expect.objectContaining({ derive: { globalId: "SD2", name: "Other SOP" } }),
-    );
+    expect(onChange).toHaveBeenCalledWith({ globalId: "SD2", name: "Other SOP" });
   });
 
-  it("ignores a stored default that is not a well-formed document", () => {
-    mockDefaults = { derive: "SD1" as unknown as { globalId: string; name: string } };
+  it("clears the selection through onChange(null)", async () => {
     const onChange = vi.fn();
-    render(<DocumentationStep operationKey="derive" value={null} onChange={onChange} />);
-    expect(screen.getByRole("checkbox")).not.toBeChecked();
-    expect(onChange).not.toHaveBeenCalled();
+    render(<DocumentationStep value={doc} onChange={onChange} remember={false} onRememberChange={vi.fn()} />);
+    await userEvent.setup().click(screen.getByRole("button", { name: /clear|actions\.clear/i }));
+    expect(onChange).toHaveBeenCalledWith(null);
   });
 
-  it("forgets the remembered default when remember is unchecked", async () => {
-    mockDefaults = { derive: remembered };
-    render(<DocumentationStep operationKey="derive" value={remembered} onChange={vi.fn()} />);
+  it("toggles the remember flag through onRememberChange", async () => {
+    const onRememberChange = vi.fn();
+    render(<DocumentationStep value={doc} onChange={vi.fn()} remember={false} onRememberChange={onRememberChange} />);
     await userEvent.setup().click(screen.getByRole("checkbox"));
-    expect(mockSetDefaults).toHaveBeenCalledWith(expect.objectContaining({ derive: null }));
+    expect(onRememberChange).toHaveBeenCalledWith(true);
+  });
+
+  it("names the process in the remember label when a process name is given", () => {
+    render(
+      <DocumentationStep
+        value={null}
+        onChange={vi.fn()}
+        remember={false}
+        onRememberChange={vi.fn()}
+        processName="dna extraction"
+      />,
+    );
+    expect(screen.getByText(/documentation\.rememberForProcess/)).toBeInTheDocument();
   });
 });

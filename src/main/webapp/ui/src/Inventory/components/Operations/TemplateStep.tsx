@@ -8,15 +8,16 @@ import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import TemplatePicker from "@/Inventory/components/Picker/TemplatePicker";
 import type TemplateModel from "@/stores/models/TemplateModel";
 import { templateSelectionBlock } from "./templateResolution";
+import WizardTemplatePicker from "./WizardTemplatePicker";
 
 /** The user's template choice for the new sample (adr/0003). */
 export type TemplateSelection = {
   // "remembered" = a specific template restored from the saved default: shown as a banner with no
-  // radio selected until the user picks a radio to override it.
-  mode: "none" | "pick" | "fromSample" | "remembered";
+  // radio selected until the user picks a radio to override it. "unselected" = the initial state
+  // when nothing is remembered: no radio selected, and Next stays disabled until the user chooses.
+  mode: "none" | "pick" | "fromSample" | "remembered" | "unselected";
   templateId: number | null;
   templateName?: string;
   remember: boolean;
@@ -33,10 +34,14 @@ function TemplateStep({
   value,
   onChange,
   originSampleName,
+  processName,
 }: {
   value: TemplateSelection;
   onChange: (value: TemplateSelection) => void;
   originSampleName: string;
+  /** The chosen process name, if the operation has one: the "remember" label names it so the user
+   *  understands the choice is remembered per process name rather than per operation. */
+  processName?: string;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
@@ -79,9 +84,8 @@ function TemplateStep({
     })();
   };
 
-  // Hand the picker a referentially stable callback (latest impl via ref). The picker fires this
-  // from an effect keyed partly on the callback's identity, so a fresh function each render would
-  // retrigger it in an infinite loop once a template is the active result.
+  // Hand the picker a referentially stable callback (latest impl via ref), so re-renders of this
+  // step never churn the picker via a changing prop.
   const onPickTemplateRef = React.useRef(onPickTemplate);
   onPickTemplateRef.current = onPickTemplate;
   const handlePickTemplate = React.useCallback((template: TemplateModel) => onPickTemplateRef.current(template), []);
@@ -94,10 +98,11 @@ function TemplateStep({
         </Alert>
       ) : null}
       <Typography variant="body2">{t("operations.template.description")}</Typography>
-      {/* An empty value means no radio is selected (the remembered template is in effect); picking a
-          radio overrides it. */}
+      {/* An empty value means no radio is selected: either a remembered template is in effect, or the
+          user has not chosen yet ("unselected", which keeps Next disabled). Picking a radio overrides
+          it. */}
       <RadioGroup
-        value={value.mode === "remembered" ? "" : value.mode}
+        value={value.mode === "remembered" || value.mode === "unselected" ? "" : value.mode}
         onChange={(e) => setMode(e.target.value as TemplateSelection["mode"])}
       >
         <FormControlLabel value="none" control={<Radio />} label={t("operations.template.none")} />
@@ -110,7 +115,7 @@ function TemplateStep({
       </RadioGroup>
       {value.mode === "pick" ? (
         <>
-          <TemplatePicker setTemplate={handlePickTemplate} />
+          <WizardTemplatePicker setTemplate={handlePickTemplate} />
           {checking ? <Typography variant="body2">{t("operations.template.checking")}</Typography> : null}
           {blockError ? (
             <Typography variant="body2" color="error">
@@ -123,7 +128,11 @@ function TemplateStep({
         control={
           <Checkbox checked={value.remember} onChange={(e) => onChange({ ...value, remember: e.target.checked })} />
         }
-        label={t("operations.template.remember")}
+        label={
+          processName
+            ? t("operations.template.rememberForProcess", { name: processName })
+            : t("operations.template.remember")
+        }
       />
     </Stack>
   );
