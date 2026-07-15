@@ -8,6 +8,14 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
+    // These expose widespread pre-existing array-index and optional-property typing errors;
+    // migrate those incrementally before enabling the checks (RSDEV-1242).
+    "noUncheckedIndexedAccess": false,
+    "exactOptionalPropertyTypes": false,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
     "esModuleInterop": true,
     "skipLibCheck": true,
     "paths": {
@@ -15,7 +23,7 @@
     },
     "resolveJsonModule": true,
     "lib": ["ES2024", "DOM", "DOM.Iterable"],
-    "types": ["@testing-library/jest-dom", "@sa11y/vitest", "jquery", "vite/client"]
+    "types": ["@vitest/browser/matchers", "@sa11y/vitest", "jquery", "vite/client"]
   },
   "exclude": ["dist", "playwright-report"]
 }

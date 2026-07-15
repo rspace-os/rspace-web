@@ -3,9 +3,8 @@
  */
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, test, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+import { describe, expect, test, vi } from "vitest";
 import NavigateContext from "../../stores/contexts/Navigate";
 import PermalinkRouter from "../PermalinkRouter";
 
