@@ -37,15 +37,17 @@
     			hibernate.javax.cache.provider=org.ehcache.jsr107.EhcacheCachingProvider
     			hibernate.javax.cache.uri=ehcache.xml
 			hibernate.search.indexing.plan.synchronization.strategy=sync
-    			<!-- Id generation for bare @GeneratedValue(strategy=TABLE) entities.
-    			     Hibernate 6's enhanced TableGenerator allocates ids for all such entities from a
-    			     single shared "default" row in hibernate_sequences
-    			     (prefer_entity_table_as_segment_value is a generator-local parameter, not a
-    			     hibernate.* setting, so it cannot be enabled here). The legacy per-entity
-    			     rows remain in use only by the two explicit @TableGenerator hierarchies
-    			     (AbstractUserOrGroupImpl, Communication). changeLog-rsdev-444.xml seeds the
-    			     "default" row above the global MAX(id) and re-seeds the per-entity rows, so no
-    			     allocation path can collide with pre-upgrade ids. See
+    			<!-- Id generation for TABLE-strategy entities: every such entity carries an explicit
+    			     @TableGenerator in rspace-core-model, keyed to its own row in hibernate_sequences.
+    			     Generators declared without pkColumnValue segment by the entity's physical table
+    			     name (Hibernate defaults prefer_entity_table_as_segment_value=true for
+    			     annotation-defined table generators), preserving the one-counter-per-table layout
+    			     Hibernate 5 used. The two TABLE_PER_CLASS hierarchies (AbstractUserOrGroupImpl,
+    			     Communication) pin pkColumnValue explicitly because sibling tables must share one
+    			     counter. changeLog-rsdev-444.xml re-seeds every row above its table's MAX(id) on
+    			     upgrade, so allocation cannot collide with pre-upgrade ids. Do NOT add a bare
+    			     @GeneratedValue(strategy=TABLE) without a generator: it would allocate from a
+    			     shared "default" segment (TableIdGeneratorConfigTest guards this). See
     			     DevDocs/DeveloperNotes/UpgradingToSpring6.md ("What the upgrade does to the
     			     database"). -->
     		</value>

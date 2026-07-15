@@ -30,36 +30,31 @@
             Under Hibernate 5 (new_generator_mappings=false) the entities annotated
             @GeneratedValue(strategy=TABLE) used the legacy MultipleHiLoPerTableGenerator, whose stored value
             in hibernate_sequences is a hi/lo "high" marker, not the next id. Hibernate 6's enhanced
-            TableGenerator reads next_val much more literally, so the small legacy values would hand out ids
+            TableGenerator reads next_val literally, so the small legacy values would hand out ids
             at or below ids already in use, colliding on the primary key across roughly 40 tables.
+
+            Id allocation itself is unchanged by the upgrade: every TABLE-strategy entity carries an
+            explicit @TableGenerator in rspace-core-model and keeps its own counter, keyed by its physical
+            table name, the same one-row-per-table layout Hibernate 5 used (generators declared without
+            pkColumnValue default their segment to the entity's own table).
 
             This changeset loops over every existing hibernate_sequences row and, for any row whose name is a
             real base table with an "id" column, sets next_val above that table's MAX(id). Driving off the
             existing rows makes it complete by construction: a TABLE-strategy table only has data if it has a
             row here, so no entity can be missed (including MappedSuperclass subclasses such as Sample/SubSample/
-            Container and StoichiometryInventoryLink, whose ids would be easy to omit from a hand-written list).
+            Container, whose ids would be easy to omit from a hand-written list).
 
-            The two TABLE_PER_CLASS hierarchies share one sequence across sibling tables and are keyed by the
+            The two TABLE_PER_CLASS hierarchies share one counter across sibling tables and are keyed by the
             abstract entity name (not a table), so they are handled explicitly:
               - AbstractUserOrGroupImpl  -> shared by User + rsGroup
               - Communication            -> shared by Notification, MessageOrRequest, GroupMessageOrRequest,
                                             CreateGroupMessageOrRequest, ShareRecordMessageOrRequest
-            These two carry an explicit @TableGenerator(allocationSize=1) in rspace-core-model.
+            These two carry an explicit @TableGenerator(allocationSize=1, pkColumnValue=entity name) in
+            rspace-core-model.
 
-            Finally a "default" row is seeded above the global MAX(id). This row is the one Hibernate 6
-            actually allocates from for every bare @GeneratedValue(strategy=TABLE) entity (verified on a
-            populated DB, 2026-06-06): prefer_entity_table_as_segment_value is a TableGenerator-local config
-            parameter, not a global hibernate.* setting, so bare TABLE entities consolidate onto the shared
-            "default" segment. The per-entity re-seeds above are belt-and-braces for the legacy rows (only the
-            two explicit @TableGenerator hierarchies still read theirs); collision safety rests on this row.
-
-            Margin: next_val = MAX(id) + 51 clears a full default allocation block (allocationSize 50) plus one,
+            Margin: next_val = MAX(id) + 51 clears a full allocation block (allocationSize 50) plus one,
             which is safe for the pooled, pooled-lo and no-op optimizers alike. It is idempotent: re-running
             never lowers an existing value, and empty tables (MAX 0) are left for Hibernate to create lazily.
-
-            Verified on populated databases during the Spring 6 migration: changeset applied, all segments
-            reseeded above MAX(id), live inserts allocated from the "default" segment above the global max
-            with no collision and no unexpected new rows.
         </comment>
         <sql splitStatements="true" stripComments="false">DROP PROCEDURE IF EXISTS rsdev444_reseed_hibernate_sequences;</sql>
         <sql splitStatements="false" stripComments="false"><![CDATA[
@@ -68,7 +63,6 @@ BEGIN
     DECLARE v_done   INT DEFAULT 0;
     DECLARE v_seg    VARCHAR(255);
     DECLARE v_is_tbl INT DEFAULT 0;
-    DECLARE v_global BIGINT DEFAULT 0;
     DECLARE seg_cur CURSOR FOR SELECT sequence_name FROM hibernate_sequences;
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET v_done = 1;
 
@@ -95,7 +89,6 @@ BEGIN
                 UPDATE hibernate_sequences
                 SET next_val = @m + 51
                 WHERE sequence_name = v_seg AND (next_val IS NULL OR next_val < @m + 51);
-                IF @m > v_global THEN SET v_global = @m; END IF;
             END IF;
         END IF;
     END LOOP;
@@ -112,7 +105,6 @@ BEGIN
         UPDATE hibernate_sequences
         SET next_val = @uog + 51
         WHERE sequence_name = 'AbstractUserOrGroupImpl' AND (next_val IS NULL OR next_val < @uog + 51);
-        IF @uog > v_global THEN SET v_global = @uog; END IF;
     END IF;
 
     -- 3) TABLE_PER_CLASS: Communication shares ids across its concrete subclass tables.
@@ -129,17 +121,6 @@ BEGIN
         UPDATE hibernate_sequences
         SET next_val = @comm + 51
         WHERE sequence_name = 'Communication' AND (next_val IS NULL OR next_val < @comm + 51);
-        IF @comm > v_global THEN SET v_global = @comm; END IF;
-    END IF;
-
-    -- 4) Insurance "default" segment above the global MAX(id) for the shared-segment fallback path.
-    IF v_global > 0 THEN
-        INSERT INTO hibernate_sequences (sequence_name, next_val)
-            SELECT 'default', v_global + 51 FROM DUAL
-            WHERE NOT EXISTS (SELECT 1 FROM hibernate_sequences WHERE sequence_name = 'default');
-        UPDATE hibernate_sequences
-        SET next_val = v_global + 51
-        WHERE sequence_name = 'default' AND (next_val IS NULL OR next_val < v_global + 51);
     END IF;
 END
         ]]></sql>

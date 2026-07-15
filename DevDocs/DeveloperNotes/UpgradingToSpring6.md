@@ -58,12 +58,12 @@ upgrade changes in the database, and what developers should know about the new s
 All changes run automatically via Liquibase at first boot of the new version.
 
 - **Id-sequence reseed.** Hibernate 6 interprets the `hibernate_sequences` counter values
-  differently from Hibernate 5's legacy hi/lo generator, and it consolidates most
-  table-generated entities onto one shared counter. The migration reseeds every counter above
-  the current maximum id (and seeds a shared insurance row above the global maximum) so that
-  new inserts cannot collide with existing primary keys. Visible behaviour change: ids in the
-  affected tables are interleaved across entity types and sparse after the upgrade. This is
-  safe and expected.
+  differently from Hibernate 5's legacy hi/lo generator (it reads `next_val` literally rather
+  than as a hi/lo block marker). The migration reseeds every counter above its table's current
+  maximum id so that new inserts cannot collide with existing primary keys. Id allocation is
+  otherwise unchanged: each table-generated entity keeps its own counter row, exactly as
+  before the upgrade. New ids may skip up to one allocation block (50) at the upgrade
+  boundary; this is safe and expected.
 - **Spring Batch schema replacement.** The `BATCH_*` tables move from the Spring Batch 3 to
   the Spring Batch 5 layout by drop-and-recreate, preserving job-id monotonicity. All batch
   job-execution history is discarded; these tables only back the monitoring metadata for
