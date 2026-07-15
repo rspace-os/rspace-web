@@ -705,8 +705,6 @@ public class StructuredDocumentController extends BaseController {
 
   private void disconnectField(Field field) {
     field.setStructuredDocument(null);
-    field.getFieldForm().setForm(null);
-    field.getFieldForm().setTempFieldForm(null); // RSPAC-1656
     if (field.getTempField() != null) {
       disconnectField(field.getTempField());
     }
@@ -761,9 +759,6 @@ public class StructuredDocumentController extends BaseController {
       for (Field field : fields) {
         field.setStructuredDocument(null);
         field.setTempField(null);
-        // setting field form to null doesn't work, it is ignored in setter.
-        field.getFieldForm().setForm(null);
-        field.getFieldForm().setTempFieldForm(null);
         result.add(field);
       }
     }
