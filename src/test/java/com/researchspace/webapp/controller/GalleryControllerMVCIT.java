@@ -732,7 +732,7 @@ public class GalleryControllerMVCIT extends MVCTestBase {
   }
 
   private MockHttpServletRequestBuilder getViewerImage(RecordInformation imageInfo) {
-    return get("/gallery/getViewerImage/{id}/", imageInfo.getId() + "", "12334");
+    return get("/gallery/getViewerImage/{id}", imageInfo.getId() + "", "12334");
   }
 
   private BufferedImage getImageFromBytes(byte[] fullImageBytes) throws IOException {

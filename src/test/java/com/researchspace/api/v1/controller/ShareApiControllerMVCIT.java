@@ -333,7 +333,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
 
     // update permission
     mockMvc
-        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share", user, update))
         .andExpect(status().isNoContent())
         .andReturn();
 
@@ -354,7 +354,7 @@ public class ShareApiControllerMVCIT extends API_MVC_TestBase {
     // change permission back to READ
     update.setPermission("READ");
     mockMvc
-        .perform(createBuilderForPutWithJSONBody(apiKey, "/share/", user, update))
+        .perform(createBuilderForPutWithJSONBody(apiKey, "/share", user, update))
         .andExpect(status().isNoContent())
         .andReturn();
 
