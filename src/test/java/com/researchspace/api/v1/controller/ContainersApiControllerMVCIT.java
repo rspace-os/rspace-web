@@ -285,16 +285,14 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
             .andReturn();
     assertNull(result.getResolvedException(), "unexpected: " + result.getResolvedException());
     ApiContainer retrievedContainer = getFromJsonResponseBody(result, ApiContainer.class);
-    // Under Hibernate 6, POST returns in-memory state (full ms precision, parentLocation.id=null
-    // before flush),
-    // GET returns DB-loaded state (datetime truncated to seconds, parentLocation.id populated).
-    // Compare meaningful fields instead of full object equality.
-    assertEquals(defaultContainer.getId(), retrievedContainer.getId());
-    assertEquals(defaultContainer.getName(), retrievedContainer.getName());
-    assertEquals(defaultContainer.getCType(), retrievedContainer.getCType());
-    assertEquals(defaultContainer.getGlobalId(), retrievedContainer.getGlobalId());
-    // createdMillis: POST has full ms precision, GET has seconds precision from MySQL datetime
-    // column
+    // Under Hibernate 6 the POST response reflects in-memory state from before the flush that
+    // assigns the parent location its id; the GET returns the DB-loaded state. Normalise that
+    // one field, then compare the whole object so every other field stays covered.
+    assertNull(defaultContainer.getParentLocation().getId());
+    defaultContainer.getParentLocation().setId(retrievedContainer.getParentLocation().getId());
+    assertEquals(defaultContainer, retrievedContainer);
+    // timestamps are excluded from equals(); compare at second granularity because the POST
+    // response has full ms precision while the datetime column truncates to seconds
     assertEquals(
         defaultContainer.getCreatedMillis() / 1000, retrievedContainer.getCreatedMillis() / 1000);
     verifyAuditAction(AuditAction.READ, 1);
