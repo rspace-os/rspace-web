@@ -394,8 +394,9 @@ public class StructuredDocumentControllerTest {
     assertNotNull(field.getStructuredDocument());
 
     assertEquals(field, strucDocCtrller.getAutoSavedFields(field.getId()).get(0));
-    // returned fields are disconnected
-    assertNull(field.getFieldForm().getForm());
+    // returned fields are disconnected from the document; the form back-reference
+    // is kept (Jackson ignores it during serialisation, so no need to null it)
+    assertNotNull(field.getFieldForm().getForm());
     assertNull(field.getStructuredDocument());
   }
 
