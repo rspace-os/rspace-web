@@ -34,7 +34,7 @@ info:
     #### Language support
 
     A high-level overview of API usage can be found on our [Github page](https://github.com/rspace-os/api-tutorial). We are also  developing rich language bindings and example code for `Python`, `Java` and others. Please suggest any use-cases or ideas for improving the API!
-  version: "2.23"
+  version: "2.25"
   license:
     name: AGPL-3.0 License
     url: https://www.gnu.org/licenses/agpl.html
@@ -2155,6 +2155,73 @@ paths:
         "501":
           description: Unsupported source/destination combination, or filestore does not
             support writes.
+  "/gallery/filestores/{filestoreId}/sidecar/preview":
+    post:
+      summary: Preview a metadata sidecar for a folder
+      description: >
+        Composes a DataCite (`ltds-datacite4.3`) metadata sidecar for the folder
+        at `path` (relative to the filestore root) and returns it without writing
+        anything. Auto-populated from the S3 file listing, the current user, and
+        the RSpace instance configuration. S3 only; non-S3 backends return
+        **404**.
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Filestore id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryFilestoreSidecarRequest"
+        required: true
+      responses:
+        "200":
+          description: The composed sidecar (nothing was written)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryFilestoreSidecar"
+        "404":
+          description: Filestore does not support sidecar generation.
+  "/gallery/filestores/{filestoreId}/sidecar":
+    post:
+      summary: Generate and save a metadata sidecar for a folder
+      description: >
+        Composes a DataCite (`ltds-datacite4.3`) metadata sidecar for the folder
+        at `path` and writes it into that folder as `<folder>.sidecar.yaml`
+        (overwriting any existing one), recording a `CREATE` audit event. S3
+        only; non-S3 backends return **404**.
+      tags:
+        - Gallery Filestores
+      parameters:
+        - name: filestoreId
+          description: Filestore id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryFilestoreSidecarRequest"
+        required: true
+      responses:
+        "201":
+          description: The sidecar that was written
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryFilestoreSidecar"
+        "404":
+          description: Filestore does not support sidecar generation.
   /gallery/filesystems:
     get:
       summary: List active filesystems
@@ -4799,6 +4866,28 @@ components:
         destFilestoreId: 42
         destPath: archive/2026/report.pdf
         deleteSource: false
+    GalleryFilestoreSidecarRequest:
+      description: Body for the sidecar endpoints (`POST
+        /gallery/filestores/{filestoreId}/sidecar/preview` and `.../sidecar`; S3 only).
+      required:
+        - path
+      properties:
+        path:
+          type: string
+          description: Folder the sidecar describes, relative to the filestore root ("" for
+            the root).
+      example:
+        path: XRD-Experiments
+    GalleryFilestoreSidecar:
+      description: A composed DataCite (`ltds-datacite4.3`) metadata sidecar returned by the
+        sidecar endpoints.
+      properties:
+        filename:
+          type: string
+          description: Sidecar filename, e.g. `XRD-Experiments.sidecar.yaml`.
+        content:
+          type: string
+          description: The serialized sidecar content (YAML).
     ExternalStorageOperationResult:
       description: Per-file outcomes of a filestore write or transfer operation.
       properties:

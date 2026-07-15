@@ -88,7 +88,8 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
   @RunIfSystemPropertyDefined(value = "nightly")
   public void testListFolderContentAWS() {
     initializeS3UtilitiesWithAWS();
-    listFolderContentsScenario("testS3File-AWS.txt");
+    S3FolderContentItem testFile = listFolderContentsScenario("testS3File-AWS.txt");
+    assertEquals("STANDARD", testFile.getStorageClass());
   }
 
   @Test
@@ -256,7 +257,8 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     tmpFile.delete();
   }
 
-  private void listFolderContentsScenario(String testTxtFilename) {
+  /** Returns the located top-level test file, so callers can assert backend-specific fields. */
+  private S3FolderContentItem listFolderContentsScenario(String testTxtFilename) {
 
     // check the root folder
     List<S3FolderContentItem> items = s3Utilities.listFolderContents("");
@@ -278,6 +280,10 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertEquals(
         LocalDate.of(2026, 5, 20),
         testS3File.get().getLastModified().atZone(ZoneOffset.UTC).toLocalDate());
+    assertTrue(
+        "listing should surface the object ETag",
+        StringUtils.isNotBlank(testS3File.get().getEtag()));
+    S3FolderContentItem topLevelTestFile = testS3File.get();
 
     // find the subfolder
     Optional<S3FolderContentItem> subfolder =
@@ -298,6 +304,8 @@ public class S3UtilitiesRealConnectionTest extends SpringTransactionalTest {
     assertTrue("Expected to find file 'test image.png'", testS3File.isPresent());
     assertEquals(
         "Unexpected test image size", testS3PngFileSize, testS3File.get().getSizeInBytes());
+
+    return topLevelTestFile;
   }
 
   private void uploadAndDeleteScenario() throws IOException {

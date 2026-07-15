@@ -55,7 +55,7 @@ export function createApiDocsConfiguration(baseUrl: string): Partial<ApiReferenc
       {
         title: i18n.t("common:apiDocs.sources.eln"),
         slug: "rspace-eln",
-        url: `${baseUrl}/resources/rspace_api_specs_2_23_0.yaml`,
+        url: `${baseUrl}/resources/rspace_api_specs_2_25_0.yaml`,
         default: true,
         agent: DISABLED_AGENT,
       },

@@ -21,6 +21,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecar;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.api.v1.model.EcatAudioFileStub;
 import com.researchspace.api.v1.model.NfsClientStub;
@@ -45,6 +47,8 @@ import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.NfsManager;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.impl.FilestoreWriteManagerImpl;
+import com.researchspace.service.metadata.GeneratedSidecar;
+import com.researchspace.service.metadata.S3SidecarService;
 import com.researchspace.testutils.GalleryFilestoreTestUtils;
 import java.io.IOException;
 import java.time.Instant;
@@ -75,6 +79,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
   @Mock private NfsFileHandler nfsFileHandler;
   @Mock private NfsFactory nfsFactory;
   @Mock private IPropertyHolder propertyHolder;
+  @Mock private S3SidecarService s3SidecarService;
   @Mock private User user;
 
   private final Long validFilestorePathId = 1L;
@@ -110,6 +115,7 @@ class GalleryFilestoresApiControllerWriteOpsTest {
     controller.setNfsFileHandler(nfsFileHandler);
     controller.setNfsFactory(nfsFactory);
     controller.properties = propertyHolder;
+    controller.s3SidecarService = s3SidecarService;
 
     when(propertyHolder.isNetFileStoresEnabled()).thenReturn(true);
     when(nfsManager.getNfsFileStore(validFilestorePathId))
@@ -757,5 +763,28 @@ class GalleryFilestoresApiControllerWriteOpsTest {
             controller.deleteFromFilestore(
                 5L, request, new BeanPropertyBindingResult(request, "request"), user));
     verify(s3Client, never()).deleteByKey(any());
+  }
+
+  @Test
+  void previewSidecar_delegatesToServiceAndMapsResponse() {
+    GeneratedSidecar generated = new GeneratedSidecar("XRD-Experiments.sidecar.yaml", "yaml-body");
+    when(s3SidecarService.preview(1L, "XRD-Experiments", user)).thenReturn(generated);
+
+    ApiGalleryFilestoreSidecar result =
+        controller.previewSidecar(
+            1L, new ApiGalleryFilestoreSidecarRequest("XRD-Experiments"), user);
+
+    assertEquals("XRD-Experiments.sidecar.yaml", result.getFilename());
+    assertEquals("yaml-body", result.getContent());
+  }
+
+  @Test
+  void saveSidecar_delegatesToServiceSave() {
+    GeneratedSidecar generated = new GeneratedSidecar("XRD-Experiments.sidecar.yaml", "yaml-body");
+    when(s3SidecarService.save(1L, "XRD-Experiments", user)).thenReturn(generated);
+
+    controller.saveSidecar(1L, new ApiGalleryFilestoreSidecarRequest("XRD-Experiments"), user);
+
+    verify(s3SidecarService).save(1L, "XRD-Experiments", user);
   }
 }

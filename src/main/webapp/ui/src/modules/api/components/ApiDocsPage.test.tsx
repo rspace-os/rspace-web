@@ -39,7 +39,7 @@ describe("createApiDocsConfiguration", () => {
     expect(eln).toMatchObject({
       title: "common:apiDocs.sources.eln",
       slug: "rspace-eln",
-      url: "https://example.com/resources/rspace_api_specs_2_23_0.yaml",
+      url: "https://example.com/resources/rspace_api_specs_2_25_0.yaml",
       default: true,
     });
     expect(inventory).toMatchObject({

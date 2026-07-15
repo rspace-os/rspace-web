@@ -135,6 +135,31 @@ public class S3UtilitiesTest {
   }
 
   @Test
+  public void listFolderContents_surfacesEtagAndStorageClass() {
+    S3Client mockS3Client = mock(S3Client.class);
+    S3UtilitiesImpl impl = s3UtilitiesWithMockClient(mockS3Client, "test-bucket");
+
+    S3Object file =
+        S3Object.builder()
+            .key("folder/data.dat")
+            .size(2202009L)
+            .lastModified(Instant.now())
+            .eTag("\"b2c3d4e5f6789012\"")
+            .storageClass("STANDARD")
+            .build();
+    ListObjectsV2Response response =
+        ListObjectsV2Response.builder().contents(file).isTruncated(false).build();
+    when(mockS3Client.listObjectsV2(argThat((ListObjectsV2Request r) -> r != null)))
+        .thenReturn(response);
+
+    List<S3FolderContentItem> items = impl.listFolderContents("folder");
+
+    assertEquals(1, items.size());
+    assertEquals("\"b2c3d4e5f6789012\"", items.get(0).getEtag());
+    assertEquals("STANDARD", items.get(0).getStorageClass());
+  }
+
+  @Test
   public void listFolderContents_emptyPath_listsBucketRootWithEmptyPrefix() {
     // A filestore rooted at the bucket top level has an empty path; listing it must query S3 with
     // an empty prefix (the bucket root) and surface top-level files and folders.

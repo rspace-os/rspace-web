@@ -8,6 +8,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecar;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.DeploymentPropertyType;
 import com.researchspace.model.User;
@@ -26,6 +28,8 @@ import com.researchspace.netfiles.NfsTarget;
 import com.researchspace.service.FilestoreWriteManager;
 import com.researchspace.service.NfsFileHandler;
 import com.researchspace.service.RecordDeletionManager;
+import com.researchspace.service.metadata.GeneratedSidecar;
+import com.researchspace.service.metadata.S3SidecarService;
 import com.researchspace.webapp.controller.DeploymentProperty;
 import java.io.File;
 import java.io.FileInputStream;
@@ -62,6 +66,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
   @Autowired @Setter NfsFactory nfsFactory;
   @Autowired RecordDeletionManager deletionManager;
   @Autowired FilestoreWriteManager filestoreWriteManager;
+  @Autowired S3SidecarService s3SidecarService;
 
   @Override
   public List<NfsFileStoreInfo> getUserFilestores(@RequestAttribute(name = "user") User user) {
@@ -352,5 +357,29 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     assertFilestoresApiEnabled(user);
     throwBindExceptionIfErrors(errors);
     return filestoreWriteManager.transferBetweenFilestores(filestoreId, request, errors, user);
+  }
+
+  @Override
+  public ApiGalleryFilestoreSidecar previewSidecar(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarRequest request,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    return toApiSidecar(s3SidecarService.preview(filestoreId, request.getPath(), user));
+  }
+
+  @Override
+  public ApiGalleryFilestoreSidecar saveSidecar(
+      @PathVariable Long filestoreId,
+      @RequestBody @Valid ApiGalleryFilestoreSidecarRequest request,
+      @RequestAttribute(name = "user") User user) {
+
+    assertFilestoresApiEnabled(user);
+    return toApiSidecar(s3SidecarService.save(filestoreId, request.getPath(), user));
+  }
+
+  private static ApiGalleryFilestoreSidecar toApiSidecar(GeneratedSidecar sidecar) {
+    return new ApiGalleryFilestoreSidecar(sidecar.getFilename(), sidecar.getContent());
   }
 }

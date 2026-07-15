@@ -17,6 +17,7 @@ import lombok.AccessLevel;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -209,7 +210,13 @@ public class S3UtilitiesImpl implements S3Utilities {
           if (!key.equals(folderPrefixToQuery)) { // Skip the folder itself
             String fileName = key.substring(folderPrefixToQuery.length());
             items.add(
-                new S3FolderContentItem(fileName, false, s3Object.size(), s3Object.lastModified()));
+                new S3FolderContentItem(
+                    fileName,
+                    false,
+                    s3Object.size(),
+                    s3Object.lastModified(),
+                    s3Object.eTag(),
+                    s3Object.storageClassAsString()));
           }
         }
 
@@ -299,11 +306,20 @@ public class S3UtilitiesImpl implements S3Utilities {
   }
 
   @Data
+  @RequiredArgsConstructor
   public static class S3FolderContentItem {
     private final String name;
     private final boolean isFolder;
     private final Long sizeInBytes;
     private final Instant lastModified;
+
+    /** S3 object ETag (quoted MD5/opaque hash), from a listing. Null for folders. */
+    private final String etag;
+
+    /**
+     * S3 storage class (e.g. {@code STANDARD}, {@code GLACIER}), from a listing. Null for folders.
+     */
+    private final String storageClass;
 
     /**
      * User-defined object metadata ({@code x-amz-meta-*} headers with the prefix stripped), e.g.
@@ -312,6 +328,12 @@ public class S3UtilitiesImpl implements S3Utilities {
      * gate.
      */
     private Map<String, String> userMetadata = Collections.emptyMap();
+
+    /** A folder, or a single-object lookup, where ETag and storage class are not known. */
+    public S3FolderContentItem(
+        String name, boolean isFolder, Long sizeInBytes, Instant lastModified) {
+      this(name, isFolder, sizeInBytes, lastModified, null, null);
+    }
   }
 
   @Override

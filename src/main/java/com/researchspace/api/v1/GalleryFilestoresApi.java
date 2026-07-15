@@ -10,6 +10,8 @@ import com.researchspace.api.v1.model.ApiGalleryFilestoreDeleteRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreFolderRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreMoveRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreOperationRequest;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecar;
+import com.researchspace.api.v1.model.ApiGalleryFilestoreSidecarRequest;
 import com.researchspace.api.v1.model.ApiGalleryFilestoreTransferRequest;
 import com.researchspace.model.User;
 import com.researchspace.model.netfiles.NfsFileStoreInfo;
@@ -161,4 +163,31 @@ public interface GalleryFilestoresApi {
   ApiExternalStorageOperationResult transferBetweenFilestores(
       Long filestoreId, ApiGalleryFilestoreTransferRequest request, BindingResult errors, User user)
       throws BindException;
+
+  /**
+   * Composes a metadata sidecar for the folder at {@code path} in the request and returns it
+   * without writing anything. Auto-populated from the S3 file listing, the current user, and the
+   * RSpace instance configuration. An unknown {@code format} produces 400; non-S3 backends produce
+   * 404.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/sidecar/preview",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.OK)
+  ApiGalleryFilestoreSidecar previewSidecar(
+      Long filestoreId, ApiGalleryFilestoreSidecarRequest request, User user);
+
+  /**
+   * Composes a metadata sidecar for the folder at {@code path} and writes it into that folder as
+   * {@code <folder>.sidecar.yaml} (overwriting any existing one), recording a {@code CREATE} audit
+   * event. An unknown {@code format} produces 400; non-S3 backends produce 404.
+   */
+  @PostMapping(
+      value = "/filestores/{filestoreId}/sidecar",
+      produces = MediaType.APPLICATION_JSON_VALUE,
+      consumes = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseStatus(HttpStatus.CREATED)
+  ApiGalleryFilestoreSidecar saveSidecar(
+      Long filestoreId, ApiGalleryFilestoreSidecarRequest request, User user);
 }
