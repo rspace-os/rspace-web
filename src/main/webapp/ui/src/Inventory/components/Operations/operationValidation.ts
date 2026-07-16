@@ -2,13 +2,21 @@ import type { InventoryOperation } from "./operationsConfig";
 import type { OperationInputs, OperationQuantity } from "./types";
 
 /**
- * Whether the details step is complete enough to advance to the next step. Text fields are required
- * only when flagged; integers must meet their minimum; amounts must be non-negative with the created
- * "each amount" strictly positive. Temperature is exempt from the non-negative rule: cryopreservation
- * stores at sub-zero temperatures (e.g. -80 °C), so a negative value is valid.
+ * Whether the given inputs are complete enough to advance. Text fields are required only when
+ * flagged; integers must meet their minimum; amounts must be non-negative with the created "each
+ * amount" strictly positive and a unit chosen. Temperature is exempt from the non-negative rule:
+ * cryopreservation stores at sub-zero temperatures (e.g. -80 °C), so a negative value is valid.
+ *
+ * The wizard splits the inputs across two steps (names/template, then amounts), so `allowedKeys`
+ * restricts validation to the current step's inputs; omit it to validate every input.
  */
-export function detailsValid(operation: InventoryOperation, values: OperationInputs): boolean {
+export function detailsValid(
+  operation: InventoryOperation,
+  values: OperationInputs,
+  allowedKeys?: ReadonlySet<string>,
+): boolean {
   for (const input of operation.inputs) {
+    if (allowedKeys && !allowedKeys.has(input.key)) continue;
     const value = values[input.key];
     if (input.type === "text") {
       if (input.required && !String(value ?? "").trim()) return false;
@@ -19,6 +27,9 @@ export function detailsValid(operation: InventoryOperation, values: OperationInp
       const q = value as OperationQuantity | undefined;
       if (!q || !Number.isFinite(q.numericValue)) return false;
       if (input.type === "quantity") {
+        // The unit is part of the amount: a cleared/unset unit (e.g. after switching to a new process
+        // name) leaves the amount incomplete, so block the step until the user picks one.
+        if (!Number.isFinite(q.unitId) || q.unitId <= 0) return false;
         if (q.numericValue < 0) return false;
         // The created "each amount" and the amount taken from the origin must both be > 0: an
         // operation must create real subsamples and must actually remove something from the origin.

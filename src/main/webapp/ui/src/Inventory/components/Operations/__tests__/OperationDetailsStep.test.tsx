@@ -15,12 +15,20 @@ vi.mock("@/components/Inputs/UnitSelect", () => ({
     disabled,
     value,
     handleChange,
+    categories,
   }: {
     disabled?: boolean;
     value: number;
     handleChange: React.ChangeEventHandler<HTMLSelectElement>;
+    categories: Array<string>;
   }) => (
-    <select data-testid="unit-select" disabled={disabled} value={value} onChange={handleChange}>
+    <select
+      data-testid="unit-select"
+      data-categories={JSON.stringify(categories)}
+      disabled={disabled}
+      value={value}
+      onChange={handleChange}
+    >
       <option value={2} />
       <option value={3} />
     </select>
@@ -57,31 +65,117 @@ const values: OperationInputs = {
   amountTaken: { numericValue: 10, unitId: 3 },
 };
 
+// A Derive-shaped operation that also declares a process-name field (a details-section input).
+const processOperation = {
+  ...operation,
+  inputs: [
+    { key: "processName", type: "text", labelKey: "operations.fields.processName", required: true },
+    ...operation.inputs,
+  ],
+  effect: { ...operation.effect, processNameFrom: "processName" },
+} as unknown as InventoryOperation;
+
 describe("OperationDetailsStep", () => {
   it("renders the quantity unit dropdowns enabled (user can pick the unit)", () => {
-    render(<OperationDetailsStep operation={operation} origin={origin} values={values} onChange={() => undefined} />);
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
     const selects = screen.getAllByTestId("unit-select");
     expect(selects).toHaveLength(2);
     for (const select of selects) expect(select).not.toBeDisabled();
   });
 
+  it("uses the override category for the created amount but keeps amount-taken on the origin's type", () => {
+    // Even when a template overrides the created-sample units (volume), the amount taken FROM the
+    // origin must stay in the origin's own measurement type (mass): you remove mass from a mass sample.
+    const massOrigin = {
+      quantity: { numericValue: 10, unitId: 5 },
+      quantityCategory: "mass",
+    } as unknown as SubSampleModel;
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={massOrigin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+        unitCategories={["volume"]}
+      />,
+    );
+    const selects = screen.getAllByTestId("unit-select");
+    // input order matches the config: eachAmount (created) then amountTaken (removed from the origin)
+    expect(selects[0]).toHaveAttribute("data-categories", '["volume"]');
+    expect(selects[1]).toHaveAttribute("data-categories", '["mass"]');
+  });
+
+  it("renders the amount fields on the amounts section and the names on the details section", () => {
+    const { rerender } = render(
+      <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
+    );
+    // details: the process-name field shows, the amount dropdowns do not
+    expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toBeInTheDocument();
+    expect(screen.queryAllByTestId("unit-select")).toHaveLength(0);
+    rerender(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    // amounts: the dropdowns show, the process-name field does not
+    expect(screen.queryByRole("combobox", { name: /fields\.processName/i })).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("unit-select")).toHaveLength(2);
+  });
+
   it("does not allow a negative amount (clamps it to zero)", () => {
     const onChange = vi.fn();
-    render(<OperationDetailsStep operation={operation} origin={origin} values={values} onChange={onChange} />);
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={onChange}
+        section="amounts"
+      />,
+    );
     fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "-5" } });
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eachAmount: { numericValue: 0, unitId: 3 } }));
   });
 
   it("caps the amount at the maximum so it cannot overflow", () => {
     const onChange = vi.fn();
-    render(<OperationDetailsStep operation={operation} origin={origin} values={values} onChange={onChange} />);
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={onChange}
+        section="amounts"
+      />,
+    );
     fireEvent.change(screen.getAllByRole("spinbutton")[0], { target: { value: "999999999999999999999" } });
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ eachAmount: { numericValue: 1e9, unitId: 3 } }));
   });
 
   it("stores the chosen unit on that input without touching its numeric value", async () => {
     const onChange = vi.fn();
-    render(<OperationDetailsStep operation={operation} origin={origin} values={values} onChange={onChange} />);
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={onChange}
+        section="amounts"
+      />,
+    );
     // change the first (eachAmount) unit dropdown from ml (3) to l (2)
     await userEvent.setup().selectOptions(screen.getAllByTestId("unit-select")[0], "2");
     expect(onChange).toHaveBeenCalledWith(
@@ -91,15 +185,6 @@ describe("OperationDetailsStep", () => {
       }),
     );
   });
-
-  const processOperation = {
-    ...operation,
-    inputs: [
-      { key: "processName", type: "text", labelKey: "operations.fields.processName", required: true },
-      ...operation.inputs,
-    ],
-    effect: { ...operation.effect, processNameFrom: "processName" },
-  } as unknown as InventoryOperation;
 
   it("reports a typed process name through onChange (controlled free-solo field)", async () => {
     const onChange = vi.fn();
@@ -141,6 +226,7 @@ describe("OperationDetailsStep", () => {
         origin={origin}
         values={{ ...values, processName: "dna" }}
         onChange={() => undefined}
+        section="amounts"
         rememberAmounts
         onRememberAmountsChange={onRememberAmounts}
       />,
@@ -158,6 +244,7 @@ describe("OperationDetailsStep", () => {
         origin={origin}
         values={values}
         onChange={() => undefined}
+        section="amounts"
         onRememberAmountsChange={() => undefined}
       />,
     );

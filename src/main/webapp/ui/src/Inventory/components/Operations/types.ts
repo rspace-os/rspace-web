@@ -7,6 +7,14 @@
 
 export type OperationQuantity = { numericValue: number; unitId: number };
 
+/**
+ * Sentinel unitId meaning "no unit chosen yet". The unit is part of an amount, so when amounts are
+ * cleared for a new process name the unit clears too (rather than snapping back to the origin's
+ * default); an amount carrying this unit is incomplete and blocks the details step (see detailsValid).
+ * Real unit ids from the store are positive, so 0 is safe as the unset marker.
+ */
+export const UNSET_UNIT = 0;
+
 /** A single collected input value. Quantity/temperature inputs carry their unit; text is a string. */
 export type OperationInputValue = string | number | OperationQuantity;
 export type OperationInputs = Record<string, OperationInputValue>;

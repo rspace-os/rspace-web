@@ -31,6 +31,8 @@ function OperationDetailsStep({
   origin,
   values,
   onChange,
+  section = "details",
+  unitCategories,
   processNameOptions = [],
   rememberProcessName = false,
   onRememberProcessNameChange,
@@ -41,6 +43,17 @@ function OperationDetailsStep({
   origin: SubSampleModel;
   values: OperationInputs;
   onChange: (values: OperationInputs) => void;
+  /**
+   * Which slice of the operation's inputs to render. The wizard shows names + template first
+   * ("details") and the quantities on a later step ("amounts"). "details" renders every input except
+   * the count/each-amount/amount-taken quantities; "amounts" renders only those three.
+   */
+  section?: "details" | "amounts";
+  /**
+   * Unit categories offered in the amount dropdowns. Defaults to the origin subsample's category, but
+   * the wizard overrides it with a chosen template's category so the amounts match the template.
+   */
+  unitCategories?: Array<string>;
   /** Saved process names for this operation, offered in the process-name autocomplete. */
   processNameOptions?: Array<string>;
   /** Whether the entered process name should become this operation's default on future runs. */
@@ -55,6 +68,15 @@ function OperationDetailsStep({
   const { t } = useTranslation("inventory");
   const label = t as unknown as (key: string) => string;
   const originUnitId = getUnitId(origin.quantity);
+  // The count / each-amount / amount-taken quantities live on the "amounts" step; everything else
+  // (names, process name, cryomedium, storage temperature, template lives in its own component) is on
+  // the "details" step.
+  const amountKeys = new Set(
+    [operation.effect.countFrom, operation.effect.eachAmountFrom, operation.effect.amountTakenFrom].filter(Boolean),
+  );
+  const inputsForSection = operation.inputs.filter((input) =>
+    section === "amounts" ? amountKeys.has(input.key) : !amountKeys.has(input.key),
+  );
   const set = (key: string, value: OperationInputValue) => onChange({ ...values, [key]: value });
   // The amounts default is scoped per process name for operations that have one, so the checkbox
   // names the process to make clear it is per-name rather than per-operation (see the wizard).
@@ -67,7 +89,7 @@ function OperationDetailsStep({
 
   return (
     <Stack spacing={1}>
-      {operation.inputs.map((input) => {
+      {inputsForSection.map((input) => {
         if (input.type === "text") {
           // The process-name field is an autocomplete of saved names (free-solo: a new name is
           // allowed). Filtering, whitespace handling, and prefix-matching live in processNames.ts.
@@ -144,6 +166,14 @@ function OperationDetailsStep({
         // Temperature is fixed to Celsius; quantities default to the origin's unit but the user may
         // pick any unit in the same category (adr/0002).
         const currentUnitId = isTemperature ? CELSIUS : (quantity?.unitId ?? originUnitId);
+        // The amount taken FROM the origin must stay in the origin subsample's own measurement type
+        // (you remove mass from a mass sample), even when a template overrides the created amount's
+        // units. Every other quantity (the created "each amount") follows unitCategories (the chosen
+        // template's category), falling back to the origin's.
+        const categoriesForInput =
+          input.key === operation.effect.amountTakenFrom
+            ? [origin.quantityCategory]
+            : (unitCategories ?? [origin.quantityCategory]);
         // Amounts (volume/mass/count) are clamped to [0, MAX_QUANTITY]; temperature is left signed
         // and uncapped (e.g. -80 °C).
         const numericValue = (raw: number) => (isTemperature ? raw : Math.min(MAX_QUANTITY, Math.max(0, raw)));
@@ -165,7 +195,7 @@ function OperationDetailsStep({
                     <InputAdornment position="end">{label("operations.fields.temperatureUnit")}</InputAdornment>
                   ) : (
                     <UnitSelect
-                      categories={[origin.quantityCategory]}
+                      categories={categoriesForInput}
                       value={currentUnitId}
                       handleChange={(e) =>
                         set(input.key, { numericValue: quantity?.numericValue ?? 0, unitId: Number(e.target.value) })

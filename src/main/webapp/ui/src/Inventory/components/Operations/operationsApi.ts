@@ -24,7 +24,14 @@ export async function performOperation(request: OperationRequest): Promise<Opera
  */
 export async function createTemplateFromOriginSample(sample: SampleModel, name: string): Promise<number> {
   if (!sample.infoLoaded) await sample.fetchAdditionalInfo();
-  const includeContentForFields = new Set(sample.fields.map((field) => field.id));
+  // Include content for BOTH the template-derived fields and the sample's own custom (extra) fields,
+  // so every value on the parent becomes a default on the new template. This path runs only for a
+  // template-less parent, whose values live entirely in extraFields, so omitting those (as before)
+  // produced a template with empty defaults.
+  const includeContentForFields = new Set([
+    ...sample.fields.map((field) => field.id),
+    ...sample.extraFields.map((field) => field.id),
+  ]);
   const args = { ...(await sample.sampleCreationParams(includeContentForFields)), name };
   const { data } = await ApiService.post<{ id: number }>("sampleTemplates", args);
   return data.id;

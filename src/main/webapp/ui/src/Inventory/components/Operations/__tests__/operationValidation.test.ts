@@ -43,4 +43,22 @@ describe("detailsValid", () => {
   it("requires the amount taken from the origin to be strictly positive", () => {
     expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 0, unitId: 3 } })).toBe(false);
   });
+
+  it("rejects an amount whose unit has been cleared (no unit chosen)", () => {
+    // A cleared unit (unitId 0, set when switching to a new process name) is an incomplete amount and
+    // must block the step even if a numeric value is present.
+    expect(detailsValid(cryo, { ...validValues, eachAmount: { numericValue: 5, unitId: 0 } })).toBe(false);
+    expect(detailsValid(cryo, { ...validValues, amountTaken: { numericValue: 5, unitId: 0 } })).toBe(false);
+  });
+
+  it("validates only the given keys when allowedKeys is passed (per-step validation)", () => {
+    // The wizard validates the name/template step and the amounts step separately: a blank amount unit
+    // fails the amounts step but is ignored while validating only the name inputs, and vice versa.
+    const blankUnit = { ...validValues, eachAmount: { numericValue: 5, unitId: 0 } };
+    expect(detailsValid(cryo, blankUnit, new Set(["sampleName"]))).toBe(true); // amounts not checked
+    expect(detailsValid(cryo, blankUnit, new Set(["eachAmount"]))).toBe(false); // amounts checked
+    const blankName = { ...validValues, sampleName: "  " };
+    expect(detailsValid(cryo, blankName, new Set(["eachAmount", "amountTaken"]))).toBe(true); // name skipped
+    expect(detailsValid(cryo, blankName, new Set(["sampleName"]))).toBe(false); // name checked
+  });
 });

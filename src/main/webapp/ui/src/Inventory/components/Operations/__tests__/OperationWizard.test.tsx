@@ -53,10 +53,15 @@ vi.mock("../../ContextMenu/ContextDialog", () => ({
 }));
 
 // Stub the step bodies so the flow can be driven deterministically without the real inputs' stores.
+// The stub ignores `section` for rendering (it shows every field regardless) so a test can read the
+// amount values while still on the details step; it echoes `section` and `unitCategories` back via
+// spans so the step split and the amount-unit category can be asserted.
 vi.mock("../OperationDetailsStep", () => ({
   default: ({
     values,
     onChange,
+    section,
+    unitCategories,
     rememberProcessName,
     onRememberProcessNameChange,
     rememberAmounts,
@@ -64,12 +69,16 @@ vi.mock("../OperationDetailsStep", () => ({
   }: {
     values: Record<string, unknown>;
     onChange: (v: Record<string, unknown>) => void;
+    section?: string;
+    unitCategories?: Array<string>;
     rememberProcessName?: boolean;
     onRememberProcessNameChange?: (r: boolean) => void;
     rememberAmounts?: boolean;
     onRememberAmountsChange?: (r: boolean) => void;
   }) => (
     <div>
+      <span data-testid="section">{String(section)}</span>
+      <span data-testid="unit-categories">{JSON.stringify(unitCategories ?? null)}</span>
       <input
         data-testid="proc"
         value={String(values.processName ?? "")}
@@ -118,6 +127,13 @@ vi.mock("../TemplateStep", () => ({
         data-testid="tmpl-pick5"
         onClick={() => onChange({ mode: "pick", templateId: 5, templateName: "T5", remember: true })}
       />
+      <button
+        type="button"
+        data-testid="tmpl-pick-volume"
+        onClick={() =>
+          onChange({ mode: "pick", templateId: 7, templateName: "T7", quantityCategory: "volume", remember: true })
+        }
+      />
     </div>
   ),
 }));
@@ -146,32 +162,38 @@ beforeEach(() => {
   performSearch.mockClear();
 });
 
-/** Advance from the operation picker through a filled-in Details step to the Template step. */
-async function reachTemplateStep(user: ReturnType<typeof userEvent.setup>, processName: string) {
+/** Complete the Details step (names, process name, template) so Next is enabled; stay on Details. */
+async function completeDetailsStep(user: ReturnType<typeof userEvent.setup>, processName: string) {
   await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
   await user.type(screen.getByTestId("proc"), processName);
-  await user.click(screen.getByTestId("fill-details"));
-  await user.click(nextButton());
+  await user.click(screen.getByTestId("fill-details")); // sample name + amounts
+  await user.click(screen.getByTestId("tmpl-pick5")); // template chosen
+}
+
+/** Complete the Details step then advance to the Amounts step. */
+async function reachAmountsStep(user: ReturnType<typeof userEvent.setup>, processName: string) {
+  await completeDetailsStep(user, processName);
+  await user.click(nextButton()); // -> amounts
 }
 
 describe("OperationWizard", () => {
-  it("keeps Next disabled on the template step until a choice is made", async () => {
+  it("keeps Next disabled on the details step until a template choice is made", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
-    await reachTemplateStep(user, "dna");
+    await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(screen.getByTestId("fill-details")); // names valid, but no template chosen yet
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
     expect(nextButton()).toBeDisabled();
     await user.click(screen.getByTestId("tmpl-pick5"));
     expect(nextButton()).toBeEnabled();
   });
 
-  it("preserves the picked template when stepping back to Details and forward again", async () => {
+  it("preserves the picked template when stepping forward to Amounts and back again", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
-    await reachTemplateStep(user, "dna");
-    await user.click(screen.getByTestId("tmpl-pick5"));
+    await reachAmountsStep(user, "dna"); // template picked on Details, now on Amounts
     await user.click(backButton()); // back to Details
-    await user.click(nextButton()); // forward to Template again
     // the in-session choice is not clobbered by the remembered-defaults pass
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("pick");
     expect(screen.getByTestId("tmpl-id")).toHaveTextContent("5");
@@ -184,8 +206,7 @@ describe("OperationWizard", () => {
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
     render(<OperationWizard open onClose={onClose} origin={origin} />);
 
-    await reachTemplateStep(user, "dna extraction");
-    await user.click(screen.getByTestId("tmpl-pick5")); // remember: true
+    await reachAmountsStep(user, "dna extraction"); // template picked (remember: true)
     await user.click(nextButton()); // -> documentation
     await user.click(screen.getByTestId("doc-choose"));
     await user.click(screen.getByTestId("doc-remember"));
@@ -204,6 +225,18 @@ describe("OperationWizard", () => {
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_NAMES).toEqual({ derive: ["dna extraction"] });
   });
 
+  it("uses the picked template's quantity category for the amount units on the amounts step", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    await user.type(screen.getByTestId("proc"), "dna");
+    await user.click(screen.getByTestId("fill-details"));
+    await user.click(screen.getByTestId("tmpl-pick-volume")); // a volume template
+    await user.click(nextButton()); // -> amounts
+    expect(screen.getByTestId("section")).toHaveTextContent("amounts");
+    expect(screen.getByTestId("unit-categories")).toHaveTextContent('["volume"]');
+  });
+
   it("names the operation and chosen process name in the heading on every step", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
@@ -211,7 +244,8 @@ describe("OperationWizard", () => {
     await user.type(screen.getByTestId("proc"), "dna");
     expect(screen.getByText(/operations\.derive\.label: dna/)).toBeInTheDocument();
     await user.click(screen.getByTestId("fill-details"));
-    await user.click(nextButton()); // -> template step; the heading persists across steps
+    await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts step; the heading persists across steps
     expect(screen.getByText(/operations\.derive\.label: dna/)).toBeInTheDocument();
   });
 
@@ -225,7 +259,7 @@ describe("OperationWizard", () => {
   it("keeps the entered process name when stepping back to Details", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
-    await reachTemplateStep(user, "dna extraction");
+    await reachAmountsStep(user, "dna extraction");
     await user.click(backButton());
     expect(screen.getByTestId("proc")).toHaveValue("dna extraction");
   });
@@ -249,8 +283,8 @@ describe("OperationWizard", () => {
     await user.type(screen.getByTestId("proc"), "dna extraction");
     await user.click(screen.getByTestId("toggle-remember-proc"));
     await user.click(screen.getByTestId("fill-details"));
-    await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -311,9 +345,11 @@ describe("OperationWizard", () => {
     await user.type(screen.getByTestId("proc"), "dna"); // loads count 2 + amounts {7,2}
     expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":7,"unitId":3}');
     await user.type(screen.getByTestId("proc"), "x"); // "dnax" is unsaved -> loaded values clear
-    expect(screen.getByTestId("count")).toHaveTextContent("1"); // back to the config default
-    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":0,"unitId":3}');
-    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":0,"unitId":3}');
+    expect(screen.getByTestId("count")).toHaveTextContent("1"); // back to the default of 1
+    // A new process starts blank: the numeric fields default to 1 and the unit is unset (0), which
+    // blocks the amounts step until the user picks a unit.
+    expect(screen.getByTestId("each-amount")).toHaveTextContent('{"numericValue":1,"unitId":0}');
+    expect(screen.getByTestId("amount-taken")).toHaveTextContent('{"numericValue":1,"unitId":0}');
     expect(screen.getByTestId("remember-amounts")).toHaveTextContent("false");
   });
 
@@ -359,8 +395,8 @@ describe("OperationWizard", () => {
     await user.type(screen.getByTestId("proc"), "dna extraction"); // a new name -> box starts unticked
     await user.click(screen.getByTestId("fill-details")); // each {5,3}, taken {1,3}
     await user.click(screen.getByTestId("toggle-remember-amounts")); // tick "remember amounts"
-    await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -384,8 +420,8 @@ describe("OperationWizard", () => {
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna extraction"); // new name -> box stays unticked
     await user.click(screen.getByTestId("fill-details"));
-    await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -411,8 +447,8 @@ describe("OperationWizard", () => {
     await user.type(screen.getByTestId("proc"), "dna extraction");
     await user.click(screen.getByTestId("fill-details"));
     await user.click(screen.getByTestId("toggle-remember-amounts")); // untick (default is ticked)
-    await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
@@ -431,8 +467,8 @@ describe("OperationWizard", () => {
     expect(screen.getByTestId("remember-amounts")).toHaveTextContent("false"); // unticked on a first run
     await user.click(screen.getByTestId("fill-details")); // each {5,3}, taken {1,3}
     await user.click(screen.getByTestId("toggle-remember-amounts")); // tick "remember amounts"
-    await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick5"));
+    await user.click(nextButton()); // -> amounts
     await user.click(nextButton()); // -> documentation
     await user.click(nextButton()); // -> confirm
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));

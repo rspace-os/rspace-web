@@ -63,7 +63,7 @@ Files:
    | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature` |
    | `effect.nameFrom` | input key holding the new sample's name |
    | `effect.countFrom` | input key holding N (number of new subsamples) |
-   | `effect.eachAmountFrom` | input key holding each subsample's amount (same unit as origin) |
+   | `effect.eachAmountFrom` | input key holding each subsample's amount (unit category follows the chosen template, else the origin's — see the amounts step below) |
    | `effect.amountTakenFrom` | input key holding the amount to remove from the origin (a positive decrement; the backend reduces the origin by it, clamped at zero, never increasing it); omit for operations that never change the origin |
    | `effect.storageTempFrom` | input key holding a temperature → set as the new sample's `storageTempMin/Max` (Cryopreserve) |
    | `effect.links[]` | `{ relationType, fieldNameKey }`; a DataCite relation link back to the origin. `fieldNameKey` may interpolate an input, e.g. `"Is Derived From using process: {processName}"` |
@@ -101,14 +101,38 @@ and clamps at zero, so an origin can never be increased). It never branches on t
 operation. Because the request is client-built, the endpoint enforces permissions
 and invariants server-side; it coordinates, it does not blindly trust.
 
+## Wizard steps
+
+The wizard collects data across two steps before the optional documentation step and
+the confirm step:
+
+1. **Details** — the new sample's name, the process name (for operations that have
+   one), and the **template** choice (see below). Next is disabled until the required
+   names are filled *and* a template choice is made.
+2. **Amounts** — the number of new subsamples and the quantities (each-amount,
+   amount-taken). For a fresh process name (nothing remembered), the numeric fields
+   default to 1 and the unit dropdowns start **blank**, which blocks Next until the
+   user picks a unit. Unit categories differ per field: the **created** amount
+   (each-amount) uses the chosen template's category when a specific template is
+   picked, otherwise the origin subsample's — so deriving a volume sample from a mass
+   subsample offers volume units. The **amount taken from the origin** always uses the
+   origin subsample's own category (you remove mass from a mass sample), regardless of
+   the template.
+
+Details and Amounts are two slices of the same `OperationDetailsStep` (a `section`
+prop selects which inputs render); the `count`/each-amount/amount-taken inputs are the
+Amounts slice, everything else is Details. `detailsValid(operation, values, keys)`
+validates each step's own inputs.
+
 ## The amount model (adr/0002)
 
-The wizard captures the **amount taken from the origin** (a **positive** decrement;
-the field starts at 0 and Next stays disabled until the user enters an amount). The
-backend reduces the origin by it (unit-aware, clamped at zero), so an operation can
+The wizard captures the **amount taken from the origin** (a **positive** decrement).
+The backend reduces the origin by it (unit-aware, clamped at zero), so an operation can
 only ever decrease the origin, never increase it. Each created subsample's amount is
-an independent input in the origin's unit; the created total need not equal what was
-taken (material may be added).
+an independent input; the created total need not equal what was taken (material may be
+added). The unit is part of the amount: it must be chosen (a blank unit blocks the
+amounts step), and switching to a new process name clears both the numbers and the
+units.
 
 ## Links
 
@@ -122,9 +146,10 @@ backend change per operation).
 
 ## Template for the new sample (adr/0003)
 
-The wizard has a **template step** (framework-level, present for every operation,
-not per-operation config). The user optionally chooses the Derived Sample's
-template:
+The template choice is a framework-level part of the **Details step** (present for
+every operation, not per-operation config), rendered after the name/process-name
+fields. Its category also governs the Amounts step's units (above). The user
+optionally chooses the Derived Sample's template:
 
 - **No template** (default) — an ad-hoc sample (`templateId: null`).
 - **An existing template** — chosen with the shared `TemplatePicker`.
@@ -141,7 +166,7 @@ checkbox persists the selection per user, per operation (in `UI_JSON_SETTINGS`).
 The template-choice logic lives in pure, tested helpers (`templateResolution.ts`):
 `resolveTemplateId` (reuse-or-create for option c) and `templateSelectionBlock`
 (the option-a guard). Picking a template whose mandatory fields have no default is
-**blocked in the template step** with a message naming those fields, so it can
+**blocked in the Details step** with a message naming those fields, so it can
 never fail at submit; the user picks a different template or uses option (c).
 Collecting values for such template fields in the wizard is deferred.
 

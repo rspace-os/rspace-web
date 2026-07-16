@@ -9,6 +9,7 @@ import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type TemplateModel from "@/stores/models/TemplateModel";
+import type { UnitCategory } from "@/stores/stores/UnitStore";
 import { templateSelectionBlock } from "./templateResolution";
 import WizardTemplatePicker from "./WizardTemplatePicker";
 
@@ -20,6 +21,10 @@ export type TemplateSelection = {
   mode: "none" | "pick" | "fromSample" | "remembered" | "unselected";
   templateId: number | null;
   templateName?: string;
+  // The picked template's quantity category (mass/volume/dimensionless...). Set when the user picks a
+  // specific template so the amounts step can offer that template's units instead of the origin
+  // subsample's (a volume template overrides a mass subsample). Undefined = fall back to the origin.
+  quantityCategory?: UnitCategory;
   remember: boolean;
 };
 
@@ -54,6 +59,9 @@ function TemplateStep({
       mode,
       templateId: mode === "pick" ? value.templateId : null,
       templateName: mode === "pick" ? value.templateName : undefined,
+      // A non-"pick" mode carries no specific template, so drop any category: the amounts step then
+      // falls back to the origin subsample's category.
+      quantityCategory: mode === "pick" ? value.quantityCategory : undefined,
     });
   };
 
@@ -76,7 +84,14 @@ function TemplateStep({
         if (blocked) {
           setBlockError(t("operations.template.mandatoryFieldsError", { fields: missingFields.join(", ") }));
         } else {
-          onChange({ ...value, templateId: Number(template.id), templateName: template.name });
+          // Capture the template's quantity category so the amounts step offers this template's units
+          // (mass/volume/...) rather than the origin subsample's.
+          onChange({
+            ...value,
+            templateId: Number(template.id),
+            templateName: template.name,
+            quantityCategory: template.quantityCategory,
+          });
         }
       } finally {
         setChecking(false);

@@ -3853,6 +3853,7 @@ export default interface Resources {
         "inProgress": "Performing operation…",
         "perform": "Perform",
         "step": {
+          "amounts": "Amounts",
           "confirm": "Confirm",
           "details": "Details",
           "documentation": "Documentation",
