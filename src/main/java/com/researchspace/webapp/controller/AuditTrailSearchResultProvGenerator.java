@@ -60,23 +60,7 @@ public class AuditTrailSearchResultProvGenerator {
   private InteropFramework interopF = new InteropFramework(provFactory);
 
   ResponseEntity<String> convertToProv(ISearchResults<AuditTrailSearchResult> res) {
-    Namespace ns =
-        new Namespace(
-            new Hashtable<String, String>(
-                Map.of(
-                    RS,
-                    rspaceBase,
-                    RS_USER,
-                    rspaceBase + "user/",
-                    RS_RESOURCE,
-                    rspaceBase + "globalId/",
-                    DCT,
-                    "http://purl.org/dc/terms/",
-                    FOAF,
-                    "http://xmlns.com/foaf/0.1/",
-                    OWL,
-                    "http://www.w3.org/2002/07/owl#")));
-    ns.addKnownNamespaces();
+    Namespace ns = createNamespace();
     ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
     List<AuditTrailSearchResult> auditEntries = res.getResults();
     Map<String, Agent> agents = new HashMap<>();
@@ -89,15 +73,14 @@ public class AuditTrailSearchResultProvGenerator {
     List<WasGeneratedBy> generations = new ArrayList<>();
     List<Used> uses = new ArrayList<>();
     List<WasInvalidatedBy> invalidations = new ArrayList<>();
+    QualifiedName xsdString = ns.qualifiedName("xsd", "string", provFactory);
+    QualifiedName dcTitleQn = ns.qualifiedName(DCT, "title", provFactory);
+    QualifiedName foafName = ns.qualifiedName(FOAF, "name", provFactory);
     for (AuditTrailSearchResult auditEntry : auditEntries) {
       String subject = auditEntry.getEvent().getSubject();
       String fullName = auditEntry.getEvent().getFullName();
       QualifiedName agentQn = ns.qualifiedName(RS_USER, subject, provFactory);
-      Attribute agentFullName =
-          provFactory.newAttribute(
-              ns.qualifiedName(FOAF, "name", provFactory),
-              fullName,
-              ns.qualifiedName("xsd", "string", provFactory));
+      Attribute agentFullName = provFactory.newAttribute(foafName, fullName, xsdString);
       Agent agent = provFactory.newAgent(agentQn, List.of(agentFullName));
       agents.putIfAbsent(subject, agent);
       XMLGregorianCalendar timestamp =
@@ -110,16 +93,9 @@ public class AuditTrailSearchResultProvGenerator {
               activityQn,
               timestamp,
               timestamp,
-              List.of(
-                  provFactory.newAttribute(
-                      AttributeKind.PROV_TYPE,
-                      action,
-                      ns.qualifiedName("xsd", "string", provFactory))));
-      associations.add(
-          provFactory.newWasAssociatedWith(
-              ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-              activityQn,
-              agentQn));
+              List.of(provFactory.newAttribute(AttributeKind.PROV_TYPE, action, xsdString)));
+      QualifiedName association = ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
+      associations.add(provFactory.newWasAssociatedWith(association, activityQn, agentQn));
       activities.add(activity);
       if (auditEntry.getData() != null
           && auditEntry.getData().getData() != null
@@ -130,46 +106,36 @@ public class AuditTrailSearchResultProvGenerator {
         if (!name.equals("n/a")) {
           Attribute dctTitle =
               provFactory.newAttribute(
-                  ns.qualifiedName(DCT, "title", provFactory),
-                  name,
-                  ns.qualifiedName("xsd", "string", provFactory));
+                  dcTitleQn, name, ns.qualifiedName("xsd", "string", provFactory));
           QualifiedName resourceQn = ns.qualifiedName(RS_RESOURCE, resourceId, provFactory);
           Entity resource = provFactory.newEntity(resourceQn, List.of());
           entities.putIfAbsent(resourceId, resource);
-          attributions.add(
-              provFactory.newWasAttributedTo(
-                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                  resourceQn,
-                  agentQn));
+          QualifiedName attribution =
+              ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
+          attributions.add(provFactory.newWasAttributedTo(attribution, resourceQn, agentQn));
           switch (action) {
             case CREATE:
+              QualifiedName generation =
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
               generations.add(
                   provFactory.newWasGeneratedBy(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      resourceQn,
-                      activityQn,
-                      timestamp,
-                      null));
+                      generation, resourceQn, activityQn, timestamp, null));
               QualifiedName firstVersionQn =
                   ns.qualifiedName(RS_RESOURCE, resourceId + "v1", provFactory);
               versions.putIfAbsent(
                   resourceId,
                   new ArrayList<>(
                       List.of(provFactory.newEntity(firstVersionQn, List.of(dctTitle)))));
-              attributions.add(
-                  provFactory.newWasAttributedTo(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      firstVersionQn,
-                      agentQn));
+              QualifiedName creation =
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
+              attributions.add(provFactory.newWasAttributedTo(creation, firstVersionQn, agentQn));
               break;
             case DELETE:
+              QualifiedName invalidation =
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
               invalidations.add(
                   provFactory.newWasInvalidatedBy(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      resourceQn,
-                      activityQn,
-                      timestamp,
-                      null));
+                      invalidation, resourceQn, activityQn, timestamp, null));
               break;
             case WRITE:
             case RENAME:
@@ -186,20 +152,14 @@ public class AuditTrailSearchResultProvGenerator {
                       latest.getId());
               derivation.setActivity(activityQn);
               derivations.add(derivation);
-              attributions.add(
-                  provFactory.newWasAttributedTo(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      newVersionQn,
-                      agentQn));
+              QualifiedName edition =
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
+              attributions.add(provFactory.newWasAttributedTo(edition, newVersionQn, agentQn));
               break;
             // TODO MOVE
             default:
-              uses.add(
-                  provFactory.newUsed(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      activityQn,
-                      resourceQn,
-                      timestamp));
+              QualifiedName used = ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
+              uses.add(provFactory.newUsed(used, activityQn, resourceQn, timestamp));
               break;
           }
         }
@@ -238,6 +198,27 @@ public class AuditTrailSearchResultProvGenerator {
     versions.values().stream().forEach(document.getStatementOrBundle()::addAll);
     interopF.writeDocument(os, ProvFormat.JSON, document);
     return createProvEntityResponse(os.toString());
+  }
+
+  private Namespace createNamespace() {
+    Namespace ns =
+        new Namespace(
+            new Hashtable<String, String>(
+                Map.of(
+                    RS,
+                    rspaceBase,
+                    RS_USER,
+                    rspaceBase + "user/",
+                    RS_RESOURCE,
+                    rspaceBase + "globalId/",
+                    DCT,
+                    "http://purl.org/dc/terms/",
+                    FOAF,
+                    "http://xmlns.com/foaf/0.1/",
+                    OWL,
+                    "http://www.w3.org/2002/07/owl#")));
+    ns.addKnownNamespaces();
+    return ns;
   }
 
   private ResponseEntity<String> createProvEntityResponse(String prov) {
