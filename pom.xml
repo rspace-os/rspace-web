@@ -741,7 +741,9 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-test-util</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <!-- jitpack's already-built snapshot of the branch head, pinned because the
+           moving -SNAPSHOT metadata currently 401s for this artifact on jitpack -->
+      <version>rsdev-444-upgrade-to-spring-6-9138f8b079-1</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
