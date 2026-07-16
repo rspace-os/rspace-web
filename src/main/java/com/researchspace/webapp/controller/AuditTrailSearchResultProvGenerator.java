@@ -156,8 +156,8 @@ public class AuditTrailSearchResultProvGenerator {
                   ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
               attributions.add(provFactory.newWasAttributedTo(edition, newVersionQn, agentQn));
               break;
-            // TODO MOVE
-            default:
+            default: // DOWNLOAD, DUPLICATE, EXPORT, MOVE, READ, RESTORE, SEARCH, SHARE, SIGN,
+              // TRANSFER, UNSHARE, VIEW, WITNESSED
               QualifiedName used = ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
               uses.add(provFactory.newUsed(used, activityQn, resourceQn, timestamp));
               break;
