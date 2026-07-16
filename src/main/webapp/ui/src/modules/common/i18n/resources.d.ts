@@ -2092,6 +2092,15 @@ export default interface Resources {
       "sectionsDrawerLabel": "gallery sections drawer",
       "uploadFiles": "Upload Files"
     },
+    "sidecar": {
+      "contentLabel": "Metadata record preview",
+      "description": "Preview the metadata record composed for this folder, then save it to the filestore.",
+      "loading": "Composing metadata record...",
+      "previewFailed": "Could not compose the metadata record.",
+      "save": "Save to S3",
+      "saveFailed": "Could not save the metadata record.",
+      "saveSuccess": "Saved {filename} to the filestore."
+    },
     "snippetPreview": {
       "error": "Error: {error}",
       "loadError": "Failed to load snippet content",

@@ -148,6 +148,12 @@ function stubCommonEndpoints({
   });
   mockAxios.onDelete(/\/api\/v1\/share\/.*/).reply(204);
 
+  // Sidecar preview (registered before the catch-all so it wins).
+  mockAxios.onPost(/\/sidecar\/preview$/).reply(200, {
+    filename: "folder.sidecar.yaml",
+    content: "schemaVersion: ltds-datacite4.3",
+  });
+
   // Catch-all so any other bootstrap request resolves cleanly rather than
   // 404-ing and surfacing an error alert that would pollute role="alert".
   mockAxios.onAny().reply(200, {});
@@ -456,6 +462,21 @@ describe("ActionsMenu", () => {
       ]) {
         expectMenuItemDisabled(screen.getByRole("menuitem", { name }));
       }
+    });
+
+    test("clicking Generate Data Record opens the sidecar preview dialog", async () => {
+      mockAxios.reset();
+      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuInWritableS3Filestore />);
+      await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
+      await openMenu(user);
+      const item = await screen.findByRole("menuitem", {
+        name: /gallery:actionsMenu\.generateDataRecord/i,
+      });
+      await waitFor(() => expectMenuItemEnabled(item));
+      await user.click(item);
+      expect(await screen.findByRole("dialog", { name: /gallery:actionsMenu\.generateDataRecord/i })).toBeVisible();
     });
 
     test("Actions button stays disabled with no selection outside an S3 filestore", async () => {

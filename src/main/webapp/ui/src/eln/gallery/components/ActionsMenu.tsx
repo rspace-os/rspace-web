@@ -80,6 +80,7 @@ import MoveToS3, { type S3TransferSource } from "./MoveToS3";
 import MoveWithinFilestoreDialog from "./MoveWithinFilestoreDialog";
 import { useFolderOpen } from "./OpenFolderProvider";
 import S3Logo from "./S3Logo.svg";
+import SidecarDialog from "./SidecarDialog";
 
 /**
  * When tapped, the user is presented with their operating system's file
@@ -326,6 +327,9 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const sidecarFilestore = asWritableS3Filestore(path?.[0]);
   // Generate Data Record is folder-level, so its context opens the Actions menu with no selection.
   const canOpenActionsWithoutSelection = showGenerateDataRecord && sidecarFilestore !== null;
+  // The sidecar describes the current browse folder; its path is relative to the filestore root.
+  const currentFolder = path?.[path.length - 1];
+  const sidecarFolderPath = currentFolder instanceof RemoteFile ? currentFolder.remotePath : "";
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -334,6 +338,7 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
   const [s3Open, setS3Open] = React.useState(false);
   const [exportOpen, setExportOpen] = React.useState(false);
   const [shareOpen, setShareOpen] = React.useState(false);
+  const [sidecarOpen, setSidecarOpen] = React.useState(false);
   const [imageEditorBlob, setImageEditorBlob] = React.useState<null | Blob>(null);
   const openAllowed = computed(() => {
     return selection
@@ -936,11 +941,12 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
               subheader={sidecarFilestore ? "" : t("actionsMenu.generateDataRecordNotS3")}
               avatar={<NoteAddIcon />}
               onClick={() => {
-                // TODO(RSDEV-998 phase B): open the generate / preview flow.
+                setSidecarOpen(true);
                 setActionsMenuAnchorEl(null);
               }}
               compact
               disabled={sidecarFilestore === null}
+              aria-haspopup="dialog"
             />
           )}
           {showNetfileActions && (
@@ -1109,6 +1115,15 @@ function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArg
           handleCloseDialog={() => {
             setDeleteConfirmOpen(false);
           }}
+        />
+      )}
+      {sidecarFilestore !== null && sidecarFilestore.id !== null && (
+        <SidecarDialog
+          open={sidecarOpen}
+          onClose={() => setSidecarOpen(false)}
+          filestoreId={sidecarFilestore.id}
+          folderPath={sidecarFolderPath}
+          refreshListing={refreshListing}
         />
       )}
       <ImageEditingDialog

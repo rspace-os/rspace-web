@@ -5,12 +5,37 @@ import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
 import type { Filestore } from "./useGalleryListing";
 
+/** A composed metadata sidecar: the target filename and its serialized (YAML) content. */
+export type Sidecar = { filename: string; content: string };
+
 export default function useFilestoresEndpoint(): {
   logout: (filestore: Filestore) => Promise<void>;
+  previewSidecar: (filestoreId: number, folderPath: string) => Promise<Sidecar>;
+  saveSidecar: (filestoreId: number, folderPath: string) => Promise<Sidecar>;
 } {
   const { getToken } = useOauthToken();
   const { addAlert } = React.useContext(AlertContext);
   const { t } = useTranslation("gallery");
+
+  const authHeader = async () => ({ Authorization: `Bearer ${await getToken()}` });
+
+  const previewSidecar = async (filestoreId: number, folderPath: string): Promise<Sidecar> => {
+    const { data } = await axios.post<Sidecar>(
+      `/api/v1/gallery/filestores/${filestoreId}/sidecar/preview`,
+      { path: folderPath },
+      { headers: await authHeader() },
+    );
+    return data;
+  };
+
+  const saveSidecar = async (filestoreId: number, folderPath: string): Promise<Sidecar> => {
+    const { data } = await axios.post<Sidecar>(
+      `/api/v1/gallery/filestores/${filestoreId}/sidecar`,
+      { path: folderPath },
+      { headers: await authHeader() },
+    );
+    return data;
+  };
 
   const logout = async (filestore: Filestore) => {
     try {
@@ -42,5 +67,7 @@ export default function useFilestoresEndpoint(): {
 
   return {
     logout,
+    previewSidecar,
+    saveSidecar,
   };
 }
