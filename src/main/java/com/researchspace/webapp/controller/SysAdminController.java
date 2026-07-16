@@ -61,7 +61,7 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.UserStatisticsManager;
 import com.researchspace.service.UserTagManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
 import java.net.URI;

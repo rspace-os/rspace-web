@@ -21,7 +21,7 @@ import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserRoleHandler;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import java.util.HashMap;
 import java.util.List;

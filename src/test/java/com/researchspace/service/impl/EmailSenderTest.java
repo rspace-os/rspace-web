@@ -4,7 +4,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import java.util.Collections;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
@@ -27,7 +27,7 @@ public class EmailSenderTest {
 
   @Test
   public void whenSendFailsRetryUntilMaxAttempts() {
-    EmailBroadcastImp emailSender = new SendFailureStub();
+    EmailBroadcastImpl emailSender = new SendFailureStub();
     emailSender.setErrorLog(logger);
     emailSender.setRetryDelayMillis(RETRY_MILLIS);
     emailSender.init();
@@ -41,7 +41,7 @@ public class EmailSenderTest {
 
   @Test
   public void whenAuthFailsDontRetry() {
-    EmailBroadcastImp emailSender = new AuthFailureStub();
+    EmailBroadcastImpl emailSender = new AuthFailureStub();
     emailSender.setErrorLog(logger);
     emailSender.setRetryDelayMillis(RETRY_MILLIS);
     emailSender.init();
@@ -52,14 +52,22 @@ public class EmailSenderTest {
         .error(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any());
   }
 
-  static class SendFailureStub extends EmailBroadcastImp {
+  static class SendFailureStub extends EmailBroadcastImpl {
+    SendFailureStub() {
+      super(new StrictEmailContentGenerator());
+    }
+
     @Override
     protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
       throw new SendFailedException("test send failure");
     }
   }
 
-  static class AuthFailureStub extends EmailBroadcastImp {
+  static class AuthFailureStub extends EmailBroadcastImpl {
+    AuthFailureStub() {
+      super(new StrictEmailContentGenerator());
+    }
+
     @Override
     protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
       throw new AuthenticationFailedException("test auth failure");

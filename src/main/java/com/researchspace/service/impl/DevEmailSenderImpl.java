@@ -2,7 +2,7 @@ package com.researchspace.service.impl;
 
 import com.researchspace.model.comms.Communication;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;

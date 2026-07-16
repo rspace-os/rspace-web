@@ -1,7 +1,7 @@
 package com.researchspace.service;
 
 import com.researchspace.model.comms.Communication;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import java.util.List;
 import org.springframework.scheduling.annotation.Async;
 

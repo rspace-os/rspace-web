@@ -7,7 +7,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import java.io.IOException;
 import java.util.Date;

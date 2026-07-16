@@ -2,7 +2,7 @@ package com.axiope.service.cfg;
 
 import static org.junit.Assert.assertEquals;
 
-import com.researchspace.service.impl.EmailBroadcastImp;
+import com.researchspace.service.impl.EmailBroadcastImpl;
 import com.researchspace.service.impl.StrictEmailContentGenerator;
 import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.junit.Test;
@@ -42,11 +42,10 @@ public class EmailBroadcasterConfigTest {
     public EmailConfig() {}
 
     @Bean
-    EmailBroadcastImp emailBroadcastImp() {
+    EmailBroadcastImpl emailBroadcastImpl(StrictEmailContentGenerator strictEmailContentGenerator) {
       Integer millis = env.getProperty("mail.maxEmailsPerSecond", Integer.class);
       Integer addressChunkSize = env.getProperty("mail.addressChunkSize", Integer.class);
-      EmailBroadcastImp rc = new EmailBroadcastImp(millis, addressChunkSize);
-      return rc;
+      return new EmailBroadcastImpl(millis, addressChunkSize, strictEmailContentGenerator);
     }
 
     @Bean(name = "velocityEngine")
@@ -69,7 +68,7 @@ public class EmailBroadcasterConfigTest {
   @ActiveProfiles(profiles = {"emailConfig"})
   @TestPropertySource(properties = {"mail.maxEmailsPerSecond=23", "mail.addressChunkSize=21"})
   public static class TestBase extends AbstractJUnit4SpringContextTests {
-    private @Autowired EmailBroadcastImp emailImpl;
+    private @Autowired EmailBroadcastImpl emailImpl;
 
     @Test
     public void testEmbeddedConfig() {
