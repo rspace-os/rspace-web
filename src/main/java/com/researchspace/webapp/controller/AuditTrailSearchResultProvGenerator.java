@@ -40,7 +40,7 @@ import org.springframework.http.ResponseEntity;
 
 @Slf4j
 public class AuditTrailSearchResultProvGenerator {
-  public static final String ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_PROV =
+  private static final String ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_PROV =
       "attachment; filename=\"rspace-audit-prov.json\"";
   private ProvFactory provFactory = InteropFramework.getDefaultFactory();
   private static final String RS = "rs";
@@ -73,6 +73,7 @@ public class AuditTrailSearchResultProvGenerator {
     List<WasGeneratedBy> generations = new ArrayList<>();
     List<Used> uses = new ArrayList<>();
     List<WasInvalidatedBy> invalidations = new ArrayList<>();
+
     QualifiedName xsdString = ns.qualifiedName("xsd", "string", provFactory);
     QualifiedName dcTitleQn = ns.qualifiedName(DCT, "title", provFactory);
     QualifiedName foafName = ns.qualifiedName(FOAF, "name", provFactory);
@@ -145,11 +146,10 @@ public class AuditTrailSearchResultProvGenerator {
               QualifiedName newVersionQn =
                   ns.qualifiedName(RS_RESOURCE, resourceId + "v" + versionNumber, provFactory);
               previousVersions.add(provFactory.newEntity(newVersionQn, List.of(dctTitle)));
+              QualifiedName derivationQn =
+                  ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
               WasDerivedFrom derivation =
-                  provFactory.newWasDerivedFrom(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      newVersionQn,
-                      latest.getId());
+                  provFactory.newWasDerivedFrom(derivationQn, newVersionQn, latest.getId());
               derivation.setActivity(activityQn);
               derivations.add(derivation);
               QualifiedName edition =
@@ -197,6 +197,10 @@ public class AuditTrailSearchResultProvGenerator {
     document.getStatementOrBundle().addAll(derivations);
     versions.values().stream().forEach(document.getStatementOrBundle()::addAll);
     interopF.writeDocument(os, ProvFormat.JSON, document);
+    log.info(
+        "Written {} provenance statements into JSON from {} audit records",
+        document.getStatementOrBundle().size(),
+        auditEntries.size());
     return createProvEntityResponse(os.toString());
   }
 
