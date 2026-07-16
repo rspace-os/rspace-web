@@ -191,7 +191,6 @@ pnpm run test -- src/components/MyComponent/__tests__/MyComponent.test.tsx
 
 ### Frontend Testing Patterns
 
-- **Custom render:** Import `render` and `within` from `@/__tests__/customQueries` (not directly from `@testing-library/react`). This wrapper provides custom queries like `findTableCell`.
 - **Path alias:** `@/` resolves to `src/` in imports.
 - **Fetch mocking:** `vitest-fetch-mock` is enabled globally in test setup.
 - **Accessibility:** `@sa11y/vitest` is integrated — use `toBeAccessible` matcher.
