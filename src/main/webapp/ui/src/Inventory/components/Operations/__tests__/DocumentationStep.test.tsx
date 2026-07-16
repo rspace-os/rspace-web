@@ -1,7 +1,6 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 import DocumentationStep from "../DocumentationStep";
 
 // Stub the ELN picker (the real one mounts a Search/fetcher); when open, clicking it plays back a

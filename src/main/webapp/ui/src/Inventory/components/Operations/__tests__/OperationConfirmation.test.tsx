@@ -1,6 +1,5 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 import OperationConfirmation from "../OperationConfirmation";
 import type { InventoryOperation } from "../operationsConfig";
 import type { TemplateSelection } from "../TemplateStep";

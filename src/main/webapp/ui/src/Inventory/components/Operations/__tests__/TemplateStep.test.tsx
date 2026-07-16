@@ -1,7 +1,6 @@
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 import TemplateStep, { type TemplateSelection } from "../TemplateStep";
 
 type FakeField = {
