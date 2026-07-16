@@ -1433,7 +1433,7 @@ function GalleryMainPanel({
               role="region"
               aria-label={t("mainPanel.filesListingControlsLabel")}
             >
-              <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} />
+              <ActionsMenu refreshListing={refreshListing} section={selectedSection} folderId={folderId} path={path} />
               <Box
                 sx={{
                   flexGrow: 1,

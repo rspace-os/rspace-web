@@ -7,6 +7,7 @@ import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import LogoutIcon from "@mui/icons-material/Logout";
+import NoteAddIcon from "@mui/icons-material/NoteAdd";
 import OpenWithIcon from "@mui/icons-material/OpenWith";
 import ShareIcon from "@mui/icons-material/Share";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -283,8 +284,10 @@ type ActionsMenuArgs = {
   refreshListing: () => Promise<void>;
   section: GallerySection | null;
   folderId: FetchingData.Fetched<Id>;
+  /** The current browse path; {@code path[0]} is the filestore when inside one. */
+  path: ReadonlyArray<GalleryFile> | null;
 };
-function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): React.ReactNode {
+function ActionsMenu({ refreshListing, section, folderId, path }: ActionsMenuArgs): React.ReactNode {
   const [actionsMenuAnchorEl, setActionsMenuAnchorEl] = React.useState<HTMLElement | null>(null);
   const { deleteFiles, duplicateFiles, uploadFiles, download } = useGalleryActions();
   const selection = useGallerySelection();
@@ -307,6 +310,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   const { openSnippetPreview } = useSnippetPreview();
   const fetchedCurrentUser = useWhoAmI();
   const netfilestoresEnabled = useDeploymentProperty("netfilestores.enabled");
+  const metadataSidecarEnabled = useDeploymentProperty("gallery.actions.metadata.sidecar.enabled");
 
   const currentUser = FetchingData.getSuccessValue(fetchedCurrentUser).orElse(null);
 
@@ -314,6 +318,14 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     .flatMap(Parsers.isBoolean)
     .flatMap(Parsers.isTrue)
     .orElse(false);
+
+  const showGenerateDataRecord = FetchingData.getSuccessValue(metadataSidecarEnabled)
+    .flatMap(Parsers.isBoolean)
+    .flatMap(Parsers.isTrue)
+    .orElse(false);
+  const sidecarFilestore = asWritableS3Filestore(path?.[0]);
+  // Generate Data Record is folder-level, so its context opens the Actions menu with no selection.
+  const canOpenActionsWithoutSelection = showGenerateDataRecord && sidecarFilestore !== null;
 
   const [renameOpen, setRenameOpen] = React.useState(false);
   const [moveOpen, setMoveOpen] = React.useState(false);
@@ -430,11 +442,16 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
           ),
       ),
   );
+  // The menu can open with no selection (inside a writable S3 filestore) for Generate Data
+  // Record; every selection-based action must stay disabled in that case.
+  const nothingSelected = Result.Error<null>([new Error("Nothing is selected.")]);
   const duplicateAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) return Result.Error([new Error("Cannot duplicate more than 50 items at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canDuplicate)).map(() => null);
   });
   const deleteAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) return Result.Error([new Error("Cannot delete more than 50 items at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canDelete)).map(() => null);
   });
@@ -445,10 +462,12 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
       .flatMap((file) => file.canRename);
   });
   const moveToIrodsAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     return Result.all(...selection.asSet().map((f) => f.canMoveToIrods)).map(() => null);
   });
 
   const moveToS3Allowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     return Result.all(...selection.asSet().map((f) => f.canMoveToS3)).map(() => null);
   });
 
@@ -490,6 +509,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
   });
 
   const exportAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     if (selection.size > 100) return Result.Error([new Error("Cannot export more than 100 items at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canBeExported)).map(() => null);
   });
@@ -543,11 +563,13 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
     return getShareDialogSelection().map(() => null);
   });
   const downloadAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     if (selection.asSet().some((f) => f.isFolder)) return Result.Error([new Error("Cannot download folders.")]);
     if (selection.asSet().some((f) => f.isSnippet)) return Result.Error([new Error("Cannot download snippets.")]);
     return Result.Ok(null);
   });
   const moveAllowed = computed((): Result<null> => {
+    if (selection.isEmpty) return nothingSelected;
     if (selection.size > 50) return Result.Error([new Error("Cannot move more than 50 items at once.")]);
     return Result.all(...selection.asSet().map((f) => f.canBeMoved)).map(() => null);
   });
@@ -567,7 +589,7 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
         variant="contained"
         color="callToAction"
         size="small"
-        disabled={selection.isEmpty || !section}
+        disabled={!section || (selection.isEmpty && !canOpenActionsWithoutSelection)}
         aria-haspopup="menu"
         aria-expanded={actionsMenuAnchorEl ? "true" : "false"}
         startIcon={<ChecklistIcon />}
@@ -908,6 +930,19 @@ function ActionsMenu({ refreshListing, section, folderId }: ActionsMenuArgs): Re
                 .orElse(null)}
             </Suspense>
           </EventBoundary>
+          {showGenerateDataRecord && (
+            <AccentMenuItem
+              title={t("actionsMenu.generateDataRecord")}
+              subheader={sidecarFilestore ? "" : t("actionsMenu.generateDataRecordNotS3")}
+              avatar={<NoteAddIcon />}
+              onClick={() => {
+                // TODO(RSDEV-998 phase B): open the generate / preview flow.
+                setActionsMenuAnchorEl(null);
+              }}
+              compact
+              disabled={sidecarFilestore === null}
+            />
+          )}
           {showNetfileActions && (
             <>
               <AccentMenuItem

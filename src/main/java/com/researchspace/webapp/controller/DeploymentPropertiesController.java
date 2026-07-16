@@ -93,6 +93,9 @@ public class DeploymentPropertiesController extends BaseController {
   @Value("${netfilestores.enabled}")
   private String netfilestoresEnabled;
 
+  @Value("${gallery.actions.metadata.sidecar.enabled}")
+  private String metadataSidecarEnabled;
+
   @Value("${chemistry.provider}")
   private String chemistryProvider;
 
@@ -171,6 +174,8 @@ public class DeploymentPropertiesController extends BaseController {
         return officeOnlineEnabled;
       case "netfilestores.enabled":
         return netfilestoresEnabled;
+      case "gallery.actions.metadata.sidecar.enabled":
+        return metadataSidecarEnabled;
       case "chemistry.provider":
         return chemistryProvider;
       case "deployment.cloud":

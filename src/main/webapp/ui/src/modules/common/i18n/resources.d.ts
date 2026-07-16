@@ -1769,6 +1769,8 @@ export default interface Resources {
         "title": "Permanently delete?"
       },
       "downloadImageForEditingFailed": "Failed to download image for editing",
+      "generateDataRecord": "Generate Data Record",
+      "generateDataRecordNotS3": "Only available inside an S3 filestore.",
       "label": "actions",
       "moveToIrods": "Move to iRODS",
       "moveToS3": "Move to S3",
@@ -3541,7 +3543,6 @@ export default interface Resources {
         "location": {
           "label": "Location",
           "listExplanation": "No location selection required for list containers.",
-          "mustStoreTypes": "inventory:instrument.createOptions.location.mustStoreTypes",
           "specificExplanation": "Specify a single location for where the new instrument should be placed."
         },
         "template": {

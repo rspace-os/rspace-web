@@ -9,10 +9,12 @@ import { cleanup, expectAccessible, render, screen, within } from "@/__tests__/c
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import {
+  ActionsMenuInWritableS3Filestore,
   ActionsMenuWithFolder,
   ActionsMenuWithMixedSelection,
   ActionsMenuWithMultipleSnippets,
   ActionsMenuWithNonFolder,
+  ActionsMenuWithNoSelection,
   ActionsMenuWithSnippet,
   ActionsMenuWithSnippetInSharedFolderOwnedByOther,
   ActionsMenuWithSnippetInSharedFolderOwnedBySelf,
@@ -43,7 +45,13 @@ const whoAmIResponse = {
   workbenchId: 1,
 };
 
-function stubCommonEndpoints({ netfilestoresEnabled = false }: { netfilestoresEnabled?: boolean } = {}) {
+function stubCommonEndpoints({
+  netfilestoresEnabled = false,
+  metadataSidecarEnabled = false,
+}: {
+  netfilestoresEnabled?: boolean;
+  metadataSidecarEnabled?: boolean;
+} = {}) {
   // Bootstrap calls made on mount by the component tree.
   mockAxios.onGet("/collaboraOnline/supportedExts").reply(200, {});
   mockAxios.onGet("/officeOnline/supportedExts").reply(200, {});
@@ -52,7 +60,9 @@ function stubCommonEndpoints({ netfilestoresEnabled = false }: { netfilestoresEn
   mockAxios.onGet("/deploymentproperties/ajax/property").reply((config) => {
     const params = config.params as URLSearchParams | undefined;
     const name = params?.get?.("name");
-    return [200, name === "netfilestores.enabled" ? netfilestoresEnabled : false];
+    if (name === "netfilestores.enabled") return [200, netfilestoresEnabled];
+    if (name === "gallery.actions.metadata.sidecar.enabled") return [200, metadataSidecarEnabled];
+    return [200, false];
   });
 
   // MoveDialog (rendered in the tree) loads the gallery listing on mount.
@@ -383,6 +393,78 @@ describe("ActionsMenu", () => {
       await screen.findByRole("menu", { name: "gallery:actionsMenu.label" });
       expect(screen.queryByRole("menuitem", { name: "gallery:actionsMenu.moveToIrods" })).not.toBeInTheDocument();
       expect(screen.queryByRole("menuitem", { name: "gallery:actionsMenu.moveToS3" })).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Generate Data Record action", () => {
+    test("is hidden when gallery.actions.metadata.sidecar.enabled is false", async () => {
+      // A selection is present so the menu opens even with the property off.
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithFolder />);
+      await openMenu(user);
+      await screen.findByRole("menu", { name: "gallery:actionsMenu.label" });
+      expect(
+        screen.queryByRole("menuitem", { name: /gallery:actionsMenu\.generateDataRecord/i }),
+      ).not.toBeInTheDocument();
+    });
+
+    test("is shown but disabled when enabled and not in an S3 filestore", async () => {
+      mockAxios.reset();
+      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuWithFolder />);
+      await openMenu(user);
+      const item = await screen.findByRole("menuitem", {
+        name: /gallery:actionsMenu\.generateDataRecord/i,
+      });
+      await waitFor(() => expectMenuItemDisabled(item));
+    });
+
+    test("opens with no selection and is enabled inside a writable S3 filestore", async () => {
+      mockAxios.reset();
+      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuInWritableS3Filestore />);
+      // The no-selection open depends on the async deployment-property fetch, so wait for
+      // the Actions button to become enabled before opening it.
+      await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
+      await openMenu(user);
+      const item = await screen.findByRole("menuitem", {
+        name: /gallery:actionsMenu\.generateDataRecord/i,
+      });
+      await waitFor(() => expectMenuItemEnabled(item));
+    });
+
+    test("other actions stay disabled when the menu opens with no selection in a writable S3 filestore", async () => {
+      // Generate Data Record is the only action that works without a selection; the
+      // rest must not become clickable just because the menu can now open empty.
+      mockAxios.reset();
+      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      const user = userEvent.setup();
+      renderStory(<ActionsMenuInWritableS3Filestore />);
+      await waitFor(() => expect(screen.getByRole("button", { name: "gallery:actionsMenu.actions" })).toBeEnabled());
+      await openMenu(user);
+      await waitFor(() =>
+        expectMenuItemEnabled(screen.getByRole("menuitem", { name: /gallery:actionsMenu\.generateDataRecord/i })),
+      );
+      for (const name of [
+        /common:actions\.duplicate/i,
+        /common:actions\.move/i,
+        /common:actions\.download/i,
+        /common:actions\.export/i,
+        /common:actions\.delete/i,
+      ]) {
+        expectMenuItemDisabled(screen.getByRole("menuitem", { name }));
+      }
+    });
+
+    test("Actions button stays disabled with no selection outside an S3 filestore", async () => {
+      // The no-selection open is scoped to writable S3 + the property; elsewhere the
+      // Actions button keeps its existing selection requirement.
+      mockAxios.reset();
+      stubCommonEndpoints({ metadataSidecarEnabled: true });
+      renderStory(<ActionsMenuWithNoSelection />);
+      expect(await screen.findByRole("button", { name: "gallery:actionsMenu.actions" })).toBeDisabled();
     });
   });
 });
