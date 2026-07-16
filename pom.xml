@@ -1650,7 +1650,12 @@
     <dependency>
       <groupId>com.github.rspace-os</groupId>
       <artifactId>rspace-core-model</artifactId>
-      <version>rsdev-444-upgrade-to-spring-6-SNAPSHOT</version>
+      <!-- Pinned to an immutable commit rather than the moving branch SNAPSHOT: the SNAPSHOT let a
+           stale core-model (entities still on bare @GeneratedValue(TABLE), allocating from the shared
+           "default" id segment) be built into the WAR, so ids collided at runtime. This commit is the
+           one that gives every TABLE-strategy entity its own @TableGenerator. Re-float to the branch
+           SNAPSHOT once the migration branches merge. -->
+      <version>39bb4c569758551bd9066724b0bb4c129924d81c</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
