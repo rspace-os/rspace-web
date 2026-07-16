@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import lombok.extern.slf4j.Slf4j;
 import org.openprovenance.prov.interop.Formats.ProvFormat;
@@ -28,7 +26,6 @@ import org.openprovenance.prov.model.Entity;
 import org.openprovenance.prov.model.Namespace;
 import org.openprovenance.prov.model.ProvFactory;
 import org.openprovenance.prov.model.QualifiedName;
-import org.openprovenance.prov.model.SpecializationOf;
 import org.openprovenance.prov.model.Used;
 import org.openprovenance.prov.model.WasAssociatedWith;
 import org.openprovenance.prov.model.WasAttributedTo;
@@ -85,7 +82,6 @@ public class AuditTrailSearchResultProvGenerator {
     Map<String, Agent> agents = new HashMap<>();
     Map<String, Entity> entities = new HashMap<>();
     Map<String, List<Entity>> versions = new HashMap<>();
-    List<SpecializationOf> specializations = new ArrayList<>();
     List<WasDerivedFrom> derivations = new ArrayList<>();
     List<Activity> activities = new ArrayList<>();
     List<WasAssociatedWith> associations = new ArrayList<>();
@@ -104,16 +100,9 @@ public class AuditTrailSearchResultProvGenerator {
               ns.qualifiedName("xsd", "string", provFactory));
       Agent agent = provFactory.newAgent(agentQn, List.of(agentFullName));
       agents.putIfAbsent(subject, agent);
-      XMLGregorianCalendar timestamp = null;
-      try {
-        timestamp =
-            DatatypeFactory.newInstance()
-                .newXMLGregorianCalendar(
-                    convertDateToISOFormat(auditEntry.getTimestamp(), TimeZone.getDefault()));
-      } catch (DatatypeConfigurationException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
+      XMLGregorianCalendar timestamp =
+          provFactory.newISOTime(
+              convertDateToISOFormat(auditEntry.getTimestamp(), TimeZone.getDefault()));
       QualifiedName activityQn = ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory);
       AuditAction action = auditEntry.getEvent().getAction();
       Activity activity =
@@ -145,11 +134,6 @@ public class AuditTrailSearchResultProvGenerator {
                   name,
                   ns.qualifiedName("xsd", "string", provFactory));
           QualifiedName resourceQn = ns.qualifiedName(RS_RESOURCE, resourceId, provFactory);
-          Attribute sameAs =
-              provFactory.newAttribute(
-                  ns.qualifiedName(OWL, "sameAs", provFactory),
-                  resourceQn.getUri(),
-                  ns.qualifiedName("xsd", "string", provFactory));
           Entity resource = provFactory.newEntity(resourceQn, List.of());
           entities.putIfAbsent(resourceId, resource);
           attributions.add(
@@ -171,13 +155,7 @@ public class AuditTrailSearchResultProvGenerator {
               versions.putIfAbsent(
                   resourceId,
                   new ArrayList<>(
-                      List.of(provFactory.newEntity(firstVersionQn, List.of(dctTitle, sameAs)))));
-              specializations.add(
-                  provFactory.newQualifiedSpecializationOf(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      firstVersionQn,
-                      resourceQn,
-                      null));
+                      List.of(provFactory.newEntity(firstVersionQn, List.of(dctTitle)))));
               attributions.add(
                   provFactory.newWasAttributedTo(
                       ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
@@ -195,13 +173,12 @@ public class AuditTrailSearchResultProvGenerator {
               break;
             case WRITE:
             case RENAME:
-              // Entity generalEntity = entities.get(resourceId);
               var previousVersions = versions.get(resourceId);
               int versionNumber = previousVersions.size() + 1;
               Entity latest = previousVersions.get(versionNumber - 2);
               QualifiedName newVersionQn =
                   ns.qualifiedName(RS_RESOURCE, resourceId + "v" + versionNumber, provFactory);
-              previousVersions.add(provFactory.newEntity(newVersionQn, List.of(dctTitle, sameAs)));
+              previousVersions.add(provFactory.newEntity(newVersionQn, List.of(dctTitle)));
               WasDerivedFrom derivation =
                   provFactory.newWasDerivedFrom(
                       ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
@@ -209,12 +186,6 @@ public class AuditTrailSearchResultProvGenerator {
                       latest.getId());
               derivation.setActivity(activityQn);
               derivations.add(derivation);
-              specializations.add(
-                  provFactory.newQualifiedSpecializationOf(
-                      ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
-                      newVersionQn,
-                      resourceQn,
-                      null));
               attributions.add(
                   provFactory.newWasAttributedTo(
                       ns.qualifiedName(RS, UUID.randomUUID().toString(), provFactory),
@@ -234,6 +205,25 @@ public class AuditTrailSearchResultProvGenerator {
         }
       }
     }
+    for (Entity genericEntity : entities.values()) {
+      if (!versions.containsKey(genericEntity.getId().getLocalPart())) continue;
+      var myVersions = versions.get(genericEntity.getId().getLocalPart());
+      Entity latest = myVersions.get(myVersions.size() - 1);
+      var others = latest.getOther();
+      genericEntity.getOther().add(others.get(0));
+      genericEntity
+          .getOther()
+          .add(
+              provFactory.newOther(
+                  ns.qualifiedName(OWL, "sameAs", provFactory),
+                  latest.getId(),
+                  ns.qualifiedName("xsd", "string", provFactory)));
+      others.add(
+          provFactory.newOther(
+              ns.qualifiedName(OWL, "sameAs", provFactory),
+              genericEntity.getId(),
+              ns.qualifiedName("xsd", "string", provFactory)));
+    }
     Document document = provFactory.newDocument();
     document.setNamespace(ns);
     document.getStatementOrBundle().addAll(agents.values());
@@ -244,7 +234,6 @@ public class AuditTrailSearchResultProvGenerator {
     document.getStatementOrBundle().addAll(generations);
     document.getStatementOrBundle().addAll(uses);
     document.getStatementOrBundle().addAll(invalidations);
-    document.getStatementOrBundle().addAll(specializations);
     document.getStatementOrBundle().addAll(derivations);
     versions.values().stream().forEach(document.getStatementOrBundle()::addAll);
     interopF.writeDocument(os, ProvFormat.JSON, document);
