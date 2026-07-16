@@ -26,18 +26,18 @@ public class InventoryOperationManagerImpl implements InventoryOperationManager 
       subSampleApiMgr.assertUserCanEditSubSample(origin.getId(), user);
     }
 
-    ApiSampleWithFullSubSamples created =
-        sampleApiMgr.createNewApiSample(request.getNewSample(), user);
-
-    // Reduce each origin by the amount taken from it. registerApiSubSampleUsage subtracts (unit-
-    // aware) and clamps at zero, so an operation can only ever decrease the origin, never increase
-    // it. Coordinated inside this manager so it joins the one transaction with the sample creation
-    // above. See adr/0002.
+    // Reduce each origin by the amount taken from it BEFORE creating the new sample, so the new
+    // subsample is the most-recently-modified record and therefore sorts first in a
+    // modification-date-descending listing (registerApiSubSampleUsage stamps each origin's
+    // modification date now; the new subsample is stamped later, when created below).
+    // registerApiSubSampleUsage subtracts (unit-aware) and clamps at zero, so an operation can only
+    // ever decrease the origin, never increase it. Coordinated inside this manager so it joins the
+    // one transaction with the sample creation. See adr/0002 and adr/0005.
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
       subSampleApiMgr.registerApiSubSampleUsage(
           origin.getId(), origin.getAmountTaken().toQuantityInfo(), user);
     }
 
-    return created;
+    return sampleApiMgr.createNewApiSample(request.getNewSample(), user);
   }
 }

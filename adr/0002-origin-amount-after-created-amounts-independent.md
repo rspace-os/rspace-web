@@ -4,7 +4,8 @@ Date: 2026-07-10 (revised 2026-07-14)
 
 ## Status
 
-Accepted
+Accepted. The over-taking behaviour (clamp at zero) is revised by ADR-0005, which
+rejects over-removal instead of silently clamping.
 
 ## Context
 

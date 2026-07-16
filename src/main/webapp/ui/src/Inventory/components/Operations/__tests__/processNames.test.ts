@@ -1,23 +1,31 @@
 import { describe, expect, it } from "vitest";
+import { type InventoryOperation, operations } from "../operationsConfig";
 import { addProcessName, filterProcessNames, processNameDefaultAfterPerform, rememberKey } from "../processNames";
 
 // Operation keys never contain spaces, so a single space separates operation key from process name.
 const DERIVE_DNA = ["derive", "dna extraction"].join(" ");
 const DERIVE_BOIL = ["derive", "boil"].join(" ");
+function op(key: string): InventoryOperation {
+  const found = operations.find((o) => o.key === key);
+  if (!found) throw new Error(`no operation "${key}"`);
+  return found;
+}
+const derive = op("derive");
+const cryopreserve = op("cryopreserve");
 
 describe("rememberKey", () => {
-  it("keys a process-name operation by operation + trimmed process name", () => {
-    expect(rememberKey("derive", "processName", { processName: "dna extraction" })).toBe(DERIVE_DNA);
-    expect(rememberKey("derive", "processName", { processName: "  boil  " })).toBe(DERIVE_BOIL);
+  it("keys a process-name operation by operation + resolved (trimmed) process name", () => {
+    expect(rememberKey(derive, { processName: "dna extraction" })).toBe(DERIVE_DNA);
+    expect(rememberKey(derive, { processName: "  boil  " })).toBe(DERIVE_BOIL);
   });
 
-  it("keys a non-process operation by the operation key", () => {
-    expect(rememberKey("cryopreserve", undefined, {})).toBe("cryopreserve");
+  it("keys a fixed-process operation by the operation key", () => {
+    expect(rememberKey(cryopreserve, {})).toBe("cryopreserve");
   });
 
   it("falls back to the operation key when the process name is empty/whitespace", () => {
-    expect(rememberKey("derive", "processName", { processName: "   " })).toBe("derive");
-    expect(rememberKey("derive", "processName", {})).toBe("derive");
+    expect(rememberKey(derive, { processName: "   " })).toBe("derive");
+    expect(rememberKey(derive, {})).toBe("derive");
   });
 });
 

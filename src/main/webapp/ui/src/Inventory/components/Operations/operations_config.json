@@ -7,8 +7,8 @@
     "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
-      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
       { "key": "processName", "type": "text", "labelKey": "operations.fields.processName", "required": true },
+      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
       { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
       { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
       { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" }

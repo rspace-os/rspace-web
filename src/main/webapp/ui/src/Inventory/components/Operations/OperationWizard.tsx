@@ -2,11 +2,11 @@ import Button from "@mui/material/Button";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import Stack from "@mui/material/Stack";
 import Step from "@mui/material/Step";
 import StepContent from "@mui/material/StepContent";
 import StepLabel from "@mui/material/StepLabel";
 import Stepper from "@mui/material/Stepper";
+import { omit } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -20,29 +20,31 @@ import getRootStore from "@/stores/stores/getRootStore";
 import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
-import { type AmountDefault, amountDefaultsAfterPerform, normalizeAmountDefault } from "./amountDefaults";
 import { buildOperationRequest } from "./buildOperationRequest";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
-import { docDefaultsAfterPerform, normalizeDocumentation } from "./documentationResolution";
 import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
-import { createTemplateFromOriginSample, performOperation } from "./operationsApi";
-import type { InventoryOperation } from "./operationsConfig";
-import { detailsValid } from "./operationValidation";
+import { performOperation, sampleNameAvailable } from "./operationsApi";
+import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
+import { amountTakenExceedsOrigin, detailsValid } from "./operationValidation";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
+import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
+import { derivedSampleName, firstAvailableName } from "./sampleNaming";
 import TemplateStep, { type TemplateSelection } from "./TemplateStep";
 import {
   resolveTemplateId,
-  selectionToRemember,
-  type TemplateDefault,
-  templateDefaultsAfterPerform,
   templateSelectionFor,
+  templateSelectionToDefault,
   templateStepValid,
 } from "./templateResolution";
-import type { OperationInputs, OperationOrigin, OperationQuantity } from "./types";
+import type { OperationInputs, OperationOrigin } from "./types";
 import { UNSET_UNIT } from "./types";
+
+// How long to wait after the process name settles before querying existing names to de-duplicate the
+// derived sample name. Keeps typing from firing a search per keystroke.
+const DEDUP_DEBOUNCE_MS = 300;
 
 function buildInitialValues(operation: InventoryOperation, origin: SubSampleModel): OperationInputs {
   const unitId = getUnitId(origin.quantity);
@@ -53,7 +55,6 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
     } else if (input.type === "integer") {
       values[input.key] = typeof input.default === "number" ? input.default : (input.min ?? 1);
     } else if (input.type === "quantity") {
-      // Amounts (each-amount, amount-taken) default to 0; the user must enter a positive amount.
       values[input.key] = { numericValue: 0, unitId };
     } else {
       values[input.key] = { numericValue: -80, unitId: CELSIUS };
@@ -63,9 +64,9 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
 }
 
 /**
- * The amount fields for a fresh amounts step (a new process name, or an operation with nothing
- * remembered): the count and both quantities default to 1, and the quantity units are left unset
- * (a blank dropdown) so the step is blocked until the user picks a unit in the amount's category.
+ * The amount fields for a fresh amounts step: count and both amounts default to 1, and the quantity
+ * units are left unset (a blank dropdown) so the step is blocked until the user picks a unit in the
+ * amount's category.
  */
 function blankAmounts(operation: InventoryOperation): OperationInputs {
   const out: OperationInputs = {
@@ -74,6 +75,18 @@ function blankAmounts(operation: InventoryOperation): OperationInputs {
   };
   if (operation.effect.amountTakenFrom) out[operation.effect.amountTakenFrom] = { numericValue: 1, unitId: UNSET_UNIT };
   return out;
+}
+
+/**
+ * A fresh set of values for the "defaults" state (nothing remembered, or the user unticked remember):
+ * every input at its config default, amounts blank (unset units), keeping only the current names.
+ */
+function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
+  const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation) };
+  values[operation.effect.nameFrom] = current[operation.effect.nameFrom] ?? "";
+  const pnFrom = operation.effect.processNameFrom;
+  if (pnFrom) values[pnFrom] = current[pnFrom] ?? "";
+  return values;
 }
 
 function toOrigin(origin: SubSampleModel): OperationOrigin {
@@ -85,9 +98,13 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
 }
 
 /**
- * The operation wizard: pick operation -> details -> (optional documentation) -> confirm -> perform.
- * The origin subsample is pre-selected (launched from its detail pane). The whole effect is one
- * atomic backend call (adr/0001).
+ * The operation wizard: pick operation -> details (process name, derived sample name, remember) ->
+ * template -> amounts -> (optional documentation) -> confirm -> perform. The origin subsample is
+ * pre-selected (launched from its detail pane). The whole effect is one atomic backend call (adr/0001).
+ *
+ * A single "remember" checkbox governs everything kept for a process name: the template, the
+ * documentation, and the collected amounts (adr/0004). Ticking it loads the saved bundle; unticking
+ * resets the form to defaults without deleting what was saved.
  */
 function OperationWizard({
   open,
@@ -103,7 +120,10 @@ function OperationWizard({
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
-  const [rememberDoc, setRememberDoc] = React.useState(false);
+  const [remember, setRemember] = React.useState(false);
+  // Whether the user has hand-edited the derived sample name; once they have, the wizard stops
+  // re-deriving it from the process name.
+  const [sampleNameEdited, setSampleNameEdited] = React.useState(false);
   const [activeStep, setActiveStep] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
   const [templateSelection, setTemplateSelection] = React.useState<TemplateSelection>({
@@ -111,12 +131,8 @@ function OperationWizard({
     templateId: null,
     remember: false,
   });
-  const [templateDefaults, setTemplateDefaults] = useUiPreference<Record<string, TemplateDefault>>(
-    PREFERENCES.INVENTORY_OPERATION_TEMPLATE_DEFAULTS,
-    { defaultValue: {} },
-  );
-  const [docDefaults, setDocDefaults] = useUiPreference<Record<string, DocumentationSelection>>(
-    PREFERENCES.INVENTORY_OPERATION_DOC_DEFAULTS,
+  const [processValues, setProcessValues] = useUiPreference<Record<string, ProcessValues>>(
+    PREFERENCES.INVENTORY_OPERATION_PROCESS_VALUES,
     { defaultValue: {} },
   );
   const [processNames, setProcessNames] = useUiPreference<Record<string, Array<string>>>(
@@ -127,42 +143,14 @@ function OperationWizard({
     PREFERENCES.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS,
     { defaultValue: {} },
   );
-  const [amountDefaults, setAmountDefaults] = useUiPreference<Record<string, AmountDefault>>(
-    PREFERENCES.INVENTORY_OPERATION_AMOUNT_DEFAULTS,
-    { defaultValue: {} },
-  );
-  // Whether the user has manually edited an amount this session. Saved amounts for a process name are
-  // only auto-filled while the amounts are untouched, so choosing a process name never overwrites an
-  // amount the user typed by hand.
-  const [amountsTouched, setAmountsTouched] = React.useState(false);
-  // Whether the chosen amounts should be remembered, and whether the user has toggled that box by
-  // hand. The box reflects whether amounts are already saved for the current key: unchecked when
-  // nothing is saved (e.g. a fresh Derive run before a process name is entered), checked once a saved
-  // key is active (a remembered process name, or a repeat Cryopreserve) - unless the user overrides it.
-  const [rememberAmounts, setRememberAmounts] = React.useState(false);
-  const [rememberAmountsTouched, setRememberAmountsTouched] = React.useState(false);
-  // Whether the entered process name should become this operation's default on future runs. Unlike
-  // the template/doc defaults (keyed per process name), the process-name default is keyed by the
-  // operation alone, so it is resolved and applied as soon as the operation is chosen.
-  const [rememberProcessName, setRememberProcessName] = React.useState(false);
-  // Whether the user has edited the template / documentation steps during this wizard session.
-  // Remembered defaults only pre-fill steps the user has not yet touched, so navigating back and
-  // forth (or editing the process name) never discards a choice made during this session; everything
-  // is reset on the next open, and only Perform persists across sessions (adr/0003).
-  const [templateTouched, setTemplateTouched] = React.useState(false);
-  const [docTouched, setDocTouched] = React.useState(false);
 
-  // Step 1 ("details") collects the names, the process name and the template; step 2 ("amounts")
-  // collects the quantities. Template selection lives on step 1 so its category is known before the
-  // amounts step chooses its units (see amountCategory).
   const stepKeys = operation
-    ? ["details", "amounts", ...(operation.documentationStep ? ["documentation"] : []), "confirm"]
+    ? ["details", "template", "amounts", ...(operation.documentationStep ? ["documentation"] : []), "confirm"]
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
-  // Inputs are split across the two data steps: the count/each-amount/amount-taken quantities on the
-  // "amounts" step, everything else (names, process name, cryomedium, storage temperature) on
-  // "details". Template selection is a separate component rendered within the details step.
+  // Count / each-amount / amount-taken live on the "amounts" step; everything else (process name,
+  // sample name, cryomedium, storage temperature) on "details". Template is its own step.
   const amountKeys: ReadonlySet<string> = operation
     ? new Set(
         [operation.effect.countFrom, operation.effect.eachAmountFrom, operation.effect.amountTakenFrom].filter(
@@ -174,108 +162,110 @@ function OperationWizard({
     ? new Set(operation.inputs.map((i) => i.key).filter((k) => !amountKeys.has(k)))
     : new Set();
   // The amounts step offers the chosen template's units, or the origin subsample's when no specific
-  // template is picked (see the requirement: a volume template overrides a mass subsample).
+  // template is picked.
   const amountCategory = templateSelection.quantityCategory ?? origin.quantityCategory;
+  // Only "use parent template" needs the parent's template; when the parent has none, that option is
+  // disabled and the user must pick an existing template or none.
+  const parentHasTemplate = (origin.sample.templateId ?? null) !== null;
 
-  // The remembered amounts for the current remember-scope key (process-name-scoped for Derive,
-  // operation-scoped for Cryopreserve), or null if nothing is saved.
-  const savedAmountsFor = (op: InventoryOperation, vals: OperationInputs): AmountDefault | null =>
-    normalizeAmountDefault(amountDefaults?.[rememberKey(op.key, op.effect.processNameFrom, vals)]);
-
-  // Details-step change handler. Marks the amounts as touched once the user edits one (so they are no
-  // longer auto-filled), and when the process name changes to one with saved amounts, pre-fills those
-  // amounts - unless the user has already edited them by hand.
-  const onDetailsChange = (next: OperationInputs) => {
-    const pnFrom = operation?.effect.processNameFrom;
-    if (operation && pnFrom) {
-      const eachFrom = operation.effect.eachAmountFrom;
-      const takenFrom = operation.effect.amountTakenFrom;
-      const amountChanged =
-        next[eachFrom] !== values[eachFrom] || (takenFrom ? next[takenFrom] !== values[takenFrom] : false);
-      if (amountChanged) setAmountsTouched(true);
-      if (next[pnFrom] !== values[pnFrom]) {
-        // The process name changed: reflect that name's saved amounts - tick the box and pre-fill the
-        // count + amounts when the name has saved amounts; untick and reset to the fresh 1/1/1 blank
-        // (numeric 1, no unit) when it does not (a new name starts blank). Both are skipped once the
-        // user has overridden the box, or edited the amounts, by hand.
-        const countFrom = operation.effect.countFrom;
-        const saved = savedAmountsFor(operation, next);
-        if (!rememberAmountsTouched) setRememberAmounts(saved !== null);
-        if (!amountsTouched) {
-          if (saved) {
-            next = {
-              ...next,
-              [countFrom]: saved.count,
-              [eachFrom]: saved.eachAmount,
-              ...(takenFrom ? { [takenFrom]: saved.amountTaken } : {}),
-            };
-          } else {
-            // A new process starts blank: numeric fields default to 1, but the unit is left unset (a
-            // blank dropdown) so the amounts step is blocked until the user picks one.
-            next = { ...next, ...blankAmounts(operation) };
-          }
-        }
-        // The template (now on this step) and documentation defaults are keyed per process name, so
-        // re-resolve them for the new name - only for steps the user has not touched this session.
-        applyRememberedDefaults(operation, next);
-      }
+  // The saved bundle for a given values set, and the wizard state (values + template + documentation +
+  // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
+  // defaults. Used on operation select and whenever the process name changes.
+  const stateForKey = (op: InventoryOperation, vals: OperationInputs) => {
+    const bundle = normalizeProcessValues(processValues?.[rememberKey(op, vals)]);
+    const base = freshValues(op, origin, vals);
+    if (bundle) {
+      return {
+        values: { ...base, ...bundle.values },
+        templateSelection: templateSelectionFor(bundle.template),
+        documentation: bundle.documentation,
+        remember: true,
+      };
     }
-    setValues(next);
+    return { values: base, templateSelection: templateSelectionFor(undefined), documentation: null, remember: false };
   };
 
   const selectOperation = (op: InventoryOperation) => {
-    setOperation(op);
-    // The process-name default is keyed by operation, so it can be applied immediately: pre-fill the
-    // process-name field and tick its remember box when this operation has a saved default.
     const initial = buildInitialValues(op, origin);
-    // Trim defensively: a blank/whitespace-only remembered name is treated as none (never pre-filled,
-    // never ticks the remember box). Blanks are not stored in the first place (processNames.ts).
+    // Pre-fill the most-recently-remembered process name for this operation, so a repeat run starts
+    // from it (and loads its bundle).
     const savedProcessName = (op.effect.processNameFrom ? (processNameDefaults?.[op.key] ?? "") : "").trim();
     if (op.effect.processNameFrom && savedProcessName) initial[op.effect.processNameFrom] = savedProcessName;
-    // Pre-fill remembered amounts for the resolved key: operation-scoped for Cryopreserve, and for
-    // Derive when a remembered process name is present (so a repeated process starts from its amounts).
-    const savedAmounts = savedAmountsFor(op, initial);
-    if (savedAmounts) {
-      initial[op.effect.countFrom] = savedAmounts.count;
-      initial[op.effect.eachAmountFrom] = savedAmounts.eachAmount;
-      if (op.effect.amountTakenFrom) initial[op.effect.amountTakenFrom] = savedAmounts.amountTaken;
-    } else {
-      // Nothing remembered for the resolved key: start the amounts blank (1/1/1, no unit chosen).
-      Object.assign(initial, blankAmounts(op));
-    }
-    setValues(initial);
-    setRememberProcessName(savedProcessName !== "");
-    // The amounts box starts checked only when amounts are already saved for the resolved key (a
-    // remembered process name that carries amounts, or a repeat Cryopreserve); otherwise unchecked.
-    setRememberAmounts(savedAmounts !== null);
-    setAmountsTouched(false);
-    setRememberAmountsTouched(false);
-    setTemplateTouched(false);
-    setDocTouched(false);
-    // Template selection now lives on this (details) step, so apply the remembered template +
-    // documentation defaults immediately for the resolved key - unconditionally, since a fresh
-    // operation selection ignores any touched state left over from a previous selection.
-    const key = rememberKey(op.key, op.effect.processNameFrom, initial);
-    setTemplateSelection(templateSelectionFor(templateDefaults?.[key]));
-    const doc = normalizeDocumentation(docDefaults?.[key]);
-    setDocumentation(doc);
-    setRememberDoc(doc !== null);
+    const s = stateForKey(op, initial);
+    // Seed the derived sample name straight away (the dedup effect refines it once names are fetched).
+    s.values[op.effect.nameFrom] = derivedSampleName(origin.sample.name, resolveProcessName(op, s.values));
+    setOperation(op);
+    setValues(s.values);
+    setTemplateSelection(s.templateSelection);
+    setDocumentation(s.documentation);
+    setRemember(s.remember);
+    setSampleNameEdited(false);
     setActiveStep(0);
   };
 
-  // Re-resolve the template + documentation defaults (both keyed per process name) when the process
-  // name changes, so a remembered name restores its template/documentation. Only steps the user has
-  // not touched this session are changed, so an in-session choice is never overwritten - including
-  // when they step back and edit the process name (adr/0003).
-  const applyRememberedDefaults = (op: InventoryOperation, vals: OperationInputs) => {
-    const key = rememberKey(op.key, op.effect.processNameFrom, vals);
-    if (!templateTouched) setTemplateSelection(templateSelectionFor(templateDefaults?.[key]));
-    if (!docTouched) {
-      const doc = normalizeDocumentation(docDefaults?.[key]);
-      setDocumentation(doc);
-      setRememberDoc(doc !== null);
+  // Details-step change handler. When the process name changes, reload that name's saved state (or
+  // reset to defaults) and re-derive the sample name; otherwise a change to the sample-name field is
+  // treated as a manual edit that stops further auto-derivation.
+  const onDetailsChange = (next: OperationInputs) => {
+    if (!operation) {
+      setValues(next);
+      return;
+    }
+    const pnFrom = operation.effect.processNameFrom;
+    const nameFrom = operation.effect.nameFrom;
+    if (pnFrom && next[pnFrom] !== values[pnFrom]) {
+      const s = stateForKey(operation, next);
+      let v = s.values;
+      if (!sampleNameEdited)
+        v = { ...v, [nameFrom]: derivedSampleName(origin.sample.name, resolveProcessName(operation, v)) };
+      setValues(v);
+      setTemplateSelection(s.templateSelection);
+      setDocumentation(s.documentation);
+      setRemember(s.remember);
+      return;
+    }
+    if (next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
+    setValues(next);
+  };
+
+  // The single "remember" checkbox. Ticking loads the saved bundle for the current process name (if
+  // any); unticking resets the form to defaults. Neither deletes the stored bundle (grill Q1).
+  const onRememberChange = (checked: boolean) => {
+    if (!operation) return;
+    setRemember(checked);
+    if (checked) {
+      const bundle = normalizeProcessValues(processValues?.[rememberKey(operation, values)]);
+      if (bundle) {
+        setValues((v) => ({ ...v, ...bundle.values }));
+        setTemplateSelection(templateSelectionFor(bundle.template));
+        setDocumentation(bundle.documentation);
+      }
+    } else {
+      setValues((v) => freshValues(operation, origin, v));
+      setTemplateSelection(templateSelectionFor(undefined));
+      setDocumentation(null);
     }
   };
+
+  // Auto-derive the sample name "<origin> <process>" and de-duplicate it against existing sample
+  // names, keyed on the base name so it re-runs only when the process name changes (not when it sets
+  // the sample name). Skipped once the user hand-edits the name.
+  const sampleBaseName =
+    operation && !sampleNameEdited ? derivedSampleName(origin.sample.name, resolveProcessName(operation, values)) : "";
+  React.useEffect(() => {
+    if (!operation || sampleNameEdited || sampleBaseName === "") return;
+    const nameFrom = operation.effect.nameFrom;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void firstAvailableName(sampleBaseName, sampleNameAvailable).then((name) => {
+        if (!cancelled) setValues((v) => ({ ...v, [nameFrom]: name }));
+      });
+    }, DEDUP_DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [operation, sampleBaseName, sampleNameEdited]);
 
   const next = () => setActiveStep((s) => s + 1);
 
@@ -290,9 +280,13 @@ function OperationWizard({
   const stepValid = (): boolean => {
     if (!operation) return false;
     const key = stepKeys[activeStep];
-    // Step 1 validates the name/process inputs and the template choice; step 2 the amount inputs.
-    if (key === "details") return detailsValid(operation, values, detailKeys) && templateStepValid(templateSelection);
-    if (key === "amounts") return detailsValid(operation, values, amountKeys);
+    if (key === "details") return detailsValid(operation, values, detailKeys);
+    if (key === "template") return templateStepValid(templateSelection);
+    if (key === "amounts")
+      return (
+        detailsValid(operation, values, amountKeys) &&
+        !amountTakenExceedsOrigin(operation, values, toOrigin(origin).quantity)
+      );
     return true;
   };
 
@@ -300,19 +294,12 @@ function OperationWizard({
     if (!operation) return;
     setSubmitting(true);
     try {
-      // Resolve the template choice to a single templateId before building the request. Option
-      // "fromSample" reuses the origin sample's own template when it has one, and only creates a
-      // new template when the sample is template-less (adr/0003).
-      if (templateSelection.mode === "fromSample") {
-        await origin.sample.fetchAdditionalInfo();
-      }
-      const originHadTemplate = (origin.sample.templateId ?? null) !== null;
-      const derivedTemplateName = t("operations.template.derivedName", { name: origin.sample.name });
-      const templateId = await resolveTemplateId({
+      // "fromSample" reuses the origin sample's own template; make sure it is loaded before reading it.
+      if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
+      const templateId = resolveTemplateId({
         mode: templateSelection.mode,
         pickedTemplateId: templateSelection.templateId,
         originSampleTemplateId: origin.sample.templateId ?? null,
-        createTemplate: () => createTemplateFromOriginSample(origin.sample, derivedTemplateName),
       });
       const request = buildOperationRequest({
         operation,
@@ -325,48 +312,27 @@ function OperationWizard({
           : undefined,
       });
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
-      // Persist the "remember" choices only now that Perform has succeeded. They are keyed per
-      // operation, and additionally per process name for operations that have one (Derive): deriving
-      // as "dna extraction" remembers separately from "boil" (see processNames.ts). Cancelling at any
-      // step never reaches here, so nothing persists (adr/0003).
-      const key = rememberKey(operation.key, operation.effect.processNameFrom, values);
-      // A template created from a template-less parent is remembered as that specific template, so it
-      // is reused rather than recreated (the backend cannot link it to the parent sample).
-      const toRemember = selectionToRemember({
-        selection: templateSelection,
-        resolvedTemplateId: templateId,
-        originHadTemplate,
-        createdTemplateName: derivedTemplateName,
-      });
-      setTemplateDefaults(templateDefaultsAfterPerform(templateDefaults ?? {}, key, toRemember));
-      // Remember (or, when unticked, forget) the documentation choice for this key.
-      setDocDefaults(docDefaultsAfterPerform(docDefaults ?? {}, key, documentation, rememberDoc));
-      // Add the chosen process name to this operation's saved list, so it appears in the autocomplete
-      // next time (operations without a process name contribute nothing).
-      if (operation.effect.processNameFrom) {
-        const name = String(values[operation.effect.processNameFrom] ?? "");
-        const list = processNames?.[operation.key] ?? [];
-        const updated = addProcessName(list, name);
-        if (updated !== list) setProcessNames({ ...(processNames ?? {}), [operation.key]: updated });
-        // Remember (or, when unticked, forget) this operation's default process name.
-        setProcessNameDefaults(
-          processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name, rememberProcessName),
-        );
+      // Persist the "remember" bundle only now that Perform has succeeded, and only when the box is
+      // ticked. Keyed per operation + process name; unticking never deletes a prior bundle (adr/0004).
+      if (remember) {
+        const key = rememberKey(operation, values);
+        const bundle: ProcessValues = {
+          values: omit(
+            values,
+            [operation.effect.nameFrom, operation.effect.processNameFrom].filter((k): k is string => Boolean(k)),
+          ),
+          template: templateSelectionToDefault(templateSelection),
+          documentation,
+        };
+        setProcessValues(processValuesAfterPerform(processValues ?? {}, key, bundle, true));
+        if (operation.effect.processNameFrom) {
+          const name = String(values[operation.effect.processNameFrom] ?? "");
+          const list = processNames?.[operation.key] ?? [];
+          const updated = addProcessName(list, name);
+          if (updated !== list) setProcessNames({ ...(processNames ?? {}), [operation.key]: updated });
+          setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name, true));
+        }
       }
-      // Remember (or, when the "remember amounts" box is unticked, forget) the chosen amounts for this
-      // key: operation-scoped for Cryopreserve, process-name-scoped for Derive.
-      const eachFrom = operation.effect.eachAmountFrom;
-      const takenFrom = operation.effect.amountTakenFrom;
-      setAmountDefaults(
-        amountDefaultsAfterPerform(
-          amountDefaults ?? {},
-          key,
-          Number(values[operation.effect.countFrom]),
-          values[eachFrom] as OperationQuantity | undefined,
-          takenFrom ? (values[takenFrom] as OperationQuantity | undefined) : undefined,
-          rememberAmounts,
-        ),
-      );
       await origin.fetchAdditionalInfo();
       // Re-run the main search so the newly created sample appears without a manual re-search.
       getRootStore().searchStore.search.performSearch();
@@ -390,6 +356,8 @@ function OperationWizard({
     switch (key) {
       case "details":
         return t("operations.wizard.step.details");
+      case "template":
+        return t("operations.wizard.step.template");
       case "amounts":
         return t("operations.wizard.step.amounts");
       case "documentation":
@@ -402,45 +370,32 @@ function OperationWizard({
   const stepContent = (key: string): React.ReactNode => {
     if (!operation) return null;
     if (key === "details") {
-      // Step 1: the names/process-name fields, then the template choice (its category feeds step 2).
       return (
-        <Stack spacing={2}>
-          <OperationDetailsStep
-            operation={operation}
-            origin={origin}
-            values={values}
-            onChange={onDetailsChange}
-            section="details"
-            processNameOptions={
-              operation.effect.processNameFrom
-                ? (processNames?.[operation.key] ?? []).filter((n) => n.trim() !== "")
-                : []
-            }
-            rememberProcessName={rememberProcessName}
-            onRememberProcessNameChange={operation.effect.processNameFrom ? setRememberProcessName : undefined}
-            // The amounts + their remember checkbox render only on the amounts section (the amount
-            // inputs are filtered out here), so these are inert on this step; they are wired anyway so
-            // the amounts state is consistent across both renders.
-            rememberAmounts={rememberAmounts}
-            onRememberAmountsChange={(r) => {
-              setRememberAmountsTouched(true);
-              setRememberAmounts(r);
-            }}
-          />
-          <TemplateStep
-            value={templateSelection}
-            onChange={(sel) => {
-              setTemplateTouched(true);
-              setTemplateSelection(sel);
-            }}
-            originSampleName={origin.sample.name}
-            processName={processNameValue || undefined}
-          />
-        </Stack>
+        <OperationDetailsStep
+          operation={operation}
+          origin={origin}
+          values={values}
+          onChange={onDetailsChange}
+          section="details"
+          processNameOptions={
+            operation.effect.processNameFrom ? (processNames?.[operation.key] ?? []).filter((n) => n.trim() !== "") : []
+          }
+          remember={remember}
+          onRememberChange={onRememberChange}
+        />
+      );
+    }
+    if (key === "template") {
+      return (
+        <TemplateStep
+          value={templateSelection}
+          onChange={setTemplateSelection}
+          originSampleName={origin.sample.name}
+          parentHasTemplate={parentHasTemplate}
+        />
       );
     }
     if (key === "amounts") {
-      // Step 2: the quantities. Units come from the chosen template's category, or the origin's.
       return (
         <OperationDetailsStep
           operation={operation}
@@ -449,30 +404,11 @@ function OperationWizard({
           onChange={onDetailsChange}
           section="amounts"
           unitCategories={[amountCategory]}
-          rememberAmounts={rememberAmounts}
-          onRememberAmountsChange={(r) => {
-            setRememberAmountsTouched(true);
-            setRememberAmounts(r);
-          }}
         />
       );
     }
     if (key === "documentation") {
-      return (
-        <DocumentationStep
-          value={documentation}
-          onChange={(doc) => {
-            setDocTouched(true);
-            setDocumentation(doc);
-          }}
-          remember={rememberDoc}
-          onRememberChange={(r) => {
-            setDocTouched(true);
-            setRememberDoc(r);
-          }}
-          processName={processNameValue || undefined}
-        />
-      );
+      return <DocumentationStep value={documentation} onChange={setDocumentation} />;
     }
     return (
       <OperationConfirmation
@@ -485,14 +421,12 @@ function OperationWizard({
     );
   };
 
-  // Once an operation is chosen, the dialog heading names it on every step, appending the chosen
-  // process name where the operation has one (e.g. "Derive: dna extraction"); operations without a
-  // process name (Cryopreserve) show just the operation name.
-  const processNameValue = operation?.effect.processNameFrom
-    ? String(values[operation.effect.processNameFrom] ?? "").trim()
-    : "";
+  // The dialog heading names the operation on every step, appending a user-entered process name where
+  // the operation has one (e.g. "Derive: dna extraction"); operations with a fixed process name
+  // (Cryopreserve) show just the operation name.
+  const headingProcessName = operation?.effect.processNameFrom ? resolveProcessName(operation, values) : "";
   const heading = operation
-    ? `${resolveLabel(operation.labelKey)}${processNameValue ? `: ${processNameValue}` : ""}`
+    ? `${resolveLabel(operation.labelKey)}${headingProcessName ? `: ${headingProcessName}` : ""}`
     : t("operations.wizard.title");
 
   return (

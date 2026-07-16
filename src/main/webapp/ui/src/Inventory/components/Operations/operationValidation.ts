@@ -1,3 +1,4 @@
+import { toCommonUnit } from "@/stores/definitions/Units";
 import type { InventoryOperation } from "./operationsConfig";
 import type { OperationInputs, OperationQuantity } from "./types";
 
@@ -40,4 +41,26 @@ export function detailsValid(
     }
   }
   return true;
+}
+
+/**
+ * Whether the amount taken from the origin exceeds the origin's current quantity (adr/0005). The
+ * comparison is unit-aware: both are converted to the atomic unit of their (shared) category, so an
+ * entry in a different unit within the same category (e.g. 0.5 L against a 400 ml origin) is compared
+ * correctly. The amount-taken field is constrained to the origin's category, so a cross-category
+ * comparison never arises. Returns false for an incomplete (unit-unset) amount or a missing origin
+ * quantity - those are handled by detailsValid and never treated as over-removal.
+ */
+export function amountTakenExceedsOrigin(
+  operation: InventoryOperation,
+  values: OperationInputs,
+  originQuantity: OperationQuantity | null,
+): boolean {
+  const takenFrom = operation.effect.amountTakenFrom;
+  if (!takenFrom || !originQuantity) return false;
+  const taken = values[takenFrom] as OperationQuantity | undefined;
+  if (!taken || !Number.isFinite(taken.numericValue) || taken.unitId <= 0) return false;
+  return (
+    toCommonUnit(taken.numericValue, taken.unitId) > toCommonUnit(originQuantity.numericValue, originQuantity.unitId)
+  );
 }

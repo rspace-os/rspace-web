@@ -1,7 +1,7 @@
 /**
- * Pure helpers for the wizard's optional documentation step (adr/0003), mirroring
- * templateResolution.ts. The documentation choice is remembered per user, per operation, and (for
- * operations with a process name) per process name - keyed the same way as the template default.
+ * Pure helper for the wizard's optional documentation step (adr/0003). The chosen document is
+ * remembered as part of the single per-process "remember" bundle (see processValues.ts); this only
+ * guards a stored value back into shape.
  */
 import type { DocumentationSelection } from "./DocumentationStep";
 
@@ -11,21 +11,4 @@ export function normalizeDocumentation(stored: unknown): DocumentationSelection 
   return s && typeof s.globalId === "string" && typeof s.name === "string"
     ? { globalId: s.globalId, name: s.name }
     : null;
-}
-
-/**
- * The documentation defaults after Perform. When "remember" is ticked and a document is chosen, store
- * it under this key; otherwise drop any previously-remembered document for the key, so unticking (or
- * clearing) is itself remembered. Persisted only on Perform, never on cancel.
- */
-export function docDefaultsAfterPerform(
-  current: Record<string, DocumentationSelection>,
-  key: string,
-  documentation: DocumentationSelection,
-  remember: boolean,
-): Record<string, DocumentationSelection> {
-  const next = { ...current };
-  if (remember && documentation) next[key] = documentation;
-  else delete next[key];
-  return next;
 }

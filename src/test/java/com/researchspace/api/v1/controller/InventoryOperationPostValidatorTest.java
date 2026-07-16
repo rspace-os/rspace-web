@@ -7,6 +7,7 @@ import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.model.units.RSUnitDef;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,5 +96,45 @@ class InventoryOperationPostValidatorTest {
     ApiInventoryOperationPost request = validRequest();
     request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(null, 3));
     assertTrue(validate(request).hasErrors());
+  }
+
+  private static ApiQuantityInfo grams(String value) {
+    return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.GRAM.getId());
+  }
+
+  @Test
+  void detectsOverRemovalInTheSameUnit() {
+    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), grams("5")));
+  }
+
+  @Test
+  void allowsTakingUpToAndWithinTheOriginQuantity() {
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("5"), grams("5")));
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("4"), grams("5")));
+  }
+
+  @Test
+  void comparesUnitAwareAcrossUnitsInTheSameCategory() {
+    // 0.006 kg = 6 g, which exceeds a 5 g origin.
+    ApiQuantityInfo sixGramsAsKilos =
+        new ApiQuantityInfo(new BigDecimal("0.006"), RSUnitDef.KILO.getId());
+    assertTrue(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixGramsAsKilos, grams("5")));
+    ApiQuantityInfo fourGramsAsKilos =
+        new ApiQuantityInfo(new BigDecimal("0.004"), RSUnitDef.KILO.getId());
+    assertFalse(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(fourGramsAsKilos, grams("5")));
+  }
+
+  @Test
+  void doesNotFlagNullQuantitiesOrDifferentCategories() {
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(null, grams("5")));
+    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
+    // a volume amount against a mass origin is not commensurate, so it is not treated as
+    // over-removal
+    ApiQuantityInfo sixMillilitres =
+        new ApiQuantityInfo(new BigDecimal("6"), RSUnitDef.MILLI_LITRE.getId());
+    assertFalse(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(sixMillilitres, grams("5")));
   }
 }

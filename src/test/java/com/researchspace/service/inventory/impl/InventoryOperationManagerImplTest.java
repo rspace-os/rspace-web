@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -75,6 +77,24 @@ class InventoryOperationManagerImplTest {
     verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), used.capture(), eq(user));
     assertEquals(0, new BigDecimal("0.6").compareTo(used.getValue().getNumericValue()));
     assertEquals(Integer.valueOf(3), used.getValue().getUnitId());
+  }
+
+  @Test
+  void decrementsOriginBeforeCreatingTheNewSample() {
+    // The new subsample must end up most-recently-modified, so the origin is decremented (which
+    // stamps its modification date) BEFORE the new sample + subsample are created (adr/0005).
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(List.of(origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3))));
+    ApiSampleWithFullSubSamples newSample = new ApiSampleWithFullSubSamples("Derived material");
+    request.setNewSample(newSample);
+    when(sampleApiMgr.createNewApiSample(newSample, user))
+        .thenReturn(new ApiSampleWithFullSubSamples("Derived material"));
+
+    manager.performOperation(request, user);
+
+    InOrder inOrder = inOrder(subSampleApiMgr, sampleApiMgr);
+    inOrder.verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+    inOrder.verify(sampleApiMgr).createNewApiSample(newSample, user);
   }
 
   @Test

@@ -8,16 +8,17 @@
  * is an unambiguous separator.
  */
 import { omit } from "es-toolkit";
+import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
 
-export function rememberKey(
-  operationKey: string,
-  processNameFrom: string | undefined,
-  values: Record<string, unknown>,
-): string {
-  if (!processNameFrom) return operationKey;
-  const raw = values[processNameFrom];
-  const name = typeof raw === "string" ? raw.trim() : "";
-  return name === "" ? operationKey : `${operationKey} ${name}`;
+/**
+ * The per-user "remember" scope key: the operation combined with its resolved process name (adr/0004).
+ * A fixed-process operation (Cryopreserve) and a Derive run with no process name typed both key by the
+ * operation alone, so the key stays clean ("cryopreserve", "derive") rather than repeating the name.
+ */
+export function rememberKey(operation: InventoryOperation, values: Record<string, unknown>): string {
+  if (!operation.effect.processNameFrom) return operation.key;
+  const name = resolveProcessName(operation, values);
+  return name === "" ? operation.key : `${operation.key} ${name}`;
 }
 
 /** Adds a trimmed, non-empty process name to the operation's saved list (deduped). */

@@ -173,6 +173,53 @@ public class InventoryOperationsApiControllerMVCIT extends API_MVC_InventoryTest
         "the derived sample must be created from the chosen template");
   }
 
+  @Test
+  public void rejectsTakingMoreThanTheOriginHolds() throws Exception {
+    // adr/0005: taking more than the origin currently holds must be rejected (400), not clamped,
+    // and
+    // must leave the origin untouched.
+    ApiSampleWithFullSubSamples source = createBasicSampleForUser(anyUser);
+    ApiSubSample origin = source.getSubSamples().get(0);
+    Long originId = origin.getId();
+    String originGlobalId = origin.getGlobalId();
+    Integer unitId = origin.getQuantity().getUnitId();
+    java.math.BigDecimal originalAmount = origin.getQuantity().getNumericValue();
+    java.math.BigDecimal tooMuch = originalAmount.add(java.math.BigDecimal.ONE);
+
+    String linkJson =
+        "{\"name\":\"Is Derived From using process:"
+            + " PCR\",\"type\":\"link\",\"newFieldRequest\":true,"
+            + "\"link\":{\"relationType\":\"IsDerivedFrom\",\"targetGlobalId\":\""
+            + originGlobalId
+            + "\",\"versionPin\":null}}";
+    String operationJson =
+        "{\"operationType\":\"DERIVE\","
+            + "\"origins\":[{\"id\":"
+            + originId
+            + ",\"amountTaken\":{\"numericValue\":"
+            + tooMuch.toPlainString()
+            + ",\"unitId\":"
+            + unitId
+            + "}}],"
+            + "\"newSample\":{\"name\":\"Derived material\",\"extraFields\":["
+            + linkJson
+            + "],\"subSamples\":[{\"quantity\":{\"numericValue\":0.5,\"unitId\":"
+            + unitId
+            + "},\"extraFields\":["
+            + linkJson
+            + "]}]}}";
+
+    mockMvc
+        .perform(createBuilderForPostWithJSONBody(apiKey, "/operations", anyUser, operationJson))
+        .andExpect(status().isBadRequest());
+
+    // the origin is unchanged (the operation was rejected before any mutation)
+    ApiSubSample reloadedOrigin = subSampleApiManager.getApiSubSampleById(originId, anyUser);
+    assertTrue(
+        originalAmount.compareTo(reloadedOrigin.getQuantity().getNumericValue()) == 0,
+        "origin quantity must be unchanged when over-removal is rejected");
+  }
+
   private ApiExtraField findLinkField(List<ApiExtraField> extraFields) {
     return extraFields.stream().filter(ef -> ef.getLink() != null).findFirst().orElse(null);
   }

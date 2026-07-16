@@ -60,3 +60,16 @@ export const operations: Array<InventoryOperation> = v.parse(v.array(OperationSc
 export function operationsForSelectionSize(count: number): Array<InventoryOperation> {
   return operations.filter((o) => count >= o.minSelected && count <= o.maxSelected);
 }
+
+/**
+ * Every operation has a process name (adr/0004). An operation that declares a process-name input
+ * (Derive) resolves to the user's trimmed entry (which may be empty until they type one); one that
+ * does not (Cryopreserve) resolves to a fixed name, its own operation key. The process name is the
+ * single key for remembered values and the seed for the derived sample name.
+ */
+export function resolveProcessName(operation: InventoryOperation, values: Record<string, unknown>): string {
+  const from = operation.effect.processNameFrom;
+  if (!from) return operation.key;
+  const raw = values[from];
+  return typeof raw === "string" ? raw.trim() : "";
+}

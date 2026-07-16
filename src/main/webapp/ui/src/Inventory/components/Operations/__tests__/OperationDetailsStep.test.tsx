@@ -74,6 +74,17 @@ const processOperation = {
   effect: { ...operation.effect, processNameFrom: "processName" },
 } as unknown as InventoryOperation;
 
+// A Derive-shaped operation with both a process-name and a derived sample-name field.
+const nameOperation = {
+  ...operation,
+  inputs: [
+    { key: "processName", type: "text", labelKey: "operations.fields.processName", required: true },
+    { key: "sampleName", type: "text", labelKey: "operations.fields.sampleName", required: true },
+    ...operation.inputs,
+  ],
+  effect: { ...operation.effect, processNameFrom: "processName", nameFrom: "sampleName" },
+} as unknown as InventoryOperation;
+
 describe("OperationDetailsStep", () => {
   it("renders the quantity unit dropdowns enabled (user can pick the unit)", () => {
     render(
@@ -91,8 +102,6 @@ describe("OperationDetailsStep", () => {
   });
 
   it("uses the override category for the created amount but keeps amount-taken on the origin's type", () => {
-    // Even when a template overrides the created-sample units (volume), the amount taken FROM the
-    // origin must stay in the origin's own measurement type (mass): you remove mass from a mass sample.
     const massOrigin = {
       quantity: { numericValue: 10, unitId: 5 },
       quantityCategory: "mass",
@@ -117,7 +126,6 @@ describe("OperationDetailsStep", () => {
     const { rerender } = render(
       <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
     );
-    // details: the process-name field shows, the amount dropdowns do not
     expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toBeInTheDocument();
     expect(screen.queryAllByTestId("unit-select")).toHaveLength(0);
     rerender(
@@ -129,7 +137,6 @@ describe("OperationDetailsStep", () => {
         section="amounts"
       />,
     );
-    // amounts: the dropdowns show, the process-name field does not
     expect(screen.queryByRole("combobox", { name: /fields\.processName/i })).not.toBeInTheDocument();
     expect(screen.getAllByTestId("unit-select")).toHaveLength(2);
   });
@@ -175,7 +182,6 @@ describe("OperationDetailsStep", () => {
         section="amounts"
       />,
     );
-    // change the first (eachAmount) unit dropdown from ml (3) to l (2)
     await userEvent.setup().selectOptions(screen.getAllByTestId("unit-select")[0], "2");
     expect(onChange).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -192,7 +198,7 @@ describe("OperationDetailsStep", () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ processName: "x" }));
   });
 
-  it("shows the current process name and a remember checkbox that toggles", async () => {
+  it("shows the single remember checkbox (naming the process) and toggles it", async () => {
     const onRemember = vi.fn();
     render(
       <OperationDetailsStep
@@ -200,53 +206,42 @@ describe("OperationDetailsStep", () => {
         origin={origin}
         values={{ ...values, processName: "dna" }}
         onChange={() => undefined}
-        rememberProcessName={false}
-        onRememberProcessNameChange={onRemember}
+        remember={false}
+        onRememberChange={onRemember}
       />,
     );
-    // the process-name field reflects the current value (so it survives navigation within a run)
-    expect(screen.getByRole("combobox", { name: /fields\.processName/i })).toHaveValue("dna");
+    // the label references the chosen process name (values are remembered per process name)
+    expect(screen.getByText(/rememberProcessValues/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("checkbox"));
     expect(onRemember).toHaveBeenCalledWith(true);
   });
 
-  it("omits the process-name remember checkbox when no handler is provided", () => {
+  it("omits the remember checkbox when no handler is provided (e.g. the amounts section)", () => {
     render(
       <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
     );
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
-  it("shows an amounts remember checkbox that names the process and toggles", async () => {
-    const onRememberAmounts = vi.fn();
-    render(
+  it("disables the derived sample-name field with a hint until a process name is entered", () => {
+    const { rerender } = render(
       <OperationDetailsStep
-        operation={processOperation}
+        operation={nameOperation}
         origin={origin}
-        values={{ ...values, processName: "dna" }}
+        values={{ ...values, processName: "", sampleName: "" }}
         onChange={() => undefined}
-        section="amounts"
-        rememberAmounts
-        onRememberAmountsChange={onRememberAmounts}
       />,
     );
-    // the label references the chosen process name (persisted per process name)
-    expect(screen.getByText(/rememberAmountsForProcess/)).toBeInTheDocument();
-    await userEvent.setup().click(screen.getByRole("checkbox"));
-    expect(onRememberAmounts).toHaveBeenCalledWith(false);
-  });
-
-  it("uses a generic amounts remember label when the operation has no process name", () => {
-    render(
+    expect(screen.getByRole("textbox", { name: /fields\.sampleName/i })).toBeDisabled();
+    expect(screen.getByText(/fields\.processNameRequired/)).toBeInTheDocument();
+    rerender(
       <OperationDetailsStep
-        operation={operation}
+        operation={nameOperation}
         origin={origin}
-        values={values}
+        values={{ ...values, processName: "dna", sampleName: "A sample dna" }}
         onChange={() => undefined}
-        section="amounts"
-        onRememberAmountsChange={() => undefined}
       />,
     );
-    expect(screen.getByText(/fields\.rememberAmounts$/)).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /fields\.sampleName/i })).toBeEnabled();
   });
 });

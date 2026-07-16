@@ -51,18 +51,26 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Derived Sample** — the single new Sample an Operation creates, and the parent
   of every subsample that Operation creates. Distinct from the Origin's own parent
   Sample.
+- **Process name** — a label for the kind of process an Operation run represents
+  (e.g. "dna extraction"). Every Operation has one: free-text and user-selectable for
+  Operations that expose it (Derive), or a fixed value for those that do not
+  (Cryopreserve's Process name is "cryopreserve"). It scopes Remembered process
+  values and seeds the Derived Sample's name.
 - **Template choice** — the user's per-run decision about the Derived Sample's
-  template: none (ad-hoc), an existing template, or a template created from the
-  Origin's parent Sample. May be remembered per user, per Operation.
+  template: the Origin's parent Sample's own template (available only when it has
+  one), an existing template, or none (ad-hoc). The wizard never creates a template;
+  a template-less parent must have one made in a separate step first.
 - **Created subsample** — a new subsample produced by an Operation, parented by the
   Derived Sample.
 - **Created amount** — the quantity assigned to each Created subsample. Independent
   of the Origin's quantity change (material may be added or removed during the
-  operation), and expressed in the same measurement unit as the Origin.
+  operation). Expressed in the chosen template's measurement category when a template
+  is selected, otherwise the Origin's.
 - **Amount taken** — the quantity removed from the Origin by the Operation (a
-  **positive** decrement; must be > 0). The backend reduces the Origin by it, clamped
-  at zero, so an Operation can never increase the Origin. Independent of the Created
-  total (material may be added during the operation).
+  **positive** decrement; must be > 0), expressed in the Origin's own measurement
+  category. It must not exceed the Origin's current quantity: over-removal is rejected
+  rather than silently clamped. Independent of the Created total (material may be
+  added during the operation).
 - **Relation link** — a typed link (a DataCite relation such as IsDerivedFrom,
   IsPartOf, HasPart) held on the Derived Sample and pointing back to the Origin(s).
   Links are one-directional: only the newly created records link to the Origin; the
@@ -74,6 +82,8 @@ resolved during design. This file is a glossary only — no implementation detai
 - **Documentation link** — an optional typed link (relation IsDocumentedBy) from
   the Derived Sample to an ELN document, typically a standard operating procedure,
   captured during an Operation's documentation step.
-- **Remembered documentation default** — a per-user, per-Operation preference: the
-  ELN document to pre-fill as the Documentation link on that user's future runs of
-  that Operation. Overridable on any run.
+- **Remembered process values** — a per-user, per-Process-name bundle of the values
+  a user opted to keep (Template choice, Documentation link, and the amounts). Saved
+  only when the user opts in for that run, and re-applied when that Process name is
+  next used; the most-recently-remembered Process name is also pre-filled on the next
+  run. Replaces the older per-item remembered defaults.

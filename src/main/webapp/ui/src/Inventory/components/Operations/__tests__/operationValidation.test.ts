@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operationsConfig";
-import { detailsValid } from "../operationValidation";
+import { amountTakenExceedsOrigin, detailsValid } from "../operationValidation";
 import type { OperationInputs } from "../types";
 
 // A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
@@ -60,5 +60,41 @@ describe("detailsValid", () => {
     const blankName = { ...validValues, sampleName: "  " };
     expect(detailsValid(cryo, blankName, new Set(["eachAmount", "amountTaken"]))).toBe(true); // name skipped
     expect(detailsValid(cryo, blankName, new Set(["sampleName"]))).toBe(false); // name checked
+  });
+});
+
+describe("amountTakenExceedsOrigin", () => {
+  // unit ids: 3 = millilitres, 4 = litres (same, volume, category); origin holds 400 ml.
+  const origin = { numericValue: 400, unitId: 3 };
+
+  it("is false when the amount taken is within (or equal to) the origin's quantity", () => {
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 400, unitId: 3 } }, origin),
+    ).toBe(false);
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 100, unitId: 3 } }, origin),
+    ).toBe(false);
+  });
+
+  it("is true when the amount taken exceeds the origin's quantity (same unit)", () => {
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 401, unitId: 3 } }, origin),
+    ).toBe(true);
+  });
+
+  it("compares unit-aware across units in the same category (0.5 L > 400 ml)", () => {
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 0.5, unitId: 4 } }, origin),
+    ).toBe(true);
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 0.3, unitId: 4 } }, origin),
+    ).toBe(false);
+  });
+
+  it("does not flag an incomplete (unit-unset) amount or a missing origin quantity", () => {
+    expect(
+      amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 999, unitId: 0 } }, origin),
+    ).toBe(false);
+    expect(amountTakenExceedsOrigin(cryo, validValues, null)).toBe(false);
   });
 });

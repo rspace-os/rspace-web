@@ -1,5 +1,4 @@
 import ApiService from "@/common/InvApiService";
-import type SampleModel from "@/stores/models/SampleModel";
 import type { OperationRequest } from "./types";
 
 /** Minimal view of the created sample returned by the operations endpoint. */
@@ -15,24 +14,25 @@ export async function performOperation(request: OperationRequest): Promise<Opera
 }
 
 /**
- * Template option (c): create a Sample Template FROM the origin's parent sample and return its new
- * id, so the operation can then create the new sample from that template. Reuses the existing
- * sampleTemplates POST (the same body shape Search.createTemplateFromSample sends). Field content is
- * included so the template carries the sample's values as defaults, which avoids mandatory-field
- * validation when the operation later creates a sample from the template with no field values. No
- * backend change (adr/0003).
+ * Whether a sample name is free for the current user, used to de-duplicate the derived sample name
+ * with a numeric suffix (adr/0004). Uses the purpose-built, exact, own-scoped endpoint
+ * `samples/validateNameForNewSample` rather than the Inventory full-text search: that search is
+ * tokenised Lucene, so a multi-word name plus a wildcard matches no single token (and a bare query
+ * matches across every readable record's name/tags/description), neither of which is an exact
+ * name-existence check. Inventory names are not uniqueness-constrained, so this is a usability
+ * nicety: a blank name needs no check, and a failed check degrades to "available" (the name is used
+ * as-is) rather than blocking the wizard.
  */
-export async function createTemplateFromOriginSample(sample: SampleModel, name: string): Promise<number> {
-  if (!sample.infoLoaded) await sample.fetchAdditionalInfo();
-  // Include content for BOTH the template-derived fields and the sample's own custom (extra) fields,
-  // so every value on the parent becomes a default on the new template. This path runs only for a
-  // template-less parent, whose values live entirely in extraFields, so omitting those (as before)
-  // produced a template with empty defaults.
-  const includeContentForFields = new Set([
-    ...sample.fields.map((field) => field.id),
-    ...sample.extraFields.map((field) => field.id),
-  ]);
-  const args = { ...(await sample.sampleCreationParams(includeContentForFields)), name };
-  const { data } = await ApiService.post<{ id: number }>("sampleTemplates", args);
-  return data.id;
+export async function sampleNameAvailable(name: string): Promise<boolean> {
+  const trimmed = name.trim();
+  if (trimmed === "") return true;
+  try {
+    const { data } = await ApiService.query<{ valid?: boolean }>(
+      "samples/validateNameForNewSample",
+      new URLSearchParams({ name: trimmed }),
+    );
+    return data.valid !== false;
+  } catch {
+    return true;
+  }
 }

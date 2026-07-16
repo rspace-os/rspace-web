@@ -41,39 +41,32 @@ const makeTemplate = (fields: Array<FakeField>): FakeTemplate => ({
 });
 
 describe("TemplateStep", () => {
-  it("offers the three template choices and a remember checkbox", () => {
+  it("offers the three template choices (use parent, choose existing, none) and no remember checkbox", () => {
     render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" />);
     expect(screen.getAllByRole("radio")).toHaveLength(3);
-    expect(screen.getByRole("checkbox")).toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("disables 'use parent template' and shows a hint when the parent has no template", () => {
+    render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" parentHasTemplate={false} />);
+    // "use parent" is first; it is disabled and the hint is shown
+    expect(screen.getAllByRole("radio")[0]).toBeDisabled();
+    expect(screen.getByText(/template\.parentHasNoTemplate/)).toBeInTheDocument();
   });
 
   it("passes a referentially stable setTemplate to the picker across re-renders", () => {
     capturedSetTemplate.length = 0;
     const { rerender } = render(<TemplateStep value={pickMode} onChange={() => undefined} originSampleName="S1" />);
     const first = capturedSetTemplate.at(-1);
-    // Re-render with a changed value (as selecting a template does), which would otherwise create a
-    // fresh handler and retrigger the picker's selection effect endlessly.
     rerender(<TemplateStep value={{ ...pickMode, templateId: 7 }} onChange={() => undefined} originSampleName="S1" />);
     expect(capturedSetTemplate.at(-1)).toBe(first);
   });
 
-  it("selects the 'existing template' mode", async () => {
+  it("selects the 'existing template' mode (the second radio)", async () => {
     const onChange = vi.fn();
     render(<TemplateStep value={base} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getAllByRole("radio")[1]);
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ mode: "pick" }));
-  });
-
-  it("toggles remember", async () => {
-    const onChange = vi.fn();
-    render(<TemplateStep value={base} onChange={onChange} originSampleName="S1" />);
-    await userEvent.setup().click(screen.getByRole("checkbox"));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ remember: true }));
-  });
-
-  it("names the process in the remember label when a process name is given", () => {
-    render(<TemplateStep value={base} onChange={() => undefined} originSampleName="S1" processName="dna extraction" />);
-    expect(screen.getByText(/template\.rememberForProcess/)).toBeInTheDocument();
   });
 
   it("shows a remembered template as a banner with its name and no radio selected", () => {
@@ -84,10 +77,8 @@ describe("TemplateStep", () => {
         originSampleName="S1"
       />,
     );
-    // emphasised via the standard Inventory info Alert, not a plain line of text
     expect(screen.getByRole("alert")).toHaveTextContent("My Template");
     for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
-    // and the picker is not open
     expect(screen.queryByTestId("template-picker")).not.toBeInTheDocument();
   });
 
@@ -113,9 +104,7 @@ describe("TemplateStep", () => {
     const onChange = vi.fn();
     render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
     await userEvent.setup().click(screen.getByTestId("template-picker"));
-    // an error is displayed (English or, if i18n is not initialised, the raw key) ...
     expect(await screen.findByText(/mandatoryFieldsError|cannot be used|no default/i)).toBeInTheDocument();
-    // ... and the template id is never accepted, so Next stays blocked
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
   });
 

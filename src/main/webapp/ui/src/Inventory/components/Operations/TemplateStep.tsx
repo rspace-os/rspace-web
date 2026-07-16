@@ -1,5 +1,4 @@
 import Alert from "@mui/material/Alert";
-import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -39,14 +38,14 @@ function TemplateStep({
   value,
   onChange,
   originSampleName,
-  processName,
+  parentHasTemplate = true,
 }: {
   value: TemplateSelection;
   onChange: (value: TemplateSelection) => void;
   originSampleName: string;
-  /** The chosen process name, if the operation has one: the "remember" label names it so the user
-   *  understands the choice is remembered per process name rather than per operation. */
-  processName?: string;
+  /** Whether the origin's parent sample has its own template. When it does not, the "use parent
+   *  template" option is disabled with a hint: the wizard never creates a template (adr/0003). */
+  parentHasTemplate?: boolean;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
@@ -120,14 +119,20 @@ function TemplateStep({
         value={value.mode === "remembered" || value.mode === "unselected" ? "" : value.mode}
         onChange={(e) => setMode(e.target.value as TemplateSelection["mode"])}
       >
-        <FormControlLabel value="none" control={<Radio />} label={t("operations.template.none")} />
-        <FormControlLabel value="pick" control={<Radio />} label={t("operations.template.pick")} />
         <FormControlLabel
           value="fromSample"
           control={<Radio />}
+          disabled={!parentHasTemplate}
           label={t("operations.template.fromSample", { name: originSampleName })}
         />
+        <FormControlLabel value="pick" control={<Radio />} label={t("operations.template.pick")} />
+        <FormControlLabel value="none" control={<Radio />} label={t("operations.template.none")} />
       </RadioGroup>
+      {!parentHasTemplate ? (
+        <Typography variant="body2" color="text.secondary">
+          {t("operations.template.parentHasNoTemplate")}
+        </Typography>
+      ) : null}
       {value.mode === "pick" ? (
         <>
           <WizardTemplatePicker setTemplate={handlePickTemplate} />
@@ -139,16 +144,6 @@ function TemplateStep({
           ) : null}
         </>
       ) : null}
-      <FormControlLabel
-        control={
-          <Checkbox checked={value.remember} onChange={(e) => onChange({ ...value, remember: e.target.checked })} />
-        }
-        label={
-          processName
-            ? t("operations.template.rememberForProcess", { name: processName })
-            : t("operations.template.remember")
-        }
-      />
     </Stack>
   );
 }
