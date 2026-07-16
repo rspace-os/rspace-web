@@ -11,18 +11,17 @@ import lombok.Value;
 @Value
 @Builder
 public class SidecarGenerationContext {
-  /** The user generating the sidecar; becomes the sole creator in phase 1. */
   User user;
 
-  /** The user's ORCID iD, or null when they have none. */
+  /** Null when the user has no ORCID. */
   String orcidId;
 
-  /** Organisation name for the deployment, used for creator affiliation and publisher. */
+  /** Deployment organisation name, used for creator affiliation and publisher. */
   String institutionName;
 
   String bucketName;
 
-  /** Absolute folder prefix (single level) within the bucket, e.g. {@code XRD-Experiments}. */
+  /** Absolute prefix within the bucket; single level, no trailing slash. */
   String folderPath;
 
   List<SidecarFileEntry> files;

@@ -23,11 +23,9 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 /**
- * Composes metadata sidecars for an <b>S3</b> filestore folder and writes them back to S3. Not a
- * transactional {@code *Manager}: it reads no DAO and its only writes are to S3 (plus an audit
- * event), so it deliberately runs outside a database transaction. Phase 1: folder-level, current
- * user as sole creator, DataCite the only format (see {@link DataCiteYamlSidecarGenerator}); the
- * storage is S3-specific, hence the {@code S3} prefix.
+ * Composes metadata sidecars for an S3 filestore folder and writes them back to S3. Deliberately
+ * not a {@code *Manager}: no DAO, only S3 writes plus an audit event, so it runs outside a DB
+ * transaction. Phase 1: folder-level, current user as sole creator, DataCite the only format.
  */
 @Service
 @AllArgsConstructor
@@ -59,12 +57,14 @@ public class S3SidecarService {
     String prefix = prefixFor(filestore, folderPath);
     GeneratedSidecar sidecar = compose(s3, prefix, user);
     writeToS3(s3, prefix, sidecar, user);
+    String filestoreName = filestore.getFileSystem().getName();
     auditService.notify(
         new GenericEvent(
             user,
-            sidecar,
+            new SidecarAuditEvent(filestoreName, prefix, sidecar.getFilename()),
             AuditAction.CREATE,
-            "Generated metadata sidecar " + sidecar.getFilename()));
+            "Generated metadata sidecar '%s' for folder '%s' on filestore '%s'"
+                .formatted(sidecar.getFilename(), prefix, filestoreName)));
     return sidecar;
   }
 

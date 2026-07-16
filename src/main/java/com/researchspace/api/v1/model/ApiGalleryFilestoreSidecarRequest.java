@@ -5,13 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-/**
- * Request body for the sidecar endpoints {@code POST
- * /api/v1/gallery/filestores/{filestoreId}/sidecar/preview} and {@code POST
- * /api/v1/gallery/filestores/{filestoreId}/sidecar}. Generates a metadata sidecar for the folder at
- * {@code path} (a filestore-relative path; {@code ""} or {@code "/"} for the filestore root). S3
- * only.
- */
+/** Request body for the sidecar preview/save endpoints (S3 only). */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

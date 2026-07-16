@@ -1,6 +1,7 @@
 package com.researchspace.service.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -63,6 +64,7 @@ class S3SidecarServiceTest {
     user.setLastName("Müller");
 
     NfsFileSystem filesystem = new NfsFileSystem();
+    filesystem.setName("lrz-filestore");
     NfsFileStore filestore = new NfsFileStore();
     filestore.setFileSystem(filesystem);
     when(nfsManager.getNfsFileStore(1L)).thenReturn(filestore);
@@ -122,7 +124,18 @@ class S3SidecarServiceTest {
 
     ArgumentCaptor<GenericEvent> eventCaptor = ArgumentCaptor.forClass(GenericEvent.class);
     verify(auditService).notify(eventCaptor.capture());
-    assertEquals(AuditAction.CREATE, eventCaptor.getValue().getAuditAction());
+    GenericEvent event = eventCaptor.getValue();
+    assertEquals(AuditAction.CREATE, event.getAuditAction());
+
+    SidecarAuditEvent payload = (SidecarAuditEvent) event.getAuditedObject();
+    assertEquals("lrz-filestore", payload.filestore());
+    assertEquals("XRD-Experiments", payload.path());
+    assertEquals("XRD-Experiments.sidecar.yaml", payload.filename());
+    assertTrue(
+        event.getDescription().contains("XRD-Experiments.sidecar.yaml")
+            && event.getDescription().contains("XRD-Experiments")
+            && event.getDescription().contains("lrz-filestore"),
+        "description should name the sidecar, folder and filestore: " + event.getDescription());
   }
 
   @Test
