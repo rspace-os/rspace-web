@@ -31,7 +31,7 @@ Playwright-CT to Vitest API translation table. Read it before writing a spec.
 ```bash
 pnpm run test-browser                              # all 3 engines (from repo root)
 VITEST_BROWSERS=chromium pnpm run test-browser     # fast inner loop, one engine
-pnpm run test-browser -- src/components/SkipToContentMenu.spec.tsx   # single file
+pnpm run test-browser src/components/SkipToContentMenu.spec.tsx      # single file
 pnpm run test-browser:watch                        # watch mode
 ```
 

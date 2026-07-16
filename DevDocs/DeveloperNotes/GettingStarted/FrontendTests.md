@@ -1,8 +1,7 @@
-# Jest
+# Frontend unit tests
 
-We use [Jest](https://jestjs.io/) to perform unit testing on the front-end
-JavaScript codebase, primarily for Inventory. Before commiting to main, it
-is best to ensure that all of the tests continue to pass.
+We use [Vitest](https://vitest.dev/) for frontend unit tests. Before committing
+to main, ensure that the relevant tests pass.
 
 ## Running
 
@@ -10,24 +9,25 @@ To run the tests, perform the following command from the repo root:
 `pnpm run test`. The `cross-env` wrapper means the same command works on
 Windows, macOS, and Linux.
 
-A regex can then be appended to the command to run just the tests whose file
-name match the regex. E.g. `pnpm run test -- ContainerModel` will run all the
-ContainerModel tests.
+A file-name filter can be appended to run only matching tests. For example,
+`pnpm run test ContainerModel` runs the ContainerModel tests.
 
 ### Other useful arguments
 
-Appending the argument `--verbose` outputs a detailed listing of each test. To
-run this, you have to add `--` first to ensure the arg gets passed to jest and
-not to pnpm. E.g. `pnpm run test -- --verbose ContainerModel`
+Appending `--verbose` outputs a detailed listing of each test. pnpm passes
+arguments directly to the script, so do not add a standalone `--`; unlike npm,
+pnpm forwards it as a literal argument instead of stripping it, and Vitest
+treats it as the end of its options, silently discarding a following test
+filter. For example: `pnpm run test --verbose ContainerModel`.
 
-The argument `-o` only runs the tests that jest thinks could have been impacted
+The argument `-o` only runs the tests that Vitest thinks could have been impacted
 by the changes that are being tracked by git. This drastically reduces the time
 it takes to run the tests before committing.
 
 The argument `--color` will always output with colours, even if the output is
 not a tty. For example, when piping into less use `--color` and `-R`
 ```
-pnpm run test -- --color | less -R
+pnpm run test --color | less -R
 ```
 
 ## Writing
@@ -36,17 +36,12 @@ New tests should be written to a `__tests__` directory adjacent to the source
 code file in a script with extension ".test.js". Included below is a template
 to start off writing new react tests.
 
-```
-/*
- * @jest-environment jsdom
- */
-/* eslint-env jest */
-import React from "react";
-import { render, cleanup } from "@testing-library/react";
-import "@testing-library/jest-dom";
+```ts
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { cleanup, render } from "@testing-library/react";
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 afterEach(cleanup);
@@ -68,56 +63,28 @@ describe("<filename>", () => {
 
 Be sure to also run Biome (`pnpm run lint`) and type checking over any new or modified tests.
 
-### Using fireEvent
+### User interactions
 
-Instead of doing `screen.getByRole("button").click();` it can be better to do
-`fireEvent.click(screen.getByRole("button"));` for the simple reason that the
-latter does not need to be wrapped in a call to `act`. However, there are times
-where only the former, wrapper in `act`, will work.
+Use `userEvent` for every user interaction so tests exercise the same event
+sequence as a browser user. Create one instance per test and await each call.
 
-```
-fireEvent.click(screen.getByRole("button"));
-// instead of
-act(() => {
-  screen.getByRole("button").click();
-});
-```
+```ts
+import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react";
 
-Further things to watch out for is that the method of `fireEvent` that should
-be used is at times unintuitive. For most uses `fireEvent.click` is correct,
-but not for `select` menus, where `fireEvent.mouseDown` is required to trigger
-the opening of the menu. Similarly, whilst `fireEvent.change` is the correct
-call to make for edits to text fields and the like (see code below), for
-numerical fields (spinbuttons) `fireEvent.input` is instead required.
-
-```
-// for buttons, and most other interactive elements
-fireEvent.click(screen.getByRole("button"));
-
-// for choice fields
-fireEvent.mouseDown(screen.getByRole("Choose"));
-
-// for text fields
-fireEvent.change(screen.getByRole("textbox"), { target: { value: "new value" }});
-
-// for numberical fields
-fireEvent.input(screen.getByRole("spinbutton", { target: { value: 4 }});
+const user = userEvent.setup();
+await user.click(screen.getByRole("button"));
 ```
 
 ### Debugging issues with `act`
 
 `act` is used to ensure that react re-renders after some user interaction has
-been simulated. Most APIs provided by testing-library/react, such as fireEvent
-as mentioned above, call act automatically and so don't need to be wrapped.
-There are times when it is necessary, and there will be a console error
-reported by the test when it appears that one is necessary but not provided;
-usually because of some asynchronous action. To resolve this, the simplest
-solution is often to use a call with `waitFor` to have the test wait on the
-result of the asynchronous action, although this assumes that the action will
-make some change to the UI that can be awaited. It is usually the case that
-such console errors don't make a material difference the test, though it is
-possible that assertions could be checking the UI before it has had a chance to
-re-render so are best resolved where possible.
+been simulated. `userEvent` calls `act` automatically, so interactions normally
+do not need to be wrapped manually.
+
+An `act` warning usually points to asynchronous work that the test has not
+awaited. Await the `userEvent` call and then use `findBy*` queries or `waitFor`
+to observe the resulting UI state before making assertions.
 
 ### Using fast-check
 
@@ -166,7 +133,7 @@ Finally, run the following commands from the root of the repo.
 git bisect start
 git bisect bad
 git bisect good <good-commit>
-git bisect run pnpm run test -- <failing-test>
+git bisect run pnpm run test <failing-test>
 ```
 
 As an aside, if this process identifies a squashed commit from a PR, GitHub
