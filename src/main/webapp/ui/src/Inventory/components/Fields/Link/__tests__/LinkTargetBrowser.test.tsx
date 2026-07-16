@@ -1,7 +1,8 @@
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import LinkTargetBrowser from "../LinkTargetBrowser";
 
 // Search pulls in the store/fetcher chain at construction; stub it out (this is a thin wrapper).

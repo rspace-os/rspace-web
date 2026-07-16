@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import { makeMockField } from "../../../../stores/models/__tests__/FieldModel/mocking";
 import materialTheme from "../../../../theme";
 import DefaultValueField from "../DefaultValueField";

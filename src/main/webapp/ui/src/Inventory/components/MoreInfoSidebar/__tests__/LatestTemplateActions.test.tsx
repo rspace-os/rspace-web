@@ -12,7 +12,8 @@ vi.mock("../../../../common/InvApiService", () => ({
 }));
 
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+import { cleanup, render, screen } from "@testing-library/react";
+
 import { makeMockTemplate } from "../../../../stores/models/__tests__/TemplateModel/mocking";
 import materialTheme from "../../../../theme";
 import LatestTemplateActions from "../LatestTemplateActions";

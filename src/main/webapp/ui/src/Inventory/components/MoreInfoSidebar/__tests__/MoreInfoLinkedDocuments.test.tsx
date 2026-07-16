@@ -1,9 +1,9 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { render, within } from "@/__tests__/customQueries";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { findTableCell } from "@/__tests__/tableQueries";
 import commonEn from "@/modules/common/i18n/locales/en-US/common.json";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import InvApiService from "../../../../common/InvApiService";
@@ -93,17 +93,13 @@ describe("LinkedDocuments", () => {
     fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedDocuments.show" }));
     expect(within(await screen.findByRole("table")).getAllByRole("row")).toHaveLength(3);
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),
     ).toHaveTextContent("Foo");
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 1,
       }),
@@ -137,9 +133,7 @@ describe("LinkedDocuments", () => {
 
     expect(rows).toHaveLength(2);
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(screen.getByRole("table")).findTableCell({
+      await findTableCell(screen.getByRole("table"), {
         columnHeading: "inventory:moreInfo.linkedDocuments.columns.name",
         rowIndex: 0,
       }),
