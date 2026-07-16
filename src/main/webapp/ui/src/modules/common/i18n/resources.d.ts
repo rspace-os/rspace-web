@@ -1025,6 +1025,7 @@ export default interface Resources {
       "owncloud": "v8ss2uso0a-owncloud-integration",
       "panelAdjuster": "bt6kx098eq-more-info-sidebar#panel_adjuster",
       "permissions": "n09nmg4ax7-permissions",
+      "pidinstIdentifiers": "pidinst-identifiers",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
       "pyrat": "9kkeooveia-pyrat-integration",
@@ -3541,7 +3542,6 @@ export default interface Resources {
         "location": {
           "label": "Location",
           "listExplanation": "No location selection required for list containers.",
-          "mustStoreTypes": "inventory:instrument.createOptions.location.mustStoreTypes",
           "specificExplanation": "Specify a single location for where the new instrument should be placed."
         },
         "template": {
@@ -4289,7 +4289,71 @@ export default interface Resources {
       },
       "dialog": {
         "error": "Error",
-        "title": "Configure Inventory (for System Administrators)"
+        "title": "Configure Identifier Registries"
+      },
+      "pidinst": {
+        "b2inst": {
+          "connectionFailed": "Connection failed. {message}",
+          "connectionSucceeded": "Connection succeeded",
+          "detailsLabel": "Details",
+          "enableLabel": "Enable PIDINST for Instruments via B2INST",
+          "fieldRequiredError": "A valid value is required",
+          "formHelperText": "You can associate PIDINST IDs with Instruments by connecting to a B2INST server.",
+          "formLabel": "PIDINST B2INST Integration",
+          "helpTitle": "PIDINST B2INST help",
+          "labels": {
+            "enabled": "Enabled",
+            "password": "Token",
+            "serverUrl": "Server URL",
+            "username": "Community ID"
+          },
+          "placeholder": "Please enter a value for {label}",
+          "testConnection": "Test Connection"
+        },
+        "conflictWarning": "Only one PIDINST provider can be enabled",
+        "datacite": {
+          "connectionFailed": "Connection failed. {message}",
+          "connectionSucceeded": "Connection succeeded",
+          "detailsLabel": "Details",
+          "enableLabel": "Enable PIDINST for Instruments via DataCite",
+          "fieldRequiredError": "A valid value is required",
+          "formHelperText": "You can associate PIDINST IDs with Instruments by connecting to <externalLink href=\"https://datacite.org/\">DataCite</externalLink> using your Repository account credentials.",
+          "formLabel": "PIDINST DataCite Integration",
+          "helpTitle": "PIDINST DataCite help",
+          "labels": {
+            "enabled": "Enabled",
+            "password": "Password",
+            "repositoryPrefix": "Repository Prefix",
+            "serverUrl": "Server URL",
+            "username": "Repository Account ID"
+          },
+          "placeholder": "Please enter a value for {label}",
+          "serverOptions": {
+            "production": "Production",
+            "test": "Test"
+          },
+          "serverUrlLabel": "DataCite Server URL",
+          "testConnection": "Test Connection"
+        },
+        "providerLabel": "Provider",
+        "providerOptions": {
+          "b2inst": "B2INST",
+          "datacite": "DataCite"
+        }
+      },
+      "tabs": {
+        "igsn": {
+          "connected": "DataCite Connected",
+          "notConnected": "Not connected",
+          "samplesLabel": "- Samples",
+          "typeLabel": "IGSN"
+        },
+        "pidinst": {
+          "connected": "{provider} Connected",
+          "instrumentsLabel": "- Instruments",
+          "nothingConnected": "Nothing connected",
+          "typeLabel": "PIDINST"
+        }
       }
     },
     "sortProperties": {

@@ -568,6 +568,7 @@ const AssignDialog = observer(
 const IdentifiersCard = observer((): ReactNode => {
   const {
     searchStore: { activeResult },
+    authStore,
   } = useStores();
   if (!activeResult) throw new Error("ActiveResult must be a Record");
   const identifiers = activeResult.identifiers ?? [];
@@ -576,6 +577,7 @@ const IdentifiersCard = observer((): ReactNode => {
   const { t } = useTranslation(["inventory", "common"]);
   const isInstrument = activeResult.recordType === "instrument" || activeResult.recordType === "instrumentTemplate";
   const identifierLabel = isInstrument ? t("fields.identifiers.card.pidinst") : t("fields.identifiers.card.igsnId");
+  const { pidinstEnabled } = authStore;
 
   return (
     <>
@@ -585,7 +587,7 @@ const IdentifiersCard = observer((): ReactNode => {
           <Button
             color="primary"
             variant="outlined"
-            disabled={isInstrument}
+            disabled={isInstrument && !pidinstEnabled}
             onClick={() => void activeResult.addIdentifier()}
           >
             {t("fields.identifiers.card.createNew", { identifierLabel })}
@@ -593,7 +595,7 @@ const IdentifiersCard = observer((): ReactNode => {
           <Button
             color="primary"
             variant="outlined"
-            disabled={isInstrument}
+            disabled={isInstrument && !pidinstEnabled}
             onClick={() => {
               setAssignDialogOpen(true);
               trackEvent("user:open:assign-existing-igsn-dialog");
