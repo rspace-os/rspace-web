@@ -1,10 +1,12 @@
 /* eslint-disable testing-library/no-node-access */
 
 import { waitFor } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
+import { server } from "@/__tests__/mswServer";
 
 const rootRenderCalls: Array<{
   container: Element;
@@ -296,7 +298,6 @@ function getLastRenderedDialogProps(): DialogProps | null {
 
 describe("TinyMCE stoichiometry plugin", () => {
   beforeEach(() => {
-    fetchMock.resetMocks();
     vi.resetModules();
     vi.clearAllMocks();
     rootRenderCalls.length = 0;
@@ -408,6 +409,13 @@ describe("TinyMCE stoichiometry plugin", () => {
   });
 
   it("reopens the selected stoichiometry table from the toolbar button instead of inserting a new one", async () => {
+    const requests: Request[] = [];
+    server.use(
+      http.all("*", ({ request }) => {
+        requests.push(request);
+        return HttpResponse.error();
+      }),
+    );
     const registeredPlugins = registerTinymcePlugins();
     const editorDocument = document.implementation.createHTMLDocument("editor");
     const tableOnlyNode = createTableOnlyNode(editorDocument, {
@@ -442,7 +450,7 @@ describe("TinyMCE stoichiometry plugin", () => {
     });
 
     expect(editorDocument.querySelectorAll('[data-stoichiometry-table-only="true"]')).toHaveLength(1);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(requests).toHaveLength(0);
   });
 
   it("removes a newly inserted tableOnly div when its stoichiometry table is deleted", async () => {

@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, test } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import type { RestApiError } from "@/modules/common/api/schema";
 import { getShareListing } from "../queries";
 import type { ShareSearchResponse } from "../schema";
@@ -40,17 +42,17 @@ const mockShareResponseWithFolderShares: ShareSearchResponse = {
   ],
 };
 
-beforeEach(() => {
-  // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
-
 describe("getShareListing", () => {
   const token = "test-token-123";
 
   test("should fetch shared items with query parameters", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockShareResponse));
+    const requests: Request[] = [];
+    server.use(
+      http.get(`${API_BASE_URL}/share`, ({ request }) => {
+        requests.push(request);
+        return HttpResponse.json(mockShareResponse);
+      }),
+    );
 
     const params = {
       pageNumber: 1,
@@ -71,28 +73,30 @@ describe("getShareListing", () => {
     expectedParams.set("query", "report");
     expectedParams.set("sharedItemIds", "1,2,3");
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/share?${expectedParams.toString()}`,
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${token}`,
-          "X-Requested-With": "XMLHttpRequest",
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    const request = requests[0];
+    expect(new URL(request.url).search).toBe(`?${expectedParams.toString()}`);
+    expect(request.headers.get("Authorization")).toBe(`Bearer ${token}`);
+    expect(request.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   test("should fetch shared items without query parameters", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockShareResponse));
+    const requests: Request[] = [];
+    server.use(
+      http.get(`${API_BASE_URL}/share`, ({ request }) => {
+        requests.push(request);
+        return HttpResponse.json(mockShareResponse);
+      }),
+    );
 
     await getShareListing({}, { token });
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/share`, expect.any(Object));
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).search).toBe("");
   });
 
   test("should parse folderShares when provided", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockShareResponseWithFolderShares));
+    server.use(http.get(`${API_BASE_URL}/share`, () => HttpResponse.json(mockShareResponseWithFolderShares)));
 
     const result = await getShareListing({ sharedItemIds: ["999"] }, { token });
 
@@ -111,10 +115,11 @@ describe("getShareListing", () => {
       data: null,
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(errorResponse), {
-      status: 404,
-      statusText: "Not Found",
-    });
+    server.use(
+      http.get(`${API_BASE_URL}/share`, () =>
+        HttpResponse.json(errorResponse, { status: 404, statusText: "Not Found" }),
+      ),
+    );
 
     await expect(getShareListing({}, { token })).rejects.toThrow("Share listing not found");
   });

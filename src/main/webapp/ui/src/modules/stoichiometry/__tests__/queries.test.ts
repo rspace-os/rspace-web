@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { getStoichiometry } from "@/modules/stoichiometry/queries";
 import type { StoichiometryResponse } from "@/modules/stoichiometry/schema";
 
@@ -76,17 +78,22 @@ const mockStoichiometryResponse: StoichiometryResponse = {
   ],
 };
 
-beforeEach(() => {
-  // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
+function mockGetStoichiometry(response: () => Response): Request[] {
+  const requests: Request[] = [];
+  server.use(
+    http.get(`${API_BASE_URL}/stoichiometry`, ({ request }) => {
+      requests.push(request);
+      return response();
+    }),
+  );
+  return requests;
+}
 
 describe("getStoichiometry", () => {
   const token = "test-token";
 
   it("fetches stoichiometry by id and revision", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockStoichiometryResponse));
+    const requests = mockGetStoichiometry(() => HttpResponse.json(mockStoichiometryResponse));
 
     const result = await getStoichiometry({
       stoichiometryId: 3,
@@ -96,43 +103,35 @@ describe("getStoichiometry", () => {
 
     expect(result).toEqual(mockStoichiometryResponse);
     expect(result.molecules[1]?.inventoryLink?.stockDeducted).toBe(true);
-    expect(fetchMock).toHaveBeenCalledWith(
-      `${API_BASE_URL}/stoichiometry?stoichiometryId=3&revision=1`,
-      expect.objectContaining({
-        method: "GET",
-        headers: expect.objectContaining({
-          Authorization: `Bearer ${token}`,
-          "X-Requested-With": "XMLHttpRequest",
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    const request = requests[0];
+    expect(Object.fromEntries(new URL(request.url).searchParams)).toEqual({ stoichiometryId: "3", revision: "1" });
+    expect(request.headers.get("Authorization")).toBe(`Bearer ${token}`);
+    expect(request.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("omits revision when not provided", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockStoichiometryResponse));
+    const requests = mockGetStoichiometry(() => HttpResponse.json(mockStoichiometryResponse));
 
     await getStoichiometry({
       stoichiometryId: 3,
       token,
     });
 
-    expect(fetchMock).toHaveBeenCalledWith(`${API_BASE_URL}/stoichiometry?stoichiometryId=3`, expect.any(Object));
+    expect(requests).toHaveLength(1);
+    expect(Object.fromEntries(new URL(requests[0].url).searchParams)).toEqual({ stoichiometryId: "3" });
   });
 
   it("throws message from API when present", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ message: "Link not found" }), {
-      status: 404,
-      statusText: "Not Found",
-    });
+    mockGetStoichiometry(() =>
+      HttpResponse.json({ message: "Link not found" }, { status: 404, statusText: "Not Found" }),
+    );
 
     await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow("Link not found");
   });
 
   it("throws fallback message when API error shape is unknown", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ nope: true }), {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    mockGetStoichiometry(() => HttpResponse.json({ nope: true }, { status: 500, statusText: "Internal Server Error" }));
 
     await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toMatchObject({
       key: "stoichiometry.errors.fetchFailed",
@@ -141,8 +140,8 @@ describe("getStoichiometry", () => {
   });
 
   it("bubbles up network failures", async () => {
-    fetchMock.mockRejectOnce(new Error("Network down"));
+    mockGetStoichiometry(() => HttpResponse.error());
 
-    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow("Network down");
+    await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow();
   });
 });

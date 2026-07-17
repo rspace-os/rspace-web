@@ -4,8 +4,11 @@ import "@/__tests__/__mocks__/useOauthToken";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
+import { HttpResponse, http } from "msw";
 import type React from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import {
@@ -146,6 +149,23 @@ function stubCommonEndpoints({ netfilestoresEnabled = false }: { netfilestoresEn
 beforeEach(() => {
   mockAxios.reset();
   stubCommonEndpoints();
+  server.use(
+    oauthTokenHandler(),
+    http.get("/integration/integrationInfo", () =>
+      HttpResponse.json({
+        success: true,
+        data: {
+          name: "RAID",
+          displayName: "RAiD",
+          available: true,
+          enabled: false,
+          oauthConnected: false,
+          options: { RAID_CONFIGURED_SERVERS: [] },
+        },
+      }),
+    ),
+    http.get("/api/v1/share", () => HttpResponse.json({ totalHits: 0, pageNumber: 0, shares: [], _links: [] })),
+  );
 });
 
 afterEach(() => {
