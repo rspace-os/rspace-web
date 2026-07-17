@@ -222,7 +222,8 @@ END
         <!-- 1) Capture current max ids before dropping (holding table survives the BATCH_* drop). -->
         <sql splitStatements="true" stripComments="false">
             DROP TABLE IF EXISTS rsdev444_batch_seq_backup;
-            CREATE TABLE rsdev444_batch_seq_backup (seq_name VARCHAR(64) NOT NULL PRIMARY KEY, max_id BIGINT NOT NULL);
+            CREATE TABLE rsdev444_batch_seq_backup (seq_name VARCHAR(64) NOT NULL PRIMARY KEY, max_id BIGINT NOT NULL)
+                ENGINE=InnoDB DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             INSERT INTO rsdev444_batch_seq_backup (seq_name, max_id) VALUES
                 ('BATCH_JOB_EXECUTION_SEQ',  COALESCE((SELECT MAX(JOB_EXECUTION_ID)  FROM BATCH_JOB_EXECUTION), 0)),
                 ('BATCH_JOB_SEQ',            COALESCE((SELECT MAX(JOB_INSTANCE_ID)   FROM BATCH_JOB_INSTANCE),  0)),
