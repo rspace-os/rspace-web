@@ -29,8 +29,7 @@ paths:
     get:
       summary: Get deployment UI configuration
       description: >
-        Public deployment branding, help links, About-page details, and the
-        next scheduled maintenance window (null when none is scheduled).
+        Public deployment branding, help links, and About-page details.
       operationId: getConfigV2
       security: []
       responses:
@@ -44,9 +43,10 @@ paths:
     get:
       summary: List upcoming maintenance windows
       description: >
-        Returns active or future scheduled maintenance windows ordered by start
-        date, in the standard v2 paginated envelope.
+        Publicly returns active or future scheduled maintenance windows ordered
+        by start date, in the standard v2 paginated envelope.
       operationId: listMaintenancesV2
+      security: []
       parameters:
         - $ref: "#/components/parameters/Page"
         - $ref: "#/components/parameters/Limit"
@@ -59,8 +59,6 @@ paths:
                 $ref: "#/components/schemas/MaintenanceListResult"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/AuthenticationRequired"
 components:
   securitySchemes:
     ApiKeySecurity:
@@ -197,10 +195,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/HelpLink"
-        nextMaintenance:
-          nullable: true
-          allOf:
-            - $ref: "#/components/schemas/Maintenance"
         deploymentDescription:
           type: string
           description: Deployment-specific About-page description; empty when unset.

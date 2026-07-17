@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
-import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { v2ListEnvelope } from "@/modules/common/queries/v2Pagination";
 
-// Shared with /config. Only startDate is read; the rest tolerate nulls so a null date can't hide the banner.
+// Only startDate is read; the rest tolerate nulls so a null date can't hide the banner.
 export const MaintenanceSchema = v.object({
   id: v.number(),
   startDate: v.string(),
@@ -26,12 +25,11 @@ export const nextMaintenanceQueryKeys = {
   next: () => [...nextMaintenanceQueryKeys.all, "next"] as const,
 };
 
-export async function getNextMaintenance(token: string): Promise<NextMaintenance | null> {
+export async function getNextMaintenance(): Promise<NextMaintenance | null> {
   try {
     const response = await fetch("/api/v2/maintenances?limit=1", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
         "X-Requested-With": "XMLHttpRequest",
       },
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -52,10 +50,9 @@ export async function getNextMaintenance(token: string): Promise<NextMaintenance
 }
 
 export function useNextMaintenanceQuery() {
-  const { data: token } = useOauthTokenQuery();
   return useQuery({
     queryKey: nextMaintenanceQueryKeys.next(),
-    queryFn: () => getNextMaintenance(token),
+    queryFn: getNextMaintenance,
     staleTime: REFETCH_INTERVAL_MS,
     refetchInterval: REFETCH_INTERVAL_MS,
     retry: false,

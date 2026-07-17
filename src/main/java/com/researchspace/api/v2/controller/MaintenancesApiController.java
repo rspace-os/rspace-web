@@ -8,13 +8,11 @@ import com.researchspace.api.v2.model.ApiV2Maintenance;
 import com.researchspace.api.v2.model.ApiV2PaginationCriteria;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
-import com.researchspace.model.User;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestAttribute;
 
 @ApiController
 public class MaintenancesApiController extends BaseApiController implements MaintenancesApi {
@@ -26,9 +24,7 @@ public class MaintenancesApiController extends BaseApiController implements Main
 
   @Override
   public ApiV2ListResult<ApiV2Maintenance> listMaintenances(
-      @ModelAttribute ApiV2PaginationCriteria pagination,
-      BindingResult errors,
-      @RequestAttribute(name = "user") User user)
+      @ModelAttribute ApiV2PaginationCriteria pagination, BindingResult errors)
       throws BindException {
 
     inputValidator.validate(pagination, paginationValidator, errors);

@@ -50,7 +50,6 @@ describe("AboutPanel", () => {
         HttpResponse.json({
           branding: { bannerImageUrl: "/public/banner" },
           helpLinks: [],
-          nextMaintenance: null,
           deploymentDescription: "Configured for advanced research teams",
           deploymentHelpEmail: "groups@example.com",
         }),
@@ -82,7 +81,6 @@ describe("AboutPanel", () => {
         HttpResponse.json({
           branding: { bannerImageUrl: "/public/banner" },
           helpLinks: [],
-          nextMaintenance: null,
           deploymentDescription: "",
           deploymentHelpEmail: "",
         }),

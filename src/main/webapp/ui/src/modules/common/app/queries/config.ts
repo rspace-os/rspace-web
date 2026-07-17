@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import * as v from "valibot";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
-import { MaintenanceSchema } from "./nextMaintenance";
 
 const AppConfigResponseSchema = v.object({
   branding: v.object({
@@ -15,7 +14,6 @@ const AppConfigResponseSchema = v.object({
   ),
   deploymentDescription: v.string(),
   deploymentHelpEmail: v.string(),
-  nextMaintenance: v.optional(v.nullable(MaintenanceSchema)),
 });
 
 export type AppConfig = v.InferOutput<typeof AppConfigResponseSchema>;
@@ -25,7 +23,6 @@ const defaultAppConfig: AppConfig = {
   helpLinks: [],
   deploymentDescription: "",
   deploymentHelpEmail: "",
-  nextMaintenance: null,
 };
 Object.freeze(defaultAppConfig.branding);
 Object.freeze(defaultAppConfig.helpLinks);

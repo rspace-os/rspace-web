@@ -5,7 +5,6 @@ import java.util.List;
 public record ApiV2Config(
     Branding branding,
     List<HelpLink> helpLinks,
-    ApiV2Maintenance nextMaintenance,
     String deploymentDescription,
     String deploymentHelpEmail) {
 

@@ -57,7 +57,7 @@ describe("getAppConfig", () => {
     });
   });
 
-  it("parses an embedded next-maintenance window", async () => {
+  it("ignores obsolete embedded maintenance data", async () => {
     const response = {
       branding: { bannerImageUrl: "/public/banner" },
       helpLinks: [],
@@ -73,7 +73,12 @@ describe("getAppConfig", () => {
     };
     server.use(http.get("/api/v2/config", () => HttpResponse.json(response)));
 
-    await expect(getAppConfig()).resolves.toEqual(response);
+    await expect(getAppConfig()).resolves.toEqual({
+      branding: response.branding,
+      helpLinks: response.helpLinks,
+      deploymentDescription: response.deploymentDescription,
+      deploymentHelpEmail: response.deploymentHelpEmail,
+    });
   });
 
   it.each([

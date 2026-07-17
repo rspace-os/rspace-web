@@ -19,6 +19,7 @@ import MainNavigation from "./MainNavigation";
 import MaintenanceNotice from "./MaintenanceNotice";
 import MobileSectionSwitcher from "./MobileSectionSwitcher";
 import { DEFAULT_APP_CONFIG, useAppConfigQuery } from "./queries/config";
+import { useNextMaintenanceQuery } from "./queries/nextMaintenance";
 
 export function PublicAppBar({ renderHamburger }: AppBarConfig) {
   const { t } = useTranslation("common");
@@ -46,8 +47,8 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
   useCurrentUserEventSync();
   const { data: currentUser } = useCurrentUserQuery();
   const { data: appConfig } = useAppConfigQuery();
+  const { data: nextMaintenance } = useNextMaintenanceQuery();
   const config = appConfig ?? DEFAULT_APP_CONFIG;
-  const nextMaintenance = config.nextMaintenance;
   const navItems: NavItem[] = [
     {
       id: "workspace",
@@ -127,7 +128,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
         <MobileSectionSwitcher currentPage={currentPage} navItems={navItems} />
         <MainNavigation currentPage={currentPage} navItems={navItems} />
         <div className="min-w-0 flex-1" />
-        {nextMaintenance && <MaintenanceNotice startDate={new Date(nextMaintenance.startDate)} />}
+        {nextMaintenance && <MaintenanceNotice startDate={nextMaintenance.startDate} />}
         <a
           href="/dashboard"
           aria-label={t("appBar.notifications")}

@@ -15,7 +15,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
-import com.researchspace.model.User;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import java.util.Calendar;
 import java.util.Collections;
@@ -35,7 +34,6 @@ class MaintenancesApiControllerTest {
   private static final String ENDPOINT = "/api/v2/maintenances";
   private final MaintenanceManager maintenanceManager = mock(MaintenanceManager.class);
   private final IControllerInputValidator inputValidator = mock(IControllerInputValidator.class);
-  private final User user = mock(User.class);
   private MockMvc mockMvc;
 
   @BeforeEach
@@ -64,7 +62,7 @@ class MaintenancesApiControllerTest {
     when(maintenanceManager.getAllFutureMaintenances()).thenReturn(Collections.emptyList());
 
     mockMvc
-        .perform(get(ENDPOINT).requestAttr("user", user))
+        .perform(get(ENDPOINT))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty())
         .andExpect(jsonPath("$.totalDocs").value(0))
@@ -88,7 +86,7 @@ class MaintenancesApiControllerTest {
 
     // Page 1 of 2: the first two windows, and a next page.
     mockMvc
-        .perform(get(ENDPOINT).param("limit", "2").requestAttr("user", user))
+        .perform(get(ENDPOINT).param("limit", "2"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs.length()").value(2))
         .andExpect(jsonPath("$.docs[0].startDate", isoDateTime()))
@@ -105,7 +103,7 @@ class MaintenancesApiControllerTest {
 
     // Page 2 of 2: the remaining window, and a previous page.
     mockMvc
-        .perform(get(ENDPOINT).param("limit", "2").param("page", "2").requestAttr("user", user))
+        .perform(get(ENDPOINT).param("limit", "2").param("page", "2"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs.length()").value(1))
         .andExpect(jsonPath("$.docs[0].message").value("Third window"))
@@ -122,7 +120,7 @@ class MaintenancesApiControllerTest {
         .thenReturn(List.of(futureMaintenance(2, "Only window")));
 
     mockMvc
-        .perform(get(ENDPOINT).param("page", "999").requestAttr("user", user))
+        .perform(get(ENDPOINT).param("page", "999"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty())
         .andExpect(jsonPath("$.totalDocs").value(1));
@@ -131,22 +129,23 @@ class MaintenancesApiControllerTest {
   @Test
   void rejectsInvalidOrNonNumericPaginationWithProblemDetails() throws Exception {
     mockMvc
-        .perform(get(ENDPOINT).param("page", "0").param("limit", "101").requestAttr("user", user))
+        .perform(get(ENDPOINT).param("page", "0").param("limit", "101"))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").exists());
     mockMvc
-        .perform(get(ENDPOINT).param("page", "not-a-number").requestAttr("user", user))
+        .perform(get(ENDPOINT).param("page", "not-a-number"))
         .andExpect(status().isBadRequest())
         .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
         .andExpect(jsonPath("$.status").value(400));
   }
 
   @Test
-  void requiresTheAuthenticatedUserRequestAttribute() throws Exception {
-    mockMvc.perform(get(ENDPOINT)).andExpect(status().isBadRequest());
+  void doesNotRequireAnAuthenticatedUserRequestAttribute() throws Exception {
+    when(maintenanceManager.getAllFutureMaintenances()).thenReturn(Collections.emptyList());
+    mockMvc.perform(get(ENDPOINT)).andExpect(status().isOk());
   }
 
   private static ScheduledMaintenance futureMaintenance(int hoursFromNow, String message) {

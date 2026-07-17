@@ -1,15 +1,15 @@
 package com.researchspace.api.v2.controller;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.researchspace.maintenance.model.ScheduledMaintenance;
-import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.properties.IPropertyHolder;
-import java.util.Calendar;
 import java.util.LinkedHashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,15 +20,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class ConfigV2ControllerTest {
 
   private final IPropertyHolder properties = mock(IPropertyHolder.class);
-  private final MaintenanceManager maintenanceManager = mock(MaintenanceManager.class);
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
     ConfigV2Controller controller = new ConfigV2Controller();
     ReflectionTestUtils.setField(controller, "properties", properties);
-    ReflectionTestUtils.setField(controller, "maintenanceManager", maintenanceManager);
-    when(maintenanceManager.getNextScheduledMaintenance()).thenReturn(ScheduledMaintenance.NULL);
     when(properties.getDeploymentDescription()).thenReturn("");
     when(properties.getDeploymentHelpEmail()).thenReturn("");
     mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
@@ -62,30 +59,13 @@ class ConfigV2ControllerTest {
   }
 
   @Test
-  void omitsNextMaintenanceWhenNoneScheduled() throws Exception {
+  void doesNotIncludeMaintenanceData() throws Exception {
     when(properties.getUiFooterUrls()).thenReturn(new LinkedHashMap<>());
 
     mockMvc
         .perform(get("/api/v2/config"))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.nextMaintenance").isEmpty());
-  }
-
-  @Test
-  void includesNextMaintenanceWhenScheduled() throws Exception {
-    when(properties.getUiFooterUrls()).thenReturn(new LinkedHashMap<>());
-    Calendar calendar = Calendar.getInstance();
-    calendar.add(Calendar.HOUR_OF_DAY, 2);
-    ScheduledMaintenance maintenance =
-        new ScheduledMaintenance(calendar.getTime(), calendar.getTime());
-    maintenance.setMessage("Planned upgrade");
-    when(maintenanceManager.getNextScheduledMaintenance()).thenReturn(maintenance);
-
-    mockMvc
-        .perform(get("/api/v2/config"))
-        .andExpect(status().isOk())
-        .andExpect(jsonPath("$.nextMaintenance.startDate").exists())
-        .andExpect(jsonPath("$.nextMaintenance.message").value("Planned upgrade"));
+        .andExpect(content().string(not(containsString("nextMaintenance"))));
   }
 
   @Test

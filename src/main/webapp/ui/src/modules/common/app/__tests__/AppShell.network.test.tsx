@@ -90,6 +90,19 @@ it("shares one current-user request across the authenticated app shell and never
         deploymentHelpEmail: "",
       }),
     ),
+    http.get("/api/v2/maintenances", () =>
+      HttpResponse.json({
+        docs: [],
+        totalDocs: 0,
+        limit: 1,
+        page: 1,
+        totalPages: 0,
+        hasPrevPage: false,
+        hasNextPage: false,
+        prevPage: null,
+        nextPage: null,
+      }),
+    ),
     http.get("/api/v1/userDetails/uiNavigationData", () => {
       legacyNavigationRequests += 1;
       return HttpResponse.json({});

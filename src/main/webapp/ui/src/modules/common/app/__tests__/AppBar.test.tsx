@@ -65,14 +65,26 @@ const currentUser: CurrentUser = {
 const appConfig = {
   branding: { bannerImageUrl: "" },
   helpLinks: [{ label: "Local help", url: "https://help.example.com" }],
-  nextMaintenance: null,
   deploymentDescription: "",
   deploymentHelpEmail: "",
 };
 
+const maintenanceEnvelope = (docs: Array<Record<string, unknown>>) => ({
+  docs,
+  totalDocs: docs.length,
+  limit: 1,
+  page: 1,
+  totalPages: docs.length === 0 ? 0 : 1,
+  hasPrevPage: false,
+  hasNextPage: false,
+  prevPage: null,
+  nextPage: null,
+});
+
 const server = setupServer(
   http.get("/api/v2/users/me", () => HttpResponse.json(currentUser)),
   http.get("/api/v2/config", () => HttpResponse.json(appConfig)),
+  http.get("/api/v2/maintenances", () => HttpResponse.json(maintenanceEnvelope([]))),
 );
 
 beforeAll(() => {
@@ -135,19 +147,20 @@ describe("NewAppBar (MSW-driven)", () => {
     expect(within(navigation).getByRole("link", { name: "common:appBar.sections.system.title" })).toBeInTheDocument();
   });
 
-  it("shows the maintenance notice when /api/v2/config carries a scheduled window", async () => {
+  it("shows the maintenance notice when /api/v2/maintenances carries a scheduled window", async () => {
     server.use(
-      http.get("/api/v2/config", () =>
-        HttpResponse.json({
-          ...appConfig,
-          nextMaintenance: {
-            id: 1,
-            startDate: "2999-01-01T00:00:00.000Z",
-            endDate: "2999-01-01T01:00:00.000Z",
-            stopUserLoginDate: null,
-            message: "Planned upgrade",
-          },
-        }),
+      http.get("/api/v2/maintenances", () =>
+        HttpResponse.json(
+          maintenanceEnvelope([
+            {
+              id: 1,
+              startDate: "2999-01-01T00:00:00.000Z",
+              endDate: "2999-01-01T01:00:00.000Z",
+              stopUserLoginDate: null,
+              message: "Planned upgrade",
+            },
+          ]),
+        ),
       ),
     );
 
@@ -156,7 +169,7 @@ describe("NewAppBar (MSW-driven)", () => {
     expect(await screen.findByRole("button", { name: /appBar.maintenancePopup/ })).toBeInTheDocument();
   });
 
-  it("hides the maintenance notice when /api/v2/config reports none", async () => {
+  it("hides the maintenance notice when /api/v2/maintenances reports none", async () => {
     renderAppBar();
 
     await screen.findByRole("navigation", { name: "common:appBar.mainLinks" });
