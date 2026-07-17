@@ -451,6 +451,12 @@
           <groupId>javax.servlet</groupId>
           <artifactId>javax.servlet-api</artifactId>
         </exclusion>
+        <!-- JavaMail 1.6 API jar; its javax-era com.sun.mail.util classes can shadow
+             the jakarta.mail implementation on the test classpath (NoSuchMethodError). -->
+        <exclusion>
+          <groupId>com.sun.mail</groupId>
+          <artifactId>mailapi</artifactId>
+        </exclusion>
         <exclusion>
           <groupId>commons-io</groupId>
           <artifactId>commons-io</artifactId>
