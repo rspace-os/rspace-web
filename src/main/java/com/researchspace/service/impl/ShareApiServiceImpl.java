@@ -152,7 +152,6 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   }
 
   @Override
-  @Transactional
   public void updateShare(SharePermissionUpdate permissionUpdate, User user) throws BindException {
     Long id = permissionUpdate.getShareId();
     assertUserHasSharePermission(id, user);

@@ -18,22 +18,13 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 /**
- * Fast unit test (no Spring context, no DB) that guards the consistency between the Hibernate L2
- * cache annotations on the entity model and the region definitions in {@code ehcache.xml}.
+ * Fast unit test (no Spring context, no DB) asserting every {@code @Cache}-annotated entity has a
+ * matching {@code <cache alias=...>} region in {@code ehcache.xml}. Hibernate 6 names the region
+ * after the root entity of the hierarchy (or the explicit {@code region} attribute).
  *
- * <p>Background: the standard test {@code SessionFactory} disables the second-level cache ({@code
- * NoCachingRegionFactory}, see {@code src/test/resources/applicationContext-dao.xml}), so the
- * production cache configuration is otherwise never exercised by CI. Hibernate 6 runs with {@code
- * missing_cache_strategy=create-warn}, meaning a misnamed or absent region is silently replaced by
- * an untuned default region rather than failing the build - so drift between the entities and
- * {@code ehcache.xml} is invisible at runtime.
- *
- * <p>Hibernate 6 requires {@code @Cache} on the <em>root</em> entity of an inheritance hierarchy,
- * and names the region after that root entity (or its explicit {@code region} attribute). This test
- * asserts every {@code @Cache}-annotated entity has a matching {@code <cache alias=...>} in {@code
- * ehcache.xml}. It would have caught the Spring 6 migration regression where {@code @Cache} was
- * moved from the {@code RSForm} leaf onto the {@code AbstractForm} root but the region kept the old
- * leaf name.
+ * <p>This guard exists because the drift is otherwise invisible: the test {@code SessionFactory}
+ * disables the second-level cache, and at runtime {@code missing_cache_strategy=create-warn}
+ * silently substitutes an untuned default region for a misnamed or absent one.
  */
 public class EhcacheRegionConfigTest {
 

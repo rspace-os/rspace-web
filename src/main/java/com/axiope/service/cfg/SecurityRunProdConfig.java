@@ -42,6 +42,10 @@ public class SecurityRunProdConfig extends SecurityBaseConfig {
     }
     realms.add(apiRealm());
     realms.add(slackRealm());
+    // Startup/content initialisers log in with GlobalInitSysadminAuthenticationToken, and that
+    // login can now happen while this security manager is active (not only against the private
+    // one GlobalInitManagerImpl builds). The token is only constructible in-process, so this
+    // realm adds no remotely reachable authentication path.
     realms.add(globalInitSysadminRealm());
 
     if (deploymentPropertyConfig.isCloud()) {

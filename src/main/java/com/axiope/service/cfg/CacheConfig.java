@@ -61,6 +61,9 @@ public class CacheConfig {
     return new EhCacheConfigurer();
   }
 
+  // Empty destroyMethod stops Spring calling close() on context shutdown: the Ehcache provider
+  // returns one shared CacheManager per (classloader, config URI), and Hibernate's L2 cache uses
+  // the same instance (see applicationContext-dao.xml), so the provider owns its lifecycle.
   @Bean(destroyMethod = "")
   javax.cache.CacheManager jCacheManager() {
     CachingProvider provider = Caching.getCachingProvider();

@@ -86,7 +86,6 @@ completes, search results will be missing or incomplete.
   Known and non-fatal: auditing, login, and CRUD all function. Fixed upstream in Hibernate
   ORM 7.0.0 (HHH-19259), with no backport to the 6.x line, so the error remains until a
   future ORM 7 upgrade.
-- `FileIndexSearcher ... this should not be called` at boot. Benign.
 
 ## Notes for developers
 
