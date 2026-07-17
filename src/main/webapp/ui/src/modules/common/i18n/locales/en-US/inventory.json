@@ -199,12 +199,18 @@
       "location": {
         "label": "Location",
         "listExplanation": "No location selection required for list containers.",
+        "mustStoreTypes": "Must be permitted to contain at least one of containers, subsamples or instruments.",
         "specificExplanation": "Specify a single location for where the new container should be placed."
       },
       "newContainer": {
         "cannotStore": "Containers cannot be stored inside this container.",
         "explanation": "The container will be automatically added to this container.",
         "label": "Container"
+      },
+      "newInstrument": {
+        "cannotStore": "Instruments cannot be stored inside this container.",
+        "explanation": "The instrument will be automatically added to this container.",
+        "label": "Instrument"
       },
       "newSample": {
         "cannotStore": "Subsamples cannot be stored inside this container.",
@@ -235,6 +241,8 @@
         },
         "error": "Must be at least {min}, and not more than {max}.",
         "label": "Grid Dimensions",
+        "numColumnsInvalid": "Number of columns is invalid.",
+        "numRowsInvalid": "Number of rows is invalid.",
         "rows": "Rows",
         "specifyDimensions": "Or specify the dimensions"
       },
@@ -1344,6 +1352,11 @@
   },
   "instrument": {
     "createOptions": {
+      "location": {
+        "label": "Location",
+        "listExplanation": "No location selection required for list containers.",
+        "specificExplanation": "Specify a single location for where the new instrument should be placed."
+      },
       "template": {
         "explanation": "Create an instrument template from this instrument, to easily create similar instruments.",
         "fieldDefaultsExplanation": "All of the instrument's custom fields will be included in the template. Select which fields should also retain their current value as a default field value.",
@@ -1412,6 +1425,10 @@
   },
   "limitedAccessAlert": {
     "message": "You do not have permission to see {access} of the details of this {whatLabel}.<br/>To gain full access, please contact the owner, {owner}."
+  },
+  "locations": {
+    "maxAllowed": "Only one selection permitted",
+    "unknown": "Locations of container must be known."
   },
   "materialsListing": {
     "actions": {
@@ -1580,6 +1597,8 @@
     },
     "showItems": "Show items being moved"
   },
+  "pageTitle": "RSpace Inventory",
+  "pageTitleWithContext": "{pageContext} | RSpace Inventory",
   "peopleField": {
     "errors": {
       "couldNotGetGroupMembers": "Could not get group members."
@@ -1753,6 +1772,11 @@
       "subsamplesSelected": "Cannot modify this sample whilst its subsamples are selected."
     },
     "createOptions": {
+      "location": {
+        "label": "Location",
+        "listExplanation": "No location selection required for list containers.",
+        "specificExplanation": "Specify a single location for where the new subsample should be placed."
+      },
       "newSubsamples": {
         "countExplanation": "Between 1 and 100.",
         "countLabel": "Number of new subsamples",

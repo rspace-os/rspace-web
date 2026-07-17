@@ -4199,6 +4199,9 @@ components:
                 containerCount:
                   type: number
                   description: Number of containers stored directly in this container
+                instrumentCount:
+                  type: number
+                  description: Number of instruments stored directly in this container
             cType:
               type: string
               description: container type, one of LIST / GRID / IMAGE
@@ -4229,14 +4232,15 @@ components:
                     - N321
             canStoreSamples:
               type: boolean
-              description: Whether object represents a historical, or latest, version of the
-                sample
+              description: Whether the container can store samples
             canStoreContainers:
               type: boolean
-              description: Whether object represents a historical, or latest, version of the
-                sample
+              description: Whether the container can store containers
+            canStoreInstruments:
+              type: boolean
+              description: Whether the container can store instruments
     Container:
-      description: A Cntainer with extra fields, locations, and content
+      description: A Container with extra fields, locations, and content
       example:
         name: My Container
         cType: LIST

@@ -9,6 +9,7 @@ import { faTrashAlt } from "@fortawesome/free-solid-svg-icons/faTrashAlt";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
+import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
@@ -203,7 +204,8 @@ window.renderToolbar = (newProps: any) => {
     },
   };
   rootNode.render(
-    <I18nRoot namespaces={["common"]}>
+    // content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys.
+    <I18nRoot namespaces={["common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
       <NotebookToolbar domContainer={domContainer} {...prevProps} />
     </I18nRoot>,
   );

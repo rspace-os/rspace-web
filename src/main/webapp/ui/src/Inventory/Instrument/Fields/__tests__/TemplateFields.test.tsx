@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import { ThemeProvider } from "@mui/material/styles";
-import { render, screen } from "@/__tests__/customQueries";
+import { render, screen } from "@testing-library/react";
+
 import { makeMockInstrument } from "@/stores/models/__tests__/InstrumentModel/mocking";
 import materialTheme from "@/theme";
 import TemplateFields from "../TemplateFields";

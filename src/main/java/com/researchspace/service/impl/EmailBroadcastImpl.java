@@ -51,7 +51,6 @@ import org.apache.velocity.tools.generic.DateTool;
 import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 /**
@@ -71,17 +70,13 @@ import org.springframework.beans.factory.annotation.Value;
  *       <p><b> Implementation notes </b>
  *       <p>TODO this class has too many responsibilities; needs refactoring into separate classes
  */
-public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
+public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
 
   public static final String TEXT_ONLY_EMAIL_DEFAULT = "This email can only be viewed in HTML";
 
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private final StrictEmailContentGenerator strictEmailContentGenerator;
 
   private int retryDelayMillis = 1000;
-
-  void setStrictEmailContentGenerator(StrictEmailContentGenerator strictEmailContentGenerator) {
-    this.strictEmailContentGenerator = strictEmailContentGenerator;
-  }
 
   void setRetryDelayMillis(int retryDelayMillis) {
     this.retryDelayMillis = retryDelayMillis;
@@ -203,13 +198,17 @@ public class EmailBroadcastImp implements EmailBroadcast, Broadcaster {
     this.addressChunkSize = addressChunkSize;
   }
 
-  public EmailBroadcastImp() {
-    this(5, 25);
+  public EmailBroadcastImpl(StrictEmailContentGenerator strictEmailContentGenerator) {
+    this(5, 25, strictEmailContentGenerator);
   }
 
-  public EmailBroadcastImp(Integer maxEmailsPerSecond, Integer addressChunkSize) {
+  public EmailBroadcastImpl(
+      Integer maxEmailsPerSecond,
+      Integer addressChunkSize,
+      StrictEmailContentGenerator strictEmailContentGenerator) {
     this.maxEmailsPerSecond = maxEmailsPerSecond;
     this.addressChunkSize = addressChunkSize;
+    this.strictEmailContentGenerator = strictEmailContentGenerator;
     log.info("Email sender will rate limit to {} mails per seconds", maxEmailsPerSecond);
   }
 

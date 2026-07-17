@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../../../theme";
 
 vi.mock("../../Link/LinkTargetBrowser", () => ({

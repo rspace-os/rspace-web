@@ -30,6 +30,7 @@ describe("computed: paramsForBackend", () => {
           totalCount: 2,
           subSampleCount: 0,
           containerCount: 2,
+          instrumentCount: 0,
         },
       });
       const two = makeMockContainer({

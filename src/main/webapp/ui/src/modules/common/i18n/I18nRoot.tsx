@@ -2,7 +2,6 @@ import type { FlatNamespace } from "i18next";
 import type React from "react";
 import { Suspense } from "react";
 import { I18nextProvider, useTranslation } from "react-i18next";
-import LoaderCircular from "@/components/LoadingCircular";
 import i18n from "@/modules/common/i18n";
 import {
   muiRichTextComponents,
@@ -25,15 +24,18 @@ export default function I18nRoot({
   children,
   namespaces,
   componentMap = muiRichTextComponents,
+  fallback = null,
 }: {
   children: React.ReactNode;
   namespaces?: readonly FlatNamespace[];
   componentMap?: RichTextComponents;
+  /** Shown while namespaces load; defaults to nothing, right for hidden-until-triggered islands. */
+  fallback?: React.ReactNode;
 }): React.ReactNode {
   return (
     <I18nextProvider i18n={i18n}>
       <RichTextComponentsContext.Provider value={componentMap}>
-        <Suspense fallback={<LoaderCircular />}>
+        <Suspense fallback={fallback}>
           <NamespacePreloader namespaces={namespaces}>{children}</NamespacePreloader>
         </Suspense>
       </RichTextComponentsContext.Provider>

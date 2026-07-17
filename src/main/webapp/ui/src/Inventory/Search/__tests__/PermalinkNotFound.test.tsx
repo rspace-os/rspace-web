@@ -5,7 +5,6 @@
 import { screen } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
-import "@testing-library/jest-dom/vitest";
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import NavigateContext from "../../../stores/contexts/Navigate";

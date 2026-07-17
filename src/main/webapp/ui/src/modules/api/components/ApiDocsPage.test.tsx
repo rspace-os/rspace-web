@@ -1,6 +1,5 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 
 /*
  * The real Scalar component boots an embedded Vue app that depends on browser
@@ -45,7 +44,7 @@ describe("createApiDocsConfiguration", () => {
     expect(inventory).toMatchObject({
       title: "common:apiDocs.sources.inventory",
       slug: "rspace-inventory",
-      url: "https://example.com/resources/rspace_api_inventory_specs_2_24_0.yaml",
+      url: "https://example.com/resources/rspace_api_inventory_specs_2_25_0.yaml",
     });
     // Only the ELN spec is the default document.
     expect(inventory).not.toHaveProperty("default", true);

@@ -18,20 +18,24 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
   }: {
     target: {
       name: string;
-      value: ReadonlyArray<"sample" | "container">;
+      value: ReadonlyArray<"sample" | "container" | "instrument">;
     };
   }) => {
     container.setAttributesDirty({
       canStoreContainers: value.includes("container"),
       canStoreSamples: value.includes("sample"),
+      canStoreInstruments: value.includes("instrument"),
     });
     onErrorStateChange(
-      [...(container.canStoreContainers ? ["container"] : []), ...(container.canStoreSamples ? ["sample"] : [])]
-        .length > 0,
+      [
+        ...(container.canStoreContainers ? ["container"] : []),
+        ...(container.canStoreSamples ? ["sample"] : []),
+        ...(container.canStoreInstruments ? ["instrument"] : []),
+      ].length > 0,
     );
   };
 
-  const options: Array<ChoiceOption<"sample" | "container">> = [
+  const options: Array<ChoiceOption<"sample" | "container" | "instrument">> = [
     {
       value: "sample",
       label: t("recordTypes.subsample.plural"),
@@ -50,11 +54,21 @@ function CanStore({ onErrorStateChange, container }: CanStoreArgs): React.ReactN
       ),
       editing: false,
     },
+    {
+      value: "instrument",
+      label: t("recordTypes.instrument.plural"),
+      disabled: orElseIfNoAccess(
+        mapPermissioned(container.contentSummary, ({ instrumentCount }) => instrumentCount > 0),
+        true,
+      ),
+      editing: false,
+    },
   ];
 
-  const value: ReadonlyArray<"sample" | "container"> = [
+  const value: ReadonlyArray<"sample" | "container" | "instrument"> = [
     ...(container.canStoreContainers ? ["container" as const] : []),
     ...(container.canStoreSamples ? ["sample" as const] : []),
+    ...(container.canStoreInstruments ? ["instrument" as const] : []),
   ];
 
   const valid = value.length > 0;

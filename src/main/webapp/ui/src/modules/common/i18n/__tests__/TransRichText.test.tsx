@@ -1,10 +1,11 @@
 import Link from "@mui/material/Link";
 import { ThemeProvider } from "@mui/material/styles";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@/__tests__/customQueries";
+
 import materialTheme from "@/theme";
 
 vi.unmock("react-i18next");

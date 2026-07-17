@@ -211,7 +211,7 @@ describe("CreateDialog", () => {
           name: "inventory:container.createOptions.newSample.label",
         }),
       );
-      expect(screen.getByText("inventory:container.createOptions.location.listExplanation")).toBeVisible();
+      expect(screen.getByText("inventory:sample.createOptions.location.listExplanation")).toBeVisible();
       expect(createButton()).toBeEnabled();
       await user.click(createButton());
     });

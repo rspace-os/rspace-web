@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import LoaderCircular from "@/components/LoadingCircular";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import TransRichText from "@/modules/common/i18n/TransRichText";
 import GenericsearchBar from "../components/GenericsearchBar";
@@ -321,7 +322,7 @@ function mountRoRIntegration(event?: Event) {
   const root = createRoot(domContainer);
   mainArea.rorRoot = root;
   root.render(
-    <I18nRoot namespaces={["system"]}>
+    <I18nRoot namespaces={["system"]} fallback={<LoaderCircular />}>
       <RoRIntegration />
     </I18nRoot>,
   );

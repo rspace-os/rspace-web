@@ -21,7 +21,7 @@ import type { CoreFetcherArgs } from "../definitions/Search";
 import type { AdjustableTableRowOptions } from "../definitions/Tables";
 import getRootStore from "../stores/getRootStore";
 import type { AttachmentJson } from "./AttachmentModel";
-import type { ContainerAttrs } from "./ContainerModel";
+import type { ContainerAttrs, ContainerInContainerParams } from "./ContainerModel";
 import ExtraFieldModel from "./ExtraFieldModel";
 import FieldModel, { type FieldModelAttrs } from "./FieldModel";
 import { HasLocationMixin } from "./HasLocation";
@@ -140,6 +140,17 @@ export default class InstrumentModel
     return "instrument";
   }
 
+  get beingCreatedInContainer(): boolean {
+    return this.parentContainers.length > 0 && !this.isDirectlyOnWorkbench;
+  }
+
+  get inContainerParams(): ContainerInContainerParams {
+    return {
+      ...(this.beingCreatedInContainer ? { parentContainers: [{ id: this.parentContainers[0].id }] } : {}),
+      ...(this.parentLocation ? { parentLocation: this.parentLocation } : {}),
+    };
+  }
+
   get cardTypeLabel(): string {
     return inventoryRecordTypeLabels.instrument;
   }
@@ -172,6 +183,7 @@ export default class InstrumentModel
   populateFromJson(factory: Factory, passedParams: object, defaultParams: object = {}): void {
     super.populateFromJson(factory, passedParams, defaultParams);
     const params = { ...defaultParams, ...passedParams } as InstrumentAttrs;
+    this.parentContainers = (params.parentContainers ?? []) as unknown as Array<import("./ContainerModel").default>;
     const [firstParent] = params.parentContainers ?? [];
     this.immediateParentContainer = firstParent
       ? (factory.newRecord(firstParent as Record<string, unknown> & { globalId: GlobalId }) as Container)
@@ -287,6 +299,7 @@ export default class InstrumentModel
             columnIndex: fm.columnIndex,
             attachment: null,
             mandatory: fm.mandatory,
+            allowedRelationTypes: [...(fm.allowedRelationTypes ?? [])],
           },
           this,
         );

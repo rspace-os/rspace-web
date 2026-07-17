@@ -413,11 +413,23 @@ public class ContainersApiControllerMVCIT extends API_MVC_InventoryTestBase {
     // container that cannot store anything
     String noValidContentContainerJSON =
         "{ \"name\": \"Container\",\"cType\": \"LIST\", \"canStoreContainers\": false,"
-            + " \"canStoreSamples\": false }";
+            + " \"canStoreSamples\": false, \"canStoreInstruments\": false }";
     result = postCreateContainerExpecting4xx(anyUser, apiKey, noValidContentContainerJSON);
     error = getErrorFromJsonResponseBody(result, ApiError.class);
     assertApiErrorContainsMessage(
-        error, "'canStoreSamples' and 'canStoreContainers' flags cannot be both set to 'false'");
+        error,
+        "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be"
+            + " set to 'false'");
+
+    // container storing instruments only is valid
+    String instrumentsOnlyContainerJSON =
+        "{ \"name\": \"Instruments only\",\"cType\": \"LIST\", \"canStoreContainers\": false,"
+            + " \"canStoreSamples\": false, \"canStoreInstruments\": true }";
+    this.mockMvc
+        .perform(
+            createBuilderForPostWithJSONBody(
+                apiKey, "/containers", anyUser, instrumentsOnlyContainerJSON))
+        .andExpect(status().isCreated());
 
     // incomplete grid layout params
     String gridContainerJSON =

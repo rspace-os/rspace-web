@@ -165,6 +165,7 @@ function App(): React.ReactNode {
             <AppBar
               variant="page"
               currentPage="Apps"
+              ambientI18n
               accessibilityTips={{
                 supportsHighContrastMode: true,
                 supportsReducedMotion: true,

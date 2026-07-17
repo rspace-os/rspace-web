@@ -30,7 +30,8 @@ vi.mock("../LinkedDocuments", () => ({
 }));
 
 import { ThemeProvider } from "@mui/material/styles";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+import { cleanup, render, screen } from "@testing-library/react";
+
 import materialTheme from "../../../../theme";
 import SidebarBody from "../SidebarBody";
 

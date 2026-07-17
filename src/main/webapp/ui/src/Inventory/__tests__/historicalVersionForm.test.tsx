@@ -5,9 +5,8 @@ import { afterEach, describe, expect, test, vi } from "vitest";
 // not an auto-mock: a side-effect polyfill that must run before tinymce loads
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
-import { cleanup, render, screen } from "@testing-library/react";
-import "@testing-library/jest-dom/vitest";
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { IsValid } from "../../components/ValidatingSubmitButton";
 import type { InventoryRecord } from "../../stores/definitions/InventoryRecord";

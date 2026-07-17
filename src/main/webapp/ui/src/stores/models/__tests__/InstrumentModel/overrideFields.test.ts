@@ -105,6 +105,22 @@ describe("InstrumentModel.overrideFields", () => {
     expect(fm.attachment).toBeFalsy();
   });
 
+  test("preserves allowedRelationTypes on link fields", () => {
+    const instrument = makeMockInstrument();
+    const source = new FieldModel(
+      fieldAttrs({
+        type: "link",
+        name: "Related Instrument",
+        columnIndex: 1,
+        allowedRelationTypes: ["IsDerivedFrom", "IsPartOf"],
+      }),
+      instrument,
+    );
+    instrument.overrideFields([source]);
+    const fm = instrument.fields[0] as FieldModel;
+    expect(fm.allowedRelationTypes).toEqual(["IsDerivedFrom", "IsPartOf"]);
+  });
+
   test("preserves radio field options", () => {
     const instrument = makeMockInstrument();
     const source = new FieldModel(

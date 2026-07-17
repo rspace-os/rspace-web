@@ -1,10 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import axios from "@/common/axios";
 import InvApiService from "../../../../../common/InvApiService";
 import materialTheme from "../../../../../theme";

@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import type { Field } from "@/stores/definitions/Field";
 import materialTheme from "@/theme";
 import LinkFieldValue from "../LinkFieldValue";

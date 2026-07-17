@@ -1,4 +1,5 @@
 import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
 import { createRoot } from "react-dom/client";
@@ -72,7 +73,8 @@ const domContainer = document.getElementById("fileTreeToolbar");
 // biome-ignore lint/style/noNonNullAssertion: initial biome migration
 const root = createRoot(domContainer!);
 root.render(
-  <I18nRoot namespaces={["common"]}>
+  // content() uses i18n.t() directly, not the hook, so I18nRoot must gate this whole render or labels freeze as raw keys.
+  <I18nRoot namespaces={["common"]} fallback={<Skeleton variant="rectangular" height={64} />}>
     <FileTreeToolbar />
   </I18nRoot>,
 );

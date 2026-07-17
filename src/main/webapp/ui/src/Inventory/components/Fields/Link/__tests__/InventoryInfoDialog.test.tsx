@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen } from "@testing-library/react";
 import type { AxiosResponse } from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import InvApiService from "../../../../../common/InvApiService";
 import materialTheme from "../../../../../theme";
 

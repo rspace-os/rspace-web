@@ -1,5 +1,6 @@
+import { render, screen } from "@testing-library/react";
 import { describe, expect, test } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import TimeField from "../TimeField";
 
 describe("TimeField", () => {

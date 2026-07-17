@@ -342,7 +342,10 @@ export default class SearchStore {
     return template;
   }
 
-  async createNewInstrument(opts?: { templateId?: Id | null }): Promise<InstrumentModel> {
+  async createNewInstrument(
+    opts?: { templateId?: Id | null },
+    parentContainerDetails?: NewInContainerParams,
+  ): Promise<InstrumentModel> {
     const template =
       opts?.templateId &&
       this.activeResult instanceof InstrumentTemplateModel &&
@@ -384,6 +387,15 @@ export default class SearchStore {
     });
     if (template) {
       await instrument.setTemplate(template);
+    }
+    const locationIsDefined = parentContainerDetails
+      ? Object.keys(parentContainerDetails.parentLocation).length > 0
+      : false;
+    if (parentContainerDetails) {
+      instrument.setAttributes({
+        parentContainers: parentContainerDetails.parentContainers,
+        ...(locationIsDefined ? { parentLocation: parentContainerDetails.parentLocation } : {}),
+      });
     }
     await this.createNewHelper(instrument);
     return instrument;

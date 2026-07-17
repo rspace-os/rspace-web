@@ -88,6 +88,7 @@ export interface Container extends InventoryRecord, HasLocation {
    */
   canStoreContainers: boolean;
   canStoreSamples: boolean;
+  canStoreInstruments: boolean;
 
   /*
    * If the container is a Grid container, then this defines the labelling of

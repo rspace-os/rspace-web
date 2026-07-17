@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { action, observable } from "mobx";
 import type React from "react";
 import { describe, expect, test, vi } from "vitest";
@@ -13,7 +13,8 @@ import "@/__tests__/__mocks__/matchMedia";
 import Dialog from "@mui/material/Dialog";
 import userEvent from "@testing-library/user-event";
 import fc from "fast-check";
-import { render, within } from "@/__tests__/customQueries";
+
+import { getIndexOfTableCell } from "@/__tests__/tableQueries";
 import { makeMockSubSample, subSampleAttrsArbitrary } from "../../../../stores/models/__tests__/SubSampleModel/mocking";
 import type SubSampleModel from "../../../../stores/models/SubSampleModel";
 import type { StoreContainer } from "../../../../stores/stores/RootStore";
@@ -121,10 +122,7 @@ describe("MoveDialog", () => {
           const table = screen.getByRole("table");
 
           const [headerRow, ...bodyRows] = within(table).getAllByRole("row");
-          const indexOfNameColumn =
-            // @ts-expect-error TS does not recognise the vi.extend
-
-            within(headerRow).getIndexOfTableCell("inventory:recordsTable.columns.name");
+          const indexOfNameColumn = getIndexOfTableCell(headerRow, "inventory:recordsTable.columns.name");
           const allNameCells = bodyRows.map((row) => within(row).getAllByRole("cell")[indexOfNameColumn]);
           expect(selectedResults.every((r) => allNameCells.some((cell) => cell.textContent === r.name))).toBe(true);
         },

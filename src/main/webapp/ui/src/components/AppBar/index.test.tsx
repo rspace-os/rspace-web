@@ -1,11 +1,12 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/useWhoAmI";
 import "@/__tests__/__mocks__/useWebSocketNotifications";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
-import { render, screen, waitFor } from "@/__tests__/customQueries";
+
 import { stubAppChrome, type VisibleTabs } from "@/__tests__/helpers/appChrome";
 import axios from "@/common/axios";
 import { SimplePageWithAppBar } from "./index.story";
@@ -202,6 +203,19 @@ describe("App Bar", () => {
        * can disable for all users, so if it has not been enabled then the
        * menuitem should not be shown.
        */
+    });
+
+    test("When published documents are opened, the new tab cannot access this page", async () => {
+      const user = userEvent.setup();
+      const open = vi.spyOn(window, "open").mockImplementation(() => null);
+      stubEndpoints({ published: true });
+      render(<SimplePageWithAppBar variant="page" />);
+      await waitForLoaded();
+      await user.click(screen.getByRole("button", { name: "common:appBar.accountMenu" }));
+
+      await user.click(await screen.findByRole("menuitem", { name: "common:appBar.published" }));
+
+      expect(open).toHaveBeenCalledWith("/public/publishedView/publishedDocuments", "_blank", "noopener,noreferrer");
     });
   });
 

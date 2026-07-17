@@ -14,7 +14,8 @@ type CountChipArgs = {
 function getCount(type: string, cs: ContentSummary): number {
   if (type === "container") return cs.containerCount;
   if (type === "subSample") return cs.subSampleCount;
-  throw new TypeError('The string "type" can only be "container" or "subSample"');
+  if (type === "instrument") return cs.instrumentCount;
+  throw new TypeError('The string "type" can only be "container", "subSample", or "instrument"');
 }
 
 const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
@@ -34,7 +35,7 @@ const CountChip = ({ type, record }: CountChipArgs): React.ReactNode => {
           <RecordTypeIcon
             record={{
               recordTypeLabel,
-              iconName: type === "container" ? "container" : "sample",
+              iconName: type === "container" ? "container" : type === "instrument" ? "instrument" : "sample",
             }}
           />
         </Box>

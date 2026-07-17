@@ -510,7 +510,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   private String combineUsersByRole(List<UserGroupPost> users, RoleInGroup role) {
     return users.stream()
-        .filter(user -> user.roleInGroup.equals(role.name()))
+        .filter(user -> role.name().equals(user.getRoleInGroup()))
         .map(UserGroupPost::getUsername)
         .collect(Collectors.joining(","));
   }
