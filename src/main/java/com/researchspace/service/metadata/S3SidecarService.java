@@ -68,9 +68,12 @@ public class S3SidecarService {
     return sidecar;
   }
 
-  /** Resolves the folder to its absolute S3 key prefix within the bucket (no trailing slash). */
+  /**
+   * Resolves the folder to its absolute S3 key prefix within the bucket (no leading/trailing
+   * slash).
+   */
   private String prefixFor(NfsFileStore filestore, String folderPath) {
-    return stripTrailingSlash(filestore.getAbsolutePath(folderPath));
+    return normalizeKeyPrefix(filestore.getAbsolutePath(folderPath));
   }
 
   private GeneratedSidecar compose(S3Utilities s3, String prefix, User user) {
@@ -124,7 +127,9 @@ public class S3SidecarService {
     }
   }
 
-  private String stripTrailingSlash(String path) {
-    return path == null ? "" : path.replaceAll("/+$", "");
+  // S3 key prefixes carry no leading or trailing slash; the bucket root is "". A leading slash
+  // arises when the filestore base path is empty, since getAbsolutePath just concatenates.
+  private String normalizeKeyPrefix(String path) {
+    return path == null ? "" : path.replaceAll("^/+", "").replaceAll("/+$", "");
   }
 }

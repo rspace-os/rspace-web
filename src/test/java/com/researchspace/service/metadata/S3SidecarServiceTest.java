@@ -157,6 +157,20 @@ class S3SidecarServiceTest {
   }
 
   @Test
+  void leadingSlashInFolderPathIsStrippedFromKeyPrefix() throws Exception {
+    // The UI sends the folder path with a leading slash; with an empty filestore base that would
+    // otherwise become a "/dev-folder" prefix, which lists nothing in S3.
+    when(s3Utilities.listFolderContents("dev-folder"))
+        .thenReturn(List.of(file("run.dat", 5L, "\"c\"", "STANDARD")));
+
+    GeneratedSidecar result = service.preview(1L, "/dev-folder", user);
+
+    JsonNode loc =
+        yaml.readTree(result.getContent()).path("relatedItems").path(0).path("s3Location");
+    assertEquals("dev-folder/run.dat", loc.path("key").asText());
+  }
+
+  @Test
   void bucketRootFolderYieldsKeysWithoutLeadingSlashAndBucketNamedSidecar() throws Exception {
     when(s3Utilities.listFolderContents(""))
         .thenReturn(List.of(file("top.dat", 10L, "\"e\"", "STANDARD")));
