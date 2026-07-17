@@ -47,6 +47,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Run profile spring configuration used for running the web application in test/dev environments.
@@ -57,6 +58,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Configuration
 @Profile("run")
 @EnableAsync
+@EnableScheduling
 public class TestAppConfig extends BaseConfig {
 
   @Bean(name = "postUserCreate")

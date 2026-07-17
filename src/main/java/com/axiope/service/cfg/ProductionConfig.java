@@ -46,11 +46,13 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.annotation.Scope;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /** Configuration for deployment/production */
 @Configuration
 @Profile({"prod", "prod-test"})
 @EnableAsync
+@EnableScheduling
 @Import(value = DataverseSpringConfig.class)
 public class ProductionConfig extends BaseConfig {
   @Value("${deployment.sso.type}")

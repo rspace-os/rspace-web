@@ -290,7 +290,8 @@ import org.springframework.web.multipart.support.StandardServletMultipartResolve
  *
  * <p>Spring 6: NOT using @EnableTransactionManagement here because it conflicts when loaded via
  * component-scan in combination with other @Enable* annotations. Transaction management configured
- * via XML <tx:annotation-driven/> instead.
+ * via XML <tx:annotation-driven/> instead. @EnableAsync and @EnableScheduling live on the concrete
+ * profile configs (ProductionConfig, TestAppConfig), and @EnableRetry on ClustermarketConfig.
  */
 @Configuration
 public abstract class BaseConfig {
