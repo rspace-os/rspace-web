@@ -144,9 +144,9 @@ class DataCiteYamlSidecarGeneratorTest {
             .files(
                 List.of(
                     new SidecarFileEntry(
-                        "XRD-Experiments/xrd_run_041.dat", 2202009L, "\"b2c3d4\"", "STANDARD"),
+                        "XRD-Experiments/xrd_run_041.dat", 2202009L, "b2c3d4", "STANDARD"),
                     new SidecarFileEntry(
-                        "XRD-Experiments/run_log.log", 45056L, "\"e5f678\"", "GLACIER")))
+                        "XRD-Experiments/run_log.log", 45056L, "e5f678", "GLACIER")))
             .build();
 
     JsonNode related = yaml.readTree(generator.generate(ctx).getContent()).path("relatedItems");
@@ -159,7 +159,7 @@ class DataCiteYamlSidecarGeneratorTest {
     assertEquals("lrz-rs-experiments", loc.path("bucket").asText());
     assertEquals("XRD-Experiments/xrd_run_041.dat", loc.path("key").asText());
     assertEquals(2202009L, loc.path("sizeBytes").asLong());
-    assertEquals("\"b2c3d4\"", loc.path("etag").asText());
+    assertEquals("b2c3d4", loc.path("etag").asText());
     assertEquals("STANDARD", loc.path("storageClass").asText());
   }
 }

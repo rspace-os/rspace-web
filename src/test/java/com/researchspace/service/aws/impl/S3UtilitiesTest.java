@@ -155,7 +155,8 @@ public class S3UtilitiesTest {
     List<S3FolderContentItem> items = impl.listFolderContents("folder");
 
     assertEquals(1, items.size());
-    assertEquals("\"b2c3d4e5f6789012\"", items.get(0).getEtag());
+    // S3 wraps the ETag in quotes; we surface it as a bare identifier.
+    assertEquals("b2c3d4e5f6789012", items.get(0).getEtag());
     assertEquals("STANDARD", items.get(0).getStorageClass());
   }
 

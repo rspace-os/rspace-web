@@ -215,7 +215,7 @@ public class S3UtilitiesImpl implements S3Utilities {
                     false,
                     s3Object.size(),
                     s3Object.lastModified(),
-                    s3Object.eTag(),
+                    normalizeEtag(s3Object.eTag()),
                     s3Object.storageClassAsString()));
           }
         }
@@ -234,6 +234,12 @@ public class S3UtilitiesImpl implements S3Utilities {
       log.error("Failed to list folder contents for {}", folderPath, e);
       throw e;
     }
+  }
+
+  // S3 returns the ETag wrapped in double quotes (the raw HTTP header value); strip them so the
+  // value is a bare identifier.
+  private static String normalizeEtag(String etag) {
+    return etag == null ? null : StringUtils.strip(etag, "\"");
   }
 
   @Override
