@@ -35,12 +35,14 @@
   --radius: 0.625rem;
 
   /*
-   * CJK families sit before the generic fallbacks so CJK glyphs render from the
-   * bundled Noto Sans CJK font. SC wins shared (Han-unified)
-   * ideographs by default; add :lang(ja|ko|zh-Hant|zh-HK) overrides if the app
-   * starts setting document lang per locale.
+   * Default stack carries no CJK family, so `en` (and any non-CJK locale)
+   * never downloads a multi-MB Noto Sans CJK face. The `:root:lang(...)` rules
+   * below re-add exactly one CJK family per document locale (from the
+   * <html lang> attribute), so each CJK font is fetched only when its locale
+   * is served. @font-face is already lazy; keeping the family out of the
+   * default stack is what makes the CJK fonts locale-gated.
    */
-  --font-ui-sans: "Noto Sans", "Noto Sans CJK SC", system-ui, sans-serif;
+  --font-ui-sans: "Noto Sans", system-ui, sans-serif;
   --chart-1: oklch(0.872 0.007 219.6);
   --chart-2: oklch(0.56 0.021 213.5);
   --chart-3: oklch(0.45 0.017 213.2);
@@ -54,6 +56,27 @@
   --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
   --sidebar-border: oklch(0.925 0.005 214.3);
   --sidebar-ring: oklch(0.723 0.014 214.4);
+}
+
+/*
+ * Per-locale CJK font stacks. `:lang(zh)` also matches zh-Hant/zh-HK and every
+ * rule here has equal specificity, so the more specific variants must come
+ * after the zh base to win the source-order tie.
+ */
+:root:lang(zh) {
+  --font-ui-sans: "Noto Sans", "Noto Sans CJK SC", system-ui, sans-serif;
+}
+:root:lang(zh-Hant) {
+  --font-ui-sans: "Noto Sans", "Noto Sans CJK TC", system-ui, sans-serif;
+}
+:root:lang(zh-HK) {
+  --font-ui-sans: "Noto Sans", "Noto Sans CJK HK", system-ui, sans-serif;
+}
+:root:lang(ja) {
+  --font-ui-sans: "Noto Sans", "Noto Sans CJK JP", system-ui, sans-serif;
+}
+:root:lang(ko) {
+  --font-ui-sans: "Noto Sans", "Noto Sans CJK KR", system-ui, sans-serif;
 }
 
 .dark {
