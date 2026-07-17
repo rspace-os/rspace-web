@@ -69,10 +69,19 @@ public class DispatcherServletInitializer implements ServletContextListener {
    * submits plain form fields as {@code multipart/form-data} (a bare {@code FormData} body), which
    * hits handlers taking ordinary {@code @RequestParam}/{@code @ModelAttribute} values — those
    * prefixes must be added here manually. {@code /groups/*} is one: group invitations, profile
-   * edits, and group permission toggles are all posted as FormData.
+   * edits, and group permission toggles are all posted as FormData. {@code /integration/*} is
+   * another: the Apps page posts {@code optionsId} to {@code /integration/deleteAppOptions} as a
+   * bare FormData body.
    */
   static final String[] MULTIPART_SOURCE_PATTERNS = {
-    "/api/*", "/gallery/*", "/export/*", "/workspace/*", "/system/*", "/userform/*", "/groups/*"
+    "/api/*",
+    "/gallery/*",
+    "/export/*",
+    "/workspace/*",
+    "/system/*",
+    "/userform/*",
+    "/groups/*",
+    "/integration/*"
   };
 
   @Override
