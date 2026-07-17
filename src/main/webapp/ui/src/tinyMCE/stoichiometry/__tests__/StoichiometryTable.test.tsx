@@ -13,7 +13,9 @@ import "@/__tests__/__mocks__/resizeObserver";
 import "@/__tests__/__mocks__/useOauthToken";
 import MockAdapter from "axios-mock-adapter";
 import * as Jwt from "jsonwebtoken";
+import { HttpResponse, http } from "msw";
 import { uiNavigationData } from "@/__tests__/helpers/appChrome";
+import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import StoichiometryTable from "@/tinyMCE/stoichiometry/StoichiometryTable";
 import {
@@ -28,7 +30,7 @@ import { StoichiometryTableWithDataStory } from "./StoichiometryTable.story";
  * axios calls (e.g. livechatProperties, uiNavigationData) that are not part of
  * what these tests assert. Without a stub they reject with "Network Error" and
  * surface as unhandled rejections that fail the run. A catch-all axios adapter
- * resolves them; fetch-based requests are handled separately by routeFetch().
+ * resolves them; fetch-based requests are handled separately by routeNetwork().
  */
 const mockAxios = new MockAdapter(axios);
 
@@ -224,42 +226,28 @@ const subSampleResponses: Record<number, unknown> = {
   125: { id: 125, globalId: "SS125", quantity: { numericValue: 25, unitId: 3 } },
 };
 
-function resolveRoutedFetch(request: Request) {
-  const url = request.url;
-
-  if (url.includes("/userform/ajax/inventoryOauthToken")) {
-    const payload = {
-      iss: "http://localhost:8080",
-      iat: Date.now(),
-      exp: Math.floor(Date.now() / 1000) + 300,
-      refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
-    };
-    return Promise.resolve(JSON.stringify({ data: Jwt.sign(payload, "dummySecretKey") }));
-  }
-
-  if (url.includes("/api/v1/stoichiometry")) {
-    return Promise.resolve(JSON.stringify(createMockStoichiometryResponse()));
-  }
-
-  const subSampleUrlMarker = "/api/inventory/v1/subSamples/";
-  const subSampleMarkerIndex = url.indexOf(subSampleUrlMarker);
-  if (subSampleMarkerIndex !== -1) {
-    const id = Number(url.slice(subSampleMarkerIndex + subSampleUrlMarker.length));
-    const body = subSampleResponses[id];
-    if (!body) {
-      return Promise.resolve({
-        status: 404,
-        body: JSON.stringify({ message: "Not Found" }),
-      });
-    }
-    return Promise.resolve(JSON.stringify(body));
-  }
-
-  return Promise.resolve({ status: 404, body: "{}" });
+function oauthToken() {
+  const payload = {
+    iss: "http://localhost:8080",
+    iat: Date.now(),
+    exp: Math.floor(Date.now() / 1000) + 300,
+    refreshTokenHash: "fe15fa3d5e3d5a47e33e9e34229b1ea2314ad6e6f13fa42addca4f1439582a4d",
+  };
+  return Jwt.sign(payload, "dummySecretKey");
 }
 
-function routeFetch() {
-  fetchMock.mockResponse(resolveRoutedFetch);
+function routeNetwork() {
+  server.use(
+    http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: oauthToken() })),
+    http.get("/api/v1/stoichiometry", () => HttpResponse.json(createMockStoichiometryResponse())),
+    http.post("/api/v1/stoichiometry/molecule/info", () => HttpResponse.json(createMockStoichiometryResponse())),
+    http.get("/api/inventory/v1/subSamples/:id", ({ params }) => {
+      const body = subSampleResponses[Number(params.id)];
+      return body
+        ? HttpResponse.json(body)
+        : HttpResponse.json({ message: "Not Found" }, { status: 404, statusText: "Not Found" });
+    }),
+  );
 }
 
 /**
@@ -292,7 +280,6 @@ describe("StoichiometryTable", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useWrapperStubs.current = false;
-    fetchMock.resetMocks();
     mockAxios.reset();
     mockAxios.onGet("/api/v1/userDetails/uiNavigationData").reply(200, uiNavigationData());
     mockAxios.onGet("/session/ajax/livechatProperties").reply(200, { livechatEnabled: false });
@@ -352,7 +339,7 @@ describe("StoichiometryTable", () => {
       // but set it explicitly so the intent survives any future reordering or
       // file-level test concurrency.
       useWrapperStubs.current = false;
-      routeFetch();
+      routeNetwork();
     });
 
     it("has no accessibility violations", async () => {
@@ -504,12 +491,15 @@ describe("StoichiometryTable", () => {
       const subSampleGate = new Promise<void>((resolve) => {
         releaseSubSampleResponses = resolve;
       });
-      fetchMock.mockResponse(async (request) => {
-        if (request.url.includes("/api/inventory/v1/subSamples/")) {
+      server.use(
+        http.get("/api/inventory/v1/subSamples/:id", async ({ params }) => {
           await subSampleGate;
-        }
-        return resolveRoutedFetch(request);
-      });
+          const body = subSampleResponses[Number(params.id)];
+          return body
+            ? HttpResponse.json(body)
+            : HttpResponse.json({ message: "Not Found" }, { status: 404, statusText: "Not Found" });
+        }),
+      );
 
       await renderLoadedTable();
 

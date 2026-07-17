@@ -1,6 +1,8 @@
 import { waitFor } from "@testing-library/react";
+import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setupRealAppI18n } from "@/__tests__/helpers/realI18n";
+import { server } from "@/__tests__/mswServer";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
 import { addFromGallery } from "@/tinyMCE/gallery/utils";
 
@@ -52,7 +54,6 @@ describe("addFromGallery", () => {
   let insertChemElement: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    fetchMock.resetMocks();
     vi.clearAllMocks();
 
     RS = {
@@ -104,28 +105,36 @@ describe("addFromGallery", () => {
   });
 
   it("posts snippet insertion with fetch and inserts returned HTML", async () => {
-    fetchMock.mockResponseOnce("<p>Inserted snippet</p>");
+    const requests: Array<{ body: string; contentType: string | null; requestedWith: string | null }> = [];
+    server.use(
+      http.post("/snippet/insertIntoField", async ({ request }) => {
+        requests.push({
+          body: await request.text(),
+          contentType: request.headers.get("Content-Type"),
+          requestedWith: request.headers.get("X-Requested-With"),
+        });
+        return new HttpResponse("<p>Inserted snippet</p>");
+      }),
+    );
 
     addFromGallery(makeRecord({ type: "Snippet" }));
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith(
-        "/snippet/insertIntoField",
-        expect.objectContaining({
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
-          },
+      expect(requests).toEqual([
+        {
           body: "snippetId=21&fieldId=11",
-        }),
-      );
+          contentType: "application/x-www-form-urlencoded; charset=UTF-8",
+          requestedWith: "XMLHttpRequest",
+        },
+      ]);
       expect(RS.tinymceInsertContent).toHaveBeenCalledWith("<p>Inserted snippet</p>");
     });
   });
 
   it("alerts when snippet insertion fails", async () => {
-    fetchMock.mockResponseOnce("failure", { status: 500, statusText: "Boom" });
+    server.use(
+      http.post("/snippet/insertIntoField", () => new HttpResponse("failure", { status: 500, statusText: "Boom" })),
+    );
 
     addFromGallery(makeRecord({ type: "Snippet" }));
 

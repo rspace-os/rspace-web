@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it } from "vitest";
+import { server } from "@/__tests__/mswServer";
 import { getAvailableRaidIdentifiersAjax, getRaidIntegrationInfoAjax } from "../queries";
 import type { GetAvailableRaidListResponse, IntegrationRaidInfo, RaidReferenceDTO } from "../schema";
 
@@ -121,15 +123,20 @@ const mockIntegrationInfoFailure: IntegrationRaidInfo = {
   errorMsg: "Integration service unavailable",
 };
 
-beforeEach(() => {
-  // TODO: RSDEV-996 Replace with msw once we migrate to Vitest
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
+function mockGet(path: string, response: () => Response): Request[] {
+  const requests: Request[] = [];
+  server.use(
+    http.get(path, ({ request }) => {
+      requests.push(request.clone());
+      return response();
+    }),
+  );
+  return requests;
+}
 
 describe("getAvailableRaidIdentifiersAjax", () => {
   it("should fetch available RAiD identifiers successfully", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListSuccess));
+    const requests = mockGet("/apps/raid", () => HttpResponse.json(mockAvailableRaidListSuccess));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
@@ -142,28 +149,17 @@ describe("getAvailableRaidIdentifiersAjax", () => {
       expect(result.data[1].raidIdentifier).toBe("raid-456");
     }
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/apps/raid",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).pathname).toBe("/apps/raid");
   });
 
   it("should include X-Requested-With header", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListSuccess));
+    const requests = mockGet("/apps/raid", () => HttpResponse.json(mockAvailableRaidListSuccess));
 
     await getAvailableRaidIdentifiersAjax();
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/apps/raid",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Requested-With": "XMLHttpRequest",
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("should handle empty RAiD list successfully", async () => {
@@ -172,7 +168,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
       data: [],
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListEmpty));
+    mockGet("/apps/raid", () => HttpResponse.json(mockAvailableRaidListEmpty));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
@@ -198,7 +194,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
       errorMsg: "Connection to RAiD server failed",
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(mockAvailableRaidListFailure));
+    mockGet("/apps/raid", () => HttpResponse.json(mockAvailableRaidListFailure));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
@@ -210,55 +206,50 @@ describe("getAvailableRaidIdentifiersAjax", () => {
   });
 
   it("should throw error when response is not ok", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Server error" }), {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    const requests = mockGet("/apps/raid", () =>
+      HttpResponse.json({ error: "Server error" }, { status: 500, statusText: "Internal Server Error" }),
+    );
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow("Failed to fetch RAiD apps: Internal Server Error");
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   it("should throw error when response is 404", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      statusText: "Not Found",
-    });
+    mockGet("/apps/raid", () => HttpResponse.json({ error: "Not found" }, { status: 404, statusText: "Not Found" }));
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow("Failed to fetch RAiD apps: Not Found");
   });
 
   it("should throw error when response is 401", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      statusText: "Unauthorized",
-    });
+    mockGet("/apps/raid", () =>
+      HttpResponse.json({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" }),
+    );
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow("Failed to fetch RAiD apps: Unauthorized");
   });
 
   it("should handle network errors", async () => {
-    fetchMock.mockRejectOnce(new Error("Network request failed"));
+    const requests = mockGet("/apps/raid", () => HttpResponse.error());
 
-    await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow("Network request failed");
+    await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   it("should handle malformed JSON response", async () => {
-    fetchMock.mockResponseOnce("Not valid JSON", {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    mockGet(
+      "/apps/raid",
+      () => new HttpResponse("Not valid JSON", { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
 
     await expect(getAvailableRaidIdentifiersAjax()).rejects.toThrow();
   });
 
   it("should throw error when response data does not match schema", async () => {
     // Mock a response with invalid data structure
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/apps/raid", () =>
+      HttpResponse.json({
         success: true,
         data: [
           {
@@ -274,8 +265,8 @@ describe("getAvailableRaidIdentifiersAjax", () => {
 
   it("should validate all required fields in RaidReferenceDTO", async () => {
     // Mock a response with incomplete RaidReferenceDTO
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/apps/raid", () =>
+      HttpResponse.json({
         success: true,
         data: [
           {
@@ -301,7 +292,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
       ],
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(responseWithExtraFields));
+    mockGet("/apps/raid", () => HttpResponse.json(responseWithExtraFields));
 
     const result = await getAvailableRaidIdentifiersAjax();
 
@@ -315,7 +306,7 @@ describe("getAvailableRaidIdentifiersAjax", () => {
 
 describe("getRaidIntegrationInfoAjax", () => {
   it("should fetch RAiD integration info successfully", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoSuccess));
+    const requests = mockGet("/integration/integrationInfo", () => HttpResponse.json(mockIntegrationInfoSuccess));
 
     const result = await getRaidIntegrationInfoAjax();
 
@@ -331,33 +322,21 @@ describe("getRaidIntegrationInfoAjax", () => {
       expect(result.data.options.RAID_CONFIGURED_SERVERS).toHaveLength(2);
     }
 
-    // Verify the fetch was called with correct URL
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/integration/integrationInfo?name=RAID",
-      expect.objectContaining({
-        method: "GET",
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(new URL(requests[0].url).searchParams.get("name")).toBe("RAID");
   });
 
   it("should include X-Requested-With header", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoSuccess));
+    const requests = mockGet("/integration/integrationInfo", () => HttpResponse.json(mockIntegrationInfoSuccess));
 
     await getRaidIntegrationInfoAjax();
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/integration/integrationInfo?name=RAID",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          "X-Requested-With": "XMLHttpRequest",
-        }) as Record<string, string>,
-      }),
-    );
+    expect(requests).toHaveLength(1);
+    expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
   it("should handle disabled integration successfully", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoDisabled));
+    mockGet("/integration/integrationInfo", () => HttpResponse.json(mockIntegrationInfoDisabled));
 
     const result = await getRaidIntegrationInfoAjax();
 
@@ -371,7 +350,7 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should handle failure response from server", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoFailure));
+    mockGet("/integration/integrationInfo", () => HttpResponse.json(mockIntegrationInfoFailure));
 
     const result = await getRaidIntegrationInfoAjax();
 
@@ -383,57 +362,54 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should throw error when response is not ok", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Server error" }), {
-      status: 500,
-      statusText: "Internal Server Error",
-    });
+    const requests = mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({ error: "Server error" }, { status: 500, statusText: "Internal Server Error" }),
+    );
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow(
       "Failed to fetch RAiD integration info: Internal Server Error",
     );
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   it("should throw error when response is 404", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Integration not found" }), {
-      status: 404,
-      statusText: "Not Found",
-    });
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({ error: "Integration not found" }, { status: 404, statusText: "Not Found" }),
+    );
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow("Failed to fetch RAiD integration info: Not Found");
   });
 
   it("should throw error when response is 401", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      statusText: "Unauthorized",
-    });
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({ error: "Unauthorized" }, { status: 401, statusText: "Unauthorized" }),
+    );
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow("Failed to fetch RAiD integration info: Unauthorized");
   });
 
   it("should handle network errors", async () => {
-    fetchMock.mockRejectOnce(new Error("Network request failed"));
+    const requests = mockGet("/integration/integrationInfo", () => HttpResponse.error());
 
-    await expect(getRaidIntegrationInfoAjax()).rejects.toThrow("Network request failed");
+    await expect(getRaidIntegrationInfoAjax()).rejects.toThrow();
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(requests).toHaveLength(1);
   });
 
   it("should handle malformed JSON response", async () => {
-    fetchMock.mockResponseOnce("Not valid JSON", {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    mockGet(
+      "/integration/integrationInfo",
+      () => new HttpResponse("Not valid JSON", { status: 200, headers: { "Content-Type": "application/json" } }),
+    );
 
     await expect(getRaidIntegrationInfoAjax()).rejects.toThrow();
   });
 
   it("should throw error when response data does not match schema", async () => {
     // Mock a response with invalid data structure
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({
         success: true,
         data: {
           name: "RAID",
@@ -447,8 +423,8 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should validate name field must be 'RAID'", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({
         success: true,
         data: {
           name: "WRONG_NAME",
@@ -467,8 +443,8 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should validate displayName field must be 'RAiD'", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({
         success: true,
         data: {
           name: "RAID",
@@ -487,8 +463,8 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should validate RAID_URL field is a valid URL", async () => {
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
+    mockGet("/integration/integrationInfo", () =>
+      HttpResponse.json({
         success: true,
         data: {
           name: "RAID",
@@ -531,7 +507,7 @@ describe("getRaidIntegrationInfoAjax", () => {
       },
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(responseWithStringBoolean));
+    mockGet("/integration/integrationInfo", () => HttpResponse.json(responseWithStringBoolean));
 
     const result = await getRaidIntegrationInfoAjax();
 
@@ -546,7 +522,7 @@ describe("getRaidIntegrationInfoAjax", () => {
   });
 
   it("should handle integration info with multiple configured servers", async () => {
-    fetchMock.mockResponseOnce(JSON.stringify(mockIntegrationInfoSuccess));
+    mockGet("/integration/integrationInfo", () => HttpResponse.json(mockIntegrationInfoSuccess));
 
     const result = await getRaidIntegrationInfoAjax();
 
@@ -578,7 +554,7 @@ describe("getRaidIntegrationInfoAjax", () => {
       },
     };
 
-    fetchMock.mockResponseOnce(JSON.stringify(responseWithExtraFields));
+    mockGet("/integration/integrationInfo", () => HttpResponse.json(responseWithExtraFields));
 
     const result = await getRaidIntegrationInfoAjax();
 

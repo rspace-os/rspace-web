@@ -3,11 +3,15 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useOauthToken";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/resizeObserver";
+import "@/__tests__/__mocks__/useWebSocketNotifications";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
+import { HttpResponse, http } from "msw";
 import { MemoryRouter } from "react-router";
+import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { Gallery } from ".";
@@ -199,6 +203,23 @@ describe("Gallery", () => {
   beforeEach(() => {
     mockAxios.reset();
     mockNetwork();
+    server.use(
+      oauthTokenHandler(),
+      http.get("/integration/integrationInfo", () =>
+        HttpResponse.json({
+          success: true,
+          data: {
+            name: "RAID",
+            displayName: "RAiD",
+            available: true,
+            enabled: false,
+            oauthConnected: false,
+            options: { RAID_CONFIGURED_SERVERS: [] },
+          },
+        }),
+      ),
+      http.get("/api/v1/share", () => HttpResponse.json({ totalHits: 0, pageNumber: 0, shares: [], _links: [] })),
+    );
     document.title = "";
   });
 

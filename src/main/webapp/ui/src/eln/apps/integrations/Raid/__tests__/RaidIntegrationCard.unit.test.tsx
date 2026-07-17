@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { HttpResponse, http } from "msw";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -9,6 +10,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
@@ -62,6 +64,18 @@ const renderWithRealI18n = async (
 const openCard = (name = "apps:integrations.raid.name") => screen.getByRole("button", { name });
 const connectButton = (name = "apps:actions.connect") => screen.getByRole("button", { name });
 const disconnectButton = (name = "apps:actions.disconnect") => screen.getByRole("button", { name });
+
+function mockDisconnect(response: () => Response) {
+  const requests: Request[] = [];
+  server.use(
+    http.delete("/apps/raid/connect/:alias", ({ request }) => {
+      requests.push(request);
+      return response();
+    }),
+  );
+  return requests;
+}
+
 describe("RaidIntegrationCard", () => {
   let restoreConsole = () => {};
   beforeEach(() => {
@@ -221,7 +235,7 @@ describe("RaidIntegrationCard", () => {
   });
   describe("Disconnect", () => {
     test("Disconnect button triggers fetch and shows success alert.", async () => {
-      fetchMock.mockResponseOnce(JSON.stringify({ ok: true }));
+      const requests = mockDisconnect(() => HttpResponse.json({ ok: true }));
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -235,11 +249,10 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
-          method: "DELETE",
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
+        expect(requests).toHaveLength(1);
       });
+      expect(new URL(requests[0].url).pathname).toBe("/apps/raid/connect/srvA");
+      expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
       });
@@ -249,7 +262,9 @@ describe("RaidIntegrationCard", () => {
     });
 
     test("Disconnect button shows error alert on fetch failure.", async () => {
-      fetchMock.mockResponseOnce("", { status: 500, statusText: "Internal Server Error" });
+      const requests = mockDisconnect(
+        () => new HttpResponse(null, { status: 500, statusText: "Internal Server Error" }),
+      );
       const { addAlert } = await renderWithRealI18n({
         mode: "DISABLED",
         credentials: {
@@ -263,11 +278,10 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
-          method: "DELETE",
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
+        expect(requests).toHaveLength(1);
       });
+      expect(new URL(requests[0].url).pathname).toBe("/apps/raid/connect/srvA");
+      expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
       });
@@ -278,7 +292,7 @@ describe("RaidIntegrationCard", () => {
     });
 
     test("Disconnect button shows error alert on fetch network error.", async () => {
-      fetchMock.mockRejectOnce(new Error("Network error"));
+      const requests = mockDisconnect(() => HttpResponse.error());
       const { addAlert } = renderWithProviders({
         mode: "DISABLED",
         credentials: {
@@ -292,16 +306,18 @@ describe("RaidIntegrationCard", () => {
 
       await userEvent.click(disconnectBtn);
       await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledWith("/apps/raid/connect/srvA", {
-          method: "DELETE",
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        });
+        expect(requests).toHaveLength(1);
       });
+      expect(new URL(requests[0].url).pathname).toBe("/apps/raid/connect/srvA");
+      expect(requests[0].headers.get("X-Requested-With")).toBe("XMLHttpRequest");
       await waitFor(() => {
         expect(addAlert).toHaveBeenCalled();
       });
       const alertArg = (addAlert.mock.calls[0] as Alert[])[0];
-      expect(alertArg.message).toContain("Network error");
+      expect(alertArg).toMatchObject({
+        variant: "error",
+        title: "apps:integrations.raid.alerts.disconnectError",
+      });
       expect(disconnectButton()).toBeVisible();
     });
   });
