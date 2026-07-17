@@ -84,6 +84,26 @@ class LinkTargetResolverImplTest {
   }
 
   @Test
+  void instrumentTargetResolvesThroughInventoryReadabilityCheck() {
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(true);
+
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("IN42"), user));
+
+    ArgumentCaptor<GlobalIdentifier> gid = ArgumentCaptor.forClass(GlobalIdentifier.class);
+    verify(inventoryPermissionUtils).canUserReadInventoryRecord(gid.capture(), eq(user));
+    assertEquals(GlobalIdPrefix.IN, gid.getValue().getPrefix());
+  }
+
+  @Test
+  void instrumentTemplateTargetResolvesThroughInventoryReadabilityCheck() {
+    when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
+        .thenReturn(true);
+
+    assertTrue(resolver.targetExistsAndIsReadable(new GlobalIdentifier("NT42"), user));
+  }
+
+  @Test
   void inventoryTargetNotReadableResolvesFalse() {
     when(inventoryPermissionUtils.canUserReadInventoryRecord(any(GlobalIdentifier.class), eq(user)))
         .thenReturn(false);

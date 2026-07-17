@@ -180,6 +180,17 @@ describe("VersionLockDialog", () => {
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/revisions");
   });
 
+  it("fetches instrument revisions for an instrument link target", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    renderDialog({ globalId: "IN42" });
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+    });
+    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("instruments/42/revisions");
+  });
+
   it("calls onConfirm with the chosen user-facing version, not the audit revisionId", async () => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
     const apiGet = InvApiService.get;

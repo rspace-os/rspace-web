@@ -70,6 +70,24 @@ describe("LinkTargetBrowser", () => {
     expect([...args.uiConfig.allowedTypeFilters]).toContain("SAMPLE_TEMPLATE");
   });
 
+  it("lets instruments be browsed as link targets", () => {
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { allowedTypeFilters: Set<string> };
+    };
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("INSTRUMENT");
+  });
+
+  it("lets instrument templates be browsed as link targets", () => {
+    render(<LinkTargetBrowser open onPick={() => {}} onCancel={() => {}} />);
+
+    const args = searchConstructorArgs.at(-1) as {
+      uiConfig: { allowedTypeFilters: Set<string> };
+    };
+    expect([...args.uiConfig.allowedTypeFilters]).toContain("INSTRUMENT_TEMPLATE");
+  });
+
   it("requires an explicit Choose click instead of confirming on row click", () => {
     // mirrors Browse ELN: clicking a result only selects it; the picker's
     // Choose button (enabled once something is selected) confirms the pick.

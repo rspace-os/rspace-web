@@ -54,6 +54,41 @@ describe("LinkedDocuments", () => {
     expect(spy).toHaveBeenCalledWith("referencingItems/IT5");
   });
 
+  test("fetches instrument-template back-references via the generic referencingItems route", async () => {
+    // NT has an entry in INVENTORY_PREFIX_TO_API_PATH, but the typed
+    // instrumentTemplates/{id}/referencingItems endpoint does not exist on the
+    // backend; like IT sample templates, instrument templates must use the
+    // generic /referencingItems/{globalId} route
+    const spy = vi.spyOn(InvApiService, "get").mockImplementation((url) => {
+      if (String(url).startsWith("referencingItems/")) {
+        return Promise.resolve({
+          data: {
+            referencingItems: [
+              {
+                sourceGlobalId: "SA1",
+                sourceName: "A sample",
+                sourceType: "SAMPLE",
+                relationType: "References",
+                versionPin: null,
+              },
+            ],
+          },
+        } as AxiosResponse);
+      }
+      return Promise.resolve({ data: [] } as AxiosResponse);
+    });
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <LinkedDocuments factory={mockFactory()} globalId="NT5" />
+      </ThemeProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "inventory:moreInfo.linkedDocuments.show" }));
+
+    expect(await screen.findByText("A sample")).toBeVisible();
+    expect(spy).toHaveBeenCalledWith("listOfMaterials/forInventoryItem/NT5");
+    expect(spy).toHaveBeenCalledWith("referencingItems/NT5");
+  });
+
   test("Assert that correct API endpoint is called with Global ID", async () => {
     const spy = vi.spyOn(InvApiService, "get").mockImplementation(() => Promise.reject(new Error("An error")));
     render(<LinkedDocuments factory={mockFactory()} globalId="IC1" />);
