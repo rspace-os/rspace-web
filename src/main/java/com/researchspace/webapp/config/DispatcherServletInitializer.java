@@ -64,9 +64,15 @@ public class DispatcherServletInitializer implements ServletContextListener {
    *
    * <p>A unit test scans all controllers and fails if a multipart-accepting controller's URL prefix
    * is not covered by this list — extend the list when it does.
+   *
+   * <p>The scan only sees handler methods that declare a {@code MultipartFile}. Some frontend code
+   * submits plain form fields as {@code multipart/form-data} (a bare {@code FormData} body), which
+   * hits handlers taking ordinary {@code @RequestParam}/{@code @ModelAttribute} values — those
+   * prefixes must be added here manually. {@code /groups/*} is one: group invitations, profile
+   * edits, and group permission toggles are all posted as FormData.
    */
   static final String[] MULTIPART_SOURCE_PATTERNS = {
-    "/api/*", "/gallery/*", "/export/*", "/workspace/*", "/system/*", "/userform/*"
+    "/api/*", "/gallery/*", "/export/*", "/workspace/*", "/system/*", "/userform/*", "/groups/*"
   };
 
   @Override
