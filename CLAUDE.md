@@ -254,7 +254,7 @@ Controller  →  Service (Manager)  →  DAO  →  Hibernate/DB
 ```
 
 - **Controllers** (`com.researchspace.api.v1.controller`, `com.researchspace.webapp.controller`): input validation only; never call DAOs directly
-- **Services** (`com.researchspace.service`): transactional; names must end in `Manager` for AOP transaction wrapping (`applicationContext-service.xml`)
+- **Services** (`com.researchspace.service`): transactional; use the `Manager` suffix by default so the service is covered by the AOP pointcuts in `applicationContext-service.xml`. A non-`Manager` service may instead declare its transaction boundary explicitly with `@Transactional`; `TransactionAdviceStartupCheck` verifies that annotation-driven transaction advice was applied at startup.
 - **DAOs** (`com.researchspace.dao`): assume an active transaction; use `sessionFactory.getCurrentSession()`
 - **Legacy core** (`com.axiope`): older DAOs, model, search components
 
@@ -305,7 +305,7 @@ STOMP over WebSocket at `/ws` endpoint with SockJS fallback. Spring's `@EnableWe
 4. **Lazy loading in tests:** Spring transactional tests with auto-rollback mask lazy-loading exceptions that will surface in production.
 5. **Form data size:** Local Jetty limits form data to 200KB (Tomcat: 2MB). Override with `-Dorg.eclipse.jetty.server.Request.maxFormContentSize=2000000`.
 6. **Liquibase context:** A changeset only runs when its `context` matches the active launch string. Local dev/test default to `run,dev-test` (set in `dev/deployment.properties`); production is `run`; Community is `run,cloud`. Tag new changesets `run` unless they are dev/test- or cloud-only — see `src/main/resources/sqlUpdates/DatabaseChangeGuidelines.md`.
-7. **Service naming:** Service beans must end in `Manager` for AOP transaction proxying (configured in `applicationContext-service.xml`).
+7. **Service naming:** Prefer the `Manager` suffix so service beans receive the transaction advice configured in `applicationContext-service.xml`. Non-`Manager` services must declare their transaction boundary explicitly with `@Transactional`; the startup transaction-advice check guards this path.
 8. **TinyMCE plugin iframes:** Plugin dialogs (e.g., `internalLink.jsp`) load in iframes and don't inherit the main page decorator. If they use `global.js` functions that depend on DOM templates (e.g., `blockUI.html` for `RS.blockPage()`), those templates must be explicitly `<jsp:include>`d.
 
 ## Key Conventions
