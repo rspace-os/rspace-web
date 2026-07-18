@@ -4,7 +4,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
+import com.researchspace.service.EmailContent;
 import java.util.Collections;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
@@ -54,7 +54,7 @@ public class EmailSenderTest {
 
   static class SendFailureStub extends EmailBroadcastImpl {
     SendFailureStub() {
-      super(new StrictEmailContentGenerator());
+      super(new EmailContentGenerator(), "http://localhost:8080");
     }
 
     @Override
@@ -65,7 +65,7 @@ public class EmailSenderTest {
 
   static class AuthFailureStub extends EmailBroadcastImpl {
     AuthFailureStub() {
-      super(new StrictEmailContentGenerator());
+      super(new EmailContentGenerator(), "http://localhost:8080");
     }
 
     @Override
@@ -75,6 +75,6 @@ public class EmailSenderTest {
   }
 
   private EmailContent anyHtmlBody() {
-    return EmailContent.builder().htmlContent("body").build();
+    return new EmailContent(null, "<html><body>body</body></html>", "body");
   }
 }

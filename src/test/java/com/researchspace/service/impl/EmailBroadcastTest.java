@@ -18,7 +18,7 @@ import com.researchspace.model.comms.NotificationType;
 import com.researchspace.model.record.Notebook;
 import com.researchspace.model.record.Record;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
+import com.researchspace.service.EmailContent;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import io.github.resilience4j.ratelimiter.RateLimiter;
@@ -51,8 +51,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   // Removes retries (which aren't tested in this class) from stubs to avoid waiting during tests
   abstract static class NoRetryBroadcasterStub extends EmailBroadcastImpl {
-    NoRetryBroadcasterStub(StrictEmailContentGenerator strictEmailContentGenerator) {
-      super(strictEmailContentGenerator);
+    NoRetryBroadcasterStub(EmailContentGenerator emailContentGenerator) {
+      super(emailContentGenerator, BASEURL);
     }
 
     @Override
@@ -62,8 +62,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   static class AuthFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    AuthFailureBroadcasterStub(StrictEmailContentGenerator strictEmailContentGenerator) {
-      super(strictEmailContentGenerator);
+    AuthFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
+      super(emailContentGenerator);
     }
 
     @Override
@@ -73,8 +73,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   static class SendFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    SendFailureBroadcasterStub(StrictEmailContentGenerator strictEmailContentGenerator) {
-      super(strictEmailContentGenerator);
+    SendFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
+      super(emailContentGenerator);
     }
 
     @Override
@@ -84,8 +84,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   static class IllegalWriteFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    IllegalWriteFailureBroadcasterStub(StrictEmailContentGenerator strictEmailContentGenerator) {
-      super(strictEmailContentGenerator);
+    IllegalWriteFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
+      super(emailContentGenerator);
     }
 
     @Override
@@ -96,8 +96,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   static class EmailSenderStub extends EmailBroadcastImpl {
 
-    EmailSenderStub(StrictEmailContentGenerator strictEmailContentGenerator) {
-      super(strictEmailContentGenerator);
+    EmailSenderStub(EmailContentGenerator emailContentGenerator) {
+      super(emailContentGenerator, BASEURL);
     }
 
     int messageCount = 0;
@@ -107,23 +107,20 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
         String subj, EmailContent content, List<String> recipients, Communication comm) {
       messageCount++;
     }
-
-    public EmailContent generateEmailBody(Communication comm) {
-      return EmailContent.builder().htmlContent("").build();
-    }
   }
 
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   private EmailBroadcastImpl broadcast;
+  private CommunicationEmailContentGenerator contentGenerator;
 
   @Before
   public void setUp() throws Exception {
     // we need to explicitly create this, as it is only created by Spring in 'prod' profile
     // and these tests run in dev profile.
-    broadcast = new EmailBroadcastImpl(strictEmailContentGenerator);
-    broadcast.setHtmlDomainPrefix(BASEURL);
+    broadcast = new EmailBroadcastImpl(emailContentGenerator, BASEURL);
     broadcast.init();
+    contentGenerator = new CommunicationEmailContentGenerator(emailContentGenerator, BASEURL);
   }
 
   @After
@@ -137,10 +134,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     Record record = TestFactory.createAnyRecord(sender);
     record.setId(1L);
     mor.setRecord(record);
-    EmailContent msgbody = broadcast.generateEmailBody(mor);
+    EmailContent msgbody = contentGenerator.generate(mor);
 
-    assertAllVelocityVarsReplaced(msgbody.getHtmlContent());
-    assertAllVelocityVarsReplaced(msgbody.getPlainTextContent().get());
+    assertAllVelocityVarsReplaced(msgbody.htmlContent());
+    assertAllVelocityVarsReplaced(msgbody.plainTextContent());
   }
 
   private User createSender() {
@@ -164,11 +161,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     MessageOrRequest mor = TestFactory.createAnyGroupRequest(sender, record, group);
     mor.setMessage("message1");
     record.setId(1L);
-    EmailContent msgbody = broadcast.generateEmailBody(mor);
+    EmailContent msgbody = contentGenerator.generate(mor);
 
-    assertAllVelocityVarsReplaced(msgbody.getHtmlContent());
-    assertTrue(
-        msgbody.getHtmlContent().contains(BASEURL + "/workspace/editor/structuredDocument/1"));
+    assertAllVelocityVarsReplaced(msgbody.htmlContent());
+    assertTrue(msgbody.htmlContent().contains(BASEURL + "/workspace/editor/structuredDocument/1"));
 
     // now try with a notebook and assert the link is different:
     assertNotebookLinkGenerated(sender, mor);
@@ -178,9 +174,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     Notebook nb = TestFactory.createANotebook("any", sender);
     nb.setId(1L);
     mor.setRecord(nb);
-    EmailContent msgbody = broadcast.generateEmailBody(mor);
-    assertAllVelocityVarsReplaced(msgbody.getHtmlContent());
-    assertTrue(msgbody.getHtmlContent().contains(BASEURL + "/notebookEditor/1"));
+    EmailContent msgbody = contentGenerator.generate(mor);
+    assertAllVelocityVarsReplaced(msgbody.htmlContent());
+    assertTrue(msgbody.htmlContent().contains(BASEURL + "/notebookEditor/1"));
   }
 
   @Test
@@ -192,19 +188,19 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
     not.setRecord(record);
     record.setId(1L);
-    EmailContent msgbody = broadcast.generateEmailBody(not);
-    assertEquals(2, StringUtils.countMatches(msgbody.getHtmlContent(), "href"));
+    EmailContent msgbody = contentGenerator.generate(not);
+    assertEquals(2, StringUtils.countMatches(msgbody.htmlContent(), "href"));
 
-    assertAllVelocityVarsReplaced(msgbody.getHtmlContent());
+    assertAllVelocityVarsReplaced(msgbody.htmlContent());
     // now try with a notebook and assert the link is different:
     assertNotebookLinkGenerated(sender, not);
 
     // now use a notification type that shouldn't include link to doc;
     not.setNotificationType(NotificationType.NOTIFICATION_DOCUMENT_DELETED);
-    msgbody = broadcast.generateEmailBody(not);
-    assertAllVelocityVarsReplaced(msgbody.getHtmlContent());
+    msgbody = contentGenerator.generate(not);
+    assertAllVelocityVarsReplaced(msgbody.htmlContent());
     // no record link
-    assertEquals(1, StringUtils.countMatches(msgbody.getHtmlContent(), "href"));
+    assertEquals(1, StringUtils.countMatches(msgbody.htmlContent(), "href"));
   }
 
   @Test
@@ -215,12 +211,6 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
                 "sendHtmlEmail", String.class, EmailContent.class, List.class, Communication.class)
             .getAnnotation(Async.class);
     assertNotNull(asynch);
-
-    Annotation asynch2 =
-        EmailBroadcast.class
-            .getMethod("sendTextEmail", String.class, String.class, List.class, Communication.class)
-            .getAnnotation(Async.class);
-    assertNotNull(asynch2);
   }
 
   @Test
@@ -229,8 +219,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     StringAppenderForTestLogging testStringAppender =
         CoreTestUtils.configureStringLogger(LogManager.getLogger(FailedEmailLogger.class));
 
-    AuthFailureBroadcasterStub broadcast =
-        new AuthFailureBroadcasterStub(strictEmailContentGenerator);
+    AuthFailureBroadcasterStub broadcast = new AuthFailureBroadcasterStub(emailContentGenerator);
     broadcast.init();
     broadcast.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     String firstMessage = testStringAppender.logContents;
@@ -239,8 +228,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
         firstMessage.startsWith(EmailBroadcastImpl.AUTHENTICATION_FAILURE_PREFIX));
 
     testStringAppender.clearLog();
-    SendFailureBroadcasterStub broadcast2 =
-        new SendFailureBroadcasterStub(strictEmailContentGenerator);
+    SendFailureBroadcasterStub broadcast2 = new SendFailureBroadcasterStub(emailContentGenerator);
     broadcast2.init();
     broadcast2.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     firstMessage = testStringAppender.logContents;
@@ -250,7 +238,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
     testStringAppender.clearLog();
     IllegalWriteFailureBroadcasterStub broadcast3 =
-        new IllegalWriteFailureBroadcasterStub(strictEmailContentGenerator);
+        new IllegalWriteFailureBroadcasterStub(emailContentGenerator);
     broadcast3.init();
     broadcast3.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     firstMessage = testStringAppender.logContents;
@@ -269,7 +257,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   @Test
   public void partitionEmailsByAddressLimit() {
     // send in batches of 3, count how many distinct emails are made
-    EmailSenderStub senderTss = new EmailSenderStub(strictEmailContentGenerator);
+    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
     senderTss.init();
     senderTss.setAddressChunkSize(3);
 
@@ -297,7 +285,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
    */
   @Test
   public void rateLimiterTestFailure() throws Exception {
-    EmailSenderStub senderTss = new EmailSenderStub(strictEmailContentGenerator);
+    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
     senderTss.init();
     senderTss.setAddressChunkSize(3);
 
@@ -319,7 +307,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   // in this test, we allow a timeout duration long enough to allow tokens to refresh
   @Test
   public void rateLimiterTestSuccess() throws Exception {
-    EmailSenderStub senderTss = new EmailSenderStub(strictEmailContentGenerator);
+    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
     senderTss.init();
     senderTss.setAddressChunkSize(3);
 
@@ -353,6 +341,6 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   private EmailContent anyHtmlBody() {
-    return EmailContent.builder().htmlContent("<p>body</p>").plainTextContent("body").build();
+    return new EmailContent(null, "<p>body</p>", "body");
   }
 }

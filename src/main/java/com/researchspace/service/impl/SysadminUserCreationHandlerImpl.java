@@ -22,13 +22,13 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
@@ -53,7 +53,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   private @Autowired GroupManager groupManager;
   private @Autowired IContentInitializer initializer;
   private @Autowired MessageSource messageSource;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -260,9 +260,12 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     velocityModel.put("adminUser", adminUser);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "newUserAccountComplete.vm", velocityModel);
-    emailer.sendHtmlEmail("RSpace account created", content, toList(newUser.getEmail()), null);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            "email.newuseraccount.complete.subject",
+            null,
+            "newUserAccountComplete.vm",
+            velocityModel);
+    emailer.sendHtmlEmail(content.subject(), content, toList(newUser.getEmail()), null);
   }
 
   private User createNewUserAccount(User newUser) throws UserExistsException {

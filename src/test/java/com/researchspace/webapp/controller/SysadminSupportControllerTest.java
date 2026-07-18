@@ -8,10 +8,13 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.testutils.TestFactory;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -29,6 +32,8 @@ public class SysadminSupportControllerTest {
   @Mock LicenseService licenseService;
   @Mock UserManager usrMgr;
   @Mock MessageSourceUtils messages;
+  @Mock EmailContentGenerator emailContentGenerator;
+  @Mock IPropertyHolder properties;
 
   @InjectMocks SysAdminSupportController controller;
   User sysadmin;
@@ -77,5 +82,19 @@ public class SysadminSupportControllerTest {
     // false
     rc = controller.forceRefreshLicense();
     assertFalse(rc.getData());
+  }
+
+  @Test
+  public void escapesLogLinesBeforeRenderingEmail() {
+    controller.generateEmailContent(sysadmin, List.of("Map<String, Object> failed"), null);
+
+    Mockito.verify(emailContentGenerator)
+        .generatePlainTextAndHtmlContent(
+            Mockito.eq("system.support.serverlogs.supportEmailTitle"),
+            Mockito.any(),
+            Mockito.eq("supportLogFiles.vm"),
+            Mockito.argThat(
+                model ->
+                    List.of("Map&lt;String, Object&gt; failed").equals(model.get("logLines"))));
   }
 }

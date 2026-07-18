@@ -10,12 +10,12 @@ import com.researchspace.model.events.AccountEventType;
 import com.researchspace.model.events.UserAccountEvent;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.LicenseRequestResult;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Setter;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserEnablementUtilsImpl implements UserEnablementUtils {
-  @Autowired private StrictEmailContentGenerator strictEmailContentGenerator;
+  @Autowired private EmailContentGenerator emailContentGenerator;
 
   @Autowired private UserManager userManager;
 
@@ -46,11 +46,12 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     velocityModel.put("accountDisabled", !newStatus);
     velocityModel.put("systemUser", systemUser);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
+    String subjectKey =
+        newStatus ? "email.account.enabled.subject" : "email.account.disabled.subject";
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "accountEnablementNotification.vm", velocityModel);
-    String title = newStatus ? "RSpace account enabled" : "RSpace account disabled";
-    emailer.sendHtmlEmail(title, content, toList(user.getEmail()), null);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            subjectKey, null, "accountEnablementNotification.vm", velocityModel);
+    emailer.sendHtmlEmail(content.subject(), content, toList(user.getEmail()), null);
   }
 
   @Override

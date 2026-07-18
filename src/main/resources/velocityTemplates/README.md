@@ -1,16 +1,9 @@
-Templates only used in emails should have an HTML and a plain text version. This is so we can send a MultiPart mail message that satisfies spam filters.
+Templates used only in emails are authored once as HTML body fragments. Do not add
+`html`, `head`, `meta`, or `body` elements: `EmailContentGenerator` adds the common
+`html` and `body` elements and sets the `html` element's `lang` attribute from the active
+recipient locale. The MIME part declares UTF-8.
 
-Plain text version should be as similar as possible in content to the HTML version to avoid the email being detected as spam.
- 
-Plaintext variant template file names should be suffixed  with '-plaintext.vm'.
-
-
-E.g. if `velocityEmailTemplate.vm` is an HTML email template, there should be a file `velocityEmailTemplate-plaintext.vm` with content as similar as possible, but no markup.
-
-This convention is useful as:
-
-* Code can be simplified to programmatically search for text alternative
-* We can easily validate that plain-text templates lack HTML by searching over *-plaintext.vm files for '<' characters for example.
-
-There is a unit test 'VelocityTemplateRenderingTest' enabling any template rendering to be quickly tested by eye
-in a simple JUnit.
+The multipart email's plain-text alternative is derived automatically from the rendered
+HTML by `EmailHtmlToPlainText`. Hyperlinks retain their target as "text (url)" and
+block-level elements become paragraph breaks, so there is no separate `-plaintext.vm`
+template to keep synchronized.

@@ -9,11 +9,11 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CommunityUserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ public class CloudUserManagerImpl implements CommunityUserManager {
   private static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   private @Autowired UserManager userManager;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
   private @Autowired RoleManager roleManager;
   private @Autowired AnalyticsManager analyticsManager;
   private @Autowired IPropertyHolder properties;
@@ -223,12 +223,12 @@ public class CloudUserManagerImpl implements CommunityUserManager {
     rc.put("verifyLink", verifyLink);
 
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "emailChangeVerificationMsg.vm", rc);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            "email.emailchange.subject", null, "emailChangeVerificationMsg.vm", rc);
 
     log.info("Sending mail to {} at unverified email: {}", user.getUsername(), email);
     emailSender.sendHtmlEmail(
-        "Email address update", content, Arrays.asList(new String[] {email}), null);
+        content.subject(), content, Arrays.asList(new String[] {email}), null);
   }
 
   private void sendEmailChangeConfirmationMsg(User user, String oldEmail) {
@@ -238,11 +238,11 @@ public class CloudUserManagerImpl implements CommunityUserManager {
     model.put("newEmailAddress", user.getEmail());
 
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "emailChangeConfirmationMsg.vm", model);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            "email.emailchange.subject", null, "emailChangeConfirmationMsg.vm", model);
     log.info("Sending confirmation mail to {} at old email {}", user.getUsername(), oldEmail);
     emailSender.sendHtmlEmail(
-        "Email address update", content, Arrays.asList(new String[] {oldEmail}), null);
+        content.subject(), content, Arrays.asList(new String[] {oldEmail}), null);
   }
 
   /*

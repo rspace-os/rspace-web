@@ -1,13 +1,14 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.service.impl.EmailBroadcastImpl.TEXT_ONLY_EMAIL_DEFAULT;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
+import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.text.ParseException;
@@ -31,7 +32,7 @@ public class EmailBroadcastVanillaJunit {
   // a little circular but will detect regressions.
   static final FastDateFormat EMAIL_DATE_FORMAT = DateFormatUtils.SMTP_DATETIME_FORMAT;
   EmailBroadcastImpl emailerBroadcastImpl =
-      new EmailBroadcastImpl(new StrictEmailContentGenerator());
+      new EmailBroadcastImpl(new EmailContentGenerator(), "http://localhost:8080");
 
   @Test
   public void calculateRecipients() {
@@ -70,28 +71,28 @@ public class EmailBroadcastVanillaJunit {
   public void createMessagePart() throws MessagingException, ParseException, IOException {
     EmailBroadcastImpl.EmailConfig plainTextConfig = createHtmlAndPlainTextEmailContent();
     Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
-    assertEquals("text/plain", multi.getBodyPart(0).getContentType());
-    assertEquals("text/html", multi.getBodyPart(1).getContentType());
+    assertTrue(multi.getBodyPart(0).getContentType().startsWith("text/plain"));
+    assertEquals("text/html; charset=UTF-8", multi.getBodyPart(1).getContentType());
     assertTrue(multi.getBodyPart(0).getContent().toString().equals("hello"));
   }
 
   @Test
-  public void createMessagePartShowsDefaultTextIfNotSet()
-      throws MessagingException, ParseException, IOException {
-    EmailBroadcastImpl.EmailConfig plainTextConfig = createHtmlOnlyEmailContent();
-    Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
-    assertTrue(multi.getBodyPart(0).getContent().toString().equals(TEXT_ONLY_EMAIL_DEFAULT));
+  public void emailContentRejectsMissingPlainText() {
+    assertThrows(
+        NullPointerException.class, () -> new EmailContent(null, "<html>hello</html>", null));
   }
 
-  private EmailBroadcastImpl.EmailConfig createHtmlOnlyEmailContent() {
-    EmailBroadcastImpl.EmailConfig plainTextConfig =
+  @Test
+  public void emailConfigFiltersImmutableRecipientListsWithoutMutatingThem() {
+    List<String> recipients =
+        List.of("user@example.com", "missing" + EmailBroadcast.UNKNOWN_EMAIL_SUFFIX);
+
+    EmailBroadcastImpl.EmailConfig config =
         new EmailBroadcastImpl.EmailConfig(
-            Collections.emptyList(),
-            "subject",
-            EmailContent.builder().htmlContent("<html>hello</html").build(),
-            null,
-            true);
-    return plainTextConfig;
+            recipients, "subject", new EmailContent(null, "<p>hello</p>", "hello"), null);
+
+    assertEquals(List.of("user@example.com"), config.addresses());
+    assertEquals(2, recipients.size());
   }
 
   private EmailBroadcastImpl.EmailConfig createHtmlAndPlainTextEmailContent() {
@@ -99,12 +100,8 @@ public class EmailBroadcastVanillaJunit {
         new EmailBroadcastImpl.EmailConfig(
             Collections.emptyList(),
             "subject",
-            EmailContent.builder()
-                .plainTextContent("hello")
-                .htmlContent("<html>hello</html")
-                .build(),
-            null,
-            true);
+            new EmailContent(null, "<html>hello</html", "hello"),
+            null);
     return plainTextConfig;
   }
 

@@ -473,7 +473,6 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.anyString(),
             Mockito.anyString(),
             Mockito.contains("Hello"));

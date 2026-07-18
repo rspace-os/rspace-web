@@ -2,8 +2,8 @@ package com.axiope.userimport;
 
 import com.researchspace.model.User;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.EmailContent;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ public class NotifyUserPostUserCreate implements IPostUserCreationSetUp {
   @Qualifier("emailBroadcast")
   private EmailBroadcast emailSender;
 
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Override
   public void postUserCreate(User created, HttpServletRequest req, String origPassword) {
@@ -51,9 +51,10 @@ public class NotifyUserPostUserCreate implements IPostUserCreationSetUp {
       rc.put("groupName", newUser.getGroups().iterator().next().getDisplayName());
     }
     EmailContent message =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(emailTemplateResource, rc);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            "email.welcome.subject", null, emailTemplateResource, rc);
     log.info("Sending mail to {} at {}", newUser.getUsername(), newUser.getEmail());
     emailSender.sendHtmlEmail(
-        "Welcome to RSpace", message, Arrays.asList(new String[] {newUser.getEmail()}), null);
+        message.subject(), message, Arrays.asList(new String[] {newUser.getEmail()}), null);
   }
 }

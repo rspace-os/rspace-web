@@ -7,9 +7,9 @@ import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +37,7 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
 
   private @Autowired UserManager userMgr;
   private @Autowired IPropertyHolder properties;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -71,11 +71,11 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
     model.put("verifyLink", createVerifyLink(upc.getToken()));
 
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            SIGNUP_VERIFICATION_TEMPLATE, model);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            "email.welcome.subject", null, SIGNUP_VERIFICATION_TEMPLATE, model);
     log.info("Sending mail to " + newUser.getUsername() + " at " + newUser.getEmail());
     emailSender.sendHtmlEmail(
-        "Welcome to RSpace", content, Arrays.asList(new String[] {newUser.getEmail()}), null);
+        content.subject(), content, Arrays.asList(new String[] {newUser.getEmail()}), null);
   }
 
   private String createVerifyLink(String token) {

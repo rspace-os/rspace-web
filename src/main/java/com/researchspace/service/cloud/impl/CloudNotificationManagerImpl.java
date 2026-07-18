@@ -16,11 +16,11 @@ import com.researchspace.model.comms.ShareRecordMessageOrRequestCreationConfigur
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CloudNotificationManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,8 +34,6 @@ import org.springframework.stereotype.Service;
 @Service("cloudNotificationManager")
 public class CloudNotificationManagerImpl implements CloudNotificationManager {
 
-  private static final String NOMINATE_PI_EMAIL_TITLE = "Create Group Invitation - Research Space";
-
   @Autowired
   @Qualifier("emailBroadcast")
   private EmailBroadcast emailer;
@@ -45,7 +43,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired UserManager userMgr;
   private @Autowired AnalyticsManager analyticsManager;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   public void setAnalyticsManager(AnalyticsManager analyticsMgr) {
     this.analyticsManager = analyticsMgr;
@@ -120,10 +118,10 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
+            "email.group.invitation.subject",
             "groupInvitationNewUser.vm",
             "groupInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(
-        "Join Group Invitation - Research Space", content, toList(invited.getEmail()), null);
+    emailer.sendHtmlEmail(content.subject(), content, toList(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.joinGroupInvitationSent(creator, invited, request);
@@ -149,9 +147,10 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
+            "email.group.pi.invitation.subject",
             "groupPIInvitationNewUser.vm",
             "groupPIInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(NOMINATE_PI_EMAIL_TITLE, msg, toList(invited.getEmail()), null);
+    emailer.sendHtmlEmail(msg.subject(), msg, toList(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.joinGroupInvitationSent(creator, invited, request);
@@ -177,10 +176,10 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             invited,
             token,
             velocityModel,
+            "email.share.record.invitation.subject",
             "shareRecordInvitationNewUser.vm",
             "shareRecordInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(
-        "Shared Document - Research Space", content, toList(invited.getEmail()), null);
+    emailer.sendHtmlEmail(content.subject(), content, toList(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.shareDocInvitationSent(creator, invited, request);
@@ -201,22 +200,24 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
       User invited,
       TokenBasedVerification token,
       Map<String, Object> velocityModel,
+      String subjectKey,
       String templateForNewUser,
       String templateForExistingUser) {
     EmailContent msg;
     if (invited.isTempAccount()) {
-      msg = mergeTempUserTemplate(token, velocityModel, templateForNewUser);
+      msg = mergeTempUserTemplate(token, velocityModel, subjectKey, templateForNewUser);
     } else {
-      msg = mergeExistingUserTemplate(velocityModel, templateForExistingUser);
+      msg = mergeExistingUserTemplate(velocityModel, subjectKey, templateForExistingUser);
     }
     return msg;
   }
 
   private EmailContent mergeExistingUserTemplate(
-      Map<String, Object> velocityModel, String templateName) {
+      Map<String, Object> velocityModel, String subjectKey, String templateName) {
 
     velocityModel.put("acceptanceLink", createLoginLink());
-    return strictEmailContentGenerator.generatePlainTextAndHtmlContent(templateName, velocityModel);
+    return emailContentGenerator.generatePlainTextAndHtmlContent(
+        subjectKey, null, templateName, velocityModel);
   }
 
   private String createLoginLink() {
@@ -224,12 +225,16 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
   }
 
   private EmailContent mergeTempUserTemplate(
-      TokenBasedVerification token, Map<String, Object> velocityModel, final String templateName) {
+      TokenBasedVerification token,
+      Map<String, Object> velocityModel,
+      String subjectKey,
+      final String templateName) {
 
     velocityModel.put("token", token.getToken());
     String link = createTokenisedSignupLink(token);
     velocityModel.put("acceptanceLink", link);
-    return strictEmailContentGenerator.generatePlainTextAndHtmlContent(templateName, velocityModel);
+    return emailContentGenerator.generatePlainTextAndHtmlContent(
+        subjectKey, null, templateName, velocityModel);
   }
 
   private String createTokenisedSignupLink(TokenBasedVerification token) {

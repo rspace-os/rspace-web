@@ -6,9 +6,9 @@ import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.SystemPropertyPermissionManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,7 +36,7 @@ public class SysAdminSupportController extends BaseController {
   protected static final String SYSTEM_SUPPORT_PAGE = "system/support";
 
   private @Autowired SysAdminManager sysMgr;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   private EmailBroadcast emailSender;
   @Autowired private SystemPropertyPermissionManager systemPropertyPermissionManager;
@@ -103,9 +103,7 @@ public class SysAdminSupportController extends BaseController {
       List<String> lines = sysMgr.getLastNLinesLogs(numLines);
       EmailContent content = generateEmailContent(user, lines, message);
       emailSender.sendHtmlEmail(
-          getText(
-              "system.support.serverlogs.supportEmailTitle",
-              new String[] {properties.getServerUrl()}),
+          content.subject(),
           content,
           TransformerUtils.toList(properties.getRSpaceSupportEmail()),
           null);
@@ -124,7 +122,7 @@ public class SysAdminSupportController extends BaseController {
     return errs;
   }
 
-  private EmailContent generateEmailContent(User user, List<String> lines, String message) {
+  EmailContent generateEmailContent(User user, List<String> lines, String message) {
     Map<String, Object> config = new HashMap<>();
     config.put("dateOb", new Date());
     config.put("user", user);
@@ -132,8 +130,11 @@ public class SysAdminSupportController extends BaseController {
     if (!StringUtils.isBlank(message)) {
       config.put("message", StringEscapeUtils.escapeHtml4(message.trim()));
     }
-    config.put("logLines", lines);
-    return strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-        "supportLogFiles.vm", config);
+    config.put("logLines", lines.stream().map(StringEscapeUtils::escapeHtml4).toList());
+    return emailContentGenerator.generatePlainTextAndHtmlContent(
+        "system.support.serverlogs.supportEmailTitle",
+        new Object[] {properties.getServerUrl()},
+        "supportLogFiles.vm",
+        config);
   }
 }

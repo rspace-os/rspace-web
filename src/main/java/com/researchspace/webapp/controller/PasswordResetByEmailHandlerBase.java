@@ -11,9 +11,9 @@ import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
@@ -44,7 +44,7 @@ public abstract class PasswordResetByEmailHandlerBase {
   EmailBroadcast emailer;
 
   @Autowired UserValidator userValidator;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
   Map<String, RateLimiter> resetsPerMinutePerUser = new ConcurrentHashMap<String, RateLimiter>();
 
   /** Generates a reset token and sends an email with the token if the given email address exists */
@@ -68,10 +68,10 @@ public abstract class PasswordResetByEmailHandlerBase {
               velocityModel.put("passwordType", getPasswordType());
 
               EmailContent emailContent =
-                  strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-                      "passwordResetMessage.vm", velocityModel);
+                  emailContentGenerator.generatePlainTextAndHtmlContent(
+                      getEmailSubjectKey(), null, "passwordResetMessage.vm", velocityModel);
               emailer.sendHtmlEmail(
-                  getEmailSubject(), emailContent, TransformerUtils.toList(email), null);
+                  emailContent.subject(), emailContent, TransformerUtils.toList(email), null);
 
               SECURITY_LOG.info(
                   "Password reset request from [{}] sent to email [{}]", remoteIpAddress, email);
@@ -152,9 +152,9 @@ public abstract class PasswordResetByEmailHandlerBase {
     velocityModel.put("passwordType", getPasswordType());
 
     EmailContent emailContent =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "passwordResetComplete.vm", velocityModel);
-    emailer.sendHtmlEmail(getCompletionEmailSubject(), emailContent, toList(upc.getEmail()), null);
+        emailContentGenerator.generatePlainTextAndHtmlContent(
+            getCompletionEmailSubjectKey(), null, "passwordResetComplete.vm", velocityModel);
+    emailer.sendHtmlEmail(emailContent.subject(), emailContent, toList(upc.getEmail()), null);
   }
 
   protected String getResetLink(String token) {
@@ -167,7 +167,7 @@ public abstract class PasswordResetByEmailHandlerBase {
 
   abstract String getResetLinkFormat();
 
-  abstract String getCompletionEmailSubject();
+  abstract String getCompletionEmailSubjectKey();
 
-  abstract String getEmailSubject();
+  abstract String getEmailSubjectKey();
 }
