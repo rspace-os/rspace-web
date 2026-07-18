@@ -15,7 +15,6 @@ import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CommunityUserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -214,7 +213,7 @@ public class CloudUserManagerImpl implements CommunityUserManager {
   private void sendEmailChangeVerificationMsg(
       User user, String email, String remoteAddr, TokenBasedVerification token) {
 
-    Map<String, Object> rc = new HashMap<String, Object>();
+    Map<String, Object> rc = new HashMap<>();
     rc.put("firstName", user.getFirstName());
     rc.put("ipAddress", remoteAddr);
 
@@ -223,12 +222,11 @@ public class CloudUserManagerImpl implements CommunityUserManager {
     rc.put("verifyLink", verifyLink);
 
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            "email.emailchange.subject", null, "emailChangeVerificationMsg.vm", rc);
+        emailContentGenerator.render(
+            "email.emailchange.subject", "emailChangeVerificationMsg.vm", rc);
 
     log.info("Sending mail to {} at unverified email: {}", user.getUsername(), email);
-    emailSender.sendHtmlEmail(
-        content.subject(), content, Arrays.asList(new String[] {email}), null);
+    emailSender.sendEmail(content, List.of(email), null);
   }
 
   private void sendEmailChangeConfirmationMsg(User user, String oldEmail) {
@@ -238,11 +236,10 @@ public class CloudUserManagerImpl implements CommunityUserManager {
     model.put("newEmailAddress", user.getEmail());
 
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            "email.emailchange.subject", null, "emailChangeConfirmationMsg.vm", model);
+        emailContentGenerator.render(
+            "email.emailchange.subject", "emailChangeConfirmationMsg.vm", model);
     log.info("Sending confirmation mail to {} at old email {}", user.getUsername(), oldEmail);
-    emailSender.sendHtmlEmail(
-        content.subject(), content, Arrays.asList(new String[] {oldEmail}), null);
+    emailSender.sendEmail(content, List.of(oldEmail), null);
   }
 
   /*

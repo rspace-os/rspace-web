@@ -7,32 +7,19 @@ Arguments:
 - newUserRole - a String of the new Role name.
 *#
 
-<p/>
-Hello ${newUser.fullName},
-<p/>
-The RSpace system administrator has created a ${newUserRole} account for you.
-To log into your server, use any browser on any device to go to
-
-${htmlPrefix}/workspace
-<p/>
-Your <b>username</b> for this account is ${newUser.username}.
-<br/>
+<p>Hello ${newUser.fullName},</p>
+<p>The RSpace system administrator has created a ${newUserRole} account for you.</p>
+<p>To log into your server, open <a href="${htmlPrefix}/workspace">RSpace</a>.</p>
+<p>Your <b>username</b> for this account is ${newUser.username}.<br/>
 Your system administrator can provide your login password if they have not already done so.
 If your server is using a single sign-on technology provided by your institution then your
-login credentials are most likely the same username and password you use to access all other institutional systems.
-<br/>
-<p>If you would like to change your profile details, please go to the "My RSpace" tab > "My Profile"
-<br/>
-<p>To access written documentation and instructional videos, click on the <b>Need Help?</b> button on the bottom-right of the interface. To request assistance from ResearchSpace support, please select "Chat with us" within the Need Help? interface.
-<br/>
-You can also access documentation through <a href="https://researchspace.helpdocs.io/">on our help website</a>.
-<p/>
+login credentials are most likely the same username and password you use to access all other institutional systems.</p>
+<p>To change your profile details, go to <b>My RSpace</b> &gt; <b>My Profile</b>.</p>
+<p>For documentation and instructional videos, use the <b>Need Help?</b> button in RSpace or visit the
+<a href="https://researchspace.helpdocs.io/">RSpace help website</a>. To request assistance from ResearchSpace support, select <b>Chat with us</b> in the help interface.</p>
 
 #notificationPrefInfoNewUser
 
-Best wishes,
-<p/>
-${adminUser.fullName}
-
-
+<p>Best wishes,<br/>
+${adminUser.fullName}</p>
 #dontReply

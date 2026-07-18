@@ -88,7 +88,7 @@ public class SysadminSupportControllerTest {
     controller.generateEmailContent(sysadmin, List.of("Map<String, Object> failed"), null);
 
     Mockito.verify(emailContentGenerator)
-        .generatePlainTextAndHtmlContent(
+        .render(
             Mockito.eq("system.support.serverlogs.supportEmailTitle"),
             Mockito.any(),
             Mockito.eq("supportLogFiles.vm"),

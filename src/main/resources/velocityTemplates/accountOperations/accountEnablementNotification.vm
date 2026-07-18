@@ -12,9 +12,9 @@ Hello ${user.fullName},
 <p/>
 
 #if (${accountDisabled} == 'true')
-<p>The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator (${systemUser.email}).
+<p>The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator at <a href="mailto:${systemUser.email}">${systemUser.email}</a>.</p>
 #else
-<p>The RSpace system administrator has enabled your user account. To login, please visit ${htmlPrefix}/workspace .
+<p>The RSpace system administrator has enabled your user account. You can now <a href="${htmlPrefix}/workspace">log in to RSpace</a>.</p>
 #end
 <br/>
 Best wishes,

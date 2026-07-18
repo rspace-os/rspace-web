@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.model.views.ServiceOperationResult.convertToStringEntity;
 import static java.lang.Boolean.TRUE;
 
@@ -890,11 +889,11 @@ public class SysAdminController extends BaseController {
     velocityModel.put("systemUser", admin);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
+        emailContentGenerator.render(
             "email.admin.operateas.subject",
             null,
             "adminRunningAsUserNotification.vm",
             velocityModel);
-    emailer.sendHtmlEmail(content.subject(), content, toList(runAs.getEmail()), null);
+    emailer.sendEmail(content, List.of(runAs.getEmail()), null);
   }
 }

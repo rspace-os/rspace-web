@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.join;
 
@@ -143,9 +142,8 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   private void sentHtmlEmailLogAnyException(
       String subjectKey, User user, Map<String, Object> velocityModel) {
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            subjectKey, null, "promoteToPIComplete.vm", velocityModel);
-    emailer.sendHtmlEmail(content.subject(), content, toList(user.getEmail()), null);
+        emailContentGenerator.render(subjectKey, "promoteToPIComplete.vm", velocityModel);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
   }
 
   private void assertAuthorizationAndInitUser(User admin, User newPI, String authFailureMsg) {

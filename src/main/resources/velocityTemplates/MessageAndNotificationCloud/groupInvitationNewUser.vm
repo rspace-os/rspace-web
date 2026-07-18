@@ -13,12 +13,12 @@ Please use this email address when you fill out the signup form - you can change
 <p>
 Once you've signed up, there will be an invitation message waiting for you  - accept this invitation and you will be added to ${creator.fullName}'s group.
 
-<p>There is lots of written and video help material <a href="https://researchspace.helpdocs.io/">on our help website</a>, or you can use the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
-Or, please feel free to ask for help at support@researchspace.com.
+<p>There is lots of written and video help material on the <a href="https://researchspace.helpdocs.io/">RSpace help website</a>, or you can use the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
+You can also ask for help at <a href="mailto:support@researchspace.com">support@researchspace.com</a>.</p>
 <p>
 #signature
 
-#aboutRSpaceCloud(true)
+#aboutRSpaceCloud
 
 <p/>
 #dontReply

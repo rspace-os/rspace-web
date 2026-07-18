@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.RequestUtil;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
@@ -68,13 +67,12 @@ public class UsernameReminderByEmailHandler {
               velocityModel.put("loginLink", properties.getServerUrl() + "/login");
 
               EmailContent emailContent =
-                  emailContentGenerator.generatePlainTextAndHtmlContent(
+                  emailContentGenerator.render(
                       "email.username.reminder.subject",
                       null,
                       "usernameReminderMessage.vm",
                       velocityModel);
-              emailer.sendHtmlEmail(
-                  emailContent.subject(), emailContent, TransformerUtils.toList(email), null);
+              emailer.sendEmail(emailContent, List.of(email), null);
             }
           });
     } catch (RequestNotPermitted e) {

@@ -1,10 +1,8 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.webapp.controller.UsernameReminderByEmailHandler.MAX_REMINDERS_PER_EMAIL_PER_HOUR;
 
 import com.researchspace.core.util.RequestUtil;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.dtos.UserValidator;
@@ -20,6 +18,7 @@ import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,10 +67,9 @@ public abstract class PasswordResetByEmailHandlerBase {
               velocityModel.put("passwordType", getPasswordType());
 
               EmailContent emailContent =
-                  emailContentGenerator.generatePlainTextAndHtmlContent(
-                      getEmailSubjectKey(), null, "passwordResetMessage.vm", velocityModel);
-              emailer.sendHtmlEmail(
-                  emailContent.subject(), emailContent, TransformerUtils.toList(email), null);
+                  emailContentGenerator.render(
+                      getEmailSubjectKey(), "passwordResetMessage.vm", velocityModel);
+              emailer.sendEmail(emailContent, List.of(email), null);
 
               SECURITY_LOG.info(
                   "Password reset request from [{}] sent to email [{}]", remoteIpAddress, email);
@@ -152,9 +150,9 @@ public abstract class PasswordResetByEmailHandlerBase {
     velocityModel.put("passwordType", getPasswordType());
 
     EmailContent emailContent =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            getCompletionEmailSubjectKey(), null, "passwordResetComplete.vm", velocityModel);
-    emailer.sendHtmlEmail(emailContent.subject(), emailContent, toList(upc.getEmail()), null);
+        emailContentGenerator.render(
+            getCompletionEmailSubjectKey(), "passwordResetComplete.vm", velocityModel);
+    emailer.sendEmail(emailContent, List.of(upc.getEmail()), null);
   }
 
   protected String getResetLink(String token) {

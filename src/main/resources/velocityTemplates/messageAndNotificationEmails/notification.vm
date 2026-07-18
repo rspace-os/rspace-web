@@ -33,6 +33,6 @@ $cmm.message
 #if ($cmm.notification)
 $cmm.notificationMessage
 #end
-#notificationPrefInfoSuffix(true)
+#notificationPrefInfoSuffix
 <br/>
 #dontReply

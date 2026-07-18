@@ -30,9 +30,17 @@ public final class EmailHtmlToPlainText {
     public void head(Node node, int depth) {
       if (node instanceof TextNode textNode) {
         appendText(textNode.text());
-      } else if (node instanceof Element element
-          && ("br".equals(element.normalName()) || element.isBlock())) {
-        newlines(1);
+      } else if (node instanceof Element element) {
+        if ("li".equals(element.normalName())) {
+          newlines(1);
+          Element parent = element.parent();
+          out.append(
+              parent != null && "ol".equals(parent.normalName())
+                  ? (element.elementSiblingIndex() + 1) + ". "
+                  : "- ");
+        } else if ("br".equals(element.normalName()) || element.isBlock()) {
+          newlines(1);
+        }
       }
     }
 

@@ -4,25 +4,16 @@ Arguments:
 - runAs - The user who was impersonated
 - systemUser - The admin user  who performed the 'RunAs' operation
 *#
-
-
-<p/>
-Hello ${runAs.fullName},
-<p/>
-The RSpace system administrator (${systemUser.fullName}) has recently  logged into your RSpace account.
-
-<p/>
-There are  several reasons why this might happen:
+<p>Hello ${runAs.fullName},</p>
+<p>The RSpace system administrator (${systemUser.fullName}) has recently logged into your RSpace account.</p>
+<p>There are several reasons why this might happen:</p>
 <ul>
-<li>To perform some admin function
-<li>Maintenance work
-<li>User assistance/fault diagnosis.
+<li>To perform an admin function</li>
+<li>Maintenance work</li>
+<li>User assistance or fault diagnosis</li>
 </ul>
-<br/>
-If this is not expected, or your account has been tampered with, please contact the RSpace admin at
-${systemUser.email}
-<p/>
-Best wishes<br/>
-RSpace admin
-<p/>
+<p>If this is unexpected, or your account has been tampered with, please contact the RSpace admin at
+<a href="mailto:${systemUser.email}">${systemUser.email}</a>.</p>
+<p>Best wishes,<br/>
+RSpace admin</p>
 #dontReply

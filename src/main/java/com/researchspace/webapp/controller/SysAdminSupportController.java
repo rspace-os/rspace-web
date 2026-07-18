@@ -1,7 +1,6 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.admin.service.SysAdminManager;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
@@ -102,11 +101,7 @@ public class SysAdminSupportController extends BaseController {
     try {
       List<String> lines = sysMgr.getLastNLinesLogs(numLines);
       EmailContent content = generateEmailContent(user, lines, message);
-      emailSender.sendHtmlEmail(
-          content.subject(),
-          content,
-          TransformerUtils.toList(properties.getRSpaceSupportEmail()),
-          null);
+      emailSender.sendEmail(content, List.of(properties.getRSpaceSupportEmail()), null);
 
     } catch (IOException e) {
       ErrorList errs = logAndGetError(e);
@@ -131,7 +126,7 @@ public class SysAdminSupportController extends BaseController {
       config.put("message", StringEscapeUtils.escapeHtml4(message.trim()));
     }
     config.put("logLines", lines.stream().map(StringEscapeUtils::escapeHtml4).toList());
-    return emailContentGenerator.generatePlainTextAndHtmlContent(
+    return emailContentGenerator.render(
         "system.support.serverlogs.supportEmailTitle",
         new Object[] {properties.getServerUrl()},
         "supportLogFiles.vm",

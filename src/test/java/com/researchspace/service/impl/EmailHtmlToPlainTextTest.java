@@ -48,10 +48,12 @@ class EmailHtmlToPlainTextTest {
   }
 
   @Test
-  void lineBreaksAndListItemsBecomeSingleNewlines() {
+  void preservesLineBreaksAndListMarkers() {
     assertEquals(
-        "one\ntwo\nfirst\nsecond",
-        EmailHtmlToPlainText.toPlainText("one<br/>two<ul><li>first</li><li>second</li></ul>"));
+        "one\ntwo\n- first\n- second\n\n1. third\n2. fourth",
+        EmailHtmlToPlainText.toPlainText(
+            "one<br/>two<ul><li>first</li><li>second</li></ul>"
+                + "<ol><li>third</li><li>fourth</li></ol>"));
   }
 
   @Test

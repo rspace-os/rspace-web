@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.MessageSourceUtils;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
@@ -24,33 +23,24 @@ public class EmailContentGenerator {
    * @param subjectKey i18n key for the email subject
    * @param subjectArgs MessageFormat arguments for the subject, or null
    */
-  public EmailContent generatePlainTextAndHtmlContent(
+  public EmailContent render(
+      String subjectKey, String htmlTemplate, Map<String, Object> velocityModel) {
+    return render(subjectKey, null, htmlTemplate, velocityModel);
+  }
+
+  public EmailContent render(
       String subjectKey,
       Object[] subjectArgs,
       String htmlTemplate,
       Map<String, Object> velocityModel) {
     String subject = messages.getMessage(subjectKey, subjectArgs);
     return fromHtmlFragment(
-        subject,
-        mergeTemplate(htmlTemplate, new HashMap<>(velocityModel)),
-        LocaleContextHolder.getLocale());
+        subject, mergeTemplate(htmlTemplate, velocityModel), LocaleContextHolder.getLocale());
   }
 
-  /**
-   * Renders an email body with no i18n subject. Reserved for communications whose subject is
-   * supplied dynamically at send time (e.g. {@code Communication#getSubject()}); package-private so
-   * external callers must use the subject-key variant above.
-   */
-  EmailContent generatePlainTextAndHtmlContent(
-      String htmlTemplate, Map<String, Object> velocityModel) {
-    return generatePlainTextAndHtmlContent(
-        htmlTemplate, velocityModel, LocaleContextHolder.getLocale());
-  }
-
-  EmailContent generatePlainTextAndHtmlContent(
-      String htmlTemplate, Map<String, Object> velocityModel, Locale locale) {
-    return fromHtmlFragment(
-        null, mergeTemplate(htmlTemplate, new HashMap<>(velocityModel)), locale);
+  EmailContent renderWithSubject(
+      String subject, String htmlTemplate, Map<String, Object> velocityModel, Locale locale) {
+    return fromHtmlFragment(subject, mergeTemplate(htmlTemplate, velocityModel), locale);
   }
 
   EmailContent fromHtmlFragment(String subject, String htmlFragment, Locale locale) {

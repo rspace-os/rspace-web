@@ -169,6 +169,7 @@ import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
 import com.researchspace.service.impl.ChemistrySearchIndexInitialisor;
 import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
+import com.researchspace.service.impl.CommunicationEmailBroadcaster;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.DBDataIntegrityChecker;
@@ -1133,11 +1134,7 @@ public abstract class BaseConfig {
   @Bean
   public EmailBroadcast emailBroadcast() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImpl(
-          getMaxEmailsPerSecond(),
-          getEmailAddressChunkSize(),
-          emailContentGenerator(),
-          htmlDomainPrefix);
+      return new EmailBroadcastImpl(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
     }
     return new DevEmailSenderImpl();
   }
@@ -1145,14 +1142,10 @@ public abstract class BaseConfig {
   @Bean
   public Broadcaster broadcaster() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImpl(
-          getMaxEmailsPerSecond(),
-          getEmailAddressChunkSize(),
-          emailContentGenerator(),
-          htmlDomainPrefix);
-    } else {
-      return new DevBroadCaster();
+      return new CommunicationEmailBroadcaster(
+          emailBroadcast(), emailContentGenerator(), htmlDomainPrefix);
     }
+    return new DevBroadCaster();
   }
 
   private Integer getMaxEmailsPerSecond() {

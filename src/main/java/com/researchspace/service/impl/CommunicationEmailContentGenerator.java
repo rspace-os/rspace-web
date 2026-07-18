@@ -22,22 +22,20 @@ class CommunicationEmailContentGenerator {
   }
 
   EmailContent generate(Communication communication) {
-    String templateName = templateFor(communication);
-    return templateName == null
-        ? null
-        : contentGenerator.generatePlainTextAndHtmlContent(
-            templateName, velocityModelFor(communication));
-  }
-
-  private String templateFor(Communication communication) {
     if (communication.isNotification()) {
-      return "notification.vm";
+      return contentGenerator.render(
+          "email.notification.subject", "notification.vm", velocityModelFor(communication));
     }
     if (communication instanceof MessageOrRequest messageOrRequest) {
       MessageType messageType = messageOrRequest.getMessageType();
-      return MessageType.SIMPLE_MESSAGE.equals(messageType) ? "message.vm" : "request.vm";
+      boolean simpleMessage = MessageType.SIMPLE_MESSAGE.equals(messageType);
+      return contentGenerator.render(
+          simpleMessage ? "email.message.subject" : "email.request.subject",
+          simpleMessage ? "message.vm" : "request.vm",
+          velocityModelFor(communication));
     }
-    return null;
+    throw new IllegalArgumentException(
+        "Unsupported communication type: " + communication.getClass().getName());
   }
 
   private Map<String, Object> velocityModelFor(Communication communication) {

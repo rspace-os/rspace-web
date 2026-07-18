@@ -5,7 +5,7 @@
 and we want to make your experience as positive as possible.
 </p>
 <p>
-You can access the application at ${htmlDomainPrefix}/workspace.
+You can access the application at <a href="${htmlDomainPrefix}/workspace">RSpace</a>.
 </p>
 <p>
 #if($groupName)
@@ -28,7 +28,8 @@ Getting Started for Researchers video</a>.
 <p>Our full <a href="https://researchspace.helpdocs.io/">Guidance Notes</a> are also available,
 and can be accessed through the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
 
-For any help, comments, or questions, please contact us at support@researchspace.com
+For any help, comments, or questions, contact
+<a href="mailto:support@researchspace.com">support@researchspace.com</a>.
 
 #notificationPrefInfoNewUser
 <p>

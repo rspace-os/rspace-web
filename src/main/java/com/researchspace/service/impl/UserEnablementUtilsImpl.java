@@ -1,7 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
-
 import com.researchspace.licensews.LicenseExceededException;
 import com.researchspace.licensews.LicenseServerUnavailableException;
 import com.researchspace.model.Role;
@@ -17,6 +15,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserEnablementUtils;
 import com.researchspace.service.UserManager;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +48,8 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     String subjectKey =
         newStatus ? "email.account.enabled.subject" : "email.account.disabled.subject";
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            subjectKey, null, "accountEnablementNotification.vm", velocityModel);
-    emailer.sendHtmlEmail(content.subject(), content, toList(user.getEmail()), null);
+        emailContentGenerator.render(subjectKey, "accountEnablementNotification.vm", velocityModel);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
   }
 
   @Override

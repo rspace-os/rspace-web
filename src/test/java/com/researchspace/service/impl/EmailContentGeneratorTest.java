@@ -36,8 +36,11 @@ class EmailContentGeneratorTest {
   void rendersCompleteAlternativesWithoutMutatingTheModel() {
     Map<String, Object> model = new HashMap<>();
     EmailContent content =
-        generator.generatePlainTextAndHtmlContent(
-            "velocityTemplates/messageAndNotificationEmails/testMessage.vm", model, Locale.GERMANY);
+        generator.renderWithSubject(
+            "subject",
+            "velocityTemplates/messageAndNotificationEmails/testMessage.vm",
+            model,
+            Locale.GERMANY);
 
     assertFalse(model.containsKey("msg"));
     assertTrue(content.htmlContent().startsWith("<html lang=\"de-DE\">\n<body>\n"));
@@ -49,7 +52,7 @@ class EmailContentGeneratorTest {
   void createsBothAlternativesFromRenderedBodyFragment() {
     EmailContent content =
         generator.fromHtmlFragment(
-            null, "  <p>Hello <a href=\"https://example.com\">there</a></p>  ", Locale.UK);
+            "subject", "  <p>Hello <a href=\"https://example.com\">there</a></p>  ", Locale.UK);
 
     assertEquals(
         "<html lang=\"en-GB\">\n"
@@ -71,7 +74,8 @@ class EmailContentGeneratorTest {
     model.put("accountDisabled", "true");
 
     EmailContent content =
-        generator.generatePlainTextAndHtmlContent(
+        generator.renderWithSubject(
+            "subject",
             "velocityTemplates/accountOperations/accountEnablementNotification.vm",
             model,
             Locale.UK);

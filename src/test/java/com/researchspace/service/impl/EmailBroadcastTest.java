@@ -21,18 +21,10 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
-import io.github.resilience4j.ratelimiter.RateLimiter;
-import io.github.resilience4j.ratelimiter.RateLimiterConfig;
-import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import io.github.resilience4j.retry.RetryConfig;
 import java.lang.annotation.Annotation;
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.IllegalWriteException;
 import javax.mail.MessagingException;
@@ -50,10 +42,6 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   // Removes retries (which aren't tested in this class) from stubs to avoid waiting during tests
   abstract static class NoRetryBroadcasterStub extends EmailBroadcastImpl {
-    NoRetryBroadcasterStub(EmailContentGenerator emailContentGenerator) {
-      super(emailContentGenerator, BASEURL);
-    }
-
     @Override
     RetryConfig buildRetryConfig() {
       return RetryConfig.custom().maxAttempts(1).build();
@@ -63,9 +51,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   static class FailingBroadcasterStub extends NoRetryBroadcasterStub {
     private final MessagingException failure;
 
-    FailingBroadcasterStub(
-        EmailContentGenerator emailContentGenerator, MessagingException failure) {
-      super(emailContentGenerator);
+    FailingBroadcasterStub(MessagingException failure) {
       this.failure = failure;
     }
 
@@ -76,16 +62,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   static class EmailSenderStub extends EmailBroadcastImpl {
-
-    EmailSenderStub(EmailContentGenerator emailContentGenerator) {
-      super(emailContentGenerator, BASEURL);
-    }
-
     int messageCount = 0;
 
     @Override
-    public void sendHtmlEmail(
-        String subj, EmailContent content, List<String> recipients, Communication comm) {
+    protected void sendMailToAddresses(EmailConfig config) {
       messageCount++;
     }
   }
@@ -95,7 +75,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   private CommunicationEmailContentGenerator contentGenerator;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     // we need to explicitly create this, as it is only created by Spring in 'prod' profile
     // and these tests run in dev profile.
     contentGenerator = new CommunicationEmailContentGenerator(emailContentGenerator, BASEURL);
@@ -111,6 +91,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     mor.setRecord(record);
     EmailContent msgbody = contentGenerator.generate(mor);
 
+    assertEquals("RSpace message", msgbody.subject());
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     assertAllVelocityVarsReplaced(msgbody.plainTextContent());
   }
@@ -138,6 +119,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     record.setId(1L);
     EmailContent msgbody = contentGenerator.generate(mor);
 
+    assertEquals("RSpace request", msgbody.subject());
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     assertTrue(msgbody.htmlContent().contains(BASEURL + "/workspace/editor/structuredDocument/1"));
 
@@ -164,6 +146,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     not.setRecord(record);
     record.setId(1L);
     EmailContent msgbody = contentGenerator.generate(not);
+    assertEquals("RSpace notification", msgbody.subject());
     assertEquals(2, StringUtils.countMatches(msgbody.htmlContent(), "href"));
 
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
@@ -182,8 +165,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   public void testEmailIsAnnotatedAsync() throws SecurityException, NoSuchMethodException {
     Annotation asynch =
         EmailBroadcast.class
-            .getMethod(
-                "sendHtmlEmail", String.class, EmailContent.class, List.class, Communication.class)
+            .getMethod("sendEmail", EmailContent.class, List.class, Communication.class)
             .getAnnotation(Async.class);
     assertNotNull(asynch);
   }
@@ -195,10 +177,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
         CoreTestUtils.configureStringLogger(LogManager.getLogger(FailedEmailLogger.class));
 
     FailingBroadcasterStub broadcast =
-        new FailingBroadcasterStub(
-            emailContentGenerator, new AuthenticationFailedException("test auth failure"));
+        new FailingBroadcasterStub(new AuthenticationFailedException("test auth failure"));
     broadcast.init();
-    broadcast.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
+    broadcast.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
     String firstMessage = testStringAppender.logContents;
     assertTrue(
         "unexpected content: " + firstMessage,
@@ -206,10 +187,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
     testStringAppender.clearLog();
     FailingBroadcasterStub broadcast2 =
-        new FailingBroadcasterStub(
-            emailContentGenerator, new SendFailedException("test send failure"));
+        new FailingBroadcasterStub(new SendFailedException("test send failure"));
     broadcast2.init();
-    broadcast2.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
+    broadcast2.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
     firstMessage = testStringAppender.logContents;
     assertTrue(
         "unexpected content: " + firstMessage,
@@ -217,10 +197,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
     testStringAppender.clearLog();
     FailingBroadcasterStub broadcast3 =
-        new FailingBroadcasterStub(
-            emailContentGenerator, new IllegalWriteException("test send failure"));
+        new FailingBroadcasterStub(new IllegalWriteException("test send failure"));
     broadcast3.init();
-    broadcast3.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
+    broadcast3.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
     firstMessage = testStringAppender.logContents;
     assertTrue(
         "unexpected content: " + firstMessage,
@@ -228,90 +207,17 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void retryConfigDoesntRetryAuthenticationFailedException() {
-    RetryConfig cfg = new EmailBroadcastImpl(emailContentGenerator, BASEURL).buildRetryConfig();
-    assertFalse(cfg.getExceptionPredicate().test(new AuthenticationFailedException()));
-    assertTrue(cfg.getExceptionPredicate().test(new MessagingException()));
-  }
+  public void disabledRecipientsAreNotEmailed() {
+    EmailSenderStub emailSender = new EmailSenderStub();
+    emailSender.init();
+    MessageOrRequest message = TestFactory.createAnyMessage(createSender());
+    User disabledRecipient = TestFactory.createAnyUser("disabled");
+    disabledRecipient.setEnabled(false);
+    message.setRecipients(Set.of(target(disabledRecipient)));
 
-  @Test
-  public void partitionEmailsByAddressLimit() {
-    // send in batches of 3, count how many distinct emails are made
-    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
-    senderTss.init();
-    senderTss.setAddressChunkSize(3);
+    broadcasterFor(emailSender).broadcast(message);
 
-    User sender = createSender();
-    MessageOrRequest mor = TestFactory.createAnyMessage(sender);
-    mor.setMessage("message1");
-    mor.setRecipients(createNAddresses(7));
-    senderTss.broadcast(mor);
-    assertEquals(3, senderTss.messageCount);
-
-    senderTss.messageCount = 0;
-    mor.setRecipients(createNAddresses(3));
-    senderTss.broadcast(mor);
-    assertEquals(1, senderTss.messageCount);
-    // nothing sent ifn
-    senderTss.messageCount = 0;
-    mor.setRecipients(createNAddresses(0));
-    senderTss.broadcast(mor);
-    assertEquals(0, senderTss.messageCount);
-  }
-
-  /*
-   * Set up a rate limiter that will only handle 2 requests, and won't wait
-   * for the tokens to renew. We attempt to send 3 emails, 3rd one throws exception
-   */
-  @Test
-  public void rateLimiterTestFailure() throws Exception {
-    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
-    senderTss.init();
-    senderTss.setAddressChunkSize(3);
-
-    RateLimiterConfig cfg =
-        RateLimiterConfig.custom()
-            .limitForPeriod(2)
-            .limitRefreshPeriod(Duration.of(100, ChronoUnit.MILLIS))
-            .timeoutDuration(Duration.of(1, ChronoUnit.MILLIS))
-            .build();
-    RateLimiter rl = RateLimiter.of("emailLimiter", cfg);
-    senderTss.setRateLimiter(rl); // max 2 per 100 millis for testing
-    User sender = createSender();
-    MessageOrRequest mor = TestFactory.createAnyMessage(sender);
-    mor.setMessage("message1");
-    mor.setRecipients(createNAddresses(7));
-    assertExceptionThrown(() -> senderTss.broadcast(mor), RequestNotPermitted.class);
-  }
-
-  // in this test, we allow a timeout duration long enough to allow tokens to refresh
-  @Test
-  public void rateLimiterTestSuccess() throws Exception {
-    EmailSenderStub senderTss = new EmailSenderStub(emailContentGenerator);
-    senderTss.init();
-    senderTss.setAddressChunkSize(3);
-
-    RateLimiterConfig cfg =
-        RateLimiterConfig.custom()
-            .limitForPeriod(2)
-            .limitRefreshPeriod(Duration.of(100, ChronoUnit.MILLIS))
-            .timeoutDuration(Duration.of(1000, ChronoUnit.MILLIS))
-            .build();
-    RateLimiter rl = RateLimiter.of("emailLimiter", cfg);
-    senderTss.setRateLimiter(rl); // max 2 per 100 millis for testing
-    User sender = createSender();
-    MessageOrRequest mor = TestFactory.createAnyMessage(sender);
-    mor.setMessage("message1");
-    mor.setRecipients(createNAddresses(7));
-    senderTss.broadcast(mor);
-    assertEquals(3, senderTss.messageCount);
-  }
-
-  private Set<CommunicationTarget> createNAddresses(int numAddresses) {
-    return IntStream.range(0, numAddresses)
-        .mapToObj(i -> TestFactory.createAnyUser(getRandomAlphabeticString("i")))
-        .map(this::target)
-        .collect(Collectors.toSet());
+    assertEquals(0, emailSender.messageCount);
   }
 
   CommunicationTarget target(User recipient) {
@@ -321,6 +227,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   private EmailContent anyHtmlBody() {
-    return new EmailContent(null, "<p>body</p>", "body");
+    return new EmailContent("subject", "<p>body</p>", "body");
+  }
+
+  private CommunicationEmailBroadcaster broadcasterFor(EmailBroadcast emailSender) {
+    return new CommunicationEmailBroadcaster(emailSender, emailContentGenerator, BASEURL);
   }
 }

@@ -9,13 +9,7 @@ public interface EmailBroadcast {
 
   String UNKNOWN_EMAIL_SUFFIX = "-unknown@researchspace.com";
 
-  /**
-   * Send email in HTML and plain text alternative for maximum spam-safety
-   *
-   * @param content complete HTML and plain-text alternatives
-   * @param recipients : a list of email addresses of recipients
-   */
+  /** Sends a complete rendered email to the supplied recipients. */
   @Async(value = "emailTaskExecutor")
-  void sendHtmlEmail(
-      String subj, EmailContent content, List<String> recipients, Communication comm);
+  void sendEmail(EmailContent content, List<String> recipients, Communication comm);
 }

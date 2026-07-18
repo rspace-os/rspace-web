@@ -1,7 +1,5 @@
 package com.researchspace.service.cloud.impl;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
-
 import com.researchspace.analytics.service.AnalyticsManager;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.Group;
@@ -121,7 +119,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             "email.group.invitation.subject",
             "groupInvitationNewUser.vm",
             "groupInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(content.subject(), content, toList(invited.getEmail()), null);
+    emailer.sendEmail(content, List.of(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.joinGroupInvitationSent(creator, invited, request);
@@ -150,7 +148,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             "email.group.pi.invitation.subject",
             "groupPIInvitationNewUser.vm",
             "groupPIInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(msg.subject(), msg, toList(invited.getEmail()), null);
+    emailer.sendEmail(msg, List.of(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.joinGroupInvitationSent(creator, invited, request);
@@ -179,7 +177,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
             "email.share.record.invitation.subject",
             "shareRecordInvitationNewUser.vm",
             "shareRecordInvitationExistingUser.vm");
-    emailer.sendHtmlEmail(content.subject(), content, toList(invited.getEmail()), null);
+    emailer.sendEmail(content, List.of(invited.getEmail()), null);
 
     if (invited.isTempAccount()) {
       analyticsManager.shareDocInvitationSent(creator, invited, request);
@@ -216,8 +214,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
       Map<String, Object> velocityModel, String subjectKey, String templateName) {
 
     velocityModel.put("acceptanceLink", createLoginLink());
-    return emailContentGenerator.generatePlainTextAndHtmlContent(
-        subjectKey, null, templateName, velocityModel);
+    return emailContentGenerator.render(subjectKey, templateName, velocityModel);
   }
 
   private String createLoginLink() {
@@ -233,8 +230,7 @@ public class CloudNotificationManagerImpl implements CloudNotificationManager {
     velocityModel.put("token", token.getToken());
     String link = createTokenisedSignupLink(token);
     velocityModel.put("acceptanceLink", link);
-    return emailContentGenerator.generatePlainTextAndHtmlContent(
-        subjectKey, null, templateName, velocityModel);
+    return emailContentGenerator.render(subjectKey, templateName, velocityModel);
   }
 
   private String createTokenisedSignupLink(TokenBasedVerification token) {

@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -33,6 +32,7 @@ import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -260,12 +260,12 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     velocityModel.put("adminUser", adminUser);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
+        emailContentGenerator.render(
             "email.newuseraccount.complete.subject",
             null,
             "newUserAccountComplete.vm",
             velocityModel);
-    emailer.sendHtmlEmail(content.subject(), content, toList(newUser.getEmail()), null);
+    emailer.sendEmail(content, List.of(newUser.getEmail()), null);
   }
 
   private User createNewUserAccount(User newUser) throws UserExistsException {

@@ -3,7 +3,6 @@ package com.axiope.userimport;
 import com.researchspace.model.User;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.Arrays;
@@ -50,7 +49,6 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
 
   @Autowired private UserManager userMgr;
   @Autowired private EmailContentGenerator contentGenerator;
-  @Autowired private MessageSourceUtils messages;
 
   @Autowired
   public void setBroadcaster(EmailBroadcast broadcaster) {
@@ -80,12 +78,12 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
 
     try {
       EmailContent content =
-          contentGenerator.generatePlainTextAndHtmlContent(
+          contentGenerator.render(
               "email.signup.request.subject",
               new Object[] {installationName},
               emailTemplateResource,
               rc);
-      emailSender.sendHtmlEmail(content.subject(), content, recipients, null);
+      emailSender.sendEmail(content, recipients, null);
       log.info("Emailed signup request to admin");
 
     } catch (MailException me) {

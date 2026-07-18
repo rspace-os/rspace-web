@@ -10,8 +10,8 @@ import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -71,11 +71,9 @@ public class CommunityPostSignupVerification implements IPostUserSignup {
     model.put("verifyLink", createVerifyLink(upc.getToken()));
 
     EmailContent content =
-        emailContentGenerator.generatePlainTextAndHtmlContent(
-            "email.welcome.subject", null, SIGNUP_VERIFICATION_TEMPLATE, model);
+        emailContentGenerator.render("email.welcome.subject", SIGNUP_VERIFICATION_TEMPLATE, model);
     log.info("Sending mail to " + newUser.getUsername() + " at " + newUser.getEmail());
-    emailSender.sendHtmlEmail(
-        content.subject(), content, Arrays.asList(new String[] {newUser.getEmail()}), null);
+    emailSender.sendEmail(content, List.of(newUser.getEmail()), null);
   }
 
   private String createVerifyLink(String token) {

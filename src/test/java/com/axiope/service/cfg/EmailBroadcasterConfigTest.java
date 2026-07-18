@@ -3,7 +3,6 @@ package com.axiope.service.cfg;
 import static org.junit.Assert.assertEquals;
 
 import com.researchspace.service.impl.EmailBroadcastImpl;
-import com.researchspace.service.impl.EmailContentGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -44,8 +43,7 @@ public class EmailBroadcasterConfigTest {
     EmailBroadcastImpl emailBroadcastImpl() {
       Integer millis = env.getProperty("mail.maxEmailsPerSecond", Integer.class);
       Integer addressChunkSize = env.getProperty("mail.addressChunkSize", Integer.class);
-      return new EmailBroadcastImpl(
-          millis, addressChunkSize, new EmailContentGenerator(), "http://localhost:8080");
+      return new EmailBroadcastImpl(millis, addressChunkSize);
     }
   }
 
