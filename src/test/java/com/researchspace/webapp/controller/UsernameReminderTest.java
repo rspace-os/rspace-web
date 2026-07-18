@@ -6,6 +6,7 @@ import com.researchspace.core.testutil.CoreTestUtils;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.testutils.SpringTransactionalTest;
+import java.util.List;
 import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,16 +63,8 @@ public class UsernameReminderTest extends SpringTransactionalTest {
     Mockito.verify(logger)
         .info(
             Mockito.anyString(),
-            Mockito.eq(Boolean.TRUE),
-            Mockito.anyString(),
-            Mockito.anyString(),
-            Mockito.anyString());
-    Mockito.verify(logger)
-        .info(
-            Mockito.anyString(),
-            Mockito.eq(Boolean.TRUE),
             Mockito.contains("username reminder"),
-            Mockito.contains(U2_EMAIL),
+            Mockito.eq(List.of(U2_EMAIL)),
             Mockito.anyString());
   }
 

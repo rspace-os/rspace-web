@@ -14,6 +14,7 @@ import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.webapp.controller.SignupController;
+import java.util.List;
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.After;
@@ -84,9 +85,8 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.contains("Join Group"),
-            Mockito.contains(invitee.getEmail()),
+            Mockito.eq(List.of(invitee.getEmail())),
             Mockito.contains("/signup?token="));
 
     // when inviting temporary user analytics should be informed
@@ -103,9 +103,8 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.contains("Join Group"),
-            Mockito.contains(invitee.getEmail()),
+            Mockito.eq(List.of(invitee.getEmail())),
             Mockito.contains("/login"));
     verify(log, never()).info(Mockito.contains("/signup?token="));
     verify(log, never()).info(Mockito.matches(".*\\$.*"));
@@ -128,9 +127,8 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.contains("Create Group"),
-            Mockito.contains(invitee.getEmail()),
+            Mockito.eq(List.of(invitee.getEmail())),
             Mockito.contains(SignupController.SIGNUP_URL));
 
     // when inviting temporary user analytics should be informed
@@ -144,9 +142,8 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.anyBoolean(),
             Mockito.contains("Create Group"),
-            Mockito.contains(invitee.getEmail()),
+            Mockito.eq(List.of(invitee.getEmail())),
             Mockito.contains("/login"));
 
     // for existing non-temporary user we shouldn't record analytics invitation event

@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.researchspace.model.User;
 import com.researchspace.service.impl.ConfigurableLogger;
 import com.researchspace.testutils.RunProfileTestConfiguration;
+import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
 import org.junit.After;
@@ -81,9 +82,8 @@ public class SysAdminSupportControllerMVCIT extends MVCTestBase {
     verify(log)
         .info(
             Mockito.anyString(),
-            Mockito.eq(true),
             Mockito.contains("Log"),
-            Mockito.contains(opsExpectedEmail),
+            Mockito.eq(List.of(opsExpectedEmail)),
             Mockito.contains("XXXX"));
   }
 

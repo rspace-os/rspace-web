@@ -474,7 +474,7 @@ public class SysAdminControllerMVCIT extends MVCTestBase {
         .info(
             Mockito.anyString(),
             Mockito.anyString(),
-            Mockito.anyString(),
+            Mockito.eq(List.of(targetuser.getEmail())),
             Mockito.contains("Hello"));
 
     // now create a record:
