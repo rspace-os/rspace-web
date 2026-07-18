@@ -15,7 +15,6 @@ import com.researchspace.service.UserManager;
 import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,17 +38,14 @@ public class SysadminSupportControllerTest {
   User sysadmin;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     sysadmin = TestFactory.createAnyUser("sysadmin");
     sysadmin.addRole(Role.SYSTEM_ROLE);
-    Mockito.when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sysadmin);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testOnlySysAdminCanReloadLicense() throws Exception {
+    authenticateSysadmin();
     demoteSysadmin();
     assertAuthExceptionThrown(() -> controller.forceRefreshLicense());
   }
@@ -61,12 +57,14 @@ public class SysadminSupportControllerTest {
 
   @Test
   public void testOnlySysAdminCanViewLicense() throws Exception {
+    authenticateSysadmin();
     demoteSysadmin();
     assertAuthExceptionThrown(() -> controller.getLicense());
   }
 
   @Test
   public void testGetLicense() {
+    authenticateSysadmin();
     License license = new License();
     license.setId(23L);
     Mockito.when(licenseService.getLicense()).thenReturn(license);
@@ -76,6 +74,7 @@ public class SysadminSupportControllerTest {
 
   @Test
   public void testReloadLicense() {
+    authenticateSysadmin();
     Mockito.when(licenseService.forceRefreshLicense()).thenReturn(true, false);
     AjaxReturnObject<Boolean> rc = controller.forceRefreshLicense();
     assertTrue(rc.getData());
@@ -96,5 +95,9 @@ public class SysadminSupportControllerTest {
             Mockito.argThat(
                 model ->
                     List.of("Map&lt;String, Object&gt; failed").equals(model.get("logLines"))));
+  }
+
+  private void authenticateSysadmin() {
+    Mockito.when(usrMgr.getAuthenticatedUserInSession()).thenReturn(sysadmin);
   }
 }

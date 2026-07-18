@@ -39,7 +39,6 @@ import javax.mail.MessagingException;
 import javax.mail.SendFailedException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,36 +60,18 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     }
   }
 
-  static class AuthFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    AuthFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
+  static class FailingBroadcasterStub extends NoRetryBroadcasterStub {
+    private final MessagingException failure;
+
+    FailingBroadcasterStub(
+        EmailContentGenerator emailContentGenerator, MessagingException failure) {
       super(emailContentGenerator);
+      this.failure = failure;
     }
 
     @Override
     protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
-      throw new AuthenticationFailedException("test auth failure");
-    }
-  }
-
-  static class SendFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    SendFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
-      super(emailContentGenerator);
-    }
-
-    @Override
-    protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
-      throw new SendFailedException("test send failure");
-    }
-  }
-
-  static class IllegalWriteFailureBroadcasterStub extends NoRetryBroadcasterStub {
-    IllegalWriteFailureBroadcasterStub(EmailContentGenerator emailContentGenerator) {
-      super(emailContentGenerator);
-    }
-
-    @Override
-    protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
-      throw new IllegalWriteException("test send failure");
+      throw failure;
     }
   }
 
@@ -111,20 +92,14 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   private @Autowired EmailContentGenerator emailContentGenerator;
 
-  private EmailBroadcastImpl broadcast;
   private CommunicationEmailContentGenerator contentGenerator;
 
   @Before
   public void setUp() throws Exception {
     // we need to explicitly create this, as it is only created by Spring in 'prod' profile
     // and these tests run in dev profile.
-    broadcast = new EmailBroadcastImpl(emailContentGenerator, BASEURL);
-    broadcast.init();
     contentGenerator = new CommunicationEmailContentGenerator(emailContentGenerator, BASEURL);
   }
-
-  @After
-  public void tearDown() throws Exception {}
 
   @Test
   public void testGenerateEmailForSimpleMessage() {
@@ -219,7 +194,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     StringAppenderForTestLogging testStringAppender =
         CoreTestUtils.configureStringLogger(LogManager.getLogger(FailedEmailLogger.class));
 
-    AuthFailureBroadcasterStub broadcast = new AuthFailureBroadcasterStub(emailContentGenerator);
+    FailingBroadcasterStub broadcast =
+        new FailingBroadcasterStub(
+            emailContentGenerator, new AuthenticationFailedException("test auth failure"));
     broadcast.init();
     broadcast.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     String firstMessage = testStringAppender.logContents;
@@ -228,7 +205,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
         firstMessage.startsWith(EmailBroadcastImpl.AUTHENTICATION_FAILURE_PREFIX));
 
     testStringAppender.clearLog();
-    SendFailureBroadcasterStub broadcast2 = new SendFailureBroadcasterStub(emailContentGenerator);
+    FailingBroadcasterStub broadcast2 =
+        new FailingBroadcasterStub(
+            emailContentGenerator, new SendFailedException("test send failure"));
     broadcast2.init();
     broadcast2.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     firstMessage = testStringAppender.logContents;
@@ -237,8 +216,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
         firstMessage.startsWith(EmailBroadcastImpl.SEND_FAILURE_PREFIX));
 
     testStringAppender.clearLog();
-    IllegalWriteFailureBroadcasterStub broadcast3 =
-        new IllegalWriteFailureBroadcasterStub(emailContentGenerator);
+    FailingBroadcasterStub broadcast3 =
+        new FailingBroadcasterStub(
+            emailContentGenerator, new IllegalWriteException("test send failure"));
     broadcast3.init();
     broadcast3.sendHtmlEmail("any", anyHtmlBody(), Collections.emptyList(), null);
     firstMessage = testStringAppender.logContents;
@@ -249,7 +229,7 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   @Test
   public void retryConfigDoesntRetryAuthenticationFailedException() {
-    RetryConfig cfg = broadcast.buildRetryConfig();
+    RetryConfig cfg = new EmailBroadcastImpl(emailContentGenerator, BASEURL).buildRetryConfig();
     assertFalse(cfg.getExceptionPredicate().test(new AuthenticationFailedException()));
     assertTrue(cfg.getExceptionPredicate().test(new MessagingException()));
   }

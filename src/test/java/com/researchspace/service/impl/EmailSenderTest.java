@@ -27,12 +27,10 @@ public class EmailSenderTest {
 
   @Test
   public void whenSendFailsRetryUntilMaxAttempts() {
-    EmailBroadcastImpl emailSender = new SendFailureStub();
+    EmailBroadcastImpl emailSender = new FailingSenderStub(new SendFailedException("test failure"));
     emailSender.setErrorLog(logger);
     emailSender.setRetryDelayMillis(RETRY_MILLIS);
     emailSender.init();
-    emailSender.retryConfig.getIntervalFunction();
-    // this will throw send failure exception on each call
     emailSender.sendHtmlEmail(
         "any", anyHtmlBody(), Collections.emptyList(), new MessageOrRequest());
 
@@ -41,7 +39,8 @@ public class EmailSenderTest {
 
   @Test
   public void whenAuthFailsDontRetry() {
-    EmailBroadcastImpl emailSender = new AuthFailureStub();
+    EmailBroadcastImpl emailSender =
+        new FailingSenderStub(new AuthenticationFailedException("test failure"));
     emailSender.setErrorLog(logger);
     emailSender.setRetryDelayMillis(RETRY_MILLIS);
     emailSender.init();
@@ -52,25 +51,17 @@ public class EmailSenderTest {
         .error(Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any());
   }
 
-  static class SendFailureStub extends EmailBroadcastImpl {
-    SendFailureStub() {
+  static class FailingSenderStub extends EmailBroadcastImpl {
+    private final MessagingException failure;
+
+    FailingSenderStub(MessagingException failure) {
       super(new EmailContentGenerator(), "http://localhost:8080");
+      this.failure = failure;
     }
 
     @Override
     protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
-      throw new SendFailedException("test send failure");
-    }
-  }
-
-  static class AuthFailureStub extends EmailBroadcastImpl {
-    AuthFailureStub() {
-      super(new EmailContentGenerator(), "http://localhost:8080");
-    }
-
-    @Override
-    protected void sendMailToAddresses(EmailConfig config) throws MessagingException {
-      throw new AuthenticationFailedException("test auth failure");
+      throw failure;
     }
   }
 

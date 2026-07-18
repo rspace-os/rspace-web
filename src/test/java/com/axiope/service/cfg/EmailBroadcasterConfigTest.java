@@ -2,10 +2,8 @@ package com.axiope.service.cfg;
 
 import static org.junit.Assert.assertEquals;
 
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.impl.EmailBroadcastImpl;
 import com.researchspace.service.impl.EmailContentGenerator;
-import org.apache.velocity.spring.VelocityEngineFactoryBean;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -14,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -44,26 +41,11 @@ public class EmailBroadcasterConfigTest {
     public EmailConfig() {}
 
     @Bean
-    EmailBroadcastImpl emailBroadcastImpl(EmailContentGenerator emailContentGenerator) {
+    EmailBroadcastImpl emailBroadcastImpl() {
       Integer millis = env.getProperty("mail.maxEmailsPerSecond", Integer.class);
       Integer addressChunkSize = env.getProperty("mail.addressChunkSize", Integer.class);
       return new EmailBroadcastImpl(
-          millis, addressChunkSize, emailContentGenerator, "http://localhost:8080");
-    }
-
-    @Bean(name = "velocityEngine")
-    public VelocityEngineFactoryBean velocityFactoryBean() {
-      return new VelocityEngineFactoryBean();
-    }
-
-    @Bean
-    public EmailContentGenerator emailContentGenerator() {
-      return new EmailContentGenerator();
-    }
-
-    @Bean
-    public MessageSourceUtils messageSourceUtils() {
-      return new MessageSourceUtils(new StaticMessageSource());
+          millis, addressChunkSize, new EmailContentGenerator(), "http://localhost:8080");
     }
   }
 

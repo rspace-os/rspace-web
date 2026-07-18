@@ -15,10 +15,8 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
 import javax.mail.Session;
@@ -52,14 +50,14 @@ public class EmailBroadcastVanillaJunit {
     emailerBroadcastImpl.addRecipients(mf, addresses, mf.getRecipients());
 
     assertEquals(1, addresses.size());
-    assertTrue(addresses.get(0).equals(enabledUser.getEmail()));
+    assertEquals(enabledUser.getEmail(), addresses.get(0));
   }
 
   @Test
   public void testDateHeaderMatchesRFC2822() throws MessagingException, ParseException {
     Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-    MimeMessage message = createMimeMessage();
+    MimeMessage message = new MimeMessage(Session.getInstance(System.getProperties(), null));
     emailerBroadcastImpl.setDateHeader(message, now);
     // parse date
     Date parsedHeader = EMAIL_DATE_FORMAT.parse(message.getHeader("Date")[0]);
@@ -69,11 +67,13 @@ public class EmailBroadcastVanillaJunit {
 
   @Test
   public void createMessagePart() throws MessagingException, ParseException, IOException {
-    EmailBroadcastImpl.EmailConfig plainTextConfig = createHtmlAndPlainTextEmailContent();
+    EmailBroadcastImpl.EmailConfig plainTextConfig =
+        new EmailBroadcastImpl.EmailConfig(
+            List.of(), "subject", new EmailContent(null, "<html>hello</html", "hello"), null);
     Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
     assertTrue(multi.getBodyPart(0).getContentType().startsWith("text/plain"));
     assertEquals("text/html; charset=UTF-8", multi.getBodyPart(1).getContentType());
-    assertTrue(multi.getBodyPart(0).getContent().toString().equals("hello"));
+    assertEquals("hello", multi.getBodyPart(0).getContent().toString());
   }
 
   @Test
@@ -93,22 +93,5 @@ public class EmailBroadcastVanillaJunit {
 
     assertEquals(List.of("user@example.com"), config.addresses());
     assertEquals(2, recipients.size());
-  }
-
-  private EmailBroadcastImpl.EmailConfig createHtmlAndPlainTextEmailContent() {
-    EmailBroadcastImpl.EmailConfig plainTextConfig =
-        new EmailBroadcastImpl.EmailConfig(
-            Collections.emptyList(),
-            "subject",
-            new EmailContent(null, "<html>hello</html", "hello"),
-            null);
-    return plainTextConfig;
-  }
-
-  private MimeMessage createMimeMessage() {
-    Properties props = System.getProperties();
-    Session session = Session.getInstance(props, null);
-    MimeMessage message = new MimeMessage(session);
-    return message;
   }
 }
