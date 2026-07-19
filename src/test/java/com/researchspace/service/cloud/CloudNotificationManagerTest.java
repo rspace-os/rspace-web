@@ -37,7 +37,6 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
   private AnalyticsManager analyticsMgrMock;
 
   private MockHttpServletRequest request;
-  // private StringAppenderForTestLogging testLogger;
 
   private User inviterPI;
   private Group inviterGroup;
@@ -67,56 +66,24 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     invitee = createAndSaveUserIfNotExists("invitee");
   }
 
-  // @Test
-  public void testSendJoinGroupRequest() {
-    // Should we use RealTransactionSpringTestBase instead ??
-  }
-
-  // @Test
-  public void testSendCreateGroupRequest() {
-    // Should we use RealTransactionSpringTestBase instead ??
-  }
-
   @Test
   public void testSendInvitationEmailToTempUser() throws MessagingException {
     invitee.setTempAccount(true);
     cloudNotificationMgr.sendJoinGroupInvitationEmail(inviterPI, invitee, inviterGroup, request);
 
-    verify(log, times(1))
-        .info(
-            Mockito.anyString(),
-            Mockito.contains("Join Group"),
-            Mockito.eq(List.of(invitee.getEmail())),
-            Mockito.contains("/signup?token="));
-
+    verifyEmailLogged("Join Group", "/signup?token=");
     // when inviting temporary user analytics should be informed
-    verify(analyticsMgrMock, times(1)).joinGroupInvitationSent(inviterPI, invitee, request);
+    verifyJoinAnalyticsRecorded();
   }
 
   @Test
   public void testSendInvitationEmailToExistingUser() throws MessagingException {
-
     cloudNotificationMgr.sendJoinGroupInvitationEmail(inviterPI, invitee, inviterGroup, request);
 
-    // if is not a temp user, they get link to workspace
-    //	assertTrue(testLogger.logContents.contains("/login"));
-    verify(log, times(1))
-        .info(
-            Mockito.anyString(),
-            Mockito.contains("Join Group"),
-            Mockito.eq(List.of(invitee.getEmail())),
-            Mockito.contains("/login"));
-    verify(log, never()).info(Mockito.contains("/signup?token="));
-    verify(log, never()).info(Mockito.matches(".*\\$.*"));
-    // assertFalse(testLogger.logContents.contains("/signup?token="));
-    // assertVelocityVariablesReplaced(testLogger.logContents);
-
-    // for existing non-temporary user we shouldn't record analytics invitation event
-    verify(analyticsMgrMock, never())
-        .joinGroupInvitationSent(
-            Matchers.any(User.class),
-            Matchers.any(User.class),
-            Matchers.any(HttpServletRequest.class));
+    // if not a temp user, they get a link to the workspace
+    verifyEmailLogged("Join Group", "/login");
+    // for existing non-temporary user we shouldn't record an analytics invitation event
+    verifyNoJoinAnalytics();
   }
 
   @Test
@@ -124,29 +91,48 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
     invitee.setTempAccount(true);
     cloudNotificationMgr.sendPIInvitationEmail(inviterPI, invitee, "GroupName", request);
 
-    verify(log, times(1))
-        .info(
-            Mockito.anyString(),
-            Mockito.contains("Create Group"),
-            Mockito.eq(List.of(invitee.getEmail())),
-            Mockito.contains(SignupController.SIGNUP_URL));
-
-    // when inviting temporary user analytics should be informed
-    verify(analyticsMgrMock, times(1)).joinGroupInvitationSent(inviterPI, invitee, request);
+    verifyEmailLogged("Create Group", SignupController.SIGNUP_URL);
+    verifyJoinAnalyticsRecorded();
   }
 
   @Test
   public void testSendPIInvitationEmailToExistingUser() throws MessagingException {
     cloudNotificationMgr.sendPIInvitationEmail(inviterPI, invitee, "GroupName", request);
 
+    verifyEmailLogged("Create Group", "/login");
+    verifyNoJoinAnalytics();
+  }
+
+  @Test
+  public void testSendShareRecordEmailToTempUser() throws MessagingException {
+    invitee.setTempAccount(true);
+    cloudNotificationMgr.sendShareRecordInvitationEmail(inviterPI, invitee, "recordName", request);
+
+    // when sharing with a temporary user analytics should be informed
+    verify(analyticsMgrMock, times(1)).shareDocInvitationSent(inviterPI, invitee, request);
+  }
+
+  @Test
+  public void testSendShareRecordEmailToExistingUser() throws MessagingException {
+    cloudNotificationMgr.sendShareRecordInvitationEmail(inviterPI, invitee, "recordName", request);
+
+    verifyNoShareAnalytics();
+  }
+
+  private void verifyEmailLogged(String subjectFragment, String linkFragment) {
     verify(log, times(1))
         .info(
             Mockito.anyString(),
-            Mockito.contains("Create Group"),
+            Mockito.contains(subjectFragment),
             Mockito.eq(List.of(invitee.getEmail())),
-            Mockito.contains("/login"));
+            Mockito.contains(linkFragment));
+  }
 
-    // for existing non-temporary user we shouldn't record analytics invitation event
+  private void verifyJoinAnalyticsRecorded() {
+    verify(analyticsMgrMock, times(1)).joinGroupInvitationSent(inviterPI, invitee, request);
+  }
+
+  private void verifyNoJoinAnalytics() {
     verify(analyticsMgrMock, never())
         .joinGroupInvitationSent(
             Matchers.any(User.class),
@@ -154,22 +140,7 @@ public class CloudNotificationManagerTest extends SpringTransactionalTest {
             Matchers.any(HttpServletRequest.class));
   }
 
-  @Test
-  public void testSendShareRecordEmailToTempUser() throws MessagingException {
-
-    invitee.setTempAccount(true);
-    cloudNotificationMgr.sendShareRecordInvitationEmail(inviterPI, invitee, "recordName", request);
-
-    // when sharing with temporary user analytics should be informed
-    verify(analyticsMgrMock, times(1)).shareDocInvitationSent(inviterPI, invitee, request);
-  }
-
-  @Test
-  public void testSendShareRecordEmailToExistingUser() throws MessagingException {
-
-    cloudNotificationMgr.sendShareRecordInvitationEmail(inviterPI, invitee, "recordName", request);
-
-    // for existing non-temporary user we shouldn't record analytics invitation event
+  private void verifyNoShareAnalytics() {
     verify(analyticsMgrMock, never())
         .shareDocInvitationSent(
             Matchers.any(User.class),

@@ -2,7 +2,6 @@ package com.researchspace.service.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.researchspace.core.testutil.CoreTestUtils;
@@ -22,7 +21,6 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.testutils.SpringTransactionalTest;
 import com.researchspace.testutils.TestFactory;
 import io.github.resilience4j.retry.RetryConfig;
-import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Set;
 import javax.mail.AuthenticationFailedException;
@@ -34,7 +32,6 @@ import org.apache.logging.log4j.LogManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Async;
 
 public class EmailBroadcastTest extends SpringTransactionalTest {
 
@@ -170,48 +167,34 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
   }
 
   @Test
-  public void testEmailIsAnnotatedAsync() throws SecurityException, NoSuchMethodException {
-    Annotation asynch =
-        EmailBroadcast.class
-            .getMethod("sendEmail", EmailContent.class, List.class, Communication.class)
-            .getAnnotation(Async.class);
-    assertNotNull(asynch);
-  }
-
-  @Test
   public void testExceptionLogging() {
     // set up logger whose contents we can inspect
     StringAppenderForTestLogging testStringAppender =
         CoreTestUtils.configureStringLogger(LogManager.getLogger(FailedEmailLogger.class));
 
-    FailingBroadcasterStub broadcast =
-        new FailingBroadcasterStub(new AuthenticationFailedException("test auth failure"));
+    assertFailureLogged(
+        testStringAppender,
+        new AuthenticationFailedException("test auth failure"),
+        EmailBroadcastImpl.AUTHENTICATION_FAILURE_PREFIX);
+    assertFailureLogged(
+        testStringAppender,
+        new SendFailedException("test send failure"),
+        EmailBroadcastImpl.SEND_FAILURE_PREFIX);
+    assertFailureLogged(
+        testStringAppender,
+        new IllegalWriteException("test send failure"),
+        EmailBroadcastImpl.GENERAL_FAILURE_PREFIX);
+  }
+
+  private void assertFailureLogged(
+      StringAppenderForTestLogging appender, MessagingException failure, String expectedPrefix) {
+    appender.clearLog();
+    FailingBroadcasterStub broadcast = new FailingBroadcasterStub(failure);
     broadcast.init();
     broadcast.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
-    String firstMessage = testStringAppender.logContents;
     assertTrue(
-        "unexpected content: " + firstMessage,
-        firstMessage.startsWith(EmailBroadcastImpl.AUTHENTICATION_FAILURE_PREFIX));
-
-    testStringAppender.clearLog();
-    FailingBroadcasterStub broadcast2 =
-        new FailingBroadcasterStub(new SendFailedException("test send failure"));
-    broadcast2.init();
-    broadcast2.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
-    firstMessage = testStringAppender.logContents;
-    assertTrue(
-        "unexpected content: " + firstMessage,
-        firstMessage.startsWith(EmailBroadcastImpl.SEND_FAILURE_PREFIX));
-
-    testStringAppender.clearLog();
-    FailingBroadcasterStub broadcast3 =
-        new FailingBroadcasterStub(new IllegalWriteException("test send failure"));
-    broadcast3.init();
-    broadcast3.sendEmail(anyHtmlBody(), List.of("user@example.com"), null);
-    firstMessage = testStringAppender.logContents;
-    assertTrue(
-        "unexpected content: " + firstMessage,
-        firstMessage.startsWith(EmailBroadcastImpl.GENERAL_FAILURE_PREFIX));
+        "unexpected content: " + appender.logContents,
+        appender.logContents.startsWith(expectedPrefix));
   }
 
   @Test

@@ -70,7 +70,6 @@ public class UsernameReminderTest extends SpringTransactionalTest {
 
   @Test
   public void tokenBucketLimitingOfEmails() {
-    // int tooManyReminders = UsernameReminderByEmailHandler.MAX_REMINDERS_PER_EMAIL_PER_HOUR + 1;
     usernameReminderByEmailHandlerTSS.setEmailer(emailSender);
 
     MockHttpServletRequest request = new MockHttpServletRequest();

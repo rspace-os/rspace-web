@@ -1,12 +1,15 @@
 package com.researchspace.service.impl;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.researchspace.model.comms.Communication;
 import com.researchspace.service.EmailBroadcast;
 import com.researchspace.service.EmailContent;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -19,6 +22,7 @@ import javax.mail.internet.MimeMessage;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.junit.Test;
+import org.springframework.scheduling.annotation.Async;
 
 public class EmailBroadcastVanillaJunit {
   // this oracle comes from the library class whose function we are testing.
@@ -59,6 +63,15 @@ public class EmailBroadcastVanillaJunit {
   public void emailContentRejectsMissingSubject() {
     assertThrows(
         NullPointerException.class, () -> new EmailContent(null, "<html>hello</html>", "hello"));
+  }
+
+  @Test
+  public void sendEmailIsAnnotatedAsync() throws NoSuchMethodException {
+    Annotation asynch =
+        EmailBroadcast.class
+            .getMethod("sendEmail", EmailContent.class, List.class, Communication.class)
+            .getAnnotation(Async.class);
+    assertNotNull(asynch);
   }
 
   @Test
