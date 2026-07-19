@@ -157,10 +157,6 @@ public class EmailBroadcastImpl implements EmailBroadcast {
     this.addressChunkSize = addressChunkSize;
   }
 
-  public EmailBroadcastImpl() {
-    this(5, 25);
-  }
-
   public EmailBroadcastImpl(Integer maxEmailsPerSecond, Integer addressChunkSize) {
     Validate.isTrue(maxEmailsPerSecond != null && maxEmailsPerSecond > 0, "Rate must be > 0");
     this.maxEmailsPerSecond = maxEmailsPerSecond;

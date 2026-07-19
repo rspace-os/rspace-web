@@ -24,7 +24,7 @@ public class EmailBroadcastVanillaJunit {
   // this oracle comes from the library class whose function we are testing.
   // a little circular but will detect regressions.
   static final FastDateFormat EMAIL_DATE_FORMAT = DateFormatUtils.SMTP_DATETIME_FORMAT;
-  EmailBroadcastImpl emailerBroadcastImpl = new EmailBroadcastImpl();
+  EmailBroadcastImpl emailerBroadcastImpl = new EmailBroadcastImpl(5, 25);
 
   @Test
   public void testDateHeaderMatchesRFC2822() throws MessagingException, ParseException {

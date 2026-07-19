@@ -42,6 +42,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   // Removes retries (which aren't tested in this class) from stubs to avoid waiting during tests
   abstract static class NoRetryBroadcasterStub extends EmailBroadcastImpl {
+    NoRetryBroadcasterStub() {
+      super(5, 25);
+    }
+
     @Override
     RetryConfig buildRetryConfig() {
       return RetryConfig.custom().maxAttempts(1).build();
@@ -63,6 +67,10 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
 
   static class EmailSenderStub extends EmailBroadcastImpl {
     int messageCount = 0;
+
+    EmailSenderStub() {
+      super(5, 25);
+    }
 
     @Override
     protected void sendMailToAddresses(EmailConfig config) {

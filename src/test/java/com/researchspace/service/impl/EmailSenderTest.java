@@ -94,7 +94,7 @@ public class EmailSenderTest {
 
   @Test
   public void authenticationFailuresAreNotRetried() {
-    RetryConfig config = new EmailBroadcastImpl().buildRetryConfig();
+    RetryConfig config = new EmailBroadcastImpl(5, 25).buildRetryConfig();
 
     assertFalse(config.getExceptionPredicate().test(new AuthenticationFailedException()));
     assertTrue(config.getExceptionPredicate().test(new MessagingException()));
@@ -110,7 +110,7 @@ public class EmailSenderTest {
     private final MessagingException failure;
 
     FailingSenderStub(MessagingException failure) {
-      super();
+      super(5, 25);
       this.failure = failure;
     }
 
@@ -122,6 +122,10 @@ public class EmailSenderTest {
 
   static class CountingSenderStub extends EmailBroadcastImpl {
     int messageCount;
+
+    CountingSenderStub() {
+      super(5, 25);
+    }
 
     @Override
     protected void sendMailToAddresses(EmailConfig config) {
