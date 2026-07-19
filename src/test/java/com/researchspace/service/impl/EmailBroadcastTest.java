@@ -97,6 +97,9 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(mor);
 
     assertEquals("RSpace message", msgbody.subject());
+    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
+    assertTrue(msgbody.htmlContent().contains(record.getName()));
+    assertTrue(msgbody.htmlContent().contains("message1"));
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     assertAllVelocityVarsReplaced(msgbody.plainTextContent());
   }
@@ -125,6 +128,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(mor);
 
     assertEquals("RSpace request", msgbody.subject());
+    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
+    assertTrue(msgbody.htmlContent().contains("message1"));
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     assertTrue(msgbody.htmlContent().contains(BASEURL + "/workspace/editor/structuredDocument/1"));
 
@@ -153,6 +158,8 @@ public class EmailBroadcastTest extends SpringTransactionalTest {
     EmailContent msgbody = contentGenerator.generate(not);
     assertEquals("RSpace notification", msgbody.subject());
     assertEquals(2, StringUtils.countMatches(msgbody.htmlContent(), "href"));
+    assertTrue(msgbody.htmlContent().contains(sender.getFullName()));
+    assertTrue(msgbody.htmlContent().contains(record.getName()));
 
     assertAllVelocityVarsReplaced(msgbody.htmlContent());
     // now try with a notebook and assert the link is different:
