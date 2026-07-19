@@ -5,10 +5,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.researchspace.admin.service.SysAdminManager;
 import com.researchspace.licenseserver.model.License;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.LicenseService;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
@@ -33,6 +36,8 @@ public class SysadminSupportControllerTest {
   @Mock MessageSourceUtils messages;
   @Mock EmailContentGenerator emailContentGenerator;
   @Mock IPropertyHolder properties;
+  @Mock SysAdminManager sysMgr;
+  @Mock EmailBroadcast emailSender;
 
   @InjectMocks SysAdminSupportController controller;
   User sysadmin;
@@ -95,6 +100,25 @@ public class SysadminSupportControllerTest {
             Mockito.argThat(
                 model ->
                     List.of("Map&lt;String, Object&gt; failed").equals(model.get("logLines"))));
+  }
+
+  @Test
+  public void mailLogsAreSentToConfiguredSupportAddress() throws Exception {
+    authenticateSysadmin();
+    Mockito.when(properties.getRSpaceSupportEmail()).thenReturn("ops@example.com");
+    Mockito.when(sysMgr.getLastNLinesLogs(Mockito.anyInt())).thenReturn(List.of("a log line"));
+    Mockito.when(
+            emailContentGenerator.render(
+                Mockito.anyString(), Mockito.any(), Mockito.anyString(), Mockito.any()))
+        .thenReturn(new EmailContent("subject", "<p>log</p>", "log"));
+
+    controller.mailServerErrorLog("XXXX", 5);
+
+    Mockito.verify(emailSender)
+        .sendEmail(
+            Mockito.any(EmailContent.class),
+            Mockito.eq(List.of("ops@example.com")),
+            Mockito.isNull());
   }
 
   private void authenticateSysadmin() {
