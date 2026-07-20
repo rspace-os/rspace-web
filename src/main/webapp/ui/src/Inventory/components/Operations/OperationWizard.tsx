@@ -14,7 +14,7 @@ import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
 import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
-import { CELSIUS } from "@/stores/definitions/Units";
+import { CELSIUS, toCommonUnit } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import getRootStore from "@/stores/stores/getRootStore";
@@ -76,10 +76,10 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
  * amount's category.
  */
 function blankAmounts(operation: InventoryOperation): OperationInputs {
-  const out: OperationInputs = {
-    [operation.effect.countFrom]: 1,
-    [operation.effect.eachAmountFrom]: { numericValue: 1, unitId: UNSET_UNIT },
-  };
+  const out: OperationInputs = {};
+  // A terminal operation (Destroy) declares no count/each-amount; only set those that exist.
+  if (operation.effect.countFrom) out[operation.effect.countFrom] = 1;
+  if (operation.effect.eachAmountFrom) out[operation.effect.eachAmountFrom] = { numericValue: 1, unitId: UNSET_UNIT };
   if (operation.effect.amountTakenFrom) out[operation.effect.amountTakenFrom] = { numericValue: 1, unitId: UNSET_UNIT };
   return out;
 }
@@ -90,7 +90,8 @@ function blankAmounts(operation: InventoryOperation): OperationInputs {
  */
 function freshValues(operation: InventoryOperation, origin: SubSampleModel, current: OperationInputs): OperationInputs {
   const values = { ...buildInitialValues(operation, origin), ...blankAmounts(operation) };
-  values[operation.effect.nameFrom] = current[operation.effect.nameFrom] ?? "";
+  const nameFrom = operation.effect.nameFrom;
+  if (nameFrom) values[nameFrom] = current[nameFrom] ?? "";
   const pnFrom = operation.effect.processNameFrom;
   if (pnFrom) values[pnFrom] = current[pnFrom] ?? "";
   return values;
@@ -100,8 +101,25 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
   return {
     id: Number(origin.id),
     globalId: origin.globalId ?? "",
+    name: origin.name ?? "",
     quantity: origin.quantity ? { numericValue: getValue(origin.quantity), unitId: getUnitId(origin.quantity) } : null,
   };
+}
+
+/** A subsample's quantity in its category's atomic unit, or 0 when it has no quantity. */
+function commonQuantity(origin: SubSampleModel): number {
+  return origin.quantity ? toCommonUnit(getValue(origin.quantity), getUnitId(origin.quantity)) : 0;
+}
+
+/**
+ * The origin the wizard treats as representative for a (possibly multi-origin) run: the one holding
+ * the *least* material. Because a Pool takes the same shared amount from every origin, the smallest
+ * origin is the binding constraint - checking the amount against it (over-removal, the empty-origin
+ * block) is equivalent to checking every origin, so the single-origin wizard logic needs no change.
+ * For a single-origin operation this is just that origin.
+ */
+function representativeOrigin(origins: Array<SubSampleModel>): SubSampleModel {
+  return origins.reduce((smallest, o) => (commonQuantity(o) < commonQuantity(smallest) ? o : smallest));
 }
 
 /**
@@ -116,14 +134,22 @@ function toOrigin(origin: SubSampleModel): OperationOrigin {
 function OperationWizard({
   open,
   onClose,
-  origin,
+  origins,
 }: {
   open: boolean;
   onClose: () => void;
-  origin: SubSampleModel;
+  /** The selected origin subsamples: one for a single-origin operation, two or more for Pool. */
+  origins: Array<SubSampleModel>;
 }): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
   const resolveLabel = t as unknown as (key: string, params?: Record<string, unknown>) => string;
+  // The representative origin (the smallest; see representativeOrigin) drives the single-origin wizard
+  // logic - units, the derived name base, over-removal - unchanged. Multi-origin specifics (all the
+  // origins, the shared amount, the per-origin links) are threaded in only where they differ.
+  const origin = representativeOrigin(origins);
+  // Pool requires every selected origin to share one measurement category (the shared amount is in one
+  // unit); the picker only enables Pool when this holds, but keep it here for the picker's own gating.
+  const allSameCategory = origins.every((o) => o.quantityCategory === origins[0].quantityCategory);
   // On small viewports (phones/tablets) the horizontal label row gets cramped, so fall back to the
   // classic vertical stepper (labels stacked, active step's content inline beneath its label).
   const { isViewportSmall } = useViewportDimensions();
@@ -154,8 +180,16 @@ function OperationWizard({
     { defaultValue: {} },
   );
 
-  const stepKeys = operation
-    ? ["details", "template", "amounts", ...(operation.documentationStep ? ["documentation"] : []), "confirm"]
+  // The wizard steps: an operation may declare an explicit `steps` subset (Destroy skips template and
+  // amounts); otherwise the default full sequence, with the documentation step gated by documentationStep.
+  const stepKeys: Array<string> = operation
+    ? (operation.steps ?? [
+        "details",
+        "template",
+        "amounts",
+        ...(operation.documentationStep ? ["documentation"] : []),
+        "confirm",
+      ])
     : [];
   const isLast = activeStep === stepKeys.length - 1;
 
@@ -175,8 +209,15 @@ function OperationWizard({
   // template is picked.
   const amountCategory = templateSelection.quantityCategory ?? origin.quantityCategory;
   // Only "use parent template" needs the parent's template; when the parent has none, that option is
-  // disabled and the user must pick an existing template or none.
-  const parentHasTemplate = (origin.sample.templateId ?? null) !== null;
+  // disabled and the user must pick an existing template or none. A multi-origin operation (Pool) has
+  // several parent samples, so "use parent template" is ambiguous and always disabled for it.
+  const parentHasTemplate = !operation?.requiresMultiple && (origin.sample.templateId ?? null) !== null;
+
+  // The base the derived sample name is built from: the origin's own sample name for a single-origin
+  // operation, or the operation's label for a multi-origin one (Pool combines several samples, so no
+  // single origin name applies - it becomes just "Pool", de-duplicated).
+  const sampleNameBase = (op: InventoryOperation): string =>
+    op.requiresMultiple ? resolveLabel(op.labelKey) : origin.sample.name;
 
   // The saved bundle for a given values set, and the wizard state (values + template + documentation +
   // whether remember is on) that a process name resolves to: its saved bundle if one exists, else the
@@ -203,7 +244,9 @@ function OperationWizard({
     if (op.effect.processNameFrom && savedProcessName) initial[op.effect.processNameFrom] = savedProcessName;
     const s = stateForKey(op, initial);
     // Seed the derived sample name straight away (the dedup effect refines it once names are fetched).
-    s.values[op.effect.nameFrom] = derivedSampleName(origin.sample.name, resolveProcessName(op, s.values));
+    // A terminal operation (Destroy) creates no sample, so it has no name to derive.
+    if (op.effect.nameFrom)
+      s.values[op.effect.nameFrom] = derivedSampleName(sampleNameBase(op), resolveProcessName(op, s.values));
     setOperation(op);
     setValues(s.values);
     setTemplateSelection(s.templateSelection);
@@ -226,15 +269,15 @@ function OperationWizard({
     if (pnFrom && next[pnFrom] !== values[pnFrom]) {
       const s = stateForKey(operation, next);
       let v = s.values;
-      if (!sampleNameEdited)
-        v = { ...v, [nameFrom]: derivedSampleName(origin.sample.name, resolveProcessName(operation, v)) };
+      if (!sampleNameEdited && nameFrom)
+        v = { ...v, [nameFrom]: derivedSampleName(sampleNameBase(operation), resolveProcessName(operation, v)) };
       setValues(v);
       setTemplateSelection(s.templateSelection);
       setDocumentation(s.documentation);
       setRemember(s.remember);
       return;
     }
-    if (next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
+    if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
     setValues(next);
   };
 
@@ -261,10 +304,12 @@ function OperationWizard({
   // names, keyed on the base name so it re-runs only when the process name changes (not when it sets
   // the sample name). Skipped once the user hand-edits the name.
   const sampleBaseName =
-    operation && !sampleNameEdited ? derivedSampleName(origin.sample.name, resolveProcessName(operation, values)) : "";
+    operation?.effect.nameFrom && !sampleNameEdited
+      ? derivedSampleName(sampleNameBase(operation), resolveProcessName(operation, values))
+      : "";
   React.useEffect(() => {
-    if (!operation || sampleNameEdited || sampleBaseName === "") return;
-    const nameFrom = operation.effect.nameFrom;
+    const nameFrom = operation?.effect.nameFrom;
+    if (!operation || !nameFrom || sampleNameEdited || sampleBaseName === "") return;
     let cancelled = false;
     const timer = setTimeout(() => {
       void firstAvailableName(sampleBaseName, sampleNameAvailable).then((name) => {
@@ -289,6 +334,10 @@ function OperationWizard({
 
   const stepValid = (): boolean => {
     if (!operation) return false;
+    // An operation that empties its origin (Destroy) cannot run on an empty subsample. It skips the
+    // details step (where other operations gate this), so enforce it for every step here, blocking
+    // Perform on the confirmation with the reason shown there.
+    if (operation.effect.emptiesOrigin && getValue(origin.quantity) <= 0) return false;
     const key = stepKeys[activeStep];
     // An origin with no amount (0, or a quantity never set) cannot be operated on: block the first
     // step (OperationDetailsStep shows the matching error).
@@ -312,16 +361,23 @@ function OperationWizard({
       const computed = operation.effect.computed ?? [];
       const needsParentFields = computed.some((c) => Object.values(c.args).some((a) => "parentSampleField" in a));
       if (templateSelection.mode === "fromSample" || needsParentFields) await origin.sample.fetchAdditionalInfo();
-      const templateId = resolveTemplateId({
-        mode: templateSelection.mode,
-        pickedTemplateId: templateSelection.templateId,
-        originSampleTemplateId: origin.sample.templateId ?? null,
-      });
+      // A terminal operation (Destroy) skips the template step and creates no sample, so it needs no
+      // template; resolve one only for producing operations.
+      const templateId = operation.noOutput
+        ? null
+        : resolveTemplateId({
+            mode: templateSelection.mode,
+            pickedTemplateId: templateSelection.templateId,
+            originSampleTemplateId: origin.sample.templateId ?? null,
+          });
       // Apply the operation's computed values (adr/0006), e.g. Passage number = parent's + 1, else 1.
-      // Computed only for the request, so they never enter the remembered bundle below.
+      // Computed only for the request, so they never enter the remembered bundle below. Search both the
+      // template-defined fields and the sample's ad-hoc extra fields: a "Passage number" the user added
+      // as a custom field lives in extraFields, so reading only `fields` would miss it and always fall
+      // back to the start value.
       const submitValues: OperationInputs = computed.length
         ? applyComputedValues(operation, {
-            parentFields: origin.sample.fields,
+            parentFields: [...origin.sample.fields, ...origin.sample.extraFields],
             values,
             resolveFieldName: resolveLabel,
           })
@@ -329,7 +385,7 @@ function OperationWizard({
       const request = buildOperationRequest({
         operation,
         values: submitValues,
-        origin: toOrigin(origin),
+        origins: origins.map(toOrigin),
         resolveLabel,
         templateId,
         documentationLink: documentation
@@ -358,7 +414,7 @@ function OperationWizard({
           setProcessNameDefaults(processNameDefaultAfterPerform(processNameDefaults ?? {}, operation.key, name, true));
         }
       }
-      await origin.fetchAdditionalInfo();
+      await Promise.all(origins.map((o) => o.fetchAdditionalInfo()));
       // Re-run the main search so the newly created sample appears without a manual re-search.
       getRootStore().searchStore.search.performSearch();
       onClose();
@@ -406,7 +462,9 @@ function OperationWizard({
             operation.effect.processNameFrom ? (processNames?.[operation.key] ?? []).filter((n) => n.trim() !== "") : []
           }
           remember={remember}
-          onRememberChange={onRememberChange}
+          // A terminal operation (Destroy) has nothing to remember (no template/amounts/documentation),
+          // so passing no handler hides the "remember" checkbox.
+          onRememberChange={operation.noOutput ? undefined : onRememberChange}
         />
       );
     }
@@ -442,6 +500,8 @@ function OperationWizard({
         documentation={documentation}
         templateSelection={templateSelection}
         originSampleName={origin.sample.name}
+        originName={origin.name ?? ""}
+        originHasAmount={getValue(origin.quantity) > 0}
       />
     );
   };
@@ -480,7 +540,11 @@ function OperationWizard({
             {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
           </>
         ) : (
-          <OperationPicker onSelect={selectOperation} />
+          <OperationPicker
+            onSelect={selectOperation}
+            selectionCount={origins.length}
+            allSameCategory={allSameCategory}
+          />
         )}
       </DialogContent>
       <DialogActions>

@@ -4,17 +4,20 @@ A framework for Inventory "operations": a user picks a subsample, a wizard gathe
 input, and the system atomically creates one new Sample that parents N new
 subsamples, links the new records back to the origin, and adjusts the origin's
 quantity. Derive, Cryopreserve, Aliquot, and Revive ship as pure config; **Passage**
-also ships but needed code (an **operation function** in the registry plus a backend
-relaxation to allow an origin that is linked but not decremented) - it is the worked
-example that the "no Java" promise holds only within the vocabulary of config primitives
-and registered functions. See the schema table below and, for the full reasoning,
-`.claude/remaining-operations-plan.md` ("The limits of config-only").
+adds an **operation function** (registry code) plus a backend relaxation; **Pool** is
+multi-origin (2+ subsamples → one pooled sample, `HasPart` links back to each); **Destroy**
+is **terminal** - it creates no sample, empties the origin, and stamps a disposal date on
+the origin itself (adr/0008). Passage is the worked example that the "no Java" promise holds
+only within the vocabulary of config primitives and registered functions. See the schema
+table below and, for the full reasoning, `.claude/remaining-operations-plan.md` ("The limits
+of config-only").
 
 The design rationale is in the top-level ADRs: `adr/0001` (frontend-declared
 operations, thin atomic backend), `adr/0002` (amount-taken decrement model),
 `adr/0003` (user-chosen template), `adr/0004` (every operation has a process name),
-`adr/0005` (over-removal is rejected, not clamped), and `adr/0006` (operation-function
-registry for computed values). The shared vocabulary is in the top-level `CONTEXT.md`.
+`adr/0005` (over-removal is rejected, not clamped), `adr/0006` (operation-function
+registry for computed values), `adr/0007` (multi-origin operations / Pool), and `adr/0008`
+(terminal operations / Destroy). The shared vocabulary is in the top-level `CONTEXT.md`.
 
 ## The one thing to know
 
@@ -74,19 +77,24 @@ Files:
    | --- | --- |
    | `key` | stable id (also sent as `operationType`, for audit only) |
    | `labelKey`, `descriptionKey` | i18n keys shown in the picker |
-   | `minSelected`, `maxSelected` | selection size the operation applies to (Derive/Cryo: 1/1) |
+   | `requiresMultiple` | `true` for a multi-origin operation (Pool: consumes 2+ subsamples); omit/false = single-origin. The picker shows every operation and enables single-origin ones for exactly one subsample, a `requiresMultiple` one for two or more of the same measurement category (adr/0007) |
+   | `noOutput` | `true` for a **terminal** operation that creates no new sample and only acts on its origins (Destroy). The wizard builds no `newSample`, the validator makes `newSample` optional, and the backend creates nothing and returns null (adr/0008). Its `effect` omits `nameFrom`/`countFrom`/`eachAmountFrom` |
    | `documentationStep` | `true` to offer the optional `IsDocumentedBy` SOP-link step |
+   | `steps[]` | explicit ordered subset of wizard steps to show, from `details` \| `template` \| `amounts` \| `documentation` \| `confirm`. Optional; when omitted the default sequence is used (details, template, amounts, documentation if `documentationStep`, confirm). Destroy sets `["confirm"]` — it needs no input, so it goes straight to confirmation (adr/0008) |
    | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, maxCelsius?, minCelsius?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature`. `maxCelsius`/`minCelsius` bound a `temperature` input (Cryopreserve's `storageTemp` is `≤ -18`; Revive's is `4..120`): an out-of-bounds value shows an inline error and blocks the step. `default` (a number) seeds a `temperature` input's opening value, e.g. Revive's `4` so it starts in range (an unconfigured one opens at `-80`) |
-   | `effect.nameFrom` | input key holding the new sample's name |
-   | `effect.countFrom` | input key holding N (number of new subsamples) |
-   | `effect.eachAmountFrom` | input key holding each subsample's amount (unit category follows the chosen template, else the origin's — see the amounts step below) |
-   | `effect.amountTakenFrom` | input key holding the amount to remove from the origin (a positive decrement; the wizard blocks and the backend rejects taking more than the origin holds — see adr/0005); omit for operations that never change the origin |
+   | `effect.nameFrom` | input key holding the new sample's name (omit for a `noOutput` operation) |
+   | `effect.countFrom` | input key holding N (number of new subsamples) (omit for a `noOutput` operation) |
+   | `effect.eachAmountFrom` | input key holding each subsample's amount (unit category follows the chosen template, else the origin's — see the amounts step below) (omit for a `noOutput` operation) |
+   | `effect.amountTakenFrom` | input key holding the amount to remove from the origin (a positive decrement; the wizard blocks and the backend rejects taking more than the origin holds — see adr/0005); omit for operations that never change the origin. For a multi-origin operation (Pool) this is a single shared amount taken from **each** origin (adr/0007) |
+   | `effect.emptiesOrigin` | `true` to set the amount taken from each origin to that origin's **own full current quantity**, so its volume ends at zero (Destroy). Reuses the decrement path (clamps at zero; taking the full amount is not over-removal). Mutually exclusive with `amountTakenFrom` (adr/0008) |
+   | `effect.originFields[]` | `{ nameKey, contentFrom, type? }`; a custom field added to the origin subsample **itself** (not the created sample), e.g. Destroy's disposed date. `type` is `text` (default) \| `number` — subsample fields have no native date type, so a date is a text field holding an ISO date. `contentFrom` is usually a `computed` value (adr/0008) |
+   | `effect.links[]` (multi-origin) | each link spec fans out to **one link per origin**, so a single-origin operation yields one link and Pool yields one `HasPart` link back to every pooled subsample (adr/0007). A link's `fieldNameKey` may interpolate `{originName}` (the origin subsample's name) so the per-origin names are **distinct** — Pool uses `"Pooled from: {originName}"` because a record cannot hold two fields with the same name |
    | `effect.processNameFrom` | input key holding a user-entered process name (Derive). **Omit** for a fixed process name equal to the operation `key` (Cryopreserve → `"cryopreserve"`); every operation has a process name (adr/0004) |
    | `effect.storageTempFrom` | input key holding a temperature → set as the new sample's `storageTempMin/Max` (Cryopreserve, Revive) |
    | `effect.computed[]` | `{ fn, into, args }`; a **computed value** (adr/0006). At submit the wizard applies operation function `fn` (from the registry in `operationFunctions.ts`) to the bound `args` and writes the single result into input `into`, which other wiring (e.g. `textFields`) then consumes. Each arg is sourced by `{ parentSampleField: <i18nKey> }` (that field's content on the origin's parent sample, or absent), `{ constant: <n\|str> }`, or `{ input: <inputKey> }`. Evaluated in array order (a later entry can read an earlier `into` via `input`). Results never enter the remembered bundle. **A new computation is a new registry function** (code) referenced here — see "Operation functions" below |
    | `effect.links[]` | `{ relationType, fieldNameKey }`; a DataCite relation link back to the origin. `fieldNameKey` may interpolate an input, e.g. `"Is Derived From using process: {processName}"` |
    | `effect.textFields[]` | `{ nameKey, contentFrom }`; plain-text field on the new sample (e.g. Cryomedium) |
-   | `confirmSummary[]` | ordered list of rows the confirmation step shows, from `process` \| `template` \| `subsamples` \| `amountTaken` \| `storageTemp` \| `linkBack` \| `documentation` (Cryopreserve lists `storageTemp`). A configured row whose value is absent (e.g. `documentation` with no linked doc) is skipped. Optional; a default order is used when omitted |
+   | `confirmSummary[]` | ordered list of rows the confirmation step shows, from `process` \| `template` \| `subsamples` \| `amountTaken` \| `storageTemp` \| `linkBack` \| `documentation` \| `originEmptied` \| `originFields` (Cryopreserve lists `storageTemp`; Destroy lists `originEmptied`, `originFields`). A configured row whose value is absent (e.g. `documentation` with no linked doc) is skipped. Optional; a default order is used when omitted |
 
    Order the `inputs[]` with the process name first and the name second: the wizard
    derives the sample name from the process name (see the Details step below).
@@ -157,21 +165,31 @@ load — an unknown function or a mismatched argument throws at startup, not at 
 registry is **dev-only**: it is not an end-user expression language, so config carries no
 executable logic (adr/0006).
 
+The registry also has `today` (no arguments): the user's local date as an ISO calendar date
+(`YYYY-MM-DD`). Destroy writes it into the origin's disposed field via `effect.originFields`
+(adr/0008). A `computed` result can flow into an `originFields` content just as it flows into
+a `textFields` content — the difference is only where the field lands (the origin vs the new
+sample).
+
 ## What the backend does
 
 `POST /api/inventory/v1/operations` is a thin, generic coordinator. It validates
-the request (a named new sample; each origin identifies a subsample with a positive
-amount-taken that does **not** exceed the origin's current quantity — unit-aware,
-see adr/0005) and, in one transaction, **reduces each origin by its amount-taken
-first** and then creates the new sample + subsamples (reusing `SampleApiManager`).
-The decrement-before-create order (adr/0005) makes the new subsample the
-most-recently-modified record, so it sorts first in a modification-date-descending
-listing (the generic listing default is name-asc, so this only shows when that sort
-is requested). Reducing reuses `SubSampleApiManager.registerApiSubSampleUsage`, which
-subtracts unit-aware and clamps at zero as defence-in-depth, so an origin can never be
-increased. The endpoint never branches on the operation. Because the request is
-client-built, permissions and invariants (including over-removal) are enforced
-server-side; it coordinates, it does not blindly trust.
+the request (each origin identifies a subsample with a non-negative amount-taken that
+does **not** exceed the origin's current quantity — unit-aware, see adr/0005; and a
+new sample, when present, is named) and, in one transaction, **reduces each origin by
+its amount-taken first**, applies any custom fields the request adds to an origin
+(Destroy's disposed date, via `updateApiSubSample`), and then creates the new sample +
+subsamples (reusing `SampleApiManager`). The new sample is **optional**: a terminal
+operation (`noOutput`, e.g. Destroy) sends none, so the endpoint creates nothing and
+returns null (adr/0008). The decrement-before-create order (adr/0005) makes the new
+subsample the most-recently-modified record, so it sorts first in a
+modification-date-descending listing (the generic listing default is name-asc, so this
+only shows when that sort is requested). Reducing reuses
+`SubSampleApiManager.registerApiSubSampleUsage`, which subtracts unit-aware and clamps
+at zero as defence-in-depth, so an origin can never be increased. The endpoint never
+branches on the operation. Because the request is client-built, permissions and
+invariants (including over-removal) are enforced server-side; it coordinates, it does
+not blindly trust.
 
 The over-removal check lives in the controller, not the stateless
 `InventoryOperationPostValidator`, because it needs each origin's live quantity (loaded
@@ -186,6 +204,11 @@ so a click outside does not dismiss it and discard progress (Escape and Cancel s
 close it).
 
 Five steps: **Details → Template → Amounts → Documentation (optional) → Confirm**.
+An operation may show a subset by declaring `steps` (adr/0008): a terminal operation
+(Destroy) uses **Confirm** only, skipping Details, Template and Amounts (it needs no input,
+creates no sample, and empties the origin, so none applies). Its description is shown on the
+Confirm step as an info panel, and its "cannot operate on an empty subsample" guard is
+enforced there too (Perform is blocked with the reason shown).
 
 1. **Details** — the **process name** (a free-solo autocomplete of the user's saved
    names for this operation; fixed and non-editable for operations without one), the
@@ -309,7 +332,9 @@ fields in the wizard is deferred.
 
 ## Out of scope (current)
 
-Multi-origin operations (Pool), operations that mutate the origin's own fields in
-place (Passage's passage-number, Dispose's date field), link-field de-duplication
-across consecutive in-place operations, and list-view entry points. The request
-schema was designed to admit multi-origin and origin field-adds later.
+Per-origin (unequal) pooling amounts, link-field de-duplication across consecutive
+in-place operations, and list-view entry points. Multi-origin operations (Pool) are
+supported (adr/0007), and terminal operations that create no new sample and add a custom
+field to the origin (Destroy) are supported (adr/0008): the request schema carries origin
+field-adds and an optional new sample. General in-place editing of arbitrary existing
+origin fields (beyond adding new ones) is still out of scope.

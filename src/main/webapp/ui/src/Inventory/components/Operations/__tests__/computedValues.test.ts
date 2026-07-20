@@ -6,8 +6,6 @@ function opWith(computed: InventoryOperation["effect"]["computed"]): InventoryOp
   return {
     key: "passage",
     labelKey: "operations.passage.label",
-    minSelected: 1,
-    maxSelected: 1,
     documentationStep: true,
     inputs: [],
     effect: {

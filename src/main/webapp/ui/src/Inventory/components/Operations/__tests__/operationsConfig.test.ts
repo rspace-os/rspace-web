@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  type InventoryOperation,
-  operations,
-  operationsForSelectionSize,
-  resolveProcessName,
-} from "../operationsConfig";
+import { type InventoryOperation, operationAvailability, operations, resolveProcessName } from "../operationsConfig";
 
 function op(key: string): InventoryOperation {
   const found = operations.find((o) => o.key === key);
@@ -39,23 +34,59 @@ describe("operations_config.json", () => {
     const keys = operations.map((o) => o.key);
     expect(keys).toContain("derive");
     expect(keys).toContain("cryopreserve");
+    expect(keys).toContain("pool");
+    expect(keys).toContain("destroy");
+  });
+
+  it("declares Destroy as a terminal operation that empties the origin and adds an origin field", () => {
+    const destroy = operations.find((o) => o.key === "destroy");
+    expect(destroy?.noOutput).toBe(true);
+    // Destroy skips straight to confirmation (no details/template/amounts steps).
+    expect(destroy?.steps).toEqual(["confirm"]);
+    expect(destroy?.effect.emptiesOrigin).toBe(true);
+    // It creates no sample, so it declares no new-sample name/count/each-amount and no links.
+    expect(destroy?.effect.nameFrom).toBeUndefined();
+    expect(destroy?.effect.links).toEqual([]);
+    // It adds a disposed field to the origin, its content a computed value (today).
+    expect(destroy?.effect.originFields?.[0]).toMatchObject({ contentFrom: "disposedDate", type: "text" });
+    expect(destroy?.effect.computed?.[0]).toMatchObject({ fn: "today", into: "disposedDate" });
   });
 
   it("declares Derive as single-origin with an IsDerivedFrom link and an origin-amount input", () => {
     const derive = operations.find((o) => o.key === "derive");
-    expect(derive?.maxSelected).toBe(1);
+    expect(derive?.requiresMultiple).toBeFalsy();
     expect(derive?.effect.amountTakenFrom).toBe("amountTaken");
     expect(derive?.effect.links[0].relationType).toBe("IsDerivedFrom");
   });
 
-  it("offers every shipped operation for a single-subsample selection", () => {
-    expect(operationsForSelectionSize(1).map((o) => o.key)).toEqual([
-      "derive",
-      "cryopreserve",
-      "aliquot",
-      "revive",
-      "passage",
-    ]);
+  it("declares Pool as multi-origin with a HasPart link and a shared origin-amount input", () => {
+    const pool = op("pool");
+    expect(pool.requiresMultiple).toBe(true);
+    expect(pool.effect.amountTakenFrom).toBe("amountTaken");
+    expect(pool.effect.links[0].relationType).toBe("HasPart");
+  });
+
+  it("declares Revive's link back to the origin as IsDerivedFrom", () => {
+    const revive = op("revive");
+    expect(revive.effect.links[0].relationType).toBe("IsDerivedFrom");
+  });
+
+  it("enables single-origin operations for one subsample and disables Pool", () => {
+    expect(operationAvailability(derive, 1, true).enabled).toBe(true);
+    expect(operationAvailability(op("pool"), 1, true).enabled).toBe(false);
+    expect(operationAvailability(op("pool"), 1, true).reasonKey).toBe("operations.picker.needsMultiple");
+  });
+
+  it("enables only Pool for a multi-subsample selection of one measurement category", () => {
+    expect(operationAvailability(op("pool"), 2, true).enabled).toBe(true);
+    expect(operationAvailability(derive, 2, true).enabled).toBe(false);
+    expect(operationAvailability(derive, 2, true).reasonKey).toBe("operations.picker.singleOnly");
+  });
+
+  it("disables Pool when the selected subsamples span measurement categories", () => {
+    const availability = operationAvailability(op("pool"), 2, false);
+    expect(availability.enabled).toBe(false);
+    expect(availability.reasonKey).toBe("operations.picker.sameCategory");
   });
 
   it("configures Cryopreserve's storage temperature with a -18 C ceiling", () => {

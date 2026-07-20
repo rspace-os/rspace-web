@@ -103,8 +103,8 @@ const contextActions = ({
         ),
         hidden:
           hideInPickerAndWhenNotAllCurrent ||
-          selectedResults.length !== 1 ||
-          !(selectedResults[0] instanceof SubSampleModel),
+          selectedResults.length < 1 ||
+          !selectedResults.every((r) => r instanceof SubSampleModel),
       },
       {
         component: (

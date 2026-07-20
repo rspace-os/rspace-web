@@ -17,19 +17,20 @@ type ProcessActionArgs = {
 };
 
 /**
- * Launches the operation wizard on a single selected subsample (RSDEV-1231). Shown only for exactly
- * one subsample; disabled otherwise.
+ * Launches the operation wizard on the selected subsamples (RSDEV-1231). Shown for one or more
+ * subsamples; the wizard's picker then enables single-origin operations for a single selection and
+ * Pool for two or more (adr/0007). Disabled when any selected record is not a subsample.
  */
 const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActionArgs>(
   ({ as, disabled, selectedResults, closeMenu }, ref) => {
     const { t } = useTranslation("inventory");
     const [open, setOpen] = React.useState(false);
-    const origin = selectedResults[0];
+    const origins = selectedResults.filter((r): r is SubSampleModel => r instanceof SubSampleModel);
+    const allSubsamples = origins.length >= 1 && origins.length === selectedResults.length;
 
     const disabledHelp = match<void, string>([
       [() => disabled !== "", disabled],
-      [() => selectedResults.length !== 1, t("operations.action.singleSubsampleOnly")],
-      [() => !(origin instanceof SubSampleModel), t("operations.action.subsampleOnly")],
+      [() => !allSubsamples, t("operations.action.subsampleOnly")],
       [() => true, ""],
     ])();
 
@@ -49,8 +50,8 @@ const ProcessAction = forwardRef<React.ElementRef<typeof MenuItem>, ProcessActio
             as={as}
             ref={ref}
           >
-            {origin instanceof SubSampleModel ? (
-              <OperationWizard key={open ? 1 : 0} open={open} onClose={onCloseHandler} origin={origin} />
+            {allSubsamples ? (
+              <OperationWizard key={open ? 1 : 0} open={open} onClose={onCloseHandler} origins={origins} />
             ) : null}
           </ContextMenuAction>
         )}

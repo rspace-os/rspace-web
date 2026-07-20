@@ -1,12 +1,15 @@
+import Alert from "@mui/material/Alert";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import CardHeader from "@mui/material/CardHeader";
+import Stack from "@mui/material/Stack";
 import { useTheme } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
 import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
+import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
 import type { ConfirmSummaryField, InventoryOperation } from "./operationsConfig";
 import type { TemplateSelection } from "./TemplateStep";
@@ -24,12 +27,21 @@ function OperationConfirmation({
   documentation,
   templateSelection,
   originSampleName,
+  originName,
+  originHasAmount = true,
 }: {
   operation: InventoryOperation;
   values: OperationInputs;
   documentation: DocumentationSelection;
   templateSelection: TemplateSelection;
   originSampleName: string;
+  /** The origin subsample's own name, shown as the card title for a terminal operation (Destroy),
+   * which acts on the origin and creates no new sample. */
+  originName: string;
+  /** Whether the origin holds any material. A terminal operation that empties its origin
+   * (`emptiesOrigin`) cannot run on an empty subsample, so the confirmation shows why and the wizard
+   * disables Perform. Defaults to true (producing operations gate emptiness on their amounts step). */
+  originHasAmount?: boolean;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
@@ -38,13 +50,20 @@ function OperationConfirmation({
   const { effect } = operation;
   const unitLabel = (unitId: number): string => unitStore.getUnit(unitId)?.label ?? "";
 
-  const count = Number(values[effect.countFrom]);
-  const each = values[effect.eachAmountFrom] as OperationQuantity;
+  // These describe the created sample; a terminal operation (noOutput) has none, so guard each read.
+  const count = effect.countFrom ? Number(values[effect.countFrom]) : 0;
+  const each = effect.eachAmountFrom ? (values[effect.eachAmountFrom] as OperationQuantity | undefined) : undefined;
   const after = effect.amountTakenFrom ? (values[effect.amountTakenFrom] as OperationQuantity) : null;
   const storageTemp = effect.storageTempFrom ? (values[effect.storageTempFrom] as OperationQuantity) : null;
-  const name = String(values[effect.nameFrom]);
+  const name = effect.nameFrom ? String(values[effect.nameFrom]) : "";
   const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
-  const linkName = resolveLabel(effect.links[0].fieldNameKey, values);
+  const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, values) : "";
+  // Preview the values the operation will compute (adr/0006), e.g. Destroy's disposed date, so the
+  // origin-field rows show the actual content. today needs no parent fields; a computed that reads a
+  // parent field previews its fallback here, which is acceptable for a preview.
+  const displayValues = operation.effect.computed?.length
+    ? applyComputedValues(operation, { parentFields: [], values, resolveFieldName: resolveLabel })
+    : values;
   const templateValue =
     templateSelection.mode === "none"
       ? t("operations.template.valueNone")
@@ -54,19 +73,23 @@ function OperationConfirmation({
 
   type Row = { label: string; value: React.ReactNode };
   // One builder per configurable summary field; a builder returns null when its value is absent
-  // (e.g. no documentation linked), so the row is skipped. The operation's confirmSummary picks and
-  // orders which of these appear (see operations_config.json).
-  const rowBuilders: Record<ConfirmSummaryField, () => Row | null> = {
+  // (e.g. no documentation linked), so the row is skipped, or an array to emit several rows (origin
+  // fields). The operation's confirmSummary picks and orders which of these appear (see
+  // operations_config.json).
+  const rowBuilders: Record<ConfirmSummaryField, () => Row | Array<Row> | null> = {
     process: () => (processName ? { label: t("operations.confirm.labels.process"), value: processName } : null),
     template: () => ({ label: t("operations.confirm.labels.template"), value: templateValue }),
-    subsamples: () => ({
-      label: t("operations.confirm.labels.subsamples"),
-      value: t("operations.confirm.values.subsamples", {
-        count,
-        amount: each.numericValue,
-        unit: unitLabel(each.unitId),
-      }),
-    }),
+    subsamples: () =>
+      each
+        ? {
+            label: t("operations.confirm.labels.subsamples"),
+            value: t("operations.confirm.values.subsamples", {
+              count,
+              amount: each.numericValue,
+              unit: unitLabel(each.unitId),
+            }),
+          }
+        : null,
     amountTaken: () =>
       after
         ? {
@@ -87,6 +110,17 @@ function OperationConfirmation({
     linkBack: () => ({ label: t("operations.confirm.labels.linkBack"), value: linkName }),
     documentation: () =>
       documentation ? { label: t("operations.confirm.labels.documentation"), value: documentation.name } : null,
+    // Terminal operations (Destroy): the origin's volume is set to zero, and each custom field the
+    // operation adds to the origin (e.g. the disposal date) is previewed as its own row.
+    originEmptied: () =>
+      effect.emptiesOrigin
+        ? { label: t("operations.confirm.labels.originEmptied"), value: t("operations.confirm.values.emptied") }
+        : null,
+    originFields: () =>
+      (effect.originFields ?? []).map((spec) => ({
+        label: resolveLabel(spec.nameKey),
+        value: String(displayValues[spec.contentFrom] ?? ""),
+      })),
   };
   // Default order preserves the pre-config behaviour for operations that do not declare confirmSummary.
   const DEFAULT_SUMMARY: Array<ConfirmSummaryField> = [
@@ -98,23 +132,35 @@ function OperationConfirmation({
     "documentation",
   ];
   const content: Array<Row> = (operation.confirmSummary ?? DEFAULT_SUMMARY)
-    .map((field) => rowBuilders[field]())
+    .flatMap((field) => rowBuilders[field]() ?? [])
     .filter((row): row is Row => row !== null);
 
+  // A terminal operation (Destroy) skips the details step, so its description is shown here as an info
+  // panel, and its "cannot operate on an empty subsample" guard also moves here: when it would empty
+  // the origin but the origin holds nothing, the confirmation explains why and the wizard blocks Perform.
+  const infoText = operation.noOutput && operation.descriptionKey ? resolveLabel(operation.descriptionKey) : null;
+  const originEmptyBlocked = Boolean(effect.emptiesOrigin) && !originHasAmount;
+
   return (
-    <Card variant="outlined">
-      <CardHeader
-        title={name}
-        subheader={t("operations.confirm.cardSubheader", { operation: resolveLabel(operation.labelKey) })}
-        sx={{
-          backgroundColor: theme.palette.record.sample.lighter,
-          paddingBottom: "4px",
-        }}
-      />
-      <CardContent>
-        <DescriptionList content={content} dividers />
-      </CardContent>
-    </Card>
+    <Stack spacing={1}>
+      {infoText ? <Alert severity="info">{infoText}</Alert> : null}
+      {originEmptyBlocked ? <Alert severity="error">{t("operations.fields.originAmountZero")}</Alert> : null}
+      <Card variant="outlined">
+        <CardHeader
+          // A terminal operation (Destroy) creates no sample, so the card names the origin subsample it
+          // acts on rather than a new sample name.
+          title={operation.noOutput ? originName : name}
+          subheader={t("operations.confirm.cardSubheader", { operation: resolveLabel(operation.labelKey) })}
+          sx={{
+            backgroundColor: theme.palette.record.sample.lighter,
+            paddingBottom: "4px",
+          }}
+        />
+        <CardContent>
+          <DescriptionList content={content} dividers />
+        </CardContent>
+      </Card>
+    </Stack>
   );
 }
 

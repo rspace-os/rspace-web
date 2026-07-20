@@ -3,8 +3,6 @@
     "key": "derive",
     "labelKey": "operations.derive.label",
     "descriptionKey": "operations.derive.description",
-    "minSelected": 1,
-    "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
       { "key": "processName", "type": "text", "labelKey": "operations.fields.processName", "required": true },
@@ -29,8 +27,6 @@
     "key": "cryopreserve",
     "labelKey": "operations.cryopreserve.label",
     "descriptionKey": "operations.cryopreserve.description",
-    "minSelected": 1,
-    "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -59,8 +55,6 @@
     "key": "aliquot",
     "labelKey": "operations.aliquot.label",
     "descriptionKey": "operations.aliquot.description",
-    "minSelected": 1,
-    "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -83,8 +77,6 @@
     "key": "revive",
     "labelKey": "operations.revive.label",
     "descriptionKey": "operations.revive.description",
-    "minSelected": 1,
-    "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -100,7 +92,7 @@
       "amountTakenFrom": "amountTaken",
       "storageTempFrom": "storageTemp",
       "links": [
-        { "relationType": "IsVariantFormOf", "fieldNameKey": "operations.revive.linkFieldName" }
+        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.revive.linkFieldName" }
       ]
     },
     "confirmSummary": ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"]
@@ -109,8 +101,6 @@
     "key": "passage",
     "labelKey": "operations.passage.label",
     "descriptionKey": "operations.passage.description",
-    "minSelected": 1,
-    "maxSelected": 1,
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -139,5 +129,48 @@
       ]
     },
     "confirmSummary": ["template", "subsamples", "linkBack", "documentation"]
+  },
+  {
+    "key": "pool",
+    "labelKey": "operations.pool.label",
+    "descriptionKey": "operations.pool.description",
+    "requiresMultiple": true,
+    "documentationStep": true,
+    "inputs": [
+      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
+      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
+      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
+      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTakenEach" }
+    ],
+    "effect": {
+      "nameFrom": "sampleName",
+      "countFrom": "count",
+      "eachAmountFrom": "eachAmount",
+      "amountTakenFrom": "amountTaken",
+      "links": [
+        { "relationType": "HasPart", "fieldNameKey": "operations.pool.linkFieldName" }
+      ]
+    },
+    "confirmSummary": ["template", "subsamples", "amountTaken", "linkBack", "documentation"]
+  },
+  {
+    "key": "destroy",
+    "labelKey": "operations.destroy.label",
+    "descriptionKey": "operations.destroy.description",
+    "noOutput": true,
+    "documentationStep": false,
+    "steps": ["confirm"],
+    "inputs": [],
+    "effect": {
+      "emptiesOrigin": true,
+      "computed": [
+        { "fn": "today", "into": "disposedDate", "args": {} }
+      ],
+      "links": [],
+      "originFields": [
+        { "nameKey": "operations.destroy.disposedField", "contentFrom": "disposedDate", "type": "text" }
+      ]
+    },
+    "confirmSummary": ["originEmptied", "originFields"]
   }
 ]

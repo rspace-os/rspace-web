@@ -33,6 +33,17 @@ const TextFieldSpecSchema = v.object({
   contentFrom: v.string(),
 });
 
+// A custom field the operation adds to each of its origin subsamples (as opposed to textFields, which
+// go on the created sample). Its content comes from a named input - typically a computed value such as
+// Destroy's "disposed" date. Inventory subsample custom fields support only text and number (no native
+// date type; see ApiExtraField), so a date is stored as a text field holding an ISO date. Defaults to
+// text when `type` is omitted.
+const OriginFieldSpecSchema = v.object({
+  nameKey: v.string(),
+  contentFrom: v.string(),
+  type: v.optional(v.picklist(["text", "number"])),
+});
+
 // An argument handed to an Operation function (adr/0006), sourced one of three ways: the content of a
 // named field on the origin's parent sample (resolved in the user's locale via the i18n key), a
 // literal constant, or the current value of another wizard input. The wizard resolves these at submit.
@@ -53,10 +64,18 @@ const ComputedSchema = v.object({
 });
 
 const EffectSchema = v.object({
-  nameFrom: v.string(),
-  countFrom: v.string(),
-  eachAmountFrom: v.string(),
+  // The new-sample fields (name / subsample count / each amount) are omitted by a terminal operation
+  // that creates nothing (noOutput, e.g. Destroy); every producing operation sets them.
+  nameFrom: v.optional(v.string()),
+  countFrom: v.optional(v.string()),
+  eachAmountFrom: v.optional(v.string()),
   amountTakenFrom: v.optional(v.string()),
+  // When true, empty every origin: the amount taken is the origin's own full current quantity, so its
+  // volume ends at zero (Destroy). Mutually exclusive with amountTakenFrom in practice.
+  emptiesOrigin: v.optional(v.boolean()),
+  // Custom fields added to each origin subsample itself (not the created sample), e.g. Destroy's
+  // "disposed" date. Content comes from a named input, usually a computed value (see OriginFieldSpec).
+  originFields: v.optional(v.array(OriginFieldSpecSchema)),
   // input key holding the process name; when set, the operation's "remember" defaults are scoped
   // per process name (see processNames.ts) and the field becomes an autocomplete of saved names.
   processNameFrom: v.optional(v.string()),
@@ -79,15 +98,30 @@ const ConfirmSummaryFieldSchema = v.picklist([
   "storageTemp",
   "linkBack",
   "documentation",
+  // Terminal operations (noOutput, e.g. Destroy): the origin's volume is emptied, and the custom
+  // field(s) added to the origin (e.g. the disposal date).
+  "originEmptied",
+  "originFields",
 ]);
+
+// The wizard steps, in order. An operation may declare a `steps` subset (e.g. Destroy skips template
+// and amounts); when omitted the wizard uses its default sequence (see OperationWizard).
+const StepSchema = v.picklist(["details", "template", "amounts", "documentation", "confirm"]);
 
 const OperationSchema = v.object({
   key: v.string(),
   labelKey: v.string(),
   descriptionKey: v.optional(v.string()),
-  minSelected: v.number(),
-  maxSelected: v.number(),
+  // Whether the operation consumes multiple origin subsamples (Pool); omitted/false = single-origin.
+  // Drives which selection sizes enable it in the picker (see operationAvailability and adr/0007).
+  requiresMultiple: v.optional(v.boolean()),
+  // When true the operation produces no new sample/subsamples (it only acts on its origins, e.g.
+  // Destroy). The wizard omits the new-sample effect wiring and the backend creates nothing.
+  noOutput: v.optional(v.boolean()),
   documentationStep: v.boolean(),
+  // The wizard steps to show, in order. Optional; when omitted the wizard uses its default sequence.
+  // A terminal operation (Destroy) sets ["details","confirm"] to skip template and amounts.
+  steps: v.optional(v.array(StepSchema)),
   inputs: v.array(InputSchema),
   effect: EffectSchema,
   // Which rows the confirmation summary shows, in order. Optional; when omitted a default set is used.
@@ -96,6 +130,8 @@ const OperationSchema = v.object({
 
 export type OperationInputConfig = v.InferOutput<typeof InputSchema>;
 export type OperationLinkSpec = v.InferOutput<typeof LinkSpecSchema>;
+export type OperationOriginFieldSpec = v.InferOutput<typeof OriginFieldSpecSchema>;
+export type OperationStep = v.InferOutput<typeof StepSchema>;
 export type ComputedArgSource = v.InferOutput<typeof ArgSourceSchema>;
 export type ComputedValueSpec = v.InferOutput<typeof ComputedSchema>;
 export type ConfirmSummaryField = v.InferOutput<typeof ConfirmSummaryFieldSchema>;
@@ -138,9 +174,26 @@ function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
 
 assertComputedValuesValid(operations);
 
-/** Operations applicable to a selection of the given size (all are subsample-only; see the wizard). */
-export function operationsForSelectionSize(count: number): Array<InventoryOperation> {
-  return operations.filter((o) => count >= o.minSelected && count <= o.maxSelected);
+export type OperationAvailability = { enabled: boolean; reasonKey?: string };
+
+/**
+ * Whether an operation is enabled for the current subsample selection, and if not, the i18n key
+ * explaining why (shown greyed-out in the picker; see adr/0007). A multi-origin operation (Pool)
+ * needs two or more subsamples that share a measurement category; a single-origin operation needs
+ * exactly one. Every operation is always shown - only its enabled state and reason change.
+ */
+export function operationAvailability(
+  operation: InventoryOperation,
+  selectionCount: number,
+  allSameCategory: boolean,
+): OperationAvailability {
+  if (operation.requiresMultiple) {
+    if (selectionCount < 2) return { enabled: false, reasonKey: "operations.picker.needsMultiple" };
+    if (!allSameCategory) return { enabled: false, reasonKey: "operations.picker.sameCategory" };
+    return { enabled: true };
+  }
+  if (selectionCount !== 1) return { enabled: false, reasonKey: "operations.picker.singleOnly" };
+  return { enabled: true };
 }
 
 /**

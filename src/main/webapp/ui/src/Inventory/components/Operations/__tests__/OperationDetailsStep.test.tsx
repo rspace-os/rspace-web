@@ -38,8 +38,6 @@ const operation = {
   key: "derive",
   labelKey: "operations.derive.label",
   descriptionKey: "operations.derive.description",
-  minSelected: 1,
-  maxSelected: 1,
   documentationStep: true,
   inputs: [
     { key: "eachAmount", type: "quantity", labelKey: "operations.fields.eachAmount" },

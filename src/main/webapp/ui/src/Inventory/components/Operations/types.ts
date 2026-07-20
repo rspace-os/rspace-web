@@ -28,7 +28,10 @@ export type OperationLinkField = {
 
 export type OperationTextFieldValue = {
   name: string;
-  type: "text";
+  // "number" is available for origin custom fields (effect.originFields); the created sample's own
+  // textFields only ever produce "text". Inventory subsample fields have no native date type, so a
+  // date (Destroy's disposed) is a text field holding an ISO date. See ApiExtraField.
+  type: "text" | "number";
   newFieldRequest: true;
   content: string;
 };
@@ -55,18 +58,27 @@ export type OperationOriginUpdate = {
   id: number;
   globalId: string;
   amountTaken: OperationQuantity;
+  /** Custom fields to add to the origin subsample itself (e.g. Destroy's disposed date). Omitted when
+   * the operation adds none, so an ordinary decrement-only origin update is unchanged. */
+  extraFields?: Array<OperationExtraField>;
 };
 
 export type OperationRequest = {
   operationType: string;
   origins: Array<OperationOriginUpdate>;
-  newSample: OperationNewSample;
+  /** The sample the operation creates, or null for a terminal operation that produces nothing
+   * (noOutput, e.g. Destroy). */
+  newSample: OperationNewSample | null;
 };
 
-/** The origin subsample the wizard was launched on. */
+/** An origin subsample the wizard was launched on. */
 export type OperationOrigin = {
   id: number;
   globalId: string;
+  /** The subsample's name, interpolated into a per-origin link field name (e.g. Pool's, so the
+   * several links back to the pooled subsamples get distinct names - a record cannot hold two fields
+   * with the same name). Available to link `fieldNameKey`s as `{originName}`. */
+  name: string;
   quantity: OperationQuantity | null;
 };
 

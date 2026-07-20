@@ -1,6 +1,7 @@
 package com.researchspace.service.inventory.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -11,10 +12,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.researchspace.api.v1.model.ApiExtraField;
+import com.researchspace.api.v1.model.ApiExtraField.ExtraFieldTypeEnum;
 import com.researchspace.api.v1.model.ApiInventoryOperationOriginUpdate;
 import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
+import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.model.User;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.service.inventory.SampleApiManager;
@@ -112,6 +116,35 @@ class InventoryOperationManagerImplTest {
 
     verify(sampleApiMgr, never()).createNewApiSample(any(), any());
     verify(subSampleApiMgr, never()).registerApiSubSampleUsage(any(), any(), any());
+  }
+
+  @Test
+  void terminalOperationAddsOriginFieldsAndCreatesNoSample() {
+    // Destroy (noOutput): no new sample is sent, and the operation adds a custom field to the
+    // origin
+    // itself. The manager must create no sample, return null, and apply the origin's extra fields
+    // via
+    // the subsample-edit path (adr/0008).
+    ApiExtraField disposed = new ApiExtraField(ExtraFieldTypeEnum.TEXT);
+    disposed.setName("disposed");
+    disposed.setContent("2026-07-20");
+    disposed.setNewFieldRequest(true);
+    ApiInventoryOperationOriginUpdate origin =
+        origin(100L, new ApiQuantityInfo(new BigDecimal("2"), 3));
+    origin.setExtraFields(List.of(disposed));
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(List.of(origin));
+    request.setNewSample(null);
+
+    ApiSampleWithFullSubSamples result = manager.performOperation(request, user);
+
+    assertNull(result);
+    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
+    verify(subSampleApiMgr).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+    ArgumentCaptor<ApiSubSample> update = ArgumentCaptor.forClass(ApiSubSample.class);
+    verify(subSampleApiMgr).updateApiSubSample(update.capture(), eq(user));
+    assertEquals(Long.valueOf(100L), update.getValue().getId());
+    assertEquals("disposed", update.getValue().getExtraFields().get(0).getName());
   }
 
   @Test

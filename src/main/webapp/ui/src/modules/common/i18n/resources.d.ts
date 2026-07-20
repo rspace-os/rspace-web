@@ -3800,6 +3800,7 @@ export default interface Resources {
           "amountTaken": "Amount taken",
           "documentation": "Documented by",
           "linkBack": "Links back to",
+          "originEmptied": "Origin volume",
           "process": "Process",
           "storageTemp": "Storage temperature",
           "subsamples": "New subsamples",
@@ -3807,6 +3808,7 @@ export default interface Resources {
         },
         "values": {
           "amountTaken": "{amount} {unit}",
+          "emptied": "Will be set to 0",
           "storageTemp": "{temp} °C",
           "subsamples": "{count} × {amount} {unit} each"
         }
@@ -3822,6 +3824,11 @@ export default interface Resources {
         "label": "Derive",
         "linkFieldName": "Is Derived From using process: {processName}"
       },
+      "destroy": {
+        "description": "Dispose of the subsample: set its volume to zero and record today's disposal date. Creates nothing.",
+        "disposedField": "disposed",
+        "label": "Destroy"
+      },
       "documentation": {
         "choose": "Choose document",
         "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
@@ -3831,6 +3838,7 @@ export default interface Resources {
       },
       "fields": {
         "amountTaken": "Amount taken from original",
+        "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
         "count": "Number of new subsamples",
         "cryomedium": "Cryomedium",
@@ -3851,6 +3859,16 @@ export default interface Resources {
         "label": "Passage",
         "linkFieldName": "Passaged from",
         "numberField": "Passage number"
+      },
+      "picker": {
+        "needsMultiple": "Select two or more subsamples to pool.",
+        "sameCategory": "Select subsamples of the same measurement type to pool.",
+        "singleOnly": "Select a single subsample for this operation."
+      },
+      "pool": {
+        "description": "Combine an equal amount from several subsamples into one new pooled sample.",
+        "label": "Pool",
+        "linkFieldName": "Pooled from: {originName}"
       },
       "revive": {
         "description": "Revive frozen material into a new sample, recorded as a variant of the original.",

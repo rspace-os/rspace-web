@@ -13,9 +13,11 @@ import org.springframework.validation.Validator;
 
 /**
  * Validates an {@link ApiInventoryOperationPost}. Operation-agnostic: it only enforces the
- * invariants every operation shares (a named new sample, and each origin identifying a subsample
- * with a non-negative amount-taken - zero meaning "link to but do not decrement this origin", e.g.
- * Passage; see adr/0002). Operation-specific shaping lives in the frontend config, not here.
+ * invariants every operation shares. The new sample is optional - a terminal operation (noOutput,
+ * e.g. Destroy) creates nothing, so newSample may be null; when present it must be named. Each
+ * origin must identify a subsample with a non-negative amount-taken - zero meaning "act on but do
+ * not decrement this origin", e.g. Passage. See adr/0002, adr/0008. Operation-specific shaping
+ * lives in the frontend config, not here.
  */
 @Component
 public class InventoryOperationPostValidator implements Validator {
@@ -29,12 +31,9 @@ public class InventoryOperationPostValidator implements Validator {
   public void validate(Object target, Errors errors) {
     ApiInventoryOperationPost request = (ApiInventoryOperationPost) target;
 
-    if (request.getNewSample() == null) {
-      errors.rejectValue(
-          "newSample",
-          "errors.inventory.operation.newSampleRequired",
-          "A new sample must be provided for the operation");
-    } else if (!StringUtils.hasText(request.getNewSample().getName())) {
+    // newSample is optional: a terminal operation (noOutput, e.g. Destroy) creates nothing. When a
+    // sample is provided it must be named.
+    if (request.getNewSample() != null && !StringUtils.hasText(request.getNewSample().getName())) {
       errors.rejectValue(
           "newSample.name",
           "errors.inventory.operation.sampleNameRequired",

@@ -207,7 +207,7 @@ function OperationDetailsStep({
     const byKey = new Map(operation.inputs.filter((i) => amountKeys.has(i.key)).map((i) => [i.key, i]));
     const each = eachAmountFrom ? byKey.get(eachAmountFrom) : undefined;
     const taken = amountTakenFrom ? byKey.get(amountTakenFrom) : undefined;
-    const count = byKey.get(countFrom);
+    const count = countFrom ? byKey.get(countFrom) : undefined;
     return (
       <Stack spacing={1}>
         {count ? renderInput(count) : null}

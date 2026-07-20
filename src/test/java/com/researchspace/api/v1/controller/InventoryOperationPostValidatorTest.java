@@ -43,10 +43,12 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
-  void rejectsMissingNewSample() {
+  void allowsMissingNewSample() {
+    // A terminal operation (noOutput, e.g. Destroy) creates nothing, so a null new sample is valid
+    // as long as the origins are (adr/0008).
     ApiInventoryOperationPost request = validRequest();
     request.setNewSample(null);
-    assertTrue(validate(request).hasFieldErrors("newSample"));
+    assertFalse(validate(request).hasErrors());
   }
 
   @Test
@@ -78,10 +80,14 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
-  void rejectsZeroAmountTaken() {
+  void allowsZeroAmountTaken() {
+    // Zero is a valid no-op decrement: it means "act on but do not reduce this origin" (Passage
+    // links
+    // to the origin without taking from it). The backend treats a 0 decrement as a no-op. See
+    // adr/0002.
     ApiInventoryOperationPost request = validRequest();
     request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(BigDecimal.ZERO, 3));
-    assertTrue(validate(request).hasErrors());
+    assertFalse(validate(request).hasErrors());
   }
 
   @Test

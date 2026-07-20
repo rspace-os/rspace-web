@@ -33,6 +33,19 @@ export const operationFunctions = {
       return Number.isFinite(n) ? n + 1 : Number(start);
     },
   },
+  /**
+   * Today's date in the user's local timezone as an ISO calendar date (YYYY-MM-DD). Takes no
+   * arguments. Destroy writes it into the origin's "disposed" field. Built from local date parts (not
+   * toISOString, which is UTC) so it is the user's local "today" even near midnight.
+   */
+  today: {
+    params: [] as ReadonlyArray<string>,
+    fn: () => {
+      const d = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    },
+  },
 } satisfies Record<string, OperationFunction>;
 
 export type OperationFunctionName = keyof typeof operationFunctions;

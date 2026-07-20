@@ -21,3 +21,20 @@ describe("operationFunctions.increment", () => {
     expect(increment.fn({ current: "n/a", start: 7 })).toBe(7);
   });
 });
+
+describe("operationFunctions.today", () => {
+  const { today } = operationFunctions;
+
+  it("takes no parameters", () => {
+    expect(today.params).toEqual([]);
+  });
+
+  it("returns today's local date as an ISO calendar date (YYYY-MM-DD)", () => {
+    const result = String(today.fn());
+    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // Matches the local date parts (not UTC), so it is the user's local "today".
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    expect(result).toBe(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+  });
+});

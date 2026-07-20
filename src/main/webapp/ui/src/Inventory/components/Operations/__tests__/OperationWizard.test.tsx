@@ -179,7 +179,7 @@ async function reachConfirm(user: ReturnType<typeof userEvent.setup>, processNam
 describe("OperationWizard step flow", () => {
   it("keeps Next disabled on the details step until a process name (and derived sample name) exist", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     expect(nextButton()).toBeDisabled(); // no process name yet
     await user.type(screen.getByTestId("proc"), "dna");
@@ -192,7 +192,7 @@ describe("OperationWizard step flow", () => {
       <OperationWizard
         open
         onClose={vi.fn()}
-        origin={makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })}
+        origins={[makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
       />,
     );
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
@@ -203,7 +203,7 @@ describe("OperationWizard step flow", () => {
 
   it("auto-derives the sample name from the origin sample name and the process name", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna extraction");
     expect(screen.getByTestId("sample-name")).toHaveTextContent("A sample dna extraction");
@@ -214,7 +214,7 @@ describe("OperationWizard step flow", () => {
     const taken = ["A sample dna", "A sample dna_1"];
     sampleNameAvailable.mockImplementation((name: string) => Promise.resolve(!taken.includes(name)));
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
     await waitFor(() => expect(screen.getByTestId("sample-name")).toHaveTextContent("A sample dna_2"));
@@ -222,7 +222,7 @@ describe("OperationWizard step flow", () => {
 
   it("stops re-deriving the sample name once the user edits it by hand", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
     await user.click(screen.getByTestId("edit-sample")); // manual override
@@ -232,7 +232,7 @@ describe("OperationWizard step flow", () => {
 
   it("puts the template on its own step, gated until a choice is made", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await fillDerive(user, "dna");
     await user.click(nextButton()); // -> template step
     expect(screen.getByTestId("tmpl-mode")).toHaveTextContent("unselected");
@@ -244,7 +244,7 @@ describe("OperationWizard step flow", () => {
   it("blocks Next on the amounts step when the amount taken exceeds the origin (over-removal)", async () => {
     // origin (makeMockSubSample) holds 1 ml; taking 5 ml must be blocked (adr/0005).
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
     await user.click(nextButton()); // -> template
@@ -258,7 +258,7 @@ describe("OperationWizard step flow", () => {
 
   it("uses the picked template's quantity category for the amount units on the amounts step", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await fillDerive(user, "dna");
     await user.click(nextButton()); // -> template
     await user.click(screen.getByTestId("tmpl-pick-volume"));
@@ -269,7 +269,7 @@ describe("OperationWizard step flow", () => {
 
   it("names the operation and its process name in the heading; just the operation for a fixed one", async () => {
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
     expect(screen.getByText(/operations\.derive\.label: dna/)).toBeInTheDocument();
@@ -285,7 +285,7 @@ describe("OperationWizard remember bundle", () => {
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
-    render(<OperationWizard open onClose={onClose} origin={origin} />);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
 
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna extraction");
@@ -316,7 +316,7 @@ describe("OperationWizard remember bundle", () => {
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
-    render(<OperationWizard open onClose={onClose} origin={origin} />);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await reachConfirm(user, "dna extraction"); // remember never ticked
     await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
 
@@ -334,7 +334,7 @@ describe("OperationWizard remember bundle", () => {
       },
     };
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna");
     expect(screen.getByTestId("remember")).toHaveTextContent("true");
@@ -351,7 +351,7 @@ describe("OperationWizard remember bundle", () => {
       },
     };
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads the saved bundle
     expect(screen.getByTestId("count")).toHaveTextContent("4");
@@ -371,7 +371,7 @@ describe("OperationWizard remember bundle", () => {
     };
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = saved;
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     await user.type(screen.getByTestId("proc"), "dna"); // loads + ticks
     expect(screen.getByTestId("remember")).toHaveTextContent("true");
@@ -391,7 +391,7 @@ describe("OperationWizard remember bundle", () => {
       },
     };
     const user = userEvent.setup();
-    render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     expect(screen.getByTestId("proc")).toHaveValue("boil");
     expect(screen.getByTestId("remember")).toHaveTextContent("true");
@@ -403,7 +403,7 @@ describe("OperationWizard remember bundle", () => {
     const onClose = vi.fn();
     const origin = makeMockSubSample({});
     vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
-    render(<OperationWizard open onClose={onClose} origin={origin} />);
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
     await user.click(screen.getByRole("button", { name: /operations\.cryopreserve\.label/i }));
     await user.click(screen.getByTestId("toggle-remember")); // tick
     await user.click(screen.getByTestId("fill-amounts"));

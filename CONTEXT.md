@@ -41,13 +41,22 @@ resolved during design. This file is a glossary only — no implementation detai
 ## Inventory operations wizard
 
 - **Operation** — a user-initiated Inventory action that consumes one or more
-  origin subsamples and produces one new Sample parenting N new subsamples, while
-  recording a typed relation link from the new records back to the origin(s), and
-  optionally changing the origin's quantity. Named instances: Derive,
-  Cryopreserve, Aliquot, Pool, Revive, Passage, Dispose.
+  origin subsamples and usually produces one new Sample parenting N new subsamples
+  (a Terminal operation produces none), recording a typed relation link from any new
+  records back to the origin(s), and optionally changing an origin's quantity or adding
+  a field to it. Named instances: Derive, Cryopreserve, Aliquot, Pool, Revive, Passage,
+  Destroy.
+- **Terminal operation** — an Operation that creates no new Sample and only acts on its
+  Origin(s): it empties the Origin and records the outcome on the Origin itself. Destroy
+  is the only instance (it sets the Origin's volume to zero and stamps a disposal date on
+  it). _Avoid_: no-output operation, in-place operation.
 - **Origin** — the existing subsample(s) selected as input to an Operation. Only
   subsamples are eligible; never a Sample, Container, or Instrument. An Operation
-  may decrement, increment, or leave unchanged an Origin's quantity.
+  may decrement, increment, or leave unchanged an Origin's quantity, and may add a
+  field to the Origin (an Origin field).
+- **Origin field** — a custom field an Operation adds to an Origin subsample itself
+  (as distinct from a field on the Derived Sample), e.g. Destroy's disposal date.
+  _Avoid_: origin annotation, in-place field.
 - **Derived Sample** — the single new Sample an Operation creates, and the parent
   of every subsample that Operation creates. Distinct from the Origin's own parent
   Sample.
@@ -66,11 +75,15 @@ resolved during design. This file is a glossary only — no implementation detai
   of the Origin's quantity change (material may be added or removed during the
   operation). Expressed in the chosen template's measurement category when a template
   is selected, otherwise the Origin's.
-- **Amount taken** — the quantity removed from the Origin by the Operation (a
-  **positive** decrement; must be > 0), expressed in the Origin's own measurement
-  category. It must not exceed the Origin's current quantity: over-removal is rejected
-  rather than silently clamped. Independent of the Created total (material may be
-  added during the operation).
+- **Amount taken** — the quantity removed from an Origin by the Operation (a
+  **non-negative** decrement), expressed in the Origin's own measurement category. Zero
+  means the Origin is acted on (linked, permission-checked) but not reduced (Passage); a
+  Terminal operation (Destroy) takes the Origin's full current quantity, emptying it. It
+  must not exceed the Origin's current quantity: over-removal is rejected rather than
+  silently clamped. Independent of the Created total (material may be added during the
+  operation). For a multi-Origin Operation (Pool) it is a single shared value removed from
+  **each** Origin, so every Origin must share one measurement category and the value must
+  not exceed the smallest Origin.
 - **Relation link** — a typed link (a DataCite relation such as IsDerivedFrom,
   IsPartOf, HasPart) held on the Derived Sample and pointing back to the Origin(s).
   Links are one-directional: only the newly created records link to the Origin; the

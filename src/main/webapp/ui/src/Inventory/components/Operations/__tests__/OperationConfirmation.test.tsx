@@ -37,16 +37,20 @@ const renderConf = (overrides: {
   templateSelection: TemplateSelection;
   documentation?: { globalId: string; name: string } | null;
   op?: InventoryOperation;
+  values?: OperationInputs;
+  originHasAmount?: boolean;
 }) =>
   render(
     // ThemeProvider supplies the app theme so the confirmation card can read palette.record.sample.
     <ThemeProvider theme={appTheme}>
       <OperationConfirmation
         operation={overrides.op ?? operation}
-        values={values}
+        values={overrides.values ?? values}
         documentation={overrides.documentation ?? null}
         templateSelection={overrides.templateSelection}
         originSampleName="S1"
+        originName="S1.01"
+        originHasAmount={overrides.originHasAmount ?? true}
       />
     </ThemeProvider>,
   );
@@ -96,6 +100,7 @@ describe("OperationConfirmation", () => {
           documentation={null}
           templateSelection={{ mode: "none", templateId: null, remember: false }}
           originSampleName="S1"
+          originName="S1.01"
         />
       </ThemeProvider>,
     );
@@ -132,6 +137,7 @@ describe("OperationConfirmation", () => {
           documentation={null}
           templateSelection={{ mode: "none", templateId: null, remember: false }}
           originSampleName="S1"
+          originName="S1.01"
         />
       </ThemeProvider>,
     );
@@ -148,11 +154,51 @@ describe("OperationConfirmation", () => {
           documentation={null}
           templateSelection={{ mode: "none", templateId: null, remember: false }}
           originSampleName="S1"
+          originName="S1.01"
         />
       </ThemeProvider>,
     );
     expect(screen.getByText(/confirm\.labels\.storageTemp/)).toBeInTheDocument();
     // template is not in this confirmSummary, so it is not shown
     expect(screen.queryByText(/confirm\.labels\.template/)).not.toBeInTheDocument();
+  });
+
+  // Destroy-shaped op (adr/0008): noOutput, so the card names the origin subsample, and the summary is
+  // the origin being emptied plus the disposed field it adds to the origin.
+  const destroyOp = {
+    key: "destroy",
+    labelKey: "operations.destroy.label",
+    descriptionKey: "operations.destroy.description",
+    noOutput: true,
+    effect: {
+      emptiesOrigin: true,
+      computed: [{ fn: "today", into: "disposedDate", args: {} }],
+      links: [],
+      originFields: [{ nameKey: "operations.destroy.disposedField", contentFrom: "disposedDate", type: "text" }],
+    },
+    confirmSummary: ["originEmptied", "originFields"],
+  } as unknown as InventoryOperation;
+
+  it("names the origin subsample and summarises the emptying and disposed field for a terminal op", () => {
+    renderConf({ op: destroyOp, values: {}, templateSelection: { mode: "none", templateId: null, remember: false } });
+    // A terminal operation creates no sample, so the card title is the origin subsample name.
+    expect(screen.getByText("S1.01")).toBeInTheDocument();
+    // The description shows here (moved off the now-skipped details step) as an info panel.
+    expect(screen.getByText(/operations\.destroy\.description/)).toBeInTheDocument();
+    expect(screen.getByText(/confirm\.labels\.originEmptied/)).toBeInTheDocument();
+    // The origin-field row is labelled by the field name (its i18n key in cimode) and shows today's
+    // date, computed for the preview.
+    expect(screen.getByText(/operations\.destroy\.disposedField/)).toBeInTheDocument();
+    expect(screen.getByText(/^\d{4}-\d{2}-\d{2}$/)).toBeInTheDocument();
+  });
+
+  it("blocks a terminal operation on an empty origin, showing why (the details-step guard moved here)", () => {
+    renderConf({
+      op: destroyOp,
+      values: {},
+      originHasAmount: false,
+      templateSelection: { mode: "none", templateId: null, remember: false },
+    });
+    expect(screen.getByText(/fields\.originAmountZero/)).toBeInTheDocument();
   });
 });
