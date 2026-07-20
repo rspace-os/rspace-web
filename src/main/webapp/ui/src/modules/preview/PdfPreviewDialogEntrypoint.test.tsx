@@ -1,6 +1,6 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
+
 import { OPEN_PDF_PREVIEW_DIALOG, PdfPreviewDialogWrapper } from "./PdfPreviewDialogEntrypoint";
 
 const { axiosGetMock } = vi.hoisted(() => ({

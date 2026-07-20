@@ -222,6 +222,13 @@ describe("Gallery", () => {
       });
     });
 
+    test("A theme-color meta tag should be present in the document head", async () => {
+      render(<GalleryStory />);
+      await waitFor(() => {
+        expect(document.head.querySelector('meta[name="theme-color"]')).not.toBeNull();
+      });
+    });
+
     test("On '?mediaType={section}', the title should be '{section} | RSpace Gallery'", async () => {
       await fc.assert(
         fc.asyncProperty(

@@ -23,7 +23,7 @@ describe("iconForInventoryGlobalId", () => {
       recordTypeLabel: "inventory:recordTypes.container.singular",
     });
     expect(iconForInventoryGlobalId("IN7")).toEqual({
-      iconName: "container",
+      iconName: "instrument",
       recordTypeLabel: "inventory:recordTypes.instrument.singular",
     });
   });
@@ -33,6 +33,15 @@ describe("iconForInventoryGlobalId", () => {
       iconName: "template",
       recordTypeLabel: "inventory:recordTypes.sampleTemplate.singular",
     });
+  });
+
+  test("maps instrument templates to the instrumentTemplate icon", () => {
+    expect(iconForInventoryGlobalId("NT3")).toEqual({
+      iconName: "instrumentTemplate",
+      recordTypeLabel: "inventory:recordTypes.instrumentTemplate.singular",
+    });
+    expect(isInventoryGlobalId("NT3")).toBe(true);
+    expect(supportsVersionPin("NT3")).toBe(true);
   });
 
   test("returns null for ELN and unknown prefixes and malformed ids", () => {

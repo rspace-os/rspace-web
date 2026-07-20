@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/useOauthToken";
-import { waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import type React from "react";
-import { cleanup, expectAccessible, render, screen, within } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
 import {

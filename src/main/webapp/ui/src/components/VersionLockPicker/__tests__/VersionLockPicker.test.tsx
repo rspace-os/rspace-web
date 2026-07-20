@@ -1,7 +1,8 @@
 import { ThemeProvider } from "@mui/material/styles";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import materialTheme from "../../../theme";
 import VersionLockPicker, { LATEST_SELECTION, type VersionRecord } from "../VersionLockPicker";
 

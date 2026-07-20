@@ -14,6 +14,14 @@ describe("validateTarget", () => {
     }
   });
 
+  test("accepts an instrument template target", () => {
+    expect(validateTarget("NT7", "SA42").ok).toBe(true);
+  });
+
+  test("rejects an instrument template self link", () => {
+    expect(validateTarget("NT7", "NT7").ok).toBe(false);
+  });
+
   test("rejects unsupported prefixes", () => {
     const { ok, reason } = validateTarget("GF9", "SA1");
     expect(ok).toBe(false);

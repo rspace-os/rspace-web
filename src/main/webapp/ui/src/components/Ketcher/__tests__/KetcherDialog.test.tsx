@@ -1,8 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render } from "@/__tests__/customQueries";
 
 const INITIAL_KET = "initial-ket";
 const mockSetMolecule = vi.fn().mockResolvedValue(undefined);

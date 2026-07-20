@@ -1,5 +1,6 @@
+import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { render, screen } from "@/__tests__/customQueries";
+
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
 import ErrorBoundary, { MessageBoundary } from "../ErrorBoundary";
 import { ErrorComponent } from "../ErrorBoundary.story";

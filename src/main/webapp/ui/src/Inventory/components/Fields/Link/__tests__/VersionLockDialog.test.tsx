@@ -1,10 +1,10 @@
 import { ThemeProvider } from "@mui/material/styles";
-import { waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AxiosResponse } from "axios";
 import type React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@/__tests__/customQueries";
+
 import axios from "@/common/axios";
 import InvApiService from "../../../../../common/InvApiService";
 import materialTheme from "../../../../../theme";
@@ -178,6 +178,17 @@ describe("VersionLockDialog", () => {
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "11")).toHaveLength(0);
     expect(screen.getAllByRole("radio").filter((radio) => radio.getAttribute("value") === "22")).toHaveLength(0);
     expect(vi.mocked(apiGet)).toHaveBeenCalledWith("samples/42/revisions");
+  });
+
+  it("fetches instrument revisions for an instrument link target", async () => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method -- mock setup
+    const apiGet = InvApiService.get;
+    vi.mocked(apiGet).mockResolvedValue(revisionsResponse);
+    renderDialog({ globalId: "IN42" });
+    await waitFor(() => {
+      expect(getVersionRadio("1")).toBeInTheDocument();
+    });
+    expect(vi.mocked(apiGet)).toHaveBeenCalledWith("instruments/42/revisions");
   });
 
   it("calls onConfirm with the chosen user-facing version, not the audit revisionId", async () => {

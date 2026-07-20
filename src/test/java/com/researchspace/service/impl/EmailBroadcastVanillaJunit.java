@@ -1,13 +1,13 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.service.impl.EmailBroadcastImp.TEXT_ONLY_EMAIL_DEFAULT;
+import static com.researchspace.service.impl.EmailBroadcastImpl.TEXT_ONLY_EMAIL_DEFAULT;
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.researchspace.model.User;
 import com.researchspace.model.comms.CommunicationTarget;
 import com.researchspace.model.comms.MessageOrRequest;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.text.ParseException;
@@ -30,7 +30,8 @@ public class EmailBroadcastVanillaJunit {
   // this oracle comes from the library class whose function we are testing.
   // a little circular but will detect regressions.
   static final FastDateFormat EMAIL_DATE_FORMAT = DateFormatUtils.SMTP_DATETIME_FORMAT;
-  EmailBroadcastImp emailerBroadcastImp = new EmailBroadcastImp();
+  EmailBroadcastImpl emailerBroadcastImpl =
+      new EmailBroadcastImpl(new StrictEmailContentGenerator());
 
   @Test
   public void calculateRecipients() {
@@ -47,7 +48,7 @@ public class EmailBroadcastVanillaJunit {
     mf.addRecipient(ct1);
     mf.addRecipient(ct2);
     List<String> addresses = new ArrayList<>();
-    emailerBroadcastImp.addRecipients(mf, addresses, mf.getRecipients());
+    emailerBroadcastImpl.addRecipients(mf, addresses, mf.getRecipients());
 
     assertEquals(1, addresses.size());
     assertTrue(addresses.get(0).equals(enabledUser.getEmail()));
@@ -58,7 +59,7 @@ public class EmailBroadcastVanillaJunit {
     Instant now = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
     MimeMessage message = createMimeMessage();
-    emailerBroadcastImp.setDateHeader(message, now);
+    emailerBroadcastImpl.setDateHeader(message, now);
     // parse date
     Date parsedHeader = EMAIL_DATE_FORMAT.parse(message.getHeader("Date")[0]);
     // ignore nanos as these get discarded in email Header
@@ -67,8 +68,8 @@ public class EmailBroadcastVanillaJunit {
 
   @Test
   public void createMessagePart() throws MessagingException, ParseException, IOException {
-    EmailBroadcastImp.EmailConfig plainTextConfig = createHtmlAndPlainTextEmailContent();
-    Multipart multi = emailerBroadcastImp.generateMultipartContent(plainTextConfig);
+    EmailBroadcastImpl.EmailConfig plainTextConfig = createHtmlAndPlainTextEmailContent();
+    Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
     assertEquals("text/plain", multi.getBodyPart(0).getContentType());
     assertEquals("text/html", multi.getBodyPart(1).getContentType());
     assertTrue(multi.getBodyPart(0).getContent().toString().equals("hello"));
@@ -77,14 +78,14 @@ public class EmailBroadcastVanillaJunit {
   @Test
   public void createMessagePartShowsDefaultTextIfNotSet()
       throws MessagingException, ParseException, IOException {
-    EmailBroadcastImp.EmailConfig plainTextConfig = createHtmlOnlyEmailContent();
-    Multipart multi = emailerBroadcastImp.generateMultipartContent(plainTextConfig);
+    EmailBroadcastImpl.EmailConfig plainTextConfig = createHtmlOnlyEmailContent();
+    Multipart multi = emailerBroadcastImpl.generateMultipartContent(plainTextConfig);
     assertTrue(multi.getBodyPart(0).getContent().toString().equals(TEXT_ONLY_EMAIL_DEFAULT));
   }
 
-  private EmailBroadcastImp.EmailConfig createHtmlOnlyEmailContent() {
-    EmailBroadcastImp.EmailConfig plainTextConfig =
-        new EmailBroadcastImp.EmailConfig(
+  private EmailBroadcastImpl.EmailConfig createHtmlOnlyEmailContent() {
+    EmailBroadcastImpl.EmailConfig plainTextConfig =
+        new EmailBroadcastImpl.EmailConfig(
             Collections.emptyList(),
             "subject",
             EmailContent.builder().htmlContent("<html>hello</html").build(),
@@ -93,9 +94,9 @@ public class EmailBroadcastVanillaJunit {
     return plainTextConfig;
   }
 
-  private EmailBroadcastImp.EmailConfig createHtmlAndPlainTextEmailContent() {
-    EmailBroadcastImp.EmailConfig plainTextConfig =
-        new EmailBroadcastImp.EmailConfig(
+  private EmailBroadcastImpl.EmailConfig createHtmlAndPlainTextEmailContent() {
+    EmailBroadcastImpl.EmailConfig plainTextConfig =
+        new EmailBroadcastImpl.EmailConfig(
             Collections.emptyList(),
             "subject",
             EmailContent.builder()

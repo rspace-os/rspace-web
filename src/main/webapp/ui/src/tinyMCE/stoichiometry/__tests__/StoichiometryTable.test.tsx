@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { expectAccessible } from "@/__tests__/customQueries";
+import { expectAccessible } from "@/__tests__/accessibility";
 // eslint-disable-next-line vitest/no-mocks-import
 import "@/__tests__/__mocks__/matchMedia";
 // The inventory picker's Searchbar uses ResizeObserver via useIsTextWiderThanField.

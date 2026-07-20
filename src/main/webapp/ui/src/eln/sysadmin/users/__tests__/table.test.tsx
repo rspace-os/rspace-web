@@ -2,9 +2,10 @@ import { describe, expect, test, vi } from "vitest";
 import "@/__tests__/__mocks__/useUiPreference";
 import { ThemeProvider } from "@mui/material/styles";
 import StyledEngineProvider from "@mui/styled-engine/StyledEngineProvider";
-import { screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import MockAdapter from "axios-mock-adapter";
-import { render, within } from "@/__tests__/customQueries";
+
+import { findTableCell } from "@/__tests__/tableQueries";
 import axios from "@/common/axios";
 import { UsersPage } from "@/eln/sysadmin/users";
 import materialTheme from "../../../../theme";
@@ -47,16 +48,12 @@ describe("Table Listing", () => {
     const grid = await screen.findByRole("grid");
     await waitFor(() => expect(within(grid).getAllByRole("row").length).toBeGreaterThan(1));
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "system:usersPage.columns.usage", rowIndex: 1 }),
+      await findTableCell(grid, { columnHeading: "system:usersPage.columns.usage", rowIndex: 1 }),
       // 362006 bytes: pretty-bytes rounds 362.006 kB to "362 kB" (the previous
       // hand-rolled toFixed(2) produced "362.01 kB")
     ).toHaveTextContent("362 kB");
     expect(
-      // @ts-expect-error findTableCell exists on the custom within function
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-      await within(grid).findTableCell({ columnHeading: "system:usersPage.columns.usage", rowIndex: 2 }),
+      await findTableCell(grid, { columnHeading: "system:usersPage.columns.usage", rowIndex: 2 }),
     ).toHaveTextContent("0 B");
   });
 });

@@ -111,6 +111,36 @@ class InventoryLinkValidatorTest {
   }
 
   @Test
+  void acceptsInstrumentTarget() {
+    ApiInventoryLink link = buildLink("References", "IN7");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void acceptsInstrumentTemplateTarget() {
+    ApiInventoryLink link = buildLink("References", "NT7");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "SA42", errors);
+
+    assertFalse(errors.hasErrors());
+  }
+
+  @Test
+  void rejectsInstrumentSelfLinkIgnoringVersionSuffix() {
+    ApiInventoryLink link = buildLink("References", "IN42v2");
+    Errors errors = errorsFor(link);
+    validator.validate(link, "IN42", errors);
+
+    assertTrue(errors.hasFieldErrors("targetGlobalId"));
+    assertEquals(
+        "errors.inventory.field.link.selfLinkForbidden",
+        errors.getFieldError("targetGlobalId").getCode());
+  }
+
+  @Test
   void acceptsElnTargetPrefixes() {
     for (String prefix : new String[] {"SD", "NB", "GL"}) {
       ApiInventoryLink link = buildLink("References", prefix + "1");

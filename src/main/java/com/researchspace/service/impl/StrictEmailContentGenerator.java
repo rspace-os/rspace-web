@@ -2,7 +2,7 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.lang3.StringUtils.replace;
 
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.velocity.app.VelocityEngine;

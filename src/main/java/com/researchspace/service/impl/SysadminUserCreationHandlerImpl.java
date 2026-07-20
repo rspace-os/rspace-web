@@ -28,7 +28,7 @@ import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImp.EmailContent;
+import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
