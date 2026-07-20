@@ -60,7 +60,7 @@ describe("buildOperationRequest (Derive)", () => {
   });
 
   it("sets the origin to its absolute after-quantity", () => {
-    expect(request.origins).toEqual([{ id: 100, globalId: "SS100", amountTaken: { numericValue: 0.6, unitId: 3 } }]);
+    expect(request.origins).toEqual([{ id: 100, amountTaken: { numericValue: 0.6, unitId: 3 } }]);
   });
 
   it("passes through a chosen templateId (any / from-origin-sample resolve to an id)", () => {
@@ -191,7 +191,7 @@ describe("buildOperationRequest (operation that does not decrement the origin)",
   });
 
   it("sends the origin with a zero amount taken (not an empty origins array)", () => {
-    expect(request.origins).toEqual([{ id: 100, globalId: "SS100", amountTaken: { numericValue: 0, unitId: 3 } }]);
+    expect(request.origins).toEqual([{ id: 100, amountTaken: { numericValue: 0, unitId: 3 } }]);
   });
 });
 
@@ -232,9 +232,9 @@ describe("buildOperationRequest (Pool - multi-origin)", () => {
 
   it("reduces every origin by the same shared amount taken", () => {
     expect(request.origins).toEqual([
-      { id: 1, globalId: "SS1", amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 2, globalId: "SS2", amountTaken: { numericValue: 1, unitId: 3 } },
-      { id: 3, globalId: "SS3", amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 1, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 3, amountTaken: { numericValue: 1, unitId: 3 } },
     ]);
   });
 
@@ -286,7 +286,6 @@ describe("buildOperationRequest (Destroy - terminal, no output)", () => {
     expect(request.origins).toEqual([
       {
         id: 100,
-        globalId: "SS100",
         amountTaken: { numericValue: 2, unitId: 3 },
         extraFields: [
           {

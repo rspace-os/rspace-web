@@ -22,7 +22,7 @@ import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
 import { buildOperationRequest } from "./buildOperationRequest";
-import { applyComputedValues } from "./computedValues";
+import { applyComputedValues, gatherParentFields } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
@@ -377,7 +377,7 @@ function OperationWizard({
       // back to the start value.
       const submitValues: OperationInputs = computed.length
         ? applyComputedValues(operation, {
-            parentFields: [...origin.sample.fields, ...origin.sample.extraFields],
+            parentFields: gatherParentFields(origin.sample),
             values,
             resolveFieldName: resolveLabel,
           })
@@ -558,7 +558,10 @@ function OperationWizard({
               <SubmitSpinnerButton
                 onClick={() => void submit()}
                 loading={submitting}
-                disabled={submitting}
+                // Gate Perform on stepValid() too, not just submitting: the confirm step's own
+                // guards (e.g. Destroy's empty-origin block) must actually block submission, not only
+                // show a message. Next is gated the same way below.
+                disabled={submitting || !stepValid()}
                 label={t("operations.wizard.perform")}
               />
             ) : (

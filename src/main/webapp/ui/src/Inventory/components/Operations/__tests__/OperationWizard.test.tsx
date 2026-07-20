@@ -267,6 +267,31 @@ describe("OperationWizard step flow", () => {
     expect(screen.getByTestId("unit-categories")).toHaveTextContent('["volume"]');
   });
 
+  it("blocks Perform for a terminal operation (Destroy) on an empty origin, skipping template/amounts", async () => {
+    // Destroy declares steps ["confirm"], so it lands straight on the confirm step (no template or
+    // amounts step). Its empty-origin guard lives in stepValid(), which must gate Perform - not just
+    // show a message. Regression guard for the Perform button being gated only by `submitting`.
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origins={[makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /operations\.destroy\.label/i }));
+    expect(screen.queryByText(/step\.template/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/step\.amounts/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeDisabled();
+  });
+
+  it("enables Perform for a terminal operation (Destroy) on a non-empty origin", async () => {
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.destroy\.label/i }));
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+  });
+
   it("names the operation and its process name in the heading; just the operation for a fixed one", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);

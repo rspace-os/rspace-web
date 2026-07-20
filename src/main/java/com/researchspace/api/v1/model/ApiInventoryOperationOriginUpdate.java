@@ -17,14 +17,11 @@ import lombok.NoArgsConstructor;
  */
 @Data
 @NoArgsConstructor
-@JsonPropertyOrder({"id", "globalId", "amountTaken", "extraFields"})
+@JsonPropertyOrder({"id", "amountTaken", "extraFields"})
 public class ApiInventoryOperationOriginUpdate {
 
   @JsonProperty("id")
   private Long id;
-
-  @JsonProperty("globalId")
-  private String globalId;
 
   @JsonProperty("amountTaken")
   private ApiQuantityInfo amountTaken;

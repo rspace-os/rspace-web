@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyComputedValues, type ComputedContext } from "../computedValues";
+import { applyComputedValues, type ComputedContext, gatherParentFields } from "../computedValues";
 import type { InventoryOperation } from "../operationsConfig";
 
 function opWith(computed: InventoryOperation["effect"]["computed"]): InventoryOperation {
@@ -71,5 +71,30 @@ describe("applyComputedValues", () => {
     const result = applyComputedValues(op, { parentFields: [], values: {}, resolveFieldName });
     expect(result.first).toBe(2);
     expect(result.second).toBe(3);
+  });
+});
+
+describe("gatherParentFields", () => {
+  it("combines the parent sample's template fields and its ad-hoc extra fields", () => {
+    const combined = gatherParentFields({
+      fields: [{ name: "Template field", content: "t" }],
+      extraFields: [{ name: "Passage number", content: "2" }],
+    });
+    expect(combined).toEqual([
+      { name: "Template field", content: "t" },
+      { name: "Passage number", content: "2" },
+    ]);
+  });
+
+  it("finds a parentSampleField that lives in extraFields, so Passage increments X to X+1 (regression)", () => {
+    // The Passage "stuck at 1" bug: the passage number is a user-added custom field, so it is in
+    // extraFields, not the template-defined `fields`. Reading only `fields` misses it and increment
+    // falls back to start (1). gatherParentFields must combine both so increment sees "2" -> 3.
+    const parentFields = gatherParentFields({
+      fields: [],
+      extraFields: [{ name: "Passage number", content: "2" }],
+    });
+    const result = applyComputedValues(opWith(passageComputed), { parentFields, values: {}, resolveFieldName });
+    expect(result.passageNumber).toBe(3);
   });
 });

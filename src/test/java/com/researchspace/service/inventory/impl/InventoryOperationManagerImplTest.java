@@ -119,6 +119,30 @@ class InventoryOperationManagerImplTest {
   }
 
   @Test
+  void abortsBeforeAnyMutationWhenALaterOriginIsNotEditable() {
+    // Multi-origin (Pool): permission is asserted on EVERY origin before ANY origin is mutated
+    // (adr/0001). If a later origin fails the check, an earlier origin must NOT have been
+    // decremented.
+    // A single-origin test cannot catch a refactor that merges the assert and mutate loops; this
+    // one
+    // does - it would decrement origin 100 before checking origin 200's permission.
+    doThrow(new RuntimeException("no permission"))
+        .when(subSampleApiMgr)
+        .assertUserCanEditSubSample(200L, user);
+    ApiInventoryOperationPost request = new ApiInventoryOperationPost();
+    request.setOrigins(
+        List.of(
+            origin(100L, new ApiQuantityInfo(new BigDecimal("0.6"), 3)),
+            origin(200L, new ApiQuantityInfo(new BigDecimal("1.5"), 3))));
+    request.setNewSample(new ApiSampleWithFullSubSamples("Derived material"));
+
+    assertThrows(RuntimeException.class, () -> manager.performOperation(request, user));
+
+    verify(subSampleApiMgr, never()).registerApiSubSampleUsage(eq(100L), any(), eq(user));
+    verify(sampleApiMgr, never()).createNewApiSample(any(), any());
+  }
+
+  @Test
   void terminalOperationAddsOriginFieldsAndCreatesNoSample() {
     // Destroy (noOutput): no new sample is sent, and the operation adds a custom field to the
     // origin

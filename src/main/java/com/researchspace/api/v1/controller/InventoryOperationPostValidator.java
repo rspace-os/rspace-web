@@ -44,7 +44,7 @@ public class InventoryOperationPostValidator implements Validator {
       errors.rejectValue(
           "origins",
           "errors.inventory.operation.originsRequired",
-          "At least one origin subsample must be provided");
+          "At least one origin subsample must be provided for the operation.");
       return;
     }
 
@@ -53,7 +53,9 @@ public class InventoryOperationPostValidator implements Validator {
       errors.pushNestedPath(String.format("origins[%d]", index++));
       if (origin.getId() == null) {
         errors.rejectValue(
-            "id", "errors.inventory.operation.originIdRequired", "Each origin must have an id");
+            "id",
+            "errors.inventory.operation.originIdRequired",
+            "Each origin must identify a subsample by id.");
       }
       if (!isNonNegativeQuantity(origin.getAmountTaken())) {
         errors.rejectValue(

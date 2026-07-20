@@ -38,6 +38,11 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
     // where the user (hence read permission) is available. Only when the structural checks passed,
     // so
     // every origin has a valid id to load. Same 400/BindException contract as the other rules.
+    // The read runs in its own transaction, separate from the later performOperation mutation, so
+    // under concurrency this check is advisory: it can act on a slightly stale quantity. That is
+    // safe because registerApiSubSampleUsage subtracts and clamps at zero (an origin can only ever
+    // decrease, never go negative), so the worst case is an origin ending at zero rather than a
+    // 400.
     if (!errors.hasErrors()) {
       int index = 0;
       for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {

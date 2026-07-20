@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { operationFunctions } from "../operationFunctions";
 
 describe("operationFunctions.increment", () => {
@@ -25,16 +25,20 @@ describe("operationFunctions.increment", () => {
 describe("operationFunctions.today", () => {
   const { today } = operationFunctions;
 
+  afterEach(() => vi.useRealTimers());
+
   it("takes no parameters", () => {
     expect(today.params).toEqual([]);
   });
 
-  it("returns today's local date as an ISO calendar date (YYYY-MM-DD)", () => {
-    const result = String(today.fn());
-    expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    // Matches the local date parts (not UTC), so it is the user's local "today".
-    const now = new Date();
-    const pad = (n: number) => String(n).padStart(2, "0");
-    expect(result).toBe(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+  it("returns the local calendar date (YYYY-MM-DD), not the UTC date", () => {
+    // Late local evening on a fixed day: in a negative-offset timezone the UTC clock has already
+    // rolled to the next day, so a toISOString()-based (UTC) implementation would return "2026-03-15"
+    // here and fail. The instant is built from local parts, so the expected local date is 2026-03-14
+    // in every timezone. This is a hardcoded expectation (not recomputed from the impl's own logic),
+    // so it actually pins the output rather than mirroring it.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 2, 14, 23, 30, 0));
+    expect(String(today.fn())).toBe("2026-03-14");
   });
 });

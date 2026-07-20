@@ -6,10 +6,11 @@ export type OperationResult = { id: number; globalId: string; name: string };
 
 /**
  * POST a configured operation to the thin backend endpoint. The /api/inventory/v1/ prefix is
- * already applied by InvApiService, so the resource is just "operations".
+ * already applied by InvApiService, so the resource is just "operations". Resolves to null for a
+ * terminal operation (noOutput, e.g. Destroy), which creates no sample and so returns an empty body.
  */
-export async function performOperation(request: OperationRequest): Promise<OperationResult> {
-  const { data } = await ApiService.post<OperationResult>("operations", request);
+export async function performOperation(request: OperationRequest): Promise<OperationResult | null> {
+  const { data } = await ApiService.post<OperationResult | null>("operations", request);
   return data;
 }
 

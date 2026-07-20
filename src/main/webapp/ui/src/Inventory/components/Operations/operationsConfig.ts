@@ -120,7 +120,7 @@ const OperationSchema = v.object({
   noOutput: v.optional(v.boolean()),
   documentationStep: v.boolean(),
   // The wizard steps to show, in order. Optional; when omitted the wizard uses its default sequence.
-  // A terminal operation (Destroy) sets ["details","confirm"] to skip template and amounts.
+  // A terminal operation (Destroy) sets ["confirm"] to skip details, template and amounts.
   steps: v.optional(v.array(StepSchema)),
   inputs: v.array(InputSchema),
   effect: EffectSchema,

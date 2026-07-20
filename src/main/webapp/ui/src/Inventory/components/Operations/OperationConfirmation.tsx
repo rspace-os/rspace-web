@@ -57,7 +57,11 @@ function OperationConfirmation({
   const storageTemp = effect.storageTempFrom ? (values[effect.storageTempFrom] as OperationQuantity) : null;
   const name = effect.nameFrom ? String(values[effect.nameFrom]) : "";
   const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
-  const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, values) : "";
+  // The link field name may interpolate {originName} (Pool's "Pooled from: {originName}"), which is
+  // not in `values` - it is injected per origin at build time. Supply the (representative) origin's
+  // name so the preview resolves; without it ICU throws on the missing argument and the raw template
+  // string is shown. The real per-origin names are set correctly in buildOperationRequest.
+  const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
   // Preview the values the operation will compute (adr/0006), e.g. Destroy's disposed date, so the
   // origin-field rows show the actual content. today needs no parent fields; a computed that reads a
   // parent field previews its fallback here, which is acceptable for a preview.

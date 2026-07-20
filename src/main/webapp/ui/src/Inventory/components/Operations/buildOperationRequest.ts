@@ -74,7 +74,6 @@ export function buildOperationRequest(params: {
 
   const originUpdates: Array<OperationOriginUpdate> = origins.map((origin) => ({
     id: origin.id,
-    globalId: origin.globalId,
     amountTaken: amountTakenFor(origin),
     ...(originFields.length ? { extraFields: originFields } : {}),
   }));

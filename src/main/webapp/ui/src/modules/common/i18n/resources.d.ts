@@ -3786,7 +3786,6 @@ export default interface Resources {
     "operations": {
       "action": {
         "process": "Process",
-        "singleSubsampleOnly": "Select a single subsample to process.",
         "subsampleOnly": "Operations can only be run on a subsample."
       },
       "aliquot": {
@@ -3877,7 +3876,6 @@ export default interface Resources {
       },
       "template": {
         "checking": "Checking template…",
-        "derivedName": "{name} (template)",
         "description": "Optionally choose a template for the new sample.",
         "fromSample": "Use the parent sample's template",
         "loadingTemplates": "Loading templates…",

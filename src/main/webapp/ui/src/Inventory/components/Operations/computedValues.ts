@@ -21,6 +21,19 @@ export type ComputedContext = {
   resolveFieldName: (key: string) => string;
 };
 
+/**
+ * The parent sample's fields a computed value may read: its template-defined fields AND its ad-hoc
+ * extra (custom) fields, combined. Both must be searched - a value like Passage number is often added
+ * as a custom field, so it lives in `extraFields`; reading only `fields` would miss it and every
+ * `parentSampleField` lookup would fall back to its start value (the original Passage "stuck at 1" bug).
+ */
+export function gatherParentFields(sample: {
+  fields: ReadonlyArray<SampleField>;
+  extraFields: ReadonlyArray<SampleField>;
+}): Array<SampleField> {
+  return [...sample.fields, ...sample.extraFields];
+}
+
 /** The content of the (case- and whitespace-insensitively) named field, or undefined if absent. */
 function parentFieldValue(fields: ReadonlyArray<SampleField>, name: string): string | number | undefined {
   const wanted = name.trim().toLowerCase();
