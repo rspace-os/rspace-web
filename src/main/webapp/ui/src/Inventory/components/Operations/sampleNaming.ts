@@ -6,12 +6,29 @@
  * field stays editable.
  */
 
-/** "<origin name> <process name>", trimming each part and dropping an empty one (no dangling space). */
+// A trailing subsample serial (".01", ".12") the backend adds to each subsample of a sample.
+const SUBSAMPLE_SERIAL = /\.\d+$/;
+// A trailing dedup suffix ("_1", "_2") firstAvailableName appends to disambiguate a name.
+const DEDUP_SUFFIX = /_\d+$/;
+
+/**
+ * "<origin name> <process name>", trimming each part and dropping an empty one (no dangling space) -
+ * except when the process name is already the tail of the origin name, in which case it is NOT
+ * appended again. Otherwise repeated runs of the same process would grow the name without bound
+ * ("SUB PROC" -> "SUB PROC PROC" -> ...). The check ignores a trailing subsample serial (".01") and
+ * dedup suffix ("_1") and is case-insensitive; when the process is already present the stripped base
+ * is returned, so the caller's de-duplication turns "SUB PROC" into "SUB PROC_1", "SUB PROC_2", etc.
+ */
 export function derivedSampleName(originName: string, processName: string): string {
-  return [originName, processName]
-    .map((part) => part.trim())
-    .filter((part) => part !== "")
-    .join(" ");
+  const origin = originName.trim();
+  const process = processName.trim();
+  if (process === "") return origin;
+  const stripped = origin.replace(SUBSAMPLE_SERIAL, "").replace(DEDUP_SUFFIX, "").trimEnd();
+  const tail = stripped.toLowerCase();
+  const proc = process.toLowerCase();
+  // The process must be the whole tail or follow a space, so "SUBPROC" does not match "PROC".
+  if (tail === proc || tail.endsWith(` ${proc}`)) return stripped;
+  return origin === "" ? process : `${origin} ${process}`;
 }
 
 /**

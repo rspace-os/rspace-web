@@ -63,6 +63,27 @@ describe("detailsValid", () => {
   });
 });
 
+describe("detailsValid temperature limit", () => {
+  // cryo with a configured storage-temperature ceiling of -18 C (as in operations_config.json)
+  const cryoWithMax = {
+    ...cryo,
+    inputs: cryo.inputs.map((i) => (i.key === "storageTemp" ? { ...i, maxCelsius: -18 } : i)),
+  } as unknown as InventoryOperation;
+
+  it("rejects a storage temperature above the configured maximum", () => {
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -10, unitId: 8 } })).toBe(false);
+  });
+
+  it("accepts a storage temperature at or below the configured maximum", () => {
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -18, unitId: 8 } })).toBe(true);
+    expect(detailsValid(cryoWithMax, { ...validValues, storageTemp: { numericValue: -80, unitId: 8 } })).toBe(true);
+  });
+
+  it("does not constrain the temperature when no maximum is configured", () => {
+    expect(detailsValid(cryo, { ...validValues, storageTemp: { numericValue: 20, unitId: 8 } })).toBe(true);
+  });
+});
+
 describe("amountTakenExceedsOrigin", () => {
   // unit ids: 3 = millilitres, 4 = litres (same, volume, category); origin holds 400 ml.
   const origin = { numericValue: 400, unitId: 3 };
@@ -91,10 +112,14 @@ describe("amountTakenExceedsOrigin", () => {
     ).toBe(false);
   });
 
-  it("does not flag an incomplete (unit-unset) amount or a missing origin quantity", () => {
+  it("does not flag an incomplete (unit-unset) amount", () => {
     expect(
       amountTakenExceedsOrigin(cryo, { ...validValues, amountTaken: { numericValue: 999, unitId: 0 } }, origin),
     ).toBe(false);
-    expect(amountTakenExceedsOrigin(cryo, validValues, null)).toBe(false);
+  });
+
+  it("flags a positive amount taken from an origin that has no quantity (treated as zero available)", () => {
+    // A subsample whose volume was never set reads as 0, so taking any positive amount is over-removal.
+    expect(amountTakenExceedsOrigin(cryo, validValues, null)).toBe(true);
   });
 });

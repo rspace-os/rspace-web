@@ -72,7 +72,7 @@ describe("buildOperationRequest (Derive)", () => {
     }
   });
 
-  it("puts the IsDerivedFrom link (named with the process) on the sample AND every subsample", () => {
+  it("puts the IsDerivedFrom link (named with the process) on the sample only, never on the subsamples", () => {
     const expectedName = "Is Derived From using process: PCR";
     const sampleLink = request.newSample.extraFields[0] as OperationLinkField;
     expect(sampleLink.name).toBe(expectedName);
@@ -81,10 +81,9 @@ describe("buildOperationRequest (Derive)", () => {
       targetGlobalId: "SS100",
       versionPin: null,
     });
+    // The process links belong on the created sample, not on any subsample it creates.
     for (const subSample of request.newSample.subSamples) {
-      const link = subSample.extraFields[0] as OperationLinkField;
-      expect(link.name).toBe(expectedName);
-      expect(link.link.targetGlobalId).toBe("SS100");
+      expect(subSample.extraFields).toEqual([]);
     }
   });
 
@@ -96,7 +95,7 @@ describe("buildOperationRequest (Derive)", () => {
     expect(request.operationType).toBe("derive");
   });
 
-  it("adds the optional documentation link (IsDocumentedBy) to the sample and every subsample", () => {
+  it("adds the optional documentation link (IsDocumentedBy) to the sample only, not the subsamples", () => {
     const withDoc = buildOperationRequest({
       operation: deriveOperation,
       values: deriveValues,
@@ -108,8 +107,9 @@ describe("buildOperationRequest (Derive)", () => {
     const docOn = (fields: Array<{ type: string }>) =>
       fields.some((f) => (f as OperationLinkField).link?.relationType === "IsDocumentedBy");
     expect(docOn(withDoc.newSample.extraFields)).toBe(true);
+    // The documentation link, like the provenance link, stays on the sample and off the subsamples.
     for (const subSample of withDoc.newSample.subSamples) {
-      expect(docOn(subSample.extraFields)).toBe(true);
+      expect(subSample.extraFields).toEqual([]);
     }
   });
 });
@@ -150,5 +150,36 @@ describe("buildOperationRequest (operation-specific fields)", () => {
     expect(textField).toMatchObject({ content: "DMSO 10%" });
     // text fields live on the sample only, not on the subsamples
     expect(request.newSample.subSamples[0].extraFields.every((f) => f.type === "link")).toBe(true);
+  });
+});
+
+// An operation with no amountTakenFrom (e.g. Passage) must NOT send an empty origins array - the
+// backend rejects that. It sends the origin with a zero amount (a no-op decrement), so the origin
+// is still linked and permission-checked but its quantity is unchanged. See adr/0002.
+describe("buildOperationRequest (operation that does not decrement the origin)", () => {
+  const passageOperation: InventoryOperation = {
+    key: "passage",
+    labelKey: "operations.passage.label",
+    minSelected: 1,
+    maxSelected: 1,
+    documentationStep: true,
+    inputs: [],
+    effect: {
+      nameFrom: "sampleName",
+      countFrom: "count",
+      eachAmountFrom: "eachAmount",
+      links: [{ relationType: "IsDerivedFrom", fieldNameKey: "operations.passage.linkFieldName" }],
+    },
+  };
+  const request = buildOperationRequest({
+    operation: passageOperation,
+    values: { sampleName: "Culture P2", count: 1, eachAmount: { numericValue: 2, unitId: 3 } },
+    origin,
+    resolveLabel,
+    templateId: null,
+  });
+
+  it("sends the origin with a zero amount taken (not an empty origins array)", () => {
+    expect(request.origins).toEqual([{ id: 100, globalId: "SS100", amountTaken: { numericValue: 0, unitId: 3 } }]);
   });
 });

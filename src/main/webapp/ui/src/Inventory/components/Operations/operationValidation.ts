@@ -1,6 +1,30 @@
 import { toCommonUnit } from "@/stores/definitions/Units";
-import type { InventoryOperation } from "./operationsConfig";
+import type { InventoryOperation, OperationInputConfig } from "./operationsConfig";
 import type { OperationInputs, OperationQuantity } from "./types";
+
+/**
+ * Whether a temperature input's value is above its configured Celsius ceiling (e.g. cryopreserve must
+ * be stored at or below -18 °C, set via `maxCelsius` in operations_config.json). Returns false for a
+ * non-temperature input, an unconfigured ceiling, or an incomplete value - none of which is an
+ * over-temperature. Pure and shared by detailsValid (gating) and the field's inline error.
+ */
+export function temperatureExceedsMax(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
+  if (input.type !== "temperature" || input.maxCelsius === undefined) return false;
+  if (!value || !Number.isFinite(value.numericValue)) return false;
+  return value.numericValue > input.maxCelsius;
+}
+
+/**
+ * Whether a temperature input's value is below its configured Celsius floor (e.g. revive must be
+ * stored at or above 4 °C, set via `minCelsius` in operations_config.json). The mirror of
+ * temperatureExceedsMax: false for a non-temperature input, an unconfigured floor, or an incomplete
+ * value. Pure and shared by detailsValid (gating) and the field's inline error.
+ */
+export function temperatureBelowMin(input: OperationInputConfig, value: OperationQuantity | undefined): boolean {
+  if (input.type !== "temperature" || input.minCelsius === undefined) return false;
+  if (!value || !Number.isFinite(value.numericValue)) return false;
+  return value.numericValue < input.minCelsius;
+}
 
 /**
  * Whether the given inputs are complete enough to advance. Text fields are required only when
@@ -27,6 +51,9 @@ export function detailsValid(
     } else {
       const q = value as OperationQuantity | undefined;
       if (!q || !Number.isFinite(q.numericValue)) return false;
+      // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) blocks it.
+      if (temperatureExceedsMax(input, q)) return false;
+      if (temperatureBelowMin(input, q)) return false;
       if (input.type === "quantity") {
         // The unit is part of the amount: a cleared/unset unit (e.g. after switching to a new process
         // name) leaves the amount incomplete, so block the step until the user picks one.
@@ -48,8 +75,9 @@ export function detailsValid(
  * comparison is unit-aware: both are converted to the atomic unit of their (shared) category, so an
  * entry in a different unit within the same category (e.g. 0.5 L against a 400 ml origin) is compared
  * correctly. The amount-taken field is constrained to the origin's category, so a cross-category
- * comparison never arises. Returns false for an incomplete (unit-unset) amount or a missing origin
- * quantity - those are handled by detailsValid and never treated as over-removal.
+ * comparison never arises. An incomplete (unit-unset) amount is not treated as over-removal (that is
+ * handled by detailsValid). A missing origin quantity means the origin holds nothing (a subsample
+ * whose volume was never set reads as 0), so any positive amount taken from it is over-removal.
  */
 export function amountTakenExceedsOrigin(
   operation: InventoryOperation,
@@ -57,10 +85,9 @@ export function amountTakenExceedsOrigin(
   originQuantity: OperationQuantity | null,
 ): boolean {
   const takenFrom = operation.effect.amountTakenFrom;
-  if (!takenFrom || !originQuantity) return false;
+  if (!takenFrom) return false;
   const taken = values[takenFrom] as OperationQuantity | undefined;
   if (!taken || !Number.isFinite(taken.numericValue) || taken.unitId <= 0) return false;
-  return (
-    toCommonUnit(taken.numericValue, taken.unitId) > toCommonUnit(originQuantity.numericValue, originQuantity.unitId)
-  );
+  const originCommon = originQuantity ? toCommonUnit(originQuantity.numericValue, originQuantity.unitId) : 0;
+  return toCommonUnit(taken.numericValue, taken.unitId) > originCommon;
 }

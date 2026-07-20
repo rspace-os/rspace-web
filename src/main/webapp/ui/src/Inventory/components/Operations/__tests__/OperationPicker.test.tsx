@@ -6,8 +6,8 @@ import OperationPicker from "../OperationPicker";
 describe("OperationPicker", () => {
   it("lists the operations from operations_config.json as selectable buttons", () => {
     render(<OperationPicker onSelect={() => undefined} />);
-    // Derive + Cryopreserve are the two shipped operations.
-    expect(screen.getAllByRole("button")).toHaveLength(2);
+    // One button per shipped operation: Derive, Cryopreserve, Aliquot, Revive, Passage.
+    expect(screen.getAllByRole("button")).toHaveLength(5);
   });
 
   it("reports the chosen operation's key", async () => {

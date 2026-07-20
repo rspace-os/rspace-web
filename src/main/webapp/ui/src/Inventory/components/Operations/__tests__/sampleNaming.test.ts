@@ -10,6 +10,28 @@ describe("derivedSampleName", () => {
     expect(derivedSampleName("  Blood  ", "")).toBe("Blood");
     expect(derivedSampleName("Blood", "   ")).toBe("Blood");
   });
+
+  it("does not re-append the process name when it is already the tail of the origin name", () => {
+    // otherwise repeated runs grow the name: "SUB PROC" -> "SUB PROC PROC" -> ...
+    expect(derivedSampleName("SUB PROC", "PROC")).toBe("SUB PROC");
+    expect(derivedSampleName("Blood dna extraction", "dna extraction")).toBe("Blood dna extraction");
+  });
+
+  it("ignores a _N dedup suffix and a .N subsample serial when checking for the process at the end", () => {
+    expect(derivedSampleName("SUB PROC_1", "PROC")).toBe("SUB PROC");
+    expect(derivedSampleName("SUB PROC.01", "PROC")).toBe("SUB PROC");
+    expect(derivedSampleName("SUB PROC_2.01", "PROC")).toBe("SUB PROC");
+  });
+
+  it("still appends the process when it is not the tail of the origin name", () => {
+    expect(derivedSampleName("SUB", "PROC")).toBe("SUB PROC");
+    // must be a trailing word, not merely a substring at the end
+    expect(derivedSampleName("SUBPROC", "PROC")).toBe("SUBPROC PROC");
+  });
+
+  it("matches the process at the end case-insensitively, preserving the origin's original casing", () => {
+    expect(derivedSampleName("SUB proc", "PROC")).toBe("SUB proc");
+  });
 });
 
 describe("firstAvailableName", () => {

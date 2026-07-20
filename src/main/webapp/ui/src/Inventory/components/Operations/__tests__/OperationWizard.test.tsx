@@ -186,6 +186,21 @@ describe("OperationWizard step flow", () => {
     expect(nextButton()).toBeEnabled();
   });
 
+  it("keeps Next disabled on the details step when the origin subsample has an amount of 0", async () => {
+    const user = userEvent.setup();
+    render(
+      <OperationWizard
+        open
+        onClose={vi.fn()}
+        origin={makeMockSubSample({ quantity: { numericValue: 0, unitId: 3 } })}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    // a process name would normally enable Next (see the test above), but a zero-amount origin blocks it
+    await user.type(screen.getByTestId("proc"), "dna");
+    expect(nextButton()).toBeDisabled();
+  });
+
   it("auto-derives the sample name from the origin sample name and the process name", async () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origin={makeMockSubSample({})} />);

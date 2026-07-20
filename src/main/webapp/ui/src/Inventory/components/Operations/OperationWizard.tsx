@@ -12,6 +12,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import SubmitSpinnerButton from "@/components/SubmitSpinnerButton";
 import useUiPreference, { PREFERENCES } from "@/hooks/api/useUiPreference";
+import useViewportDimensions from "@/hooks/browser/useViewportDimensions";
 import { mkAlert } from "@/stores/contexts/Alert";
 import { CELSIUS } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
@@ -21,6 +22,7 @@ import { showToastWhilstPending } from "@/util/alerts";
 import { getErrorMessage } from "@/util/error";
 import ContextDialog from "../ContextMenu/ContextDialog";
 import { buildOperationRequest } from "./buildOperationRequest";
+import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
 import DocumentationStep from "./DocumentationStep";
 import OperationConfirmation from "./OperationConfirmation";
@@ -57,7 +59,12 @@ function buildInitialValues(operation: InventoryOperation, origin: SubSampleMode
     } else if (input.type === "quantity") {
       values[input.key] = { numericValue: 0, unitId };
     } else {
-      values[input.key] = { numericValue: -80, unitId: CELSIUS };
+      // Temperature: start at the input's configured default (revive: 4 °C, in its 4..120 range), or
+      // -80 °C for an unconfigured one (cryopreserve), so the field opens on a valid value.
+      values[input.key] = {
+        numericValue: typeof input.default === "number" ? input.default : -80,
+        unitId: CELSIUS,
+      };
     }
   }
   return values;
@@ -117,6 +124,9 @@ function OperationWizard({
 }): React.ReactNode {
   const { t } = useTranslation(["inventory", "common"]);
   const resolveLabel = t as unknown as (key: string, params?: Record<string, unknown>) => string;
+  // On small viewports (phones/tablets) the horizontal label row gets cramped, so fall back to the
+  // classic vertical stepper (labels stacked, active step's content inline beneath its label).
+  const { isViewportSmall } = useViewportDimensions();
   const [operation, setOperation] = React.useState<InventoryOperation | null>(null);
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
@@ -280,7 +290,9 @@ function OperationWizard({
   const stepValid = (): boolean => {
     if (!operation) return false;
     const key = stepKeys[activeStep];
-    if (key === "details") return detailsValid(operation, values, detailKeys);
+    // An origin with no amount (0, or a quantity never set) cannot be operated on: block the first
+    // step (OperationDetailsStep shows the matching error).
+    if (key === "details") return detailsValid(operation, values, detailKeys) && getValue(origin.quantity) > 0;
     if (key === "template") return templateStepValid(templateSelection);
     if (key === "amounts")
       return (
@@ -294,16 +306,29 @@ function OperationWizard({
     if (!operation) return;
     setSubmitting(true);
     try {
-      // "fromSample" reuses the origin sample's own template; make sure it is loaded before reading it.
-      if (templateSelection.mode === "fromSample") await origin.sample.fetchAdditionalInfo();
+      // "fromSample" reads the origin sample's own template, and a computed value with a
+      // parentSampleField arg reads a field on it (e.g. Passage number); either way the parent's
+      // fields must be loaded before we read them.
+      const computed = operation.effect.computed ?? [];
+      const needsParentFields = computed.some((c) => Object.values(c.args).some((a) => "parentSampleField" in a));
+      if (templateSelection.mode === "fromSample" || needsParentFields) await origin.sample.fetchAdditionalInfo();
       const templateId = resolveTemplateId({
         mode: templateSelection.mode,
         pickedTemplateId: templateSelection.templateId,
         originSampleTemplateId: origin.sample.templateId ?? null,
       });
+      // Apply the operation's computed values (adr/0006), e.g. Passage number = parent's + 1, else 1.
+      // Computed only for the request, so they never enter the remembered bundle below.
+      const submitValues: OperationInputs = computed.length
+        ? applyComputedValues(operation, {
+            parentFields: origin.sample.fields,
+            values,
+            resolveFieldName: resolveLabel,
+          })
+        : values;
       const request = buildOperationRequest({
         operation,
-        values,
+        values: submitValues,
         origin: toOrigin(origin),
         resolveLabel,
         templateId,
@@ -430,18 +455,30 @@ function OperationWizard({
     : t("operations.wizard.title");
 
   return (
-    <ContextDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <ContextDialog open={open} onClose={onClose} maxWidth="sm" fullWidth disableBackdropClick>
       <DialogTitle>{heading}</DialogTitle>
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ minHeight: operation ? "60vh" : undefined }}>
         {operation ? (
-          <Stepper activeStep={activeStep} orientation="vertical">
-            {stepKeys.map((key, index) => (
-              <Step key={key}>
-                <StepLabel>{stepLabel(key)}</StepLabel>
-                <StepContent>{index === activeStep ? stepContent(key) : null}</StepContent>
-              </Step>
-            ))}
-          </Stepper>
+          <>
+            {/* Wide viewports: horizontal stepper (labels in one compact top row) so each step's
+                content — especially the confirmation card and its varied display formats — gets the
+                dialog's full width. Small viewports: vertical stepper with the active step's content
+                rendered inline beneath its label, which reads better on a narrow screen. */}
+            <Stepper
+              activeStep={activeStep}
+              orientation={isViewportSmall ? "vertical" : "horizontal"}
+              alternativeLabel={!isViewportSmall}
+              sx={{ mb: isViewportSmall ? 0 : 2 }}
+            >
+              {stepKeys.map((key, index) => (
+                <Step key={key}>
+                  <StepLabel>{stepLabel(key)}</StepLabel>
+                  {isViewportSmall ? <StepContent>{index === activeStep ? stepContent(key) : null}</StepContent> : null}
+                </Step>
+              ))}
+            </Stepper>
+            {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
+          </>
         ) : (
           <OperationPicker onSelect={selectOperation} />
         )}

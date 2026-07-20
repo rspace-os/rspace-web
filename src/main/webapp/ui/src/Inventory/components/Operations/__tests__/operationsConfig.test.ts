@@ -48,7 +48,25 @@ describe("operations_config.json", () => {
     expect(derive?.effect.links[0].relationType).toBe("IsDerivedFrom");
   });
 
-  it("offers both operations for a single-subsample selection", () => {
-    expect(operationsForSelectionSize(1).map((o) => o.key)).toEqual(["derive", "cryopreserve"]);
+  it("offers every shipped operation for a single-subsample selection", () => {
+    expect(operationsForSelectionSize(1).map((o) => o.key)).toEqual([
+      "derive",
+      "cryopreserve",
+      "aliquot",
+      "revive",
+      "passage",
+    ]);
+  });
+
+  it("configures Cryopreserve's storage temperature with a -18 C ceiling", () => {
+    const storageTemp = cryopreserve.inputs.find((i) => i.key === "storageTemp");
+    expect(storageTemp?.type).toBe("temperature");
+    expect(storageTemp?.maxCelsius).toBe(-18);
+  });
+
+  it("includes the storage temperature in Cryopreserve's confirmation summary", () => {
+    expect(cryopreserve.confirmSummary).toContain("storageTemp");
+    // Derive has no storage temperature, so its summary does not list one
+    expect(derive.confirmSummary).not.toContain("storageTemp");
   });
 });

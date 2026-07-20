@@ -50,8 +50,14 @@ allowed increasing the origin, which is wrong, so it was reversed.
 - Reuses the existing, tested usage-registration primitive, including its unit
   conversion and zero-clamping.
 - Re-aligns with the ticket table's "decrement by amount" wording.
-- Operations that must leave the origin untouched simply omit `amountTakenFrom` (no
-  origin update is sent). When the field is present, the amount must be positive.
+- Operations that must leave the origin untouched omit `amountTakenFrom`; the frontend
+  then sends that origin with a **zero** amount taken. The backend treats a zero decrement
+  as a no-op (`registerApiSubSampleUsage` returns early - no quantity change, no timestamp
+  bump), so the origin stays untouched while remaining linked and permission-checked. The
+  amount taken is therefore a **non-negative** decrement: positive for operations that
+  consume the origin (which the wizard still requires to be > 0), zero for those that only
+  link to it (e.g. Passage). Negative is never valid. (Revises the earlier "must be
+  positive / no origin update is sent" wording once Passage introduced a link-only origin.)
 
 ## Alternatives considered
 

@@ -210,10 +210,28 @@ describe("OperationDetailsStep", () => {
         onRememberChange={onRemember}
       />,
     );
-    // the label references the chosen process name (values are remembered per process name)
-    expect(screen.getByText(/rememberProcessValues/)).toBeInTheDocument();
+    // the label references the chosen process name (values are remembered per process name);
+    // anchor the match so it hits the label, not the sibling rememberProcessValuesHelp helper text
+    expect(screen.getByText(/rememberProcessValues$/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("checkbox"));
     expect(onRemember).toHaveBeenCalledWith(true);
+  });
+
+  it("presents the remember checkbox as a plain control with helper text, not inside an info alert", () => {
+    render(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={origin}
+        values={{ ...values, processName: "dna" }}
+        onChange={() => undefined}
+        remember={false}
+        onRememberChange={vi.fn()}
+      />,
+    );
+    // no coloured info panel (hence no non-interactive info icon) wrapping the checkbox
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    // the explanatory helper text carries the emphasis instead
+    expect(screen.getByText(/rememberProcessValuesHelp/)).toBeInTheDocument();
   });
 
   it("omits the remember checkbox when no handler is provided (e.g. the amounts section)", () => {
@@ -221,6 +239,60 @@ describe("OperationDetailsStep", () => {
       <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
     );
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it("flags an origin subsample that has an amount of 0 on the details step", () => {
+    const zeroOrigin = {
+      quantity: { numericValue: 0, unitId: 3 },
+      quantityCategory: "volume",
+    } as unknown as SubSampleModel;
+    render(
+      <OperationDetailsStep
+        operation={processOperation}
+        origin={zeroOrigin}
+        values={values}
+        onChange={() => undefined}
+      />,
+    );
+    const message = screen.getByText(/originAmountZero/);
+    expect(message).toBeInTheDocument();
+    // shown as a prominent MUI error alert (red background), not easy-to-miss plain text
+    expect(message.closest(".MuiAlert-colorError")).not.toBeNull();
+  });
+
+  it("does not flag the origin amount when the subsample has a positive quantity", () => {
+    render(
+      <OperationDetailsStep operation={processOperation} origin={origin} values={values} onChange={() => undefined} />,
+    );
+    expect(screen.queryByText(/originAmountZero/)).not.toBeInTheDocument();
+  });
+
+  it("shows an error on the temperature field when it exceeds the configured maximum", () => {
+    const cryoOp = {
+      ...operation,
+      inputs: [{ key: "storageTemp", type: "temperature", labelKey: "operations.fields.storageTemp", maxCelsius: -18 }],
+      effect: { ...operation.effect, storageTempFrom: "storageTemp" },
+    } as unknown as InventoryOperation;
+    const { rerender } = render(
+      <OperationDetailsStep
+        operation={cryoOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: -10, unitId: 8 } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.getByText(/storageTempMax/)).toBeInTheDocument();
+
+    // at or below the maximum, no error
+    rerender(
+      <OperationDetailsStep
+        operation={cryoOp}
+        origin={origin}
+        values={{ storageTemp: { numericValue: -80, unitId: 8 } }}
+        onChange={() => undefined}
+      />,
+    );
+    expect(screen.queryByText(/storageTempMax/)).not.toBeInTheDocument();
   });
 
   it("disables the derived sample-name field with a hint until a process name is entered", () => {

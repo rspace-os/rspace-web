@@ -5,6 +5,7 @@
  * is inferred from it, and the JSON is validated at module load so an authoring mistake fails fast.
  */
 import * as v from "valibot";
+import { type OperationFunctionName, operationFunctions } from "./operationFunctions";
 import rawConfig from "./operations_config.json";
 
 const InputSchema = v.object({
@@ -13,6 +14,12 @@ const InputSchema = v.object({
   labelKey: v.string(),
   required: v.optional(v.boolean()),
   min: v.optional(v.number()),
+  // Upper bound (in Celsius) for a "temperature" input, e.g. cryopreserve must be stored at or below
+  // this. Configurable per operation; when absent the temperature is unconstrained.
+  maxCelsius: v.optional(v.number()),
+  // Lower bound (in Celsius) for a "temperature" input, e.g. revive must be stored at or above this.
+  // Configurable per operation; when absent there is no lower bound.
+  minCelsius: v.optional(v.number()),
   default: v.optional(v.union([v.string(), v.number()])),
 });
 
@@ -26,6 +33,25 @@ const TextFieldSpecSchema = v.object({
   contentFrom: v.string(),
 });
 
+// An argument handed to an Operation function (adr/0006), sourced one of three ways: the content of a
+// named field on the origin's parent sample (resolved in the user's locale via the i18n key), a
+// literal constant, or the current value of another wizard input. The wizard resolves these at submit.
+const ArgSourceSchema = v.union([
+  v.object({ parentSampleField: v.string() }),
+  v.object({ constant: v.union([v.string(), v.number()]) }),
+  v.object({ input: v.string() }),
+]);
+
+// A computed value: apply the named Operation function to its bound args and write the single return
+// value into input `into`, which the effect wiring (e.g. textFields) then consumes. Evaluated in array
+// order, so a later entry may read an earlier one's `into` via an `input` arg. The function must exist
+// in the registry and its params must match `args` (checked at load; see assertComputedValuesValid).
+const ComputedSchema = v.object({
+  fn: v.string(),
+  into: v.string(),
+  args: v.record(v.string(), ArgSourceSchema),
+});
+
 const EffectSchema = v.object({
   nameFrom: v.string(),
   countFrom: v.string(),
@@ -35,9 +61,25 @@ const EffectSchema = v.object({
   // per process name (see processNames.ts) and the field becomes an autocomplete of saved names.
   processNameFrom: v.optional(v.string()),
   storageTempFrom: v.optional(v.string()),
+  // Values computed at submit by applying an Operation function (adr/0006) to configured arguments,
+  // each written into a named input the effect wiring then consumes (e.g. Passage's passage number).
+  computed: v.optional(v.array(ComputedSchema)),
   links: v.array(LinkSpecSchema),
   textFields: v.optional(v.array(TextFieldSpecSchema)),
 });
+
+// The fields the confirmation summary can show, in the order configured per operation. Each maps to
+// a renderer in OperationConfirmation; a field whose value is absent (e.g. documentation when none
+// was linked) is skipped. Editing an operation's confirmSummary changes its summary, no code change.
+const ConfirmSummaryFieldSchema = v.picklist([
+  "process",
+  "template",
+  "subsamples",
+  "amountTaken",
+  "storageTemp",
+  "linkBack",
+  "documentation",
+]);
 
 const OperationSchema = v.object({
   key: v.string(),
@@ -48,13 +90,53 @@ const OperationSchema = v.object({
   documentationStep: v.boolean(),
   inputs: v.array(InputSchema),
   effect: EffectSchema,
+  // Which rows the confirmation summary shows, in order. Optional; when omitted a default set is used.
+  confirmSummary: v.optional(v.array(ConfirmSummaryFieldSchema)),
 });
 
 export type OperationInputConfig = v.InferOutput<typeof InputSchema>;
 export type OperationLinkSpec = v.InferOutput<typeof LinkSpecSchema>;
+export type ComputedArgSource = v.InferOutput<typeof ArgSourceSchema>;
+export type ComputedValueSpec = v.InferOutput<typeof ComputedSchema>;
+export type ConfirmSummaryField = v.InferOutput<typeof ConfirmSummaryFieldSchema>;
 export type InventoryOperation = v.InferOutput<typeof OperationSchema>;
 
 export const operations: Array<InventoryOperation> = v.parse(v.array(OperationSchema), rawConfig);
+
+/**
+ * Fail fast, like the valibot parse above: every computed value must name an Operation function that
+ * exists in the registry and bind exactly that function's declared parameters. An authoring mistake
+ * throws at module load rather than at submit. See adr/0006.
+ */
+function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
+  for (const op of ops) {
+    for (const computed of op.effect.computed ?? []) {
+      const def = operationFunctions[computed.fn as OperationFunctionName];
+      if (!def) {
+        throw new Error(
+          `operations_config.json: operation "${op.key}" references unknown operation function "${computed.fn}"`,
+        );
+      }
+      const bound = Object.keys(computed.args);
+      for (const name of bound) {
+        if (!def.params.includes(name)) {
+          throw new Error(
+            `operations_config.json: operation function "${computed.fn}" has no parameter "${name}" (operation "${op.key}")`,
+          );
+        }
+      }
+      for (const param of def.params) {
+        if (!bound.includes(param)) {
+          throw new Error(
+            `operations_config.json: operation function "${computed.fn}" requires argument "${param}" (operation "${op.key}")`,
+          );
+        }
+      }
+    }
+  }
+}
+
+assertComputedValuesValid(operations);
 
 /** Operations applicable to a selection of the given size (all are subsample-only; see the wizard). */
 export function operationsForSelectionSize(count: number): Array<InventoryOperation> {

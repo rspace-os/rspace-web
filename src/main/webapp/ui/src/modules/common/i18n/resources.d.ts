@@ -3789,13 +3789,27 @@ export default interface Resources {
         "singleSubsampleOnly": "Select a single subsample to process.",
         "subsampleOnly": "Operations can only be run on a subsample."
       },
+      "aliquot": {
+        "description": "Take equal-volume aliquots. Same material; parent volume decremented.",
+        "label": "Aliquot",
+        "linkFieldName": "Derived from"
+      },
       "confirm": {
-        "amountTaken": "Amount taken from original: {amount} {unit}.",
-        "created": "with {count} new subsample(s) of {amount} {unit} each.",
-        "documentation": "Documented by: {name}.",
-        "link": "Links new records back to the origin ({name}).",
-        "newSample": "Creates a new sample “{name}”.",
-        "process": "Process: {name}."
+        "cardSubheader": "New sample · via {operation}",
+        "labels": {
+          "amountTaken": "Amount taken",
+          "documentation": "Documented by",
+          "linkBack": "Links back to",
+          "process": "Process",
+          "storageTemp": "Storage temperature",
+          "subsamples": "New subsamples",
+          "template": "Template"
+        },
+        "values": {
+          "amountTaken": "{amount} {unit}",
+          "storageTemp": "{temp} °C",
+          "subsamples": "{count} × {amount} {unit} each"
+        }
       },
       "cryopreserve": {
         "cryomediumField": "Cryomedium",
@@ -3810,7 +3824,7 @@ export default interface Resources {
       },
       "documentation": {
         "choose": "Choose document",
-        "description": "Optionally link this operation to an ELN document, such as a protocol (SOP).",
+        "description": "Optionally link this operation to a document in ELN or Gallery, such as a protocol (SOP).",
         "fieldName": "Documented by",
         "none": "No document linked.",
         "selected": "Linked document: {name}"
@@ -3821,12 +3835,27 @@ export default interface Resources {
         "count": "Number of new subsamples",
         "cryomedium": "Cryomedium",
         "eachAmount": "Amount per new subsample",
+        "originAmountZero": "Subsample has an amount of 0.",
         "processName": "Process name",
         "processNameRequired": "Enter a process name first.",
         "rememberProcessValues": "Remember values for this process: {name}",
+        "rememberProcessValuesHelp": "Reuses this process's template, amounts and documentation next time.",
         "sampleName": "New sample name",
         "storageTemp": "Storage temperature",
+        "storageTempMax": "Storage temperature must be at most {max}°C.",
+        "storageTempMin": "Storage temperature must be at least {min}°C.",
         "temperatureUnit": "°C"
+      },
+      "passage": {
+        "description": "Create the next passage as a new sample, numbering it from the parent's passage number.",
+        "label": "Passage",
+        "linkFieldName": "Passaged from",
+        "numberField": "Passage number"
+      },
+      "revive": {
+        "description": "Revive frozen material into a new sample, recorded as a variant of the original.",
+        "label": "Revive",
+        "linkFieldName": "Revived from"
       },
       "template": {
         "checking": "Checking template…",
@@ -3841,9 +3870,8 @@ export default interface Resources {
         "pick": "Choose an existing template",
         "searchLabel": "Search templates",
         "selectedLabel": "Selected template",
-        "summaryFromSample": "Template: from {name}",
-        "summaryNone": "Template: none (ad-hoc sample)",
-        "summaryPick": "Template: {name}"
+        "valueFromSample": "From {name}",
+        "valueNone": "None (ad-hoc sample)"
       },
       "wizard": {
         "failed": "The operation could not be completed",

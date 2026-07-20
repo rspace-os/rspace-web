@@ -3,19 +3,33 @@
 A framework for Inventory "operations": a user picks a subsample, a wizard gathers
 input, and the system atomically creates one new Sample that parents N new
 subsamples, links the new records back to the origin, and adjusts the origin's
-quantity. Derive and Cryopreserve ship with it.
+quantity. Derive, Cryopreserve, Aliquot, and Revive ship as pure config; **Passage**
+also ships but needed code (an **operation function** in the registry plus a backend
+relaxation to allow an origin that is linked but not decremented) - it is the worked
+example that the "no Java" promise holds only within the vocabulary of config primitives
+and registered functions. See the schema table below and, for the full reasoning,
+`.claude/remaining-operations-plan.md` ("The limits of config-only").
 
 The design rationale is in the top-level ADRs: `adr/0001` (frontend-declared
 operations, thin atomic backend), `adr/0002` (amount-taken decrement model),
 `adr/0003` (user-chosen template), `adr/0004` (every operation has a process name),
-and `adr/0005` (over-removal is rejected, not clamped). The shared vocabulary is in
-the top-level `CONTEXT.md`.
+`adr/0005` (over-removal is rejected, not clamped), and `adr/0006` (operation-function
+registry for computed values). The shared vocabulary is in the top-level `CONTEXT.md`.
 
 ## The one thing to know
 
-**Adding a new operation is a frontend-config change. No Java.** You add an entry
-to `operations_config.json` and some i18n strings. The backend endpoint and the
-wizard UI are generic and never change per operation.
+**Adding a new operation is a frontend-config change - *if* its every effect is already
+a primitive in the config vocabulary.** For such operations you add an entry to
+`operations_config.json` and some i18n strings; the backend endpoint and wizard UI are
+generic and never change. This holds for Derive, Cryopreserve, Aliquot, and Revive.
+
+It does **not** hold when an operation needs an effect the vocabulary cannot express -
+then you add an operation function (or change the backend), i.e. you write a small amount
+of code. Passage was the first such case (a `computed` value backed by the `increment`
+operation function, plus a backend change to allow a linked-but-not-decremented origin).
+Before assuming a new operation is config-only, decompose its effects and check each against
+the schema table below; if one is missing, it is a (usually small) code story. The full
+reasoning is in `.claude/remaining-operations-plan.md` ("The limits of config-only").
 
 ## How it fits together
 
@@ -40,8 +54,8 @@ Files:
   - `operationsConfig.ts` — valibot schema (single source of truth for the shape)
     + `operations` / `operationsForSelectionSize`.
   - `buildOperationRequest.ts` — pure: (operation + collected values + origin) →
-    request body. Puts provenance and documentation links on the new sample **and
-    every created subsample**; text fields (e.g. Cryomedium) on the sample only.
+    request body. Puts provenance and documentation links, and text fields (e.g.
+    Cryomedium), on the new sample only, **never on the created subsamples**.
   - `types.ts` — request/response types mirroring the backend DTO.
   - the wizard components (`OperationWizard`, `OperationPicker`,
     `OperationDetailsStep`, `DocumentationStep`, `OperationConfirmation`,
@@ -62,15 +76,17 @@ Files:
    | `labelKey`, `descriptionKey` | i18n keys shown in the picker |
    | `minSelected`, `maxSelected` | selection size the operation applies to (Derive/Cryo: 1/1) |
    | `documentationStep` | `true` to offer the optional `IsDocumentedBy` SOP-link step |
-   | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature` |
+   | `inputs[]` | wizard fields: `{ key, type, labelKey, required?, min?, maxCelsius?, minCelsius?, default? }`; `type` is `text` \| `integer` \| `quantity` \| `temperature`. `maxCelsius`/`minCelsius` bound a `temperature` input (Cryopreserve's `storageTemp` is `≤ -18`; Revive's is `4..120`): an out-of-bounds value shows an inline error and blocks the step. `default` (a number) seeds a `temperature` input's opening value, e.g. Revive's `4` so it starts in range (an unconfigured one opens at `-80`) |
    | `effect.nameFrom` | input key holding the new sample's name |
    | `effect.countFrom` | input key holding N (number of new subsamples) |
    | `effect.eachAmountFrom` | input key holding each subsample's amount (unit category follows the chosen template, else the origin's — see the amounts step below) |
    | `effect.amountTakenFrom` | input key holding the amount to remove from the origin (a positive decrement; the wizard blocks and the backend rejects taking more than the origin holds — see adr/0005); omit for operations that never change the origin |
    | `effect.processNameFrom` | input key holding a user-entered process name (Derive). **Omit** for a fixed process name equal to the operation `key` (Cryopreserve → `"cryopreserve"`); every operation has a process name (adr/0004) |
-   | `effect.storageTempFrom` | input key holding a temperature → set as the new sample's `storageTempMin/Max` (Cryopreserve) |
+   | `effect.storageTempFrom` | input key holding a temperature → set as the new sample's `storageTempMin/Max` (Cryopreserve, Revive) |
+   | `effect.computed[]` | `{ fn, into, args }`; a **computed value** (adr/0006). At submit the wizard applies operation function `fn` (from the registry in `operationFunctions.ts`) to the bound `args` and writes the single result into input `into`, which other wiring (e.g. `textFields`) then consumes. Each arg is sourced by `{ parentSampleField: <i18nKey> }` (that field's content on the origin's parent sample, or absent), `{ constant: <n\|str> }`, or `{ input: <inputKey> }`. Evaluated in array order (a later entry can read an earlier `into` via `input`). Results never enter the remembered bundle. **A new computation is a new registry function** (code) referenced here — see "Operation functions" below |
    | `effect.links[]` | `{ relationType, fieldNameKey }`; a DataCite relation link back to the origin. `fieldNameKey` may interpolate an input, e.g. `"Is Derived From using process: {processName}"` |
    | `effect.textFields[]` | `{ nameKey, contentFrom }`; plain-text field on the new sample (e.g. Cryomedium) |
+   | `confirmSummary[]` | ordered list of rows the confirmation step shows, from `process` \| `template` \| `subsamples` \| `amountTaken` \| `storageTemp` \| `linkBack` \| `documentation` (Cryopreserve lists `storageTemp`). A configured row whose value is absent (e.g. `documentation` with no linked doc) is skipped. Optional; a default order is used when omitted |
 
    Order the `inputs[]` with the process name first and the name second: the wizard
    derives the sample name from the process name (see the Details step below).
@@ -96,6 +112,51 @@ required **only** a config entry: a `cryomedium` text input written to a
 That is the framework's acceptance test: if a new operation needs Java or bespoke
 wizard code, the framework has a gap worth fixing rather than working around.
 
+## Operation functions (computed values) — adr/0006
+
+When an operation needs a value the declarative config cannot express (a computation),
+you write an **operation function** rather than a one-off config primitive. The registry
+is `operationFunctions.ts`: each entry is a named pure function that declares its
+parameter names and returns a single value. Config selects it via `effect.computed[]` and
+binds each argument to a source; the wizard resolves the arguments at submit
+(`computedValues.ts`) and writes the result into the `into` input, which normal wiring
+(usually `textFields`) then persists.
+
+**To add a computation:** add a function to the registry, then reference it from config.
+
+```ts
+// operationFunctions.ts — the computation, in code
+increment: {
+  params: ["current", "start"],
+  fn: ({ current, start }) => {
+    const n = Number(current);
+    return Number.isFinite(n) ? n + 1 : Number(start);
+  },
+},
+```
+
+```json
+// operations_config.json — which function, how to source its args, where the result goes
+"effect": {
+  "computed": [{
+    "fn": "increment",
+    "into": "passageNumber",
+    "args": {
+      "current": { "parentSampleField": "operations.passage.numberField" },
+      "start":   { "constant": 1 }
+    }
+  }],
+  "textFields": [{ "nameKey": "operations.passage.numberField", "contentFrom": "passageNumber" }]
+}
+```
+
+That is Passage's passage number: read the "Passage number" field on the origin's parent
+sample, add one (or start at 1 when absent), and write it back onto the new sample under
+the same field name, so successive passages increment. The reference is validated at module
+load — an unknown function or a mismatched argument throws at startup, not at submit. The
+registry is **dev-only**: it is not an end-user expression language, so config carries no
+executable logic (adr/0006).
+
 ## What the backend does
 
 `POST /api/inventory/v1/operations` is a thin, generic coordinator. It validates
@@ -120,20 +181,34 @@ same `rejectValue` → `BindException` → HTTP 400 path as the structural rules
 
 ## Wizard steps
 
+The wizard is a modal dialog rendered via `ContextDialog` with `disableBackdropClick`,
+so a click outside does not dismiss it and discard progress (Escape and Cancel still
+close it).
+
 Five steps: **Details → Template → Amounts → Documentation (optional) → Confirm**.
 
 1. **Details** — the **process name** (a free-solo autocomplete of the user's saved
    names for this operation; fixed and non-editable for operations without one), the
    **derived sample name**, and the single **remember** checkbox (below). The sample
-   name is auto-derived as `"<origin sample name> <process name>"` and de-duplicated
+   name is auto-derived as `"<origin sample name> <process name>"` — but if the process
+   name is already the tail of the origin name (ignoring any `_N` dedup and `.NN`
+   subsample-serial suffixes, matched case-insensitively) it is **not** appended again,
+   so repeated runs of the same process do not grow the name (`SUB PROC` stays `SUB PROC`
+   and de-dups to `SUB PROC_1`, `SUB PROC_2`, … rather than becoming `SUB PROC PROC`).
+   The name is then de-duplicated
    against existing sample names with a `_1`, `_2`, … suffix (`firstAvailableName` in
    `sampleNaming.ts` probes each candidate via `operationsApi.sampleNameAvailable`,
    which calls the exact, own-scoped `samples/validateNameForNewSample` endpoint — **not**
    the tokenised full-text search, which cannot do an exact multi-word name check;
-   degrades to no-dedup on error). Its field is **disabled until a process name is
+   degrades to no-dedup on error). Deleted samples do not count as a name clash
+   (`SampleDao.entityNameExistsForUser` filters `deleted=false`), so a name freed by
+   deletion is reused without a suffix. Its field is **disabled until a process name is
    entered**, then
    editable (a manual edit stops further auto-derivation for the run). Next is disabled
-   until the process name and sample name are present.
+   until the process name and sample name are present. If the origin subsample has **no
+   amount** (0, or a quantity never set), this step shows an error
+   (`operations.fields.originAmountZero`) and blocks Next: you cannot operate on an empty
+   subsample.
 2. **Template** — its own step now (see below). Next is disabled until a choice is made.
 3. **Amounts** — the number of new subsamples (full width) and the two quantities
    (each-amount and amount-taken, sharing a row). For a fresh process name (nothing
@@ -154,8 +229,9 @@ validates each step's own inputs.
 
 ### Remembered process values (single checkbox)
 
-One "Remember values for this process: {name}" checkbox on the Details step (in an
-Alert-style box) governs everything kept for a process name — the template choice, the
+One "Remember values for this process: {name}" checkbox on the Details step (a plain
+checkbox with explanatory helper text beneath it, `rememberProcessValuesHelp`) governs
+everything kept for a process name — the template choice, the
 documentation link, and the collected amounts — as a single bundle
 (`processValues.ts`, preference `INVENTORY_OPERATION_PROCESS_VALUES`; supersedes the
 earlier per-item template/doc/amount preferences). Ticking it loads the saved bundle
@@ -182,7 +258,7 @@ both the numbers and the units.
 ## Links
 
 Every link (provenance and the optional documentation link) is placed on the new
-sample and on every created subsample. Links reuse the RSDEV-1131 `link` field
+sample only, never on the subsamples it creates. Links reuse the RSDEV-1131 `link` field
 (`{ relationType, targetGlobalId, versionPin }`); relation types come from
 `DataCiteRelationType`. The documentation link targets an ELN document
 (`IsDocumentedBy`); it is remembered as part of the single per-process bundle (see
@@ -198,7 +274,11 @@ Amounts step's units (above). Three choices, in this order:
   own template (`origin.sample.templateId`). The wizard **never creates** a template
   (adr/0003); when the parent has none this option is **disabled with a hint** and the
   user must pick an existing template or none, or create a template separately first.
-- **An existing template** — chosen with the shared `TemplatePicker`.
+- **An existing template** — chosen from `WizardTemplatePicker`, a single-select,
+  server-backed autocomplete (same interaction as the process-name field, but the user
+  cannot enter free text: typing re-queries the backend, debounced, and only a returned
+  template can be selected). Each option shows the template name and its global id as
+  plain text; reopening it pre-fills the currently-selected template.
 - **No template** — an ad-hoc sample (`templateId: null`).
 
 The choice resolves to a single `templateId` (or null) via `resolveTemplateId` and is

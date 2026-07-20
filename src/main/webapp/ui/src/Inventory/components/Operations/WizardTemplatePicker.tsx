@@ -1,37 +1,50 @@
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
+import Autocomplete from "@mui/material/Autocomplete";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+import { debounce } from "es-toolkit";
 import { observer } from "mobx-react-lite";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import AlwaysNewWindowNavigationContext from "@/components/AlwaysNewWindowNavigationContext";
-import GlobalId from "@/components/GlobalId";
-import type { InventoryRecord } from "@/stores/definitions/InventoryRecord";
 import AlwaysNewFactory from "@/stores/models/Factory/AlwaysNewFactory";
 import Search from "@/stores/models/Search";
-import TemplateModel from "@/stores/models/TemplateModel";
+import type TemplateModel from "@/stores/models/TemplateModel";
+
+// Matches the process-name field's debounce (and the Inventory tag search): long enough that typing a
+// name does not fire a request per keystroke, short enough to feel live.
+const SEARCH_DEBOUNCE_MS = 300;
+// The backend rejects a search term shorter than this (422). Below it, show the initial list rather
+// than sending a query that would only error.
+const MIN_SEARCH_CHARS = 2;
+
+/** One selectable template. `record` is the underlying model (null for a pre-filled placeholder that
+ *  represents an already-chosen template not present in the current result page). */
+type TemplateOption = { id: number; name: string; globalId: string; record: TemplateModel | null };
 
 /**
- * A deliberately minimal template picker used ONLY by the operation wizard: a search box plus a
- * radio list of the allowed templates, each showing its name and its global id as the standard
- * Inventory pill (a clickable link, with the template record-type icon, via the shared GlobalId
- * component). It reuses the shared Search model (so it fetches the same permission-filtered
- * SAMPLE_TEMPLATE results and searches the same way) but renders its own stripped-down UI, so it
- * does not touch the shared TemplatePicker/InventoryPicker used elsewhere in Inventory.
- *
- * The list is wrapped in AlwaysNewWindowNavigationContext so clicking a template's id-pill opens
- * that template in a new window rather than navigating away from (and losing) the wizard.
+ * The wizard's "choose an existing template" control: a single-select, server-backed autocomplete
+ * (adr/0003). It mirrors the process-name dropdown, except the user cannot enter free text - typing
+ * re-queries the backend (debounced) and only a returned template can be chosen. Selecting one hands
+ * the record to the parent, which validates it (a template with mandatory, defaultless fields is
+ * blocked there). It reuses the shared Search model so it fetches the same permission-filtered
+ * SAMPLE_TEMPLATE results, but renders its own minimal UI.
  */
-function WizardTemplatePicker({ setTemplate }: { setTemplate: (template: TemplateModel) => void }): React.ReactNode {
+function WizardTemplatePicker({
+  setTemplate,
+  selectedTemplateId = null,
+  selectedTemplateName,
+}: {
+  setTemplate: (template: TemplateModel) => void;
+  /** The already-chosen template (if any), so a reopened picker starts pre-filled on it. */
+  selectedTemplateId?: number | null;
+  selectedTemplateName?: string;
+}): React.ReactNode {
   const { t } = useTranslation("inventory");
   const [search] = React.useState(
     () =>
       new Search({
         factory: new AlwaysNewFactory(),
-        // pageSize is generous so most template libraries fit without paging; the search box
+        // The server does the filtering (typing re-queries), so a modest page is enough; the box
         // narrows anything larger. ponytail: no pager here, add one if template counts get big.
         fetcherParams: { resultType: "SAMPLE_TEMPLATE", pageSize: 25, orderBy: "name", order: "asc" },
         uiConfig: {
@@ -41,65 +54,89 @@ function WizardTemplatePicker({ setTemplate }: { setTemplate: (template: Templat
         },
       }),
   );
-  const [query, setQuery] = React.useState("");
-  const [selectedGlobalId, setSelectedGlobalId] = React.useState<string | null>(null);
 
+  // The already-selected template, shown pre-filled. It may not be in the current result page, so it
+  // is carried as its own option with no record (selecting it again is a no-op; it is already chosen).
+  const preselected: TemplateOption | null =
+    selectedTemplateId != null
+      ? { id: selectedTemplateId, name: selectedTemplateName ?? "", globalId: "", record: null }
+      : null;
+  const [value, setValue] = React.useState<TemplateOption | null>(preselected);
+  const [inputValue, setInputValue] = React.useState(preselected?.name ?? "");
+
+  // Load an initial list as soon as the picker opens (empty query), so the dropdown is never empty.
   React.useEffect(() => {
     void search.fetcher.performInitialSearch(null);
   }, [search]);
 
-  const runSearch = () => {
-    void search.fetcher.performInitialSearch({ query, resultType: "SAMPLE_TEMPLATE" });
-  };
+  // Re-query the backend as the user types, debounced. Filtering is server-side, so the Autocomplete's
+  // own client-side filter is disabled (see filterOptions below). A term shorter than the backend's
+  // minimum is not sent; instead the initial (unfiltered) list is shown, so a single keystroke never
+  // triggers a rejected request.
+  const runSearch = React.useMemo(
+    () =>
+      debounce((query: string) => {
+        const trimmed = query.trim();
+        if (trimmed.length >= MIN_SEARCH_CHARS) {
+          void search.fetcher.performInitialSearch({ query: trimmed, resultType: "SAMPLE_TEMPLATE" });
+        } else {
+          void search.fetcher.performInitialSearch(null);
+        }
+      }, SEARCH_DEBOUNCE_MS),
+    [search],
+  );
+  React.useEffect(() => () => runSearch.cancel(), [runSearch]);
 
-  const select = (record: InventoryRecord) => {
-    if (!(record instanceof TemplateModel)) return;
-    setSelectedGlobalId(record.globalId ?? null);
-    setTemplate(record);
-  };
+  const results: Array<TemplateOption> = search.results.map((record) => ({
+    id: Number(record.id),
+    name: record.name,
+    globalId: record.globalId ?? "",
+    record: record as TemplateModel,
+  }));
+  // Keep the pre-filled template selectable/visible even before (or if never) it appears in results.
+  const options: Array<TemplateOption> =
+    preselected && !results.some((option) => option.id === preselected.id) ? [preselected, ...results] : results;
 
   return (
-    <Stack spacing={1}>
-      <TextField
-        size="small"
-        margin="dense"
-        value={query}
-        label={t("operations.template.searchLabel")}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            runSearch();
-          }
-        }}
-      />
-      {search.fetcher.loading ? (
-        <Typography variant="body2">{t("operations.template.loadingTemplates")}</Typography>
-      ) : search.results.length === 0 ? (
-        <Typography variant="body2">{t("operations.template.noTemplates")}</Typography>
-      ) : (
-        <AlwaysNewWindowNavigationContext>
-          <RadioGroup value={selectedGlobalId ?? ""}>
-            {search.results.map((record) => (
-              <FormControlLabel
-                key={record.globalId}
-                value={record.globalId ?? ""}
-                control={<Radio />}
-                onChange={() => select(record)}
-                label={
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                    <Typography variant="body2" component="span">
-                      {record.name}
-                    </Typography>
-                    <GlobalId record={record} size="small" />
-                  </Stack>
-                }
-              />
-            ))}
-          </RadioGroup>
-        </AlwaysNewWindowNavigationContext>
+    <Autocomplete
+      options={options}
+      value={value}
+      inputValue={inputValue}
+      loading={search.fetcher.loading}
+      isOptionEqualToValue={(option, selected) => option.id === selected.id}
+      getOptionLabel={(option) => option.name}
+      // The server already filtered; return the options unchanged rather than filtering again client-side.
+      filterOptions={(opts) => opts}
+      onChange={(_event, next) => {
+        setValue(next);
+        if (next?.record) setTemplate(next.record);
+      }}
+      onInputChange={(_event, next, reason) => {
+        setInputValue(next);
+        // Re-query on typing and on clearing (which returns to the initial list); ignore "reset",
+        // which fires when a selection syncs the input and must not trigger a search.
+        if (reason === "input" || reason === "clear") runSearch(next);
+      }}
+      renderOption={(props, option) => (
+        <li {...props} key={option.id}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Typography variant="body2" component="span">
+              {option.name}
+            </Typography>
+            {option.globalId ? (
+              <Typography variant="caption" component="span" color="text.secondary">
+                {option.globalId}
+              </Typography>
+            ) : null}
+          </Stack>
+        </li>
       )}
-    </Stack>
+      renderInput={(params) => (
+        <TextField {...params} size="small" margin="dense" label={t("operations.template.searchLabel")} />
+      )}
+      noOptionsText={t("operations.template.noTemplates")}
+      loadingText={t("operations.template.loadingTemplates")}
+    />
   );
 }
 

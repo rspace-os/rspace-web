@@ -127,14 +127,24 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
-  void doesNotFlagNullQuantitiesOrDifferentCategories() {
+  void doesNotFlagNullAmountTakenOrDifferentCategories() {
     assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(null, grams("5")));
-    assertFalse(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
     // a volume amount against a mass origin is not commensurate, so it is not treated as
     // over-removal
     ApiQuantityInfo sixMillilitres =
         new ApiQuantityInfo(new BigDecimal("6"), RSUnitDef.MILLI_LITRE.getId());
     assertFalse(
         InventoryOperationPostValidator.amountTakenExceedsOrigin(sixMillilitres, grams("5")));
+  }
+
+  @Test
+  void flagsPositiveAmountTakenFromOriginWithNoQuantity() {
+    // A subsample whose quantity was never set holds nothing, so taking any positive amount from it
+    // is over-removal (adr/0005). A null origin quantity, or one with a null numeric value, is
+    // treated as zero available rather than as "no limit".
+    assertTrue(InventoryOperationPostValidator.amountTakenExceedsOrigin(grams("6"), null));
+    assertTrue(
+        InventoryOperationPostValidator.amountTakenExceedsOrigin(
+            grams("6"), new ApiQuantityInfo(null, RSUnitDef.GRAM.getId())));
   }
 }

@@ -135,7 +135,11 @@ function TemplateStep({
       ) : null}
       {value.mode === "pick" ? (
         <>
-          <WizardTemplatePicker setTemplate={handlePickTemplate} />
+          <WizardTemplatePicker
+            setTemplate={handlePickTemplate}
+            selectedTemplateId={value.templateId}
+            selectedTemplateName={value.templateName}
+          />
           {checking ? <Typography variant="body2">{t("operations.template.checking")}</Typography> : null}
           {blockError ? (
             <Typography variant="body2" color="error">

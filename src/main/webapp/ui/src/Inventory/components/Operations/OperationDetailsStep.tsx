@@ -1,7 +1,9 @@
 import Alert from "@mui/material/Alert";
 import Autocomplete from "@mui/material/Autocomplete";
 import Checkbox from "@mui/material/Checkbox";
+import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import InputAdornment from "@mui/material/InputAdornment";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -13,7 +15,7 @@ import { CELSIUS } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
 import { type InventoryOperation, type OperationInputConfig, resolveProcessName } from "./operationsConfig";
-import { amountTakenExceedsOrigin } from "./operationValidation";
+import { amountTakenExceedsOrigin, temperatureBelowMin, temperatureExceedsMax } from "./operationValidation";
 import { filterProcessNames } from "./processNames";
 import type { OperationInputs, OperationInputValue, OperationQuantity } from "./types";
 
@@ -156,6 +158,10 @@ function OperationDetailsStep({
         values,
         origin.quantity ? { numericValue: getValue(origin.quantity), unitId: getUnitId(origin.quantity) } : null,
       );
+    // A temperature outside its configured bounds (cryopreserve > -18 °C, revive < 4 °C) is flagged
+    // inline; the wizard blocks Next on the same condition (detailsValid).
+    const overMaxTemp = temperatureExceedsMax(input, quantity);
+    const underMinTemp = temperatureBelowMin(input, quantity);
     return (
       <TextField
         key={input.key}
@@ -164,8 +170,16 @@ function OperationDetailsStep({
         value={quantity ? String(quantity.numericValue) : ""}
         fullWidth
         margin="dense"
-        error={overRemoval}
-        helperText={overRemoval ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
+        error={overRemoval || overMaxTemp || underMinTemp}
+        helperText={
+          overRemoval
+            ? label("operations.fields.amountTakenExceedsOrigin")
+            : overMaxTemp
+              ? label("operations.fields.storageTempMax", { max: input.maxCelsius })
+              : underMinTemp
+                ? label("operations.fields.storageTempMin", { min: input.minCelsius })
+                : undefined
+        }
         onChange={(e) => set(input.key, { numericValue: numericValue(Number(e.target.value)), unitId: currentUnitId })}
         slotProps={{
           htmlInput: isTemperature ? {} : { min: 0, max: MAX_QUANTITY },
@@ -205,19 +219,27 @@ function OperationDetailsStep({
     );
   }
 
+  // An origin subsample with no amount (0, or a quantity never set - getValue reads null as 0) cannot
+  // be operated on: block the first step with a clear error (the wizard also disables Next on this).
+  const originHasNoAmount = getValue(origin.quantity) <= 0;
+
   return (
     <Stack spacing={1}>
+      {originHasNoAmount ? <Alert severity="error">{label("operations.fields.originAmountZero")}</Alert> : null}
       {operation.inputs.filter((input) => !amountKeys.has(input.key)).map(renderInput)}
       {onRememberChange ? (
         // One checkbox governs everything remembered for this process name (template, amounts,
-        // documentation). Rendered in an Alert so it stands out; the info icon plus text means the
-        // emphasis is not conveyed by colour alone (accessible).
-        <Alert severity="info" sx={{ "& .MuiAlert-message": { width: "100%" } }}>
+        // documentation). A plain checkbox with helper text beneath: the explanatory line, not a
+        // coloured panel, conveys what "remember" does (see the operation-wizard dev note).
+        <FormControl>
           <FormControlLabel
             control={<Checkbox checked={remember} onChange={(e) => onRememberChange(e.target.checked)} />}
             label={label("operations.fields.rememberProcessValues", { name: processName })}
           />
-        </Alert>
+          <FormHelperText sx={{ mt: 0, ml: "34px" }}>
+            {label("operations.fields.rememberProcessValuesHelp")}
+          </FormHelperText>
+        </FormControl>
       ) : null}
     </Stack>
   );
