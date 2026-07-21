@@ -315,3 +315,64 @@ describe("OperationDetailsStep", () => {
     expect(screen.getByRole("textbox", { name: /fields\.sampleName/i })).toBeEnabled();
   });
 });
+
+// The "amount to take" modes for a multi-origin operation (adr/0009).
+describe("OperationDetailsStep (amount modes)", () => {
+  const poolOp = {
+    ...operation,
+    requiresMultiple: true,
+    takeAmountPerSubsample: true,
+  } as unknown as InventoryOperation;
+  const poolOrigins = [
+    { globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 }, quantityCategory: "volume" },
+    { globalId: "SS2", name: "Vial B", quantity: { numericValue: 8, unitId: 3 }, quantityCategory: "volume" },
+  ] as unknown as Array<SubSampleModel>;
+
+  const renderPool = (overrides: Partial<React.ComponentProps<typeof OperationDetailsStep>> = {}) =>
+    render(
+      <OperationDetailsStep
+        operation={poolOp}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+        amountMode="same"
+        origins={poolOrigins}
+        onAmountModeChange={() => undefined}
+        perSubsampleAmounts={{}}
+        onPerSubsampleAmountsChange={() => undefined}
+        {...overrides}
+      />,
+    );
+
+  it("offers the three amount-to-take modes for a multi-origin operation", () => {
+    renderPool();
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+  });
+
+  it("does not show the amount-to-take radios for a single-origin operation", () => {
+    render(
+      <OperationDetailsStep
+        operation={operation}
+        origin={origin}
+        values={values}
+        onChange={() => undefined}
+        section="amounts"
+      />,
+    );
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+  });
+
+  it("reports the chosen mode through onAmountModeChange", async () => {
+    const onMode = vi.fn();
+    renderPool({ onAmountModeChange: onMode });
+    await userEvent.setup().click(screen.getByRole("radio", { name: /amountModePerSubsample/i }));
+    expect(onMode).toHaveBeenCalledWith("perSubsample");
+  });
+
+  it("shows one amount field per origin in 'per subsample' mode", () => {
+    renderPool({ amountMode: "perSubsample" });
+    expect(screen.getByRole("spinbutton", { name: /Vial A/ })).toBeInTheDocument();
+    expect(screen.getByRole("spinbutton", { name: /Vial B/ })).toBeInTheDocument();
+  });
+});

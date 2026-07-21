@@ -7,6 +7,7 @@
 import * as v from "valibot";
 import { type OperationFunctionName, operationFunctions } from "./operationFunctions";
 import rawConfig from "./operations_config.json";
+import type { AmountMode } from "./types";
 
 const InputSchema = v.object({
   key: v.string(),
@@ -112,9 +113,20 @@ const OperationSchema = v.object({
   key: v.string(),
   labelKey: v.string(),
   descriptionKey: v.optional(v.string()),
+  // Identifier of the icon shown beside the operation in the picker, resolved to a FontAwesome icon by
+  // the picker's registry (icons must be statically imported for tree-shaking, so the config only names
+  // one). Optional; an operation without it renders no icon.
+  iconKey: v.optional(v.string()),
   // Whether the operation consumes multiple origin subsamples (Pool); omitted/false = single-origin.
   // Drives which selection sizes enable it in the picker (see operationAvailability and adr/0007).
   requiresMultiple: v.optional(v.boolean()),
+  // Whether the amounts step offers the per-origin "amount to take" modes (same / take all / per
+  // subsample). Only meaningful for a multi-origin operation that takes an amount; for those it
+  // defaults to true. Ignored for single-origin operations, which always take one amount. See adr/0009.
+  takeAmountPerSubsample: v.optional(v.boolean()),
+  // The amount mode a multi-origin operation starts on, before the user changes it or a remembered
+  // bundle supplies one. Defaults to "same" when omitted; Pool sets "all". See adr/0009.
+  defaultAmountMode: v.optional(v.picklist(["same", "all", "perSubsample"])),
   // When true the operation produces no new sample/subsamples (it only acts on its origins, e.g.
   // Destroy). The wizard omits the new-sample effect wiring and the backend creates nothing.
   noOutput: v.optional(v.boolean()),
@@ -212,6 +224,30 @@ export function assertEffectReferencesValid(ops: Array<InventoryOperation>): voi
 }
 
 assertEffectReferencesValid(operations);
+
+/**
+ * Whether the amounts step should offer the per-origin "amount to take" modes for this operation
+ * (adr/0009): only a multi-origin operation that actually takes an amount, and only when its config
+ * has not opted out (`takeAmountPerSubsample` defaults to true for such operations). Single-origin
+ * operations always take a single amount, so this is false for them regardless of config.
+ */
+export function usesAmountModes(operation: InventoryOperation): boolean {
+  return (
+    Boolean(operation.requiresMultiple) &&
+    operation.effect.amountTakenFrom !== undefined &&
+    (operation.takeAmountPerSubsample ?? true)
+  );
+}
+
+/**
+ * The amount mode a multi-origin operation starts on before the user changes it or a remembered bundle
+ * supplies one (adr/0009): the operation's configured `defaultAmountMode`, or "same" when unset (e.g.
+ * Pool defaults to "all"). Always "same" for an operation that does not use amount modes, so a stray
+ * config value can never empty a single-origin operation's origin.
+ */
+export function resolveDefaultAmountMode(operation: InventoryOperation): AmountMode {
+  return usesAmountModes(operation) ? (operation.defaultAmountMode ?? "same") : "same";
+}
 
 export type OperationAvailability = { enabled: boolean; reasonKey?: string };
 

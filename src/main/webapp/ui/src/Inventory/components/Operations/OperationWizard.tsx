@@ -29,8 +29,13 @@ import OperationConfirmation from "./OperationConfirmation";
 import OperationDetailsStep from "./OperationDetailsStep";
 import OperationPicker from "./OperationPicker";
 import { performOperation, sampleNameAvailable } from "./operationsApi";
-import { type InventoryOperation, resolveProcessName } from "./operationsConfig";
-import { amountTakenExceedsOrigin, detailsValid } from "./operationValidation";
+import {
+  type InventoryOperation,
+  resolveDefaultAmountMode,
+  resolveProcessName,
+  usesAmountModes,
+} from "./operationsConfig";
+import { amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "./operationValidation";
 import { addProcessName, processNameDefaultAfterPerform, rememberKey } from "./processNames";
 import { normalizeProcessValues, type ProcessValues, processValuesAfterPerform } from "./processValues";
 import { derivedSampleName, firstAvailableName } from "./sampleNaming";
@@ -41,7 +46,7 @@ import {
   templateSelectionToDefault,
   templateStepValid,
 } from "./templateResolution";
-import type { OperationInputs, OperationOrigin } from "./types";
+import type { AmountMode, OperationInputs, OperationOrigin, PerSubsampleAmounts } from "./types";
 import { UNSET_UNIT } from "./types";
 
 // How long to wait after the process name settles before querying existing names to de-duplicate the
@@ -157,6 +162,13 @@ function OperationWizard({
   const [values, setValues] = React.useState<OperationInputs>({});
   const [documentation, setDocumentation] = React.useState<DocumentationSelection>(null);
   const [remember, setRemember] = React.useState(false);
+  // The multi-origin amount mode (adr/0009) and, for "perSubsample", the per-origin amounts by global
+  // id. Single-origin operations stay on "same".
+  const [amountMode, setAmountMode] = React.useState<AmountMode>("same");
+  const [perSubsampleAmounts, setPerSubsampleAmounts] = React.useState<PerSubsampleAmounts>({});
+  // When a complete remembered bundle loads, step one offers Perform straight away; "reviewing" is set
+  // once the user chooses to step through the wizard instead (adr/0009).
+  const [reviewing, setReviewing] = React.useState(false);
   // Whether the user has hand-edited the derived sample name; once they have, the wizard stops
   // re-deriving it from the process name.
   const [sampleNameEdited, setSampleNameEdited] = React.useState(false);
@@ -230,10 +242,19 @@ function OperationWizard({
         values: { ...base, ...bundle.values },
         templateSelection: templateSelectionFor(bundle.template),
         documentation: bundle.documentation,
+        amountMode: bundle.amountMode ?? resolveDefaultAmountMode(op),
+        perSubsampleAmounts: bundle.perSubsampleAmounts ?? {},
         remember: true,
       };
     }
-    return { values: base, templateSelection: templateSelectionFor(undefined), documentation: null, remember: false };
+    return {
+      values: base,
+      templateSelection: templateSelectionFor(undefined),
+      documentation: null,
+      amountMode: resolveDefaultAmountMode(op),
+      perSubsampleAmounts: {},
+      remember: false,
+    };
   };
 
   const selectOperation = (op: InventoryOperation) => {
@@ -252,6 +273,9 @@ function OperationWizard({
     setTemplateSelection(s.templateSelection);
     setDocumentation(s.documentation);
     setRemember(s.remember);
+    setAmountMode(s.amountMode);
+    setPerSubsampleAmounts(s.perSubsampleAmounts);
+    setReviewing(false);
     setSampleNameEdited(false);
     setActiveStep(0);
   };
@@ -275,6 +299,8 @@ function OperationWizard({
       setTemplateSelection(s.templateSelection);
       setDocumentation(s.documentation);
       setRemember(s.remember);
+      setAmountMode(s.amountMode);
+      setPerSubsampleAmounts(s.perSubsampleAmounts);
       return;
     }
     if (nameFrom && next[nameFrom] !== values[nameFrom]) setSampleNameEdited(true);
@@ -292,11 +318,15 @@ function OperationWizard({
         setValues((v) => ({ ...v, ...bundle.values }));
         setTemplateSelection(templateSelectionFor(bundle.template));
         setDocumentation(bundle.documentation);
+        setAmountMode(bundle.amountMode ?? "same");
+        setPerSubsampleAmounts(bundle.perSubsampleAmounts ?? {});
       }
     } else {
       setValues((v) => freshValues(operation, origin, v));
       setTemplateSelection(templateSelectionFor(undefined));
       setDocumentation(null);
+      setAmountMode("same");
+      setPerSubsampleAmounts({});
     }
   };
 
@@ -332,24 +362,53 @@ function OperationWizard({
     setActiveStep((s) => s - 1);
   };
 
-  const stepValid = (): boolean => {
+  // Whether the amounts step is valid, given the amount mode (adr/0009). "same" (and any operation
+  // without amount modes) checks the shared amount against the representative (smallest) origin; "all"
+  // is always valid (every origin emptied, never over-removal); "perSubsample" needs a positive,
+  // in-range amount for every origin, each checked against its own quantity. The created-sample
+  // count/each-amount must be valid in every mode.
+  const amountsStepValid = (): boolean => {
+    if (!operation) return false;
+    const sharedValid =
+      detailsValid(operation, values, amountKeys) &&
+      !amountTakenExceedsOrigin(operation, values, toOrigin(origin).quantity);
+    if (!usesAmountModes(operation)) return sharedValid;
+    const createdKeys: ReadonlySet<string> = new Set(
+      [operation.effect.countFrom, operation.effect.eachAmountFrom].filter((k): k is string => Boolean(k)),
+    );
+    if (!detailsValid(operation, values, createdKeys)) return false;
+    if (amountMode === "all") return true;
+    if (amountMode === "perSubsample") {
+      return origins.every((o) => {
+        const q = perSubsampleAmounts[o.globalId ?? ""];
+        if (!q || !Number.isFinite(q.numericValue) || q.unitId <= 0 || q.numericValue <= 0) return false;
+        return !quantityExceedsOrigin(q, toOrigin(o).quantity);
+      });
+    }
+    return sharedValid;
+  };
+
+  const stepValidFor = (key: string): boolean => {
     if (!operation) return false;
     // An operation that empties its origin (Destroy) cannot run on an empty subsample. It skips the
     // details step (where other operations gate this), so enforce it for every step here, blocking
     // Perform on the confirmation with the reason shown there.
     if (operation.effect.emptiesOrigin && getValue(origin.quantity) <= 0) return false;
-    const key = stepKeys[activeStep];
     // An origin with no amount (0, or a quantity never set) cannot be operated on: block the first
     // step (OperationDetailsStep shows the matching error).
     if (key === "details") return detailsValid(operation, values, detailKeys) && getValue(origin.quantity) > 0;
     if (key === "template") return templateStepValid(templateSelection);
-    if (key === "amounts")
-      return (
-        detailsValid(operation, values, amountKeys) &&
-        !amountTakenExceedsOrigin(operation, values, toOrigin(origin).quantity)
-      );
+    if (key === "amounts") return amountsStepValid();
     return true;
   };
+
+  const stepValid = (): boolean => stepValidFor(stepKeys[activeStep]);
+  // Every step complete and valid: the gate for the step-one fast path (adr/0009), only offered when a
+  // remembered bundle already makes the whole run performable.
+  const allStepsValid = (): boolean => operation !== null && stepKeys.every(stepValidFor);
+  // Step one shows the confirmation and Perform (skipping the wizard) when a remembered bundle fully
+  // specifies a valid run and the user has not chosen to step through it.
+  const fastPath = operation !== null && activeStep === 0 && remember && !reviewing && allStepsValid();
 
   const submit = async (): Promise<void> => {
     if (!operation) return;
@@ -391,6 +450,8 @@ function OperationWizard({
         documentationLink: documentation
           ? { fieldName: t("operations.documentation.fieldName"), targetGlobalId: documentation.globalId }
           : undefined,
+        amountMode,
+        perSubsampleAmounts,
       });
       await showToastWhilstPending(t("operations.wizard.inProgress"), performOperation(request));
       // Persist the "remember" bundle only now that Perform has succeeded, and only when the box is
@@ -404,6 +465,12 @@ function OperationWizard({
           ),
           template: templateSelectionToDefault(templateSelection),
           documentation,
+          // The amount mode and (for "perSubsample") the per-origin amounts are only meaningful for a
+          // multi-origin run, so store them only for such operations (adr/0009); a single-origin bundle
+          // stays as before, and an older bundle without them keeps normalising to "same".
+          ...(usesAmountModes(operation)
+            ? { amountMode, perSubsampleAmounts: amountMode === "perSubsample" ? perSubsampleAmounts : {} }
+            : {}),
         };
         setProcessValues(processValuesAfterPerform(processValues ?? {}, key, bundle, true));
         if (operation.effect.processNameFrom) {
@@ -487,12 +554,24 @@ function OperationWizard({
           onChange={onDetailsChange}
           section="amounts"
           unitCategories={[amountCategory]}
+          origins={origins}
+          amountMode={amountMode}
+          onAmountModeChange={setAmountMode}
+          perSubsampleAmounts={perSubsampleAmounts}
+          onPerSubsampleAmountsChange={setPerSubsampleAmounts}
         />
       );
     }
     if (key === "documentation") {
       return <DocumentationStep value={documentation} onChange={setDocumentation} />;
     }
+    return confirmationStep();
+  };
+
+  // The confirmation card, shared by the confirm step and the step-one fast path (adr/0009). Origins
+  // are passed as name + global id so a "per subsample" run can break the amounts down per origin.
+  const confirmationStep = (): React.ReactNode => {
+    if (!operation) return null;
     return (
       <OperationConfirmation
         operation={operation}
@@ -502,6 +581,9 @@ function OperationWizard({
         originSampleName={origin.sample.name}
         originName={origin.name ?? ""}
         originHasAmount={getValue(origin.quantity) > 0}
+        amountMode={amountMode}
+        perSubsampleAmounts={perSubsampleAmounts}
+        origins={origins.map((o) => ({ globalId: o.globalId ?? "", name: o.name ?? "" }))}
       />
     );
   };
@@ -519,26 +601,34 @@ function OperationWizard({
       <DialogTitle>{heading}</DialogTitle>
       <DialogContent dividers sx={{ minHeight: operation ? "60vh" : undefined }}>
         {operation ? (
-          <>
-            {/* Wide viewports: horizontal stepper (labels in one compact top row) so each step's
+          fastPath ? (
+            // A remembered run: show its confirmation on step one so the user can Perform without
+            // stepping through the wizard (adr/0009). "Review / edit" (below) drops into the stepper.
+            confirmationStep()
+          ) : (
+            <>
+              {/* Wide viewports: horizontal stepper (labels in one compact top row) so each step's
                 content — especially the confirmation card and its varied display formats — gets the
                 dialog's full width. Small viewports: vertical stepper with the active step's content
                 rendered inline beneath its label, which reads better on a narrow screen. */}
-            <Stepper
-              activeStep={activeStep}
-              orientation={isViewportSmall ? "vertical" : "horizontal"}
-              alternativeLabel={!isViewportSmall}
-              sx={{ mb: isViewportSmall ? 0 : 2 }}
-            >
-              {stepKeys.map((key, index) => (
-                <Step key={key}>
-                  <StepLabel>{stepLabel(key)}</StepLabel>
-                  {isViewportSmall ? <StepContent>{index === activeStep ? stepContent(key) : null}</StepContent> : null}
-                </Step>
-              ))}
-            </Stepper>
-            {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
-          </>
+              <Stepper
+                activeStep={activeStep}
+                orientation={isViewportSmall ? "vertical" : "horizontal"}
+                alternativeLabel={!isViewportSmall}
+                sx={{ mb: isViewportSmall ? 0 : 2 }}
+              >
+                {stepKeys.map((key, index) => (
+                  <Step key={key}>
+                    <StepLabel>{stepLabel(key)}</StepLabel>
+                    {isViewportSmall ? (
+                      <StepContent>{index === activeStep ? stepContent(key) : null}</StepContent>
+                    ) : null}
+                  </Step>
+                ))}
+              </Stepper>
+              {isViewportSmall ? null : stepContent(stepKeys[activeStep])}
+            </>
+          )
         ) : (
           <OperationPicker
             onSelect={selectOperation}
@@ -550,26 +640,47 @@ function OperationWizard({
       <DialogActions>
         <Button onClick={onClose}>{t("common:actions.cancel")}</Button>
         {operation ? (
-          <>
-            <Button onClick={back} disabled={submitting}>
-              {t("common:actions.back")}
-            </Button>
-            {isLast ? (
+          fastPath ? (
+            // Remembered run: perform straight from step one, or drop into the wizard to change it.
+            <>
+              <Button onClick={() => setReviewing(true)} disabled={submitting}>
+                {t("operations.wizard.reviewEdit")}
+              </Button>
               <SubmitSpinnerButton
                 onClick={() => void submit()}
                 loading={submitting}
-                // Gate Perform on stepValid() too, not just submitting: the confirm step's own
-                // guards (e.g. Destroy's empty-origin block) must actually block submission, not only
-                // show a message. Next is gated the same way below.
-                disabled={submitting || !stepValid()}
+                disabled={submitting || !allStepsValid()}
                 label={t("operations.wizard.perform")}
               />
-            ) : (
-              <Button variant="contained" color="callToAction" disableElevation onClick={next} disabled={!stepValid()}>
-                {t("common:actions.next")}
+            </>
+          ) : (
+            <>
+              <Button onClick={back} disabled={submitting}>
+                {t("common:actions.back")}
               </Button>
-            )}
-          </>
+              {isLast ? (
+                <SubmitSpinnerButton
+                  onClick={() => void submit()}
+                  loading={submitting}
+                  // Gate Perform on stepValid() too, not just submitting: the confirm step's own
+                  // guards (e.g. Destroy's empty-origin block) must actually block submission, not only
+                  // show a message. Next is gated the same way below.
+                  disabled={submitting || !stepValid()}
+                  label={t("operations.wizard.perform")}
+                />
+              ) : (
+                <Button
+                  variant="contained"
+                  color="callToAction"
+                  disableElevation
+                  onClick={next}
+                  disabled={!stepValid()}
+                >
+                  {t("common:actions.next")}
+                </Button>
+              )}
+            </>
+          )
         ) : null}
       </DialogActions>
     </ContextDialog>

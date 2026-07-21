@@ -10,29 +10,65 @@
 import type { DocumentationSelection } from "./DocumentationStep";
 import { normalizeDocumentation } from "./documentationResolution";
 import type { TemplateDefault } from "./templateResolution";
-import type { OperationInputs } from "./types";
+import type { AmountMode, OperationInputs, PerSubsampleAmounts } from "./types";
 
 export type ProcessValues = {
   /** The collected inputs to restore. The wizard omits the name/process-name keys before saving. */
   values: OperationInputs;
   template: TemplateDefault;
   documentation: DocumentationSelection;
+  /** The amount mode chosen for a multi-origin run (adr/0009); absent in older bundles = "same". */
+  amountMode?: AmountMode;
+  /** Per-origin amounts by origin global id, for "perSubsample" mode; absent otherwise. */
+  perSubsampleAmounts?: PerSubsampleAmounts;
 };
 
 const UNSELECTED_TEMPLATE: TemplateDefault = { mode: "unselected", templateId: null };
+const AMOUNT_MODES: ReadonlyArray<AmountMode> = ["same", "all", "perSubsample"];
 
-/** Guard a stored bundle back into shape, tolerating an absent template/documentation. */
+function normalizeAmountMode(value: unknown): AmountMode {
+  return typeof value === "string" && (AMOUNT_MODES as ReadonlyArray<string>).includes(value)
+    ? (value as AmountMode)
+    : "same";
+}
+
+/** Keep only entries that are a complete numeric quantity, dropping anything malformed in storage. */
+function normalizePerSubsampleAmounts(value: unknown): PerSubsampleAmounts {
+  if (typeof value !== "object" || value === null) return {};
+  const out: PerSubsampleAmounts = {};
+  for (const [globalId, q] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof q === "object" && q !== null) {
+      const { numericValue, unitId } = q as { numericValue?: unknown; unitId?: unknown };
+      if (typeof numericValue === "number" && typeof unitId === "number") out[globalId] = { numericValue, unitId };
+    }
+  }
+  return out;
+}
+
+/** Guard a stored bundle back into shape, tolerating an absent template/documentation/amount mode. */
 export function normalizeProcessValues(stored: unknown): ProcessValues | null {
   if (typeof stored !== "object" || stored === null) return null;
-  const s = stored as { values?: unknown; template?: unknown; documentation?: unknown };
+  const s = stored as {
+    values?: unknown;
+    template?: unknown;
+    documentation?: unknown;
+    amountMode?: unknown;
+    perSubsampleAmounts?: unknown;
+  };
   if (typeof s.values !== "object" || s.values === null) return null;
   const template =
     typeof s.template === "object" && s.template !== null ? (s.template as TemplateDefault) : UNSELECTED_TEMPLATE;
-  return {
+  const result: ProcessValues = {
     values: s.values as OperationInputs,
     template,
     documentation: normalizeDocumentation(s.documentation),
   };
+  // Only carried for multi-origin runs; an older bundle without them normalises to no field, and
+  // consumers default the mode to "same" (adr/0009).
+  if (s.amountMode !== undefined) result.amountMode = normalizeAmountMode(s.amountMode);
+  if (s.perSubsampleAmounts !== undefined)
+    result.perSubsampleAmounts = normalizePerSubsampleAmounts(s.perSubsampleAmounts);
+  return result;
 }
 
 /**

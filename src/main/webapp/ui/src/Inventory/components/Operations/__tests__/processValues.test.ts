@@ -43,3 +43,33 @@ describe("processValuesAfterPerform", () => {
     expect(current).toEqual({ existing: bundle });
   });
 });
+
+describe("normalizeProcessValues (amount modes, adr/0009)", () => {
+  it("carries a valid amount mode and per-origin amounts unchanged", () => {
+    const withMode: ProcessValues = {
+      ...bundle,
+      amountMode: "perSubsample",
+      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 } },
+    };
+    expect(normalizeProcessValues(withMode)).toEqual(withMode);
+  });
+
+  it("coerces an unknown amount mode to 'same'", () => {
+    expect(normalizeProcessValues({ ...bundle, amountMode: "bogus" })?.amountMode).toBe("same");
+  });
+
+  it("drops malformed per-origin amount entries", () => {
+    const normalized = normalizeProcessValues({
+      ...bundle,
+      amountMode: "perSubsample",
+      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 }, SS2: { numericValue: "x", unitId: 3 }, SS3: null },
+    });
+    expect(normalized?.perSubsampleAmounts).toEqual({ SS1: { numericValue: 2, unitId: 3 } });
+  });
+
+  it("omits the amount fields for an older bundle that lacks them (consumers default to 'same')", () => {
+    const normalized = normalizeProcessValues({ values: { count: 1 } });
+    expect(normalized).not.toHaveProperty("amountMode");
+    expect(normalized).not.toHaveProperty("perSubsampleAmounts");
+  });
+});

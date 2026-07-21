@@ -4,7 +4,11 @@ Date: 2026-07-20
 
 ## Status
 
-Accepted
+Accepted. The shared-amount simplification below (one amount from every origin, checked
+against the smallest "representative" origin) is **extended by adr/0009**, which makes the
+amount across origins a per-run choice (same amount / take all / per subsample). "Same
+amount" keeps this decision unchanged; the other modes take a per-origin amount and so
+validate every origin rather than only the representative one.
 
 ## Context
 

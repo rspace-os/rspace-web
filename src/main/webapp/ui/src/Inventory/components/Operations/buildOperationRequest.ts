@@ -13,6 +13,7 @@
  */
 import type { InventoryOperation } from "./operationsConfig";
 import type {
+  AmountMode,
   OperationExtraField,
   OperationInputs,
   OperationNewSample,
@@ -20,6 +21,7 @@ import type {
   OperationOriginUpdate,
   OperationQuantity,
   OperationRequest,
+  PerSubsampleAmounts,
   ResolveLabel,
 } from "./types";
 import { UNSET_UNIT } from "./types";
@@ -38,8 +40,22 @@ export function buildOperationRequest(params: {
   templateId: number | null;
   /** Optional SOP link chosen in the documentation step; added as an IsDocumentedBy link. */
   documentationLink?: { fieldName: string; targetGlobalId: string };
+  /** How the amount taken is decided across origins (adr/0009). Defaults to "same" (single shared
+   *  amount), which is also every single-origin operation's mode. */
+  amountMode?: AmountMode;
+  /** Per-origin amounts (by origin global id) for "perSubsample" mode; ignored in other modes. */
+  perSubsampleAmounts?: PerSubsampleAmounts;
 }): OperationRequest {
-  const { operation, values, origins, resolveLabel, templateId, documentationLink } = params;
+  const {
+    operation,
+    values,
+    origins,
+    resolveLabel,
+    templateId,
+    documentationLink,
+    amountMode = "same",
+    perSubsampleAmounts = {},
+  } = params;
   const { effect } = operation;
 
   // The unit used when an amount-taken has to be defaulted (a no-op zero) and the origin carries no
@@ -48,15 +64,25 @@ export function buildOperationRequest(params: {
     ? (values[effect.eachAmountFrom] as OperationQuantity | undefined)?.unitId
     : undefined;
 
-  // The amount to take from a given origin. `emptiesOrigin` (Destroy) takes the origin's own full
-  // current quantity so its volume ends at zero. Otherwise a decrementing operation takes the
-  // configured shared amount (Pool takes the same amount from every origin; adr/0007), and one that
-  // leaves the origin untouched (Passage) takes zero: the backend treats a 0 decrement as a no-op
-  // (SubSampleApiManagerImpl returns early), so the origin is still linked/permission-checked but
-  // unchanged. See adr/0002.
+  const fullQuantity = (origin: OperationOrigin): OperationQuantity =>
+    origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
+
+  // The amount to take from a given origin (adr/0002, adr/0007, adr/0009):
+  // - `emptiesOrigin` (Destroy) and the runtime "take all" mode both take the origin's own full
+  //   current quantity, so its volume ends at zero.
+  // - "perSubsample" mode takes the per-origin amount chosen for this origin (by global id); an origin
+  //   with none recorded takes a zero (no-op) decrement.
+  // - otherwise ("same" mode, and every single-origin operation) it takes the configured shared amount
+  //   (Pool takes the same amount from every origin; adr/0007). An operation that leaves the origin
+  //   untouched (Passage) has no amountTakenFrom and takes zero: the backend treats a 0 decrement as a
+  //   no-op (SubSampleApiManagerImpl returns early), so the origin is still linked/permission-checked.
   const amountTakenFor = (origin: OperationOrigin): OperationQuantity => {
-    if (effect.emptiesOrigin) {
-      return origin.quantity ? { ...origin.quantity } : { numericValue: 0, unitId: eachAmountUnit ?? UNSET_UNIT };
+    if (effect.emptiesOrigin || amountMode === "all") return fullQuantity(origin);
+    if (amountMode === "perSubsample") {
+      const chosen = perSubsampleAmounts[origin.globalId];
+      return chosen
+        ? { ...chosen }
+        : { numericValue: 0, unitId: origin.quantity?.unitId ?? eachAmountUnit ?? UNSET_UNIT };
     }
     if (effect.amountTakenFrom) return quantityValue(values, effect.amountTakenFrom);
     return { numericValue: 0, unitId: origin.quantity?.unitId ?? eachAmountUnit ?? UNSET_UNIT };

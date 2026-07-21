@@ -41,4 +41,22 @@ describe("OperationPicker", () => {
     await userEvent.setup().click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
     expect(chosen).toContain("derive");
   });
+
+  it("renders the operations in the configured order", () => {
+    render(<OperationPicker onSelect={() => undefined} selectionCount={1} allSameCategory />);
+    const names = screen.getAllByRole("button").map((b) => b.textContent ?? "");
+    const order = ["aliquot", "passage", "pool", "derive", "cryopreserve", "revive", "destroy"];
+    order.forEach((key, i) => {
+      expect(names[i]).toContain(`operations.${key}.label`);
+    });
+  });
+
+  it("renders each operation's configured icon", () => {
+    const { container } = render(<OperationPicker onSelect={() => undefined} selectionCount={1} allSameCategory />);
+    // FontAwesomeIcon renders an <svg data-icon="..."> per operation; every operation carries an icon.
+    const icons = container.querySelectorAll("svg[data-icon]");
+    expect(icons).toHaveLength(7);
+    expect(container.querySelector('svg[data-icon="trash"]')).toBeInTheDocument();
+    expect(container.querySelector('svg[data-icon="flask"]')).toBeInTheDocument();
+  });
 });

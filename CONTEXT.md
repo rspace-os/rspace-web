@@ -81,9 +81,15 @@ resolved during design. This file is a glossary only — no implementation detai
   Terminal operation (Destroy) takes the Origin's full current quantity, emptying it. It
   must not exceed the Origin's current quantity: over-removal is rejected rather than
   silently clamped. Independent of the Created total (material may be added during the
-  operation). For a multi-Origin Operation (Pool) it is a single shared value removed from
-  **each** Origin, so every Origin must share one measurement category and the value must
-  not exceed the smallest Origin.
+  operation). For a multi-Origin Operation the value across its Origins is governed by the
+  run's **Amount mode** (below).
+- **Amount mode** — for a multi-Origin Operation, how the Amount taken is decided across
+  its Origins: **Same amount** (one shared value removed from every Origin, the default;
+  every Origin must share one measurement category and the value must not exceed the
+  smallest), **Take all** (every Origin emptied to zero, independent of the Created amount),
+  or **Per subsample** (a separate Amount taken chosen for each Origin, each validated
+  against its own quantity). Offered only for Operations that can take multiple Origins;
+  single-Origin Operations always use one Amount taken. _Avoid_: pooling mode, split mode.
 - **Relation link** — a typed link (a DataCite relation such as IsDerivedFrom,
   IsPartOf, HasPart) held on the Derived Sample and pointing back to the Origin(s).
   Links are one-directional: only the newly created records link to the Origin; the
@@ -105,10 +111,13 @@ resolved during design. This file is a glossary only — no implementation detai
   the Derived Sample to an ELN document, typically a standard operating procedure,
   captured during an Operation's documentation step.
 - **Remembered process values** — a per-user, per-Process-name bundle of the values
-  a user opted to keep (Template choice, Documentation link, and the amounts). Saved
-  only when the user opts in for that run, and re-applied when that Process name is
-  next used; the most-recently-remembered Process name is also pre-filled on the next
-  run. Replaces the older per-item remembered defaults.
+  a user opted to keep (Template choice, Documentation link, the amounts, and — for a
+  multi-Origin Operation — the Amount mode and any per-Origin amounts keyed by Origin
+  Global ID). Saved only when the user opts in for that run, and re-applied when that
+  Process name is next used; the most-recently-remembered Process name is also pre-filled
+  on the next run. When a re-run's remembered values already form a complete, valid
+  Operation, the wizard offers to perform it immediately from step one. Replaces the older
+  per-item remembered defaults.
 
 ## RSpace inventory Link fields
 

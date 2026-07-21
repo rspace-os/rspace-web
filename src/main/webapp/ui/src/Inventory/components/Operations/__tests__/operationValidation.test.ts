@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InventoryOperation } from "../operationsConfig";
-import { amountTakenExceedsOrigin, detailsValid } from "../operationValidation";
+import { amountTakenExceedsOrigin, detailsValid, quantityExceedsOrigin } from "../operationValidation";
 import type { OperationInputs } from "../types";
 
 // A cryopreserve-shaped operation: it has a sub-zero temperature field and an optional cryomedium.
@@ -121,5 +121,29 @@ describe("amountTakenExceedsOrigin", () => {
   it("flags a positive amount taken from an origin that has no quantity (treated as zero available)", () => {
     // A subsample whose volume was never set reads as 0, so taking any positive amount is over-removal.
     expect(amountTakenExceedsOrigin(cryo, validValues, null)).toBe(true);
+  });
+});
+
+// The per-origin over-removal check used for "per subsample" amounts (adr/0009): each origin's chosen
+// amount is checked against its own quantity, unit-aware within a category.
+describe("quantityExceedsOrigin", () => {
+  it("is false at or within the origin's quantity, true above it (same unit)", () => {
+    expect(quantityExceedsOrigin({ numericValue: 5, unitId: 3 }, { numericValue: 5, unitId: 3 })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 4, unitId: 3 }, { numericValue: 5, unitId: 3 })).toBe(false);
+    expect(quantityExceedsOrigin({ numericValue: 6, unitId: 3 }, { numericValue: 5, unitId: 3 })).toBe(true);
+  });
+
+  it("compares unit-aware across units in the same category (0.5 L > 400 ml)", () => {
+    expect(quantityExceedsOrigin({ numericValue: 0.5, unitId: 4 }, { numericValue: 400, unitId: 3 })).toBe(true);
+    expect(quantityExceedsOrigin({ numericValue: 0.3, unitId: 4 }, { numericValue: 400, unitId: 3 })).toBe(false);
+  });
+
+  it("does not flag an incomplete (unit-unset) or absent amount", () => {
+    expect(quantityExceedsOrigin({ numericValue: 999, unitId: 0 }, { numericValue: 5, unitId: 3 })).toBe(false);
+    expect(quantityExceedsOrigin(undefined, { numericValue: 5, unitId: 3 })).toBe(false);
+  });
+
+  it("flags any positive amount against an origin that holds nothing", () => {
+    expect(quantityExceedsOrigin({ numericValue: 1, unitId: 3 }, null)).toBe(true);
   });
 });

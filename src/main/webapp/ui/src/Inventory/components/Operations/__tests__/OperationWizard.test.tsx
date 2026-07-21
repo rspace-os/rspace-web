@@ -406,7 +406,9 @@ describe("OperationWizard remember bundle", () => {
     expect(prefs.store.INVENTORY_OPERATION_PROCESS_VALUES).toEqual(saved); // store untouched
   });
 
-  it("pre-fills the last-used process name and loads its bundle on open", async () => {
+  it("pre-fills the last-used process name and, on Review / edit, shows its bundle", async () => {
+    // A complete remembered bundle loads on open, so the wizard offers the step-one fast path (adr/0009):
+    // the confirmation and Perform, with the details form only behind "Review / edit".
     prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
     prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
       "derive boil": {
@@ -418,9 +420,35 @@ describe("OperationWizard remember bundle", () => {
     const user = userEvent.setup();
     render(<OperationWizard open onClose={vi.fn()} origins={[makeMockSubSample({})]} />);
     await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    // Fast path: the confirmation and an enabled Perform show; the details form is not rendered yet.
+    expect(screen.getByTestId("confirm")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /wizard\.perform/i })).toBeEnabled();
+    expect(screen.queryByTestId("proc")).not.toBeInTheDocument();
+    // Review / edit drops into the normal wizard with the bundle pre-filled.
+    await user.click(screen.getByRole("button", { name: /wizard\.reviewEdit/i }));
     expect(screen.getByTestId("proc")).toHaveValue("boil");
     expect(screen.getByTestId("remember")).toHaveTextContent("true");
     expect(screen.getByTestId("count")).toHaveTextContent("3");
+  });
+
+  it("performs a remembered run directly from the step-one fast path", async () => {
+    prefs.store.INVENTORY_OPERATION_PROCESS_NAME_DEFAULTS = { derive: "boil" };
+    prefs.store.INVENTORY_OPERATION_PROCESS_VALUES = {
+      "derive boil": {
+        values: { count: 3, eachAmount: { numericValue: 8, unitId: 3 }, amountTaken: { numericValue: 1, unitId: 3 } },
+        template: { mode: "none", templateId: null },
+        documentation: null,
+      },
+    };
+    const onClose = vi.fn();
+    const origin = makeMockSubSample({});
+    vi.spyOn(origin, "fetchAdditionalInfo").mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<OperationWizard open onClose={onClose} origins={[origin]} />);
+    await user.click(screen.getByRole("button", { name: /operations\.derive\.label/i }));
+    await user.click(screen.getByRole("button", { name: /wizard\.perform/i }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(performOperation).toHaveBeenCalledTimes(1);
   });
 
   it("persists a Cryopreserve bundle keyed by the operation (fixed process name)", async () => {

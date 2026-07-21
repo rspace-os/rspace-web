@@ -3797,6 +3797,7 @@ export default interface Resources {
         "cardSubheader": "New sample · via {operation}",
         "labels": {
           "amountTaken": "Amount taken",
+          "amountTakenEach": "Amount taken from each subsample",
           "documentation": "Documented by",
           "linkBack": "Links back to",
           "originEmptied": "Origin volume",
@@ -3809,7 +3810,8 @@ export default interface Resources {
           "amountTaken": "{amount} {unit}",
           "emptied": "Will be set to 0",
           "storageTemp": "{temp} °C",
-          "subsamples": "{count} × {amount} {unit} each"
+          "subsamples": "{count} × {amount} {unit} each",
+          "takeAll": "All (subsamples emptied)"
         }
       },
       "cryopreserve": {
@@ -3825,7 +3827,7 @@ export default interface Resources {
       },
       "destroy": {
         "description": "Dispose of the subsample: set its volume to zero and record today's disposal date. Creates nothing.",
-        "disposedField": "disposed",
+        "disposedField": "Disposed",
         "label": "Destroy"
       },
       "documentation": {
@@ -3836,6 +3838,11 @@ export default interface Resources {
         "selected": "Linked document: {name}"
       },
       "fields": {
+        "amountMode": "Amount to take",
+        "amountModeAll": "Take all",
+        "amountModeAllHelp": "Every selected subsample will be emptied (reduced to 0).",
+        "amountModePerSubsample": "Per subsample",
+        "amountModeSame": "Same amount",
         "amountTaken": "Amount taken from original",
         "amountTakenEach": "Amount taken from each",
         "amountTakenExceedsOrigin": "Cannot take more than the original holds.",
@@ -3893,6 +3900,7 @@ export default interface Resources {
         "failed": "The operation could not be completed",
         "inProgress": "Performing operation…",
         "perform": "Perform",
+        "reviewEdit": "Review / edit",
         "step": {
           "amounts": "Amounts",
           "confirm": "Confirm",

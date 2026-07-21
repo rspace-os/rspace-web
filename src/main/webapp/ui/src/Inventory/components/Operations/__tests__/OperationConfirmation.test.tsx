@@ -163,6 +163,48 @@ describe("OperationConfirmation", () => {
     expect(screen.queryByText(/confirm\.labels\.template/)).not.toBeInTheDocument();
   });
 
+  // Pool-shaped op: multi-origin (requiresMultiple), its linkBack field name interpolates each origin.
+  const poolOp = {
+    key: "pool",
+    labelKey: "operations.pool.label",
+    requiresMultiple: true,
+    effect: {
+      nameFrom: "sampleName",
+      countFrom: "count",
+      eachAmountFrom: "eachAmount",
+      amountTakenFrom: "amountTaken",
+      links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
+    },
+    confirmSummary: ["subsamples", "amountTaken", "linkBack"],
+  } as unknown as InventoryOperation;
+
+  it("lists a linkBack line for every pooled subsample, not just the representative one", () => {
+    render(
+      <ThemeProvider theme={appTheme}>
+        <OperationConfirmation
+          operation={poolOp}
+          values={values}
+          documentation={null}
+          templateSelection={{ mode: "none", templateId: null, remember: false }}
+          originSampleName="S1"
+          originName="Vial A"
+          origins={[
+            { globalId: "SS1", name: "Vial A" },
+            { globalId: "SS2", name: "Vial B" },
+          ]}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByText(/confirm\.labels\.linkBack/)).toBeInTheDocument();
+    // The row fans out one line per origin (in cimode each renders the field-name key); the bug showed
+    // only one. Two origins -> two lines.
+    expect(screen.getAllByText(/pool\.linkFieldName/)).toHaveLength(2);
+    // A per-subsample operation labels its amount-taken row "from each subsample", not just "Amount
+    // taken" (the plain label, anchored so it does not also match ...amountTakenEach, is absent).
+    expect(screen.getByText(/confirm\.labels\.amountTakenEach/)).toBeInTheDocument();
+    expect(screen.queryByText(/confirm\.labels\.amountTaken$/)).not.toBeInTheDocument();
+  });
+
   // Destroy-shaped op (adr/0008): noOutput, so the card names the origin subsample, and the summary is
   // the origin being emptied plus the disposed field it adds to the origin.
   const destroyOp = {

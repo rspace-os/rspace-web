@@ -11,9 +11,9 @@ import DescriptionList from "@/components/DescriptionList";
 import useStores from "@/stores/use-stores";
 import { applyComputedValues } from "./computedValues";
 import type { DocumentationSelection } from "./DocumentationStep";
-import type { ConfirmSummaryField, InventoryOperation } from "./operationsConfig";
+import { type ConfirmSummaryField, type InventoryOperation, usesAmountModes } from "./operationsConfig";
 import type { TemplateSelection } from "./TemplateStep";
-import type { OperationInputs, OperationQuantity } from "./types";
+import type { AmountMode, OperationInputs, OperationQuantity, PerSubsampleAmounts } from "./types";
 
 /**
  * Final step: a preview card of the sample the operation will create, before it is performed. The
@@ -29,6 +29,9 @@ function OperationConfirmation({
   originSampleName,
   originName,
   originHasAmount = true,
+  amountMode = "same",
+  perSubsampleAmounts = {},
+  origins = [],
 }: {
   operation: InventoryOperation;
   values: OperationInputs;
@@ -42,6 +45,12 @@ function OperationConfirmation({
    * (`emptiesOrigin`) cannot run on an empty subsample, so the confirmation shows why and the wizard
    * disables Perform. Defaults to true (producing operations gate emptiness on their amounts step). */
   originHasAmount?: boolean;
+  /** The amount mode for a multi-origin operation (adr/0009); drives how the amount-taken row reads. */
+  amountMode?: AmountMode;
+  /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
+  perSubsampleAmounts?: PerSubsampleAmounts;
+  /** Every selected origin (name + global id), for the "per subsample" amount breakdown. */
+  origins?: Array<{ globalId: string; name: string }>;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const theme = useTheme();
@@ -58,9 +67,10 @@ function OperationConfirmation({
   const name = effect.nameFrom ? String(values[effect.nameFrom]) : "";
   const processName = effect.processNameFrom ? String(values[effect.processNameFrom] ?? "").trim() : "";
   // The link field name may interpolate {originName} (Pool's "Pooled from: {originName}"), which is
-  // not in `values` - it is injected per origin at build time. Supply the (representative) origin's
-  // name so the preview resolves; without it ICU throws on the missing argument and the raw template
-  // string is shown. The real per-origin names are set correctly in buildOperationRequest.
+  // not in `values` - it is injected per origin at build time. For a single-origin operation, supply
+  // the origin's name so the preview resolves (without it ICU throws on the missing argument and the
+  // raw template string is shown). A multi-origin operation lists every origin in the linkBack row
+  // below instead, so this single value is only its single-origin fallback.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
   // Preview the values the operation will compute (adr/0006) so the origin-field rows show real
   // content. Computed here with no parent fields, which is exact for everything this card actually
@@ -98,16 +108,43 @@ function OperationConfirmation({
             }),
           }
         : null,
-    amountTaken: () =>
-      after
+    amountTaken: () => {
+      // An operation with per-origin amount modes (Pool) takes from each subsample, so its row is
+      // labelled "Amount taken from each subsample"; a single-origin operation keeps "Amount taken".
+      const amountTakenLabel = usesAmountModes(operation)
+        ? t("operations.confirm.labels.amountTakenEach")
+        : t("operations.confirm.labels.amountTaken");
+      // Multi-origin amount modes (adr/0009): "take all" reads as emptied; "per subsample" lists each
+      // origin's chosen amount; "same" (and single-origin) shows the one shared amount as before.
+      if (usesAmountModes(operation) && amountMode === "all") {
+        return { label: amountTakenLabel, value: t("operations.confirm.values.takeAll") };
+      }
+      if (usesAmountModes(operation) && amountMode === "perSubsample") {
+        return {
+          label: amountTakenLabel,
+          value: (
+            <>
+              {origins.map((o) => {
+                const q = perSubsampleAmounts[o.globalId];
+                const amount = q
+                  ? t("operations.confirm.values.amountTaken", { amount: q.numericValue, unit: unitLabel(q.unitId) })
+                  : "";
+                return <div key={o.globalId}>{`${o.name}: ${amount}`}</div>;
+              })}
+            </>
+          ),
+        };
+      }
+      return after
         ? {
-            label: t("operations.confirm.labels.amountTaken"),
+            label: amountTakenLabel,
             value: t("operations.confirm.values.amountTaken", {
               amount: after.numericValue,
               unit: unitLabel(after.unitId),
             }),
           }
-        : null,
+        : null;
+    },
     storageTemp: () =>
       storageTemp
         ? {
@@ -115,7 +152,26 @@ function OperationConfirmation({
             value: t("operations.confirm.values.storageTemp", { temp: storageTemp.numericValue }),
           }
         : null,
-    linkBack: () => ({ label: t("operations.confirm.labels.linkBack"), value: linkName }),
+    linkBack: () => {
+      // Pool (multi-origin) links back to every pooled subsample; its link field name interpolates each
+      // origin's own name ("Pooled from: {originName}"), so list one line per origin to match the links
+      // buildOperationRequest creates, rather than only the representative origin (adr/0007). A
+      // single-origin operation shows its one link name.
+      if (operation.requiresMultiple && origins.length && effect.links.length) {
+        const fieldNameKey = effect.links[0].fieldNameKey;
+        return {
+          label: t("operations.confirm.labels.linkBack"),
+          value: (
+            <>
+              {origins.map((o) => (
+                <div key={o.globalId}>{resolveLabel(fieldNameKey, { ...values, originName: o.name })}</div>
+              ))}
+            </>
+          ),
+        };
+      }
+      return { label: t("operations.confirm.labels.linkBack"), value: linkName };
+    },
     documentation: () =>
       documentation ? { label: t("operations.confirm.labels.documentation"), value: documentation.name } : null,
     // Terminal operations (Destroy): the origin's volume is set to zero, and each custom field the

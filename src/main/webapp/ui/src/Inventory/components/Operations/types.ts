@@ -8,6 +8,16 @@
 export type OperationQuantity = { numericValue: number; unitId: number };
 
 /**
+ * How the amount taken is decided across a multi-origin operation's origins (adr/0009). "same" is the
+ * single shared amount (the default, and the only mode single-origin operations use); "all" empties
+ * every origin to zero; "perSubsample" takes a separate amount from each origin.
+ */
+export type AmountMode = "same" | "all" | "perSubsample";
+
+/** Per-origin amount taken in "perSubsample" mode, keyed by the origin subsample's global id. */
+export type PerSubsampleAmounts = Record<string, OperationQuantity>;
+
+/**
  * Sentinel unitId meaning "no unit chosen yet". The unit is part of an amount, so when amounts are
  * cleared for a new process name the unit clears too (rather than snapping back to the origin's
  * default); an amount carrying this unit is incomplete and blocks the details step (see detailsValid).

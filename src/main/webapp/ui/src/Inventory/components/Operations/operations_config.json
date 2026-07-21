@@ -1,60 +1,9 @@
 [
   {
-    "key": "derive",
-    "labelKey": "operations.derive.label",
-    "descriptionKey": "operations.derive.description",
-    "documentationStep": true,
-    "inputs": [
-      { "key": "processName", "type": "text", "labelKey": "operations.fields.processName", "required": true },
-      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
-      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
-      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
-      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" }
-    ],
-    "effect": {
-      "nameFrom": "sampleName",
-      "countFrom": "count",
-      "eachAmountFrom": "eachAmount",
-      "amountTakenFrom": "amountTaken",
-      "processNameFrom": "processName",
-      "links": [
-        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.derive.linkFieldName" }
-      ]
-    },
-    "confirmSummary": ["process", "template", "subsamples", "amountTaken", "linkBack", "documentation"]
-  },
-  {
-    "key": "cryopreserve",
-    "labelKey": "operations.cryopreserve.label",
-    "descriptionKey": "operations.cryopreserve.description",
-    "documentationStep": true,
-    "inputs": [
-      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
-      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
-      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
-      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" },
-      { "key": "cryomedium", "type": "text", "labelKey": "operations.fields.cryomedium" },
-      { "key": "storageTemp", "type": "temperature", "labelKey": "operations.fields.storageTemp", "maxCelsius": -18 }
-    ],
-    "effect": {
-      "nameFrom": "sampleName",
-      "countFrom": "count",
-      "eachAmountFrom": "eachAmount",
-      "amountTakenFrom": "amountTaken",
-      "storageTempFrom": "storageTemp",
-      "links": [
-        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.cryopreserve.linkFieldName" }
-      ],
-      "textFields": [
-        { "nameKey": "operations.cryopreserve.cryomediumField", "contentFrom": "cryomedium" }
-      ]
-    },
-    "confirmSummary": ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"]
-  },
-  {
     "key": "aliquot",
     "labelKey": "operations.aliquot.label",
     "descriptionKey": "operations.aliquot.description",
+    "iconKey": "eye-dropper",
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -74,33 +23,10 @@
     "confirmSummary": ["template", "subsamples", "amountTaken", "linkBack", "documentation"]
   },
   {
-    "key": "revive",
-    "labelKey": "operations.revive.label",
-    "descriptionKey": "operations.revive.description",
-    "documentationStep": true,
-    "inputs": [
-      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
-      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
-      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
-      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" },
-      { "key": "storageTemp", "type": "temperature", "labelKey": "operations.fields.storageTemp", "minCelsius": 4, "maxCelsius": 120, "default": 4 }
-    ],
-    "effect": {
-      "nameFrom": "sampleName",
-      "countFrom": "count",
-      "eachAmountFrom": "eachAmount",
-      "amountTakenFrom": "amountTaken",
-      "storageTempFrom": "storageTemp",
-      "links": [
-        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.revive.linkFieldName" }
-      ]
-    },
-    "confirmSummary": ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"]
-  },
-  {
     "key": "passage",
     "labelKey": "operations.passage.label",
     "descriptionKey": "operations.passage.description",
+    "iconKey": "arrows-rotate",
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -134,7 +60,10 @@
     "key": "pool",
     "labelKey": "operations.pool.label",
     "descriptionKey": "operations.pool.description",
+    "iconKey": "flask",
     "requiresMultiple": true,
+    "takeAmountPerSubsample": true,
+    "defaultAmountMode": "all",
     "documentationStep": true,
     "inputs": [
       { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
@@ -154,9 +83,89 @@
     "confirmSummary": ["template", "subsamples", "amountTaken", "linkBack", "documentation"]
   },
   {
+    "key": "derive",
+    "labelKey": "operations.derive.label",
+    "descriptionKey": "operations.derive.description",
+    "iconKey": "code-branch",
+    "documentationStep": true,
+    "inputs": [
+      { "key": "processName", "type": "text", "labelKey": "operations.fields.processName", "required": true },
+      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
+      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
+      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
+      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" }
+    ],
+    "effect": {
+      "nameFrom": "sampleName",
+      "countFrom": "count",
+      "eachAmountFrom": "eachAmount",
+      "amountTakenFrom": "amountTaken",
+      "processNameFrom": "processName",
+      "links": [
+        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.derive.linkFieldName" }
+      ]
+    },
+    "confirmSummary": ["process", "template", "subsamples", "amountTaken", "linkBack", "documentation"]
+  },
+  {
+    "key": "cryopreserve",
+    "labelKey": "operations.cryopreserve.label",
+    "descriptionKey": "operations.cryopreserve.description",
+    "iconKey": "snowflake",
+    "documentationStep": true,
+    "inputs": [
+      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
+      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
+      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
+      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" },
+      { "key": "cryomedium", "type": "text", "labelKey": "operations.fields.cryomedium" },
+      { "key": "storageTemp", "type": "temperature", "labelKey": "operations.fields.storageTemp", "maxCelsius": -18 }
+    ],
+    "effect": {
+      "nameFrom": "sampleName",
+      "countFrom": "count",
+      "eachAmountFrom": "eachAmount",
+      "amountTakenFrom": "amountTaken",
+      "storageTempFrom": "storageTemp",
+      "links": [
+        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.cryopreserve.linkFieldName" }
+      ],
+      "textFields": [
+        { "nameKey": "operations.cryopreserve.cryomediumField", "contentFrom": "cryomedium" }
+      ]
+    },
+    "confirmSummary": ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"]
+  },
+  {
+    "key": "revive",
+    "labelKey": "operations.revive.label",
+    "descriptionKey": "operations.revive.description",
+    "iconKey": "sun",
+    "documentationStep": true,
+    "inputs": [
+      { "key": "sampleName", "type": "text", "labelKey": "operations.fields.sampleName", "required": true },
+      { "key": "count", "type": "integer", "labelKey": "operations.fields.count", "min": 1, "default": 1 },
+      { "key": "eachAmount", "type": "quantity", "labelKey": "operations.fields.eachAmount" },
+      { "key": "amountTaken", "type": "quantity", "labelKey": "operations.fields.amountTaken" },
+      { "key": "storageTemp", "type": "temperature", "labelKey": "operations.fields.storageTemp", "minCelsius": 4, "maxCelsius": 120, "default": 4 }
+    ],
+    "effect": {
+      "nameFrom": "sampleName",
+      "countFrom": "count",
+      "eachAmountFrom": "eachAmount",
+      "amountTakenFrom": "amountTaken",
+      "storageTempFrom": "storageTemp",
+      "links": [
+        { "relationType": "IsDerivedFrom", "fieldNameKey": "operations.revive.linkFieldName" }
+      ]
+    },
+    "confirmSummary": ["template", "subsamples", "amountTaken", "storageTemp", "linkBack", "documentation"]
+  },
+  {
     "key": "destroy",
     "labelKey": "operations.destroy.label",
     "descriptionKey": "operations.destroy.description",
+    "iconKey": "trash",
     "noOutput": true,
     "documentationStep": false,
     "steps": ["confirm"],

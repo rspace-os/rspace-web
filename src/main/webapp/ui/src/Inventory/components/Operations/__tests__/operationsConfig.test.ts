@@ -4,7 +4,9 @@ import {
   type InventoryOperation,
   operationAvailability,
   operations,
+  resolveDefaultAmountMode,
   resolveProcessName,
+  usesAmountModes,
 } from "../operationsConfig";
 
 function op(key: string): InventoryOperation {
@@ -42,6 +44,56 @@ describe("operations_config.json", () => {
     expect(keys).toContain("cryopreserve");
     expect(keys).toContain("pool");
     expect(keys).toContain("destroy");
+  });
+
+  it("lists the operations in the configured order", () => {
+    expect(operations.map((o) => o.key)).toEqual([
+      "aliquot",
+      "passage",
+      "pool",
+      "derive",
+      "cryopreserve",
+      "revive",
+      "destroy",
+    ]);
+  });
+});
+
+describe("usesAmountModes", () => {
+  it("is true for Pool (multi-origin, takes an amount, defaults to true)", () => {
+    expect(op("pool").takeAmountPerSubsample).toBe(true);
+    expect(usesAmountModes(op("pool"))).toBe(true);
+  });
+
+  it("is false for single-origin operations (they always take one amount)", () => {
+    expect(usesAmountModes(op("derive"))).toBe(false);
+    expect(usesAmountModes(op("cryopreserve"))).toBe(false);
+  });
+
+  it("is false when a multi-origin operation opts out via takeAmountPerSubsample:false", () => {
+    const optedOut = { ...op("pool"), takeAmountPerSubsample: false };
+    expect(usesAmountModes(optedOut)).toBe(false);
+  });
+
+  it("defaults Pool's amount mode to 'take all' from its config", () => {
+    expect(op("pool").defaultAmountMode).toBe("all");
+    expect(resolveDefaultAmountMode(op("pool"))).toBe("all");
+  });
+
+  it("defaults to 'same' for a multi-origin operation with no configured default", () => {
+    const noDefault = { ...op("pool"), defaultAmountMode: undefined };
+    expect(resolveDefaultAmountMode(noDefault)).toBe("same");
+  });
+
+  it("is always 'same' for a single-origin operation, ignoring any stray config default", () => {
+    expect(resolveDefaultAmountMode(op("derive"))).toBe("same");
+    const strayDefault = { ...op("derive"), defaultAmountMode: "all" as const };
+    expect(resolveDefaultAmountMode(strayDefault)).toBe("same");
+  });
+
+  it("is false for a multi-origin operation that takes no amount (no amountTakenFrom)", () => {
+    const noAmount = { ...op("pool"), effect: { ...op("pool").effect, amountTakenFrom: undefined } };
+    expect(usesAmountModes(noAmount)).toBe(false);
   });
 
   it("declares Destroy as a terminal operation that empties the origin and adds an origin field", () => {

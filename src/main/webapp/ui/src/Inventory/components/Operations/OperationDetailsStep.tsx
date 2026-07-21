@@ -4,9 +4,13 @@ import Checkbox from "@mui/material/Checkbox";
 import FormControl from "@mui/material/FormControl";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import FormHelperText from "@mui/material/FormHelperText";
+import FormLabel from "@mui/material/FormLabel";
 import InputAdornment from "@mui/material/InputAdornment";
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useTranslation } from "react-i18next";
@@ -14,10 +18,20 @@ import UnitSelect from "@/components/Inputs/UnitSelect";
 import { CELSIUS } from "@/stores/definitions/Units";
 import { getUnitId, getValue } from "@/stores/models/HasQuantity";
 import type SubSampleModel from "@/stores/models/SubSampleModel";
-import { type InventoryOperation, type OperationInputConfig, resolveProcessName } from "./operationsConfig";
-import { amountTakenExceedsOrigin, temperatureBelowMin, temperatureExceedsMax } from "./operationValidation";
+import {
+  type InventoryOperation,
+  type OperationInputConfig,
+  resolveProcessName,
+  usesAmountModes,
+} from "./operationsConfig";
+import {
+  amountTakenExceedsOrigin,
+  quantityExceedsOrigin,
+  temperatureBelowMin,
+  temperatureExceedsMax,
+} from "./operationValidation";
 import { filterProcessNames } from "./processNames";
-import type { OperationInputs, OperationInputValue, OperationQuantity } from "./types";
+import type { AmountMode, OperationInputs, OperationInputValue, OperationQuantity, PerSubsampleAmounts } from "./types";
 
 // Practical ceiling for an amount: far beyond any real inventory quantity, yet comfortably inside
 // both the decimal(19,3) DB column and JS's safe-integer range, so entering huge values can neither
@@ -43,6 +57,11 @@ function OperationDetailsStep({
   processNameOptions = [],
   remember = false,
   onRememberChange,
+  origins,
+  amountMode = "same",
+  onAmountModeChange,
+  perSubsampleAmounts = {},
+  onPerSubsampleAmountsChange,
 }: {
   operation: InventoryOperation;
   origin: SubSampleModel;
@@ -60,6 +79,14 @@ function OperationDetailsStep({
   remember?: boolean;
   /** When provided, the single "remember" checkbox is shown (on the details section). */
   onRememberChange?: (remember: boolean) => void;
+  /** Every selected origin, for the "per subsample" amounts list (adr/0009); defaults to [origin]. */
+  origins?: Array<SubSampleModel>;
+  /** The amount mode for a multi-origin operation (adr/0009); "same" for single-origin operations. */
+  amountMode?: AmountMode;
+  onAmountModeChange?: (mode: AmountMode) => void;
+  /** Per-origin amounts (by origin global id) for "perSubsample" mode. */
+  perSubsampleAmounts?: PerSubsampleAmounts;
+  onPerSubsampleAmountsChange?: (amounts: PerSubsampleAmounts) => void;
 }): React.ReactNode {
   const { t } = useTranslation("inventory");
   const label = t as unknown as (key: string, params?: Record<string, unknown>) => string;
@@ -201,6 +228,46 @@ function OperationDetailsStep({
     );
   };
 
+  // One amount field for a single origin in "per subsample" mode: blank until entered, with the unit
+  // prefilled to that subsample's own unit (Pool subsamples share a category, so no unit-picking is
+  // needed) and its own over-removal check against that subsample's quantity (adr/0009).
+  const renderPerSubsampleAmount = (sub: SubSampleModel): React.ReactNode => {
+    const globalId = sub.globalId ?? "";
+    const current = perSubsampleAmounts[globalId];
+    const currentUnitId = current?.unitId ?? getUnitId(sub.quantity);
+    const originQuantity = sub.quantity
+      ? { numericValue: getValue(sub.quantity), unitId: getUnitId(sub.quantity) }
+      : null;
+    const over = quantityExceedsOrigin(current, originQuantity);
+    const setAmount = (numericValue: number, unitId: number) =>
+      onPerSubsampleAmountsChange?.({ ...perSubsampleAmounts, [globalId]: { numericValue, unitId } });
+    return (
+      <TextField
+        key={globalId}
+        type="number"
+        label={sub.name ?? globalId}
+        value={current ? String(current.numericValue) : ""}
+        fullWidth
+        margin="dense"
+        error={over}
+        helperText={over ? label("operations.fields.amountTakenExceedsOrigin") : undefined}
+        onChange={(e) => setAmount(Math.min(MAX_QUANTITY, Math.max(0, Number(e.target.value))), currentUnitId)}
+        slotProps={{
+          htmlInput: { min: 0, max: MAX_QUANTITY },
+          input: {
+            endAdornment: (
+              <UnitSelect
+                categories={[sub.quantityCategory]}
+                value={currentUnitId}
+                handleChange={(e) => setAmount(current?.numericValue ?? 0, Number(e.target.value))}
+              />
+            ),
+          },
+        }}
+      />
+    );
+  };
+
   if (section === "amounts") {
     // Count full-width above; the two amounts share a row (they are narrow), stacking on small
     // screens. Any other amount-section inputs fall in below.
@@ -208,6 +275,42 @@ function OperationDetailsStep({
     const each = eachAmountFrom ? byKey.get(eachAmountFrom) : undefined;
     const taken = amountTakenFrom ? byKey.get(amountTakenFrom) : undefined;
     const count = countFrom ? byKey.get(countFrom) : undefined;
+
+    // Multi-origin operations offer the "amount to take" modes (adr/0009): "same" keeps the single
+    // shared amount-taken field; "all" empties every origin (no field); "per subsample" shows one
+    // amount field per origin. The created-sample count/each-amount stay above and independent (adr/0002).
+    if (usesAmountModes(operation)) {
+      const originsList = origins ?? [origin];
+      return (
+        <Stack spacing={1}>
+          {count ? renderInput(count) : null}
+          {each ? renderInput(each) : null}
+          <FormControl>
+            <FormLabel>{label("operations.fields.amountMode")}</FormLabel>
+            <RadioGroup value={amountMode} onChange={(e) => onAmountModeChange?.(e.target.value as AmountMode)}>
+              {/* "Take all" is listed first as the common default (adr/0009). */}
+              <FormControlLabel value="all" control={<Radio />} label={label("operations.fields.amountModeAll")} />
+              <FormControlLabel value="same" control={<Radio />} label={label("operations.fields.amountModeSame")} />
+              <FormControlLabel
+                value="perSubsample"
+                control={<Radio />}
+                label={label("operations.fields.amountModePerSubsample")}
+              />
+            </RadioGroup>
+          </FormControl>
+          {amountMode === "same" && taken ? renderInput(taken) : null}
+          {amountMode === "all" ? (
+            <Typography variant="body2" color="text.secondary">
+              {label("operations.fields.amountModeAllHelp")}
+            </Typography>
+          ) : null}
+          {amountMode === "perSubsample" ? (
+            <Stack spacing={1}>{originsList.map(renderPerSubsampleAmount)}</Stack>
+          ) : null}
+        </Stack>
+      );
+    }
+
     return (
       <Stack spacing={1}>
         {count ? renderInput(count) : null}

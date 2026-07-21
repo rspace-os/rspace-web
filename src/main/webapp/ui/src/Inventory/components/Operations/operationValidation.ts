@@ -86,7 +86,20 @@ export function amountTakenExceedsOrigin(
 ): boolean {
   const takenFrom = operation.effect.amountTakenFrom;
   if (!takenFrom) return false;
-  const taken = values[takenFrom] as OperationQuantity | undefined;
+  return quantityExceedsOrigin(values[takenFrom] as OperationQuantity | undefined, originQuantity);
+}
+
+/**
+ * The lower-level, operation-agnostic over-removal check (adr/0005): whether a single amount exceeds
+ * an origin's current quantity, unit-aware within the shared category. Used directly for a per-origin
+ * amount ("perSubsample" mode, adr/0009), where each origin is checked against its own quantity rather
+ * than against the representative origin. An incomplete (unit-unset) amount is not flagged; a missing
+ * origin quantity means the origin holds nothing, so any positive amount is over-removal.
+ */
+export function quantityExceedsOrigin(
+  taken: OperationQuantity | undefined,
+  originQuantity: OperationQuantity | null,
+): boolean {
   if (!taken || !Number.isFinite(taken.numericValue) || taken.unitId <= 0) return false;
   const originCommon = originQuantity ? toCommonUnit(originQuantity.numericValue, originQuantity.unitId) : 0;
   return toCommonUnit(taken.numericValue, taken.unitId) > originCommon;

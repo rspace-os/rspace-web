@@ -299,3 +299,84 @@ describe("buildOperationRequest (Destroy - terminal, no output)", () => {
     ]);
   });
 });
+
+// Amount modes for a multi-origin operation (adr/0009): "same" removes one shared amount from every
+// origin; "all" empties each origin to zero; "per subsample" removes a per-origin chosen amount.
+describe("buildOperationRequest (amount modes, multi-origin)", () => {
+  const poolOp: InventoryOperation = {
+    key: "pool",
+    labelKey: "operations.pool.label",
+    requiresMultiple: true,
+    takeAmountPerSubsample: true,
+    documentationStep: true,
+    inputs: [],
+    effect: {
+      nameFrom: "sampleName",
+      countFrom: "count",
+      eachAmountFrom: "eachAmount",
+      amountTakenFrom: "amountTaken",
+      links: [{ relationType: "HasPart", fieldNameKey: "operations.pool.linkFieldName" }],
+    },
+  } as unknown as InventoryOperation;
+  const values: OperationInputs = {
+    sampleName: "Pool",
+    count: 1,
+    eachAmount: { numericValue: 2, unitId: 3 },
+    amountTaken: { numericValue: 1, unitId: 3 },
+  };
+  const origins: Array<OperationOrigin> = [
+    { id: 1, globalId: "SS1", name: "Vial A", quantity: { numericValue: 5, unitId: 3 } },
+    { id: 2, globalId: "SS2", name: "Vial B", quantity: { numericValue: 8, unitId: 3 } },
+    { id: 3, globalId: "SS3", name: "Vial C", quantity: { numericValue: 4, unitId: 3 } },
+  ];
+
+  it("'take all' empties every origin (each takes its own full current quantity)", () => {
+    const request = buildOperationRequest({
+      operation: poolOp,
+      values,
+      origins,
+      resolveLabel,
+      templateId: null,
+      amountMode: "all",
+    });
+    expect(request.origins).toEqual([
+      { id: 1, amountTaken: { numericValue: 5, unitId: 3 } },
+      { id: 2, amountTaken: { numericValue: 8, unitId: 3 } },
+      { id: 3, amountTaken: { numericValue: 4, unitId: 3 } },
+    ]);
+  });
+
+  it("'per subsample' takes each origin's chosen amount, defaulting a missing one to zero", () => {
+    const request = buildOperationRequest({
+      operation: poolOp,
+      values,
+      origins,
+      resolveLabel,
+      templateId: null,
+      amountMode: "perSubsample",
+      perSubsampleAmounts: { SS1: { numericValue: 2, unitId: 3 }, SS2: { numericValue: 4, unitId: 3 } },
+    });
+    expect(request.origins).toEqual([
+      { id: 1, amountTaken: { numericValue: 2, unitId: 3 } },
+      { id: 2, amountTaken: { numericValue: 4, unitId: 3 } },
+      // SS3 has no chosen amount, so it takes a zero (no-op) decrement in its own unit.
+      { id: 3, amountTaken: { numericValue: 0, unitId: 3 } },
+    ]);
+  });
+
+  it("'same' (the default) takes the one shared amount from every origin", () => {
+    const request = buildOperationRequest({
+      operation: poolOp,
+      values,
+      origins,
+      resolveLabel,
+      templateId: null,
+      amountMode: "same",
+    });
+    expect(request.origins).toEqual([
+      { id: 1, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 2, amountTaken: { numericValue: 1, unitId: 3 } },
+      { id: 3, amountTaken: { numericValue: 1, unitId: 3 } },
+    ]);
+  });
+});
