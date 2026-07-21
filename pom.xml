@@ -1661,7 +1661,7 @@
            "default" id segment) be built into the WAR, so ids collided at runtime. This commit includes
            the per-entity @TableGenerator work for every TABLE-strategy entity. Re-float to the branch
            SNAPSHOT once the migration branches merge. -->
-      <version>a3f02d0de4e5b1774309b172eb62ebed69b3537c</version>
+      <version>25ccb50b250deca550ccf68fa968a1f1c737df53</version>
       <exclusions>
         <exclusion>
           <groupId>commons-io</groupId>
