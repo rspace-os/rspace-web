@@ -35,6 +35,7 @@ import com.researchspace.service.UserConnectionManager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.shiro.util.ThreadContext;
 import org.hibernate.search.Search;
 import org.junit.After;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -192,10 +193,8 @@ public abstract class SpringTransactionalTest extends BaseManagerTestCaseBase {
   }
 
   private Folder doInit(User user) throws IllegalAddChildOperation {
-    // Log out any subject left bound to this fork's thread by an earlier test before
-    // authenticating, so content initialisation is not affected by test ordering (a raw login on
-    // top of an inherited subject can fail with a Shiro AuthenticationException).
-    RSpaceTestUtils.logoutCurrUserAndLoginAs(user.getUsername(), TESTPASSWD);
+    ThreadContext.remove();
+    RSpaceTestUtils.login(user.getUsername(), TESTPASSWD);
     // replace application init for tests
     return contentInitializer.init(user.getId()).getUserRoot();
   }
