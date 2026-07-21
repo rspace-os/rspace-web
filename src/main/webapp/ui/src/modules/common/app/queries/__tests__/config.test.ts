@@ -39,24 +39,6 @@ describe("getAppConfig", () => {
     expect(request?.headers.get("X-Requested-With")).toBe("XMLHttpRequest");
   });
 
-  it("trims optional About-page values", async () => {
-    server.use(
-      http.get("/api/v2/config", () =>
-        HttpResponse.json({
-          branding: { bannerImageUrl: "/public/banner" },
-          helpLinks: [],
-          deploymentDescription: "  Configured for advanced research teams  ",
-          deploymentHelpEmail: "   ",
-        }),
-      ),
-    );
-
-    await expect(getAppConfig()).resolves.toMatchObject({
-      deploymentDescription: "Configured for advanced research teams",
-      deploymentHelpEmail: "",
-    });
-  });
-
   it("ignores obsolete embedded maintenance data", async () => {
     const response = {
       branding: { bannerImageUrl: "/public/banner" },

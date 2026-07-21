@@ -41,15 +41,10 @@ export async function getAppConfig(): Promise<AppConfig> {
       },
     });
 
-    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`.trim());
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
 
     const data: unknown = await response.json();
-    const config = parseOrThrow(AppConfigResponseSchema, data);
-    return {
-      ...config,
-      deploymentDescription: config.deploymentDescription.trim(),
-      deploymentHelpEmail: config.deploymentHelpEmail.trim(),
-    };
+    return parseOrThrow(AppConfigResponseSchema, data);
   } catch (error) {
     console.warn("Could not read app configuration", error);
     return DEFAULT_APP_CONFIG;
