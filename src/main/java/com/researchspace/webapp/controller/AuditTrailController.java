@@ -209,7 +209,7 @@ public class AuditTrailController extends BaseController {
     if (downloadType.equals("csv")) {
       return auditTrailSearchResultCsvGenerator.convertToCsv(res, inputSearchConfig);
     } else if (downloadType.equals("prov")) {
-      return auditTrailSearchResultProvGenerator.convertToProv(res);
+      return auditTrailSearchResultProvGenerator.convertToProvJson(res);
     } else {
       return new ResponseEntity<String>(HttpStatus.BAD_REQUEST);
     }

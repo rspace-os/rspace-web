@@ -59,9 +59,9 @@ public class AuditTrailSearchResultProvGenerator {
 
   private InteropFramework interopF = new InteropFramework(provFactory);
 
-  ResponseEntity<String> convertToProv(ISearchResults<AuditTrailSearchResult> res) {
+  Document createDocument(ISearchResults<AuditTrailSearchResult> res) {
     Namespace ns = createNamespace();
-    ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
+    // ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
     List<AuditTrailSearchResult> auditEntries = res.getResults();
     Map<String, Agent> agents = new HashMap<>();
     Map<String, Entity> entities = new HashMap<>();
@@ -196,11 +196,23 @@ public class AuditTrailSearchResultProvGenerator {
     document.getStatementOrBundle().addAll(invalidations);
     document.getStatementOrBundle().addAll(derivations);
     versions.values().stream().forEach(document.getStatementOrBundle()::addAll);
+    // interopF.writeDocument(os, ProvFormat.JSON, document);
+    // log.info(
+    //     "Written {} provenance statements into JSON from {} audit records",
+    //     document.getStatementOrBundle().size(),
+    //     auditEntries.size());
+    // return createProvEntityResponse(os.toString());
+    return document;
+  }
+
+  ResponseEntity<String> convertToProvJson(ISearchResults<AuditTrailSearchResult> res) {
+    Document document = createDocument(res);
+    ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
     interopF.writeDocument(os, ProvFormat.JSON, document);
     log.info(
-        "Written {} provenance statements into JSON from {} audit records",
+        "Wrote {} provenance statements into JSON from {} audit records",
         document.getStatementOrBundle().size(),
-        auditEntries.size());
+        res.getResults().size());
     return createProvEntityResponse(os.toString());
   }
 
