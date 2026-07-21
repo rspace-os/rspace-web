@@ -11,8 +11,11 @@ import com.researchspace.model.User;
  *
  * <p>This is generic. The effect is described entirely by the request; there is no per-operation
  * logic here, so a new operation is a new {@code operations_config.json} entry rather than new
- * Java. The impl lives in {@code service.inventory} so the AOP transaction advice wraps it and the
- * coordinated sub-manager calls join the same transaction (see adr/0001).
+ * Java. Transactionality comes from the {@code service.inventory.*Manager} AOP advice (see {@code
+ * applicationContext-service.xml}), whose pointcut matches this interface - it is in {@code
+ * service.inventory} and named {@code *Manager}. Calls through it, including the implementation in
+ * {@code service.inventory.impl}, run in one transaction that the coordinated sub-manager calls
+ * join (see adr/0001).
  */
 public interface InventoryOperationManager {
 
