@@ -53,7 +53,7 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
           errors.rejectValue(
               "amountTaken",
               "errors.inventory.operation.amountTakenExceedsOrigin",
-              "Cannot take more from an origin than it currently holds");
+              "Cannot take more from an origin than it currently holds.");
         }
         errors.popNestedPath();
       }

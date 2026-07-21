@@ -39,7 +39,7 @@ public class InventoryOperationPostValidator implements Validator {
       errors.rejectValue(
           "newSample.name",
           "errors.inventory.operation.sampleNameRequired",
-          "The new sample must have a name");
+          "The new sample must have a name.");
     }
 
     if (CollectionUtils.isEmpty(request.getOrigins())) {
@@ -73,7 +73,7 @@ public class InventoryOperationPostValidator implements Validator {
         errors.rejectValue(
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",
-            "Each origin must specify a non-negative amount, with a unit, to take from it");
+            "Each origin must specify a non-negative amount, with a unit, to take from it.");
       }
       errors.popNestedPath();
     }
