@@ -54,6 +54,17 @@ function TemplateStep({
   // B before A resolves, A can complete last; guarding on this ref discards a superseded lookup so
   // the latest pick always wins rather than the last response.
   const latestPickRef = React.useRef<string | null>(null);
+  // Abandon any in-flight lookup when the step unmounts. The wizard renders only the active step, so
+  // it moves off this step (Back, or a process-name / remembered-value / operation change that
+  // replaces the template selection) by unmounting it. Without this, a lookup still pending at that
+  // point resolves against the stale ref and restores the abandoned template onto the wizard's newer
+  // selection (Greptile P1); nulling the ref makes the guards below discard it.
+  React.useEffect(
+    () => () => {
+      latestPickRef.current = null;
+    },
+    [],
+  );
 
   const setMode = (mode: TemplateSelection["mode"]) => {
     setBlockError(null);

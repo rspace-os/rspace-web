@@ -10,7 +10,8 @@ and the vocabulary in the top-level `CONTEXT.md`. This file does not repeat them
 A generic, frontend-declared operation framework: a user picks a subsample, a
 modal wizard gathers input, and one atomic backend endpoint creates a new Sample
 parenting N subsamples, links them to the origin, and decrements the origin.
-Derive, Cryopreserve, and Aliquot ship on it; new operations are config-only.
+Aliquot, Passage, Pool, Derive, Cryopreserve, Revive, and Destroy ship on it; new
+operations are config-only.
 
 ## Requirements traceability
 
@@ -18,14 +19,14 @@ Derive, Cryopreserve, and Aliquot ship on it; new operations are config-only.
 | --- | --- | --- | --- |
 | 1 | Reusable/extensible operation "recipe" framework | Done | Operations are data, not code: `operations_config.json` validated by the valibot schema in `operationsConfig.ts`. Adding one is a config + i18n change, no Java (adr/0001). |
 | 2 | Per-instance/per-operation configurability | Done | Each config entry declares inputs, effect wiring, links, text fields, and the confirm summary. The wizard and endpoint never branch on the operation. |
-| 3 | Ship initial operations | Done | `operations_config.json` ships **Derive**, **Cryopreserve**, and **Aliquot**, all config-only. Cryopreserve = Derive + a Cryomedium text field + a `storageTemp` bounded at `maxCelsius: -18`. Aliquot takes equal-volume aliquots and links with `IsPartOf`. |
-| 4 | Remaining operations (Pool, Revive, Passage, Dispose) | Out of scope | Deferred (see "Out of scope"). The request schema was designed to admit multi-origin and in-place field edits later. |
-| 5 | Eligible-resource determination | Done (subsample-only) | `operationsForSelectionSize` filters by `minSelected`/`maxSelected`; all shipped operations are subsample-only, single selection. |
+| 3 | Ship initial operations | Done | `operations_config.json` ships **Aliquot**, **Passage**, **Pool**, **Derive**, **Cryopreserve**, **Revive**, and **Destroy**, all config-only. Cryopreserve = Derive + a Cryomedium text field + a `storageTemp` bounded at `maxCelsius: -18`. Aliquot takes equal-volume aliquots and links with `IsPartOf`. |
+| 4 | Remaining operations (Pool, Revive, Passage, Destroy) | Done | Shipped config-only on this branch: Pool is multi-origin with a per-origin amount mode (adr/0007, adr/0009), Destroy is a terminal in-place operation (adr/0008), Revive and Passage are further single-origin operations. |
+| 5 | Eligible-resource determination | Done (subsample-only) | `operationAvailability` enables each operation for the current selection: a single-origin operation needs exactly one subsample; a multi-origin operation (Pool) needs two or more subsamples of the same measurement category (adr/0007, adr/0009). |
 | 6 | Parameter/details steps | Done | `OperationDetailsStep` renders Details and Amounts slices (a `section` prop selects inputs); `detailsValid` validates each step's own inputs. |
 | 7 | Relation types (IsDerivedFrom, IsPartOf, IsVariantFormOf) | Done (via config) | `effect.links[]` carries a `relationType` from `DataCiteRelationType`. In use: `IsDerivedFrom` (Derive, Cryopreserve) and `IsPartOf` (Aliquot); `IsVariantFormOf` is available by config, no code change. |
 | 8 | Provenance link back to the origin | Done | `buildOperationRequest` puts every link (provenance + optional doc link) on the **new sample only**, never the subsamples. Reuses the RSDEV-1131 `link` field. |
 | 9 | Creation-complete confirmation screen | Done | `OperationConfirmation`: a preview Card of the sample to be created (header = name + operation; body = a `DescriptionList` label:value grid). Rows are picked/ordered by the operation's `confirmSummary` (RSDEV-1231 summary redesign). |
-| 10 | Atomic creation (sample + N subsamples + links + origin adjust) | Done | `POST /api/inventory/v1/operations`, one `@Transactional` in `InventoryOperationManagerImpl`: decrement each origin first, then create (adr/0005 ordering), reusing `SampleApiManager`. |
+| 10 | Atomic creation (sample + N subsamples + links + origin adjust) | Done | `POST /api/inventory/v1/operations`, one transaction around `InventoryOperationManagerImpl.performOperation` (applied by the inventory `*Manager` `txAdvice` AOP advisor in `applicationContext-service.xml`, not an explicit `@Transactional`): decrement each origin first, then create (adr/0005 ordering), reusing `SampleApiManager`. |
 | 11 | Origin quantity is only ever decreased | Done | Wizard captures a **positive** amount-taken (adr/0002); backend subtracts it. `registerApiSubSampleUsage` clamps at zero as defence-in-depth. |
 | 12 | Reject taking more than the origin holds | Done | Unit-aware, both sides: inline block in the Amounts step (`amountTakenExceedsOrigin` in `operationValidation.ts`) and HTTP 400 at the endpoint via `InventoryOperationPostValidator.amountTakenExceedsOrigin` (adr/0005). |
 | 13 | Template for the new sample | Done | Own framework step (adr/0003): parent-sample template, an existing template (`WizardTemplatePicker`), or none. Never creates a template; a template with undefaulted mandatory fields is blocked in-step (`templateResolution.ts`). |
@@ -50,6 +51,12 @@ Derive, Cryopreserve, and Aliquot ship on it; new operations are config-only.
   i18n keys).
 - **Aliquot**: a third operation, added config-only (equal-volume aliquots, parent
   volume decremented, `IsPartOf` link).
+- **Pool, Revive, Passage, Destroy**: further operations added config-only. Pool is
+  the first multi-origin operation (combines several same-category subsamples, links
+  each with `HasPart`) and offers an "amount to take" mode - same amount, take all,
+  or per subsample - via `takeAmountPerSubsample`/`defaultAmountMode` (adr/0007,
+  adr/0009). Destroy is terminal: it empties the origin and stamps a disposal date on
+  it, creating no new sample (adr/0008).
 - **Bounded temperature input**: `maxCelsius` on a `temperature` input, with the
   `storageTempMax` inline error (Cryopreserve's `storageTemp` at or below `-18` °C).
 
@@ -71,9 +78,9 @@ Per the epic's scope boundaries and as carried into this branch:
 
 - Backend/data-model changes beyond the thin generic endpoint; lineage
   visualisation; reservation/request workflow (RPD-183); consent-status fields.
-- Multi-origin operations (Pool); Revive; operations that mutate the origin's own
-  fields in place (Passage, Dispose); link-field de-duplication across consecutive
-  in-place operations; **list-view entry points** (item-view picker only for now).
+- Link-field de-duplication across consecutive in-place operations; **list-view
+  entry points** (item-view picker only for now). (Pool, Revive, Passage, and
+  Destroy, previously deferred here, now ship on this branch — see requirement 4.)
 
 ## Acceptance-criteria status
 

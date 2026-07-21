@@ -117,6 +117,17 @@ class InventoryOperationPostValidatorTest {
   }
 
   @Test
+  void rejectsAmountTakenWithNonPositiveUnit() {
+    // The frontend uses unitId <= 0 (UNSET_UNIT = 0) as an "unset" marker; a non-positive unit id
+    // is
+    // not a real unit and would fail the unit-aware subtraction, so reject it here with a clean
+    // 400.
+    ApiInventoryOperationPost request = validRequest();
+    request.getOrigins().get(0).setAmountTaken(new ApiQuantityInfo(new BigDecimal("1"), 0));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
   void rejectsDuplicateOriginIds() {
     // The same subsample listed twice would be decremented twice while each entry is validated
     // against the same original quantity, so it could be drained past the over-removal limit.

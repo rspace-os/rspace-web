@@ -5,8 +5,9 @@
  *
  * The provenance/documentation link(s) and text fields (e.g. Cryomedium) go on the new sample only,
  * never on the subsamples it creates; custom fields added to an origin itself (Destroy's disposed
- * date) travel on the origin update. Each origin's amount-taken is a positive decrement, clamped at
- * zero by the backend (adr/0002). `templateId` is chosen by the user in the wizard's template step
+ * date) travel on the origin update. Each origin's amount-taken is a positive decrement; the backend
+ * rejects taking more than the origin holds (HTTP 400, adr/0005) and clamps at zero only as
+ * defence-in-depth (adr/0002). `templateId` is chosen by the user in the wizard's template step
  * (none / an existing template / a template created from the origin's sample); null means an ad-hoc
  * sample (adr/0003). A terminal operation (noOutput, e.g. Destroy) creates no sample, so newSample is
  * null and only the origins are affected.

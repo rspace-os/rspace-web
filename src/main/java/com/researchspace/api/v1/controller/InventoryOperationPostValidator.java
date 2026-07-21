@@ -80,16 +80,19 @@ public class InventoryOperationPostValidator implements Validator {
   }
 
   /**
-   * A valid amount-taken is a non-negative numeric value carrying a unit. The unit is required
+   * A valid amount-taken is a non-negative numeric value carrying a real unit. The unit is required
    * because the manager converts it to a {@link com.researchspace.model.units.QuantityInfo}
-   * (unit-aware subtraction); a null unit would fail there with a 500 rather than a clean 400. Zero
-   * is allowed (a no-op decrement, e.g. Passage).
+   * (unit-aware subtraction); a null or non-positive unit would fail there with a 500 rather than a
+   * clean 400. The frontend uses a non-positive unit id (UNSET_UNIT = 0) as an "unset" marker, so
+   * the unit id must be present and greater than zero. A zero numeric value is still allowed (a
+   * no-op decrement, e.g. Passage); a non-positive unit id is not.
    */
   private static boolean isValidAmountTaken(ApiQuantityInfo quantity) {
     return quantity != null
         && quantity.getNumericValue() != null
         && quantity.getNumericValue().compareTo(BigDecimal.ZERO) >= 0
-        && quantity.getUnitId() != null;
+        && quantity.getUnitId() != null
+        && quantity.getUnitId() > 0;
   }
 
   /**

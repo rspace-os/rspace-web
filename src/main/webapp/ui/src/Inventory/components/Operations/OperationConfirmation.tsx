@@ -212,9 +212,12 @@ function OperationConfirmation({
       <Card variant="outlined">
         <CardHeader
           // A terminal operation (Destroy) creates no sample, so the card names the origin subsample it
-          // acts on rather than a new sample name.
+          // acts on rather than a new sample name, and its subheader must not claim a "New sample".
           title={operation.noOutput ? originName : name}
-          subheader={t("operations.confirm.cardSubheader", { operation: resolveLabel(operation.labelKey) })}
+          subheader={t(
+            operation.noOutput ? "operations.confirm.cardSubheaderTerminal" : "operations.confirm.cardSubheader",
+            { operation: resolveLabel(operation.labelKey) },
+          )}
           sx={{
             backgroundColor: theme.palette.record.sample.lighter,
             paddingBottom: "4px",

@@ -147,6 +147,30 @@ describe("TemplateStep", () => {
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
   });
 
+  it("abandons a pending template lookup when the step unmounts (wizard navigated away)", async () => {
+    // Pick a template, then unmount the step before its lookup resolves - as happens when the user
+    // steps back and a process-name / remembered-value / operation change replaces the wizard's
+    // template selection. The late result must not restore the abandoned template onto the newer
+    // selection (Greptile P1: only picker/mode changes invalidated the in-flight lookup before).
+    let resolveA: () => void = () => undefined;
+    const templateA: FakeTemplate = {
+      id: 5,
+      name: "A",
+      fetchAdditionalInfo: () => new Promise((r) => (resolveA = r)),
+      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
+    };
+    const onChange = vi.fn();
+    const { unmount } = render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
+    const user = userEvent.setup();
+
+    currentTemplate = templateA;
+    await user.click(screen.getByTestId("template-picker"));
+    unmount(); // the wizard moved off the template step
+    resolveA();
+    await Promise.resolve();
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+  });
+
   it("abandons a pending template lookup when the user switches mode (no stale restore)", async () => {
     // Pick a template, then switch to "No template" before its lookup resolves: the late result
     // must not restore the abandoned template.

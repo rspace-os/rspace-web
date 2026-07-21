@@ -52,8 +52,8 @@ resolved during design. This file is a glossary only — no implementation detai
   it). _Avoid_: no-output operation, in-place operation.
 - **Origin** — the existing subsample(s) selected as input to an Operation. Only
   subsamples are eligible; never a Sample, Container, or Instrument. An Operation
-  may decrement, increment, or leave unchanged an Origin's quantity, and may add a
-  field to the Origin (an Origin field).
+  may decrement or leave unchanged an Origin's quantity (never increase it;
+  adr/0002), and may add a field to the Origin (an Origin field).
 - **Origin field** — a custom field an Operation adds to an Origin subsample itself
   (as distinct from a field on the Derived Sample), e.g. Destroy's disposal date.
   _Avoid_: origin annotation, in-place field.

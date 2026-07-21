@@ -225,6 +225,9 @@ describe("OperationConfirmation", () => {
     renderConf({ op: destroyOp, values: {}, templateSelection: { mode: "none", templateId: null, remember: false } });
     // A terminal operation creates no sample, so the card title is the origin subsample name.
     expect(screen.getByText("S1.01")).toBeInTheDocument();
+    // ...and the subheader must not claim a "New sample": it uses the terminal-op variant.
+    expect(screen.getByText(/confirm\.cardSubheaderTerminal/)).toBeInTheDocument();
+    expect(screen.queryByText(/confirm\.cardSubheader$/)).not.toBeInTheDocument();
     // The description shows here (moved off the now-skipped details step) as an info panel.
     expect(screen.getByText(/operations\.destroy\.description/)).toBeInTheDocument();
     expect(screen.getByText(/confirm\.labels\.originEmptied/)).toBeInTheDocument();

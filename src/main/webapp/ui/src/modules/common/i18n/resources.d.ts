@@ -3795,6 +3795,7 @@ export default interface Resources {
       },
       "confirm": {
         "cardSubheader": "New sample · via {operation}",
+        "cardSubheaderTerminal": "Origin subsample · via {operation}",
         "labels": {
           "amountTaken": "Amount taken",
           "amountTakenEach": "Amount taken from each subsample",
