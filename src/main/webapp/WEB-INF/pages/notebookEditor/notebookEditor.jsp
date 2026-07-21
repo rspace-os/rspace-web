@@ -7,8 +7,6 @@
 
 <body>
 
-<body>
-
   <script>
     const RS_MAX_FILE_SIZE = ${applicationScope['RS_DEPLOY_PROPS']['maxUploadSize']};
   </script>
