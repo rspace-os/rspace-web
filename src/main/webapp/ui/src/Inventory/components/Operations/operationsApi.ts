@@ -11,7 +11,10 @@ export type OperationResult = { id: number; globalId: string; name: string };
  */
 export async function performOperation(request: OperationRequest): Promise<OperationResult | null> {
   const { data } = await ApiService.post<OperationResult | null>("operations", request);
-  return data;
+  // A terminal operation returns an empty body, which Axios surfaces as "" (not null) once JSON
+  // parsing of the empty string fails; normalise any empty/falsy response to null so the declared
+  // OperationResult | null return type holds and callers never see a stray "".
+  return data || null;
 }
 
 /**

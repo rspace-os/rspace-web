@@ -47,15 +47,22 @@ public class InventoryOperationsApiController extends BaseApiInventoryController
       int index = 0;
       for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
         errors.pushNestedPath(String.format("origins[%d]", index++));
-        ApiSubSample current = subSampleApiMgr.getApiSubSampleById(origin.getId(), user);
-        if (InventoryOperationPostValidator.amountTakenExceedsOrigin(
-            origin.getAmountTaken(), current.getQuantity())) {
-          errors.rejectValue(
-              "amountTaken",
-              "errors.inventory.operation.amountTakenExceedsOrigin",
-              "Cannot take more from an origin than it currently holds.");
+        // try/finally so the nested-path stack is always restored, even if getApiSubSampleById
+        // throws
+        // (missing origin / permission edge cases); otherwise a thrown read would leave the
+        // BindingResult's path stack unbalanced.
+        try {
+          ApiSubSample current = subSampleApiMgr.getApiSubSampleById(origin.getId(), user);
+          if (InventoryOperationPostValidator.amountTakenExceedsOrigin(
+              origin.getAmountTaken(), current.getQuantity())) {
+            errors.rejectValue(
+                "amountTaken",
+                "errors.inventory.operation.amountTakenExceedsOrigin",
+                "Cannot take more from an origin than it currently holds.");
+          }
+        } finally {
+          errors.popNestedPath();
         }
-        errors.popNestedPath();
       }
     }
     throwBindExceptionIfErrors(errors);
