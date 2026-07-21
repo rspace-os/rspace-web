@@ -1,0 +1,72 @@
+package com.researchspace.featureflags;
+
+import com.researchspace.model.User;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.io.Serializable;
+
+@Entity
+@Table(
+    name = "FeatureFlagUserOverride",
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uq_feature_flag_user_flag",
+            columnNames = {"user_id", "flag_name"}))
+public class FeatureFlagUserOverride implements Serializable {
+
+  private static final long serialVersionUID = 1L;
+
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(
+      name = "user_id",
+      nullable = false,
+      foreignKey = @ForeignKey(name = "fk_feature_flag_override_user"))
+  private User user;
+
+  @Column(name = "flag_name", length = FeatureFlagDefinition.MAX_NAME_LENGTH, nullable = false)
+  private String flagName;
+
+  @Column(name = "enabled", nullable = false)
+  private boolean enabled;
+
+  protected FeatureFlagUserOverride() {}
+
+  public FeatureFlagUserOverride(User user, String flagName, boolean enabled) {
+    this.user = user;
+    this.flagName = flagName;
+    this.enabled = enabled;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public User getUser() {
+    return user;
+  }
+
+  public String getFlagName() {
+    return flagName;
+  }
+
+  public boolean isEnabled() {
+    return enabled;
+  }
+
+  public void setEnabled(boolean enabled) {
+    this.enabled = enabled;
+  }
+}
