@@ -15,10 +15,6 @@ export const livechatPropertiesQueryKeys = {
   detail: () => [...livechatPropertiesQueryKeys.all, "detail"] as const,
 };
 
-export function parseLivechatProperties(data: unknown) {
-  return parseOrThrow(LivechatPropertiesSchema, data);
-}
-
 export async function getLivechatProperties(): Promise<LivechatProperties> {
   const response = await fetch("/session/ajax/livechatProperties", {
     method: "GET",
@@ -33,7 +29,7 @@ export async function getLivechatProperties(): Promise<LivechatProperties> {
     throw new Error(`Failed to fetch livechat properties: ${response.statusText}`);
   }
 
-  return parseLivechatProperties(data);
+  return parseOrThrow(LivechatPropertiesSchema, data);
 }
 
 export function useLivechatPropertiesQuery() {

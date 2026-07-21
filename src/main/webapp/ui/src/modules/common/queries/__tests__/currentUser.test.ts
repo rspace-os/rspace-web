@@ -5,12 +5,7 @@ import { setupServer } from "msw/node";
 import { createElement, Suspense } from "react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { useOauthTokenQuery } from "@/modules/common/hooks/auth";
-import {
-  getCurrentUser,
-  parseCurrentUserResponse,
-  useCurrentUserEventSync,
-  useCurrentUserQuery,
-} from "@/modules/common/queries/currentUser";
+import { getCurrentUser, useCurrentUserEventSync, useCurrentUserQuery } from "@/modules/common/queries/currentUser";
 
 vi.mock("@/modules/common/hooks/auth", () => ({
   useOauthTokenQuery: vi.fn(),
@@ -60,21 +55,23 @@ afterAll(() => {
 });
 
 describe("current-user query", () => {
-  it("parses the complete v2 current-user contract", () => {
-    expect(parseCurrentUserResponse(currentUserResponse)).toEqual(currentUserResponse);
+  it("rejects malformed current-user responses", async () => {
+    server.use(http.get("/api/v2/users/me", () => HttpResponse.json({ username: "ada" })));
+
+    await expect(getCurrentUser("token")).rejects.toThrow("Validation failed");
   });
 
-  it("rejects malformed current-user responses", () => {
-    expect(() => parseCurrentUserResponse({ username: "ada" })).toThrow("Validation failed");
-  });
+  it("rejects a non-ISO last-session timestamp", async () => {
+    server.use(
+      http.get("/api/v2/users/me", () =>
+        HttpResponse.json({
+          ...currentUserResponse,
+          session: { ...currentUserResponse.session, lastSession: "15 July 2026" },
+        }),
+      ),
+    );
 
-  it("rejects a non-ISO last-session timestamp", () => {
-    expect(() =>
-      parseCurrentUserResponse({
-        ...currentUserResponse,
-        session: { ...currentUserResponse.session, lastSession: "15 July 2026" },
-      }),
-    ).toThrow("Validation failed");
+    await expect(getCurrentUser("token")).rejects.toThrow("Validation failed");
   });
 
   it("fetches the current user with bearer authentication", async () => {

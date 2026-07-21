@@ -46,10 +46,6 @@ export const currentUserQueryKeys = {
   me: () => [...currentUserQueryKeys.all, "me"] as const,
 };
 
-export function parseCurrentUserResponse(data: unknown) {
-  return parseOrThrow(CurrentUserResponseSchema, data);
-}
-
 export async function getCurrentUser(token: string): Promise<CurrentUser> {
   const response = await fetch("/api/v2/users/me", {
     method: "GET",
@@ -64,7 +60,7 @@ export async function getCurrentUser(token: string): Promise<CurrentUser> {
   }
 
   const data: unknown = await response.json();
-  return parseCurrentUserResponse(data);
+  return parseOrThrow(CurrentUserResponseSchema, data);
 }
 
 export function useCurrentUserQuery() {
