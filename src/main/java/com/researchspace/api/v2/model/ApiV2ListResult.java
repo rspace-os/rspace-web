@@ -1,7 +1,6 @@
 package com.researchspace.api.v2.model;
 
 import java.util.List;
-import java.util.function.Function;
 
 public record ApiV2ListResult<T>(
     List<T> docs,
@@ -28,16 +27,5 @@ public record ApiV2ListResult<T>(
         hasNext,
         hasPrev ? page - 1 : null,
         hasNext ? page + 1 : null);
-  }
-
-  public static <S, T> ApiV2ListResult<T> paginate(
-      List<S> all, ApiV2PaginationCriteria pagination, Function<S, T> mapper) {
-    int limit = pagination.getLimit();
-    int page = pagination.getPage();
-    long offset = (long) (page - 1) * limit; // long: page is unbounded, avoid int overflow
-    int fromIndex = (int) Math.min(offset, all.size());
-    int toIndex = (int) Math.min(offset + limit, all.size());
-    List<T> docs = all.subList(fromIndex, toIndex).stream().map(mapper).toList();
-    return of(docs, all.size(), limit, page);
   }
 }

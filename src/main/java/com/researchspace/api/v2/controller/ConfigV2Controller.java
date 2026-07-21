@@ -2,6 +2,7 @@ package com.researchspace.api.v2.controller;
 
 import com.researchspace.api.v1.controller.ApiController;
 import com.researchspace.api.v1.controller.BaseApiController;
+import com.researchspace.api.v1.controller.PublicApi;
 import com.researchspace.api.v2.model.ApiV2Config;
 import com.researchspace.api.v2.model.ApiV2Config.Branding;
 import com.researchspace.api.v2.model.ApiV2Config.HelpLink;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @ApiController
+@PublicApi
 @RequestMapping("/api/v2/config")
 public class ConfigV2Controller extends BaseApiController {
 

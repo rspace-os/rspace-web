@@ -4,7 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.researchspace.Constants;
+import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import com.researchspace.testutils.SpringTransactionalTest;
 import java.util.Calendar;
@@ -109,6 +111,36 @@ public class MaintenanceManagerTest extends SpringTransactionalTest {
     // cleanup
     maintenanceManager.removeScheduledMaintenance(firstMaintenance.getId(), sysUser);
     maintenanceManager.removeScheduledMaintenance(secondMaintenance.getId(), sysUser);
+  }
+
+  @Test
+  public void pagesFutureMaintenancesInStableStartDateOrder() {
+    Calendar calendar = Calendar.getInstance();
+    calendar.add(Calendar.DAY_OF_MONTH, 1);
+    Date firstStart = calendar.getTime();
+    calendar.add(Calendar.HOUR_OF_DAY, 1);
+    Date secondStart = calendar.getTime();
+    calendar.add(Calendar.HOUR_OF_DAY, 1);
+    Date end = calendar.getTime();
+
+    ScheduledMaintenance first =
+        maintenanceManager.saveScheduledMaintenance(
+            new ScheduledMaintenance(firstStart, end), sysUser);
+    ScheduledMaintenance second =
+        maintenanceManager.saveScheduledMaintenance(
+            new ScheduledMaintenance(secondStart, end), sysUser);
+    PaginationCriteria<ScheduledMaintenance> pagination = new PaginationCriteria<>();
+    pagination.setResultsPerPage(1);
+
+    ISearchResults<ScheduledMaintenance> firstPage =
+        maintenanceManager.getFutureMaintenances(pagination);
+    pagination.setPageNumber(1L);
+    ISearchResults<ScheduledMaintenance> secondPage =
+        maintenanceManager.getFutureMaintenances(pagination);
+
+    assertEquals(Long.valueOf(2), firstPage.getTotalHits());
+    assertEquals(first.getId(), firstPage.getFirstResult().getId());
+    assertEquals(second.getId(), secondPage.getFirstResult().getId());
   }
 
   @Test

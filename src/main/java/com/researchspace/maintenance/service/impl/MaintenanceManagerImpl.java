@@ -1,8 +1,10 @@
 package com.researchspace.maintenance.service.impl;
 
+import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.dao.MaintenanceDao;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
 import java.util.List;
@@ -36,6 +38,12 @@ public class MaintenanceManagerImpl implements MaintenanceManager {
   @Override
   public List<ScheduledMaintenance> getAllFutureMaintenances() {
     return maintenanceDao.getAllFutureMaintenances();
+  }
+
+  @Override
+  public ISearchResults<ScheduledMaintenance> getFutureMaintenances(
+      PaginationCriteria<ScheduledMaintenance> pagination) {
+    return maintenanceDao.getFutureMaintenances(pagination);
   }
 
   @Override

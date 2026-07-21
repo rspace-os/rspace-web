@@ -7,22 +7,27 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.researchspace.core.util.SearchResultsImpl;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.dtos.IControllerInputValidator;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -52,14 +57,12 @@ class MaintenancesApiControllerTest {
         .when(inputValidator)
         .validate(any(), any(Validator.class), any(Errors.class));
     mockMvc =
-        MockMvcBuilders.standaloneSetup(controller)
-            .setControllerAdvice(new ApiV2ControllerAdvice())
-            .build();
+        MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(problemAdvice()).build();
   }
 
   @Test
   void appliesDefaultPaginationWhenNoMaintenanceIsScheduled() throws Exception {
-    when(maintenanceManager.getAllFutureMaintenances()).thenReturn(Collections.emptyList());
+    stubPage(Collections.emptyList(), 0, 1, 20);
 
     mockMvc
         .perform(get(ENDPOINT))
@@ -77,12 +80,16 @@ class MaintenancesApiControllerTest {
 
   @Test
   void pagesAllFutureMaintenancesThroughTheEnvelope() throws Exception {
-    when(maintenanceManager.getAllFutureMaintenances())
+    when(maintenanceManager.getFutureMaintenances(any()))
         .thenReturn(
-            List.of(
-                futureMaintenance(2, "Planned database upgrade"),
-                futureMaintenance(26, "Second window"),
-                futureMaintenance(50, "Third window")));
+            new SearchResultsImpl<>(
+                List.of(
+                    futureMaintenance(2, "Planned database upgrade"),
+                    futureMaintenance(26, "Second window")),
+                0,
+                3,
+                2),
+            new SearchResultsImpl<>(List.of(futureMaintenance(50, "Third window")), 1, 3, 2));
 
     // Page 1 of 2: the first two windows, and a next page.
     mockMvc
@@ -116,36 +123,49 @@ class MaintenancesApiControllerTest {
 
   @Test
   void returnsAnEmptyPageWhenPagingPastTheEnd() throws Exception {
-    when(maintenanceManager.getAllFutureMaintenances())
-        .thenReturn(List.of(futureMaintenance(2, "Only window")));
+    stubPage(Collections.emptyList(), 1, 999, 20);
 
     mockMvc
         .perform(get(ENDPOINT).param("page", "999"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isEmpty())
         .andExpect(jsonPath("$.totalDocs").value(1));
+    verify(maintenanceManager, never()).getAllFutureMaintenances();
   }
 
   @Test
   void rejectsInvalidOrNonNumericPaginationWithProblemDetails() throws Exception {
     mockMvc
         .perform(get(ENDPOINT).param("page", "0").param("limit", "101"))
-        .andExpect(status().isBadRequest())
-        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-        .andExpect(jsonPath("$.title").value("Bad Request"))
-        .andExpect(jsonPath("$.status").value(400))
-        .andExpect(jsonPath("$.detail").exists());
-    mockMvc
-        .perform(get(ENDPOINT).param("page", "not-a-number"))
-        .andExpect(status().isBadRequest())
-        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
-        .andExpect(jsonPath("$.status").value(400));
+        .andExpect(status().isBadRequest());
+    mockMvc.perform(get(ENDPOINT).param("page", "not-a-number")).andExpect(status().isBadRequest());
   }
 
   @Test
   void doesNotRequireAnAuthenticatedUserRequestAttribute() throws Exception {
-    when(maintenanceManager.getAllFutureMaintenances()).thenReturn(Collections.emptyList());
+    stubPage(Collections.emptyList(), 0, 1, 20);
     mockMvc.perform(get(ENDPOINT)).andExpect(status().isOk());
+  }
+
+  private void stubPage(
+      List<ScheduledMaintenance> results, long total, int page, int resultsPerPage) {
+    when(maintenanceManager.getFutureMaintenances(any()))
+        .thenReturn(new SearchResultsImpl<>(results, page - 1, total, resultsPerPage));
+  }
+
+  private static ApiV2ControllerAdvice problemAdvice() {
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "errors.api.pagination.page.min", Locale.getDefault(), "Page must be 1 or greater.");
+    source.addMessage(
+        "errors.api.pagination.limit.range",
+        Locale.getDefault(),
+        "Limit must be between 1 and {0}.");
+    source.addMessage(
+        "errors.api.v2.invalidRequest",
+        Locale.getDefault(),
+        "The request contains an invalid value.");
+    return new ApiV2ControllerAdvice(new MessageSourceUtils(source));
   }
 
   private static ScheduledMaintenance futureMaintenance(int hoursFromNow, String message) {

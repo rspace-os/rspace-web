@@ -13,11 +13,7 @@ import type { ReactNode } from "react";
 
 export type AppBarConfig = {
   currentPage: AppBarPage;
-  /**
-   * false = auth-optional page (publicly reachable): show the authenticated app
-   * bar when the user is logged in, the public bar otherwise. Default (true /
-   * unset) assumes an authenticated-only page.
-   */
+  /** false = auth-optional page: authenticated bar if logged in, else public bar. Default true = authenticated-only. */
   authenticated?: boolean;
   renderHamburger?: () => ReactNode;
 };

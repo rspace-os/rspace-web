@@ -47,7 +47,7 @@ export default function AppShell() {
 
   const authenticatedAppBar = appBarConfig !== false && (
     <React.Suspense fallback={<PublicAppBar {...appBarConfig} />}>
-      {/* inside the boundary so its suspending queries use this fallback, not a blank page */}
+      {/* inside the boundary so suspending queries use this fallback, not a blank page */}
       <UserSessionBootstrap />
       <AuthenticatedAppBar {...appBarConfig} />
       <RouteTransitionIndicator />
@@ -59,9 +59,7 @@ export default function AppShell() {
       <HeadContent />
       {appBarConfig !== false && appBarConfig.authenticated !== false && authenticatedAppBar}
       {appBarConfig !== false && appBarConfig.authenticated === false && (
-        // Auth-optional pages (e.g. /about is `anon` in security.xml): render the
-        // full app bar for a logged-in user, and fall back to the public bar when
-        // the auth/user queries reject for an anonymous visitor.
+        // Auth-optional page: authenticated bar for a logged-in user, public bar when auth queries reject.
         <CatchBoundary getResetKey={() => "public-app-bar"} errorComponent={() => <PublicAppBar {...appBarConfig} />}>
           {authenticatedAppBar}
         </CatchBoundary>

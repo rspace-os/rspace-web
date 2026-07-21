@@ -1,5 +1,7 @@
 package com.researchspace.api.v2.controller;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,8 +27,13 @@ public class PublicApiV2AuthenticationMVCIT extends API_MVC_TestBase {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.docs").isArray());
 
+    mockMvc.perform(get("/api/v2/config/")).andExpect(status().isOk());
+    mockMvc.perform(get("/api/v2/maintenances/")).andExpect(status().isOk());
+
     mockMvc
         .perform(createBuilderForAnonymousGet(API_VERSION.TWO, "users/me"))
-        .andExpect(status().isUnauthorized());
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+        .andExpect(jsonPath("$.status").value(401));
   }
 }

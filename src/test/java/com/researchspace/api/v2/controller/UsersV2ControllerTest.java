@@ -1,21 +1,24 @@
 package com.researchspace.api.v2.controller;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.api.v1.auth.ApiAuthenticator;
 import com.researchspace.api.v1.controller.ApiAuthenticationInterceptor;
-import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.model.ImageBlob;
 import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.model.record.Folder;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
@@ -23,15 +26,18 @@ import com.researchspace.service.UserProfileManager;
 import com.researchspace.service.inventory.ContainerApiManager;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Optional;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.util.NestedServletException;
 
 class UsersV2ControllerTest {
 
@@ -52,7 +58,8 @@ class UsersV2ControllerTest {
     ReflectionTestUtils.setField(
         controller, "propertyPermissionManager", propertyPermissionManager);
     ThreadContext.bind(subject);
-    mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(problemAdvice()).build();
   }
 
   @AfterEach
@@ -108,6 +115,7 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.hasPiRole").value(true))
         .andExpect(jsonPath("$.hasSysAdminRole").value(false))
         .andExpect(jsonPath("$.profileImageUrl").value("/userform/profileImage/12/34"))
+        .andExpect(jsonPath("$.profileImageApiUrl").value("/api/v2/users/me/profile-image"))
         .andExpect(jsonPath("$.orcid.available").value(true))
         .andExpect(jsonPath("$.orcid.id").value("0000-0001-2345-6789"))
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(true))
@@ -129,9 +137,40 @@ class UsersV2ControllerTest {
         .perform(get("/api/v2/users/me").requestAttr("user", user))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.profileImageUrl").isEmpty())
+        .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
         .andExpect(jsonPath("$.orcid.available").value(false))
         .andExpect(jsonPath("$.orcid.id").isEmpty())
         .andExpect(jsonPath("$.session.lastSession").isEmpty());
+  }
+
+  @Test
+  void servesProfileImageThroughApiAuthenticationSurface() throws Exception {
+    User user = mock(User.class);
+    UserProfile profile = mock(UserProfile.class);
+    ImageBlob image = mock(ImageBlob.class);
+    byte[] imageBytes = {1, 2, 3};
+    when(userProfileManager.getUserProfile(user)).thenReturn(profile);
+    when(profile.getProfilePicture()).thenReturn(image);
+    when(image.getId()).thenReturn(34L);
+    when(image.getData()).thenReturn(imageBytes);
+
+    mockMvc
+        .perform(get("/api/v2/users/me/profile-image").requestAttr("user", user))
+        .andExpect(status().isOk())
+        .andExpect(header().string("Cache-Control", "no-store"))
+        .andExpect(content().contentType("image/png"))
+        .andExpect(content().bytes(imageBytes));
+  }
+
+  @Test
+  void returnsNotFoundWhenCurrentUserHasNoProfileImage() throws Exception {
+    User user = mock(User.class);
+    UserProfile profile = mock(UserProfile.class);
+    when(userProfileManager.getUserProfile(user)).thenReturn(profile);
+
+    mockMvc
+        .perform(get("/api/v2/users/me/profile-image").requestAttr("user", user))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -148,7 +187,7 @@ class UsersV2ControllerTest {
     mockMvc
         .perform(get("/api/v2/users/me").requestAttr("user", user))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.length()").value(13))
+        .andExpect(jsonPath("$.length()").value(14))
         .andExpect(jsonPath("$.orcid.length()").value(2))
         .andExpect(jsonPath("$.capabilities.length()").value(3))
         .andExpect(jsonPath("$.session.length()").value(2))
@@ -162,6 +201,7 @@ class UsersV2ControllerTest {
         .andExpect(jsonPath("$.hasPiRole").value(false))
         .andExpect(jsonPath("$.hasSysAdminRole").value(false))
         .andExpect(jsonPath("$.profileImageUrl").isEmpty())
+        .andExpect(jsonPath("$.profileImageApiUrl").isEmpty())
         .andExpect(jsonPath("$.orcid.available").value(false))
         .andExpect(jsonPath("$.orcid.id").isEmpty())
         .andExpect(jsonPath("$.capabilities.canUseInventory").value(false))
@@ -233,9 +273,19 @@ class UsersV2ControllerTest {
     MockMvc authenticatedMockMvc =
         MockMvcBuilders.standaloneSetup(new UsersV2Controller())
             .addInterceptors(interceptor)
-            .setControllerAdvice(new ApiControllerAdvice())
+            .setControllerAdvice(problemAdvice())
             .build();
 
-    authenticatedMockMvc.perform(get("/api/v2/users/me")).andExpect(status().isUnauthorized());
+    assertThrows(
+        NestedServletException.class, () -> authenticatedMockMvc.perform(get("/api/v2/users/me")));
+  }
+
+  private static ApiV2ControllerAdvice problemAdvice() {
+    StaticMessageSource source = new StaticMessageSource();
+    source.addMessage(
+        "errors.api.v2.authenticationRequired", Locale.getDefault(), "Authentication is required.");
+    source.addMessage(
+        "errors.api.v2.notFound", Locale.getDefault(), "The requested resource was not found.");
+    return new ApiV2ControllerAdvice(new MessageSourceUtils(source));
   }
 }

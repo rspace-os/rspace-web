@@ -58,7 +58,7 @@ public class APIRequestThrottlingInterceptor extends AbstractThrottleInterceptor
 
   public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
       throws IOException {
-    String identifier = assertApiAccess(request);
+    String identifier = assertApiAccess(request, handler);
     if (isInventoryRequest(request)) {
       setInvHeaderStats(request, response, identifier);
       return inventoryThrottler.proceed(identifier);

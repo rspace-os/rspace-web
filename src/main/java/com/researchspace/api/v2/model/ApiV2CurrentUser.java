@@ -11,6 +11,7 @@ public record ApiV2CurrentUser(
     boolean hasPiRole,
     boolean hasSysAdminRole,
     String profileImageUrl,
+    String profileImageApiUrl,
     Orcid orcid,
     Capabilities capabilities,
     Session session) {

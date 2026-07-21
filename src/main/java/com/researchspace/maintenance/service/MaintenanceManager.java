@@ -1,6 +1,8 @@
 package com.researchspace.maintenance.service;
 
+import com.researchspace.core.util.ISearchResults;
 import com.researchspace.maintenance.model.ScheduledMaintenance;
+import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.User;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +27,15 @@ public interface MaintenanceManager {
    * @return List of {@link ScheduledMaintenance} or empty list
    */
   List<ScheduledMaintenance> getAllFutureMaintenances();
+
+  /**
+   * Gets one page of active or future scheduled maintenances, ordered by start date and id.
+   *
+   * @param pagination page and page-size criteria
+   * @return matching maintenance rows and the total number of matches
+   */
+  ISearchResults<ScheduledMaintenance> getFutureMaintenances(
+      PaginationCriteria<ScheduledMaintenance> pagination);
 
   /**
    * Get old or expired maintenances, ordered by startDate.

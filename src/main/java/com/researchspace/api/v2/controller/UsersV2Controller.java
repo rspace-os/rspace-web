@@ -19,9 +19,14 @@ import java.util.Date;
 import java.util.Optional;
 import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.server.ResponseStatusException;
 
 @ApiController
 @RequestMapping("/api/v2/users")
@@ -34,6 +39,9 @@ public class UsersV2Controller {
 
   @GetMapping("/me")
   public ApiV2CurrentUser getCurrentUser(@RequestAttribute(name = "user") User user) {
+    UserProfile profile = userProfileManager.getUserProfile(user);
+    Long imageId =
+        Optional.ofNullable(profile.getProfilePicture()).map(ImageBlob::getId).orElse(null);
     return new ApiV2CurrentUser(
         user.getId(),
         user.getUsername(),
@@ -44,17 +52,24 @@ public class UsersV2Controller {
         containerApiManager.getWorkbenchIdForUser(user),
         user.isPI(),
         user.hasSysadminRole(),
-        profileImageUrl(user),
+        imageId == null ? null : "/userform/profileImage/" + profile.getId() + "/" + imageId,
+        imageId == null ? null : "/api/v2/users/me/profile-image",
         orcid(user),
         capabilities(user),
         session(user));
   }
 
-  private String profileImageUrl(User user) {
-    UserProfile profile = userProfileManager.getUserProfile(user);
-    Long imageId =
-        Optional.ofNullable(profile.getProfilePicture()).map(ImageBlob::getId).orElse(null);
-    return imageId == null ? null : "/userform/profileImage/" + profile.getId() + "/" + imageId;
+  @GetMapping(value = "/me/profile-image", produces = MediaType.IMAGE_PNG_VALUE)
+  public ResponseEntity<byte[]> getCurrentUserProfileImage(
+      @RequestAttribute(name = "user") User user) {
+    ImageBlob image = userProfileManager.getUserProfile(user).getProfilePicture();
+    if (image == null) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+    }
+    return ResponseEntity.ok()
+        .cacheControl(CacheControl.noStore())
+        .contentType(MediaType.IMAGE_PNG)
+        .body(image.getData());
   }
 
   private Orcid orcid(User user) {

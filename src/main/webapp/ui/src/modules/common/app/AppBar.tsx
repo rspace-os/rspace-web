@@ -82,8 +82,7 @@ export default function AuthenticatedAppBar({ renderHamburger, currentPage }: Ap
       label: t("appBar.sections.booking.title"),
       href: "/booking",
       routerTo: "/booking",
-      // Off by default until the feature-flag PR wires up the real
-      // visibility control.
+      // Off until the feature-flag PR wires up visibility control.
       isVisible: false,
       description: t("appBar.sections.booking.subheader"),
       icon: <CalendarIcon />,

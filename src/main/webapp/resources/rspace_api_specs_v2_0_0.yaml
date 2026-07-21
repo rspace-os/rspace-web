@@ -25,6 +25,22 @@ paths:
                 $ref: "#/components/schemas/CurrentUser"
         "401":
           $ref: "#/components/responses/AuthenticationRequired"
+  /users/me/profile-image:
+    get:
+      summary: Get the current user's profile image
+      operationId: getCurrentUserProfileImageV2
+      responses:
+        "200":
+          description: The current profile image.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/AuthenticationRequired"
+        "404":
+          $ref: "#/components/responses/NotFound"
   /config:
     get:
       summary: Get deployment UI configuration
@@ -99,8 +115,18 @@ components:
   responses:
     AuthenticationRequired:
       description: API key or OAuth authentication is required.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
     BadRequest:
       description: Invalid request parameters.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotFound:
+      description: The requested resource was not found.
       content:
         application/problem+json:
           schema:
@@ -130,6 +156,7 @@ components:
         - hasPiRole
         - hasSysAdminRole
         - profileImageUrl
+        - profileImageApiUrl
         - orcid
         - capabilities
         - session
@@ -143,7 +170,14 @@ components:
         workbenchId: { type: integer, format: int64, nullable: true }
         hasPiRole: { type: boolean }
         hasSysAdminRole: { type: boolean }
-        profileImageUrl: { type: string, nullable: true }
+        profileImageUrl:
+          type: string
+          nullable: true
+          description: Session-authenticated URL suitable for display in a browser.
+        profileImageApiUrl:
+          type: string
+          nullable: true
+          description: API-authenticated URL for retrieving the current profile image.
         orcid:
           $ref: "#/components/schemas/CurrentUserOrcid"
         capabilities:
