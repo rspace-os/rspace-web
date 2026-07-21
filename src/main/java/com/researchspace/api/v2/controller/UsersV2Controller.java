@@ -10,6 +10,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.UserProfile;
 import com.researchspace.repository.spi.ExternalId;
 import com.researchspace.repository.spi.IdentifierScheme;
+import com.researchspace.service.FeatureFlagManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserExternalIdResolver;
@@ -33,6 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class UsersV2Controller {
 
   @Autowired private ContainerApiManager containerApiManager;
+  @Autowired private FeatureFlagManager featureFlagManager;
   @Autowired private UserExternalIdResolver externalIdResolver;
   @Autowired private UserProfileManager userProfileManager;
   @Autowired private SystemPropertyPermissionManager propertyPermissionManager;
@@ -93,7 +95,12 @@ public class UsersV2Controller {
   }
 
   private Session session(User user) {
-    return new Session(SecurityUtils.getSubject().isRunAs(), lastSession(user));
+    return new Session(
+        SecurityUtils.getSubject().isRunAs(),
+        lastSession(user),
+        featureFlagManager.canUseDevtools(user),
+        featureFlagManager.canOverrideFeatureFlags(user),
+        featureFlagManager.canChangeFeatureFlagBaselines(user));
   }
 
   private String lastSession(User user) {

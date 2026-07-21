@@ -376,6 +376,8 @@
             well for deployment-dependent property files. -->
           <include>deployments/${deployment}/**</include>
           <include>deployments/defaultDeployment.properties</include>
+          <include>deployments/feature-flags.properties</include>
+          <include>feature-flags/feature-flags.jsonc</include>
         </includes>
         <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
           placeholders resolve from deployment.properties at runtime. -->
@@ -2582,6 +2584,8 @@
               <!-- see Spring application-resources.xml which uses this variable
                 as well for deployment-dependent property files. -->
               <include>deployments/defaultDeployment.properties</include>
+              <include>deployments/feature-flags.properties</include>
+              <include>feature-flags/feature-flags.jsonc</include>
             </includes>
             <!-- applicationContext-dao.xml is not filtered (re-added unfiltered below) so its
               placeholders resolve from deployment.properties at runtime. -->

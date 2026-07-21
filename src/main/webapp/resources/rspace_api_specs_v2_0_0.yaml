@@ -3,8 +3,8 @@ info:
   title: RSpace API v2
   version: 2.0.0
   description: >
-    Current-user, deployment configuration, and maintenance APIs for the RSpace
-    v2 surface. Errors are returned as RFC 9457 problem details
+    Feature flag, current-user, deployment configuration, and maintenance APIs
+    for the RSpace v2 surface. Errors are returned as RFC 9457 problem details
     (application/problem+json).
 servers:
   - url: /api/v2
@@ -12,6 +12,82 @@ security:
   - ApiKeySecurity: []
   - OAuth: []
 paths:
+  /feature-flags:
+    get:
+      summary: Get feature flags
+      description: >
+        Returns flags in manifest order. Anonymous requests receive baselines;
+        authenticated requests include user overrides.
+      operationId: getFeatureFlags
+      security: []
+      responses:
+        "200":
+          description: The feature flag state map.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureFlagStateMap"
+  /feature-flags/{flagName}/override:
+    put:
+      summary: Set the current user's override for a flag
+      operationId: setFeatureFlagOverride
+      parameters:
+        - $ref: "#/components/parameters/FlagName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeatureFlagValueRequest"
+      responses:
+        "204":
+          description: Override stored, even if it matches the baseline.
+        "400":
+          $ref: "#/components/responses/MissingValue"
+        "403":
+          $ref: "#/components/responses/NotPermitted"
+        "404":
+          $ref: "#/components/responses/UnknownFlag"
+        "409":
+          $ref: "#/components/responses/FlagReadOnly"
+    delete:
+      summary: Clear the current user's override for a flag
+      operationId: clearFeatureFlagOverride
+      parameters:
+        - $ref: "#/components/parameters/FlagName"
+      responses:
+        "204": { description: Override cleared (or none existed). }
+        "403":
+          $ref: "#/components/responses/NotPermitted"
+        "404":
+          $ref: "#/components/responses/UnknownFlag"
+        "409":
+          $ref: "#/components/responses/FlagReadOnly"
+  /feature-flags/{flagName}/baseline:
+    put:
+      summary: Set a feature flag baseline
+      description: >
+        Only sysadmins acting as themselves can update baselines. Setting the
+        current value is a no-op; user overrides remain unchanged.
+      operationId: setFeatureFlagBaseline
+      parameters:
+        - $ref: "#/components/parameters/FlagName"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FeatureFlagValueRequest"
+      responses:
+        "204": { description: Baseline updated. }
+        "400":
+          $ref: "#/components/responses/MissingValue"
+        "403":
+          $ref: "#/components/responses/NotPermitted"
+        "404":
+          $ref: "#/components/responses/UnknownFlag"
+        "409":
+          $ref: "#/components/responses/FlagReadOnly"
   /users/me:
     get:
       summary: Get the current user and session
@@ -112,6 +188,13 @@ components:
         minimum: 1
         maximum: 100
         default: 20
+    FlagName:
+      name: flagName
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Lower-camel-case feature flag name.
   responses:
     AuthenticationRequired:
       description: API key or OAuth authentication is required.
@@ -131,6 +214,30 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/Problem"
+    MissingValue:
+      description: Value is missing or null.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    NotPermitted:
+      description: Insufficient permission.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    UnknownFlag:
+      description: Unknown feature flag.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+    FlagReadOnly:
+      description: Feature flag is forced by the properties file.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
   schemas:
     Problem:
       type: object
@@ -143,6 +250,40 @@ components:
           type: integer
         detail:
           type: string
+    FeatureFlagSource:
+      type: string
+      enum: [DEFAULT, DATABASE, USER_OVERRIDE, PROPERTIES_FILE]
+    FeatureFlagState:
+      type: object
+      required: [value, baselineValue, source, canOverride]
+      properties:
+        value:
+          type: boolean
+          description: Effective value.
+        baselineValue:
+          type: boolean
+          description: >
+            Baseline before a user override, or the properties-forced value.
+        source:
+          $ref: "#/components/schemas/FeatureFlagSource"
+        canOverride:
+          type: boolean
+          description: Whether the current user may override this flag.
+    FeatureFlagStateMap:
+      type: object
+      required: [flags]
+      properties:
+        flags:
+          type: object
+          description: Flags by name in manifest order.
+          additionalProperties:
+            $ref: "#/components/schemas/FeatureFlagState"
+    FeatureFlagValueRequest:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: boolean
     CurrentUser:
       type: object
       required:
@@ -207,7 +348,12 @@ components:
           description: True for community administrators and sysadmins.
     Session:
       type: object
-      required: [operatedAs, lastSession]
+      required:
+        - operatedAs
+        - lastSession
+        - canUseDevtools
+        - canOverrideFeatureFlags
+        - canChangeFeatureFlagBaselines
       properties:
         operatedAs:
           type: boolean
@@ -215,6 +361,12 @@ components:
           type: string
           nullable: true
           format: date-time
+        canUseDevtools:
+          type: boolean
+        canOverrideFeatureFlags:
+          type: boolean
+        canChangeFeatureFlagBaselines:
+          type: boolean
     Config:
       type: object
       required:
