@@ -115,4 +115,35 @@ describe("TemplateStep", () => {
     await userEvent.setup().click(screen.getByTestId("template-picker"));
     await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 })));
   });
+
+  it("discards a stale template lookup that resolves after a newer pick (latest wins)", async () => {
+    // Pick A then B before A's lookup resolves, then let A resolve last: B must survive, not A.
+    let resolveA: () => void = () => undefined;
+    const templateA: FakeTemplate = {
+      id: 5,
+      name: "A",
+      fetchAdditionalInfo: () => new Promise((r) => (resolveA = r)),
+      fields: [{ name: "F", mandatory: false, content: "x", selectedOptions: null }],
+    };
+    const templateB: FakeTemplate = {
+      id: 6,
+      name: "B",
+      fetchAdditionalInfo: () => Promise.resolve(),
+      fields: [{ name: "F", mandatory: false, content: "y", selectedOptions: null }],
+    };
+    const onChange = vi.fn();
+    render(<TemplateStep value={pickMode} onChange={onChange} originSampleName="S1" />);
+    const user = userEvent.setup();
+
+    currentTemplate = templateA;
+    await user.click(screen.getByTestId("template-picker"));
+    currentTemplate = templateB;
+    await user.click(screen.getByTestId("template-picker"));
+
+    // B resolved immediately and applied; now the older A resolves and must be ignored.
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ templateId: 6 })));
+    resolveA();
+    await Promise.resolve();
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ templateId: 5 }));
+  });
 });

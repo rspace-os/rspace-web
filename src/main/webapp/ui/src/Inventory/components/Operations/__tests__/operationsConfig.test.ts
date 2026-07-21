@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { type InventoryOperation, operationAvailability, operations, resolveProcessName } from "../operationsConfig";
+import {
+  assertEffectReferencesValid,
+  type InventoryOperation,
+  operationAvailability,
+  operations,
+  resolveProcessName,
+} from "../operationsConfig";
 
 function op(key: string): InventoryOperation {
   const found = operations.find((o) => o.key === key);
@@ -99,5 +105,37 @@ describe("operations_config.json", () => {
     expect(cryopreserve.confirmSummary).toContain("storageTemp");
     // Derive has no storage temperature, so its summary does not list one
     expect(derive.confirmSummary).not.toContain("storageTemp");
+  });
+});
+
+describe("assertEffectReferencesValid", () => {
+  it("accepts the shipped config (every effect source resolves to an input or computed value)", () => {
+    expect(() => assertEffectReferencesValid(operations)).not.toThrow();
+  });
+
+  it("throws when an effect source key names no declared input or computed value", () => {
+    const bad = {
+      key: "bad",
+      labelKey: "l",
+      documentationStep: false,
+      inputs: [{ key: "sampleName", type: "text", labelKey: "l" }],
+      effect: { nameFrom: "typo", links: [] },
+    } as unknown as InventoryOperation;
+    expect(() => assertEffectReferencesValid([bad])).toThrow(/unknown input "typo"/);
+  });
+
+  it("resolves a contentFrom that names a computed value's `into` (e.g. Destroy's disposedDate)", () => {
+    const withComputed = {
+      key: "c",
+      labelKey: "l",
+      documentationStep: false,
+      inputs: [],
+      effect: {
+        computed: [{ fn: "today", into: "disposedDate", args: {} }],
+        originFields: [{ nameKey: "n", contentFrom: "disposedDate", type: "text" }],
+        links: [],
+      },
+    } as unknown as InventoryOperation;
+    expect(() => assertEffectReferencesValid([withComputed])).not.toThrow();
   });
 });

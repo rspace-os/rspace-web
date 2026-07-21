@@ -18,7 +18,8 @@ public interface InventoryOperationManager {
 
   /**
    * @return the newly created sample (with its subsamples), as returned by the sample-creation
-   *     manager.
+   *     manager, or {@code null} for a terminal operation that creates nothing (noOutput, e.g.
+   *     Destroy, which only acts on its origins). See adr/0008.
    */
   ApiSampleWithFullSubSamples performOperation(ApiInventoryOperationPost request, User user);
 }

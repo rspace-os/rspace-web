@@ -50,6 +50,10 @@ function TemplateStep({
   const { t } = useTranslation("inventory");
   const [checking, setChecking] = React.useState(false);
   const [blockError, setBlockError] = React.useState<string | null>(null);
+  // The most recently picked template id. fetchAdditionalInfo is async, so if the user picks A then
+  // B before A resolves, A can complete last; guarding on this ref discards a superseded lookup so
+  // the latest pick always wins rather than the last response.
+  const latestPickRef = React.useRef<string | null>(null);
 
   const setMode = (mode: TemplateSelection["mode"]) => {
     setBlockError(null);
@@ -66,12 +70,16 @@ function TemplateStep({
 
   const onPickTemplate = (template: TemplateModel) => {
     // Clear the selection until the template is validated, so Next stays disabled meanwhile.
+    const pickId = String(template.id);
+    latestPickRef.current = pickId;
     setBlockError(null);
     setChecking(true);
     onChange({ ...value, templateId: null, templateName: template.name });
     void (async () => {
       try {
         await template.fetchAdditionalInfo();
+        // A newer pick has superseded this one: drop this stale result without touching state.
+        if (latestPickRef.current !== pickId) return;
         const fields = template.fields.map((f) => ({
           name: f.name,
           mandatory: f.mandatory,
@@ -93,7 +101,8 @@ function TemplateStep({
           });
         }
       } finally {
-        setChecking(false);
+        // Only the latest pick clears the spinner; a superseded lookup leaves it to the newer one.
+        if (latestPickRef.current === pickId) setChecking(false);
       }
     })();
   };

@@ -5,6 +5,8 @@ import com.researchspace.api.v1.model.ApiInventoryOperationPost;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -48,6 +50,11 @@ public class InventoryOperationPostValidator implements Validator {
       return;
     }
 
+    // A subsample may appear at most once: each origin's amount taken is validated against that
+    // origin's original quantity, but the manager applies the decrements in order, so the same id
+    // listed twice would be checked twice against the full quantity yet decremented twice (two 6 mL
+    // entries could drain a 10 mL origin past what the over-removal check permits). See adr/0002.
+    Set<Long> seenIds = new HashSet<>();
     int index = 0;
     for (ApiInventoryOperationOriginUpdate origin : request.getOrigins()) {
       errors.pushNestedPath(String.format("origins[%d]", index++));
@@ -56,21 +63,33 @@ public class InventoryOperationPostValidator implements Validator {
             "id",
             "errors.inventory.operation.originIdRequired",
             "Each origin must identify a subsample by id.");
+      } else if (!seenIds.add(origin.getId())) {
+        errors.rejectValue(
+            "id",
+            "errors.inventory.operation.duplicateOrigin",
+            "An origin subsample may appear at most once in an operation.");
       }
-      if (!isNonNegativeQuantity(origin.getAmountTaken())) {
+      if (!isValidAmountTaken(origin.getAmountTaken())) {
         errors.rejectValue(
             "amountTaken",
             "errors.inventory.operation.amountTakenInvalid",
-            "Each origin must specify a non-negative amount to take from it");
+            "Each origin must specify a non-negative amount, with a unit, to take from it");
       }
       errors.popNestedPath();
     }
   }
 
-  private static boolean isNonNegativeQuantity(ApiQuantityInfo quantity) {
+  /**
+   * A valid amount-taken is a non-negative numeric value carrying a unit. The unit is required
+   * because the manager converts it to a {@link com.researchspace.model.units.QuantityInfo}
+   * (unit-aware subtraction); a null unit would fail there with a 500 rather than a clean 400. Zero
+   * is allowed (a no-op decrement, e.g. Passage).
+   */
+  private static boolean isValidAmountTaken(ApiQuantityInfo quantity) {
     return quantity != null
         && quantity.getNumericValue() != null
-        && quantity.getNumericValue().compareTo(BigDecimal.ZERO) >= 0;
+        && quantity.getNumericValue().compareTo(BigDecimal.ZERO) >= 0
+        && quantity.getUnitId() != null;
   }
 
   /**

@@ -174,6 +174,37 @@ function assertComputedValuesValid(ops: Array<InventoryOperation>): void {
 
 assertComputedValuesValid(operations);
 
+/**
+ * Fail fast (like the parse and the computed-values check above): every effect source key -
+ * nameFrom, the amount/temperature sources, and each text/origin field's contentFrom - must name
+ * either a declared input or a computed `into`, otherwise a config typo silently produces empty
+ * content or a malformed quantity at submit instead of failing when the config loads. See adr/0001.
+ */
+export function assertEffectReferencesValid(ops: Array<InventoryOperation>): void {
+  for (const op of ops) {
+    const available = new Set<string>(op.inputs.map((i) => i.key));
+    for (const computed of op.effect.computed ?? []) available.add(computed.into);
+
+    const check = (ref: string | undefined, where: string) => {
+      if (ref !== undefined && !available.has(ref)) {
+        throw new Error(`operations_config.json: operation "${op.key}" ${where} references unknown input "${ref}"`);
+      }
+    };
+
+    const { effect } = op;
+    check(effect.nameFrom, "effect.nameFrom");
+    check(effect.countFrom, "effect.countFrom");
+    check(effect.eachAmountFrom, "effect.eachAmountFrom");
+    check(effect.amountTakenFrom, "effect.amountTakenFrom");
+    check(effect.storageTempFrom, "effect.storageTempFrom");
+    check(effect.processNameFrom, "effect.processNameFrom");
+    for (const field of effect.textFields ?? []) check(field.contentFrom, "textField.contentFrom");
+    for (const field of effect.originFields ?? []) check(field.contentFrom, "originField.contentFrom");
+  }
+}
+
+assertEffectReferencesValid(operations);
+
 export type OperationAvailability = { enabled: boolean; reasonKey?: string };
 
 /**

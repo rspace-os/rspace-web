@@ -104,6 +104,30 @@ class InventoryOperationPostValidatorTest {
     assertTrue(validate(request).hasErrors());
   }
 
+  @Test
+  void rejectsAmountTakenWithoutUnit() {
+    // A null unitId passes the numeric check but fails later in the manager (toQuantityInfo needs a
+    // unit for the unit-aware subtraction); reject it here with a clean 400 rather than a 500.
+    ApiInventoryOperationPost request = validRequest();
+    request
+        .getOrigins()
+        .get(0)
+        .setAmountTaken(new ApiQuantityInfo(new BigDecimal("1"), (Integer) null));
+    assertTrue(validate(request).hasErrors());
+  }
+
+  @Test
+  void rejectsDuplicateOriginIds() {
+    // The same subsample listed twice would be decremented twice while each entry is validated
+    // against the same original quantity, so it could be drained past the over-removal limit.
+    ApiInventoryOperationPost request = validRequest();
+    ApiInventoryOperationOriginUpdate duplicate = new ApiInventoryOperationOriginUpdate();
+    duplicate.setId(100L);
+    duplicate.setAmountTaken(new ApiQuantityInfo(new BigDecimal("0.6"), 3));
+    request.getOrigins().add(duplicate);
+    assertTrue(validate(request).hasErrors());
+  }
+
   private static ApiQuantityInfo grams(String value) {
     return new ApiQuantityInfo(new BigDecimal(value), RSUnitDef.GRAM.getId());
   }
