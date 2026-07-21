@@ -57,7 +57,7 @@ defined in Tomcat configuration file. E.g. `-DpropertyFileDir=/etc/rspace`
 
 Some properties are read before the Spring context starts and must be passed as JVM arguments (`-D`), not in deployment property files.
 
-* **files.maxUploadSize** — Maximum individual file upload size in bytes. Default 52428800 (50MB). Spring 6 removed `CommonsMultipartResolver`, so multipart limits are now applied at servlet registration time by `DispatcherServletInitializer`, which reads this system property. Example: `-Dfiles.maxUploadSize=1000485760` for ~1GB.
+* **files.maxUploadSize** — Maximum upload size in bytes, applied to the total multipart request. Default 52428800 (50MB). Spring 6 removed `CommonsMultipartResolver`, so multipart limits are now applied at servlet registration time by `DispatcherServletInitializer`, which reads this system property. Example: `-Dfiles.maxUploadSize=1000485760` for ~1GB.
 
 ## Adding a new property
 

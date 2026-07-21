@@ -26,6 +26,10 @@ import org.springframework.web.servlet.DispatcherServlet;
  * be applied at the servlet-container level via {@link MultipartConfigElement}, which is set here
  * at servlet-registration time (before Spring loads, so {@code @Value} is not an option).
  *
+ * <p>{@code files.maxUploadSize} caps the <em>total multipart request</em> size, with no separate
+ * per-file cap — the same semantics {@code CommonsMultipartResolver.setMaxUploadSize} enforced
+ * before the upgrade.
+ *
  * <p>Resolution order for {@code files.maxUploadSize}:
  *
  * <ol>
@@ -43,7 +47,7 @@ public class DispatcherServletInitializer implements ServletContextListener {
 
   private static final Logger log = LoggerFactory.getLogger(DispatcherServletInitializer.class);
 
-  static final long DEFAULT_MAX_FILE_SIZE = 52_428_800L; // 50 MB
+  static final long DEFAULT_MAX_UPLOAD_SIZE = 52_428_800L; // 50 MB
   static final String PROPERTY_NAME = "files.maxUploadSize";
   static final String PROPERTY_FILE_DIR = "propertyFileDir";
   static final String DEPLOYMENT_PROPERTIES_FILE = "deployment.properties";
@@ -88,8 +92,7 @@ public class DispatcherServletInitializer implements ServletContextListener {
   public void contextInitialized(ServletContextEvent sce) {
     ServletContext ctx = sce.getServletContext();
 
-    long maxFileSize = resolveMaxFileSize();
-    long maxRequestSize = maxFileSize * 2;
+    long maxUploadSize = resolveMaxUploadSize();
 
     ServletRegistration.Dynamic dispatcher = ctx.addServlet("dispatcher", new DispatcherServlet());
     dispatcher.setLoadOnStartup(1);
@@ -102,12 +105,14 @@ public class DispatcherServletInitializer implements ServletContextListener {
               + " uploads on those paths will fail under Tomcat",
           conflicts);
     }
-    dispatcher.setMultipartConfig(new MultipartConfigElement("", maxFileSize, maxRequestSize, 0));
+    // -1 = no per-file cap; the request cap bounds file size, as CommonsMultipartResolver did.
+    dispatcher.setMultipartConfig(new MultipartConfigElement("", -1, maxUploadSize, 0));
 
-    log.info("Registered DispatcherServlet with multipart max-file-size={} bytes", maxFileSize);
+    log.info(
+        "Registered DispatcherServlet with multipart max-request-size={} bytes", maxUploadSize);
   }
 
-  long resolveMaxFileSize() {
+  long resolveMaxUploadSize() {
     Long fromSysProp = parsePositiveLong(System.getProperty(PROPERTY_NAME), "system property");
     if (fromSysProp != null) {
       log.info("Resolved {} from JVM system property: {}", PROPERTY_NAME, fromSysProp);
@@ -119,8 +124,8 @@ public class DispatcherServletInitializer implements ServletContextListener {
       return fromDeploymentFile;
     }
 
-    log.info("Using default {} of {} bytes", PROPERTY_NAME, DEFAULT_MAX_FILE_SIZE);
-    return DEFAULT_MAX_FILE_SIZE;
+    log.info("Using default {} of {} bytes", PROPERTY_NAME, DEFAULT_MAX_UPLOAD_SIZE);
+    return DEFAULT_MAX_UPLOAD_SIZE;
   }
 
   private Long readFromDeploymentProperties() {

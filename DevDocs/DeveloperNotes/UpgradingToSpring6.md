@@ -43,8 +43,8 @@ upgrade changes in the database, and what developers should know about the new s
    dev/test environment setting risks executing test fixtures against real data.
 7. **Upload limit (if customised).** Multipart upload limits are no longer set in `web.xml`.
    They resolve, in order, from the JVM system property `-Dfiles.maxUploadSize=<bytes>`, then
-   the `files.maxUploadSize` key in `deployment.properties`, then a 50 MB default. The total
-   multipart request limit is automatically twice the file limit. If your deployment needs a
+   the `files.maxUploadSize` key in `deployment.properties`, then a 50 MB default. As before
+   the upgrade, the value caps the total multipart request size. If your deployment needs a
    different limit, set the property explicitly. Tomcat ops note: ensure the connector's
    `maxSwallowSize` is `-1` or larger than the configured upload limit, otherwise oversize
    uploads result in a connection reset instead of a clean HTTP 413 response.

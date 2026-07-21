@@ -69,13 +69,13 @@ class DispatcherServletInitializerTest {
   @Test
   void defaultWhenNothingSet() {
     assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+        DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, initializer.resolveMaxUploadSize());
   }
 
   @Test
   void jvmSystemPropertyWins() {
     System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "12345");
-    assertEquals(12345L, initializer.resolveMaxFileSize());
+    assertEquals(12345L, initializer.resolveMaxUploadSize());
   }
 
   @Test
@@ -84,7 +84,7 @@ class DispatcherServletInitializerTest {
     Files.writeString(file, "files.maxUploadSize=67890\n");
     System.setProperty(DispatcherServletInitializer.PROPERTY_FILE_DIR, tmp.toString());
 
-    assertEquals(67890L, initializer.resolveMaxFileSize());
+    assertEquals(67890L, initializer.resolveMaxUploadSize());
   }
 
   @Test
@@ -94,14 +94,14 @@ class DispatcherServletInitializerTest {
     System.setProperty(DispatcherServletInitializer.PROPERTY_FILE_DIR, tmp.toString());
     System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "11111");
 
-    assertEquals(11111L, initializer.resolveMaxFileSize());
+    assertEquals(11111L, initializer.resolveMaxUploadSize());
   }
 
   @Test
   void fallsBackToDefaultWhenPropertyFileDirMissingFile(@TempDir Path tmp) {
     System.setProperty(DispatcherServletInitializer.PROPERTY_FILE_DIR, tmp.toString());
     assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+        DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, initializer.resolveMaxUploadSize());
   }
 
   @Test
@@ -111,7 +111,7 @@ class DispatcherServletInitializerTest {
     System.setProperty(DispatcherServletInitializer.PROPERTY_FILE_DIR, tmp.toString());
 
     assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+        DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, initializer.resolveMaxUploadSize());
   }
 
   @Test
@@ -120,21 +120,21 @@ class DispatcherServletInitializerTest {
     Files.writeString(file, "files.maxUploadSize=42424242\n");
     System.setProperty(DispatcherServletInitializer.PROPERTY_FILE_DIR, "file:" + tmp);
 
-    assertEquals(42424242L, initializer.resolveMaxFileSize());
+    assertEquals(42424242L, initializer.resolveMaxUploadSize());
   }
 
   @Test
   void ignoresNonNumericSysProp() {
     System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "not-a-number");
     assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+        DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, initializer.resolveMaxUploadSize());
   }
 
   @Test
   void ignoresNonPositiveValue() {
     System.setProperty(DispatcherServletInitializer.PROPERTY_NAME, "0");
     assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, initializer.resolveMaxFileSize());
+        DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, initializer.resolveMaxUploadSize());
   }
 
   @Test
@@ -160,9 +160,10 @@ class DispatcherServletInitializerTest {
         ArgumentCaptor.forClass(MultipartConfigElement.class);
     verify(dynamic).setMultipartConfig(multipart.capture());
     MultipartConfigElement config = multipart.getValue();
-    assertEquals(12345L, config.getMaxFileSize());
-    // Request size is twice the per-file limit (a multipart request may carry several files).
-    assertEquals(24690L, config.getMaxRequestSize());
+    // Total request size is capped; per-file is unbounded (the request cap bounds it), matching
+    // the pre-Spring-6 CommonsMultipartResolver semantics.
+    assertEquals(-1L, config.getMaxFileSize());
+    assertEquals(12345L, config.getMaxRequestSize());
     assertEquals(0, config.getFileSizeThreshold());
     assertEquals("", config.getLocation());
   }
@@ -268,8 +269,7 @@ class DispatcherServletInitializerTest {
         ArgumentCaptor.forClass(MultipartConfigElement.class);
     verify(dynamic).setMultipartConfig(multipart.capture());
     MultipartConfigElement config = multipart.getValue();
-    assertEquals(DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE, config.getMaxFileSize());
-    assertEquals(
-        DispatcherServletInitializer.DEFAULT_MAX_FILE_SIZE * 2, config.getMaxRequestSize());
+    assertEquals(-1L, config.getMaxFileSize());
+    assertEquals(DispatcherServletInitializer.DEFAULT_MAX_UPLOAD_SIZE, config.getMaxRequestSize());
   }
 }
