@@ -1,6 +1,7 @@
 import { CatchBoundary, HeadContent, Outlet, useMatches, useRouterState } from "@tanstack/react-router";
 import * as React from "react";
 import { useTranslation } from "react-i18next";
+import FeatureFlagDevtoolsMount from "@/featureFlags/FeatureFlagDevtoolsMount";
 import { UserSessionBootstrap } from "@/modules/common/stores/userSessionStore";
 import { cn } from "@/modules/common/utils/cn";
 import AuthenticatedAppBar, { PublicAppBar } from "./AppBar";
@@ -67,6 +68,7 @@ export default function AppShell() {
       <React.Suspense fallback={<p>{t("loading")}</p>}>
         <Outlet />
       </React.Suspense>
+      {appBarConfig !== false && appBarConfig.authenticated !== false && <FeatureFlagDevtoolsMount />}
     </>
   );
 }

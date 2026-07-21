@@ -55,7 +55,7 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.stories.tsx"],
+      "includes": ["**/*.stories.tsx", "src/featureFlags/FeatureFlagDevtools.tsx"],
       "linter": {
         "rules": {
           "style": {
