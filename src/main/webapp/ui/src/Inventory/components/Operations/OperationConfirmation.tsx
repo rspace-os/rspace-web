@@ -62,9 +62,13 @@ function OperationConfirmation({
   // name so the preview resolves; without it ICU throws on the missing argument and the raw template
   // string is shown. The real per-origin names are set correctly in buildOperationRequest.
   const linkName = effect.links.length ? resolveLabel(effect.links[0].fieldNameKey, { ...values, originName }) : "";
-  // Preview the values the operation will compute (adr/0006), e.g. Destroy's disposed date, so the
-  // origin-field rows show the actual content. today needs no parent fields; a computed that reads a
-  // parent field previews its fallback here, which is acceptable for a preview.
+  // Preview the values the operation will compute (adr/0006) so the origin-field rows show real
+  // content. Computed here with no parent fields, which is exact for everything this card actually
+  // renders: the only computed value it surfaces is an origin field, and the sole operation with
+  // those (Destroy) computes `today`, which needs no parent fields. A parent-dependent computed value
+  // (Passage's passage number) is a sample textField the card never shows, so its parentless fallback
+  // is never displayed. Revisit if an origin field is ever sourced from a parent-dependent computed
+  // value: previewing it correctly would need the origin's parent fields loaded here.
   const displayValues = operation.effect.computed?.length
     ? applyComputedValues(operation, { parentFields: [], values, resolveFieldName: resolveLabel })
     : values;

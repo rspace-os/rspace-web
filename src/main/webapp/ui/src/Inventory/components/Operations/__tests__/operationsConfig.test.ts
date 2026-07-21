@@ -138,4 +138,32 @@ describe("assertEffectReferencesValid", () => {
     } as unknown as InventoryOperation;
     expect(() => assertEffectReferencesValid([withComputed])).not.toThrow();
   });
+
+  it("throws when a computed { input } arg names no declared input or computed value", () => {
+    const bad = {
+      key: "c",
+      labelKey: "l",
+      documentationStep: false,
+      inputs: [{ key: "count", type: "integer", labelKey: "l" }],
+      effect: {
+        computed: [{ fn: "increment", into: "n", args: { current: { input: "typo" }, start: { constant: 1 } } }],
+        links: [],
+      },
+    } as unknown as InventoryOperation;
+    expect(() => assertEffectReferencesValid([bad])).toThrow(/unknown input "typo"/);
+  });
+
+  it("accepts a computed { input } arg that names a declared input", () => {
+    const ok = {
+      key: "c",
+      labelKey: "l",
+      documentationStep: false,
+      inputs: [{ key: "count", type: "integer", labelKey: "l" }],
+      effect: {
+        computed: [{ fn: "increment", into: "n", args: { current: { input: "count" }, start: { constant: 1 } } }],
+        links: [],
+      },
+    } as unknown as InventoryOperation;
+    expect(() => assertEffectReferencesValid([ok])).not.toThrow();
+  });
 });

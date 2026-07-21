@@ -176,9 +176,10 @@ assertComputedValuesValid(operations);
 
 /**
  * Fail fast (like the parse and the computed-values check above): every effect source key -
- * nameFrom, the amount/temperature sources, and each text/origin field's contentFrom - must name
- * either a declared input or a computed `into`, otherwise a config typo silently produces empty
- * content or a malformed quantity at submit instead of failing when the config loads. See adr/0001.
+ * nameFrom, the amount/temperature sources, each text/origin field's contentFrom, and each computed
+ * `{ input }` argument - must name either a declared input or a computed `into`, otherwise a config
+ * typo silently produces empty content or a malformed quantity at submit instead of failing when the
+ * config loads. See adr/0001.
  */
 export function assertEffectReferencesValid(ops: Array<InventoryOperation>): void {
   for (const op of ops) {
@@ -200,6 +201,13 @@ export function assertEffectReferencesValid(ops: Array<InventoryOperation>): voi
     check(effect.processNameFrom, "effect.processNameFrom");
     for (const field of effect.textFields ?? []) check(field.contentFrom, "textField.contentFrom");
     for (const field of effect.originFields ?? []) check(field.contentFrom, "originField.contentFrom");
+    // A computed argument sourced from another input ({ input: "key" }) must name a real input or a
+    // computed `into`; a constant or parentSampleField arg has nothing to resolve against here.
+    for (const computed of effect.computed ?? []) {
+      for (const [param, source] of Object.entries(computed.args)) {
+        if ("input" in source) check(source.input, `computed "${computed.fn}" arg "${param}"`);
+      }
+    }
   }
 }
 

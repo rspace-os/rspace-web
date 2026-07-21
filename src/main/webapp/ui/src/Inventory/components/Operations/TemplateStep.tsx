@@ -57,6 +57,10 @@ function TemplateStep({
 
   const setMode = (mode: TemplateSelection["mode"]) => {
     setBlockError(null);
+    // Switching mode abandons any in-flight template lookup: invalidate it (so a late result can't
+    // restore a template the user has moved away from) and clear the spinner it left on.
+    latestPickRef.current = null;
+    setChecking(false);
     onChange({
       ...value,
       mode,
