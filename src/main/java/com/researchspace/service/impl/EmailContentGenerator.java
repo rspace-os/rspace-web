@@ -38,11 +38,6 @@ public class EmailContentGenerator {
         subject, mergeTemplate(htmlTemplate, velocityModel), LocaleContextHolder.getLocale());
   }
 
-  EmailContent renderWithSubject(
-      String subject, String htmlTemplate, Map<String, Object> velocityModel, Locale locale) {
-    return fromHtmlFragment(subject, mergeTemplate(htmlTemplate, velocityModel), locale);
-  }
-
   EmailContent fromHtmlFragment(String subject, String htmlFragment, Locale locale) {
     String html =
         "<html lang=\"%s\">\n<body>\n%s\n</body>\n</html>"
