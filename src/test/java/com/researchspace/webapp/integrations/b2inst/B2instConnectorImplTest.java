@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withException;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
@@ -19,6 +21,7 @@ import com.researchspace.b2inst.model.response.B2instDraftRecord;
 import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,6 +178,7 @@ class B2instConnectorImplTest {
     server
         .expect(requestTo(submitUrl))
         .andExpect(method(HttpMethod.POST))
+        .andExpect(content().string(""))
         .andRespond(withSuccess("{\"status\":\"submitted\"}", MediaType.APPLICATION_JSON));
 
     assertEquals("submitted", connector.publishDoi("k2j9p-7yh21").getStatus());
@@ -187,6 +191,116 @@ class B2instConnectorImplTest {
     connector.reloadClient();
 
     assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+  }
+
+  @Test
+  void publishDoiSurfacesFieldValidationErrorsFromB2inst() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String validationError =
+        "{\"status\":400,\"message\":\"A validation error"
+            + " occurred.\",\"errors\":[{\"field\":\"instrument_type\",\"messages\":[\"Missing data"
+            + " for required field.\"]},{\"field\":\"owners\",\"messages\":[\"Shorter than minimum"
+            + " length 1.\"]}]}";
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(validationError));
+
+    B2instConnectionException ex =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals(
+        "Error submitting B2INST record k2j9p-7yh21 for community review: "
+            + "instrument_type: Missing data for required field.; "
+            + "owners: Shorter than minimum length 1.",
+        ex.getMessage());
+  }
+
+  @Test
+  void publishDoiSurfacesTopLevelMessageWhenNoFieldErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.FORBIDDEN)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"status\":403,\"message\":\"Permission denied.\"}"));
+
+    B2instConnectionException ex =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals(
+        "Error submitting B2INST record k2j9p-7yh21 for community review: Permission denied.",
+        ex.getMessage());
+  }
+
+  @Test
+  void publishDoiFallsBackToHttpStatusWhenBodyIsNotJson() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_GATEWAY)
+                .contentType(MediaType.TEXT_HTML)
+                .body("<html>Bad Gateway</html>"));
+
+    B2instConnectionException ex =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals(
+        "Error submitting B2INST record k2j9p-7yh21 for community review: "
+            + "B2INST returned HTTP 502 Bad Gateway",
+        ex.getMessage());
+  }
+
+  @Test
+  void publishDoiKeepsTransportErrorMessageWhenNoResponse() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(withException(new IOException("connect timed out")));
+
+    B2instConnectionException ex =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertTrue(
+        ex.getMessage()
+            .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: "));
+    assertTrue(ex.getMessage().contains("connect timed out"));
+  }
+
+  @Test
+  void registerDoiSurfacesFieldValidationErrors() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_REQUEST)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(
+                    "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
+                        + "[{\"field\":\"community\",\"messages\":[\"Missing data for required"
+                        + " field.\"]}]}"));
+
+    B2instConnectionException ex =
+        assertThrows(
+            B2instConnectionException.class, () -> connector.registerDoi(draftWithName("X")));
+
+    assertEquals(
+        "Error creating B2INST draft record: community: Missing data for required field.",
+        ex.getMessage());
   }
 
   @Test

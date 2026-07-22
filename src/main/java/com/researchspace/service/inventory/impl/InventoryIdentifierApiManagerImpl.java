@@ -584,8 +584,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       result = b2instConnector.publishDoi(doi.getIdentifier());
     } catch (B2instConnectionException b2instException) {
       throw new B2instConnectionException(
-          "Error when publishing the instrument PID in B2INST. "
-              + "If the problem persists, please contact your System Admin",
+          messages.getMessage(
+              "errors.inventory.identifier.b2inst.publish.failed",
+              new Object[] {b2instException.getMessage()}),
           b2instException);
     }
     ApiInventoryDOI publishDoi = new ApiInventoryDOI();
