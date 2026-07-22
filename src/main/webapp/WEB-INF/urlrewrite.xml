@@ -186,6 +186,14 @@
         <to>/newApp/index.jsp</to>
     </rule>
     <rule>
+        <from>/public/apiDocs</from>
+        <to>/newApp/index.jsp</to>
+    </rule>
+    <rule>
+        <from>/public/apiDocs/**</from>
+        <to>/newApp/index.jsp</to>
+    </rule>
+    <rule>
         <from>/apps</from>
         <to>/eln/apps.jsp</to>
     </rule>

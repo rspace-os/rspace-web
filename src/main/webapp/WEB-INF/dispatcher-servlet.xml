@@ -89,7 +89,6 @@
 	<mvc:view-controller path="/public/ssologout" view-name="public/ssologout" />
 	<mvc:view-controller path="/requestFeedback" view-name="requestFeedback" />
 	<mvc:view-controller path="/public/ipAddressInvalid" view-name="public/ipAddressInvalid" />
-	<mvc:view-controller path="/public/apiDocs" view-name="public/apiDocs" />
 	<mvc:view-controller path="/test/template" view-name="/test/template" />
 	<mvc:view-controller path="/admin/cloud/createCloudGroupSuccess" view-name="admin/cloud/createCloudGroupSuccess" />
 	<mvc:view-controller path="/cloud/signup/cloudSignupConfirmation" view-name="cloud/signup/cloudSignupConfirmation" />
