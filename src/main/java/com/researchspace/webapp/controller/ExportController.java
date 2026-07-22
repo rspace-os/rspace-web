@@ -30,6 +30,7 @@ import com.researchspace.model.repository.RepoDepositConfig;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.DocumentTagManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RaIDServiceManager;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
@@ -70,6 +71,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.UnexpectedRollbackException;
@@ -460,6 +462,14 @@ public class ExportController extends BaseController {
   }
 
   /**
+   * Signals export failure via HTTP status rather than relying on the frontend inspecting the
+   * (translatable) response body for English keywords.
+   */
+  private ResponseEntity<String> badRequest(String message) {
+    return ResponseEntity.badRequest().body(message);
+  }
+
+  /**
    * Exports a selection of documents to PDF or Word and optionally deposits the file in a
    * repository.
    *
@@ -470,7 +480,7 @@ public class ExportController extends BaseController {
    */
   @PostMapping("/ajax/export")
   @ResponseBody
-  public String export(
+  public ResponseEntity<String> export(
       @Valid @RequestBody ExportDialogConfigDTO exportConfig,
       BindingResult errors,
       Principal principal) {
@@ -485,10 +495,11 @@ public class ExportController extends BaseController {
       try {
         projectGroup = groupManager.getGroup(exportConfig.getProjectGroupId());
       } catch (ObjectRetrievalFailureException ex) {
-        return getExportFailureMessage(
-            getText(
-                "workspace.export.projectGroupNotFound",
-                new Object[] {exportConfig.getProjectGroupId()}));
+        return badRequest(
+            getExportFailureMessage(
+                getText(
+                    "workspace.export.projectGroupNotFound",
+                    new Object[] {exportConfig.getProjectGroupId()})));
       }
     }
 
@@ -496,24 +507,24 @@ public class ExportController extends BaseController {
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(errors, el);
-      return getExportFailureMessage(el.getAllErrorMessagesAsStringsSeparatedBy(","));
+      return badRequest(getExportFailureMessage(ListFormatUtils.formatList(el.getErrorMessages())));
     }
 
     // Checks for any missing or invalid data in exportSelection
     StringBuilder errorBuffer = new StringBuilder();
     if (checkForExportSelectionErrors(exportSelection, errorBuffer)) {
-      return getExportFailureMessage(errorBuffer.toString());
+      return badRequest(getExportFailureMessage(errorBuffer.toString()));
     }
 
     // RSPAC-900 only single files currently supported
     if (isMultiDocWordExport(exportSelection.getExportIds(), exportToFileConfig)) {
-      return getExportFailureMessage(getMultiDocExportErrorMsg());
+      return badRequest(getExportFailureMessage(getMultiDocExportErrorMsg()));
     }
     User exporter = getUserByUsername(principal.getName());
 
     if (exportConfig.getProjectGroupId() != null
         && !validateRaidAndDecorate(exporter, projectGroup, exportConfig)) {
-      return getRaidValidationError(exportConfig);
+      return badRequest(getRaidValidationError(exportConfig));
     }
 
     updatePageSizePrefs(
@@ -533,7 +544,7 @@ public class ExportController extends BaseController {
           break;
         case USER:
           if (isWordExport(exportToFileConfig)) {
-            return getExportFailureMessage(getMultiDocExportErrorMsg());
+            return badRequest(getExportFailureMessage(getMultiDocExportErrorMsg()));
           }
 
           User userToExport = userManager.getUserByUsername(exportSelection.getUsername());
@@ -548,7 +559,7 @@ public class ExportController extends BaseController {
           break;
         case GROUP:
           if (isWordExport(exportToFileConfig)) {
-            return getExportFailureMessage(getMultiDocExportErrorMsg());
+            return badRequest(getExportFailureMessage(getMultiDocExportErrorMsg()));
           }
 
           if (groupPermUtils.userCanExportGroup(
@@ -557,7 +568,8 @@ public class ExportController extends BaseController {
                 exportManager.asyncExportGroupToPdf(
                     exportToFileConfig, exporter, exportSelection.getGroupId());
           } else {
-            return getExportFailureMessage(getText("workspace.export.groupPermissionDenied"));
+            return badRequest(
+                getExportFailureMessage(getText("workspace.export.groupPermissionDenied")));
           }
           break;
       }
@@ -567,7 +579,7 @@ public class ExportController extends BaseController {
         RepoDepositPreDepositValidation va =
             validatePreDeposit(errorBuffer, repositoryConfig, exporter);
         if (!StringUtils.isBlank(va.getErrorMsg())) {
-          return va.getErrorMsg();
+          return badRequest(va.getErrorMsg());
         }
         if (repositoryConfig.isExportToRaid()) {
           repositoryConfig.setRaidAssociated(raidAssociated);
@@ -577,9 +589,9 @@ public class ExportController extends BaseController {
       }
     } catch (Exception e) {
       handleUnexpectedRollbackException(e);
-      return getExportFailureMessage(e.getMessage());
+      return badRequest(getExportFailureMessage(e.getMessage()));
     }
-    return getText("importExport.pdfArchiving.submission.success");
+    return ResponseEntity.ok(getText("importExport.pdfArchiving.submission.success"));
   }
 
   @Data
@@ -669,12 +681,12 @@ public class ExportController extends BaseController {
    * @param exportDialogConfig
    * @param errors
    * @param principal
-   * @return A String 'Submitted' on success, or an error list
+   * @return 200 with a submission-confirmation message on success, or 400 with an error message
    * @throws IOException, URISyntaxException
    */
   @PostMapping("/ajax/exportArchive")
   @ResponseBody
-  public String exportArchive(
+  public ResponseEntity<String> exportArchive(
       @Valid @RequestBody ExportArchiveDialogConfigDTO exportDialogConfig,
       BindingResult errors,
       HttpServletRequest request,
@@ -689,10 +701,11 @@ public class ExportController extends BaseController {
       try {
         projectGroup = groupManager.getGroup(exportDialogConfig.getProjectGroupId());
       } catch (ObjectRetrievalFailureException ex) {
-        return getExportFailureMessage(
-            getText(
-                "workspace.export.projectGroupNotFound",
-                new Object[] {exportDialogConfig.getProjectGroupId()}));
+        return badRequest(
+            getExportFailureMessage(
+                getText(
+                    "workspace.export.projectGroupNotFound",
+                    new Object[] {exportDialogConfig.getProjectGroupId()})));
       }
     }
 
@@ -700,23 +713,23 @@ public class ExportController extends BaseController {
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(errors, el);
-      return getExportFailureMessage(el.getAllErrorMessagesAsStringsSeparatedBy(","));
+      return badRequest(getExportFailureMessage(ListFormatUtils.formatList(el.getErrorMessages())));
     }
 
     // Checks for any missing or invalid data in exportSelection
     StringBuilder errorBuffer = new StringBuilder();
     if (checkForExportSelectionErrors(exportSelection, errorBuffer)) {
-      return getExportFailureMessage(errorBuffer.toString());
+      return badRequest(getExportFailureMessage(errorBuffer.toString()));
     }
 
     // Check enough disk space for an archive
     if (!diskSpaceChecker.canStartArchiveProcess()) {
-      return getText("workspace.export.noDiskSpace");
+      return badRequest(getText("workspace.export.noDiskSpace"));
     }
     User exporter = getUserByUsername(principal.getName());
     if (exportDialogConfig.getProjectGroupId() != null
         && !validateRaidAndDecorate(exporter, projectGroup, exportDialogConfig)) {
-      return getRaidValidationError(exportDialogConfig);
+      return badRequest(getRaidValidationError(exportDialogConfig));
     }
 
     try {
@@ -746,7 +759,8 @@ public class ExportController extends BaseController {
                 exportManager.asyncExportGroupToArchive(
                     exportCfg, exporter, groupId, baseUri, standardPostExport);
           } else {
-            return getExportFailureMessage(getText("workspace.export.groupPermissionDenied"));
+            return badRequest(
+                getExportFailureMessage(getText("workspace.export.groupPermissionDenied")));
           }
           break;
       }
@@ -757,7 +771,7 @@ public class ExportController extends BaseController {
         RepoDepositPreDepositValidation va =
             validatePreDeposit(errorBuffer, repositoryConfig, exporter);
         if (!StringUtils.isBlank(va.getErrorMsg())) {
-          return va.getErrorMsg();
+          return badRequest(va.getErrorMsg());
         }
         if (repositoryConfig.isExportToRaid()) {
           repositoryConfig.setRaidAssociated(exportDialogConfig.getRaidAssociated());
@@ -767,10 +781,10 @@ public class ExportController extends BaseController {
       }
     } catch (Exception e) {
       handleUnexpectedRollbackException(e);
-      return getExportFailureMessage(e.getMessage());
+      return badRequest(getExportFailureMessage(e.getMessage()));
     }
 
-    return getText("importExport.pdfArchiving.submission.success");
+    return ResponseEntity.ok(getText("importExport.pdfArchiving.submission.success"));
   }
 
   private String getRaidValidationError(AbstractExportDialog exportDialog) {

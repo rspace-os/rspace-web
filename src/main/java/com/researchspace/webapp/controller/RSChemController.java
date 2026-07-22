@@ -15,6 +15,7 @@ import com.researchspace.model.dtos.chemistry.ConvertedStructureDto;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.ChemistryService;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.RSChemService.ChemicalSearchResults;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -207,7 +208,7 @@ public class RSChemController extends BaseController {
           input.getParameters());
       ErrorList el = new ErrorList();
       el = inputValidator.populateErrorList(errors, el);
-      return badConversion(el.getAllErrorMessagesAsStringsSeparatedBy(","));
+      return badConversion(ListFormatUtils.formatList(el.getErrorMessages()));
     }
     try {
       log.info(

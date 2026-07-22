@@ -71,6 +71,7 @@ import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNotSharedException;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitialiserUtils;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.PiChangeContext;
 import com.researchspace.service.PiChangeHandler;
@@ -1188,7 +1189,7 @@ public class GroupManagerImpl implements GroupManager {
     if (result.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(result, el);
-      throw new IllegalArgumentException(el.getAllErrorMessagesAsStringsSeparatedBy(";"));
+      throw new IllegalArgumentException(ListFormatUtils.formatList(el.getErrorMessages()));
     }
 
     PiChangeContext ctxt = new PiChangeContext(grp.getUserGroupForUser(currPi).isPiCanEditWork());

@@ -24,6 +24,7 @@ import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.service.BaseRecordManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RSChemElementManager;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -431,7 +432,7 @@ public class ApiFieldsHelper {
             "Validation problem with "
                 + getFieldDescForErrorMsg(apiField, i)
                 + ": "
-                + validate.getAllErrorMessagesAsStringsSeparatedBy(","));
+                + ListFormatUtils.formatList(validate.getErrorMessages()));
       }
 
       // check attachments in text fields

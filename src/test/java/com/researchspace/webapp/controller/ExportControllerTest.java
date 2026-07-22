@@ -76,6 +76,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -383,16 +385,20 @@ public class ExportControllerTest {
 
     when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(false);
 
-    String msgTooMany = exportController.exportArchive(tooManyConfig, errors, request, principal);
-    assertEquals(tooManyFailure, msgTooMany);
+    ResponseEntity<String> msgTooMany =
+        exportController.exportArchive(tooManyConfig, errors, request, principal);
+    assertEquals(HttpStatus.BAD_REQUEST, msgTooMany.getStatusCode());
+    assertEquals(tooManyFailure, msgTooMany.getBody());
 
     ExportArchiveDialogConfigDTO okConfig =
         createExportArchiveConfig(ids(1), types(1), names(1), false);
-    String msgDiskSpace = exportController.exportArchive(okConfig, errors, request, principal);
+    ResponseEntity<String> msgDiskSpace =
+        exportController.exportArchive(okConfig, errors, request, principal);
+    assertEquals(HttpStatus.BAD_REQUEST, msgDiskSpace.getStatusCode());
     assertEquals(
         "RSpace has not enough disk space to start archive export process. Please contact your"
             + " System Admin.",
-        msgDiskSpace);
+        msgDiskSpace.getBody());
   }
 
   @Test
@@ -400,12 +406,13 @@ public class ExportControllerTest {
     Long[] tooMany = ids(ExportController.maxIdsToProcess + 1);
     String[] tooManyTypes = types(ExportController.maxIdsToProcess + 1);
     String[] tooManyNames = names(ExportController.maxIdsToProcess + 1);
-    String msg =
+    ResponseEntity<String> msg =
         exportController.export(
             createExportConfig(tooMany, tooManyNames, tooManyTypes, new ExportToFileConfig()),
             errors,
             principal);
-    assertEquals(tooManyFailure, msg);
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    assertEquals(tooManyFailure, msg.getBody());
   }
 
   @Test
@@ -415,10 +422,11 @@ public class ExportControllerTest {
     String[] multiNames = names(2);
     ExportToFileConfig cfg = new ExportToFileConfig();
     cfg.setExportFormat(WORD);
-    String msg =
+    ResponseEntity<String> msg =
         exportController.export(
             createExportConfig(multi, multiNames, multiTypes, cfg), errors, principal);
-    assertEquals(wordMultiDocFailure, msg);
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    assertEquals(wordMultiDocFailure, msg.getBody());
   }
 
   private String[] names(int size) {
@@ -451,12 +459,13 @@ public class ExportControllerTest {
     Mockito.when(principal.getName()).thenReturn("user1a");
     Mockito.when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
 
-    String rst =
+    ResponseEntity<String> rst =
         exportController.export(
             createExportConfig(exportIds, exportNames, exportTypes, defaultCfg), errors, principal);
     Mockito.verify(mockUserMgr, Mockito.never())
         .setPreference(Preference.UI_PDF_PAGE_SIZE, defaultCfg.getPageSize(), user.getUsername());
-    assertEquals(submissionSuccess, rst);
+    assertEquals(HttpStatus.OK, rst.getStatusCode());
+    assertEquals(submissionSuccess, rst.getBody());
 
     // setting size default
     defaultCfg.setSetPageSizeAsDefault(true);
@@ -465,7 +474,8 @@ public class ExportControllerTest {
             createExportConfig(exportIds, exportNames, exportTypes, defaultCfg), errors, principal);
     Mockito.verify(mockUserMgr, Mockito.times(1))
         .setPreference(Preference.UI_PDF_PAGE_SIZE, defaultCfg.getPageSize(), user.getUsername());
-    assertEquals(submissionSuccess, rst);
+    assertEquals(HttpStatus.OK, rst.getStatusCode());
+    assertEquals(submissionSuccess, rst.getBody());
   }
 
   @Test
@@ -476,19 +486,21 @@ public class ExportControllerTest {
 
     ExportDialogConfigDTO exportConfig = createExportConfigForUser(principal.getName());
 
-    String rst = exportController.export(exportConfig, bindingResult, principal);
+    ResponseEntity<String> rst = exportController.export(exportConfig, bindingResult, principal);
 
     Mockito.verify(exImportMgr, Mockito.times(1))
         .asyncExportAllUserRecordsToPdf(user, exportConfig.getExportConfig(), user);
     Mockito.verify(bindingResult, Mockito.times(1)).hasErrors();
 
     assertTrue(rst != null);
-    assertEquals(submissionSuccess, rst);
+    assertEquals(HttpStatus.OK, rst.getStatusCode());
+    assertEquals(submissionSuccess, rst.getBody());
 
     // word unsupported
     exportConfig.getExportConfig().setExportFormat(WORD);
     rst = exportController.export(exportConfig, bindingResult, principal);
-    assertEquals(wordMultiDocFailure, rst);
+    assertEquals(HttpStatus.BAD_REQUEST, rst.getStatusCode());
+    assertEquals(wordMultiDocFailure, rst.getBody());
   }
 
   @Test
@@ -506,10 +518,11 @@ public class ExportControllerTest {
     ExportDialogConfigDTO exportConfig = createExportConfigForUser(other.getUsername());
 
     // check that regular user can't export another's records
-    String rst = exportController.export(exportConfig, bindingResult, principal);
+    ResponseEntity<String> rst = exportController.export(exportConfig, bindingResult, principal);
     Mockito.verify(exImportMgr, never())
         .asyncExportAllUserRecordsToPdf(other, exportConfig.getExportConfig(), user);
-    assertEquals(exportFailureMsg("auth_error"), rst);
+    assertEquals(HttpStatus.BAD_REQUEST, rst.getStatusCode());
+    assertEquals(exportFailureMsg("auth_error"), rst.getBody());
   }
 
   @Test
@@ -528,8 +541,9 @@ public class ExportControllerTest {
     verify(exImportMgr, times(1)).asyncExportGroupToPdf(exportConfig.getExportConfig(), user, 1L);
 
     exportConfig.getExportConfig().setExportFormat(WORD);
-    String rst = exportController.export(exportConfig, bindingResult, principal);
-    assertEquals(wordMultiDocFailure, rst);
+    ResponseEntity<String> rst = exportController.export(exportConfig, bindingResult, principal);
+    assertEquals(HttpStatus.BAD_REQUEST, rst.getStatusCode());
+    assertEquals(wordMultiDocFailure, rst.getBody());
   }
 
   @Test
@@ -590,17 +604,19 @@ public class ExportControllerTest {
     String[] names = names(ExportController.maxIdsToProcess);
     when(errors.hasErrors()).thenReturn(false);
 
-    String msg =
+    ResponseEntity<String> msg =
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
-    assertEquals(tooManyFailure, msg);
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    assertEquals(tooManyFailure, msg.getBody());
 
     ids = ids(ExportController.maxIdsToProcess);
     types = types(ExportController.maxIdsToProcess + 1);
     msg =
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
-    assertEquals(tooManyFailure, msg);
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
+    assertEquals(tooManyFailure, msg.getBody());
 
     setupArchiveNotMadeExpectation();
   }
@@ -639,16 +655,17 @@ public class ExportControllerTest {
     when(principal.getName()).thenReturn("user1a");
     when(properties.getServerUrl()).thenReturn("http://www.rspace.com");
 
-    String msg =
+    ResponseEntity<String> msg =
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
     Mockito.verify(depositHandler, never()).sendArchiveToRepository(any(), any(), any(), any());
+    assertEquals(HttpStatus.BAD_REQUEST, msg.getStatusCode());
     assertEquals(
         exportFailureMsg(
             messages.getMessage(
                 "workspace.export.invalidRepositoryApp",
                 new Object[] {slackCfg.getApp().getName()})),
-        msg);
+        msg.getBody());
 
     UserAppConfig uac = setupMockAppCfg(appSetId, App.APP_DATAVERSE);
     when(appCfgMgr.getByAppName(uac.getApp().getName(), user)).thenReturn(uac);
@@ -656,7 +673,8 @@ public class ExportControllerTest {
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
     Mockito.verify(depositHandler, times(1)).sendArchiveToRepository(any(), any(), any(), any());
-    assertEquals(submissionSuccess, msg);
+    assertEquals(HttpStatus.OK, msg.getStatusCode());
+    assertEquals(submissionSuccess, msg.getBody());
   }
 
   @Test

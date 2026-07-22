@@ -4,6 +4,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.User;
 import com.researchspace.model.field.ErrorList;
+import com.researchspace.service.ListFormatUtils;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -98,7 +99,7 @@ public class ScheduledMaintenanceController extends BaseController {
       throw new IllegalArgumentException(
           getText(
               "errors.operation.failed.message",
-              new String[] {messagePart, el.getAllErrorMessagesAsStringsSeparatedBy(",")}));
+              new String[] {messagePart, ListFormatUtils.formatList(el.getErrorMessages())}));
     }
   }
 

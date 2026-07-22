@@ -15,6 +15,7 @@ import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.views.CommunityListResult;
 import com.researchspace.model.views.GroupListResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.audit.search.AuditTrailHandler;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
@@ -197,7 +198,7 @@ public class AuditTrailController extends BaseController {
     Optional<ErrorList> validationErrors = validateAndConfigure(inputSearchConfig, errors, subject);
     if (validationErrors.isPresent()) {
       throw new IllegalArgumentException(
-          validationErrors.get().getAllErrorMessagesAsStringsSeparatedBy(","));
+          ListFormatUtils.formatList(validationErrors.get().getErrorMessages()));
     }
     pgCrit.setResultsPerPage(AuditTrailSearchResultCsvGenerator.MAX_RESULTS_PER_CSV);
     ISearchResults<AuditTrailSearchResult> res =

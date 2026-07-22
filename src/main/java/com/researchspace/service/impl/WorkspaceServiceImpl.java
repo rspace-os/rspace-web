@@ -19,6 +19,7 @@ import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.WorkspaceService;
@@ -206,7 +207,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private ServiceOperationResult<BaseRecord> mapShareResultToServiceOperation(
       SharingResult sharingResult, BaseRecord baseRecordToMove) {
     if (sharingResult.getError() != null && sharingResult.getError().hasErrorMessages()) {
-      String msg = sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",");
+      String msg = ListFormatUtils.formatList(sharingResult.getError().getErrorMessages());
       return new ServiceOperationResult<>(null, false, msg);
     }
     if (sharingResult.getSharedIds() != null

@@ -33,6 +33,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserApiKeyManager;
 import com.researchspace.service.UserDeletionManager;
@@ -132,13 +133,15 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   private void validateTempUser(User toDelete) {
     if (!toDelete.isTempAccount() || userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException("Can only delete temp users created more than a year ago");
+      throw new IllegalArgumentException(
+          getMessage("userDeletion.errors.tempUserTooNew", new Object[] {}));
     }
   }
 
   private void validateNonTempUser(User toDelete) {
     if (userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException("Can only delete  users created more than a year ago");
+      throw new IllegalArgumentException(
+          getMessage("userDeletion.errors.nonTempUserTooNew", new Object[] {}));
     }
   }
 
@@ -364,7 +367,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
       return new ApiUser(createdUser);
     } else {
       throw new IllegalArgumentException(
-          aroAjaxReturnObject.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(","));
+          ListFormatUtils.formatList(aroAjaxReturnObject.getErrorMsg().getErrorMessages()));
     }
   }
 
@@ -446,16 +449,19 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
               .map(Map.Entry::getKey)
               .collect(Collectors.toList());
       if (piUsers.size() != 1) {
-        throw new IllegalArgumentException("Exactly one user must be the group's PI.");
+        throw new IllegalArgumentException(
+            getMessage("groups.edit.errors.exactlyOnePi", new Object[] {}));
       }
       User piUser = piUsers.get(0);
       if (!piUser.hasRole(Role.PI_ROLE)) {
-        throw new IllegalArgumentException("User selected as group's PI must have PI role.");
+        throw new IllegalArgumentException(
+            getMessage("groups.edit.errors.piRoleRequired", new Object[] {}));
       }
       group.setOwner(piUser);
     } else {
       if (group.getGroupOwners() == null || group.getGroupOwners().isEmpty()) {
-        throw new IllegalArgumentException("Project group should have at least 1 GROUP_OWNER.");
+        throw new IllegalArgumentException(
+            getMessage("groups.edit.errors.groupOwnerRequired", new Object[] {}));
       }
       group.setOwner(sysadmin);
     }

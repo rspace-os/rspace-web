@@ -25,6 +25,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
@@ -220,7 +221,7 @@ public class SharingHandlerImpl implements SharingHandler {
     if (sharingResult.getError().hasErrorMessages()) {
       throw new IllegalStateException(
           "Errors while moving into Shared Notebook: ["
-              + sharingResult.getError().getAllErrorMessagesAsStringsSeparatedBy(",")
+              + ListFormatUtils.formatList(sharingResult.getError().getErrorMessages())
               + "]");
     }
     return sharingResult;

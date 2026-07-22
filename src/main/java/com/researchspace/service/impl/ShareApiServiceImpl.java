@@ -33,6 +33,7 @@ import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DetailedRecordInformationProvider;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.RecordSharingManager;
@@ -160,7 +161,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (errors != null && errors.hasErrorMessages()) {
       throw new IllegalArgumentException(
-          "Could not update permission: " + errors.getAllErrorMessagesAsStringsSeparatedBy(", "));
+          "Could not update permission: " + ListFormatUtils.formatList(errors.getErrorMessages()));
     }
   }
 
