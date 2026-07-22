@@ -166,6 +166,12 @@ public interface IPropertyHolder extends Versionable {
    */
   String getAnalyticsEnabled();
 
+  /** Whether browser telemetry is enabled. */
+  String getOtelWebEnabled();
+
+  /** Browser trace sampling ratio from 0.0 to 1.0. */
+  String getOtelWebTraceSamplingRatio();
+
   String getBannerImagePath();
 
   String getLdapEnabled();
@@ -217,8 +223,6 @@ public interface IPropertyHolder extends Versionable {
    * @see https://researchspace.atlassian.net/browse/RSPAC-1336
    */
   boolean isPicreateGroupOnSignupEnabled();
-
-  Integer getSlowLogThreshold();
 
   boolean isAsposeCachingEnabled();
 

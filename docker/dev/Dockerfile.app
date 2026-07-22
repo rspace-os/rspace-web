@@ -9,10 +9,10 @@
 ARG MAVEN_IMAGE=maven:3.9-eclipse-temurin-17
 FROM ${MAVEN_IMAGE}
 
-# Pinned versions (update together; both are vetted third-party artifacts).
+# Pinned JBR version. Java agent versions are managed by
+# java-dependencies.pom.xml below.
 ARG JBR_VERSION=17.0.14
 ARG JBR_BUILD=b1367.22
-ARG HOTSWAP_AGENT_VERSION=2.0.1
 # Provided automatically by BuildKit (amd64 / arm64).
 ARG TARGETARCH
 
@@ -25,14 +25,26 @@ RUN set -eux; \
       arm64) jbr_arch=aarch64 ;; \
       *) echo "unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
     esac; \
-    mkdir -p /opt/jbr /opt/hotswap; \
+    mkdir -p /opt/jbr; \
     curl -fsSL "https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-${JBR_VERSION}-linux-${jbr_arch}-${JBR_BUILD}.tar.gz" \
       | tar -xz -C /opt/jbr --strip-components=1; \
-    curl -fsSL -o /opt/hotswap/hotswap-agent.jar \
-      "https://github.com/HotswapProjects/HotswapAgent/releases/download/RELEASE-${HOTSWAP_AGENT_VERSION}/hotswap-agent-${HOTSWAP_AGENT_VERSION}.jar"; \
     # Fail the build early if this JBR does not provide the enhanced-redefinition
     # flag or cannot run.
     /opt/jbr/bin/java -XX:+AllowEnhancedClassRedefinition -version
+
+# Keep the agents out of the application pom. This standalone pom copies the
+# individual agents and builds inferred-spans as an uber jar because the OTel
+# agent loads each extension in an isolated classloader.
+COPY java-dependencies.pom.xml /tmp/java-dependencies.pom.xml
+RUN set -eux; \
+    mvn --batch-mode --no-transfer-progress \
+      --file /tmp/java-dependencies.pom.xml package; \
+    mkdir -p /opt/hotswap /opt/otel; \
+    cp /tmp/target/docker-libs/hotswap-agent.jar /opt/hotswap/; \
+    cp /tmp/target/docker-libs/opentelemetry-*.jar /opt/otel/; \
+    rm -rf /tmp/target /tmp/java-dependencies.pom.xml; \
+    # Verify a required runtime dependency is present.
+    jar tf /opt/otel/opentelemetry-inferred-spans.jar | grep -q "WeakConcurrentMap.class"
 
 # Make JBR the JVM that Maven (and therefore jetty:run) runs on.
 ENV JAVA_HOME=/opt/jbr
