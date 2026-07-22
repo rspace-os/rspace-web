@@ -47,4 +47,16 @@ export class DocumentPage extends BasePage {
 
     return this.page.locator(`#plainText_${fieldId}`);
   }
+
+  async close(): Promise<void> {
+    await this.toolbar.actions.closeLink.click();
+  }
+
+  async saveAsTemplate(templateName: string): Promise<void> {
+    await this.toolbar.saveAsTemplateButton.click();
+    const dialog = this.page.getByRole("dialog", { name: "Save Template" });
+    await dialog.getByRole("textbox", { name: "Template Name" }).fill(templateName);
+    await dialog.getByRole("button", { name: "OK" }).click();
+    await dialog.waitFor({ state: "hidden" });
+  }
 }

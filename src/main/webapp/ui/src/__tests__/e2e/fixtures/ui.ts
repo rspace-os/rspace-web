@@ -14,6 +14,7 @@ import { IdentifiersPage } from "../pageObjects/inventory/IdentifiersPage";
 import { InventoryImportPage } from "../pageObjects/inventory/InventoryImportPage";
 import { InventoryPage } from "../pageObjects/inventory/InventoryPage";
 import { AuditTrailPage } from "../pageObjects/myrspace/AuditTrailPage";
+import { DeletedItemsPage } from "../pageObjects/myrspace/DeletedItemsPage";
 import { MyRSpacePage } from "../pageObjects/myrspace/MyRSpacePage";
 import { NotebookPage } from "../pageObjects/notebook/NotebookPage";
 import { WorkspacePage } from "../pageObjects/workspace/WorkspacePage";
@@ -35,6 +36,7 @@ type UiFixtures = {
   pageIdentifiers: IdentifiersPage;
   pageMyRSpace: MyRSpacePage;
   pageAuditTrail: AuditTrailPage;
+  pageDeletedItems: DeletedItemsPage;
   pageNotebook: NotebookPage;
   componentExportWizard: ExportWizardComponent;
   componentNotifications: NotificationsDialogComponent;
@@ -79,6 +81,7 @@ export const uiTest = base.extend<E2EOptions & UiFixtures>({
   pageIdentifiers: pageFixture(IdentifiersPage),
   pageMyRSpace: pageFixture(MyRSpacePage),
   pageAuditTrail: pageFixture(AuditTrailPage),
+  pageDeletedItems: pageFixture(DeletedItemsPage),
   pageNotebook: pageFixture(NotebookPage),
   componentExportWizard: pageFixture(ExportWizardComponent),
   componentNotifications: pageFixture(NotificationsDialogComponent),

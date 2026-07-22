@@ -1,10 +1,12 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
+import { CreateFolderDialog } from "@/__tests__/e2e/components/workspace/CreateFolderDialog";
 import { WorkspacePagination } from "@/__tests__/e2e/components/workspace/WorkspacePagination";
 import type { WorkspaceRecordInfoDialog } from "@/__tests__/e2e/components/workspace/WorkspaceRecordInfoDialog";
 import { WorkspaceSearchBar } from "@/__tests__/e2e/components/workspace/WorkspaceSearchBar";
 import { WorkspaceSelectionBar } from "@/__tests__/e2e/components/workspace/WorkspaceSelectionBar";
 import { WorkspaceTable } from "@/__tests__/e2e/components/workspace/WorkspaceTable";
+import { WorkspaceTemplatePickerDialog } from "@/__tests__/e2e/components/workspace/WorkspaceTemplatePickerDialog";
 import { WorkspaceToolbar } from "@/__tests__/e2e/components/workspace/WorkspaceToolbar";
 import { WorkspaceTree } from "@/__tests__/e2e/components/workspace/WorkspaceTree";
 import { BasePage } from "../BasePage";
@@ -49,6 +51,14 @@ export class WorkspacePage extends BasePage {
     return this.tree.root.isVisible();
   }
 
+  get breadcrumbFolderName(): Locator {
+    return this.page.locator("#recordNameInBreadcrumb");
+  }
+
+  async waitUntilBreadcrumbShows(folderName: string): Promise<void> {
+    await this.breadcrumbFolderName.filter({ hasText: folderName }).waitFor({ state: "visible" });
+  }
+
   async findRecord(name: string, { maxPages = 50 }: { maxPages?: number } = {}): Promise<void> {
     if (await this.isTreeView()) {
       throw new Error("findRecord: pagination is list-view only — switch to list view first.");
@@ -74,6 +84,23 @@ export class WorkspacePage extends BasePage {
   async createBasicDocument(): Promise<DocumentEditorPage> {
     await this.toolbar.createMenu.createFromCustomForm("Basic Document");
     await this.page.waitForURL("**/workspace/editor/structuredDocument/**");
+    const editor = new DocumentEditorPage(this.page);
+    await editor.isLoaded();
+    return editor;
+  }
+
+  async createFolder(path: string, { navigate = false }: { navigate?: boolean } = {}): Promise<void> {
+    await this.toolbar.createMenu.create("Folder");
+    const dialog = new CreateFolderDialog(this.page);
+    await dialog.waitUntilVisible();
+    await dialog.create(path, { navigate });
+  }
+
+  async createDocumentFromTemplate(templateName: string, newDocName: string): Promise<DocumentEditorPage> {
+    await this.toolbar.createMenu.create("From Template");
+    const picker = new WorkspaceTemplatePickerDialog(this.page);
+    await picker.waitUntilVisible();
+    await picker.createFromTemplate(templateName, newDocName);
     const editor = new DocumentEditorPage(this.page);
     await editor.isLoaded();
     return editor;

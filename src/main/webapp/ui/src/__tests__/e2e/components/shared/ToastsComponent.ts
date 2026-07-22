@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export type ToastVariant = "success" | "error" | "warning" | "notice";
 
@@ -34,7 +34,12 @@ export class ToastsComponent {
   async dismissAll(): Promise<void> {
     const dismissButtons = this.root.getByRole("button", { name: "Dismiss" });
     while ((await dismissButtons.count()) > 0) {
-      await dismissButtons.first().click();
+      const toast = this.root.getByRole("group").first();
+      const button = toast.getByRole("button", { name: "Dismiss" });
+      await expect(async () => {
+        await button.click({ timeout: 3_000 }).catch(() => {});
+        await toast.waitFor({ state: "detached", timeout: 3_000 });
+      }).toPass({ timeout: 15_000 });
     }
   }
 }

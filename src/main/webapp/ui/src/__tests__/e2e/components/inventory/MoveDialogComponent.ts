@@ -30,11 +30,20 @@ export class MoveDialogComponent {
 
   async search(query: string): Promise<void> {
     await this.searchInput.fill(query);
-    await this.searchInput.press("Enter");
+    await Promise.all([
+      this.page.waitForResponse(
+        (res) => new URL(res.url()).pathname.endsWith("/api/inventory/v1/search") && res.request().method() === "GET",
+      ),
+      this.searchInput.press("Enter"),
+    ]);
   }
 
   async selectDestination(name: string): Promise<void> {
-    await this.destinationTree.getByRole("treeitem", { name }).first().click();
+    const item = this.destinationTree.getByRole("treeitem", { name }).first();
+    await expect(async () => {
+      await item.click({ timeout: 3_000 }).catch(() => {});
+      await expect(item).toHaveAttribute("aria-checked", "true", { timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
   }
 
   async selectedDestinationName(): Promise<string> {
@@ -113,7 +122,10 @@ export class MoveDialogComponent {
     if (await this.nextButton.isVisible().catch(() => false)) {
       await this.nextButton.click();
     }
-    await clickAndWaitDetached(this.moveButton, this.root);
+    await expect(async () => {
+      await this.moveButton.click({ timeout: 3_000 }).catch(() => {});
+      await this.root.waitFor({ state: "detached", timeout: 3_000 });
+    }).toPass({ timeout: 30_000 });
   }
 
   async cancel(): Promise<void> {

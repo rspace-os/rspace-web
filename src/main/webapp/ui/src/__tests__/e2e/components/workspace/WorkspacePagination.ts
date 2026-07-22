@@ -8,7 +8,6 @@ export class WorkspacePagination {
   private readonly applyItemsPerPageButton: Locator;
 
   constructor(page: Page) {
-    // Legacy Bootstrap pagination has no named landmark; this class identifies its root.
     this.root = page.locator("ul.pagination");
     this.itemsPerPageSelect = page.getByRole("combobox", { name: "Items per page:" });
     this.applyItemsPerPageButton = page.locator("#applyNumberRecords");
@@ -50,7 +49,9 @@ export class WorkspacePagination {
 
   async setItemsPerPage(n: ItemsPerPage): Promise<void> {
     await this.itemsPerPageSelect.selectOption(String(n));
+    await expect(this.itemsPerPageSelect).toHaveValue(String(n));
     await this.applyItemsPerPageButton.click();
     await this.waitForPage(1);
+    await this.itemsPerPageSelect.page().locator('[data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
   }
 }

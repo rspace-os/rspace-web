@@ -30,6 +30,7 @@ test.describe(`Sample Template creation`, { tag: [tags.INVENTORY, tags.MOBILE] }
     await form.save();
 
     await expect(componentToasts.byVariant("success", "successfully created")).toBeVisible();
+    await componentToasts.dismissAll();
 
     await pageInventory.detailsPanel.expandSection("Custom Fields");
     for (const fieldName of [

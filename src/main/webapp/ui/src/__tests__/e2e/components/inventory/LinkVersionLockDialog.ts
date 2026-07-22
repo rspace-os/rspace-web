@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { clickAndWaitDetached } from "./DialogHelpers";
 
 export class LinkVersionLockDialog {
@@ -17,11 +17,15 @@ export class LinkVersionLockDialog {
   }
 
   async selectLatest(): Promise<void> {
-    await this.root.getByRole("radio", { name: "Latest", exact: true }).click();
+    const radio = this.root.getByRole("radio", { name: "Latest", exact: true });
+    await radio.click();
+    await expect(radio).toBeChecked();
   }
 
   async selectVersion(version: number): Promise<void> {
-    await this.root.getByRole("radio", { name: `Version ${version}`, exact: true }).click();
+    const radio = this.root.getByRole("radio", { name: `Version ${version}`, exact: true });
+    await radio.click();
+    await expect(radio).toBeChecked();
   }
 
   async lockToSelectedVersion(): Promise<void> {

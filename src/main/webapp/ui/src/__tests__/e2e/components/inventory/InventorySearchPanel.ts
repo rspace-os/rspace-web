@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { BasketsMenuComponent } from "./BasketsMenuComponent";
 import { openDialog } from "./DialogHelpers";
 import { InventoryBatchActionBar } from "./InventoryBatchActionBar";
@@ -11,6 +11,7 @@ export type InventoryViewMode = "List" | "Tree" | "Card" | "Grid";
 export class InventorySearchPanel {
   private readonly root: Locator;
   private readonly searchInput: Locator;
+  private readonly submitButton: Locator;
   private readonly resultsTable: Locator;
   readonly statusText: Locator;
   readonly batchActions: InventoryBatchActionBar;
@@ -29,6 +30,7 @@ export class InventorySearchPanel {
   constructor(private readonly page: Page) {
     this.root = page.getByRole("navigation", { name: "Search and Navigation" });
     this.searchInput = this.root.getByRole("searchbox", { name: "Search" });
+    this.submitButton = this.root.getByRole("button", { name: "Search", exact: true }).first();
     this.resultsTable = this.root.getByRole("table", { name: "Search results" });
     this.statusText = this.root.getByRole("status", { name: "Search status" });
     this.batchActions = new InventoryBatchActionBar(page, this.resultsTable);
@@ -46,11 +48,15 @@ export class InventorySearchPanel {
     this.activeDetailsHeading = page.getByRole("main").getByRole("heading", { level: 2 });
   }
 
-  private async waitForSearchRequest(action: () => Promise<void>): Promise<void> {
+  private async waitForSearchRequest(action: () => Promise<void>, expectedQuery?: string): Promise<void> {
     await Promise.all([
-      this.page.waitForResponse(
-        (res) => new URL(res.url()).pathname.endsWith("/api/inventory/v1/search") && res.request().method() === "GET",
-      ),
+      this.page.waitForResponse((res) => {
+        const url = new URL(res.url());
+        if (!url.pathname.endsWith("/api/inventory/v1/search")) return false;
+        if (res.request().method() !== "GET") return false;
+        if (expectedQuery === undefined) return true;
+        return url.searchParams.get("query") === expectedQuery;
+      }),
       action(),
     ]);
   }
@@ -60,15 +66,18 @@ export class InventorySearchPanel {
   }
 
   async ensureVisible(): Promise<void> {
-    if (await this.backButton.isVisible().catch(() => false)) {
-      await this.backButton.click();
-    }
+    await expect(async () => {
+      if (await this.backButton.isVisible().catch(() => false)) {
+        await this.backButton.click();
+      }
+      await this.searchInput.waitFor({ state: "visible", timeout: 2_000 });
+    }).toPass({ timeout: 10_000 });
   }
 
   async search(query: string): Promise<void> {
     await this.ensureVisible();
     await this.searchInput.fill(query);
-    await this.waitForSearchRequest(() => this.searchInput.press("Enter"));
+    await this.waitForSearchRequest(() => this.submitButton.click(), query);
   }
 
   async clearSearch(): Promise<void> {

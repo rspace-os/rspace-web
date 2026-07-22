@@ -21,7 +21,10 @@ export class NotebookPage extends BasePage {
 
   async isLoaded(): Promise<void> {
     await this.page.waitForURL("**/notebookEditor/**");
-    await this.entryStrip.entryCounter.waitFor({ state: "visible" });
+    await Promise.race([
+      this.entryStrip.entryCounter.waitFor({ state: "visible" }),
+      this.page.getByText("There are no entries to display.").first().waitFor({ state: "visible" }),
+    ]);
   }
 
   async enterEditMode(): Promise<DocumentEditorPage> {

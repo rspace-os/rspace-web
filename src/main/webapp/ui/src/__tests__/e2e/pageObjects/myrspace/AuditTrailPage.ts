@@ -1,4 +1,5 @@
-import type { Locator } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { AppHeader } from "@/__tests__/e2e/components/shared/AppHeader";
 import { BasePage } from "../BasePage";
 
 export type AuditAction =
@@ -22,6 +23,12 @@ export type AuditAction =
 
 export class AuditTrailPage extends BasePage {
   readonly path = "/audit/auditing";
+  readonly header: AppHeader;
+
+  constructor(page: Page) {
+    super(page);
+    this.header = new AppHeader(page);
+  }
 
   private get submitButton(): Locator {
     return this.page.getByRole("button", { name: "Get Audit Report" });
