@@ -9,8 +9,8 @@
       RSDEV-1219: add the isEditable flag to InstrumentEntity (and its audit table).
       A false value locks a default/system instrument template against edit, delete and transfer
       for everyone (including the owning sysadmin); the lock is enforced centrally in
-      InventoryPermissionUtils. Existing rows default to editable (1); the audit column is nullable,
-      as audit-table columns generally are.
+      InventoryPermissionUtils. Existing rows default to editable (1); the audit column defaults
+      to 1 as well but stays nullable, as audit-table columns generally are.
   -->
   <changeSet id="2026-07-21-instrumentEntity-isEditable" context="run" author="nico">
     <comment>Add isEditable column to InstrumentEntity and InstrumentEntity_AUD</comment>
@@ -20,7 +20,7 @@
       </column>
     </addColumn>
     <addColumn tableName="InstrumentEntity_AUD">
-      <column name="isEditable" type="bit"/>
+      <column name="isEditable" type="bit" defaultValueNumeric="1"/>
     </addColumn>
   </changeSet>
 
