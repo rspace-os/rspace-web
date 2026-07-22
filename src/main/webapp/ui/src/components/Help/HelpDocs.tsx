@@ -9,6 +9,7 @@ import { observer } from "mobx-react-lite";
 import React, { useContext, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { useTracedRequest } from "@/common/otel";
 import useUiNavigationData from "@/components/AppBar/useUiNavigationData";
 import IconButtonWithTooltip from "@/components/IconButtonWithTooltip";
 import AnalyticsContext from "../../stores/contexts/Analytics";
@@ -69,6 +70,7 @@ function loadScript(url: string): void {
 function HelpDocs() {
   const { t } = useTranslation("common");
   const uiNavigationData = useUiNavigationData();
+  const traceRequest = useTracedRequest();
   const api = useRef(
     axios.create({
       baseURL: "/session/ajax",
@@ -111,11 +113,13 @@ function HelpDocs() {
     void (async () => {
       const {
         data: { livechatEnabled, livechatServerKey, livechatUserId },
-      } = await api.current.get<{
-        livechatEnabled: boolean;
-        livechatServerKey: string;
-        livechatUserId: string;
-      }>("/livechatProperties");
+      } = await traceRequest(() =>
+        api.current.get<{
+          livechatEnabled: boolean;
+          livechatServerKey: string;
+          livechatUserId: string;
+        }>("/livechatProperties"),
+      );
       if (livechatEnabled) {
         Intercom({
           app_id: livechatServerKey,
