@@ -31,6 +31,7 @@ import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
+import { onPageLoadWithOtel } from "@/common/otel";
 import LoaderCircular from "@/components/LoadingCircular";
 import { MuiCssLayerProvider } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
@@ -742,7 +743,7 @@ const IdentifierPublicPage = ({ publicId }: IdentifierPublicPageArgs): ReactNode
   );
 };
 
-window.addEventListener("load", (_e) => {
+onPageLoadWithOtel({ page: "public-inventory" }, () => {
   const domContainer = document.getElementById("identifierPublicPage");
   const location = window.location;
   /**

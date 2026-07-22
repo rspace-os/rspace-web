@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import createAccentedTheme from "./accentedTheme";
 import { ACCENT_COLOR as INVENTORY_COLOR } from "./assets/branding/rspace/inventory";
+import { onPageLoadWithOtel } from "./common/otel";
 import Analytics from "./components/Analytics";
 import { ERROR_MSG } from "./components/ErrorBoundary";
 import GoogleLoginProvider from "./components/GoogleLoginProvider";
@@ -67,7 +68,7 @@ function App(): React.ReactNode {
   );
 }
 
-window.addEventListener("load", () => {
+onPageLoadWithOtel({ page: "inventory" }, () => {
   const domContainer = document.getElementById("app");
   window.scrollTo(0, 1);
 

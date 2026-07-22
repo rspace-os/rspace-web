@@ -89,6 +89,38 @@ if [ "${RSPACE_CHEMISTRY:-false}" = "true" ]; then
   echo "[entrypoint] Chemistry service enabled at ${CHEMISTRY_SERVICE_URL:-http://chemistry:8090}"
 fi
 
+# OpenTelemetry settings for the observability profile.
+OTEL_JETTY_ARGS=()
+if [ "${RSPACE_OTEL:-false}" = "true" ]; then
+  export MAVEN_OPTS="${MAVEN_OPTS:-} -javaagent:/opt/otel/opentelemetry-javaagent.jar"
+  export OTEL_SERVICE_NAME="${OTEL_SERVICE_NAME:-rspace-backend}"
+  export OTEL_RESOURCE_ATTRIBUTES="${OTEL_RESOURCE_ATTRIBUTES:-deployment.environment=dev,service.namespace=rspace}"
+  export OTEL_EXPORTER_OTLP_ENDPOINT="${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4317}"
+  export OTEL_EXPORTER_OTLP_PROTOCOL="${OTEL_EXPORTER_OTLP_PROTOCOL:-grpc}"
+  export OTEL_TRACES_EXPORTER="${OTEL_TRACES_EXPORTER:-otlp}"
+  export OTEL_METRICS_EXPORTER="${OTEL_METRICS_EXPORTER:-otlp}"
+  export OTEL_LOGS_EXPORTER="${OTEL_LOGS_EXPORTER:-otlp}"
+  export OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE="${OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:-delta}"
+  export OTEL_INSTRUMENTATION_HIBERNATE_ENABLED="${OTEL_INSTRUMENTATION_HIBERNATE_ENABLED:-false}"
+  OTEL_EXTENSION_JARS=""
+  for ext_jar in /opt/otel/opentelemetry-span-stacktrace.jar /opt/otel/opentelemetry-inferred-spans.jar; do
+    [ -f "${ext_jar}" ] && OTEL_EXTENSION_JARS="${OTEL_EXTENSION_JARS:+${OTEL_EXTENSION_JARS},}${ext_jar}"
+  done
+  if [ -n "${OTEL_EXTENSION_JARS}" ]; then
+    export OTEL_JAVAAGENT_EXTENSIONS="${OTEL_JAVAAGENT_EXTENSIONS:-${OTEL_EXTENSION_JARS}}"
+  fi
+  if [ -f /opt/otel/opentelemetry-span-stacktrace.jar ]; then
+    export OTEL_JAVA_EXPERIMENTAL_SPAN_STACKTRACE_MIN_DURATION="${OTEL_JAVA_EXPERIMENTAL_SPAN_STACKTRACE_MIN_DURATION:-5ms}"
+  fi
+  if [ -f /opt/otel/opentelemetry-inferred-spans.jar ]; then
+    export OTEL_INFERRED_SPANS_ENABLED="${OTEL_INFERRED_SPANS_ENABLED:-true}"
+  fi
+  OTEL_JETTY_ARGS+=(
+    "-Drs.otel.web.enabled=true"
+  )
+  echo "[entrypoint] OpenTelemetry agent enabled -> ${OTEL_EXPORTER_OTLP_ENDPOINT}"
+fi
+
 echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
 echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
 
@@ -112,4 +144,5 @@ exec mvn -B jetty:run \
   -Drs.session.cookie.name="${SESSION_COOKIE_NAME}" \
   -DRS.devlogLevel=INFO \
   -Dlog4j2.configurationFile=log4j2-dev.xml \
+  ${OTEL_JETTY_ARGS[@]+"${OTEL_JETTY_ARGS[@]}"} \
   < "${FIFO}"

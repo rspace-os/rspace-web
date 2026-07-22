@@ -11,12 +11,13 @@
 #   ./docker/dev/rspace-dev <command> [args]
 #
 # Commands:
-#   up [--fresh] [--chemistry|--no-chemistry]
-#                  Build images (if needed) and start db + app + frontend.
+#   up [--fresh] [--chemistry|--no-chemistry] [--observability]
+#                  Build images (if needed) and start db + app + frontend + Apache.
 #                  First boot (or --fresh) recreates the DB schema + sample data.
 #                  --chemistry also starts the optional chemistry microservice
 #                  (rspaceops/oss-chemistry) and points the app at it; the choice
 #                  persists in .env until --no-chemistry.
+#                  --observability starts OpenTelemetry and Elastic APM/ELK.
 #   down           Stop and remove the containers (keeps the database + caches).
 #   reload         Recompile and hot-redeploy the whole webapp (rebuilds the
 #                  Spring context) in the same JVM — applies any Java/JSP/config
@@ -25,7 +26,7 @@
 #   restart        Restart the backend (full JVM restart).
 #   reset-db       Recreate the database from scratch (drop-recreate-db) and
 #                  restart the backend. Destroys local data in this worktree.
-#   logs [svc]     Follow logs (default: app). svc = app | frontend | db.
+#   logs [svc]     Follow logs (default: app). svc = app | frontend | apache | db.
 #   ps | status    Show stack status and the URLs/ports for this worktree.
 #   shell [svc]    Open a shell in a service container (default: app).
 #   db             Open a MariaDB client against this worktree's database.
@@ -124,7 +125,28 @@ DEBUG_PORT=${debug_port}
 VITE_HMR_HOST=localhost
 VITE_USE_POLLING=${polling}
 EOF
+  ensure_observability_ports
   echo "rspace-dev: wrote ${ENV_FILE} (app=${app_port}, vite=${vite_port}, db=${db_port}, debug=${debug_port})" >&2
+}
+
+ensure_env_port() {
+  local key="$1" first_port="$2"
+  if ! grep -q "^${key}=" "${ENV_FILE}" 2>/dev/null; then
+    printf '%s=%s\n' "${key}" "$(free_port_from "${first_port}")" >> "${ENV_FILE}"
+  fi
+}
+
+ensure_observability_ports() {
+  local offset
+  offset="$(path_offset)"
+  ensure_env_port KIBANA_PORT "$((5601 + offset))"
+  ensure_env_port ES_PORT "$((9200 + offset))"
+  ensure_env_port OTLP_GRPC_PORT "$((4317 + offset))"
+  ensure_env_port OTLP_HTTP_PORT "$((4318 + offset))"
+}
+
+observability_enabled() {
+  [ "$(env_get RSPACE_OBSERVABILITY)" = "true" ]
 }
 
 # Read a value out of .env.
@@ -132,14 +154,28 @@ env_get() { grep -E "^$1=" "${ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2-; 
 
 compose() {
   ensure_env
-  # Activate the optional chemistry profile when enabled in .env, so every
-  # compose subcommand (up/down/ps/logs/...) consistently includes the service.
-  local profiles=""
-  [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && profiles="chemistry"
-  COMPOSE_PROFILES="${profiles}" docker compose \
+  local profile_args=()
+  [ "$(env_get RSPACE_CHEMISTRY)" = "true" ] && profile_args+=(--profile chemistry)
+  if observability_enabled; then
+    profile_args+=(--profile observability)
+  fi
+  docker compose \
     --project-directory "${SCRIPT_DIR}" \
     --env-file "${ENV_FILE}" \
     -f "${COMPOSE_FILE}" \
+    ${profile_args[@]+"${profile_args[@]}"} \
+    "$@"
+}
+
+# Include disabled profiles during teardown.
+compose_all_profiles() {
+  ensure_env
+  docker compose \
+    --project-directory "${SCRIPT_DIR}" \
+    --env-file "${ENV_FILE}" \
+    -f "${COMPOSE_FILE}" \
+    --profile chemistry \
+    --profile observability \
     "$@"
 }
 
@@ -174,6 +210,22 @@ print_urls() {
     Database   127.0.0.1:${db_port}  (db=rspace user=rspacedbuser pass=rspacedbpwd)
     Debug      127.0.0.1:${debug_port:-5005}  (JDWP — attach IntelliJ "Remote JVM Debug")
     Chemistry  ${chem}
+EOF
+  if observability_enabled; then
+    cat <<EOF
+
+  Observability
+    APM UI         http://localhost:$(env_get KIBANA_PORT)/app/apm
+    Kibana         http://localhost:$(env_get KIBANA_PORT)
+    Elasticsearch  http://localhost:$(env_get ES_PORT)
+    Collector      OTLP gRPC 127.0.0.1:$(env_get OTLP_GRPC_PORT) · OTLP HTTP 127.0.0.1:$(env_get OTLP_HTTP_PORT)
+EOF
+  else
+    cat <<EOF
+    Telemetry  off — enable with: ${0##*/} up --observability
+EOF
+  fi
+  cat <<EOF
 
     Logins: user1a .. user8h / user1234   sysadmin1 / sysWisc23!
 EOF
@@ -197,7 +249,9 @@ cmd_up() {
     printf 'DEBUG_PORT=%s\n' "${dbg}" >> "${ENV_FILE}"
     echo "rspace-dev: allocated debug port ${dbg}" >&2
   fi
-  local fresh="false" arg
+  ensure_observability_ports
+  local fresh="false"
+  local arg
   for arg in "$@"; do
     case "${arg}" in
       --fresh)        fresh="true" ;;
@@ -208,7 +262,11 @@ cmd_up() {
                       # commands, so stop a leftover container explicitly.
                       docker rm -f "$(env_get COMPOSE_PROJECT_NAME)-chemistry" >/dev/null 2>&1 || true
                       echo "rspace-dev: chemistry service disabled (persisted in .env)" >&2 ;;
-      *) die "unknown flag for up: '${arg}'" ;;
+      --observability)
+        env_set RSPACE_OBSERVABILITY true
+        echo "rspace-dev: observability enabled (OTel collector + Elasticsearch + Kibana)" >&2
+        ;;
+      *) die "unknown 'up' option '${arg}' (supported: --fresh, --chemistry, --no-chemistry, --observability)" ;;
     esac
   done
 
@@ -221,16 +279,16 @@ cmd_up() {
 
   # The app shares the frontend's network namespace (network_mode in the compose
   # file). If `up` recreates the frontend, the app's reference to the old
-  # namespace goes stale, so it must be recreated too. Detect a frontend
-  # container-id change across `up` and rebind the app when needed.
+  # namespace goes stale, so it must be recreated too. Apache is also recreated
+  # so it resolves the frontend service's new address.
   local proj fe_before fe_after
   proj="$(env_get COMPOSE_PROJECT_NAME)"
   fe_before="$(docker ps -aq -f "name=^${proj}-frontend$" 2>/dev/null)"
   compose up -d --build
   fe_after="$(docker ps -aq -f "name=^${proj}-frontend$" 2>/dev/null)"
   if [ -n "${fe_before}" ] && [ "${fe_before}" != "${fe_after}" ]; then
-    echo "rspace-dev: frontend was recreated — rebinding the app to its network ..." >&2
-    compose up -d --force-recreate app
+    echo "rspace-dev: frontend was recreated — rebinding app and Apache ..." >&2
+    compose up -d --force-recreate app apache
   fi
 
   print_urls
@@ -239,7 +297,7 @@ cmd_up() {
   echo "  (the backend takes a few minutes to compile + start on first boot)"
 }
 
-cmd_down()    { compose down; }
+cmd_down()    { compose_all_profiles down; }
 cmd_build()   { compose build; }
 cmd_ps()      { compose ps; print_urls; }
 cmd_logs()    { compose logs -f "${1:-app}"; }
@@ -250,7 +308,7 @@ cmd_logs()    { compose logs -f "${1:-app}"; }
 # the launcher env and .env (so debug/hotswap/etc. knobs set in .env take effect).
 cmd_restart() {
   db_volume_exists || die "no database for this worktree yet — run '${0##*/} up' first"
-  RSPACE_DB_MODE="keepdbintact" compose up -d --force-recreate app
+  RSPACE_DB_MODE="keepdbintact" compose up -d --force-recreate app apache
 }
 
 cmd_reload() {
@@ -276,7 +334,7 @@ cmd_reset_db() {
   echo "rspace-dev: recreating the database from scratch for this worktree ..."
   # No --no-deps: the app shares the frontend's network namespace, so Compose
   # must be able to start frontend (and db) if the stack is currently down.
-  RSPACE_DB_MODE="drop-recreate-db" compose up -d --force-recreate app
+  RSPACE_DB_MODE="drop-recreate-db" compose up -d --force-recreate app apache
   print_urls
 }
 
@@ -296,7 +354,7 @@ cmd_db() {
 
 cmd_nuke() {
   echo "rspace-dev: removing containers AND volumes for this worktree ..." >&2
-  compose down -v
+  compose_all_profiles down -v
 }
 
 main() {
@@ -324,4 +382,6 @@ main() {
   esac
 }
 
-main "$@"
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi

@@ -167,9 +167,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Value("${picreateGroupOnSignup.enabled}")
   private String picreateGroupOnSignupEnabled;
 
-  @Value("${slow.request.time:5000}")
-  private Integer slowRequestTimeThreshold;
-
   @Value("${aspose.cacheConverted}")
   private String asposeCacheConverted;
 
@@ -329,6 +326,22 @@ public class PropertyHolder implements IMutablePropertyHolder {
 
   public void setAnalyticsEnabled(String analyticsEnabled) {
     this.analyticsEnabled = analyticsEnabled;
+  }
+
+  @Value("${rs.otel.web.enabled:false}")
+  private String otelWebEnabled;
+
+  @Value("${rs.otel.web.traceSamplingRatio:1.0}")
+  private String otelWebTraceSamplingRatio;
+
+  @Override
+  public String getOtelWebEnabled() {
+    return otelWebEnabled;
+  }
+
+  @Override
+  public String getOtelWebTraceSamplingRatio() {
+    return otelWebTraceSamplingRatio;
   }
 
   @Override
@@ -727,11 +740,6 @@ public class PropertyHolder implements IMutablePropertyHolder {
   @Override
   public void setPicreateGroupOnSignupEnabled(Boolean enabled) {
     picreateGroupOnSignupEnabled = enabled.toString();
-  }
-
-  @Override
-  public Integer getSlowLogThreshold() {
-    return slowRequestTimeThreshold;
   }
 
   @Override

@@ -8,6 +8,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=2.0"
     />
     <title>Apps</title>
+    <jsp:include page="/common/otelConfig.jsp" />
     <rst:viteClient />
     <rst:bundle bundle="apps" />
 

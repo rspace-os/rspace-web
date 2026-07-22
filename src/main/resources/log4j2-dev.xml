@@ -2,9 +2,10 @@
   <!-- pattern for fileNames is system property loggingDirectory (set via deployment property logging.dir) or . (current directory) if property not set,
  OS specific path separator, then log file e.g. my/log/directory/{fileName}-->
   <Appenders>
+    <!-- The OpenTelemetry agent supplies trace_id and span_id. -->
     <Console name="CONSOLE">
       <PatternLayout>
-        <Pattern>%p [-%t] %d{DATE} - %C{1}.%M(%L) | %m%n</Pattern>
+        <Pattern>%p [-%t] %d{DATE} - %C{1}.%M(%L)%notEmpty{ [trace_id=%X{trace_id} span_id=%X{span_id}]} | %m%n</Pattern>
       </PatternLayout>
     </Console>
 
@@ -81,10 +82,6 @@
       <AppenderRef ref="ApiRequestLogAppender"/>
     </Logger>
 
-    <Logger name="com.researchspace.webapp.controller.PerformanceLoggingInterceptor" level="INFO">
-      <AppenderRef ref="SlowRequestsLogAppender"/>
-    </Logger>
-
     <Logger name="com.researchspace.service.impl.FailedEmailLogger" level="INFO">
       <AppenderRef ref="FailedEmailLogAppender"/>
     </Logger>
@@ -105,7 +102,6 @@
     <Logger name="com.researchspace.service.impl.LoggingInitializer" level="INFO">
       <AppenderRef ref="HttpRequestLogger"/>
       <AppenderRef ref="SecurityEventLogAppender"/>
-      <AppenderRef ref="SlowRequestsLogAppender"/>
     </Logger>
 
     <!-- helping debug SSO issues -->

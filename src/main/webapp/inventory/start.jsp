@@ -8,6 +8,7 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <title>RSpace Inventory</title>
+    <jsp:include page="/common/otelConfig.jsp" />
     <rst:viteClient />
     <rst:bundle bundle="inventoryEntry" />
     <style>

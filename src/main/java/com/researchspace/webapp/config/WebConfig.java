@@ -52,7 +52,6 @@ public class WebConfig extends WebMvcConfigurationSupport {
 
   @Override
   public void addInterceptors(InterceptorRegistry registry) {
-    registry.addInterceptor(defaultConfig.performanceLoggingInterceptor()).addPathPatterns("/**");
     if ("true".equals(csrfFiltersEnabled)) {
       registry
           .addInterceptor(defaultConfig.originRefererCheckingInterceptor())
