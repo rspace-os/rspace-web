@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
 import { BrowserRouter, Navigate, Route, Routes, useParams } from "react-router";
 import axios from "@/common/axios";
+import { onPageLoadWithOtel } from "@/common/otel";
 import createAccentedTheme from "../../accentedTheme";
 import { ACCENT_COLOR } from "../../assets/branding/rspace/gallery";
 import Alerts from "../../components/Alerts/Alerts";
@@ -488,7 +489,7 @@ export function Gallery() {
   );
 }
 
-window.addEventListener("load", () => {
+onPageLoadWithOtel({ page: "gallery" }, () => {
   const domContainer = document.getElementById("app");
   if (domContainer) {
     window.scrollTo(0, 1);

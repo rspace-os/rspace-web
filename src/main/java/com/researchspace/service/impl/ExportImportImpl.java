@@ -48,6 +48,7 @@ import com.researchspace.service.archive.export.ArchiveRemover;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
 import com.researchspace.service.archive.export.ExportFailureException;
 import com.researchspace.service.archive.export.ExportFileResult;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -587,6 +588,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     }
   }
 
+  @WithSpan("ExportImport.removeOldArchives")
   @Override
   public void removeOldArchives() {
     archiveRemover.removeOldArchives(getArchiveManager());

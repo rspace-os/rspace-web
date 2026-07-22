@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import { useTranslation } from "react-i18next";
+import { onPageLoadWithOtel } from "@/common/otel";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 import I18nRoot from "@/modules/common/i18n/I18nRoot";
 import createAccentedTheme from "../../accentedTheme";
@@ -32,7 +33,7 @@ function AboutPage(): React.ReactElement {
   );
 }
 
-window.addEventListener("load", () => {
+onPageLoadWithOtel({ page: "about" }, () => {
   const domContainer = document.getElementById("about-page");
   if (!domContainer) {
     console.error("Could not find element with id 'about-page'");

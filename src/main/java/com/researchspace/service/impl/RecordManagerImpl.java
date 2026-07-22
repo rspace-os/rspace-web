@@ -91,6 +91,10 @@ import com.researchspace.service.RequiresActiveLicense;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.SessionAttributeUtils;
 import com.researchspace.session.UserSessionTracker;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.metrics.LongCounter;
+import io.opentelemetry.instrumentation.annotations.SpanAttribute;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -123,6 +127,14 @@ public class RecordManagerImpl implements RecordManager {
 
   private static final String RECORD_ACCESS_FAILURE_MSG =
       "This record does not exist, or you do not have permission to access it.";
+
+  private static final LongCounter DOCUMENTS_CREATED_COUNTER =
+      GlobalOpenTelemetry.get()
+          .getMeter("com.researchspace.rspace-web")
+          .counterBuilder("rspace.documents.created")
+          .setDescription("Number of structured documents created")
+          .setUnit("{document}")
+          .build();
 
   private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -335,9 +347,10 @@ public class RecordManagerImpl implements RecordManager {
     return doCreateDocument(parentId, formID, name, user, context, null, skipAddingToChildren);
   }
 
+  @WithSpan("RecordManager.createStructuredDocument")
   private StructuredDocument doCreateDocument(
       Long parentId,
-      Long formID,
+      @SpanAttribute("rspace.form.id") Long formID,
       String name,
       User user,
       RecordContext context,
@@ -408,6 +421,7 @@ public class RecordManagerImpl implements RecordManager {
       publisher.publishEvent(new RecordCreatedEvent(rc, user));
     }
 
+    DOCUMENTS_CREATED_COUNTER.add(1);
     return rc;
   }
 

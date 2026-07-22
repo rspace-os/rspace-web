@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import { useTracedRequest } from "@/common/otel";
 import type { Person, PersonAttrs } from "@/stores/definitions/Person";
 import type { Fetched } from "@/util/fetchingData";
 import useOauthToken from "../auth/useOauthToken";
@@ -8,6 +9,7 @@ import useOauthToken from "../auth/useOauthToken";
  * Get the current user's information from the /api/v1/userDetails/whoami endpoint.
  */
 export default function useWhoAmI(): Fetched<Person> {
+  const traceRequest = useTracedRequest();
   const getToken = useOauthToken();
   const [currentUser, setCurrentUser] = React.useState<Fetched<Person>>({
     tag: "loading",
@@ -16,11 +18,14 @@ export default function useWhoAmI(): Fetched<Person> {
   React.useEffect(() => {
     void (async () => {
       try {
-        const { data } = await axios.get<PersonAttrs>("/api/v1/userDetails/whoami", {
-          headers: {
-            Authorization: `Bearer ${await getToken.getToken()}`,
-          },
-        });
+        const token = await getToken.getToken();
+        const { data } = await traceRequest(() =>
+          axios.get<PersonAttrs>("/api/v1/userDetails/whoami", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+        );
         setCurrentUser({
           tag: "success",
           value: {

@@ -11,6 +11,7 @@ import com.researchspace.model.views.UserStatistics;
 import com.researchspace.service.LicenseRequestResult;
 import com.researchspace.service.RemoteLicenseService;
 import com.researchspace.service.UserStatisticsManager;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import io.vavr.control.Option;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -253,6 +254,7 @@ public class LicenseWSClient implements RemoteLicenseService {
     return getLicense().getTotalUserSeats() - userStats.getTotalEnabledUsers();
   }
 
+  @WithSpan("LicenseService.forceRefreshLicense")
   @Override
   public boolean forceRefreshLicense() {
     log.info("Forcibly polling license server for new license");

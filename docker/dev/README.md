@@ -5,11 +5,11 @@
 > manual Maven/Jetty workflow in the
 > [Getting Started guide](/DevDocs/DeveloperNotes/GettingStarted/GettingStarted.md).
 
-Boot a **complete** RSpace instance — database, Java/Jetty backend, and Vite
-frontend — for the git worktree you are currently in, with one command. Your
-worktree source is bind-mounted into the containers, so edits on your machine
-are live: the frontend hot-reloads automatically (HMR), and the backend can be
-hot-redeployed or restarted without rebuilding any image.
+Boot a **complete** RSpace instance — database, Java/Jetty backend, Vite
+frontend, and Apache ingress — for the git worktree you are currently in, with
+one command. Your worktree source is bind-mounted into the containers, so edits
+on your machine are live: the frontend hot-reloads automatically (HMR), and the
+backend can be hot-redeployed or restarted without rebuilding any image.
 
 > This is for **local development only**. It uses throwaway credentials and is
 > not hardened. For running RSpace as a real deployment, use
@@ -93,7 +93,7 @@ The first boot:
 1. builds the backend and frontend images,
 2. starts MariaDB and waits until it is healthy,
 3. creates the schema and sample data (`drop-recreate-db`),
-4. compiles and starts the backend, and installs frontend deps + starts Vite.
+4. compiles and starts the backend, installs frontend deps, and starts Vite and Apache.
 
 This takes several minutes the first time (Maven and pnpm download
 dependencies). Watch progress with:
@@ -111,9 +111,13 @@ Subsequent `up`s reuse the existing database and are much faster.
 ## Everyday commands
 
 ```bash
-./docker/dev/rspace-dev up [--fresh]   # start (--fresh recreates the DB)
-./docker/dev/rspace-dev up --chemistry # also start the chemistry microservice
-./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry
+./docker/dev/rspace-dev up [--fresh] [--chemistry|--no-chemistry] [--observability]
+                                       # start (--fresh recreates the DB;
+                                       # --chemistry adds the chemistry microservice;
+                                       # --observability adds OTel + ELK)
+./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | apache | db | chemistry
+                                       #   (plus otel-collector | elasticsearch
+                                       #    | kibana when observability is on)
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
 ./docker/dev/rspace-dev restart        # full backend JVM restart
@@ -384,7 +388,7 @@ wrong, `restart`.
 > connected; `rspace-dev restart` is a new JVM, so re-attach afterward.
 > `RSPACE_HOTSWAP=false` disables the agent (e.g. to rule it out while diagnosing
 > a startup issue). JBR + HotswapAgent are pinned third-party components — see
-> `Dockerfile.app` for versions.
+> `Dockerfile.app` and `java-dependencies.pom.xml` for versions.
 
 ## Troubleshooting
 
@@ -401,6 +405,35 @@ is the quick lookup.
 | Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
 | Java edits don't take effect after `reload` | Change needs a context rebuild or new JVM (see "What still requires a full restart") | `rspace-dev reload`, and if still stale `rspace-dev restart`. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
+## Observability
+
+Start the optional OpenTelemetry and Elastic APM/ELK stack with:
+
+```bash
+./docker/dev/rspace-dev up --observability
+```
+
+This enables backend and browser telemetry and starts four optional containers:
+`otel-collector`, `apm-server`, `elasticsearch`, and `kibana`. Run
+`./docker/dev/rspace-dev ps` to find Kibana, then open `/app/apm`.
+
+Apache is the normal ingress for the dev stack. It sends `/otlp/v1/traces` and
+`/otlp/v1/metrics` directly to the Collector and sends other requests to
+RSpace. The public app URL and port do not change.
+
+The first boot downloads the Elastic APM integration and may take a few
+minutes. It requires internet access.
+
+The setting persists as `RSPACE_OBSERVABILITY=true` in `.env`. Set it to
+`false` and run `up` again to disable telemetry. `down` and `nuke` remove the
+optional containers; `nuke` also deletes their data.
+
+Collector ports are bound to loopback for host-run backends. Production must
+keep the Collector private and rate-limit `/otlp/` at the edge.
+
+See
+[`DevDocs/DeveloperNotes/Observability.md`](/DevDocs/DeveloperNotes/Observability.md)
+for configuration details.
 
 ## Notes & gotchas
 
@@ -415,8 +448,8 @@ is the quick lookup.
   one first, or just retry — it is harmless.
 - **Memory**: the backend defaults to `-Xmx2g` (`MAVEN_OPTS` in `.env`). Vite
   uses a large Node heap; give Docker Desktop a generous memory limit.
-- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`, and
-  `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
+- **Image/tool overrides**: `DB_IMAGE`, `MAVEN_IMAGE`, `NODE_IMAGE`,
+  `APACHE_IMAGE`, and `MAVEN_OPTS` can be set in `.env` (see `.env.example`).
 - **Session cookies**: each instance names its session cookie
   `JSESSIONID_<app port>` (via the `rs.session.cookie.name` system property),
   so concurrent localhost logins don't evict each other. Override with

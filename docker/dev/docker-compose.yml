@@ -98,6 +98,12 @@ services:
       # entrypoint passes the chemistry.* properties to the app.
       RSPACE_CHEMISTRY: ${RSPACE_CHEMISTRY:-false}
       CHEMISTRY_SERVICE_URL: http://chemistry:8090
+      # Enable app telemetry with the observability profile.
+      RSPACE_OTEL: ${RSPACE_OBSERVABILITY:-false}
+      # Elastic requires delta histograms.
+      OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: ${OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE:-delta}
+      # Hibernate spans mostly duplicate JDBC spans.
+      OTEL_INSTRUMENTATION_HIBERNATE_ENABLED: ${OTEL_INSTRUMENTATION_HIBERNATE_ENABLED:-false}
     volumes:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - m2-repo:/root/.m2
@@ -113,7 +119,7 @@ services:
     # localhost:5173 (a host Vite trusts) instead of the service name "frontend"
     # (which Vite's host check rejects). The app is the dependent here because it
     # restarts often, so `restart` / `reload` / `reset-db` do not disrupt the
-    # shared network. Published host ports therefore live on the frontend service.
+    # shared network. Apache reaches the backend through the frontend service.
     network_mode: "service:frontend"
     # stdin/tty kept open so Jetty's manual-redeploy console reader has a stable
     # stdin; the entrypoint feeds it from a FIFO for `rspace-dev reload`.
@@ -126,7 +132,7 @@ services:
   # all frontend dependencies are declared, and binds 0.0.0.0 inside the
   # container. The app shares THIS service's network namespace (see the app
   # service's network_mode), so the backend reaches Vite over localhost and this
-  # service publishes both the app's and Vite's host ports.
+  # service publishes the Vite and JVM debug ports.
   # ---------------------------------------------------------------------------
   frontend:
     build:
@@ -154,12 +160,31 @@ services:
       - ${RSPACE_SRC:?run via ./rspace-dev}:/rspace:cached
       - node-modules:/rspace/node_modules
       - pnpm-store:/pnpm-store
-    # The app shares this service's network namespace, so the app's (8080), Vite's
-    # (5173), and the app's JDWP debug (5005) host ports are all published here.
+    # The app shares this service's network namespace, so Vite and the app's JDWP
+    # debug port are published here. Apache reaches the app on frontend:8080.
     ports:
-      - "127.0.0.1:${APP_PORT:-8080}:8080"
       - "127.0.0.1:${VITE_PORT:-5173}:5173"
       - "127.0.0.1:${DEBUG_PORT:-5005}:5005"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Same-origin ingress. Browser OTLP requests go straight to the Collector;
+  # every other request goes to RSpace.
+  # ---------------------------------------------------------------------------
+  apache:
+    image: ${APACHE_IMAGE:-httpd:2.4-alpine}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-apache
+    depends_on:
+      app:
+        condition: service_started
+    command:
+      - httpd-foreground
+      - -c
+      - Include conf/extra/rspace.conf
+    volumes:
+      - ./apache/rspace.conf:/usr/local/apache2/conf/extra/rspace.conf:ro
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:80"
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
@@ -174,11 +199,86 @@ services:
     profiles: ["chemistry"]
     volumes:
       - chemistry-files:/home/app
+  # Optional OpenTelemetry and Elastic APM/ELK services.
+  otel-collector:
+    image: ${OTEL_COLLECTOR_IMAGE:-otel/opentelemetry-collector-contrib:0.153.0}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-otel-collector
+    profiles: ["observability"]
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      apm-server:
+        condition: service_started
+    # Loopback ports also support a host-run backend.
+    ports:
+      - "127.0.0.1:${OTLP_GRPC_PORT:-4317}:4317"
+      - "127.0.0.1:${OTLP_HTTP_PORT:-4318}:4318"
+    restart: unless-stopped
+
+  apm-server:
+    image: ${APM_IMAGE:-docker.elastic.co/apm/apm-server:9.4.2}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-apm-server
+    profiles: ["observability"]
+    command:
+      - -e
+      - -E
+      - apm-server.host=0.0.0.0:8200
+      - -E
+      - output.elasticsearch.hosts=["http://elasticsearch:9200"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      kibana:
+        condition: service_healthy
+    restart: unless-stopped
+
+  elasticsearch:
+    image: ${ELASTIC_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:9.4.2}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-elasticsearch
+    profiles: ["observability"]
+    environment:
+      # Local development only; do not expose this insecure instance.
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: ${ES_JAVA_OPTS:--Xms512m -Xmx512m}
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    ports:
+      - "127.0.0.1:${ES_PORT:-9200}:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+  kibana:
+    image: ${KIBANA_IMAGE:-docker.elastic.co/kibana/kibana:9.4.2}
+    container_name: ${COMPOSE_PROJECT_NAME:-rspace-dev}-kibana
+    profiles: ["observability"]
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      TELEMETRY_ENABLED: "false"
+      # Required by the standalone APM Server. First boot needs internet access.
+      XPACK_FLEET_PACKAGES: '[{"name":"apm","version":"latest"}]'
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:5601/api/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
     restart: unless-stopped
 
 volumes:
   # Per-worktree (namespaced by the compose project name): isolated DB, build
-  # outputs, indices, filestore, and node_modules.
+  # outputs, indices, filestore, node_modules, and Elasticsearch data.
   db-data:
   chemistry-files:
   app-target:
@@ -186,6 +286,7 @@ volumes:
   lucene-index:
   filestore:
   node-modules:
+  es-data:
   # Shared across all worktrees (fixed names) to avoid re-downloading Maven
   # artifacts and npm packages for every worktree. Declared `external` so that
   # `rspace-dev nuke` (docker compose down -v) NEVER removes them — tearing down

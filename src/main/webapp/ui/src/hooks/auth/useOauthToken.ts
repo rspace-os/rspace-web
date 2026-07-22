@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import { useTracedRequest } from "@/common/otel";
 import { getStoredToken, saveStoredToken, secondsToExpiry } from "@/modules/common/utils/auth";
 
 const MAX_SET_TIMEOUT_DELAY_MS = 2_147_483_647;
@@ -43,6 +44,7 @@ function refreshDelayMs(token: string): number {
  * expires just as if the token and been fetched directly.
  */
 export default function useOauthToken(): { getToken: () => Promise<string> } {
+  const traceRequest = useTracedRequest();
   /*
    * We use a ref instead of useState to store the token because we need the
    * `getToken` function to have a stable reference. If we used useState, then
@@ -66,7 +68,7 @@ export default function useOauthToken(): { getToken: () => Promise<string> } {
    * across page loads and only incur that penalty on the first page load.
    */
   async function fetchToken(): Promise<string> {
-    const response = await axios.get<{ data: string }>("/userform/ajax/inventoryOauthToken");
+    const response = await traceRequest(() => axios.get<{ data: string }>("/userform/ajax/inventoryOauthToken"));
     const newToken = response.data.data;
     saveStoredToken(newToken);
     return newToken;
