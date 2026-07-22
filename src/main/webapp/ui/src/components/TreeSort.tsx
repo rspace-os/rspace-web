@@ -87,6 +87,7 @@ export default function TreeSort({ justifyContent = "flex-end", selectPaddingLef
     >
       <Select
         className="orderBy"
+        SelectDisplayProps={{ "aria-label": t("treeSort.orderLabel") }}
         value={orderBy}
         onChange={handleChangeOrderBy}
         variant="standard"
@@ -102,7 +103,14 @@ export default function TreeSort({ justifyContent = "flex-end", selectPaddingLef
           {t("treeSort.order.lastModified")}
         </MenuItem>
       </Select>
-      <Select className="sortOrder" value={sortOrder} onChange={handleChangeSortOrder} variant="standard" sx={selectSx}>
+      <Select
+        className="sortOrder"
+        SelectDisplayProps={{ "aria-label": t("treeSort.directionLabel") }}
+        value={sortOrder}
+        onChange={handleChangeSortOrder}
+        variant="standard"
+        sx={selectSx}
+      >
         <MenuItem value="ASC" data-test-id="sort-asc">
           <FontAwesomeIcon icon={faSortAmountUpAlt} style={{ marginRight: "10px" }} />
           {t("treeSort.direction.ascending")}

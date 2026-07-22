@@ -1,0 +1,28 @@
+{
+  "conceptrecid": "1234566",
+  "id": 1234567,
+  "record_id": 1234567,
+  "metadata": {
+    "prereserve_doi": {
+      "doi": "10.5281/zenodo.1234567",
+      "recid": 1234567
+    }
+  },
+  "files": [],
+  "links": {
+    "bucket": "http://localhost:9099/files/8f3f2b3c-0000-4000-8000-000000000000",
+    "html": "http://localhost:9099/deposit/1234567",
+    "discard": "http://localhost:9099/api/deposit/depositions/1234567/actions/discard",
+    "edit": "http://localhost:9099/api/deposit/depositions/1234567/actions/edit",
+    "files": "http://localhost:9099/api/deposit/depositions/1234567/files",
+    "latest_draft": "http://localhost:9099/api/deposit/depositions/1234567",
+    "latest_draft_html": "http://localhost:9099/deposit/1234567",
+    "publish": "http://localhost:9099/api/deposit/depositions/1234567/actions/publish",
+    "self": "http://localhost:9099/api/deposit/depositions/1234567"
+  },
+  "created": "2026-01-01T00:00:00.000000+00:00",
+  "modified": "2026-01-01T00:00:00.000000+00:00",
+  "owner": 12345,
+  "submitted": "false",
+  "title": ""
+}

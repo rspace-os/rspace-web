@@ -1,0 +1,20 @@
+name: e2e (real)
+
+# Informational; do not require this check.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      mode: real
+    secrets: inherit

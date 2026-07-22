@@ -903,11 +903,13 @@
       "ascending": "Ascending",
       "descending": "Descending"
     },
+    "directionLabel": "Sort direction",
     "order": {
       "creationDate": "Creation Date",
       "lastModified": "Last Modified",
       "name": "Name"
-    }
+    },
+    "orderLabel": "Sort field"
   },
   "userDetails": {
     "accountDisabled": "Disabled",

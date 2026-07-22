@@ -60,6 +60,9 @@ function Row({ columnFieldMap, existingTemplate }: ColumnFieldMapRowArgs) {
             onChange={() => columnFieldMap.toggleSelected()}
             color="default"
             name={t("import.columnMapping.selectMapping", { fieldName: columnFieldMap.fieldName })}
+            slotProps={{
+              input: { "aria-label": t("import.columnMapping.selectMapping", { fieldName: columnFieldMap.fieldName }) },
+            }}
             data-test-id={columnFieldMap.fieldName}
           />
         </TableCell>

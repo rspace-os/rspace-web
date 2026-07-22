@@ -246,6 +246,7 @@ export default function UpdateField({ extraField, index, record }: UpdateFieldAr
               onChange={handleTypeChange}
               SelectDisplayProps={
                 {
+                  "aria-label": t("fields.extraFields.fields.fieldType"),
                   "data-testid": "FieldTypeSelect",
                 } as React.HTMLAttributes<HTMLDivElement>
               }

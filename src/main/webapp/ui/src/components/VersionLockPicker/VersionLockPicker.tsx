@@ -66,7 +66,11 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
         <TableBody>
           <TableRow hover onClick={() => props.onChange(LATEST_SELECTION)} data-test-id="VersionLockPicker-latest">
             <TableCell padding="checkbox">
-              <Radio checked={isLatest} value={LATEST_SELECTION} />
+              <Radio
+                checked={isLatest}
+                value={LATEST_SELECTION}
+                slotProps={{ input: { "aria-label": t("versionLockPicker.latest") } }}
+              />
             </TableCell>
             <TableCell>{t("versionLockPicker.latest")}</TableCell>
             <TableCell />
@@ -81,7 +85,13 @@ export default function VersionLockPicker(props: VersionLockPickerProps): React.
                 data-test-id={`VersionLockPicker-row-${v.version}`}
               >
                 <TableCell padding="checkbox">
-                  <Radio checked={checked} value={v.version} />
+                  <Radio
+                    checked={checked}
+                    value={v.version}
+                    slotProps={{
+                      input: { "aria-label": t("versionLockPicker.versionValue", { version: v.version }) },
+                    }}
+                  />
                 </TableCell>
                 <TableCell>{t("versionLockPicker.versionValue", { version: v.version })}</TableCell>
                 <TableCell>{v.modificationDate}</TableCell>
