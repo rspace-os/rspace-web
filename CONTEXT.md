@@ -35,9 +35,7 @@ resolved during design. This file is a glossary only — no implementation detai
   stamped onto every record created from that template (for the PIDINST template:
   Owner, Manufacturer, etc.).
 - **Extra field** — an ad-hoc field (text, number or link) a user attaches to an
-  individual record after creation, outside any template definition. On the
-  instrument side these are meaningful only for concrete Instruments, not
-  templates (ADR 0002, proposed); sample templates retain them.
+  individual record after creation, outside any template definition.
 
 ## Internationalization (i18n)
 
