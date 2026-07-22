@@ -211,11 +211,11 @@ jobs:
     env:
       # ponytail: shard count is a plain number, not a matrix-generating step;
       # bump both this and the matrix.shard list below together to rescale.
-      VITEST_SHARD_COUNT: 5
+      VITEST_SHARD_COUNT: 2
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5]
+        shard: [1, 2]
     if: |
       github.event_name == 'pull_request' ||
       inputs.frontend_tests ||

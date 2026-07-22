@@ -260,7 +260,13 @@ const CustomTreeItem = observer(
       },
     });
     const dndContext = useDndContext();
-    const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(null);
+    const dndDebounce = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const clearDndDebounce = () => {
+      if (dndDebounce.current !== null) {
+        clearTimeout(dndDebounce.current);
+        dndDebounce.current = null;
+      }
+    };
     const dndInProgress = Boolean(dndContext.active);
     const normalBorder = `2px solid hsl(${ACCENT_COLOR.background.hue}deg, ${ACCENT_COLOR.background.saturation}%, 99%)`;
     const dropStyle: {
@@ -337,25 +343,19 @@ const CustomTreeItem = observer(
             setDragRef(node);
           }}
           onMouseDown={(...args) => {
-            setDndDebounce(
-              setTimeout(() => {
-                listeners?.onMouseDown(...args);
-              }, 500),
-            );
+            dndDebounce.current = setTimeout(() => {
+              dndDebounce.current = null;
+              listeners?.onMouseDown(...args);
+            }, 500);
           }}
-          onMouseUp={() => {
-            if (dndDebounce !== null) clearTimeout(dndDebounce);
-          }}
+          onMouseUp={clearDndDebounce}
           onTouchStart={(...args) => {
-            setDndDebounce(
-              setTimeout(() => {
-                listeners?.onTouchStart(...args);
-              }, 500),
-            );
+            dndDebounce.current = setTimeout(() => {
+              dndDebounce.current = null;
+              listeners?.onTouchStart(...args);
+            }, 500);
           }}
-          onTouchEnd={() => {
-            if (dndDebounce !== null) clearTimeout(dndDebounce);
-          }}
+          onTouchEnd={clearDndDebounce}
           {...(listeners?.onKeyDown && {
             onKeyDown: listeners.onKeyDown as React.KeyboardEventHandler<HTMLLIElement>,
           })}

@@ -147,7 +147,7 @@ export default defineConfig({
     // Exclude the heavy suites that time out on CI Firefox (see above); empty on
     // every other run so they execute normally. `configDefaults.exclude` keeps
     // node_modules/dist/etc. excluded since setting `exclude` overrides it.
-    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles],
+    exclude: [...configDefaults.exclude, ...firefoxCiSkippedFiles, "src/__tests__/e2e/**"],
     setupFiles: ["./src/__tests__/browserSetup.ts"],
     testTimeout: 20000,
     // Real-browser component tests carry inherent timing flakiness, especially

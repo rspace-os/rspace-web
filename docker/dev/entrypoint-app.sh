@@ -89,6 +89,23 @@ if [ "${RSPACE_CHEMISTRY:-false}" = "true" ]; then
   echo "[entrypoint] Chemistry service enabled at ${CHEMISTRY_SERVICE_URL:-http://chemistry:8090}"
 fi
 
+# Optional third-party integration mocks (rspace-dev up --e2e). The mock
+# server runs beside Vite in the network namespace shared by both containers,
+# so localhost is intentionally correct here.
+E2E_MOCK_ARGS=()
+if [ "${RSPACE_E2E_MOCKS:-false}" = "true" ]; then
+  E2E_MOCK_URL="http://localhost:${E2E_MOCK_PORT:-9099}"
+  E2E_MOCK_ARGS=(
+    "-Dpubchem.base.url=${E2E_MOCK_URL}"
+    "-Dfieldmark.api.url=${E2E_MOCK_URL}"
+    "-Dzenodo.url=${E2E_MOCK_URL}"
+    "-Dgalaxy.server.config=[{\"alias\":\"mock\",\"url\":\"${E2E_MOCK_URL}\"}]"
+    "-Dpyrat.server.config={\"mock\":{\"url\":\"${E2E_MOCK_URL}\",\"token\":\"mock-server-token\"}}"
+    "-Domero.api.url=${E2E_MOCK_URL}"
+  )
+  echo "[entrypoint] E2E integration mocks enabled at ${E2E_MOCK_URL}"
+fi
+
 echo "[entrypoint] Starting RSpace (db mode: ${DB_MODE}) ..."
 echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_PUBLIC_PORT}"
 
@@ -97,6 +114,7 @@ echo "[entrypoint] App will be reachable on the host at http://localhost:${APP_P
 # plugins (e.g. the drop-recreate-db SQL step) at build time.
 exec mvn -B jetty:run \
   "${CHEMISTRY_ARGS[@]}" \
+  "${E2E_MOCK_ARGS[@]}" \
   -Denvironment="${DB_MODE}" \
   -Dspring.profiles.active=run \
   -DreactDevMode=true \
