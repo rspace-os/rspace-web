@@ -34,7 +34,8 @@ public class LinkTargetResolverImpl implements LinkTargetResolver {
           GlobalIdPrefix.SS,
           GlobalIdPrefix.IC,
           GlobalIdPrefix.IN,
-          GlobalIdPrefix.IT);
+          GlobalIdPrefix.IT,
+          GlobalIdPrefix.NT);
 
   private static final Set<GlobalIdPrefix> ELN_BASE_RECORD_PREFIXES =
       EnumSet.of(GlobalIdPrefix.SD, GlobalIdPrefix.NB, GlobalIdPrefix.GL);

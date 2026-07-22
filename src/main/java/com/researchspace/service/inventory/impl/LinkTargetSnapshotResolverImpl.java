@@ -8,6 +8,7 @@ import com.researchspace.model.core.GlobalIdPrefix;
 import com.researchspace.model.core.GlobalIdentifier;
 import com.researchspace.model.inventory.Container;
 import com.researchspace.model.inventory.Instrument;
+import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.model.inventory.InventoryRecord;
 import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -121,7 +122,8 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
         || prefix == GlobalIdPrefix.SS
         || prefix == GlobalIdPrefix.IC
         || prefix == GlobalIdPrefix.IN
-        || prefix == GlobalIdPrefix.IT;
+        || prefix == GlobalIdPrefix.IT
+        || prefix == GlobalIdPrefix.NT;
   }
 
   private Class<?> entityClassFor(GlobalIdPrefix prefix) {
@@ -139,6 +141,11 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
         // concrete class so Envers resolves the template revision (Sample.class would filter to
         // DTYPE='Sample' and miss it).
         return SampleTemplate.class;
+      case NT:
+        // like IT: a distinct single-table subtype (DTYPE='InstrumentTemplate'); query the
+        // concrete class so Envers resolves the template revision (Instrument.class would filter
+        // to DTYPE='Instrument' and miss it).
+        return InstrumentTemplate.class;
       case SD:
         return StructuredDocument.class;
       case NB:
@@ -167,6 +174,8 @@ public class LinkTargetSnapshotResolverImpl implements LinkTargetSnapshotResolve
         return "INSTRUMENT";
       case IT:
         return "SAMPLE";
+      case NT:
+        return "INSTRUMENT_TEMPLATE";
       case SD:
         return "DOCUMENT";
       case NB:

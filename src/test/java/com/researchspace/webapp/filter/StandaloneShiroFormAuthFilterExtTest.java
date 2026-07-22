@@ -233,6 +233,7 @@ public class StandaloneShiroFormAuthFilterExtTest extends SpringTransactionalTes
     initHttpReqAndResp(u.getUsername());
     // also if is initialised, if disabled fails too
     initialiseContentWithEmptyContent(u);
+    subject = SecurityUtils.getSubject();
     assertFalse(filter.onLoginSuccess(getTokenAndSetUsernameInRequest(u), subject, req, resp));
     assertTrue(getRedirectUrl().contains(AccountEnabledAuthorizer.REDIRECT_FOR_DISABLED));
     // should be logged out when redirected

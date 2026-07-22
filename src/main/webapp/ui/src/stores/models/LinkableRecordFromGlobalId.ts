@@ -31,6 +31,8 @@ export default class LinkableRecordFromGlobalId implements LinkableRecord {
       SA: "sample",
       SS: "subsample",
       IT: "template",
+      IN: "instrument",
+      NT: "instrumentTemplate",
     }).orElseGet(() => {
       throw new Error("Not an Inventory Record Type");
     });

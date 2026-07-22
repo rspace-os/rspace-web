@@ -8,9 +8,19 @@ import i18n from "@/modules/common/i18n";
  * round-trip and live in checkLinkTargetExists.
  */
 
-// Inventory items (SA/SS/IC/IN, plus IT sample templates) and ELN documents (SD),
-// notebooks (NB) and gallery files (GL).
-export const ALLOWED_TARGET_PREFIXES: ReadonlySet<string> = new Set(["SA", "SS", "IC", "IN", "IT", "SD", "NB", "GL"]);
+// Inventory items (SA/SS/IC/IN, plus IT sample templates and NT instrument templates)
+// and ELN documents (SD), notebooks (NB) and gallery files (GL).
+export const ALLOWED_TARGET_PREFIXES: ReadonlySet<string> = new Set([
+  "SA",
+  "SS",
+  "IC",
+  "IN",
+  "IT",
+  "NT",
+  "SD",
+  "NB",
+  "GL",
+]);
 
 export const GLOBAL_ID_PATTERN = /^([A-Z]{2})(\d+)(?:v(\d+))?$/;
 
@@ -25,6 +35,7 @@ export const INVENTORY_PREFIX_TO_API_PATH: Record<string, string> = {
   IC: "containers",
   IN: "instruments",
   IT: "sampleTemplates",
+  NT: "instrumentTemplates",
 };
 
 /** True when target points at the same item as source, ignoring any version suffix. */

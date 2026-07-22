@@ -112,6 +112,26 @@ describe("SidebarBody", () => {
     expect(screen.getByTestId("linked-documents")).toHaveAttribute("data-globalid", "IT5");
   });
 
+  it("includes LinkedDocuments for an instrument template", () => {
+    // like sample templates: not usable in a List of Materials, but a valid
+    // link target, so the back-reference panel must render
+    render(
+      <ThemeProvider theme={materialTheme}>
+        <SidebarBody
+          record={
+            makeRecord({
+              globalId: "NT42",
+              usableInLoM: false,
+              recordType: "instrumentTemplate",
+            }) as never
+          }
+          factory={null}
+        />
+      </ThemeProvider>,
+    );
+    expect(screen.getByTestId("linked-documents")).toHaveAttribute("data-globalid", "NT42");
+  });
+
   it("omits LinkedDocuments when the record has no Global ID yet", () => {
     render(
       <ThemeProvider theme={materialTheme}>
