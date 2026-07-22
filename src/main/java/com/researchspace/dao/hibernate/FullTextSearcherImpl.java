@@ -509,7 +509,8 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     }
     boolean notOwnedByDefaultTemplateOwner =
         !defaultTemplatesOwner.equals(rec.getOwner().getUsername());
-    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate();
+    // keep the default owner's templates (sample and instrument) but exclude their other records
+    return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate() || rec.isInstrumentTemplate();
   }
 
   private boolean canCurrentUserReadInvRec(InventoryRecord rec, User authenticatedUser) {

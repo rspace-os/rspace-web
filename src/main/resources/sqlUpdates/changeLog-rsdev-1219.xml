@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd">
+
+  <!--
+      RSDEV-1219: add the isEditable flag to InstrumentEntity (and its audit table).
+      A false value locks a default/system instrument template against edit, delete and transfer
+      for everyone (including the owning sysadmin); the lock is enforced centrally in
+      InventoryPermissionUtils. Existing rows default to editable (1); the audit column is nullable,
+      as audit-table columns generally are.
+  -->
+  <changeSet id="2026-07-21-instrumentEntity-isEditable" context="run" author="nico">
+    <comment>Add isEditable column to InstrumentEntity and InstrumentEntity_AUD</comment>
+    <addColumn tableName="InstrumentEntity">
+      <column name="isEditable" type="bit" defaultValueNumeric="1">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+    <addColumn tableName="InstrumentEntity_AUD">
+      <column name="isEditable" type="bit"/>
+    </addColumn>
+  </changeSet>
+
+</databaseChangeLog>

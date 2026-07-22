@@ -1,0 +1,142 @@
+{
+  "id": null,
+  "globalId": null,
+  "name": "Instrument (PIDINST 1.0)",
+  "description": "<p>Instrument Template for PIDINST (version 1.0)</p>",
+  "extraFields": [],
+  "tags": [],
+  "newBase64Image": null,
+  "barcodes": [],
+  "identifiers": [],
+  "sharingMode": "OWNER_GROUPS",
+  "sharedWith": [],
+  "fields": [
+    {
+      "name": "Owner",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": true,
+      "content": ""
+    },
+    {
+      "name": "Manufacturer",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": true,
+      "content": ""
+    },
+    {
+      "name": "Model",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Instrument type",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Commissioned",
+      "type": "date",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Decommissioned",
+      "type": "date",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Measurement technique",
+      "type": "link",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "allowedRelationTypes": [
+        "IsDocumentedBy"
+      ],
+      "link": null
+    },
+    {
+      "name": "Measured quantity",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Calibration",
+      "type": "link",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "allowedRelationTypes": [
+        "IsCalibratedBy",
+        "IsDescribedBy"
+      ],
+      "link": null
+    },
+    {
+      "name": "Last calibrated",
+      "type": "date",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Landing page",
+      "type": "uri",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    },
+    {
+      "name": "Alternate Identifier",
+      "type": "string",
+      "definition": {},
+      "newFieldRequest": true,
+      "deleteFieldRequest": false,
+      "deleteFieldOnSampleUpdate": false,
+      "mandatory": false,
+      "content": ""
+    }
+  ]
+}

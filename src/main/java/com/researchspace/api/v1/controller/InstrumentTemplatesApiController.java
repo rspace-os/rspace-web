@@ -214,7 +214,7 @@ public class InstrumentTemplatesApiController extends BaseApiInventoryController
       throws BindException, IOException {
 
     InstrumentTemplate template =
-        instrumentApiMgr.assertUserCanReadInstrumentTemplate(templateId, user);
+        instrumentApiMgr.assertUserCanEditInstrumentTemplate(templateId, user);
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {

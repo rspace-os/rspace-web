@@ -21,6 +21,7 @@ import com.axiope.search.WorkspaceSearchInputValidator;
 import com.researchspace.Constants;
 import com.researchspace.api.v1.model.ApiInventorySearchResult;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.dao.InstrumentTemplateDao;
 import com.researchspace.dao.SampleTemplateDao;
 import com.researchspace.dao.TextSearchDao;
 import com.researchspace.model.Group;
@@ -65,6 +66,7 @@ public class SearchManagerImpl implements SearchManager {
   private @Autowired FolderManager folderMgr;
   private @Autowired SampleApiManager sampleApiManager;
   private @Autowired SampleTemplateDao sampleTemplateDao;
+  private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   private @Autowired BasketApiManager basketApiManager;
   private @Autowired InventoryPermissionUtils invPermissionUtils;
   private @Autowired MessageSourceUtils messages;
@@ -305,6 +307,17 @@ public class SearchManagerImpl implements SearchManager {
         // let's also search templates of default templates owner
         ownersFilter.add(defaultTemplatesOwner);
         searchConfig.setDefaultTemplatesOwner(defaultTemplatesOwner);
+      }
+      // also include the default INSTRUMENT template owner so the locked default instrument
+      // template appears in restricted global search (RSDEV-1219 E2). Normally the same sysadmin
+      // owns both defaults, so guard against adding a duplicate owner to the filter.
+      String defaultInstrumentTemplatesOwner = instrumentTemplateDao.getDefaultTemplatesOwner();
+      if (defaultInstrumentTemplatesOwner != null
+          && !ownersFilter.contains(defaultInstrumentTemplatesOwner)
+          && !invPermissionUtils.isInventoryOwnerReadableByUser(
+              defaultInstrumentTemplatesOwner, user)) {
+        ownersFilter.add(defaultInstrumentTemplatesOwner);
+        searchConfig.setDefaultTemplatesOwner(defaultInstrumentTemplatesOwner);
       }
       searchConfig.setUsernameFilter(ownersFilter);
 
