@@ -30,6 +30,7 @@ import com.researchspace.service.LicenseService;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.TrackMessage;
+import io.opentelemetry.instrumentation.annotations.WithSpan;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -273,6 +274,7 @@ public class AnalyticsManagerImpl implements AnalyticsManager {
     return recordType;
   }
 
+  @WithSpan("AnalyticsManager.uploadUsersDiskUsage")
   @Override
   public void uploadUsersDiskUsage() {
     if (!isAnalyticsEnabled()) {
