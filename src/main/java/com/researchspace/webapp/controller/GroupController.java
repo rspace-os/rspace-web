@@ -81,7 +81,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -204,15 +203,7 @@ public class GroupController extends BaseController {
       String[] piArry = pis.split(",");
       User piowner = userManager.getUserByUsername(piArry[0]);
       if (!group.isProjectGroup() && !piowner.hasRole(Role.PI_ROLE)) {
-        errors.addError(
-            new FieldError(
-                "group",
-                "pis",
-                null,
-                false,
-                new String[] {"groups.edit.errors.piRoleRequired"},
-                null,
-                null));
+        errors.rejectValue("pis", "groups.edit.errors.piRoleRequired");
         return EDIT_GROUP_VIEW_NAME;
       }
       group.setOwner(piowner);
