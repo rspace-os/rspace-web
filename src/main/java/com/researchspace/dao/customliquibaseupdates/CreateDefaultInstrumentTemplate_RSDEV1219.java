@@ -12,6 +12,7 @@ import com.researchspace.model.inventory.InstrumentTemplate;
 import com.researchspace.service.inventory.InstrumentEntityApiManager;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import liquibase.database.Database;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.mgt.DefaultSecurityManager;
@@ -56,13 +57,24 @@ public class CreateDefaultInstrumentTemplate_RSDEV1219 extends AbstractCustomLiq
         new GlobalInitSysadminAuthenticationToken();
     User sysadmin = userDao.getUserByUsername(sysadminToken.getPrincipal().toString());
     if (sysadmin == null) {
-      log.warn("No sysadmin account found; skipping default instrument template creation");
-      return;
+      // Fail the migration rather than return: a silent skip would be recorded as applied in
+      // DATABASECHANGELOG and never retried, permanently leaving the deployment without the
+      // required default template. The sysadmin account is seeded before customUpdates runs, so a
+      // null here is a genuine, unexpected error state.
+      throw new IllegalStateException(
+          "No sysadmin account found; cannot create the default instrument template '"
+              + TEMPLATE_NAME
+              + "'");
     }
     // Idempotency: custom changes run once per DB via DATABASECHANGELOG, but guard anyway for
-    // re-baselined / restored databases.
-    if (!instrumentTemplateDao.findInstrumentTemplatesByName(TEMPLATE_NAME, sysadmin).isEmpty()) {
-      log.info("Default instrument template '{}' already exists; nothing to do", TEMPLATE_NAME);
+    // re-baselined / restored databases. Only a *locked* template counts as already seeded; an
+    // editable same-named template (e.g. from a prior run interrupted before the lock step) must be
+    // locked rather than treated as done, or the deployment would keep an unlocked default.
+    List<InstrumentTemplate> existing =
+        instrumentTemplateDao.findInstrumentTemplatesByName(TEMPLATE_NAME, sysadmin);
+    if (existing.stream().anyMatch(template -> !template.isEditable())) {
+      log.info(
+          "Locked default instrument template '{}' already exists; nothing to do", TEMPLATE_NAME);
       return;
     }
 
@@ -77,11 +89,18 @@ public class CreateDefaultInstrumentTemplate_RSDEV1219 extends AbstractCustomLiq
       ThreadContext.bind(new DefaultSecurityManager());
     }
     try {
-      ApiInstrumentTemplatePost post = readTemplatePost();
-      ApiInstrumentTemplate created = instrumentApiMgr.createInstrumentTemplate(post, sysadmin);
-
-      // the create path sets isEditable=true by default; the seeder is the only writer of false
-      InstrumentTemplate template = instrumentTemplateDao.get(created.getId());
+      InstrumentTemplate template;
+      if (existing.isEmpty()) {
+        ApiInstrumentTemplate created =
+            instrumentApiMgr.createInstrumentTemplate(readTemplatePost(), sysadmin);
+        // the create path sets isEditable=true by default; the seeder is the only writer of false
+        template = instrumentTemplateDao.get(created.getId());
+      } else {
+        // a prior run created the template but did not lock it; finish the job by locking the
+        // existing one rather than creating a duplicate
+        template = existing.get(0);
+        log.info("Found an unlocked default instrument template '{}'; locking it", TEMPLATE_NAME);
+      }
       template.setEditable(false);
       instrumentTemplateDao.save(template);
       instrumentTemplateDao.resetDefaultTemplateOwner();

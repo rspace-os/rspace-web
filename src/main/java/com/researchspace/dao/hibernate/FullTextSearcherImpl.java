@@ -374,7 +374,7 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
             .filter(
                 rec ->
                     isNotOwnedByDefaultTemplatesOwnerOrTemplate(
-                        rec, srchConfigInput.getDefaultTemplatesOwner()))
+                        rec, srchConfigInput.getDefaultTemplatesOwners()))
             .filter(rec -> canCurrentUserReadInvRec(rec, srchConfigInput.getAuthenticatedUser()))
             .collect(Collectors.toList());
     List<InventoryRecord> dbHits =
@@ -502,14 +502,15 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
     return isTemplate || searchType != InventorySearchType.SAMPLE_TEMPLATE;
   }
 
-  private boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
-      InventoryRecord rec, String defaultTemplatesOwner) {
-    if (defaultTemplatesOwner == null) {
-      return true; // we were not adding default templates owner to search filter
+  // package-private + static for unit testing: a pure predicate over (record, default owners).
+  static boolean isNotOwnedByDefaultTemplatesOwnerOrTemplate(
+      InventoryRecord rec, Set<String> defaultTemplatesOwners) {
+    if (defaultTemplatesOwners == null || defaultTemplatesOwners.isEmpty()) {
+      return true; // we were not adding any default templates owner to the search filter
     }
     boolean notOwnedByDefaultTemplateOwner =
-        !defaultTemplatesOwner.equals(rec.getOwner().getUsername());
-    // keep the default owner's templates (sample and instrument) but exclude their other records
+        !defaultTemplatesOwners.contains(rec.getOwner().getUsername());
+    // keep every default owner's templates (sample and instrument) but exclude their other records
     return notOwnedByDefaultTemplateOwner || rec.isSampleTemplate() || rec.isInstrumentTemplate();
   }
 
