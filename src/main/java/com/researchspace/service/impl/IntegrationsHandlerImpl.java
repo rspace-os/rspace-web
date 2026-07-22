@@ -13,7 +13,6 @@ import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIK
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.integrations.galaxy.service.GalaxyAliasToServer;
 import com.researchspace.integrations.galaxy.service.GalaxyService;
@@ -32,6 +31,7 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -428,7 +429,13 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
       throw new IllegalArgumentException(
           messages.getMessage(
               "apps.errors.invalidIntegrationName",
-              new Object[] {name, join(booleanIntegrationPrefs, ",")}));
+              new Object[] {
+                name,
+                ListFormatUtils.formatList(
+                    booleanIntegrationPrefs.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.toList()))
+              }));
     }
   }
 

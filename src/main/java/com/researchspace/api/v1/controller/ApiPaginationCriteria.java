@@ -1,6 +1,8 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
+import com.researchspace.service.ListFormatUtils;
+import java.util.Arrays;
 import javax.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -79,7 +81,7 @@ public abstract class ApiPaginationCriteria {
           "Problem parsing sort parameter: ["
               + orderBy
               + "]. It must be one of "
-              + String.join(",", validParams)
+              + ListFormatUtils.formatList(Arrays.asList(validParams))
               + ".");
       this.orderBy = orderBy;
       this.validParams = validParams;

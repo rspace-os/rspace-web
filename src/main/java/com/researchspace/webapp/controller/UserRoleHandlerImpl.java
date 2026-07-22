@@ -1,7 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static org.apache.commons.lang3.StringUtils.join;
-
 import com.researchspace.Constants;
 import com.researchspace.auth.UserPermissionUtils;
 import com.researchspace.model.Group;
@@ -17,6 +15,7 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
@@ -128,7 +127,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
       throw new IllegalStateException(
           messages.getMessage(
               "groups.edit.errors.piCannotBeDemoted",
-              new Object[] {piToDemote.getUsername(), join(grpsAsPi, ",")}));
+              new Object[] {piToDemote.getUsername(), ListFormatUtils.formatList(grpsAsPi)}));
     }
 
     piToDemote.removeRole(roleMgr.getRole(Constants.PI_ROLE));

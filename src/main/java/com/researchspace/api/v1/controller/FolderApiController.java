@@ -22,6 +22,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNavigationService;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.RecordDeletionManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.impl.RecordDeletionManagerImpl.DeletionSettings;
@@ -36,7 +37,6 @@ import java.util.stream.Collectors;
 import javax.validation.Valid;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
@@ -242,7 +242,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       throw new IllegalArgumentException(
           getMessage(
               "folder.list.errors.invalidTypesToInclude",
-              new Object[] {StringUtils.join(ACCEPTABLE_TYPES, ",")}));
+              new Object[] {ListFormatUtils.formatList(ACCEPTABLE_TYPES)}));
     }
   }
 

@@ -11,11 +11,13 @@ import com.researchspace.model.PaginationCriteria;
 import com.researchspace.model.dtos.IControllerInputValidator;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.session.UserSessionTracker;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -97,7 +99,9 @@ public class BaseApiController implements ServletContextAware {
         throw new IllegalArgumentException(
             getMessage(
                 "errors.pagination.invalidSortParameter",
-                new Object[] {e.getOrderBy(), String.join(",", e.getValidParams())}));
+                new Object[] {
+                  e.getOrderBy(), ListFormatUtils.formatList(Arrays.asList(e.getValidParams()))
+                }));
       }
     }
     return pgCrit;
