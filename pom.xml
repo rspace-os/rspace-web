@@ -902,7 +902,7 @@
     <dependency>
       <groupId>org.ehcache</groupId>
       <artifactId>ehcache</artifactId>
-      <version>${ehcache3.version}</version>
+      <version>3.10.8</version>
       <classifier>jakarta</classifier>
       <exclusions>
         <exclusion>
@@ -2734,7 +2734,6 @@
     <hibernate.logLevel>ERROR</hibernate.logLevel>
 
     <javax.cache.version>1.1.1</javax.cache.version>
-    <ehcache3.version>3.10.8</ehcache3.version>
 
     <hibernate.search.index>FTsearchIndices</hibernate.search.index>
     <lucene.attachment.searchIndex>LuceneFTsearchIndices</lucene.attachment.searchIndex>
