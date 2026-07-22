@@ -37,6 +37,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class FolderOrganisationAndApiInboxFolderTest {
   @Rule public MockitoRule mockito = MockitoJUnit.rule();
@@ -65,6 +66,8 @@ public class FolderOrganisationAndApiInboxFolderTest {
     when(folderManagerMock.getFolder(eq(1L), eq(user))).thenReturn(folderMock);
     when(folderMock.getName()).thenReturn("group shared folder");
     folderMgr = new FolderManagerImpl(recordFactory, folderDao, permUtils, messages);
+    ReflectionTestUtils.setField(
+        folderMgr, "messageSourceUtils", new MessageSourceUtils(new JsonMessageSource()));
 
     setup = FolderTestUtils.createDefaultFolderStructure(user, folderManagerMock, folderMock);
   }
