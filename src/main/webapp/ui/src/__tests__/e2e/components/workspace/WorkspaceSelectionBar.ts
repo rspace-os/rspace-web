@@ -32,7 +32,7 @@ export class WorkspaceSelectionBar {
   }
 
   private item(name: string): Locator {
-    return this.root.getByRole("listitem").filter({ hasText: name });
+    return this.root.getByRole("listitem").filter({ has: this.page.getByText(name, { exact: true }) });
   }
 
   async isActionVisible(action: SelectionBarAction): Promise<boolean> {
