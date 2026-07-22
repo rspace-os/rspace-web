@@ -2917,13 +2917,17 @@ export default interface Resources {
           },
           "hide": "Hide",
           "igsnDocLink": "See IGSN Documentation for details",
+          "pidinstDocLink": "See PIDINST Documentation for details",
           "preview": "Preview",
           "rorError": "Could not get RoR data.",
           "show": "Show",
           "stateInfo": {
             "draft": "This IGSN ID is a Draft. Metadata can be specified, but no information is publicly available.",
+            "draftPidinst": "This PIDINST is a Draft. Metadata can be specified, but no information is publicly available.",
             "findable": "This IGSN ID is Findable. The IGSN ID is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
-            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
+            "findablePidinst": "This PIDINST is Findable. The PIDINST is a citable URL that redirects to the <externalLink href=\"{link}\">RSpace landing page</externalLink>. The metadata is publicly available through the landing page, DataCite Commons and the DataCite APIs.",
+            "registered": "This IGSN ID is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API.",
+            "registeredPidinst": "This PIDINST is Registered. The metadata is not publicly available through the <externalLink href=\"{link}\">RSpace landing page</externalLink>, DataCite Commons or the Public API, but is available through the Members API."
           },
           "toggleId": {
             "hide": "Hide identifier's details",
@@ -2984,6 +2988,7 @@ export default interface Resources {
           "fieldLabel": "{label}:",
           "inventoryFields": {
             "alert": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the IGSN schema. <strong>Before publishing the IGSN ID, please ensure the fields do not contain sensitive information.</strong>",
+            "alertPidinst": "You can include Inventory fields in the item's landing page, to openly share domain-specific metadata outside the PIDINST schema. <strong>Before publishing the PIDINST, please ensure the fields do not contain sensitive information.</strong>",
             "customFields": "Custom Fields",
             "description": "Description",
             "extraFields": "Extra Fields",
@@ -3315,6 +3320,7 @@ export default interface Resources {
     "identifierConfirm": {
       "create": {
         "body": "An IGSN ID in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
+        "bodyPidinst": "A PIDINST in <strong>Draft</strong> state will be created. No metadata will be made public at this stage.",
         "title": "You are about to create an Identifier"
       },
       "delete": {
@@ -3323,6 +3329,7 @@ export default interface Resources {
       },
       "publish": {
         "body": "The IGSN ID landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the IGSN ID metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinst": "The PIDINST landing page, DataCite Commons, and the DataCite APIs will be updated with these changes.<br /><br /><strong>Please ensure the PIDINST metadata you provided does not contain any information you do not want to make public before publishing, as this action cannot be fully undone.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to publish this Identifier"
       },
       "retract": {
@@ -4341,7 +4348,8 @@ export default interface Resources {
         "providerOptions": {
           "b2inst": "B2INST",
           "datacite": "DataCite"
-        }
+        },
+        "providerSelectLabel": "Choose a PIDINST Registry provider to be used"
       },
       "tabs": {
         "igsn": {
@@ -4500,7 +4508,8 @@ export default interface Resources {
     },
     "images": {
       "igsnLogo": "IGSN Logo",
-      "institutionLogo": "Institution Logo"
+      "institutionLogo": "Institution Logo",
+      "pidinstLogo": "PIDINST Logo"
     },
     "labels": {
       "alternateIdentifiers": "alternate identifiers",
@@ -4513,6 +4522,7 @@ export default interface Resources {
       "igsnId": "IGSN ID:",
       "name": "Name:",
       "organisation": "Organisation:",
+      "pidinstId": "PIDINST:",
       "publicationYear": "Publication Year:",
       "resourceType": "Resource Type:",
       "subjects": "subjects",
@@ -4521,7 +4531,8 @@ export default interface Resources {
     "links": {
       "doiAddress": "DOI - address",
       "igsnHomepage": "IGSN Homepage",
-      "itemLandingPage": "Item landing page"
+      "itemLandingPage": "Item landing page",
+      "pidinstHomepage": "PIDINST Homepage"
     },
     "resourceTypes": {
       "physicalObject": "Physical Object"

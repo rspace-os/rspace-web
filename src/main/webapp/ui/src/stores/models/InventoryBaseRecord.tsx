@@ -1367,7 +1367,13 @@ export default class InventoryBaseRecord
       if (
         await getRootStore().uiStore.confirm(
           i18n.t("inventory:identifierConfirm.create.title"),
-          <TransRichText i18nKey="inventory:identifierConfirm.create.body" />,
+          <TransRichText
+            i18nKey={
+              this.recordType === "instrument" || this.recordType === "instrumentTemplate"
+                ? "inventory:identifierConfirm.create.bodyPidinst"
+                : "inventory:identifierConfirm.create.body"
+            }
+          />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

@@ -35,7 +35,8 @@
   },
   "images": {
     "igsnLogo": "IGSN Logo",
-    "institutionLogo": "Institution Logo"
+    "institutionLogo": "Institution Logo",
+    "pidinstLogo": "PIDINST Logo"
   },
   "labels": {
     "alternateIdentifiers": "alternate identifiers",
@@ -48,6 +49,7 @@
     "igsnId": "IGSN ID:",
     "name": "Name:",
     "organisation": "Organisation:",
+    "pidinstId": "PIDINST:",
     "publicationYear": "Publication Year:",
     "resourceType": "Resource Type:",
     "subjects": "subjects",
@@ -56,7 +58,8 @@
   "links": {
     "doiAddress": "DOI - address",
     "igsnHomepage": "IGSN Homepage",
-    "itemLandingPage": "Item landing page"
+    "itemLandingPage": "Item landing page",
+    "pidinstHomepage": "PIDINST Homepage"
   },
   "resourceTypes": {
     "physicalObject": "Physical Object"

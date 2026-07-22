@@ -73,7 +73,7 @@ export default function PIDINSTB2InstCard({
 
   return (
     <Card elevation={0} variant="outlined">
-      <CardContent sx={{ pt: 0.5 }}>
+      <CardContent sx={{ pt: 0.5, pb: 1 }}>
         <FormControl>
           <FormLabel>
             {t("settings.pidinst.b2inst.formLabel")}
@@ -85,21 +85,6 @@ export default function PIDINSTB2InstCard({
           <FormHelperText component="div" sx={{ m: 0 }}>
             <TransRichText i18nKey="inventory:settings.pidinst.b2inst.formHelperText" />
           </FormHelperText>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={updatedSettings.enabled === "true"}
-                onChange={({ target: { checked } }) => {
-                  const newEnabled: IntegrationState = checked ? "true" : "false";
-                  setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
-                  onEnabledChange(newEnabled);
-                }}
-                color="primary"
-                slotProps={{ input: { role: "checkbox" } }}
-              />
-            }
-            label={t("settings.pidinst.b2inst.enableLabel")}
-          />
         </FormControl>
         <Box sx={{ mt: 1.5 }}>
           <FormControl component="fieldset" fullWidth>
@@ -144,9 +129,27 @@ export default function PIDINSTB2InstCard({
             ))}
           </FormControl>
         </Box>
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.5 }}>
+          <FormControlLabel
+            sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.8125rem" } }}
+            control={
+              <Switch
+                checked={updatedSettings.enabled === "true"}
+                onChange={({ target: { checked } }) => {
+                  const newEnabled: IntegrationState = checked ? "true" : "false";
+                  setUpdatedSettings({ ...updatedSettings, enabled: newEnabled });
+                  onEnabledChange(newEnabled);
+                }}
+                color="primary"
+                slotProps={{ input: { role: "checkbox" } }}
+              />
+            }
+            label={t("settings.pidinst.b2inst.enableLabel")}
+          />
+          {unsavedChanges && <WarningBar />}
+        </Box>
       </CardContent>
-      {unsavedChanges && <WarningBar />}
-      <CardActions sx={{ justifyContent: "flex-end" }}>
+      <CardActions sx={{ justifyContent: "flex-end", pt: 0.5 }}>
         <Box sx={{ mr: 1 }}>
           {isConflict ? (
             <Typography variant="caption" sx={{ color: "error.main" }}>

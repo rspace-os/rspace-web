@@ -434,7 +434,13 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.publish.title"),
-          <TransRichText i18nKey="inventory:identifierConfirm.publish.body" />,
+          <TransRichText
+            i18nKey={
+              this.doiType.startsWith("PIDINST")
+                ? "inventory:identifierConfirm.publish.bodyPidinst"
+                : "inventory:identifierConfirm.publish.body"
+            }
+          />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

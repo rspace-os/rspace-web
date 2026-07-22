@@ -6,6 +6,8 @@ import Alert from "@mui/material/Alert";
 import AlertTitle from "@mui/material/AlertTitle";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -187,20 +189,34 @@ function SettingsDialog({ open, setOpen }: SettingsDialogArgs): React.ReactNode 
 
             {/* PIDINST tab panel */}
             <Box role="tabpanel" hidden={activeTab !== 0}>
-              <FormControl component="fieldset" fullWidth sx={{ mb: 1.5 }}>
-                <RadioField
-                  name={t("settings.pidinst.providerLabel")}
-                  value={pidinstProvider}
-                  onChange={({ target }) => {
-                    if (target.value === "datacite" || target.value === "b2inst") {
-                      setPidinstProvider(target.value);
-                    }
-                  }}
-                  options={pidinstProviderOptions}
-                  smallText
-                  row
-                />
-              </FormControl>
+              <Card elevation={0} variant="outlined" sx={{ mb: 1.5 }}>
+                <CardContent sx={{ py: 1, pl: 4, "&:last-child": { pb: 1 } }}>
+                  <Typography variant="body2" sx={{ ml: "-7px" }}>
+                    {t("settings.pidinst.providerSelectLabel")}
+                  </Typography>
+                  <FormControl
+                    component="fieldset"
+                    sx={{
+                      width: "fit-content",
+                      "& .MuiFormControlLabel-label": { fontWeight: "bold" },
+                      "& .MuiRadioGroup-root": { gap: 3, justifyContent: "flex-start" },
+                    }}
+                  >
+                    <RadioField
+                      name={t("settings.pidinst.providerLabel")}
+                      value={pidinstProvider}
+                      onChange={({ target }) => {
+                        if (target.value === "datacite" || target.value === "b2inst") {
+                          setPidinstProvider(target.value);
+                        }
+                      }}
+                      options={pidinstProviderOptions}
+                      smallText
+                      row
+                    />
+                  </FormControl>
+                </CardContent>
+              </Card>
               {/* Keep both cards mounted so in-progress edits are preserved when switching providers */}
               <Box sx={{ display: pidinstProvider === "datacite" ? undefined : "none" }}>
                 <PIDINSTDataciteCard
