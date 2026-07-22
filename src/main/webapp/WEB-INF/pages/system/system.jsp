@@ -1,11 +1,10 @@
 <%@ include file="/common/taglibs.jsp"%>
-<fmt:bundle basename="bundles.system.system">
 
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="UTF-8">
     <title>
-      <fmt:message key="system.admin.pageTitle" />
+      <spring:message code="system.admin.pageTitle"/>
     </title>
 
     <!-- moved to default.jsp -->
@@ -28,7 +27,6 @@
         <div id="sysadminUsers" style="width: 100%" /></div>
       </div>
     </c:if>
-</fmt:bundle>
 
 <div id="statusMsg" style="margin-top:10px;color:red">
   <c:if test="${not empty errorList}">

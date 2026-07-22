@@ -1,14 +1,15 @@
 <%@ page language="java" isErrorPage="true" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
+<%@ taglib uri="http://www.springframework.org/tags" prefix="spring" %>
 <%@ taglib uri="http://researchspace.com/tags" prefix="rst" %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html>
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
-    <title><fmt:message key="errorPage.title"/></title>
+    <title><spring:message code="errorPage.title"/></title>
     <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/simplicity/theme.css'/>" />
 </head>
 
@@ -16,21 +17,19 @@
     <div id="page">
         <div id="content" class="clearfix">
             <div id="main">
-                <h1><fmt:message key="errorPage.heading"/></h1>
+                <h1><spring:message code="errorPage.heading"/></h1>
                 <% if (exception != null) { %>
-    				This is usually because
+    				<spring:message code="errors.page.reasonsIntro"/>
     				<ul>
-    					<li>You have insufficient permissions to view the resource, or you requested an unauthorized or non-existent resource.</li>
-    					<li>You attempted to do an operation which is unauthorized or not available to you.</li>
-    					<li>An error occurred on the server.</li>
+    					<li><spring:message code="errors.page.insufficientPermissions"/></li>
+    					<li><spring:message code="errors.page.unauthorizedOperation"/></li>
+    					<li><spring:message code="errors.page.genericServerError"/></li>
     				</ul>
-    				Please inspect the message detail below &ndash; if you believe this to be a server error,
-                          please contact  ResearchSpace support. You might also try asking the resource owner to share the resource with you.
-                        <p>Id - ${errorId}  at ${tstamp}</p>
+    				<spring:message code="errors.page.contactSupportNotice"/>
+                        <p><spring:message code="errors.page.idAtTimestamp" arguments="${errorId},${tstamp}"/></p>
                         <pre class="message"> ${exceptionMessage}</pre>
                  <% } else if ((Exception)request.getAttribute("javax.servlet.error.exception") != null) { %>
-                    <pre class="message">An exception occurred on the server. If it persists, please contact  ResearchSpace
-                     support.</pre>
+                    <pre class="message"><spring:message code="errors.page.unhandledExceptionNotice"/></pre>
                  <% } %>
             </div>
         </div>

@@ -83,7 +83,7 @@ public class InventorySearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.termsoptionsmismatch", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.termsOptionsMismatch", errors.getAllErrors().get(0).getCode());
 
     // unknown search option
     errors = reinitializeErrors();
@@ -91,7 +91,7 @@ public class InventorySearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.unknownsearchoption", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.unknownSearchOption", errors.getAllErrors().get(0).getCode());
 
     // empty search term
     errors = reinitializeErrors();
@@ -99,7 +99,7 @@ public class InventorySearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.searchtermblank", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.searchTermBlank", errors.getAllErrors().get(0).getCode());
 
     // too long search term
     errors = reinitializeErrors();
@@ -107,7 +107,7 @@ public class InventorySearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.searchtermtoolong", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.searchTermTooLong", errors.getAllErrors().get(0).getCode());
   }
 
   private SearchConfig createSearchConfig(User user, String[] options, String[] terms) {

@@ -1,7 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
-
-<html lang="en">
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
   <title>Use a Galaxy Workflow</title>
   <rst:viteClient />

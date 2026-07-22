@@ -39,24 +39,23 @@ abstract class InventoryRecordValidator {
     }
 
     if (isNegativeQuantity(incomingApiQuantity)) {
-      errors.rejectValue(quantityFieldName, "", "Quantity 'numericValue' must be positive");
+      errors.rejectValue(quantityFieldName, "errors.inventory.quantity.negative");
     }
     if (isValidUnit(incomingApiQuantity)) {
       RSUnitDef def = RSUnitDef.getUnitById(incomingApiQuantity.getUnitId());
       if (!def.isAmount()) {
         errors.rejectValue(
             quantityFieldName,
-            "",
-            String.format(
-                "Quantity unit id [%d] is not pointing to a unit of amount, "
-                    + "it should be an id of a mass, volume or dimensionless unit.",
-                incomingApiQuantity.getUnitId()));
+            "errors.inventory.quantity.unitNotAmount",
+            new Object[] {incomingApiQuantity.getUnitId()},
+            null);
       }
     } else {
       errors.rejectValue(
           quantityFieldName,
-          "",
-          String.format("Quantity unit id [%d] is invalid", incomingApiQuantity.getUnitId()));
+          "errors.inventory.quantity.unitInvalid",
+          new Object[] {incomingApiQuantity.getUnitId()},
+          null);
     }
   }
 
@@ -101,8 +100,7 @@ abstract class InventoryRecordValidator {
 
   void validateNotNullAndBlank(String fieldName, String fieldValue, Errors errors) {
     if (fieldValue != null && StringUtils.isBlank(fieldValue)) {
-      errors.rejectValue(
-          fieldName, "errors.emptyString", new Object[] {fieldName}, fieldName + " is empty.");
+      errors.rejectValue(fieldName, "errors.emptyString.generic", new Object[] {fieldName}, null);
     }
   }
 
@@ -110,21 +108,14 @@ abstract class InventoryRecordValidator {
     if (!StringUtils.isBlank(fieldValue)) {
       if (fieldValue.length() > maxLength) {
         errors.rejectValue(
-            fieldName,
-            "errors.maxlength",
-            new Object[] {fieldName, maxLength},
-            fieldName + " is too long.");
+            fieldName, "errors.maxLength", new Object[] {fieldName, maxLength}, null);
       }
     }
   }
 
   void validateTooShort(String fieldName, String fieldValue, int minLength, Errors errors) {
     if (StringUtils.length(fieldValue) < minLength) {
-      errors.rejectValue(
-          fieldName,
-          "errors.minlength",
-          new Object[] {fieldName, minLength},
-          fieldName + " is too short");
+      errors.rejectValue(fieldName, "errors.minLength", new Object[] {fieldName, minLength}, null);
     }
   }
 
@@ -134,9 +125,9 @@ abstract class InventoryRecordValidator {
           getReservedFieldNames().stream().sorted().collect(Collectors.joining("/"));
       errors.rejectValue(
           "name",
-          "errors.inventory.template.reserved.field.name",
+          "errors.inventory.template.reservedFieldName",
           new Object[] {fieldName, reservedFieldNamesString},
-          "reserved field name");
+          null);
     }
   }
 

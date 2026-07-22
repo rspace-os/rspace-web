@@ -8,7 +8,7 @@ function loadSettingsFromServer() {
         $('#mainArea').html(resp);
     });
     viewRequest.fail(function () {
-         RS.ajaxFailed("Getting Settings page", false, viewRequest);
+         RS.ajaxFailed(RS.msg("legacyjs.system.settings.gettingSettingsPageAction"), false, viewRequest);
     });
 
     var propertiesRequest = $.get("/deploymentproperties/ajax/editableProperties");
@@ -16,7 +16,7 @@ function loadSettingsFromServer() {
         settings = resp;
     });
     propertiesRequest.fail(function () {
-         RS.ajaxFailed("Getting Settings values", false, propertiesRequest);
+         RS.ajaxFailed(RS.msg("legacyjs.system.settings.gettingSettingsValuesAction"), false, propertiesRequest);
     });
 
     $.when(viewRequest, propertiesRequest).then(function() {
@@ -27,22 +27,22 @@ function loadSettingsFromServer() {
 
 function printSettingsList() {
 
-    _printCategory('RSpace Settings');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.rspaceSettings"));
 
-    _printSubCategory('RSpace API');
+    _printSubCategory(RS.msg("legacyjs.system.settingsCategory.rspaceApi"));
     _printSettings([ 'api.available' ]);
     _printSettings([ 'api.oauth.authentication' ]);
 
-    _printSubCategory('Lab Group Settings');
+    _printSubCategory(RS.msg("legacyjs.system.settingsCategory.labGroupSettings"));
     _printSettings([ 'pi_can_edit_all_work_in_labgroup' ]);
     _printSettings(['group_autosharing.available']);
     _printSettings(['self_service_labgroups']);
     _printSettings(['allow_project_groups']);
 
-     _printSubCategory('Privacy');
+     _printSubCategory(RS.msg("legacyjs.system.settingsCategory.privacy"));
      _printSettings([ 'publicLastLogin.available' ]);
 
-    _printCategory('Storage and Document Management');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.storageAndDocumentManagement"));
     _printSettings([
             'box.available',
             'box.linking.enabled',
@@ -58,7 +58,7 @@ function printSettingsList() {
             'owncloud.available',
     ]);
 
-    _printCategory('Data Repositories and Publishing');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.dataRepositoriesAndPublishing"));
     _printSettings([ 'public_sharing' ]);
     _printSettings([ 'publicdocs_allow_seo' ]);
     _printSettings([ 'dataverse.available' ]);
@@ -67,19 +67,19 @@ function printSettingsList() {
     _printSettings([ 'figshare.available' ]);
     _printSettings([ 'zenodo.available' ]);
 
-    _printCategory('Data Management Plans');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.dataManagementPlans"));
     _printSettings([ 'argos.available' ]);
     _printSettings([ 'dmpassistant.available' ]);
     _printSettings([ 'dmponline.available' ]);
     _printSettings([ 'dmptool.available' ]);
     _printSettings([ 'dsw.available' ]);
 
-    _printCategory('Collaboration and Communication');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.collaborationAndCommunication"));
     _printSettings([ 'msteams.available' ]);
     _printSettings([ 'slack.available' ]);
     _printSettings([ 'github.available' ]);
 
-    _printCategory('Scientific Tools and Specialized Data');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.scientificToolsAndSpecializedData"));
     _printSettings([ 'inventory.available' ]);
     _printSettings([ 'chemistry.available' ]);
     _printSettings([ 'clustermarket.available' ]);
@@ -88,13 +88,13 @@ function printSettingsList() {
     _printSettings([ 'pyrat.available' ]);
     _printSettings([ 'snapgene.available' ]);
 
-    _printCategory('Research Methods and Protocols');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.researchMethodsAndProtocols"));
     _printSettings([ 'protocols_io.available' ]);
 
-    _printCategory('Analysis and Programming');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.analysisAndProgramming"));
     _printSettings([ 'galaxy.available' ]);
 
-    _printCategory('Identity');
+    _printCategory(RS.msg("legacyjs.system.settingsCategory.identity"));
     _printSettings([ 'orcid.available' ]);
     _printSettings([ 'raid.available' ]);
 
@@ -143,7 +143,7 @@ function saveSetting($settingRow) {
     var settingLabel = $settingRow.data('label') || settingName;
     var newValue = _get$InputFieldForRow($settingRow).val();
 
-    RS.blockPage("Saving...");
+    RS.blockPage(RS.msg("legacyjs.system.common.saving"));
 
     var data = {
         propertyName : settingName,
@@ -152,17 +152,17 @@ function saveSetting($settingRow) {
     var jqxhr = $.post("/deploymentproperties/ajax/updateProperty", data);
     jqxhr.done(function(result) {
         if (result.errorMsg) {
-            apprise('System Setting \'' + settingLabel + '\' couldn\'t be updated.');
+            apprise(RS.msg("legacyjs.system.settings.updateFailed", settingLabel));
         } else {
             var safeResult = RS.escapeHtml(result.data);
-            $().toastmessage('showSuccessToast', 'System Setting \'' + settingLabel + '\' updated to \'' + safeResult + '\'');
+            $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.settings.updated", settingLabel, safeResult));
             settings[settingName] = result.data;
             $settingRow.find('.settingViewDiv .settingValue').html(safeResult || '&nbsp;');
             toggleSettingMode($settingRow);
         }
     });
     jqxhr.fail(function() {
-        RS.ajaxFailed("Update", true, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.system.settings.updateAction"), true, jqxhr);
     });
     jqxhr.always(function () {
         RS.unblockPage();

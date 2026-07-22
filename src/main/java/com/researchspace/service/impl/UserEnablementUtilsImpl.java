@@ -44,9 +44,11 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     velocityModel.put("user", user);
     velocityModel.put("accountDisabled", !newStatus);
     velocityModel.put("systemUser", systemUser);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
     String subjectKey =
-        newStatus ? "email.account.enabled.subject" : "email.account.disabled.subject";
+        newStatus
+            ? "email.account.accountEnablementNotification.subjectEnabled"
+            : "email.account.accountEnablementNotification.subjectDisabled";
     EmailContent content =
         emailContentGenerator.render(subjectKey, "accountEnablementNotification.vm", velocityModel);
     emailer.sendEmail(content, List.of(user.getEmail()), null);

@@ -194,19 +194,19 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
           return new AjaxReturnObject<>(
               null,
               ErrorList.of(
-                  "Couldn't download DMP for id: "
-                      + id
-                      + ". "
-                      + dmpUserServiceOperationResult.getMessage()));
+                  getText(
+                      "apps.dmpTool.errors.download",
+                      new Object[] {id, dmpUserServiceOperationResult.getMessage()})));
         }
       } else {
         return new AjaxReturnObject<>(
-            null, ErrorList.of("Couldn't get details of DMP with id: " + id));
+            null, ErrorList.of(getText("apps.dmpTool.errors.getDetails", new Object[] {id})));
       }
 
     } catch (URISyntaxException | IOException | RuntimeException e) {
       log.error("Failure on downloading DMP", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't download DMP file for id: " + id));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("apps.dmpTool.errors.downloadFile", new Object[] {id})));
     }
     return new AjaxReturnObject<Boolean>(Boolean.TRUE, null);
   }
@@ -234,7 +234,7 @@ public class DMPToolOAuthController extends BaseOAuth2Controller {
       return new AjaxReturnObject<>(null, ErrorList.of(se.getMessage()));
     } catch (Exception e) {
       log.error("Failure on listing DMPs", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Couldn't list DMPs"));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmp.errors.list")));
     }
   }
 

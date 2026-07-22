@@ -139,9 +139,7 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
 
     assertIsSysadmin(subject, req);
     if (incomingSettings.getProvider() == null) {
-      errors.reject(
-          "errors.inventory.settings.provider.required",
-          messages.getMessage("errors.inventory.settings.provider.required"));
+      errors.reject("errors.inventory.settings.providerRequired");
     }
     throwBindExceptionIfErrors(errors);
 

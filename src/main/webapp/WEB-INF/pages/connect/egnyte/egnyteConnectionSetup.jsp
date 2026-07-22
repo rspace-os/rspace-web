@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-	<title>Connect to Egnyte</title>
+	<title><spring:message code="connect.egnyte.connectionSetup.title"/></title>
 </head>
 
 <!-- Hide the top menu tabs -->
@@ -56,34 +56,33 @@
                 egnyteUsername: $('#engyteUsername').val(),
                 egnytePassword: $('#egnytePassword').val(),
             };
-            RS.blockPage("Connecting to Egnyte filestore...");
+            RS.blockPage(RS.msg("legacyjs.egnyte.connectingToFilestore"));
             var jqxhr = $.post("/egnyte/connectUserToEgnyteFilestore", egnyteTokenRequestData);
-            
+
             jqxhr.done(function(data) {
                 RS.unblockPage();
                 if (data.data) {
-                    RS.confirm("Egnyte connected successfully");
+                    RS.confirm(RS.msg("legacyjs.egnyte.connectedSuccessfully"));
                     $('.errorMsgDiv').hide();
-                    RS.blockPage("Egnyte connection details saved. Opening the Workspace...");
+                    RS.blockPage(RS.msg("legacyjs.egnyte.connectionSavedOpeningWorkspace"));
                     RS.navigateTo('/workspace');
                 } else {
                     $('.errorMsgDiv').show().text(data.error.errorMessages.join(','));
                 }
             });
             jqxhr.fail(function() {
-                RS.ajaxFailed("Egnyte authentication", true, jqxhr);
+                RS.ajaxFailed(RS.msg("legacyjs.egnyte.authenticationAction"), true, jqxhr);
             });
             return false;
         };
-        
+
         RS.addOnEnterHandlerToDocument("#egnytePassword", connectToEgnyteServer);
         $('#egnyteConnectBtn').click(connectToEgnyteServer);
-        
+
 
         $('#skipEgnyteConfigLink').click(function() {
-            apprise("Are you sure you want to skip Egnyte account configuration? " +
-                    "The files uploaded to RSpace will not be saved in Egnyte.", 
-                    { textOk : "Skip"}, function() { RS.navigateTo('/workspace'); });
+            apprise(RS.msg("legacyjs.egnyte.skipConfirm"),
+                    { textOk : RS.msg("legacyjs.egnyte.skipConfirmOk")}, function() { RS.navigateTo('/workspace'); });
         });
     });
 
@@ -92,28 +91,28 @@
 
 <div class="page"> 
 
-  <div class="engyteSetupInfoDiv">Please provide your Egnyte credential so RSpace can access your account.</div>
+  <div class="engyteSetupInfoDiv"><spring:message code="connect.egnyte.connectionSetup.credentialsPrompt"/></div>
 
   <div class="egynteLoginDiv bootstrap-custom-flat">
     <form class="egynteLoginDiv__form" autocomplete="off">
       <fieldset>
         <div class="form-group rs-field">
-            <input type="text" id="engyteUsername" placeholder="Egnyte Username"></input>
+            <input type="text" id="engyteUsername" placeholder="<spring:message code='connect.egnyte.connectionSetup.usernamePlaceholder'/>"></input>
         </div>
         <div class="form-group rs-field">
-            <input type="password" id="egnytePassword" placeholder="Egnyte Password"></input>
+            <input type="password" id="egnytePassword" placeholder="<spring:message code='connect.egnyte.connectionSetup.passwordPlaceholder'/>"></input>
         </div>
         <div class="form-group rs-field">
-            <button id="egnyteConnectBtn" role="button" type="submit" class="btn btn-primary">Connect</button>
+            <button id="egnyteConnectBtn" role="button" type="submit" class="btn btn-primary"><spring:message code="connect.egnyte.connectionSetup.connectButton"/></button>
         </div>
       </fieldset>
     </form>
-    
+
     <div class="errorMsgDiv" style="display:none"></div>
   </div>
 
   <div class="goToWorkspaceLinkDiv">
-    <a id="skipEgnyteConfigLink" href="#">Skip Egnyte configuration, go to Workspace</a>
+    <a id="skipEgnyteConfigLink" href="#"><spring:message code="connect.egnyte.connectionSetup.skipConfigLink"/></a>
   </div>
 
 </div>

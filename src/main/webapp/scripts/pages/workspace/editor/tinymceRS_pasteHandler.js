@@ -250,7 +250,7 @@ RS.tinymcePasteHandler = function() {
     function _pasteHtmlWithCopiedRSpaceElements($html) {
         var fieldId = getFieldIdFromTextFieldId(tinymce.activeEditor.id);
         // wrap in block screen
-        RS.blockPage("Copying elements in pasted content...");
+        RS.blockPage(RS.msg("legacyjs.workspace.tinymcePaste.copyingElements"));
         var jqxhr = $.post("/workspace/editor/structuredDocument/copyContentIntoField", {
           content: RS.convert$HtmlToHtmlString($html),
           fieldId: fieldId
@@ -262,7 +262,7 @@ RS.tinymcePasteHandler = function() {
             _insertIntoTinymce(copiedContent);
         })
         jqxhr.fail(function() {
-            RS.ajaxFailed("Copying content", true, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.workspace.tinymcePaste.copyingContent"), true, jqxhr);
         })
         
     }

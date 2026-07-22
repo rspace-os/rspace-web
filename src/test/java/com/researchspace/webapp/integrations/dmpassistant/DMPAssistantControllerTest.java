@@ -348,7 +348,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.refresh", surfaced);
+    assertEquals("apps.dmpAssistant.errors.refresh", surfaced);
   }
 
   @Test
@@ -452,7 +452,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+    assertEquals("apps.dmpAssistant.errors.upstream:404 Not Found", surfaced);
   }
 
   @Test
@@ -466,7 +466,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.upstream:404 Not Found", surfaced);
+    assertEquals("apps.dmpAssistant.errors.upstream:404 Not Found", surfaced);
   }
 
   @Test
@@ -507,7 +507,7 @@ class DMPAssistantControllerTest {
     assertNull(result.getData());
     assertNotNull(result.getError());
     String surfaced = result.getError().getAllErrorMessagesAsStringsSeparatedBy(" ");
-    assertEquals("apps.dmpassistant.error.import.batch.too.large:50", surfaced);
+    assertEquals("apps.dmpAssistant.errors.importBatchTooLarge:50", surfaced);
     verifyNoInteractions(dmpAssistantProvider);
   }
 

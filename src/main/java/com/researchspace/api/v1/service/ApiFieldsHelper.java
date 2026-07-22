@@ -51,6 +51,10 @@ import org.springframework.validation.Errors;
 @Slf4j
 public class ApiFieldsHelper {
 
+  private static final String MANDATORY_FIELD_EMPTY = "errors.inventory.field.mandatoryFieldEmpty";
+  private static final String MANDATORY_FIELD_NO_SELECTION =
+      "errors.inventory.field.mandatoryFieldNoSelection";
+
   protected static final Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
 
   public static final Pattern incomingAttachmentPattern =
@@ -322,7 +326,6 @@ public class ApiFieldsHelper {
    * <p>Otherwise add the errors if there are problems.
    */
   public void validateMandatoryFieldsForEntityPost(
-      String entityTypeName,
       List<ApiInventoryEntityField> incomingApiFields,
       List<InventoryEntityField> templateFields,
       Errors errors) {
@@ -340,9 +343,9 @@ public class ApiFieldsHelper {
           if (CollectionUtils.isEmpty(selectedOptions)) {
             errors.rejectValue(
                 "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.no.selection",
+                MANDATORY_FIELD_NO_SELECTION,
                 new Object[] {templateField.getName()},
-                "no option selected for mandatory field");
+                null);
           }
         } else if (FieldType.LINK.equals(templateField.getType())) {
           // Link fields carry their value in the `link` object, not `content` (which is always
@@ -358,10 +361,7 @@ public class ApiFieldsHelper {
           }
           if (!hasLinkTarget) {
             errors.rejectValue(
-                "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
+                "fields", MANDATORY_FIELD_EMPTY, new Object[] {templateField.getName()}, null);
           }
         } else {
           String incomingContent =
@@ -370,10 +370,7 @@ public class ApiFieldsHelper {
                   : templateField.getFieldData();
           if (!templateField.isValidValueForMandatoryField(incomingContent)) {
             errors.rejectValue(
-                "fields",
-                "errors.inventory." + entityTypeName + ".mandatory.field.empty",
-                new Object[] {templateField.getName()},
-                "no content for mandatory field");
+                "fields", MANDATORY_FIELD_EMPTY, new Object[] {templateField.getName()}, null);
           }
         }
       }

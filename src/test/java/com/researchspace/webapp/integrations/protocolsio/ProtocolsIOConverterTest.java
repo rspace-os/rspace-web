@@ -22,7 +22,10 @@ import com.researchspace.protocolsio.Protocol;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FormManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import com.researchspace.testutils.VelocityTestUtils;
@@ -51,6 +54,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 public class ProtocolsIOConverterTest {
@@ -101,6 +105,8 @@ public class ProtocolsIOConverterTest {
     vel = VelocityTestUtils.setupVelocity("src/main/resources/velocityTemplates/integrations");
     impl.setVelocity(vel);
     impl.setRecordFactory(new RecordFactory());
+    ReflectionTestUtils.setField(impl, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(impl, "userLocaleService", new UserLocaleService());
     importFolder = TestFactory.createAnImportsFolder(any);
     importFolder.setId(-2L);
     doc = TestFactory.createAnySD();

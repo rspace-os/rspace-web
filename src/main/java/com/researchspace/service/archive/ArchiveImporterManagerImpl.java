@@ -3,6 +3,7 @@ package com.researchspace.service.archive;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.archive.IArchiveModel;
 import com.researchspace.core.util.progress.ProgressMonitor;
+import com.researchspace.service.MessageSourceUtils;
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +15,7 @@ public class ArchiveImporterManagerImpl implements ArchiveImporterManager {
 
   private @Autowired IArchiveParser archiveParser;
   private @Autowired ArchiveModelToDatabaseSaver databaseSaver;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public ImportArchiveReport importArchive(
@@ -25,7 +27,9 @@ public class ArchiveImporterManagerImpl implements ArchiveImporterManager {
     try {
       IArchiveModel archiveModel = archiveParser.loadArchive(zipFile, report, iconfig);
       if (!report.isValidationSuccessful()) {
-        report.getErrorList().addErrorMsg("Validation of archive was not successful");
+        report
+            .getErrorList()
+            .addErrorMsg(messages.getMessage("archiveImport.errors.validationFailed"));
         log.error(
             "Validation of archive was not successful: {}",
             report.getErrorList().getAllErrorMessagesAsStringsSeparatedBy("\n"));

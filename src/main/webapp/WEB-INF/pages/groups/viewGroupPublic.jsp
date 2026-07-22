@@ -1,8 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 <%-- JSP to view the information about a group --%>
 <head>
-  <title><fmt:message key="groups.view.title"/></title>
-  <meta name="heading" content="<fmt:message key='groups.heading'/>"/>
+  <title><spring:message code="groups.view.title"/></title>
+  <meta name="heading" content="<spring:message code='groups.heading'/>"/>
   <meta name="menu" content="MainMenu"/>
   <meta charset="UTF-8">
   <link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/groups/viewGroup.css'/>" />
@@ -41,19 +41,20 @@
 <jsp:include page="/WEB-INF/pages/admin/admin.jsp" />
 <p style="visibility:hidden;">space holder</p>
 
+
 <div id="groupBlocks">
   <div id="groupBlockLeft">
     <h2 style="flex-grow:1;">
-      <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">Collaboration </c:if>
-      <c:if test="${group.groupType == 'PROJECT_GROUP'}">Project </c:if>
-      Group: <span class="displayname">${group.displayName}</span>
+      <c:if test="${group.groupType == 'COLLABORATION_GROUP'}"><spring:message code="groups.view.type.collaboration"/> </c:if>
+      <c:if test="${group.groupType == 'PROJECT_GROUP'}"><spring:message code="groups.view.type.project"/> </c:if>
+      <spring:message code="groups.view.groupLabel"/> <span class="displayname">${group.displayName}</span>
     </h2>
   </div>
 
   <c:if test="${group.groupType != 'COLLABORATION_GROUP'}">
     <div id="communityDisplay">
       <h3>
-        Community:
+        <spring:message code="groups.view.communityLabel"/>
         <a href="/directory/community/${group.community.id}">${group.community.displayName}</a>
       </h3>
     </div>
@@ -74,7 +75,7 @@
 
 <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">
   <div id="memberGroups">
-    <h3>Group PIs</h3>
+    <h3><spring:message code="groups.view.groupPisHeading"/></h3>
     <table id="memberGroupsTable" class="table">
       <tbody>
       <c:forEach var="groupPI" items="${group.piusers}">
@@ -140,16 +141,16 @@
       <table id="grpDetails" class="table" cellspacing="0">
         <thead>
           <tr>
-            <th><spring:message code="user.fullname.label" /></th>
-            <th><spring:message code="user.username.label" /></th>
+            <th><spring:message code="system:usersPage.columns.fullName" /></th>
+            <th><spring:message code="system:usersPage.columns.username" /></th>
             <c:if test="${showExportFunctionality}">
-              <th style="width:10%"><spring:message code="user.documents.label" /></th>
+              <th style="width:10%"><spring:message code="common:sections.documents" /></th>
             </c:if>
-            <th><spring:message code="user.role.label" /></th>
-            <th>Autosharing</th>
+            <th><spring:message code="system:usersPage.columns.role" /></th>
+            <th><spring:message code="groups.view.table.autosharing"/></th>
             <th style="min-width: 120px"><spring:message code="user.actions.label" /></th>
             <c:if test="${showExportFunctionality}">
-              <th><spring:message code="user.exportWork.label" /></th>
+              <th><spring:message code="system:usersPage.export.work" /></th>
             </c:if>
             <th style="width:15%"><spring:message code="user.remove.label" /></th>
           </tr>
@@ -199,8 +200,8 @@
                 <td style="width:10%">
                   <span data-test-id="homeFolderSpan">
                     <c:choose>
-                    <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="Home Folder Not Available"></c:when>
-                    <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="Go to User's Home Folder"></a></c:otherwise>
+                    <c:when test="${ug.user.PI and ug.user ne subject}"><img src="/images/icons/folder-unavailable.png" title="<spring:message code='groups.view.homeFolder.notAvailable'/>"></c:when>
+                    <c:otherwise><a href="/workspace/${ug.user.rootFolder.id}"><img src="/images/icons/folder-user.png" title="<spring:message code='groups.view.homeFolder.goTo'/>"></a></c:otherwise>
                     </c:choose>
                   </span>
                 </td>
@@ -208,8 +209,8 @@
               <%-- can't remove or edit a PI in a lab group --%>
               <td>
                 <span data-test-id="roleInGroup_${ug.user.username}">${ug.roleInGroup.label}</span>
-                <c:if test="${ug.adminViewDocsEnabled}"> <img src='/images/icons/viewAllFolderIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="Can View Group's Documents" /></c:if>
-                <c:if test="${ug.piCanEditWork}"> <img src='/images/icons/editIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="Can Edit Group's Documents" /></c:if>
+                <c:if test="${ug.adminViewDocsEnabled}"> <img src='/images/icons/viewAllFolderIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canView'/>" /></c:if>
+                <c:if test="${ug.piCanEditWork}"> <img src='/images/icons/editIcon.png' style="vertical-align:middle;padding-bottom:2px;" title="<spring:message code='groups.view.permissions.canEdit'/>" /></c:if>
               </td>
               <td id="autoshareStatus-${ug.user.id}"></td>
               <td>

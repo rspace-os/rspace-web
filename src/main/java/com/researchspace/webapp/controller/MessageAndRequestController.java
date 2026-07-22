@@ -175,7 +175,10 @@ public class MessageAndRequestController extends BaseController implements Appli
     }
     if (userInfos.isEmpty()) {
       ErrorList errors =
-          ErrorList.of(getText("messages.norecipients.msg", new Object[] {messageType.getLabel()}));
+          ErrorList.of(
+              getText(
+                  "messaging.errors.noRecipients.emptyRecipientList",
+                  new Object[] {messageType.getLabel()}));
       return new AjaxReturnObject<>(null, errors);
     }
     return new AjaxReturnObject<>(userInfos, null);
@@ -261,7 +264,7 @@ public class MessageAndRequestController extends BaseController implements Appli
 
       if (startTimeCal.after(endTimeCalendar)) {
         return new AjaxReturnObject<>(
-            null, ErrorList.createErrListWithSingleMsg(getText("calendar.event.start.before.end")));
+            null, ErrorList.createErrListWithSingleMsg(getText("calendar.event.start.beforeEnd")));
       }
     }
 
@@ -297,7 +300,7 @@ public class MessageAndRequestController extends BaseController implements Appli
 
     // Show an error message if there's no calendar file available.
     if (calendarEventFileContents == null) {
-      throw new IllegalStateException(getText("calendar.event.not.available"));
+      throw new IllegalStateException(getText("calendar.event.unavailable"));
     }
 
     // Output the calendar file
@@ -324,7 +327,7 @@ public class MessageAndRequestController extends BaseController implements Appli
             message, appConfigElementSetId, Arrays.asList(ArrayUtils.nullToEmpty(recordIds)), user);
     if (!resp.isSucceeded()) {
       return new AjaxReturnObject<>(
-          null, ErrorList.createErrListWithSingleMsg("Could not send message"));
+          null, ErrorList.createErrListWithSingleMsg(getText("messaging.errors.sendFailed")));
     }
 
     return new AjaxReturnObject<>(Boolean.TRUE, null);
@@ -356,7 +359,8 @@ public class MessageAndRequestController extends BaseController implements Appli
       MsgOrReqstCreationCfg mor, BindingResult errors, User subject) {
 
     if (!isAdminSendToAll(subject, mor)) {
-      ValidationUtils.rejectIfEmptyOrWhitespace(errors, RECIPIENT_NAMES, "errors.emptyString");
+      ValidationUtils.rejectIfEmptyOrWhitespace(
+          errors, RECIPIENT_NAMES, "errors.emptyString.generic");
     }
     if (errors.hasErrors()) {
       return null;
@@ -452,7 +456,7 @@ public class MessageAndRequestController extends BaseController implements Appli
           if (!isAdminSendToAll(subject, mor)) {
             result.rejectValue(
                 RECIPIENT_NAMES,
-                "messages.invalidrecipient.msg",
+                "messaging.errors.invalidRecipient.deliveryFailure",
                 new String[] {toAdd.getFullName(), policy.getFailureMessageIfUserInvalidTarget()},
                 null);
           } else {
@@ -507,12 +511,14 @@ public class MessageAndRequestController extends BaseController implements Appli
         c.setTime(new Date());
         // if this is true then the date passed in is in the future and should be disallowed
         if (completionDate.before(c.getTime())) {
-          result.rejectValue(
-              "requestedCompletionDate", null, "Completion date must be a date in the future");
+          result.rejectValue("requestedCompletionDate", "messaging.errors.completionDateNotFuture");
         }
       } catch (ParseException e) {
         result.rejectValue(
-            "requestedCompletionDate", null, "Invalid date format - must be [" + format + "]");
+            "requestedCompletionDate",
+            "messaging.errors.invalidCompletionDateFormat",
+            new Object[] {format},
+            null);
       }
     }
     return completionDate;

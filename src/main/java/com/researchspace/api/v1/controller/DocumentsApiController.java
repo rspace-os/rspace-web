@@ -303,7 +303,10 @@ public class DocumentsApiController extends BaseApiController implements Documen
     if (doc.isSigned()) {
       errors.addError(
           new ObjectError(
-              "doc", String.format("Document %d is signed and  cannot be altered", doc.getId())));
+              "doc",
+              new String[] {"document.edit.errors.signed"},
+              new Object[] {doc.getId()},
+              null));
     }
     throwBindExceptionIfErrors(errors);
   }

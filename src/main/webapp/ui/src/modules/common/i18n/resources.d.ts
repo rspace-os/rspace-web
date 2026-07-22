@@ -978,6 +978,7 @@ export default interface Resources {
       "viewGroup": "View Group"
     },
     "help": {
+      "additionalServerProperties": "6i9j335fy1-additional-server-properties-settings",
       "apiDirect": "v0dxtfvj7u-api-direct-access",
       "appsIntroduction": "08ky7o0l1y-apps-introduction",
       "argos": "vkd8mt2ffb-argos-integration",
@@ -988,6 +989,7 @@ export default interface Resources {
       "chemistry": "wfxm4xwtio-chemistry-integration",
       "cloudstorage": "j2z5f5r90q-cloud-storage-integrations",
       "clustermarket": "e6pb7y8ak1-calira-integration",
+      "collaborationBetweenLabs": "l72tg5rzze-collaboration-between-labs",
       "controlledVocabularies": "8ujmvpa1no-controlled-vocabularies",
       "createContainer": "e5v4bvcl61-create-a-container",
       "createDialog": "x4y02hje72-edit-a-sample-or-container#create",
@@ -1008,17 +1010,21 @@ export default interface Resources {
       "evernote": "9ckpmfdq8m-evernote-integration",
       "fieldmark": "idbaaggghu-fieldmark-integration",
       "figshare": "ir4ybsamcn-figshare-integration",
+      "formsRadiosAndPicklists": "rozak8tlwr-forms#radios_and_picklists",
       "galaxy": "zzsl46jo5y-galaxy-integration",
       "gallery": "sl6mo1i9do-gallery",
       "gettingStarted": "tffkwcpizj-getting-started",
       "github": "y2080yw30x-github-integration",
       "igsnIdentifiers": "0wh5ziurr5-add-igsn-identifiers-to-your-samples#add-igsn-identifiers-to-your-samples",
       "import": "a5zm2c3vtw-import-records",
+      "inconsistentSharingFolder": "2toicmq4iu",
       "irods": "xt21074dln-irods-integration",
       "jupyter": "gg0ao0rqpt-jupyter-integration",
+      "labAdminRole": "8qekgz9y5b-the-lab-admin-role",
       "listOfMaterials": "cdrc4ed67l-list-of-materials",
       "luceneSyntax": "k919di8naq-search-inventory#expert_lucene_query_syntax",
       "moving": "dncoti2i4t-moving-items",
+      "multipleAccountsSameSso": "bk9ap372vv-setting-up-multiple-rspace-accounts-with-the-same-sso-identity",
       "nextcloud": "na3hn8ilee-nextcloud-integration",
       "omero": "bwwbpkll90-omero-integration",
       "orcid": "yhkbtnj61a-orcid-integration",
@@ -1027,6 +1033,7 @@ export default interface Resources {
       "permissions": "n09nmg4ax7-permissions",
       "protocolsio": "nid9q64pas-protocols-io-integration",
       "pubchem": "wfxm4xwtio-chemistry-integration#importing_chemical_structures_from_external_databases",
+      "publicationOfDocuments": "lqxsej13hv-publication-of-documents",
       "pyrat": "9kkeooveia-pyrat-integration",
       "pyratCors": "9kkeooveia-pyrat-integration#cors",
       "raid": "zb4c2c8a4b-raid-integration",
@@ -3541,7 +3548,6 @@ export default interface Resources {
         "location": {
           "label": "Location",
           "listExplanation": "No location selection required for list containers.",
-          "mustStoreTypes": "inventory:instrument.createOptions.location.mustStoreTypes",
           "specificExplanation": "Specify a single location for where the new instrument should be placed."
         },
         "template": {
@@ -4469,6 +4475,4723 @@ export default interface Resources {
     "values": {
       "invalidDate": "Invalid date",
       "none": "None"
+    }
+  },
+  "server.admin": {
+    "action": {
+      "audit": "Audit"
+    },
+    "admin": {
+      "title": "ResearchSpace Admin"
+    },
+    "audit": {
+      "actions": {
+        "label": "Actions"
+      },
+      "activity": {
+        "filter": {
+          "label": "You can filter this audit"
+        }
+      },
+      "communities": {
+        "label": "Communities"
+      },
+      "date": {
+        "label": "Date range"
+      },
+      "domains": {
+        "label": "Activity areas"
+      },
+      "downloadReport": {
+        "button": {
+          "label": "Download Audit Report"
+        },
+        "limit": "(maximum of 10,000 events per download)"
+      },
+      "filter": {
+        "and": "and",
+        "by": "by",
+        "communityPrompt": "Enter a Community to audit",
+        "dateRangePrompt": "Date range to audit",
+        "from": "from",
+        "globalIdPrompt": "Enter a global ID of a document, notebook, or Inventory item, e.g. SD12345",
+        "labGroupPrompt": "Enter a LabGroup to audit",
+        "or": "or",
+        "to": "to",
+        "usersPrompt": "Enter a user or users to audit"
+      },
+      "getReport": {
+        "button": {
+          "label": "Get Audit Report"
+        }
+      },
+      "global": {
+        "label": "Global RSpace Activity"
+      },
+      "heading": "Auditing",
+      "my": "My RSpace Activity",
+      "myCommunity": {
+        "label": "My Community's RSpace Activity"
+      },
+      "myGroup": {
+        "label": "My LabGroup's RSpace Activity"
+      },
+      "title": "Auditing"
+    },
+    "cloud": {
+      "createGroup": {
+        "labGroup": {
+          "controlledSharing": {
+            "cloud": "Only you and your PI can see your data by default.",
+            "label": "Controlled sharing.",
+            "nonCloud": "As PI, you can see the data of all members of your group. Other group members can only see their own data by default.",
+            "shareInstructions": "You can let others in your lab see or edit a specific document or notebook by selecting it in the workspace and clicking SHARE. YOU decide when to share your work, who to share it with and what level of access other users have; either 'read only' or 'edit'."
+          },
+          "intro": "You can organise your colleagues into LabGroups to make collaboration and oversight easier.",
+          "openSharing": "Open sharing. It may be that your group is 'open' and you want all data to be shared automatically amongst its members. Your group members can opt-in to this after they join the group, by enabling autosharing.",
+          "sharingOptionsIntro": "There are two options for sharing data in LabGroups:",
+          "visibilityNote": "Your work is ONLY ever visible to members of groups that you belong to."
+        },
+        "projectGroup": {
+          "dataPrivate": "All data is private, unless explicitly shared among group members.",
+          "heading": "Create a Project Group",
+          "intro": "You can organise your colleagues into Project Groups to allow data sharing.",
+          "leave": "Any group member may leave, except the last Group Owner.",
+          "noPi": "There is no PI in a Project Group. There must be at least one Group Owner, by default the creator of the group.",
+          "ownerDelete": "The Group Owner can delete the group.",
+          "ownerInvite": "The Group Owner can invite new members.",
+          "ownerPromote": "The Group Owner can make other users Group Owners."
+        }
+      },
+      "createGroupSuccess": {
+        "hereLinkText": "here"
+      }
+    },
+    "dialogs": {
+      "changeEmail": {
+        "label": {
+          "confirm": "Confirm new e-mail",
+          "new": "New e-mail",
+          "password": "Enter password"
+        }
+      },
+      "changeFormIcon": {
+        "instruction": "Select a file and view resized to icon proportions before submitting"
+      },
+      "changePassword": {
+        "label": {
+          "confirm": "Confirm new password",
+          "current": "Enter current password",
+          "new": "Enter new password"
+        }
+      },
+      "changeVerificationPassword": {
+        "label": {
+          "confirm": "Confirm new verification password",
+          "current": "Enter current verification password",
+          "new": "Enter new verification password"
+        }
+      },
+      "setVerificationPassword": {
+        "label": {
+          "confirm": "Confirm verification password",
+          "new": "Enter verification password"
+        }
+      },
+      "uploadImage": {
+        "instruction": "Please upload a gif, jpeg, or png format profile image"
+      },
+      "verificationPassword": {
+        "description": "This password provides an additional layer of security when performing sensitive actions such as changing email address or signing documents.<strong> It should <em> not </em> be the same as your SingleSignOn or Google password. </strong>"
+      }
+    },
+    "directory": {
+      "cloud": {
+        "searchPrompt": "Please search for users using the search bar on the right of the page."
+      },
+      "labGroupList": {
+        "communityNameHeader": "Community Name",
+        "nameHeader": "LabGroup Name"
+      },
+      "noResults": {
+        "emptySearchResults": "No {0} were found. Please try searching again."
+      },
+      "projectGroupList": {
+        "nameHeader": "Project Group Name"
+      },
+      "projectGroups": {
+        "title": "Project Groups"
+      },
+      "search": {
+        "placeholder": "By name, email or username"
+      },
+      "title": "Directory",
+      "userList": {
+        "orcidLogoAlt": "ORCiD Logo"
+      }
+    },
+    "form": {
+      "create": {
+        "fieldTypeSelect": "Select Field Type"
+      }
+    },
+    "header": {
+      "runAs": {
+        "activeBanner": "Currently operating as"
+      }
+    },
+    "mainMenu": {
+      "heading": "Welcome!"
+    },
+    "menu": {
+      "admin": {
+        "audit": "Auditing",
+        "inOut": "Export - Import",
+        "listRecordSharing": "Shared Documents",
+        "newGroup": "Create LabGroup",
+        "newProjectGroup": "Create Project Group",
+        "publicListRecordSharing": "Users' Published Documents",
+        "trash": "Deleted Resources",
+        "trashList": "Deleted Items"
+      },
+      "labGroup": "My LabGroups",
+      "profile": "My Profile",
+      "publicListRecordSharing": {
+        "pi": "My Group's Published Documents",
+        "user": "My Published Documents"
+      },
+      "scrollButtons": {
+        "next": "Next menu items",
+        "previous": "Previous menu items"
+      },
+      "templates": {
+        "create": "Create Form",
+        "formEditor": "Form Editor",
+        "list": "Manage Forms"
+      },
+      "user": "Edit Profile"
+    },
+    "passwordChange": {
+      "errors": {
+        "incorrectCurrentPassword": "The current password is incorrect"
+      },
+      "success": "Password changed successfully"
+    },
+    "table": {
+      "about": {
+        "header": "About"
+      },
+      "admins": {
+        "header": "Admins"
+      },
+      "created": {
+        "header": "Created"
+      },
+      "name": {
+        "header": "Name"
+      }
+    },
+    "unknown": {
+      "group": {
+        "label": "&lt;unknown group&gt;"
+      },
+      "user": {
+        "label": "&lt;unknown user&gt;"
+      }
+    },
+    "user": {
+      "actions": {
+        "label": "Manage Roles"
+      },
+      "affiliation": {
+        "label": "Affiliation"
+      },
+      "apiKey": {
+        "label": "Manage API key"
+      },
+      "confirmPassword": "Confirm Password",
+      "email": "E-Mail",
+      "id": "Id",
+      "orcid": {
+        "label": "ORCID"
+      },
+      "remove": {
+        "label": "Remove User"
+      },
+      "roles": "Current Roles",
+      "sid": "SID",
+      "signupSource": "Signed up with"
+    },
+    "userDeletion": {
+      "errors": {
+        "filestoreRemovalFailed": "Problem during filestore removal",
+        "resourceListUnreadable": "Resource list file not readable",
+        "sysadminRequired": "Only user with sysadmin role can delete filestore resources"
+      }
+    },
+    "userList": {
+      "heading": "Current Users",
+      "title": "User List"
+    },
+    "userProfile": {
+      "apiKey": {
+        "errors": {
+          "notSet": "API key is not set",
+          "runAs": "API key value cannot be accessed when 'operating as' another user"
+        }
+      },
+      "email": {
+        "errors": {
+          "alreadyRegistered": "There is already user registered with this email",
+          "confirmationMismatch": "New email field does not match the confirm email",
+          "incorrectPassword": "The current password is incorrect",
+          "tooLong": "Email address is too long - should be less than {0} characters",
+          "unchanged": "Provided email is the same as your current email"
+        }
+      },
+      "heading": "User Profile",
+      "message": {
+        "delivery": {
+          "label": "Preferred delivery method"
+        },
+        "notify": {
+          "label": "Notify me when"
+        },
+        "title": "Messaging and Notification Preferences"
+      },
+      "messageSettingsChanged": {
+        "confirmation": "Message preferences updated"
+      },
+      "otherPreferences": {
+        "hideProfile": {
+          "label": "Hide my profile from public listings"
+        },
+        "title": "Other Preferences"
+      },
+      "pageLinks": {
+        "changePassword": "Change Password",
+        "changeVerificationPassword": "Change Verification Password",
+        "deleteOrcidId": "Remove ORCID ID",
+        "forgotVerificationPassword": "Reset Verification Password",
+        "setOrcidId": "Set ORCID ID",
+        "setVerificationPassword": "Set Verification Password",
+        "uploadImage": "Change Image"
+      },
+      "preferences": {
+        "updateButton": {
+          "label": "Update Preferences"
+        }
+      },
+      "sectionLabel": {
+        "collaborationGroups": "Collaboration Groups:",
+        "labGroups": "LabGroups",
+        "projectGroups": "Project Groups:"
+      },
+      "selfDeclarePi": {
+        "addPiRole": "Add PI role",
+        "canManage": "You can manage your PI role.",
+        "errors": {
+          "alreadyPi": "User is already a PI.",
+          "disabled": "Self-declaring PI not enabled.",
+          "hasLabGroups": "You must delete or transfer over all LabGroups before you can remove your PI status.",
+          "notAllowed": "User cannot self-declare as a PI (isAllowedPiRole=false).",
+          "notPi": "User is not a PI."
+        },
+        "heading": "Manage PI Role",
+        "isPi": "You have PI role.",
+        "notPi": "You are a regular user, without PI role.",
+        "removePiRole": "Remove PI role"
+      },
+      "title": "User Settings"
+    },
+    "verificationPassword": {
+      "set": {
+        "errors": {
+          "alreadySet": "Verification password has already been set."
+        },
+        "success": "Verification password set successfully"
+      }
+    }
+  },
+  "server.admin.community": {
+    "create": {
+      "group": {
+        "bePi": {
+          "description": "<strong>Make yourself the group's PI</strong> - the group will be created immediately and member invitations sent."
+        },
+        "creationChoicesIntro": "When creating a LabGroup with this form, you must either:",
+        "heading": "Create a LabGroup",
+        "newPi": {
+          "inviteByEmailLabel": "Invite new or existing users to join the group by automated email."
+        },
+        "newUsers": {
+          "heading": "New users"
+        },
+        "nominatePi": {
+          "description": "<strong>Nominate someone else to be PI for the group</strong>, which will then only be created and members invited when the nominee accepts the PI role."
+        },
+        "rspaceUsers": {
+          "heading": "RSpace users"
+        },
+        "title": "Create a Group"
+      }
+    },
+    "group": {
+      "created": {
+        "success": {
+          "conclusion1": "Invited users will be added to the group when they accept their invitation.",
+          "conclusion2a": "View and manage your new group {0}",
+          "conclusion2b": "Once the group is created, you'll be able to link to it from your {0} page.",
+          "currentPiCreated": "You have created a group called {0}.",
+          "currentPiInvitations": "The following people have been invited to join the group:",
+          "heading": "Congratulations!",
+          "nominationInvitationsPending": "When this nomination is accepted, the following people will be invited to join the group.",
+          "nominationStarted": "You have initiated a group called {0} and nominated {1} to be Principal Investigator.",
+          "title": "Group created"
+        }
+      }
+    }
+  },
+  "server.apps": {
+    "apps": {
+      "dmp": {
+        "errors": {
+          "import": "Couldn't import DMP",
+          "list": "Couldn't list DMPs"
+        }
+      },
+      "dmpAssistant": {
+        "errors": {
+          "connect": "Error connecting to DMP Assistant.",
+          "importBatchTooLarge": "A maximum of {0} plans can be imported in one request.",
+          "refresh": "Your DMP Assistant connection has expired and could not be refreshed. Please reconnect to DMP Assistant from the Apps page.",
+          "upstream": "DMP Assistant returned an error: {0}."
+        }
+      },
+      "dmpOnline": {
+        "errors": {
+          "connect": "Error connecting to DMPonline."
+        }
+      },
+      "dmpTool": {
+        "errors": {
+          "alreadyExists": "A DMP with id {0}, title: {1} already exists",
+          "download": "Couldn't download DMP for id: {0}. {1}",
+          "downloadFile": "Couldn't download DMP file for id: {0}",
+          "getDetails": "Couldn't get details of DMP with id: {0}",
+          "loadUnavailable": "Unable to load your DMPs. For more information visit {0}",
+          "noAccessToken": "Access token isn't enabled - user must connect in Apps page",
+          "updateDoi": "Couldn't update DMP with DOI: {0}"
+        },
+        "update": {
+          "success": "DMP updated"
+        }
+      },
+      "dsw": {
+        "errors": {
+          "credentials": "Cannot access the server using the supplied API key",
+          "project": "Error retrieving DSW project",
+          "projects": "Error getting DSW projects",
+          "serverUrl": "Cannot access the specified server URL"
+        }
+      },
+      "egnyte": {
+        "errors": {
+          "authenticationFailed": "Couldn't authenticate with provided credentials.",
+          "credentialsRequired": "Egnyte username and password must be provided.",
+          "invalidAccessToken": "Received un-workable Egnyte access token for provided credentials."
+        }
+      },
+      "errors": {
+        "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}"
+      },
+      "fieldmark": {
+        "errors": {
+          "createIgsnCandidateFields": "Error creating IGSN candidate fields for notebook \"{0}\"",
+          "createIgsnCandidateFieldsUnsupported": "Not possible to create IGSN candidate fields for notebook \"{0}\" because {1}",
+          "fetchNotebooks": "Error fetching notebooks due to the Fieldmark server",
+          "importNotebook": "Error importing notebook \"{0}\" from Fieldmark: {1}",
+          "notebookIdRequired": "Error importing notebook because the request had an empty \"notebookId\""
+        }
+      },
+      "github": {
+        "errors": {
+          "getFolderContents": "Error while getting GitHub folder contents",
+          "parseTreeRequest": "Error while parsing the request"
+        }
+      },
+      "nextcloud": {
+        "errors": {
+          "notConfigured": "Nextcloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+        }
+      },
+      "owncloud": {
+        "errors": {
+          "notConfigured": "ownCloud cannot be enabled because it has not been fully configured for this deployment. A server URL and OAuth credentials (client id and secret) are required. Please contact your System Administrator."
+        }
+      },
+      "raid": {
+        "errors": {
+          "associateGroup": "Not able to associate RAiD to group: {0}",
+          "connection": "No connection to RAiD for server alias \"{0}\"",
+          "disassociateGroup": "Not able to disassociate RAiD from group: {0}",
+          "folderLookup": "Not able to get RAiD associated to the project group with folder ID ''{0}'' for the user ''{1}''",
+          "folderNotProjectGroup": "Not able to get RAiD associated to the project group with folder ID ''{0}'' for the user ''{1}'' because that is not a Project Group shared folder",
+          "listForUser": "Not able to get RAiD list for the user \"{0}\"",
+          "noAssociationForGroup": "The group with projectGroupId {0} has no RAiDs already associated."
+        }
+      },
+      "slack": {
+        "errors": {
+          "noAccessToken": "Please, add this Slack channel again on RSpace (no access token found).",
+          "noConnectedUser": "There are no RSpace users associated with this Slack account! Please connect to Slack from the RSpace Apps tab.",
+          "tooManyConnectedUsers": "There is more than 1 RSpace user associated with this Slack account! [{0}, {1}...]",
+          "verificationCodeMismatch": "Verification token does not match!"
+        },
+        "saveConversation": {
+          "done": "Done. {0} messages saved from Slack.",
+          "error": "Error while saving Slack conversation [{0}]",
+          "genericDefault": "Please provide a valid time period, e.g. '7 days' or '7d'",
+          "help": "Typing `/rs-save-conversation [time period]` creates a document on RSpace with Slack messages from the current Slack channel. For example, `/rs-save-conversation 5 days` saves messages from the last 5 days. Other accepted time period formats are: 1d 5h 10min, from 2017-06-01 to 2017-06-02T14:12:00, to 2018, from 2017. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature.",
+          "maxTimePeriod": "Sorry, please provide a time period not longer than {0} days.",
+          "noMessages": "No messages found in a selected time period.",
+          "ok": "Creating a document ''{0}''..."
+        },
+        "search": {
+          "help": "Typing `/rs-search [search term]` will look up your search term using RSpace basic search and post the first five results. Search term can be a document name, tag or global ID. For example, `/rs-search Example*`. If you've not already done so, please connect RSpace to Slack from the RSpace Apps tab to set up this feature."
+        }
+      }
+    },
+    "connect": {
+      "authorizationError": {
+        "closeWindowNotice": "You can close this window.",
+        "detailsHeading": "Details",
+        "notAuthorizedNotice": "RSpace was not authorized to use {0}: {1}.",
+        "retryPrompt": "Please try again, or contact your System Admin.",
+        "stateMismatch": "The OAuth2 'state' parameter is missing or doesn't match.",
+        "title": "Authorization Error"
+      },
+      "box": {
+        "connectedNotice": "Box API connection is now established. This window will be closed shortly."
+      },
+      "connected": {
+        "closeWindowNotice": "You may now close this window.",
+        "defaultTitle": "RSpace connection result",
+        "title": "Connected"
+      },
+      "egnyte": {
+        "connectionSetup": {
+          "connectButton": "Connect",
+          "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
+          "passwordPlaceholder": "Egnyte Password",
+          "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
+          "title": "Connect to Egnyte",
+          "usernamePlaceholder": "Egnyte Username"
+        }
+      },
+      "msoffice": {
+        "officeView": {
+          "convertFilePrompt": "Do you want to convert the file <strong>{0}</strong> so you can edit it in Office.com?",
+          "convertHeading": "Do you want to convert this RSpace file?",
+          "convertNotice": "Office.com cannot edit a file with <strong>.{0}</strong> extension, but it can convert the file to <strong>.{1}</strong>, which will be editable. Conversion shouldn''t, but may result in lost content."
+        },
+        "unsupportedView": {
+          "heading": "Unsupported action",
+          "notice": "RSpace can''t determine the way to open file <strong>{0}</strong> (.{1} type) for <strong>{2}</strong> in Office.com.<br/>That''s unexpected. Please try again, or contact your System Admin."
+        }
+      },
+      "msteams": {
+        "domainConfig": {
+          "connectButton": "Connect",
+          "connectHeading": "Connect to your RSpace server:",
+          "noAccountHeading": "Don't have an account yet?",
+          "signupLinkText": "https://community.researchspace.com",
+          "signupPrompt": "Sign up for free on {0}",
+          "title": "Initial Tab configuration screen for MS Teams - Domain selection"
+        },
+        "rspaceAuthentication": {
+          "title": "RSpace authentication screen for MS Teams"
+        },
+        "simpleDocView": {
+          "loggedInAs": "Logged in as: {0}",
+          "signOut": "Sign out",
+          "title": "Simple document view for MS Teams"
+        },
+        "tabConfig": {
+          "currentServerLabel": "Current RSpace Server:",
+          "title": "MS Teams Tab config"
+        }
+      },
+      "oneDrive": {
+        "redirectPageTitle": "One Drive Redirect Page"
+      },
+      "orcid": {
+        "connectedPrefix": "Success - Your Orcid ID is",
+        "connectedSuffix": "This window will close shortly."
+      }
+    },
+    "external": {
+      "messaging": {
+        "send": {
+          "failedDefault": "Could not send message.",
+          "failedStatus": "Could not send message: the webhook returned \"{0}\".",
+          "msTeamsUnauthorized": "Microsoft Teams rejected the message as unauthorized (401). This usually means the Teams workflow only accepts authenticated senders, which RSpace's webhook posts cannot be. In Teams, check the workflow is turned on, and that it was created from a template such as \"Send webhook alerts to a channel\" rather than one restricted to specific people or to people in your organisation."
+        }
+      }
+    },
+    "repository": {
+      "connection": {
+        "failed": "Failed! {0}",
+        "success": "Success! {0}"
+      }
+    },
+    "search": {
+      "noResults": "Your search returned no results"
+    }
+  },
+  "server.core": {
+    "api": {
+      "pubchem": {
+        "errors": {
+          "unexpected": "An unexpected error occurred."
+        }
+      }
+    },
+    "date": {
+      "format": "MM/dd/yyyy"
+    },
+    "errors": {
+      "ajax": {
+        "unauthenticated": {
+          "refreshRequired": "You are no longer authenticated - please refresh the page and log in again."
+        }
+      },
+      "ajaxFragment": {
+        "notice": "There was an error responding to this request, which has been logged.",
+        "refLabel": "Ref: {0}"
+      },
+      "allFields": {
+        "required": "Please fill in all the fields."
+      },
+      "authorization": {
+        "document": {
+          "signed": "This document has already been signed."
+        },
+        "failed": "Attempt to access resource of type {0} identified by {1} by user {2} to perform action {3}",
+        "failure": {
+          "detailed": "Unauthorized attempt by {0} to {1}",
+          "polite": "Sorry, you don''t have permission to {0}"
+        },
+        "signing": "Only the  record owner can sign the record."
+      },
+      "captcha": {
+        "response": {
+          "missing": "Please confirm that you're not a robot."
+        },
+        "verification": {
+          "failed": "Invalid captcha response, please try again."
+        }
+      },
+      "date": "{0} is not a date.",
+      "dateOutsideAllowedRange": "Default date is outside the allowed range.",
+      "detail": "{0}",
+      "disorderedRange": "Default value lies outside the min/ max range.",
+      "emptyString": {
+        "generic": "Field cannot be empty.",
+        "polite": "Please enter a value for {0}."
+      },
+      "existing": {
+        "user": "This username ({0}) or e-mail address ({1}) already exists. Please try a different username and/or email.",
+        "username": "This username ({0}) already exists. Please try a different username.",
+        "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn't be taken by an alias"
+      },
+      "fromDateLaterThanToDate": "From date should be before to date.",
+      "invalid": "{0} is invalid.",
+      "invalidChars": "{0} is not an allowed character for {1}",
+      "invalidDateFormat": "Invalid date format used.",
+      "invalidDateFormattingString": "Invalid date formatting String used.",
+      "invalidOrderByClause": "Invalid order by clause {0} - should be one of {1}",
+      "invalidPassword": "Password must be between {0} and {1} characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[]^_`'{'|'}'~",
+      "invalidRole": "{0} is not a valid role name - must be one of {1}",
+      "invalidStringFormat": "Invalid string format {0} for parameter {1}; should match {2}",
+      "invalidUsername": {
+        "relaxed": "Username must consist of alphanumeric characters.",
+        "strict": "Username must be at least 6 alphanumeric characters."
+      },
+      "invalidXml": {
+        "content": "XML content for field {0} was invalid: {1}",
+        "namespace": "XML content for property {0} has invalid namespace - it  should be {1} but was {2}."
+      },
+      "login": {
+        "adminLogin": {
+          "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
+        },
+        "credentials": {
+          "wrong": "Invalid username or password, please try again."
+        },
+        "lockout": {
+          "policyDescription": "After four unsuccessful login attempts the account is temporarily locked - try again in 10 minutes."
+        }
+      },
+      "maxLength": "{0} cannot be greater than {1} characters.",
+      "minDateLaterThanMaxDate": "Minimum date is later than maximum date.",
+      "minGtMax": "Min value is greater than max value",
+      "minLength": "{0} cannot be less than {1} characters.",
+      "noOptions": "No search option provided",
+      "noTerms": "No search term provided",
+      "noValue": {
+        "multipleChoice": "No value given for multiple choice option.",
+        "name": "No value given for name field."
+      },
+      "noWildcards": "No wildcards allowed for sysadmin search but was {0}",
+      "notUnique": "{0} is not a unique value, please try another.",
+      "number": {
+        "decimalPlaces": "Decimal places must be a whole number between 0 and 127.",
+        "invalidNumber": "Invalid number format"
+      },
+      "operation": {
+        "failed": {
+          "message": "{0} failed for the following reasons: {1}"
+        }
+      },
+      "page": {
+        "contactSupportNotice": "Please inspect the message detail below – if you believe this to be a server error, please contact ResearchSpace support. You might also try asking the resource owner to share the resource with you.",
+        "databaseUnavailable": "Database exception - query could not be executed.",
+        "genericServerError": "An error occurred on the server.",
+        "idAtTimestamp": "Id - {0} at {1}",
+        "insufficientPermissions": "You have insufficient permissions to view the resource, or you requested an unauthorized or non-existent resource.",
+        "reasonsIntro": "This is usually because",
+        "unauthorizedOperation": "You attempted to do an operation which is unauthorized or not available to you.",
+        "unavailableResource": "An expected resource was unavailable (null). This is probably a server error - please report this to support.",
+        "unhandledExceptionNotice": "An exception occurred on the server. If it persists, please contact ResearchSpace support."
+      },
+      "password": {
+        "conflict": "Password and Confirm Password fields are not identical.",
+        "insecurePassword": "Please choose a more secure password.",
+        "invalid": "Invalid password.",
+        "notEqualUsername": "Please use a  password other than your username."
+      },
+      "reauthentication": {
+        "failed": "Reauthentication failed, please try again."
+      },
+      "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",
+      "required": "{0} is a required field.",
+      "resource": {
+        "inaccessible": "{0} with id [{1}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it."
+      },
+      "searchOptionBlank": "Empty search option",
+      "searchTermBlank": "Empty search term",
+      "searchTermMinLength": "Search term must be at least {0} characters",
+      "searchTermTooLong": "Search term at index {2} is too long ({0} chars) - max search string length is {1} chars.",
+      "signing": {
+        "failed": "Signing failed"
+      },
+      "signupCode": {
+        "failed": "Please supply the correct signup code (this is case sensitive)."
+      },
+      "termCannotParse": "Cannot parse the search term {0}",
+      "termTooPermissive": "Search term [{0}] is too permissive - please use a more precise search term",
+      "termsOptionsMismatch": "The number of terms ({0}) should equal the number of options ({1})",
+      "textQueryWildcardStartDisallowed": "Search term [{0}] should not begin with a wildcard (* or ?).",
+      "unknownSearchOption": "Unknown search option {0}",
+      "username": "An invalid username was specified",
+      "valueCount": {
+        "tooMany": "Only {0} values can be handled at once, please choose fewer items."
+      }
+    },
+    "label": {
+      "password": "Password"
+    }
+  },
+  "server.dashboard": {
+    "dashboard": {
+      "createMessage": {
+        "label": "Create Message"
+      },
+      "errors": {
+        "invalidSession": "No valid session",
+        "replySaveFailed": "Could not save message reply, this has been logged"
+      },
+      "message": {
+        "completionDateLabel": "Completion Date?",
+        "optionalMessageLabel": "Optional Message",
+        "recipientsLabel": "To",
+        "requestTypeLabel": "Request Type"
+      },
+      "messages": {
+        "header": "Message Settings"
+      },
+      "new": {
+        "calendar": {
+          "entry": "Create a Calendar Entry"
+        }
+      },
+      "received": {
+        "header": "Requests and Messages Received"
+      },
+      "sent": {
+        "header": "Open Sent Requests"
+      }
+    },
+    "messages": {
+      "completionBy": {
+        "label": "Due for completion by:"
+      },
+      "concerning": {
+        "label": "Concerning:"
+      },
+      "empty": "There are no active messages or requests.",
+      "from": {
+        "label": "From:"
+      },
+      "joinLabGroup": {
+        "warning": "If you accept, the group PI will be able to see all of your data"
+      },
+      "joinProjectGroup": {
+        "warning": "Project Groups have no PI, your documents won't be visible <br/> to other group members until you explicitly share them."
+      },
+      "joinRequest": {
+        "toJoin": "To join:"
+      },
+      "orderBy": {
+        "completionDate": "| Completion date",
+        "label": "Order by",
+        "sender": "| Sender",
+        "time": "Time"
+      },
+      "recipients": {
+        "allUsers": "Recipients: All Users",
+        "count": "{0} recipients:"
+      },
+      "reply": {
+        "label": "Reply",
+        "placeholder": "Add optional message"
+      },
+      "sent": {
+        "label": "Sent:"
+      },
+      "setStatus": {
+        "label": "Set Request Status:"
+      },
+      "status": {
+        "accepted": "ACCEPTED",
+        "acceptedShareWithPi": "ACCEPTED - share data with PI"
+      },
+      "title": "My Messages",
+      "type": {
+        "global": "Global",
+        "message": "Message",
+        "requestSuffix": "request"
+      },
+      "updateReply": {
+        "label": "Update & Reply"
+      }
+    },
+    "messaging": {
+      "errors": {
+        "completionDateNotFuture": "Completion date must be a date in the future",
+        "invalidCompletionDateFormat": "Invalid date format - must be [{0}]",
+        "invalidRecipient": {
+          "deliveryFailure": "Message could not be sent to user {0} - {1}"
+        },
+        "noRecipients": {
+          "emptyRecipientList": "There are no valid recipients for message type: {0}"
+        },
+        "sendFailed": "Could not send message"
+      },
+      "newNotificationsTitle": "My New Notifications",
+      "request": {
+        "cancelled": "Request cancelled",
+        "cancelledBy": "Request cancelled by {0}"
+      },
+      "sendMessageLinkHelpText": "Send a new message from the link above, or use the message icon anywhere in the application.",
+      "sendMessageLinkLabel": "Send Message"
+    },
+    "myrequests": {
+      "cancelRequest": "Cancel Request",
+      "dueForCompletionBy": "due for completion by",
+      "empty": "There are no sent requests.",
+      "orderBy": {
+        "completionDate": "Completion date",
+        "label": "Order by:",
+        "timeSent": "Time sent"
+      },
+      "request": {
+        "sentLabel": "Request<br>Sent:"
+      },
+      "requestWord": "request",
+      "sentToAllUsers": "Sent to all users",
+      "status": {
+        "label": "Status:"
+      },
+      "title": "My Sent Requests",
+      "youSentA": "You sent a"
+    },
+    "notificationType": {
+      "archiveExportCompleted": "Export Completed",
+      "documentDeleted": "Document Deleted",
+      "documentEdited": "Document Edited",
+      "documentShared": "Document Shared",
+      "documentUnshared": "Document Unshared",
+      "processCompleted": "Process Completed",
+      "processFailed": "Process Failed",
+      "requestStatusChange": "Request Status Change"
+    },
+    "notifications": {
+      "concerning": "concerning",
+      "deleteAll": "Delete all",
+      "deleteDisplayed": "Delete all displayed",
+      "empty": "There are no new notifications.",
+      "generatedEvent": "{0} generated a {1} event.",
+      "markAsRead": "Mark as read",
+      "orderBy": "Order By:",
+      "sender": "Sender",
+      "sent": "Notification<br>Sent:",
+      "timeSent": "Time Sent",
+      "title": "My Notifications",
+      "withMessage": "with message:"
+    }
+  },
+  "server.email": {
+    "email": {
+      "collabGroupInvitation": {
+        "response": "{0, select, COMPLETED {{1} has accepted your invitation to join the {2} {3}.} REJECTED {{1} has rejected your invitation to join the {2} {3}.} other {}}"
+      },
+      "common": {
+        "aboutRSpaceDescription": "Designed in collaboration with the University of Wisconsin and three years in the making, RSpace is an electronic lab notebook designed for academic labs. It's also a research 'space' where labs can collaborate with other labs, at your institution or around the world.<br/>And, it's absolutely free!",
+        "aboutRSpaceHeading": "About RSpace",
+        "aboutRSpaceIntro": "RSpace Community is a new concept.",
+        "dontReply": "Please don't reply to this email, it was generated automatically.",
+        "greeting": "Hello {0},",
+        "greetingDefault": "Hello,",
+        "notificationPrefNewUser": "When you connect to RSpace for the first time, all of the various notification options will be set to 'on' by default.<br>If you don’t want to get notifications from RSpace you can set your notification preferences in My RSpace > My Profile. The notifications settings are at the bottom of the page.",
+        "notificationPrefSuffix": "Too many notifications? Set your messaging preferences in MyRSpace -> My Profile",
+        "signatureSignOff": "Best wishes,",
+        "signatureTeam": "The RSpace team",
+        "sourceIpFooter": "This request was generated from IP address {0}. To find out more about this IP address, please visit <a href=\"{1}\">ip-lookup.net</a>."
+      },
+      "group": {
+        "type": {
+          "collaborationGroup": "collaboration group",
+          "labGroup": "lab group",
+          "projectGroup": "project group"
+        }
+      },
+      "groupInvitation": {
+        "response": "{0, select, COMPLETED {{1} has accepted your invitation to join the {2} {3}.} REJECTED {{1} has declined your invitation to join the {2} {3}.} other {}}"
+      },
+      "message": {
+        "subject": "RSpace message"
+      },
+      "recordWitnessed": {
+        "response": "{0, select, COMPLETED {{1} has witnessed your signature of document {3}.} REJECTED {{1} ({2}) has declined to witness your signature of document {3}.} other {}}"
+      },
+      "request": {
+        "subject": "RSpace request"
+      },
+      "requestStatus": {
+        "generationFailed": "The request status notification could not be generated.",
+        "updated": "{0} updated request status, altered from {1} to {2}"
+      }
+    }
+  },
+  "server.email.account": {
+    "email": {
+      "account": {
+        "accountEnablementNotification": {
+          "disabled": "The RSpace system administrator has disabled your user account. For more details, please contact your RSpace administrator at <a href=\"mailto:{0}\">{0}</a>.",
+          "enabled": "The RSpace system administrator has enabled your user account. You can now <a href=\"{0}/workspace\">log in to RSpace</a>.",
+          "subjectDisabled": "RSpace account disabled",
+          "subjectEnabled": "RSpace account enabled"
+        },
+        "activationRequest": {
+          "accept": "To <b>accept</b> this request, please click <a href=\"{0}\"> to accept. </a>",
+          "body": "A new registrant for the {0} installation has signed up.",
+          "details": "The details are as follows:",
+          "email": "Email: {0}",
+          "fullName": "Full name: {0}",
+          "reject": "To <b>reject</b> this request, please click <a href=\"{0}\"> to deny. </a>",
+          "subject": "Sign up request from {0}"
+        },
+        "defaultWelcome": {
+          "access": "You can access the application at <a href=\"{0}/workspace\">RSpace</a>.",
+          "browserAdvice": "We support recent versions of Chrome, Safari and Firefox.<br>We do not support Edge or Internet Explorer.",
+          "contact": "For any help, comments, or questions, contact <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
+          "groupMember": "You are part of the Lab Group ''{0}'', and can share documents, send messages, and collaborate with other members of the group.",
+          "guidanceHeading": "Guidance",
+          "guidanceIntro": "Here is some guidance for getting started with RSpace.",
+          "guidanceVideo": "As background you might like to watch our <a href=\"https://youtu.be/bhRExXIGxek&ab_channel=ResearchSpace\">Getting Started for Researchers video</a>.",
+          "helpDocs": "Our full <a href=\"https://researchspace.helpdocs.io/\">Guidance Notes</a> are also available, and can be accessed through the in-app <b>Need Help?</b> button on the bottom-right of RSpace.",
+          "individualUser": "You are registered as an individual user.",
+          "intro": "Welcome to ResearchSpace! We're pleased that you are using our system and we want to make your experience as positive as possible.",
+          "recommendModernBrowser": "RSpace uses modern HTML technology, and to get the best experience we recommend a modern browser:",
+          "subject": "Welcome to RSpace"
+        },
+        "emailChangeConfirmation": {
+          "body": "Your RSpace email address was updated. The new address is {0}.",
+          "ifNotYou": "If you did not just change your email, please get in touch with your RSpace support team.",
+          "subject": "Email address update"
+        },
+        "emailChangeVerification": {
+          "body": "Please use the link below to verify and activate your new email account in RSpace.",
+          "subject": "Email address update"
+        },
+        "genericAccountActivation": {
+          "activated": "Your account is now activated and can be accessed by going to <a href=\"{0}\">{0}</a> in your browser.",
+          "subject": "RSpace account activated"
+        },
+        "genericAccountDenial": {
+          "denied": "Unfortunately, your request was not accepted.",
+          "subject": "RSpace account denied"
+        },
+        "genericAccountReview": {
+          "body": "Thank you for registering with RSpace.",
+          "contactSupport": "Please contact support@researchspace.com for more information.",
+          "greeting": "Dear {0},"
+        },
+        "newUserAccountComplete": {
+          "body": "The RSpace system administrator has created a {0} account for you.<p>To log into your server, open <a href=\"{1}/workspace\">RSpace</a>.</p><p>Your <b>username</b> for this account is {2}.<br>Your system administrator can provide your login password if they have not already done so. If your server is using a single sign-on technology provided by your institution then your login credentials are most likely the same username and password you use to access all other institutional systems.</p><p>To change your profile details, go to <b>My RSpace</b> &gt; <b>My Profile</b>.</p><p>For documentation and instructional videos, use the <b>Need Help?</b> button in RSpace or visit the <a href=\"https://researchspace.helpdocs.io/\">RSpace help website</a>. To request assistance from ResearchSpace support, select <b>Chat with us</b> in the help interface.</p>",
+          "subject": "RSpace account created"
+        },
+        "passwordResetComplete": {
+          "body": "You, or someone else, has reset the {0} for the RSpace account at this email address.",
+          "ifNotYou": "If you did not just reset your {0}, please get in touch with your RSpace support team.",
+          "subject": "RSpace password changed"
+        },
+        "passwordResetMessage": {
+          "body": "You, or someone else, requested to reset their {0} for RSpace at this email address.",
+          "ifGenuine": "If this is a genuine request, and you wish to change your {0}, then please use the link below to reset your {0}:",
+          "subject": "RSpace password change request"
+        },
+        "usernameReminderMessage": {
+          "body": "You, or someone else, requested a username reminder for RSpace at this email address.",
+          "ifNotYou": "If you did not request a username reminder, please get in touch with your RSpace support team.",
+          "subject": "RSpace username reminder",
+          "username": "Your username is {0}<br>You can <a href=\"{1}\">login to RSpace</a>."
+        },
+        "verificationPasswordResetComplete": {
+          "subject": "RSpace verification password changed"
+        }
+      }
+    }
+  },
+  "server.email.admin": {
+    "email": {
+      "admin": {
+        "adminRunningAsUserNotification": {
+          "body": "The RSpace system administrator ({0}) has recently logged into your RSpace account.<p>There are several reasons why this might happen:</p><ul><li>To perform an admin function</li><li>Maintenance work</li><li>User assistance or fault diagnosis</li></ul><p>If this is unexpected, or your account has been tampered with, please contact the RSpace admin at <a href=\"mailto:{1}\">{1}</a>.</p><p>Best wishes,<br>RSpace admin</p>",
+          "subject": "RSpace admin is using your account"
+        },
+        "promoteToPiComplete": {
+          "bodyLabGroupLink": "To view your lab group, please go to <a href=\"{0}\">{0}</a>.",
+          "bodyProfileLink": "If you would like to change your profile details for your account, please go to <a href=\"{0}\">{0}</a>.",
+          "bodyPromoted": "The RSpace system administrator has set you up with a PI role.",
+          "subject": "RSpace admin account created"
+        },
+        "supportLogFiles": {
+          "bodyGenerated": "{0} ({1}) generated an RSpace server error log file on {2} at {3}.",
+          "bodyLogsEnd": "END OF LOGS",
+          "bodyLogsHeader": "Logs",
+          "bodyMessageSent": "The following message was sent from {0}"
+        }
+      }
+    }
+  },
+  "server.email.cloud": {
+    "email": {
+      "cloud": {
+        "common": {
+          "signupEmailNote": "Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up."
+        },
+        "groupInvitation": {
+          "loginPrompt": "If you''d like to accept this invitation, please login to RSpace at <a href=\"{0}\">{0}</a>."
+        },
+        "groupInvitationExistingUser": {
+          "body": "{0} ({1}) has invited you to join their RSpace group ''{2}''.",
+          "onceLoggedIn": "Once you''ve logged in, there will be an invitation message waiting for you - accept this invitation and you will be added to {0}''s group."
+        },
+        "groupInvitationNewUser": {
+          "accept": "If you''d like to accept this invitation, please <a href=\"{0}\">sign up for an account</a>.",
+          "body": "Welcome to RSpace! {0} ({1}) has invited you to join their RSpace group ''{2}''.",
+          "help": "There is lots of written and video help material on the <a href=\"https://researchspace.helpdocs.io/\">RSpace help website</a>, or you can use the in-app <b>Need Help?</b> button on the bottom-right of RSpace. You can also ask for help at <a href=\"mailto:support@researchspace.com\">support@researchspace.com</a>.",
+          "onceSignedUp": "Once you''ve signed up, there will be an invitation message waiting for you - accept this invitation and you will be added to {0}''s group."
+        },
+        "groupPiInvitationExistingUser": {
+          "body": "{0} ({1}) has invited you to create an RSpace group ''{2}'', with you as its Principal Investigator.",
+          "onceLoggedIn": "Once you''ve logged in, there will be an invitation message waiting for you - accept this invitation and your group will be created, with {0} as your Lab Admin."
+        },
+        "groupPiInvitationNewUser": {
+          "accept": "To accept this request, all you have to do is go to <a href=\"{0}\">{0}</a>, where you can sign up for an account and authorize the creation of the group.",
+          "body": "Welcome to RSpace! {0} ({1}) wants to create an RSpace group ''{2}'', with you as its Principal Investigator.",
+          "onceSignedUp": "Once you''ve signed up, there will be an invitation message waiting for you - accept this invitation and your group will be created, with {0} as your Lab Admin."
+        },
+        "shareRecordInvitationExistingUser": {
+          "body": "{0} ({1}) wants to share a document ({2}) with you.",
+          "loginPrompt": "If you''d like to accept this request, please login to RSpace at <a href=\"{0}\">{0}</a>.",
+          "onceLoggedIn": "Once you''ve logged in, there will be a request waiting for you - accept this request and the document ({0}) will be shared."
+        },
+        "shareRecordInvitationNewUser": {
+          "accept": "If you''d like to accept this request, please <a href=\"{0}\">sign up for an account</a>.",
+          "body": "Welcome to RSpace! {0} ({1}) has invited you to view a document ''{2}''.",
+          "onceSignedUp": "Once you''ve signed up, there will be a request waiting for you - accept this request and the document ({0}) will be shared."
+        },
+        "signupVerification": {
+          "activate": "If it was really you that signed up, please use the link below to verify and activate your account.",
+          "signedUp": "You, or someone else, have signed up for an RSpace account, at:",
+          "subject": "Welcome to RSpace"
+        },
+        "subject": {
+          "groupInvitation": "Join Group Invitation - Research Space",
+          "groupPiInvitation": "Create Group Invitation - Research Space",
+          "shareRecord": "Shared Document - Research Space"
+        }
+      }
+    }
+  },
+  "server.email.notifications": {
+    "email": {
+      "notification": {
+        "exportCompleteNotification": {
+          "andLinkedItem": " and {0, plural, one {# linked filestore item} other {# linked filestore items}}",
+          "archiveIncludes": "{0, plural, =0 {No records were exported} one {The archive includes # record} other {The archive includes # records}}",
+          "clickOrCopy": "Please click on, or copy the link into a browser to access the export:",
+          "completedWithSize": "Your export {0} is completed and generated an archive of size {1}.",
+          "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
+          "noFilestoreLinks": ". No filestore links were included",
+          "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
+          "skippedLinks": ".<br/><br/>{0, plural, one {# filestore link was not included} other {# filestore links were not included}}"
+        },
+        "message": {
+          "concerningDocument": "This message concerns the document <a href=\"{0}\">{1}</a>.",
+          "replyInRSpace": "To reply to the sender of this message, please do so in <a href=\"{0}\">RSpace</a>.",
+          "rspaceMessageFrom": "RSpace message from {0}",
+          "sentMessage": "<a href=\"{0}\">{1}</a> sent you a message on {2} at {3}."
+        },
+        "notification": {
+          "concerning": "This notification concerns the {0, select, notebook {notebook} other {document}} {1}.",
+          "generatedNotification": "<a href=\"{0}\">{1}</a> generated a notification for you on {2} at {3}.",
+          "generatedNotificationWithType": "<a href=\"{0}\">{1}</a> generated a notification for you of type [{2}] on {3} at {4}.",
+          "moreDetails": "More details:",
+          "notificationFromRSpace": "Notification from RSpace"
+        },
+        "raidUpdateCompleteNotification": {
+          "response": "{0, select, true {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> has been added to your RAiD record <a href=\"{3}\">{4}</a>.} other {Your research output recently deposited on \"{1}\" with the DOI <a href=\"{2}\">{2}</a> could not be added to your RAiD record <a href=\"{3}\">{4}</a>.}}"
+        },
+        "repoDepositCompleteNotification": {
+          "hereIsMessage": "Here is the message from the repository:",
+          "noUrlRetrieved": "No URL for the repository could be retrieved",
+          "response": "{0, select, true {Your deposit to repository {1} is complete.} other {Your deposit to repository {1} failed.}}"
+        },
+        "request": {
+          "concerningDocument": "This request concerns the document <a href=\"{0}\">{1}</a>.",
+          "concerningNotebook": "This request concerns the notebook <a href=\"{0}\">{1}</a>.",
+          "joinInstruction": "In order to join the {0, select, labGroup {Lab Group} other {Project Group}} \"<b>{1}</b>\", click to <a href=\"{2}\">ACCEPT</a> or <a href=\"{3}\">REJECT</a> this invitation, then log in to RSpace with your credentials.",
+          "joinPermissionNote": "{0, select, labGroup {If you accept, the group''s PI will be permitted to view your documents.} other {Project Groups have no PI, your documents won''t be visible to other group members until you explicitly share them.}}",
+          "rspaceRequestFromUser": "RSpace Request from \"{0}\" (user \"{1}\")",
+          "sentRequest": "The RSpace {0, select, pi {Principal Investigator} other {User}} \"<b>{1}</b>\" sent you a request on {2} at {3}."
+        },
+        "subject": "RSpace notification"
+      }
+    }
+  },
+  "server.export": {
+    "archiveExportReport": {
+      "addedToArchiveHeader": "Added to archive",
+      "downloadLinkLabel": "Download link:",
+      "errorHeader": "Error",
+      "excludedFileTypesNotice": "Files of <strong>{{excludedNfsFileExtensionsList}}</strong> type were not included.",
+      "exportedDocumentsHeading": "Exported documents",
+      "exportedFilestoreLinksHeading": "Exported filestore links",
+      "fileSizeLimitNotice": "File size limit for individual filestore files was set to <strong>{{maxNfsFileSizeMB}} MB</strong>.",
+      "fileSystemNameHeader": "File System name",
+      "filestorePathHeader": "Filestore path",
+      "folderExportSummaryHeader": "Folder export summary",
+      "folderHeader": "Folder",
+      "globalIdHeader": "Global Id",
+      "nameHeader": "Name",
+      "noFilestoreLinksNotice": "<strong>Export filestore links</strong> option was selected, but exported documents didn't contain any filestore links.",
+      "notesHeader": "Notes",
+      "resourcePathHeader": "Resource path",
+      "summary": "Archive export report for {{archiveType}} export of {{exportedUserOrGroupId}} {{exportScope}} generated on {{creationTimeFormatted}}."
+    },
+    "archiveImport": {
+      "errors": {
+        "createDocumentFailed": "Could not create document from archive document: {0}",
+        "databaseInsertFailed": "Error attempting to insert content into database: {0}",
+        "invalidDocumentFolder": "{0} folder does not contain a valid document.",
+        "itemFailed": "Archive item {0} could not be imported: {1}",
+        "missingDocumentXml": "Missing XML file for document: {0}",
+        "missingFormXml": "Missing XML file for form: {0}",
+        "validationFailed": "Validation of archive was not successful"
+      },
+      "exportAllLink": "Export all my work",
+      "importArchiveOnServerHeading": "Import archive on server",
+      "importArchiveOnServerInstructions": "If you want to import an archive that is already on the RSpace server, you can set this path instead of uploading from your computer. Please ask your RSpace administrator on how to get this file path.",
+      "importOntologyDataColumnLabel": "Identify column which holds data",
+      "importOntologyHeading": "Import an ontology file - csv format",
+      "importOntologyNameLabel": "Ontology name",
+      "importOntologyUriColumnLabel": "Identify column which holds uris for data (if single column data choose '1')",
+      "importOntologyVersionLabel": "Ontology version",
+      "info": {
+        "existingUserSkipped": "User [{0}] already exists; skipping",
+        "importingGalleryItem": "Importing Gallery item {0}",
+        "latestVersionOnly": "Only the latest version of {0} was imported."
+      },
+      "progress": {
+        "document": "Importing document {0}",
+        "galleryDocuments": "Importing Gallery documents"
+      },
+      "serverFilePathLabel": "Enter absolute file path on server"
+    },
+    "export": {
+      "archive": {
+        "azIndex": {
+          "title": "A-Z listing"
+        },
+        "documentView": {
+          "header": "Document {0} (version {1})",
+          "originalImage": "Original image:"
+        },
+        "htmlIndex": {
+          "fullAzIndexLink": "Full A-Z index of all exported items",
+          "listingOf": "Listing of {0}",
+          "manifest": "Manifest",
+          "nfsSummaryLink": "Summary of links to external files",
+          "noItems": "There are no items in this folder."
+        },
+        "mediaView": {
+          "header": "Gallery file {0}",
+          "originalTiffLink": "Click <a href=\"{0}\">here</a> to access original TIFF image.",
+          "viewAttachment": "View attachment"
+        },
+        "nfsExports": {
+          "heading": "All external file links in export",
+          "title": "External file system links"
+        },
+        "parentFolder": "Parent folder",
+        "top": "Top"
+      },
+      "audit": {
+        "csv": {
+          "commentGeneratedAt": "# audit trail download generated at {0}.",
+          "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
+          "headerDescription": "Description",
+          "headerName": "Name",
+          "headerResource": "Resource",
+          "headerType": "Type",
+          "maxResultsExceeded": "Results are truncated at {0} results",
+          "moveDetails": "From {0} ({1}) to {2} ({3})"
+        }
+      },
+      "global": {
+        "comments": {
+          "number": "Comment {0}",
+          "title": "Comments"
+        },
+        "coreData": {
+          "by": "By {0}",
+          "createdOn": "Created on {0} at {1}"
+        },
+        "lomsHtml": {
+          "description": "Description: {0}",
+          "headerItemId": "Inventory Item Id",
+          "headerItemType": "Inventory Item Type",
+          "headerUsedQuantity": "Used Quantity",
+          "listOfMaterials": "List of materials: {0}",
+          "title": "Lists of materials"
+        },
+        "nfsElements": {
+          "headerArchivePath": "Archive Path",
+          "headerFileStorePath": "File Store Path",
+          "headerFileSystemUri": "File System URI",
+          "headerFolderExportSummary": "Folder export summary",
+          "headerReasonNotIncluded": "Reason for not including",
+          "headerRelativePath": "Relative Path",
+          "no": "no",
+          "notIncluded": "-not included-",
+          "title": "Linked filestore files referenced by this document",
+          "yes": "yes"
+        }
+      },
+      "pdf": {
+        "comments": {
+          "line": "{0} on {1}: {2}"
+        },
+        "exporterNameWithOrcid": "{0} - Orcid ID {1}",
+        "externalWorkflow": {
+          "headerContainerHistory": "Container/Galaxy History",
+          "headerDataUploaded": "Data Uploaded",
+          "headerInvocation": "Invocation",
+          "headerInvocationStatus": "Invocation Status",
+          "title": "Galaxy Workflow Data"
+        },
+        "footer": {
+          "createDate": "Create date: {0}",
+          "exportDate": "Export date: {0}",
+          "exportedBy": "Exported by: {0}",
+          "lastUpdated": "Last updated: {0}"
+        },
+        "header": {
+          "pageLabel": "Page: "
+        },
+        "nfsTable": {
+          "headerFileSystemId": "File System ID",
+          "headerFileSystemUrl": "File System URL",
+          "headerPath": "Path",
+          "title": "Network Files"
+        },
+        "provenance": {
+          "headerDate": "Date",
+          "headerModificationType": "Modification Type",
+          "headerName": "Name",
+          "title": "Provenance Information"
+        },
+        "runningHeader": {
+          "owner": "Owner: {0}"
+        },
+        "stoichiometry": {
+          "headerInventory": "Inventory",
+          "headerName": "Name",
+          "headerRole": "Role",
+          "reactionHeader": " the chemical reaction above.",
+          "reactionlessHeader": " this reactionless stoichiometry.",
+          "title": "Stoichiometry Information for {0}"
+        }
+      },
+      "protocolsIo": {
+        "abstract": "Abstract",
+        "attachedDocument": "Attached Document:",
+        "beforeStart": "Before start",
+        "brand": "Brand:",
+        "centrifuge": "Centrifuge:",
+        "command": "Command:",
+        "comment": "Comment:",
+        "dataset": "Dataset:",
+        "equipment": "Equipment",
+        "importedFrom": "Imported from",
+        "linkOut": "Link out",
+        "materials": "Materials",
+        "metadata": "Metadata",
+        "name": "Name:",
+        "nestedProtocol": "Nested protocol:",
+        "note": "Note:",
+        "operatingSystem": "Operating system:",
+        "originalAuthors": "Original authors:",
+        "originalCreator": "Original creator:",
+        "publishedOn": "Published on:",
+        "repository": "Repository:",
+        "safetyInformation": "Safety information",
+        "seePreviousStep": "See <a href=\"#{0}\"> previous step </a>",
+        "shaker": "Shaker:",
+        "softwarePackage": "Software package:",
+        "source": "Source",
+        "stepNumber": "Step {0}",
+        "steps": "Steps",
+        "type": "Type:",
+        "version": "Version:"
+      }
+    }
+  },
+  "server.gallery": {
+    "gallery": {
+      "api": {
+        "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
+      },
+      "errors": {
+        "saveFailed": "Save action failed [{0}]"
+      },
+      "filestore": {
+        "folder": {
+          "uploadRejected": "Cannot move folders to filestores."
+        },
+        "mediaFileRequired": "Only media files can be moved to filestores."
+      },
+      "snippet": {
+        "creation": {
+          "failed": "Some problems occurred during creation of the snippet. Please try again.",
+          "ok": "A new snippet ''{0}'' has been added to the Gallery."
+        }
+      }
+    }
+  },
+  "server.gallery.netfiles": {
+    "netFileStores": {
+      "acl": {
+        "denied": {
+          "read": "User ''{0}'' has no read access to filesystem ''{1}''",
+          "write": "User ''{0}'' has no write access to filesystem ''{1}''"
+        },
+        "users": {
+          "inBothLists": "These users are listed for both read and write access; please remove them from one of the lists: {0}"
+        }
+      },
+      "errors": {
+        "authPublicKey": "Authentication problem, verify that your public key is properly registered or contact your System Admin",
+        "connection": "Connection problem, please try again or contact your System Admin",
+        "disabled": "This file system has been disabled, please contact your System Admin",
+        "download": "Couldn't retrieve the file, please try again or contact your System Admin",
+        "invalidUrl": "Invalid connection URL. Try connecting to another Filestore or contact your System Admin",
+        "userNotLoggedIn": "User is not logged in"
+      },
+      "export": {
+        "downloadError": "download error: {0}",
+        "fileExtensionExcluded": "file extension ''{0}'' excluded",
+        "fileSkipped": "file skipped ({0})",
+        "fileTooLarge": "file larger than provided size limit",
+        "folderEmpty": "empty folder",
+        "folderIncludedLabel": "Included",
+        "folderSkippedAsSubfolder": "skipped as subfolder",
+        "folderSkippedLabel": "Skipped",
+        "noReadAccess": "no read access to ''{0}'' File System",
+        "notLoggedIn": "not logged into connected File System",
+        "resourceNotAccessible": "resource not accessible",
+        "subfolderNotIncluded": "subfolder of linked folder",
+        "userNotLoggedIn": "user not logged into ''{0}'' File System"
+      },
+      "login": {
+        "dialog": {
+          "intro": "Please authenticate to File System:",
+          "title": "Login Required"
+        },
+        "noFilePathsInDirectory": "No paths in directory name",
+        "password": {
+          "label": "Password:"
+        },
+        "user": {
+          "dirLabel": "Directory:"
+        },
+        "username": {
+          "label": "Username:"
+        }
+      },
+      "s3": {
+        "delete": {
+          "deniedNoMetadata": "This item has no creation record and cannot be deleted",
+          "deniedNotCreator": "You can only delete filestore items that you created",
+          "deniedTooOld": "{0, plural, one {Filestore items can only be deleted within # minute of their creation} other {Filestore items can only be deleted within # minutes of their creation}}"
+        }
+      },
+      "validation": {
+        "noKey": "Please generate ssh key first",
+        "noPassword": "Please provide the password",
+        "noUsername": "Please provide the username"
+      },
+      "write": {
+        "filestore": {
+          "notFound": "Could not find file store with id: {0}"
+        },
+        "filestorePathIdMandatory": "filestorePathId is mandatory",
+        "folderName": {
+          "invalid": "Folder name cannot contain '/' or start or end with spaces",
+          "mandatory": "folderName is mandatory"
+        },
+        "recordIdsMandatory": "recordIds is mandatory",
+        "rootModificationForbidden": "Cannot move or delete the filestore root"
+      }
+    }
+  },
+  "server.groups": {
+    "autoshare": {
+      "errors": {
+        "adminProhibited": "Sysadmins cannot manage group-wide autoshare status",
+        "alreadySet": "Autoshare is already set to the desired state",
+        "disabled": "Please contact your system administrator to enable this feature",
+        "enterpriseRequired": "Group autosharing is only available on the Enterprise version of RSpace",
+        "forbidden": "Forbidden",
+        "labGroupRequired": "Can only manage autosharing for lab groups",
+        "operationInProgress": "Cannot launch new bulk share operation; already running",
+        "userAlreadySet": "Autosharing for user {0} in group {1} has already been set to {2}",
+        "userForbidden": "User {0} attempted to modify user's {1} autoshare status without permission"
+      },
+      "notification": {
+        "allSucceededDisabled": "Automatic sharing is now disabled. All your previously shared work is now unshared.",
+        "allSucceededEnabled": "Automatic sharing is now enabled. All your previously unshared work is now shared.",
+        "mayHaveFailedDisabled": "Setting automatic sharing to disabled may have failed. Some of your previously shared work is still shared - {0}.",
+        "mayHaveFailedEnabled": "Setting automatic sharing to enabled may have failed. Some of your previously unshared work is still unshared - {0}.",
+        "memberDisabled": "{0} has disabled autosharing into group ''{1}'' and unshared all their work",
+        "memberEnabled": "{0} has enabled autosharing into group ''{1}'' and shared all their work",
+        "partialFailureDisabled": "Automatic sharing is now disabled. There was a problem, some of your previously shared work is still shared - {0}.",
+        "partialFailureEnabled": "Automatic sharing is now enabled. There was a problem, some of your previously unshared work is still unshared - {0}."
+      }
+    },
+    "groups": {
+      "actions": {
+        "changeRole": "Change Role"
+      },
+      "create": {
+        "configureIntro": "Create and configure a new Group"
+      },
+      "creation": {
+        "errors": {
+          "currentUserAlreadyMember": "You are already in the group. Please check the email addresses.",
+          "duplicateName": "You have already created a Group with the name: {0}",
+          "groupNameRequired": "Group name is required",
+          "memberEmailInvalid": "Enter correct emails",
+          "piEmailInvalid": "Please enter a correct email",
+          "piEmailRequired": "Principal investigator email is required"
+        }
+      },
+      "edit": {
+        "addUsers": {
+          "autoshareFailed": "Users added, however, failed to enable autosharing for users {0}.",
+          "success": "Users added to the group."
+        },
+        "errors": {
+          "cannotRemoveLastAdminOrPi": "Sorry, cannot remove the only admin or PI of this group. Please assign a new admin or PI role to this group before deleting this member.",
+          "cannotRemoveLastGroupOwner": "Sorry, cannot remove the only group owner this group. Please assign a group owner role to this group before deleting this member.",
+          "invalidRoleName": "Invalid role name value - must be one of DEFAULT or RS_LAB_ADMIN.",
+          "missingDisplayName": "Missing display name!",
+          "missingProfileInfo": "Please enter some profile information.",
+          "noGroupOwnerDelete": "You cannot delete owner of a labgroup",
+          "notMember": "You are not a member of the group.",
+          "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
+          "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",
+          "piRequiredForPublication": "Only PI can allow group publication",
+          "piRoleRequired": "PI does not have a PI role"
+        },
+        "invitationSent": {
+          "confirmation": "Invitation sent to {0}"
+        },
+        "renameSuccess": {
+          "confirmation": "Rename ok"
+        },
+        "title": "Edit group"
+      },
+      "emptyName": "Please enter a name for your LabGroup",
+      "export": {
+        "link": "Export LabGroup's Work"
+      },
+      "heading": "Edit group",
+      "invalidCharacters": "Please choose an alphanumeric name for your group, with no spaces.",
+      "invitation": {
+        "errors": {
+          "missingGroupId": "Could not issue invitation as request was lacking a group ID. This is a server error, please report it quoting RSPAC-1127",
+          "noMembers": "The request couldn't be processed (members string empty)"
+        }
+      },
+      "labGroup": {
+        "name": "LabGroup"
+      },
+      "lead": {
+        "label": "PI / Group Owner"
+      },
+      "members": {
+        "adminNotGroup": "Admin {0} was not in the group member list. A group admin must be a group member.",
+        "groupOwnerNotInGroup": "Group owner {0} was not in the group member list. A group owner must be a group member.",
+        "noGroupOwner": "No group owner was chosen. Every user-collaboration group must have at least one associated group owner.",
+        "noPi": "No PI was chosen. Every group must have an associated PI.",
+        "nonUniqueName": "This name is already used. Please try a new name for your group.",
+        "noneSelected": "Please select >=1 user to add to the group.",
+        "piNotGroup": "PI {0} was not in the group members list. A PI must be a group member."
+      },
+      "pi": {
+        "label": "Principal Investigator"
+      },
+      "profile": {
+        "edit": {
+          "help": "Please enter a short description of this group."
+        }
+      },
+      "shared": {
+        "title": "Shared Documents"
+      },
+      "sharing": {
+        "copyAllLinks": "Copy all links on this page",
+        "copyAllLinksAlt": "copy all links",
+        "copyLinkAlt": "copy link",
+        "copyPublicLinkTooltip": "Copy public link",
+        "errors": {
+          "updatePermission": "Could not update permission"
+        },
+        "linkText": "link",
+        "myGroupsPublishedDocuments": "My Group's Published Documents",
+        "myPublishedDocuments": "My Published Documents",
+        "noPublishedDocuments": "You have no published documents to manage.",
+        "noSharedDocumentRequests": "You have no shared document requests to manage.",
+        "noSharedDocuments": "You have no shared documents to manage.",
+        "permission": {
+          "edit": "EDIT",
+          "read": "READ"
+        },
+        "publicLinkText": "public link",
+        "publishedDocumentsTitle": "Published Documents",
+        "recordInfoLabel": "Record Info",
+        "rspaceUsersPublishedDocuments": "RSpace Users' Published Documents",
+        "searchPlaceholder": "By document or user",
+        "sharedDocumentsRequestsHeading": "Shared Documents Requests",
+        "sharedForEditInto": "Shared for edit into",
+        "table": {
+          "actions": "Actions",
+          "description": "Description",
+          "documentName": "Document name",
+          "globalId": "Global Id",
+          "link": "Link",
+          "options": "Options",
+          "owner": "Owner",
+          "permission": "Permission",
+          "publicLink": "Public link",
+          "publishedDate": "Published date",
+          "publishedOn": "Published on",
+          "publisher": "Publisher",
+          "sharedDate": "Shared date",
+          "sharedWith": "Shared with",
+          "uniqueId": "Unique ID"
+        },
+        "unpublish": "Unpublish",
+        "unshare": "Unshare",
+        "usersPublishedDocuments": "Users' Published Documents",
+        "viewOwnPublishedDocuments": "View your own published documents"
+      },
+      "swapPi": {
+        "errors": {
+          "labGroupRequired": "Can't alter PIs of a collaboration group {0}, aborting set new PI"
+        },
+        "requiredNewPi": "New PI must be different from old PI",
+        "requiredPi": {
+          "inGroup": "The new PI must already belong to the group",
+          "role": "New PI must have global PI role"
+        }
+      },
+      "userDeletion": {
+        "errors": {
+          "activeMembersPreventDeletion": "Other group members still exist that may want access to user's work"
+        }
+      },
+      "view": {
+        "actions": {
+          "changeGroup": "Change Group",
+          "changePi": "Change PI",
+          "createCollabGroup": "Create Collaboration Group",
+          "deleteGroup": "Delete Group",
+          "leaveGroup": "Leave Group",
+          "remove": "Remove",
+          "rename": "Rename"
+        },
+        "changeRole": {
+          "helpLinkText": "Help",
+          "helpText": "See {0} for a full explanation of lab roles.",
+          "selectRolePrompt": "Select a role for the user."
+        },
+        "communityLabel": "Community:",
+        "disabledAccountsHeading": "Disabled Accounts",
+        "exportWork": {
+          "label": "Export Work"
+        },
+        "groupLabel": "Group:",
+        "groupPisHeading": "Group PIs",
+        "homeFolder": {
+          "goTo": "Go to User's Home Folder",
+          "notAvailable": "Home Folder Not Available"
+        },
+        "inviteDialog": {
+          "existingUsers": "RSpace users",
+          "newUsers": "New users"
+        },
+        "labAdminPermissions": {
+          "legend": "Lab Admin permissions",
+          "personalOnly": "Lab Admin cannot view all group's documents.",
+          "viewAll": "Lab Admin <em>can</em> view all group's documents."
+        },
+        "leaveCollaboration": {
+          "label": "Leave Collaboration",
+          "title": "Leave Collaboration"
+        },
+        "newPiInvitation": {
+          "label": "Invite a New PI",
+          "title": "New PI Invitation"
+        },
+        "permissions": {
+          "canEdit": "Can Edit Group's Documents",
+          "canView": "Can View Group's Documents"
+        },
+        "removeMe": {
+          "confirmText": "By accepting, you will be removed from the group '{0}':",
+          "noSharedContent": "You will no longer be able to see shared content within the group.",
+          "piNoAccess": "The PI of the group will no longer be able to see your work.",
+          "privateProfileWarning": "This group is private - you will no longer be able to view the group's profile",
+          "workNotVisible": "Any of your work that you shared will no longer be visible to other group members."
+        },
+        "rename": {
+          "prompt": "Please  enter a new name for this group"
+        },
+        "role": {
+          "groupOwner": "Group Owner",
+          "labAdmin": "Lab Admin"
+        },
+        "setNewPi": {
+          "label": "Select new PI:"
+        },
+        "sharedFolder": {
+          "heading": "Shared Folder",
+          "missing": "Folder missing"
+        },
+        "table": {
+          "autosharing": "Autosharing"
+        },
+        "title": "Group details",
+        "type": {
+          "collaboration": "Collaboration",
+          "project": "Project"
+        }
+      }
+    },
+    "pendingInvitations": {
+      "heading": "Pending invitations",
+      "table": {
+        "action": "Action"
+      }
+    }
+  },
+  "server.inventory": {
+    "errors": {
+      "inventory": {
+        "container": {
+          "deletion": {
+            "notEmpty": "Container {0} is not empty and cannot be deleted"
+          },
+          "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
+          "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
+          "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'."
+        },
+        "export": {
+          "requestHasBothIdsAndUsers": "Export requires specifying either items or users to export, but POST request provided both 'globalIds' and 'users'",
+          "requestHasNoIdsNoUsers": "Export requires specifying either items or users to export, but POST request provided neither 'globalIds' nor 'users'",
+          "requestInvalidGlobalIds": "Some of requested globalIds are not valid global identifiers: [{0}]",
+          "unexportableGlobalIds": "Cannot export items with global id [{0}] - items not found, or no permission",
+          "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
+        },
+        "field": {
+          "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+          "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
+          "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
+          "link": {
+            "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
+          },
+          "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
+          "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
+          "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
+          "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+          "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
+          "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+          "validation": "{0}"
+        },
+        "icon": {
+          "imageParseFailure": "Couldn''t parse file [{0}] as an image."
+        },
+        "identifier": {
+          "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+          "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
+          "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+          "deleteNotOwner": "You can only delete an identifier that you own.",
+          "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
+          "mintingUnsupportedType": "unsupported type for minting: {0}",
+          "typeUnsupported": "identifiers of type {0} are not supported yet"
+        },
+        "import": {
+          "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+          "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
+          "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+          "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
+          "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+          "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
+          "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
+          "parentContainerNotFound": "Parent container with import id ''{0}'' could not be found",
+          "parentContainerNotListContainer": "Parent container with global id ''{0}'' is a {1} container, but CSV import only supports import into list-type containers",
+          "parentSampleImportIdWithGlobalId": "Parent sample should be set via either 'Parent Sample Import ID' or 'Parent Sample Global ID', but not both at the same time",
+          "parentSampleNotEditable": "Parent sample with global id ''{0}'' doesn''t exist, or user has no permission to add new subsamples into it",
+          "parentSampleNotFound": "Parent sample with import id ''{0}'' could not be found",
+          "parentSampleNotSet": "Parent sample import id or global id must be set, but both were empty",
+          "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id' ",
+          "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
+          "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
+        },
+        "instrument": {
+          "templateNotFound": "No instrument template with id: {0}",
+          "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
+        },
+        "listOfMaterials": {
+          "elnFieldIdRequired": "elnFieldId cannot be null",
+          "nameRequired": "name cannot be empty"
+        },
+        "location": {
+          "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
+          "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
+        },
+        "move": {
+          "targetContainer": {
+            "unavailable": "Cannot locate target container from provided target container and location details"
+          },
+          "targetLocation": {
+            "notFoundInImageContainer": "Target location not found.",
+            "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
+          }
+        },
+        "publicLink": {
+          "unavailable": "The item you try to see is not publicly available right now."
+        },
+        "quantity": {
+          "negative": "Quantity 'numericValue' must be positive",
+          "unitInvalid": "Quantity unit id [{0}] is invalid",
+          "unitNotAmount": "Quantity unit id [{0}] is not pointing to a unit of amount, it should be an id of a mass, volume or dimensionless unit."
+        },
+        "sample": {
+          "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
+          "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
+          "templateNotFound": "No sample template with id: {0}",
+          "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
+        },
+        "settings": {
+          "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
+        },
+        "subsample": {
+          "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
+        },
+        "temperature": {
+          "invalidUnit": "Unit id is not a valid temperature unit.",
+          "minGreaterThanMax": "Min temperature is greater than max temperature.",
+          "unitsNotComparable": "Temperature units are not mutually comparable."
+        },
+        "template": {
+          "emptyFieldName": "Field name cannot be empty",
+          "emptyFieldType": "Field type cannot be empty",
+          "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
+          "invalidFieldContent": "Field validation error: {0} ",
+          "invalidRelationType": "{0} is not a valid DataCite relation type",
+          "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
+          "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
+          "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
+        }
+      }
+    },
+    "export": {
+      "inventory": {
+        "csv": {
+          "commentHeader": "RSpace Inventory Export",
+          "headerCanStoreContainers": "Can Store Containers (Y/N)",
+          "headerCanStoreSubsamples": "Can Store Subsamples (Y/N)",
+          "headerContainerGlobalId": "Parent Container (Global ID)",
+          "headerLomGlobalId": "List of Materials (Global ID)",
+          "headerLomName": "List of Materials (Name)",
+          "headerMaterialGlobalId": "Used Material (Global ID)",
+          "headerMaterialName": "Used Material (Name)",
+          "headerMaterialType": "Used Material (Type)",
+          "headerSampleGlobalId": "Parent Sample (Global ID)",
+          "headerSampleSource": "Sample Source",
+          "headerStorageTemperatureMax": "Storage Temperature (max)",
+          "headerStorageTemperatureMin": "Storage Temperature (min)",
+          "headerStoredContainersCount": "Number of Stored Containers",
+          "headerStoredSubsamplesCount": "Number of Stored Subsamples",
+          "headerTemplateGlobalId": "Parent Template (Global ID)",
+          "headerTemplateName": "Parent Template (name)",
+          "headerUsedQuantity": "Used Quantity"
+        }
+      }
+    }
+  },
+  "server.legacyJs": {
+    "legacyjs": {
+      "admin": {
+        "gettingUserActivity": "Getting user activity information"
+      },
+      "ajax": {
+        "failed": "{0} could not complete: <br/>{1}<br/>{2}",
+        "noDetails": "No error details in response",
+        "status": {
+          "generic": "Status: {0}",
+          "serverError": "Status: {0} - server error",
+          "unauthorised": "Status: {0} - unauthorised or unavailable resource.",
+          "unauthorisedNetwork": "Status: {0} - unauthorised or unavailable resource - is your network connection OK?"
+        }
+      },
+      "archiveExportReport": {
+        "exportedAsPartOfNotebook": "exported as a part of <a href=\"/globalId/{0}\">{0}</a> notebook"
+      },
+      "archiveImport": {
+        "archiveTooLarge": "Archive [{0}] is larger than the maximum permitted file upload of {1}. Please ask your administrator to enable large files",
+        "importingArchive": "Importing archive",
+        "importingOntologyFile": "Importing ontology file"
+      },
+      "audit": {
+        "exportedAs": "as {0} to {1}",
+        "itemsExported": "{0, plural, one {1 item exported} other {# items exported}}",
+        "itemsExportedAs": "Items exported as {0} to {1}",
+        "movedFromTo": "from {0} ({1}) to {2} ({3})",
+        "queryingAuditTable": "Querying audit table..",
+        "queryingAuditTrail": "Querying audit trail"
+      },
+      "cloudGroup": {
+        "emailAlreadyAdded": "You have already added an email.",
+        "noPiEmailFound": "No PI email found to send an invitation.",
+        "principalEmailPlaceholder": "Type and find PI or enter new email"
+      },
+      "columnSort": {
+        "actionGettingUserInformation": "Getting user  information"
+      },
+      "common": {
+        "abandoningSearch": "Abandoning search...",
+        "cancel": "Cancel",
+        "changingRecordsPerPage": "Changing the number of records per page...",
+        "checkEmailSyntax": "Please check email syntax",
+        "close": "Close",
+        "enterEmailPlaceholder": "Type and enter email",
+        "hide": "Hide",
+        "loadingChosenPage": "Loading the chosen page...",
+        "noResultsForSearchTerm": "Your search for ''{0}'' returned no results. Please search again or",
+        "ok": "OK",
+        "save": "Save",
+        "searchEllipsis": "Search...",
+        "searchTermTooShort": "Please enter at least three characters.",
+        "searchingEllipsis": "Searching...",
+        "selectExistingUserEmail": "Please check email. <br> Select an existing RSpace user email from the autocompleted list.",
+        "send": "Send",
+        "show": "Show",
+        "userSearchPlaceholder": "Type and find users by name, username or email",
+        "verify": "Verify"
+      },
+      "connect": {
+        "collabora": {
+          "frameTitle": "Collabora Online Frame",
+          "saveAndClose": "Save and Close"
+        }
+      },
+      "core": {
+        "action": {
+          "create": "Create",
+          "delete": "Delete",
+          "remove": "Remove",
+          "rename": "Rename"
+        },
+        "document": {
+          "creating": "Creating a document..."
+        },
+        "folder": {
+          "actionCreation": "Folder creation",
+          "creating": "Creating folder...",
+          "locationRequired": "Please select location for the new folder using the tree view above",
+          "nameRequired": "Please enter a name for the new folder",
+          "notInsideNotebook": "Cannot create a folder inside the Notebook"
+        },
+        "form": {
+          "loadListFailed": "Failed to load form list for create form dialog",
+          "navigation": "Form navigation"
+        },
+        "maintenance": {
+          "header": "Scheduled maintenance will start on {0}",
+          "notice": "RSpace will be down for a scheduled maintenance from {0} until {1}. {2}",
+          "warning": "Scheduled maintenance is about to start on {0}. Please finish your work and log off"
+        },
+        "media": {
+          "loadingPlayer": "Loading the player ...",
+          "playerNotAvailable": "Player not available"
+        },
+        "nfs": {
+          "actionFailed": "{0} action failed ({1}), if that does not work contact your System Admin",
+          "actionLogin": "Login",
+          "connecting": "Connecting...",
+          "dialogTitle": "Filestore link details",
+          "downloadError": "An error occurred on file download: {0}",
+          "downloading": "Downloading...",
+          "fileDetails": "File details:",
+          "filestoreTitle": "Filestore: {0}",
+          "folderDetails": "Folder details:",
+          "galleryLoadError": "An error occurred on loading net files gallery",
+          "gettingPath": "Getting Current Path...",
+          "infoRetrievalError": "An error occured on filestore info retrieval{0}",
+          "loggedIntoAs": "Logged into {0} as:",
+          "loginProblem": "Sorry, there is some problem with logging you into {0}. Please ask your administrator for help.",
+          "pathError": "An error occurred retrieving current path: {0}",
+          "systemUnavailable": "This file system is no longer available; it may have been disabled or removed. Please contact your System Admin."
+        },
+        "pagination": {
+          "currentPage": "{0} (current page)",
+          "firstPage": "First page",
+          "lastPage": "Last page",
+          "page": "Page {0}"
+        },
+        "pdf": {
+          "conversionFailed": "Conversion to PDF could not complete.<br/>Status:{0}<br />{1}",
+          "convertFailed": "Couldn't convert the document",
+          "preparing": "Preparing the file...",
+          "timeout": "PDF conversion takes longer than usual. Please try again later."
+        },
+        "permission": {
+          "edit": "Edit",
+          "read": "Read"
+        },
+        "popup": {
+          "blocked": "Pop-up blocker is stopping RSpace from opening new tab.",
+          "openAnyway": "Open anyway"
+        },
+        "preferences": {
+          "changeFailed": "Message preferences change"
+        },
+        "progress": {
+          "completed": "Completed",
+          "starting": "Starting..."
+        },
+        "protocolsIo": {
+          "dialogTitle": "Import from Protocols.io"
+        },
+        "publicJournal": {
+          "contactLabel": "contact: {0}"
+        },
+        "renameForm": {
+          "nameRequired": "Please enter a name!"
+        },
+        "saveTemplate": {
+          "chooseField": "Please choose at least one field!",
+          "createAction": "Create template",
+          "creating": "Creating template...",
+          "notOwner": "Sorry, you may not create a template from a file you do not own. <br/>Please ask the owner to create a template from this document, and share it with you.",
+          "title": "Save Template"
+        },
+        "share": {
+          "action": "Sharing",
+          "becauseErrors": "{0, plural, one {because of the following error} other {because of the following errors}}: <br/> - {1}",
+          "chooseFolder": "choose a folder {0}",
+          "clipboardButtonHint": "There is a copy button at the top left of this screen which will copy document names with their published links to your clipboard.",
+          "clipboardHint": "Document names with their published links are in your clipboard.",
+          "confirmed": "(confirmed)",
+          "copyLatestLinks": "copy latest links",
+          "didNotComplete": "Sharing did not complete: {0}",
+          "folderChooserDescription": "to share into. Otherwise, documents will be shared into the top of your LabGroup Shared folder.",
+          "maybeAlreadyPublished": "{0, plural, one {Maybe the document is already published?} other {Maybe the documents are already published?}}",
+          "maybeAlreadyShared": "{0, plural, one {Maybe the document is already shared?} other {Maybe the documents are already shared?}}",
+          "notAllPublished": "Not all documents were published",
+          "notAllShared": "Not all documents were shared",
+          "notPublished": "{0, plural, one {Document not published} other {Documents not published}}",
+          "notShared": "{0, plural, one {Document not shared} other {Documents not shared}}",
+          "orNotebook": "or notebook",
+          "publicationPartiallyUnsuccessful": "Publication was partially unsuccessful",
+          "publicationUnsuccessful": "Publication was unsuccessful",
+          "publish": "Publish",
+          "publishOption": "publish",
+          "selectOption": "<p>Please select a sharing option. Either:<ul><li> Share with a group you belong to, or a member of that group<li> Invite by email an individual to share with<li> Invite members of another group to view your document <li> Cancel to abort.</ul></p>",
+          "selectionSelected": "({0} selected)",
+          "share": "Share",
+          "sharing": "{0, plural, one {Sharing document} other {Sharing documents}}",
+          "sharingPartiallyUnsuccessful": "Sharing was partially unsuccessful",
+          "sharingUnsuccessful": "Sharing was unsuccessful",
+          "skipped": "{0, plural, one {1 document was skipped} other {# documents were skipped}}",
+          "successPublished": "{0, plural, one {Document published} other {# documents published}}",
+          "successShared": "{0, plural, one {Document shared} other {# documents shared}}",
+          "usersSelectedCount": "{0, plural, one {user selected} other {users selected}}"
+        },
+        "template": {
+          "nameRequired": "Please enter a name - excluding '/' characters.",
+          "noneFound": "No templates found",
+          "selectPrompt": "Please select a template by clicking on it",
+          "selectTitle": "Select a template"
+        },
+        "upload": {
+          "notAnImage": "The file type is not an image.",
+          "nothingSelected": "Please select something to upload",
+          "tooLarge": "Please upload a smaller file, that's less than {0}kB"
+        },
+        "useTemplate": {
+          "folderChooserDescription": "to put the document there.",
+          "title": "Create Document from Template"
+        },
+        "word": {
+          "allImported": "All documents imported, reloading page...",
+          "chooseFiles": "Please choose some {0} files to upload.",
+          "converted": "These documents were converted: {0}",
+          "folderChooserDescription": "to put the imported documents. Otherwise, they will be put in the current folder.",
+          "importAction": "Importing Word Documents",
+          "importTitle": "Import",
+          "importing": "Importing files...",
+          "notConverted": "<br>These documents were not converted: {0}"
+        }
+      },
+      "directory": {
+        "actionGettingList": "Getting list of {0}",
+        "loadingList": "Loading list of {0}...",
+        "noItemsToView": "There are no {0} to view.",
+        "noUsersToView": "There are no users to view.",
+        "reordering": "Reordering {0}...",
+        "showingForSearchTerm": "Showing {0} for search term ''{1}''.",
+        "userSearchPlaceholder": "Type a user's name, email or username"
+      },
+      "egnyte": {
+        "authenticationAction": "Egnyte authentication",
+        "connectedSuccessfully": "Egnyte connected successfully",
+        "connectingToFilestore": "Connecting to Egnyte filestore...",
+        "connectionSavedOpeningWorkspace": "Egnyte connection details saved. Opening the Workspace...",
+        "notConfiguredToast": "Connection to your Egnyte account is not configured correctly, please fix it on <a href=\"/egnyte/egnyteConnectionSetup\">connection setup page</a>",
+        "skipConfirm": "Are you sure you want to skip Egnyte account configuration? The files uploaded to RSpace will not be saved in Egnyte.",
+        "skipConfirmOk": "Skip"
+      },
+      "gallery": {
+        "actionFileUpload": "File upload",
+        "dragAndDropDescription": "Drag and drop files here.</br> They will be added as attachments",
+        "fileTooBig": "File {0} is too big ({1}), maximum individual size is {2}.",
+        "filesUploaded": "{0, plural, one {1 file uploaded} other {# files uploaded}}",
+        "importFile": "Import File",
+        "insertingChemFiles": "Inserting chem files...",
+        "uploadCancellationAttempted": "File upload cancellation attempted...",
+        "uploadFailedTooBigOrFolder": "Couldn't upload to server - possibly either a folder (not supported), or too big ({0})",
+        "uploaded": "Uploaded {0}",
+        "uploadingEllipsis": "Uploading..."
+      },
+      "googleSignin": {
+        "actionLoggingIn": "Logging in",
+        "actionSignup": "Signup",
+        "registeringAccount": "Registering account..",
+        "signingIn": "Signing in"
+      },
+      "groupEditing": {
+        "actionChangingPi": "Changing the PI of the group",
+        "actionInvitingNewUsers": "Inviting new users",
+        "actionLeavingGroup": "Leaving group",
+        "actionRemovingGroup": "Removing group",
+        "actionUpdatingPiCanEditAll": "Updating PI can edit all",
+        "actionUpdatingProfileVisibility": "Updating profile visibility",
+        "actionUpdatingRoles": "Updating roles",
+        "changePiDialogTitle": "Change LabGroup's PI",
+        "changeUserRoleDialogTitle": "Change  User's Role",
+        "changingPi": "Changing PI",
+        "checkEmailAddresses": "Please check the email addresses.",
+        "confirmDeleteGroupConsequences": "Are you sure you want to delete the following group: <strong>{0}</strong>?",
+        "confirmDeletionTitle": "Confirm Deletion",
+        "confirmLeaveGroupTitle": "Confirm Leave Group",
+        "groupRemoved": "Group removed",
+        "invite": "Invite",
+        "inviteNewMembersDialogTitle": "Invite new members",
+        "invitedPeopleList": "<br>The following people have been invited to join the group : <ul>{0}</ul><br> Invited users will be added to the group when they accept their invitation.",
+        "leaveGroup": "Leave Group",
+        "leftGroup": "You have left the group",
+        "leftPrivateGroup": "You have left the group. This was a private group; you are no longer authorised to view its profile.",
+        "noEmailFoundForInvitation": "No email found to send an invitation.",
+        "noOneCouldBecomeNewPi": "There is no-one in the group who could become a new PI.",
+        "piCanEditAllUpdated": "PI can edit all updated to: {0}",
+        "piChangedReloading": "PI of group changed; reloading page",
+        "pleaseEnterAName": "Please enter a name!",
+        "pleaseSelectNewPi": "Please select a new PI",
+        "profileVisibilityUpdated": "Profile visibility updated",
+        "rename": "Rename",
+        "renameGroupDialogTitle": "Rename Group",
+        "roleUpdatedTo": "Role updated to: {0} with read-all permissions ={1}",
+        "submit": "Submit"
+      },
+      "messaging": {
+        "actionChangingMessageStatus": "Changing message status",
+        "actionGettingSpecialMessages": "Getting special messages",
+        "actionListingNotifications": "Listing notifications",
+        "actionMarkingNotificationsRead": "Marking notifications as read",
+        "actionSendReplyMessage": "Send reply message",
+        "actionSendingMessage": "Sending message",
+        "actionUpdateMessageStatus": "Update message status",
+        "enterMessageHere": "Please enter a message here!",
+        "extMessageDialogTitle": "Send message to external messaging platform",
+        "extMessageLinkLimit": "There is a limit of 20 links that can be included with the external message.<br> Please select fewer records.",
+        "extMessageNoLinkableEntry": "There is no entry that could be linked in external message.",
+        "messageSent": "Message sent",
+        "messagesAndRequestsDialogTitle": "Messages and Requests",
+        "messagesTooltip": "Messages",
+        "noActiveMessages": "There are no active messages.",
+        "noChangeInStatus": "No change in status!",
+        "noChannelsSetUp": "No channels set up",
+        "noNewNotifications": "There are no new notifications.",
+        "noRequestsSent": "No requests sent.",
+        "notificationsDialogTitle": "Notifications",
+        "notificationsTooltip": "Notifications",
+        "optionalMessageTooLong": "Optional message is too long <br /> ({0}/2000 characters)",
+        "replyFailed": "Message sending failed - please try again, or report the error.",
+        "replyMessageTooLong": "Reply message is too long <br /> ({0}/2000 characters)",
+        "requestAccepted": "Request accepted",
+        "requestDeclined": "Request declined",
+        "requestSent": "Request Sent",
+        "sendMessageDialogTitle": "Send a Message",
+        "sendingEllipsis": "Sending...",
+        "sendingMessage": "Sending...",
+        "sendingToChannel": "Sending the message to Channel...",
+        "updateAndReply": "Update & Reply",
+        "updating": "Updating"
+      },
+      "msOffice": {
+        "conversionRequiredTitle": "Conversion Required",
+        "convertAndEdit": "Yes, convert and edit",
+        "keepViewing": "No, just keep viewing",
+        "officeOnlineFrameTitle": "Office Online Frame"
+      },
+      "recordPicker": {
+        "actionSearch": "Search",
+        "documentsFound": "{0, plural, =0 {No documents found.} one {Found 1 document:} other {Found # documents:}}",
+        "searchTermTooShort": "Search term must be at least 2 characters."
+      },
+      "selfDeclarePi": {
+        "actionSelfDeclareProcess": "Self-declare PI process",
+        "addingPiRole": "Adding PI role...",
+        "cannotBecomePi": "Based on your status at {0}, you cannot become a PI unless a system administrator manually enables this for you.",
+        "confirmRemovePiStatus": "Based on your status at {0}, if you remove your PI status, you will need a system administrator to restore it, are you sure you wish to proceed.",
+        "isPiOfLabGroup": "You are a PI of at least one LabGroup. You must delete or transfer over all LabGroups before you can remove your PI status.",
+        "promotedToPi": "Promoted to PI",
+        "removePiRoleCancel": "No, don't",
+        "removePiRoleConfirm": "Yes, remove my PI role",
+        "removedPiRole": "Removed PI role",
+        "removingPiRole": "Removing PI role..."
+      },
+      "sharedRecords": {
+        "actionGettingSharedDocuments": "Getting shared documents",
+        "actionUnsharingDocument": "Unsharing shared document",
+        "actionUpdatingPermissions": "Updating permissions of the shared document",
+        "alter": "Alter",
+        "noPublishedRecordsToManage": "There are no published records to manage.",
+        "noSharedDocumentsToView": "There are no shared documents to view.",
+        "noSharedRecordsToManage": "There are no shared records to manage.",
+        "permissionEdit": "Edit",
+        "permissionRead": "Read",
+        "permissionsUpdated": "Updated permissions",
+        "searchingSharedItems": "Searching shared items...",
+        "showingForSearchTerm": "Showing shared documents for search term ''{0}''.",
+        "unpublished": "Unpublished",
+        "unshared": "Unshared",
+        "unsharingDocument": "Unsharing document...",
+        "updatingPermissions": "Updating permissions..."
+      },
+      "signature": {
+        "archiveHashChecksum": "SHA-256 checksum of {0}: {1}",
+        "checksumAtSigningTime": "Checksum at the time of signing: {0}",
+        "contactSystemAdmin": "If that's unexpected, contact your System Admin",
+        "contentChangedWarning": "Either document content, or the way it is represented, has changed since the document was signed.",
+        "contentHashChecksum": "SHA-256 checksum of the signed content: {0}",
+        "contentMatchesChecksum": "Current content matches the checksum from the time of signing.",
+        "currentChecksum": "Current checksum: {0}",
+        "declinedWitnessRequests": "Declined witness requests: {0}.",
+        "gettingCurrentHashValue": "Getting current hash value",
+        "hashesIntro": "Secure checksums and exports were generated on signing: ",
+        "infoUnavailable": "-- signature info unavailable --",
+        "pendingWitnessRequests": "Pending witness requests: {0}.",
+        "signedBy": "This document was signed by <b>{0}</b> on {1}.",
+        "witnessedBy": "This document was witnessed by <b>{0}</b> on {1}."
+      },
+      "system": {
+        "batchUserRegistration": {
+          "complete": "Batch registration complete",
+          "completeWithSomeErrors": "Batch registration complete with some errors",
+          "couldNotProcessCsvUpload": "Could not process CSV upload.",
+          "csvContentLoadedFine": "CSV content loaded fine",
+          "errorsInCsvContent": "Errors in CSV content",
+          "gettingPageAction": "Getting batch user registration page",
+          "repeatedUsername": "Repeated username.",
+          "selectCsvFile": "Please select a CSV file to upload",
+          "starting": "Starting...",
+          "startingUserCreation": "Starting user creation",
+          "unexpectedError": "Unexpected error during batch registration",
+          "unhandledException": "Unhandled exception was thrown during Batch User Registration:<br />Status: {0}({1}) - {2}",
+          "upload": "Upload",
+          "uploadDialogTitle": "Batch upload users",
+          "uploading": "Uploading..."
+        },
+        "common": {
+          "cancel": "Cancel",
+          "confirmDeletionTitle": "Confirm Deletion",
+          "delete": "Delete",
+          "ok": "OK",
+          "remove": "Remove",
+          "saving": "Saving...",
+          "submit": "Submit"
+        },
+        "community": {
+          "confirmRemoveGroups": "Confirm Remove Groups",
+          "movingGroupAction": "Moving group to another community",
+          "noAvailableAdmins": "There are no available admins to add to this community just now.",
+          "removingAdminAction": "Removing admin from community",
+          "removingGroupAction": "Removing group from community",
+          "selectAdminsToAdd": "Please select admins to add to this community.",
+          "selectGroupsToAdd": "Please select groups to add to this community."
+        },
+        "communityList": {
+          "cannotDeleteDefault": "You can't delete the default all-labs community, please remove this from the selection.",
+          "confirmDeletionConsequences": "Are you sure you want to delete the following {0, plural, one {community} other {communities}}: <strong>{1}</strong>?",
+          "deleted": "{0, plural, one {Community deleted.} other {Communities deleted.}}",
+          "removing": "Removing communities...",
+          "removingCommunityAction": "Removing community"
+        },
+        "communitySettings": {
+          "gettingSettingsPageAction": "Getting Settings page",
+          "gettingSettingsValuesAction": "Getting Settings values",
+          "updateAction": "Update",
+          "updateFailed": "Community App Setting ''{0}'' couldn't be updated.",
+          "updated": "Community App Setting ''{0}'' updated to ''{1}''"
+        },
+        "config": {
+          "addingIpAddressAction": "Adding ip address",
+          "deletingIpAddressAction": "Deleting ip address",
+          "invalidIpAddress": "Please enter a valid IPv4, CIDR, or IPv6  address",
+          "missingIpDescription": "Please enter a human-readable identifier for this IP address",
+          "saveSeparator": "Save |",
+          "savingIpAddressAction": "Saving ip address"
+        },
+        "createAccount": {
+          "accountCreatedSuccessfully": "New Account has been created successfully",
+          "createUserAccountAction": "Create user account",
+          "creatingAccount": "Creating account...",
+          "gettingFormAction": "Getting create user account form",
+          "gettingGeneratedPasswordAction": "Getting generated password",
+          "gettingGroupListAction": "Getting group list",
+          "gettingLdapDetailsAction": "Getting LDAP details",
+          "ldapDetailsFound": "Found LDAP details, updated empty fields",
+          "ldapFieldsAlreadyProvided": "First name, Last name and Email are already provided, skipping call to LDAP",
+          "noLdapDetailsForUser": "No LDAP details found for user ''{0}''",
+          "provideUsername": "Please provide the username",
+          "retrievingLdapDetails": "Retrieving LDAP details..."
+        },
+        "groupList": {
+          "confirmDeletionConsequences": "Are you sure you want to delete the following group: <strong>{0}</strong>?",
+          "groupRemoved": "Group removed",
+          "removingGroupAction": "Removing group",
+          "searchingGroupsAction": "Searching groups list"
+        },
+        "ldap": {
+          "allUsersHaveSid": "all users have non-empty SID assigned.",
+          "findingUsers": "Finding users who authenticate through LDAP but don't have SID saved in RSpace yet...",
+          "foundUsers": "found {0, plural, one {1 user} other {# users}}.",
+          "loadingSettings": "loading LDAP settings...",
+          "processingUser": "Processing user ''{0}'':",
+          "sidFoundAndSaved": "SID found and saved in RSpace ({0}).",
+          "sidRetrievalComplete": "SID retrieval complete.",
+          "sidRetrievalRequestFailed": "SID retrieval request failed.",
+          "sidRetrievalStopped": "SID retrieval stopped.",
+          "userNotFoundOrSidEmpty": "user not found in LDAP, or found but their SID in LDAP is empty.",
+          "usersQueryAction": "Users query failed"
+        },
+        "maintenance": {
+          "deletingSelectedDowntimeAction": "Couldn't delete selected downtime",
+          "downtimeDetailsUpdated": "Downtime details updated",
+          "downtimeFinished": "Downtime finished",
+          "endDateBeforeStartDate": "End date can't be earlier than start date",
+          "finishingActiveDowntimeAction": "Couldn't finish active downtime",
+          "gettingScheduleViewAction": "Getting schedule downtime view",
+          "retrievingScheduledListAction": "Couldn't retrieve list of scheduled downtimes",
+          "scheduledDowntimeDeleted": "Scheduled downtime deleted",
+          "scheduledNewDowntime": "Scheduled new downtime",
+          "schedulingNewDowntimeAction": "Couldn't schedule new downtime",
+          "startDateInPast": "Start date can't be set in the past",
+          "stoppingUsersLoginAction": "Couldn't stop users login",
+          "updatingScheduledDowntimeAction": "Couldn't update scheduled downtime",
+          "usersNoLongerAllowedToLogin": "Users no longer allowed to login"
+        },
+        "netFileSystem": {
+          "confirmDeleteFileSystem": "Delete File System ''{0}''?",
+          "deleting": "Deleting...",
+          "fileSystemDeleteFailed": "The File System ''{0}'' couldn't be deleted. <br><br>That could happen if users already created some File Stores for this File System.",
+          "fileSystemDeleted": "File System deleted",
+          "fileSystemSaved": "File System saved",
+          "gettingFileSystemsPageAction": "Getting File Systems page",
+          "irodsHostLabel": "iRODS Host",
+          "irodsUrlTitle": "iRODS hostname or IP without protocol",
+          "retrievingFileSystemsAction": "Couldn't retrieve list of File Systems",
+          "sambaUrlTitle": "Samba URL",
+          "savingFileSystemAction": "Couldn't save File System",
+          "unknownReadAllowlistUsernames": "Unknown usernames on read allowlist (saved as typed): {0}",
+          "unknownWriteAllowlistUsernames": "Unknown usernames on write allowlist (saved as typed): {0}"
+        },
+        "settings": {
+          "gettingSettingsPageAction": "Getting Settings page",
+          "gettingSettingsValuesAction": "Getting Settings values",
+          "updateAction": "Update",
+          "updateFailed": "System Setting ''{0}'' couldn't be updated.",
+          "updated": "System Setting ''{0}'' updated to ''{1}''"
+        },
+        "settingsCategory": {
+          "analysisAndProgramming": "Analysis and Programming",
+          "collaborationAndCommunication": "Collaboration and Communication",
+          "dataManagementPlans": "Data Management Plans",
+          "dataRepositoriesAndPublishing": "Data Repositories and Publishing",
+          "identity": "Identity",
+          "labGroupSettings": "Lab Group Settings",
+          "privacy": "Privacy",
+          "researchMethodsAndProtocols": "Research Methods and Protocols",
+          "rspaceApi": "RSpace API",
+          "rspaceSettings": "RSpace Settings",
+          "scientificToolsAndSpecializedData": "Scientific Tools and Specialized Data",
+          "storageAndDocumentManagement": "Storage and Document Management"
+        },
+        "support": {
+          "licenseRefreshFailed": "License refresh failed, still using cached version. Please check server logs.",
+          "licenseRefreshSuccessful": "License refresh successful",
+          "logFilesMailed": "Log files mailed to RSpace support!",
+          "mailingLogFilesAction": "Mailing log files to RSpace support",
+          "refreshingLicenseAction": "Refreshing license",
+          "retrievingLogsAction": "Retrieving logs"
+        },
+        "system": {
+          "runAsInitFailedAction": "Could not initialise admin role creation..",
+          "runAsUserDialogTitle": "Operate as user",
+          "verificationPasswordRequired": "Verification Password Required"
+        }
+      },
+      "tinymce": {
+        "boxConfigMissing": "Box integration has not been set up (\"clientId\" or \"clientSecret\" missing). Contact your system administrator.",
+        "chemistryIntegrationRequired": "To operate on a chemical structure please active Chemistry integration on Apps page",
+        "codeSample": {
+          "c": "C",
+          "cpp": "C++",
+          "csharp": "C#",
+          "css": "CSS",
+          "htmlXml": "HTML/XML",
+          "java": "Java",
+          "javascript": "JavaScript",
+          "json": "JSON",
+          "latex": "LaTeX",
+          "matlab": "MATLAB",
+          "php": "PHP",
+          "python": "Python",
+          "r": "R",
+          "ruby": "Ruby",
+          "sql": "SQL",
+          "wikiMarkup": "Wiki markup"
+        },
+        "command": {
+          "codeSample": "Code sample",
+          "date": "Date",
+          "externalLink": "External link",
+          "horizontalLine": "Horizontal line",
+          "insert": "Insert",
+          "nonbreakingSpace": "Nonbreaking space",
+          "specialCharacter": "Special character...",
+          "time": "Time"
+        },
+        "comments": {
+          "addComment": "Add comment",
+          "addFailed": "Adding comment failed.",
+          "comment": "Comment",
+          "getFailed": "Getting comments failed.",
+          "insertComment": "Insert comment",
+          "insertFailed": "Inserting comment failed.",
+          "title": "Comments"
+        },
+        "confirmCancel": {
+          "confirmNo": "No, don't",
+          "confirmYes": "Yes, cancel",
+          "message": "Please confirm that you wish to cancel - the changes you made won't be saved."
+        },
+        "egnyte": {
+          "configMissing": "Egnyte is not configured properly on this RSpace instance. Please contact your System Admin",
+          "domainMissing": "Egnyte Domain URL is not set, please go to Apps page and set it up."
+        },
+        "handsontable": {
+          "insertFailed": "Inserting calculation table failed."
+        },
+        "hint": {
+          "attachment": "Hint: double-click on the attachment to see the details",
+          "calculationTable": "Hint: double-click on calculation table to edit",
+          "chemical": "Hint: double-click on the chemical structure to edit",
+          "codeSample": "Hint: double-click on code sample to edit",
+          "comment": "Hint: double-click on the comment to see the details",
+          "equation": "Hint: double-click on the math equation to edit",
+          "image": "Hint: double-click on the image to open annotation tool"
+        },
+        "mathjax": {
+          "insertFailed": "Inserting formula failed.",
+          "noEquation": "No equation provided",
+          "previewFailed": "Getting preview of the equation failed."
+        },
+        "mentionMessage": "You were mentioned in {0} ( {1} ).",
+        "menu": {
+          "file": "File",
+          "format": "Format",
+          "insert": "Insert",
+          "onlineTools": "Online Tools",
+          "scienceTools": "Science Tools",
+          "table": "Table",
+          "view": "View"
+        },
+        "oneDriveConfigMissing": "OneDrive integration has not been set up (\"clientId\" or \"redirectUri\" missing). Contact your system administrator.",
+        "protocols": {
+          "changeHandlerCalled": "Handler for .change() called.",
+          "importFailed": "{0, plural, one {Couldn't import selected protocol.} other {Couldn't import selected protocols.}}",
+          "noResults": "No results found",
+          "retrieveListFailed": "Could not retrieve the list of protocols.",
+          "retrieveProtocolFailed": "Could not retrieve protocol {0} from Protocols.io",
+          "selectProtocol": "Please select one or more protocols to import"
+        },
+        "sketch": {
+          "largeBrush": "Large brush",
+          "loadAnnotationsFailed": "Loading annotations failed.",
+          "saveFailed": "Saving sketch/annotation failed.",
+          "smallBrush": "Small brush",
+          "zoomIn": "Zoom-In",
+          "zoomOut": "Zoom-out"
+        },
+        "snip": {
+          "createFailed": "Creating new snippet failed.",
+          "nameRequired": "Please provide a name for the snippet",
+          "noContentSelected": "No content was selected"
+        },
+        "toolbar": {
+          "configure": "Configure toolbar",
+          "minRows": "Toolbar must contain at least two rows",
+          "newGroup": "new group",
+          "newRow": "new row",
+          "reset": "Reset",
+          "resetDefault": "Reset to default"
+        },
+        "tools": {
+          "desiredNotLargerThanStock": "Desired concentration cannot be larger than stock concentration",
+          "loadingTools": "Loading tools",
+          "stockPositive": "Stock concentration must be larger than 0",
+          "valuesRequired": "Please provide values for all fields"
+        },
+        "video": {
+          "detected": "{0} video detected.",
+          "embed": "Embed video",
+          "help": "Paste a supported video URL.",
+          "httpOrHttps": "Video URLs must start with http:// or https://.",
+          "supportedProviderUrl": "Enter a URL from a supported video provider.",
+          "supportedProviders": "Supported providers: YouTube, YouTube Privacy-Enhanced Mode, JoVE, TIB AV-Portal.",
+          "urlLabel": "Video URL",
+          "validHttpUrl": "Enter a valid HTTP or HTTPS URL.",
+          "video": "Video",
+          "youtubePlayerTitle": "YouTube video player"
+        }
+      },
+      "trash": {
+        "actionGettingDeletedItemsList": "Getting list of deleted items",
+        "noDeletedItemsToView": "There are no deleted items to view.",
+        "reorderingDeletedItems": "Reordering deleted items...",
+        "restored": "Restored",
+        "restoredDocument": "Restored deleted document...",
+        "restoredMediaFile": "Restored deleted media file into the Gallery...",
+        "searchingDeletedItems": "Searching in deleted items...",
+        "showingDeletedItemsForSearchTerm": "Showing deleted items for search term ''{0}''."
+      },
+      "userForm": {
+        "actionChangeEmailProcess": "Change email process",
+        "actionChangePasswordProcess": "Change password process",
+        "actionChangeVerificationPasswordProcess": "Change verification password process",
+        "actionCreatingApiKey": "Creating a new API key",
+        "actionEditProfileProcess": "Edit profile process",
+        "actionRemovingEgnyteToken": "Removing Egnyte token",
+        "actionSetVerificationPasswordProcess": "Set verification password process",
+        "apiKeyDeleted": "Key deleted",
+        "apiKeyNotDeleted": "Key was not deleted, please try again or ask support",
+        "cameraAccessProblem": "Sorry, there are some problems with accessing your camera",
+        "change": "Change",
+        "changeEmailDialogTitle": "Change Email",
+        "changePasswordDialogTitle": "Change Password",
+        "changeVerificationPasswordDialogTitle": "Change Verification Password",
+        "changingEmailEllipsis": "Changing email ...",
+        "changingPasswordEllipsis": "Changing password...",
+        "changingVerificationPasswordEllipsis": "Changing verification password...",
+        "confirmPasswordDialogTitle": "Confirm Password",
+        "editProfileDialogTitle": "Edit Profile",
+        "editingProfileEllipsis": "Editing profile ...",
+        "emailChangedSuccessfully": "Email changed successfully",
+        "passwordResetLinkError": "An error occurred while sending email, please try again.",
+        "passwordResetLinkSent": "Password reset link sent.  Please check your email.",
+        "profileUpdated": "Profile updated",
+        "set": "Set",
+        "setVerificationPasswordBeforeApiKey": "Please set your verification password before generating an api key.",
+        "setVerificationPasswordBeforeChangingEmail": "Please set your verification password before changing your email.",
+        "setVerificationPasswordDialogTitle": "Set Verification Password",
+        "settingVerificationPasswordEllipsis": "Setting verification password...",
+        "upload": "Upload",
+        "uploadImageDialogTitle": "Upload Image",
+        "verificationLinkSent": "Verification link has been sent to the new email address"
+      },
+      "workspace": {
+        "calendarDialog": {
+          "attachButton": "Attach",
+          "attachTitle": "Attach a file",
+          "cancelButton": "Cancel",
+          "createButton": "Create",
+          "createFailed": "An error occurred during the creation of the calendar event.",
+          "createTitle": "Create a calendar entry",
+          "downloading": "Calendar event is being downloaded.",
+          "noAttachments": "No Attachments",
+          "nothingSelected": "Nothing was selected!",
+          "occurrencesInvalid": "Number of times must be a positive integer!",
+          "startRequired": "Event start is a required field.",
+          "titleRequired": "Event title is a required field."
+        },
+        "clientUISettings": {
+          "savingUiSettingsAction": "Saving UI settings"
+        },
+        "coreEditor": {
+          "ajaxGettingComments": "Getting comments",
+          "ajaxRenamingRecord": "Renaming record",
+          "ajaxRetrievingAttachmentInfo": "Retrieving attachment information",
+          "ajaxRetrievingAttachmentsInfo": "Retrieving attachments information",
+          "ajaxRetrievingRecordInfo": "Retrieving record information",
+          "ajaxSavingComment": "Saving comment",
+          "ajaxTagging": "Tagging",
+          "attachmentDetailsLoadProblem": "There was a problem with loading attachment details: <br/>{0}",
+          "bioOntologiesDisabled": "Use My LabGroups page to enable inclusion of BioPortal Ontologies suggestions.",
+          "bioOntologiesEnabled": "BioPortal Ontologies being added to suggestions.Disable on My LabGroups Page.",
+          "boxConfigProblem": "There is a problem with RSpace Box configuration for Versioned links. Please contact your System Admin.",
+          "cancelButton": "Cancel",
+          "cancelCommentConfirm": "Please confirm that you wish to cancel - the changes you made won't be saved.",
+          "cancelCommentConfirmNo": "No, don't",
+          "cancelCommentConfirmYes": "Yes, cancel",
+          "chemCreationProblem": "There was a problem creating chemical: {0} <br/>{1}",
+          "chemFileIncompatibleExtension": "{0, plural, one {The following file has an incompatible extension:} other {The following files have an incompatible extension:}} <ul>{1}</ul>",
+          "closeButton": "Close",
+          "commentByAt": "Comment by {0} at {1}",
+          "commentsDialogTitle": "Comments",
+          "downloadAsCsv": "Download as CSV",
+          "downloadAsImage": "Download as image",
+          "downloadFullImage": "Download full image",
+          "embeddedVideoFrom": "embedded video from {0}",
+          "errorsPrefix": "Errors : {0}",
+          "externalLinkInfoDialogTitle": "External Link Info",
+          "forbiddenCharInName": "Sorry, ''{0}'' is a forbidden character that you can't use in document name",
+          "forbiddenCharInTag": "Sorry, ''{0}'' is a forbidden character that you can't use in tags",
+          "imageDetails": "Image details",
+          "linkAtServer": "at {0}",
+          "markushNotSupported": "RSpace doesn't currently support the generation of Markush or R-Group structure images, your file is stored in the gallery but cannot be inserted into a document",
+          "okButton": "OK",
+          "ontologiesEnforcedMessage": "Ontologies are enforced, tag values must come from ontology files shared with a group",
+          "pleaseEnterName": "Please enter a name",
+          "requestFailed": "Request failed",
+          "saveButton": "Save",
+          "saveCurrentDocumentTitle": "Save current document",
+          "sharedWithGroup": "<b>This document has been automatically shared with all members of {0}</b><br />To amend the permissions, visit the <a href=\"/record/share/manage\">Shared Documents</a> page.",
+          "tagInfoDialogTitle": "Tag Info",
+          "tagTooShort": "Sorry, the tag needs to be at least 2 characters long",
+          "tagsBackToStart": "================BACK_TO_START================",
+          "tagsClickForNextData": "============CLICK_HERE_FOR_NEXT_DATA============",
+          "tagsPlaceholderDefault": "Separate tags by comma...",
+          "tagsPlaceholderOntologiesEnforced": "Ontologies enforced...",
+          "tagsTooManyResults": "Too many results, please enter a specific search term",
+          "unsavedChangesConfirm": "You are currently editing the document, please save it before leaving the page."
+        },
+        "crudOps": {
+          "addingToFavoritesAction": "Adding to favorites",
+          "archivingDepositAction": "Archiving deposit",
+          "cannotCalculateMoveTargets": "Cannot calculate valid move targets for content of the current folder.",
+          "confirmDeletionTitle": "Confirm Deletion",
+          "copyAction": "Copy",
+          "copyingProgress": "Copying...",
+          "deleteAction": "Delete",
+          "deleteConfirmConsequences": "{0, plural, one {Do you want to delete the following document?} other {Do you want to delete the following documents?}}<br><strong>{1}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
+          "deletingFromFavoritesAction": "Deleting from favorites",
+          "deletingProgress": "Deleting...",
+          "depositSuccessful": "Deposit successfully at {0}",
+          "favoriteAltTitle": "Favorite",
+          "favoriteFailed": "Failed to favorite: {0}",
+          "favoritesIncomplete": "Favorites did not complete: {0}",
+          "markedAsFavorite": "{0, plural, one {Document marked as favorite} other {# documents marked as favourite}}",
+          "moveAction": "Move",
+          "noRecordsFound": "No records have been found.",
+          "publishDialogTitle": "Publish",
+          "removedFromFavorites": "{0, plural, one {Item removed from favorites} other {# documents removed from favorites}}",
+          "searchNoResults": "Your search returned no results. Please search again or",
+          "searchResultsShown": "Showing results of your search.",
+          "selectTargetFolderTitle": "Select target folder",
+          "sharedAltTitle": "Shared"
+        },
+        "documentEdit": {
+          "autosaveAction": "Autosave",
+          "autosaveErrors": "Errors: {0}",
+          "autosaveFailedAgain": "Autosave attempt failed again (status: {0})",
+          "autosaveRecovered": "Autosave was successful",
+          "autosaving": "Autosaving...",
+          "cancelConfirm": "Cancelling will revert the document's content back to its state at the last save - please confirm that you want to proceed.",
+          "cancelConfirmNo": "No, don't",
+          "cancelConfirmYes": "Yes, cancel",
+          "cancelEditsAction": "Cancel autosaved document edits",
+          "cancellingEdits": "Cancelling autosaved document edits",
+          "cannotCancelDocument": "You cannot cancel the current document",
+          "cannotEdit": "Sorry, you can't edit the document",
+          "cannotEditOtherEditing": "Sorry, you can't edit the document now - it is currently being edited by {0}",
+          "cannotSaveAndCopy": "You cannot perform 'Save and Copy' here - maybe you don't have  permission to create a document here",
+          "cannotSaveAndNew": "You cannot perform 'Save and New' here - maybe you don't have permission to create a document here",
+          "cannotSaveDocument": "You cannot save the current document",
+          "documentSaved": "Document saved",
+          "documentSavedNoChange": "Document saved, but no change in content was detected",
+          "editsCancelled": "Edits cancelled",
+          "exitWithoutSavingConfirm": "Are you sure you want to exit without saving changes?",
+          "requestEditLockAction": "Request for edit lock",
+          "requestingEditLock": "Requesting edit lock",
+          "retrievingFieldContent": "Retrieving latest field content",
+          "saveDocumentAction": "Save document",
+          "saving": "Saving...",
+          "savingAndCopying": "Saving and copying...",
+          "savingAndCreatingNew": "Saving and creating new...",
+          "someoneElse": "someone else",
+          "unchangedContentWarning": "The last few save actions didn't detect any changes to document content, is this expected? <br><br>If you <em>did</em> make changes to the content, then there may be a communication problem between your browser and RSpace server, and your latest changes may be lost. Please copy and save your content outside RSpace, close and reopen the document, and check if everything is there.<br><br>If some content is missing, or if you keep seeing this message, please contact your System Admin.",
+          "valueGreaterThanMax": "Value greater than max value ({0}).",
+          "valueLessThanMin": "Value less than min value ({0}).",
+          "valueNotANumber": "Value [{0}] is not a number!"
+        },
+        "documentView": {
+          "deleteConfirm": "<div style='line-height:1.3em'>Do you want to delete the following this document ? - {0}. <a href='#' id='moreDeleteInfoLnk' class='moreDeleteInfo'>Details...</a><div style='display:none;' id='moreDeleteInfoContent'>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with.</br> Deleting a document <em>shared with you</em> will only delete it from your view. <br/><a href='#' class='moreDeleteInfo'>Hide... </a></div></div>",
+          "deleteConfirmOk": "Delete",
+          "deleteDocumentAction": "Delete operation",
+          "fieldTooWideWarning": "The content of last edited field is wider than the page. It may affect PDF export and printout",
+          "noAttachments": "The document has no attachments.",
+          "signDialogTitle": "Signing Document",
+          "verificationPasswordRequiredSigning": "Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before signing.",
+          "verificationPasswordRequiredWitnessing": "Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before witnessing.",
+          "witnessDialogTitle": "Witnessing Document"
+        },
+        "form": {
+          "abandoningFormUpdatesBlock": "Abandoning form updates...",
+          "addingFieldAction": "Adding field",
+          "cancelButton": "Cancel",
+          "changeIconDialogTitle": "Change Form Icon",
+          "defaultDateGreaterThanMax": "The default date is greater than the max value.",
+          "defaultDateLessThanMin": "The default date is less than the min value.",
+          "defaultGreaterThanMaxNumber": "Default value greater than max value.",
+          "defaultLessThanMinNumber": "Default value less than min value.",
+          "defaultTimeGreaterThanMax": "The defualt time is greater than the max value.",
+          "defaultTimeLessThanMin": "The defualt time is less than the min value.",
+          "deleteButton": "Delete",
+          "deleteLink": "(Delete)",
+          "deletingFieldAction": "Deleting field",
+          "deletingFieldBlock": "Deleting field...",
+          "doneButton": "Done",
+          "editButton": "Edit",
+          "fieldErrors": "Errors : {0}",
+          "fieldNameMaxLength": "Field name maximum length is {0} characters",
+          "fieldNamePicklist": "{0} (Picklist)",
+          "fieldNameRadio": "{0} (Radio)",
+          "fieldNameRequired": "Field Name required.",
+          "fieldsReorderedMessage": "Fields reordered, page reloading",
+          "fileTooLarge": "Please upload a file smaller than 100kb.",
+          "formUpdatedMessage": "Form updated to new version..",
+          "genericError": "Error",
+          "iconChanged": "Icon changed!",
+          "minGreaterThanMaxDate": "The min value is greater than the max value.",
+          "minGreaterThanMaxNumber": "Min value is greater than max value.",
+          "minGreaterThanMaxTime": "The min value was greater than the max value.",
+          "moveBottom": "Bottom",
+          "moveDown": "Down",
+          "moveTop": "Top",
+          "moveUp": "Up",
+          "noChoicesAdded": "No choices have been added.",
+          "noFieldTypeSelected": "No field type selected.",
+          "noRadiosAdded": "No radios have been added.",
+          "okButton": "OK",
+          "picklistTooLarge": "The picklist cannot hold more than 2000 items.",
+          "publishShareDialogTitle": "Configure access to forms",
+          "reorderingFieldsAction": "Reordering fields",
+          "revertingFormAction": "Reverting to previous form version",
+          "saveButton": "Save",
+          "savingFieldAction": "Saving field",
+          "savingFormAction": "Saving form",
+          "savingFormBlock": "Saving form...",
+          "savingFormTagsAction": "Saving form tags",
+          "submitButton": "Submit",
+          "unpublishingFormAction": "Unpublishing form",
+          "updatingFormAction": "Updating form",
+          "updatingFormBlock": "Updating  form...",
+          "valueGreaterThanMaxNumber": "Value greater than max value({0}).",
+          "valueLessThanMinNumber": "Value less than min value({0}).",
+          "valueNotANumber": "Value [{0}] is not a number!",
+          "warningAlt": "Warning"
+        },
+        "formList": {
+          "abandoningSearch": "Abandoning search...",
+          "addToMenuAction": "Adding to form to Create Menu",
+          "addingToCreateMenu": "Adding to Create Menu...",
+          "cancelButton": "Cancel",
+          "changingPageSize": "Changing the number of records per page...",
+          "changingPermissions": "Changing permissions...",
+          "configureAccessTitle": "Configure access to Forms",
+          "copyingForms": "Copying selected forms...",
+          "deleteFailed": "Deleting selected items wasn't successful. Server returned message: {0}",
+          "deleteFormAction": "Delete form",
+          "deletingForms": "Deleting selected forms...",
+          "genericError": "Error",
+          "loadingForms": "Loading forms...",
+          "loadingFormsAction": "Loading forms",
+          "noFormsToManage": "You have no forms to manage.",
+          "okButton": "OK",
+          "openingPermissionsTools": "Opening permissions management tools...",
+          "openingPublishingTools": "Opening publishing tools...",
+          "openingRecordInfo": "Opening record information...",
+          "publishing": "Publishing...",
+          "removeFromMenuAction": "Removing form from Create Menu",
+          "removingFromCreateMenu": "Removing from Create Menu...",
+          "reorderingForms": "Reordering forms...",
+          "searchNoResults": "Your search for ''{0}'' returned no results. Please search again or",
+          "searchResultsShown": "Showing forms for search term ''{0}''.",
+          "searchTermTooShort": "Please enter at least three characters.",
+          "searching": "Searching...",
+          "searchingFormListAction": "Searching form list",
+          "showingAllForms": "Showing all forms",
+          "showingMyForms": "Showing my forms",
+          "unpublishAction": "Unpublishing the selected forms",
+          "unpublishingForms": "Unpublishing the forms..."
+        },
+        "journal": {
+          "entryNumber": "Entry {0} of {1}",
+          "loadingEntry": "Loading entry...",
+          "noEntriesToDisplay": "There are no entries to display.",
+          "noMoreRecordsInDirection": "No more records in this direction.",
+          "noParentRecordId": "No parent record ID was set, journal view cannot be rendered",
+          "noResultsFound": "No results were found",
+          "searchFailed": "Search failed: {0}"
+        },
+        "main": {
+          "cancelButton": "Cancel",
+          "chooseFormTitle": "Choose a form",
+          "displaySettingsAction": "Display Workspace Settings",
+          "folderEmpty": "This folder is empty.",
+          "importEvernoteFileType": "Evernote XML",
+          "importEvernoteTitle": "Import from Evernote",
+          "importWordFileType": "Word or Open Office",
+          "importWordTitle": "Import from Word/Open Office",
+          "listView": "List View",
+          "loadingRecords": "Loading records...",
+          "openFolderAction": "Opening folder",
+          "orderByTitle": "Order by {0}",
+          "saveSettingsFailedAction": "Failed to save workspace settings",
+          "searchNoResults": "Your search returned no results. Please search again or",
+          "searchResultsShown": "Showing results of your search.",
+          "treeView": "Tree View"
+        },
+        "notebookEditor": {
+          "ajaxDeleteEntry": "Delete entry",
+          "cancelButton": "Cancel",
+          "chooseFormTitle": "Choose a form",
+          "confirmDeletionTitle": "Confirm Deletion",
+          "deleteEntryConfirm": "Are you sure you want to delete the following entry?<br><strong>{0}</strong><br /><br />Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.",
+          "exitWithoutSavingConfirm": "Are you sure you want to exit without saving changes?",
+          "importWordTitle": "Import from Word/Open Office",
+          "noEntriesToEdit": "There are no entries to edit yet in this notebook - please click on Create > New Entry to start editing.",
+          "setVerificationPasswordBeforeSigning": "Please set your verification password in <a href=\"/userform\" target=\"_blank\">My RSpace</a> before signing.",
+          "signingEntryTitle": "Signing Entry",
+          "witnessingEntryTitle": "Witnessing Entry",
+          "wordFileType": "Word or Open Office"
+        },
+        "recordInfoPanel": {
+          "dialogTitle": "Info",
+          "documentPublished": "This document is published: <li><a target=\"blank\" href={0}>public link</a></li>",
+          "linkedByCount": "This {0} is linked by {1} {1, plural, one {doc} other {docs}}.",
+          "linkedByHeader": "This {0} is linked by:",
+          "linkedInPublishedNotebook": "This document is in a published notebook:<li><a target=\"blank\" href={0}>public link</a></li>",
+          "loading": "Loading&hellip;",
+          "noInventoryItemsLinkToRecord": "No Inventory items link to this {0}.",
+          "noLinksToRecord": "There are no links to this {0}.",
+          "notShared": "This {0} is not shared.",
+          "notebookPublished": "This notebook is published:<li><a target=\"blank\" href={0}>public link</a></li>",
+          "okButton": "OK",
+          "openInApp": "Open in {0}",
+          "previewLoadError": "Sorry but there was an error: {0} {1}",
+          "privateDocsBelongingTo": "{0} private {0, plural, one {doc} other {docs}} belonging to {1}",
+          "recordNotPublished": "This {0} is not published.",
+          "relatedInventoryItemsLoadFailed": "Could not load related Inventory items.",
+          "relatedInventoryItemsTitle": "Related inventory items",
+          "retrievingCollaboraExtsAction": "retrieving Collabora supported extensions",
+          "retrievingMsOfficeExtsAction": "retrieving MS Office supported extensions",
+          "sharedHeader": "This {0} is shared:",
+          "sharedImplicitly": "implicitly - is in shared Notebook <a href='/globalId/{0}'>{0}</a> (shared with : {1})",
+          "sharedIntoNotebook": "into Notebook <a href='/globalId/{0}'>{0}</a> (owner: {1})",
+          "sharedWithGroup": "with {0} (group) for {1}",
+          "sharedWithUser": "with {0} (user) for {1}",
+          "showLinkedDocs": "Show linked {0, plural, one {doc} other {docs}}",
+          "signatureStatusAllWitnessesDeclined": "signed, all witnesses declined",
+          "signatureStatusAwaitingWitness": "signed, awaiting witness",
+          "signatureStatusSigned": "signed",
+          "signatureStatusSignedAndWitnessed": "signed and witnessed",
+          "signatureStatusUnknown": "unknown",
+          "signatureStatusUnsignable": "unsignable",
+          "signatureStatusUnsigned": "unsigned",
+          "statusCurrentlyEditedByYou": "currently edited by you",
+          "statusEditInProgressBy": "edit in progress by {0}",
+          "statusReadOnly": "read-only",
+          "statusViewable": "viewable",
+          "statusViewableEditable": "viewable & editable",
+          "updatingInfoAction": "Updating info",
+          "updatingRecordInformation": "Updating record information..."
+        },
+        "revisionHistory": {
+          "ownedBy": "Owned by",
+          "restoreAction": "Restore",
+          "restoredToast": "Restored"
+        },
+        "search": {
+          "abandoningSearchBlock": "Abandoning search..."
+        },
+        "signingProcess": {
+          "cancelButton": "Cancel",
+          "editedCannotSign": "This document cannot be signed because it is being edited. Please click 'Save and View', then 'Sign' to initialize the signing process.",
+          "proceedButton": "Proceed",
+          "signButton": "Sign",
+          "signedAndLocked": "The document has been signed and locked",
+          "signingAction": "Signing process",
+          "signingInProgress": "Signing...",
+          "witnessButton": "Witness",
+          "witnessed": "Document witnessed",
+          "witnessingAction": "Witnessing process",
+          "witnessingDeclined": "Document witnessing declined",
+          "witnessingInProgress": "Witnessing..."
+        },
+        "tinymcePaste": {
+          "copyingContent": "Copying content",
+          "copyingElements": "Copying elements in pasted content..."
+        }
+      }
+    }
+  },
+  "server.public": {
+    "account": {
+      "disabled": {
+        "contactAdminPrompt": "If this is unexpected, please contact an administrator.",
+        "statusNotice": "Access to your account is not enabled at the moment.",
+        "title": "Account disabled",
+        "unavailableHeading": "Login not Available"
+      }
+    },
+    "accountActivated": {
+      "notice": "Account successfully activated!",
+      "title": "User account activated"
+    },
+    "accountDenied": {
+      "notice": "Account request rejected!",
+      "title": "User account rejected"
+    },
+    "adminLogin": {
+      "heading": "Welcome to RSpace",
+      "passwordPlaceholder": "Password",
+      "title": "Admin login",
+      "usernamePlaceholder": "User"
+    },
+    "adminLoginUnavailable": {
+      "title": "Admin Login",
+      "unavailableNotice": "Admin Login is not available on this system."
+    },
+    "apiDocs": {
+      "noJsWarning": "You need to enable JavaScript to view the RSpace API documentation.",
+      "title": "RSpace API Documentation | ResearchSpace"
+    },
+    "awaitingAuthorisation": {
+      "heading": "Sign Up In Process",
+      "processingNotice": "Your account is still being processed, and you will shortly receive an email confirming your account has been set up.",
+      "title": "Sign up request being processed"
+    },
+    "button": {
+      "login": {
+        "label": "Log in",
+        "with": {
+          "google": "Log in with Google"
+        }
+      },
+      "more": "More...",
+      "signup": {
+        "with": {
+          "google": "Or sign up with Google"
+        }
+      }
+    },
+    "company": {
+      "name": "ResearchSpace",
+      "url": "https://www.researchspace.com/"
+    },
+    "contactSystemAdminIfUnexpected": "If that's unexpected, please contact your System Admin.",
+    "emailChangeConfirmed": {
+      "heading": "Email address has been changed",
+      "title": "Email Changed"
+    },
+    "externalAuth": {
+      "errors": {
+        "accountNotFound": "No account found for email [{0}], please sign up",
+        "invalidIdToken": "Couldn't create or sign in, idToken was invalid."
+      }
+    },
+    "form": {
+      "emailAddressPlaceholder": "Your Email Address",
+      "emailAddressTitle": "Use a valid email address"
+    },
+    "invalid": {
+      "ipAddress": {
+        "loginBlocked": "The IP address you logged in from is invalid for this login. Please try again from a valid IP address.",
+        "title": "Invalid IP address"
+      }
+    },
+    "license": {
+      "insufficientSeats": {
+        "details": "{1, plural, one {There are insufficient license seats available to create or re-enable a user. Please contact your RSpace administrator. {2}} other {Your request requires # seats, but the number available is {0}. Please contact your RSpace administrator. {2}}}"
+      }
+    },
+    "login": {
+      "errors": {
+        "passwordRequired": "Please specify a password.",
+        "usernameRequired": "Please specify a username."
+      },
+      "heading": "Log in",
+      "title": "Log in"
+    },
+    "logo": {
+      "alt": "RSpace logo"
+    },
+    "maintenance": {
+      "mode": {
+        "checkAgainNotice": "This page will check the maintenance status again in {0} seconds, or you can",
+        "checkStatusLink": "check the status now",
+        "heading": "Maintenance Mode",
+        "inProgressNotice": "Scheduled maintenance is in progress now. Please try again later.",
+        "title": "RSpace Maintenance Mode"
+      }
+    },
+    "noLdapSignUp": {
+      "adminAccountPrompt": "Please ask your Admin for an account or to enable user self signup."
+    },
+    "pi": {
+      "signup": {
+        "info": "If you are a Principal Investigator (PI), then please tick this box. Registered PIs will have a lab group created for them, to which other members can be invited."
+      }
+    },
+    "public": {
+      "requestPassword": {
+        "emailInstructions": "Please enter your email address that you registered with RSpace - instructions to reset your password will be sent to that address.",
+        "title": "Request password reset"
+      }
+    },
+    "publicLinkNotFound": {
+      "contactSourcePrompt": "Please contact your source for the link.",
+      "heading": "Link not found",
+      "title": "Published Link Not Found",
+      "wrongLinkNotice": "We are sorry, it appears you have the wrong link or the link you have is to a document which is no longer published."
+    },
+    "publishIsDisabled": {
+      "disabledNotice": "Sorry - Admin has disabled all public documents.",
+      "heading": "Public Documents are disabled"
+    },
+    "remindUsernameEmailSent": {
+      "sentNotice": "Your username has been sent to {0}.",
+      "title": "Username verification"
+    },
+    "requestPasswordReset": {
+      "heading": "Forgotten your password?"
+    },
+    "requestUsernameReminder": {
+      "heading": "Forgotten your username?",
+      "instructions": "Please enter the email address that you registered with RSpace - your username will be sent to that address.",
+      "title": "Request username reminder"
+    },
+    "resendEmail": {
+      "awaitingEmailConfirmation": {
+        "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you.  In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+        "resendButtonText": "Resend email",
+        "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
+        "title": "Awaiting Email Confirmation"
+      },
+      "resendFailure": {
+        "deliveryFailure": "Sending an activation email to this email address failed.",
+        "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
+        "title": "Sending Activation Email Failed"
+      },
+      "resendSuccess": {
+        "activationInstructions": "To activate your account and verify your email, click a link in the email that has just been sent to you.",
+        "retryOrSupportInstructions": "If you still don't receive any email, please wait some time and try to <a href=\"/login\">login</a> again, or contact support@researchspace.com to have our System Admin complete the registration process for you.",
+        "title": "Successfully Sent Activation Email"
+      }
+    },
+    "resetPassword": {
+      "changeHeading": "Change {0}",
+      "confirmPasswordLabel": "Confirm {0}",
+      "enterNewPasswordPrompt": "Please enter your new {0}:",
+      "newPasswordLabel": "New {0}",
+      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "submitButton": "Reset"
+    },
+    "resetPasswordComplete": {
+      "loginPasswordNotice": "You can now <a href=\"/workspace\">login</a> with your new password.",
+      "successNotice": "Thank you, your {0} is successfully changed.",
+      "title": "{0} changed",
+      "verificationPasswordNotice": "You can now use your new verification password in <a href=\"/workspace\">RSpace</a>."
+    },
+    "resetPasswordFail": {
+      "heading": "This link has a problem!",
+      "rejectedNotice": "Sorry, this link could not be accepted - either the token was rejected, or it has expired, or it has already been used.",
+      "retryPrompt": "Please try again to <a href=\"/public/requestPasswordReset\">reset your password</a>.",
+      "title": "Password reset link declined"
+    },
+    "resetPasswordRequestSent": {
+      "instructions": "Please check your email and follow the instructions in the email to reset your password within 1 hour.",
+      "sentNotice": "A password request verification email has been sent to {0}.",
+      "title": "Password verification"
+    },
+    "signup": {
+      "browserWarning": {
+        "chrome": "Chrome",
+        "firefox": "Firefox",
+        "heading": "Browser upgrade recommended to use RSpace",
+        "iconAlt": "Icon by Martin Leblanc",
+        "notice1": "It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.",
+        "notice2": "We do fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.",
+        "safari": "Safari"
+      },
+      "community": {
+        "activation": {
+          "completeHeading": "Congratulations - account activation is now complete",
+          "completeStatusHeading": "Completed",
+          "completeTitle": "Account Activation Complete",
+          "failTitle": "Account Activation Failed",
+          "failureHeading": "There was a problem with this link!",
+          "loginPromptLink": "log in to use RSpace",
+          "loginPromptPrefix": "You can now"
+        },
+        "confirm": {
+          "activationEmailInstructions": "You will shortly receive an email confirming your account creation. Please read this email and click on the validation link to activate your account. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+          "heading": "Sign Up Requested",
+          "thankYou": "Thank you for signing up to RSpace",
+          "title": "Sign up request confirmed"
+        },
+        "finalSignup": {
+          "label": "One click to join",
+          "title": "Join RSpace"
+        }
+      },
+      "form": {
+        "affiliationLabel": "Affiliation",
+        "affiliationPlaceholder": "Your organisation - type and select",
+        "confirmPasswordLabel": "Confirm Password",
+        "confirmPasswordPlaceholder": "Confirm Password",
+        "confirmPasswordTitle": "Confirm Password",
+        "createPasswordLabel": "Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.",
+        "createUsernameLabel": "Create Username",
+        "emailLabel": "Email address",
+        "fillDetailsPrompt": "Please fill in your details",
+        "firstNameLabel": "First Name",
+        "firstNamePlaceholder": "Your First Name",
+        "lastNameLabel": "Last Name",
+        "lastNamePlaceholder": "Your Last Name",
+        "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+        "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+        "passwordPlaceholder": "Create a Password",
+        "piStatusNotice": "Based on your status at {0}, you cannot become a PI unless a system administrator manually enables this for you.",
+        "signupCodeLabel": "Signup code",
+        "signupCodePlaceholder": "Signup code (get this from your administrator)",
+        "submitButton": "Sign up",
+        "termsAgreement": "I agree to these {0}",
+        "termsAgreementLinkText": "Terms and Conditions",
+        "usernameLengthHint": "6 - 50 characters. Only numbers and letters are allowed.",
+        "usernameLengthTitle": "Minimum {0}, max 50 alphanumeric characters",
+        "usernamePlaceholder": "Create a Username"
+      },
+      "heading": "New User Registration",
+      "title": "Sign Up"
+    },
+    "signupConfirmation": {
+      "setupNotice": "You will shortly receive an email confirming that your account has been set up."
+    },
+    "ssoHeader": {
+      "backToWorkspace": "Back to {0} Workspace",
+      "currentRspaceUserLabel": "Current&nbsp;RSpace&nbsp;user:&nbsp;",
+      "logoutFromSsoSession": "Logout from SSO session",
+      "ssoUserLabel": "SSO&nbsp;user:&nbsp;"
+    },
+    "ssoinfo": {
+      "default": {
+        "contactSupportPrompt": "Please contact RSpace Support ({0}) to ask for an account."
+      },
+      "liege": {
+        "contactPrompt": "Please contact labis@uliege.be to ask for an RSpace account.",
+        "heading": "Request access to RSpace",
+        "unavailableNotice": "Sorry - you are unable to use RSpace just yet - an administrator has to create an RSpace account for you first."
+      }
+    },
+    "ssoinfoUsernameConflict": {
+      "heading": "There is a pre-existing RSpace account for your username",
+      "notice": "Sorry - Your username ({0}) is already registered in RSpace as an internal, administrative account. Such account can only be accessed through ''Admin&nbsp;Login'' screen, not directly.",
+      "title": "Conflicting accounts"
+    },
+    "ssoinfoUsernameNotAlias": {
+      "heading": "Login attempt with username, rather than username alias",
+      "notice": "Sorry - Your username ({0}) is matching a user who is configured to login with username alias, rather than by main username.",
+      "title": "Login attempt with username, to account that has an username alias"
+    },
+    "ssologout": {
+      "clickHereToLogOut": "You can <a href={0}>click here</a> to fully log out.",
+      "heading": "Logged out of RSpace",
+      "pleaseLogOutReminder": "Please don't forget to fully log out.",
+      "stillLoggedInNotice": "You are <b>still logged</b> into your <b>institutional Single Sign-On</b> account.",
+      "title": "Logged out"
+    },
+    "token": {
+      "verification": {
+        "email": {
+          "changeFailAlreadyTaken": "It looks like someone already registered an account for the email you want to change to.",
+          "changeFailHeading": "There is a problem with the verification link",
+          "changeFailTitle": "Email Change Failed",
+          "changeSuccessWorkspaceLink": "Go to Workspace"
+        },
+        "fail": {
+          "rejectedLink": "Sorry, this link could not be accepted.",
+          "retryInstructions": "Either the token was rejected, it has expired, or it has already been used. Please login to receive a new token.",
+          "wrongUser": "You are not logged in as the user for whom the link was generated."
+        }
+      }
+    },
+    "unknownUser": {
+      "heading": "RSpace doesn't know you...",
+      "notRegisteredNotice": "Sorry - Your username ({0}) is not registered with RSpace, so you are not able to use RSpace yet.",
+      "title": "Unknown RSpace user"
+    },
+    "verificationEmail": {
+      "checkItsYouHeading": "We need to check it's you...",
+      "thankYou": "Thank you."
+    },
+    "verifyEmailChange": {
+      "heading": "Click to change your email address to {0}",
+      "submitButton": "Change Email",
+      "title": "Email Change"
+    },
+    "webapp": {
+      "name": "ResearchSpace"
+    }
+  },
+  "server.system": {
+    "errorPage": {
+      "explanation": {
+        "message": "Sorry, but RSpace has encountered a problem, which has been logged. If this problem persists, please contact the ResearchSpace development team for assistance."
+      },
+      "forbidden": {
+        "message": "Your current role does not allow you to view this page. Please contact your system administrator if you believe you should have access.",
+        "title": "Access Denied"
+      },
+      "heading": "Sorry, we couldn't take you to the page you requested",
+      "notFound": {
+        "message": "The page was not found. You can try again, or use your ‘back’ button to return to your previous location and navigate from there, or click <a href=\"{0}\">here</a> to go to the main workspace. If you can’t resolve the problem, please contact an administrator.",
+        "title": "Page Not Found"
+      },
+      "title": "An error has occurred"
+    },
+    "errors": {
+      "adminNotInCommunity": "The admin does not belong to any community.",
+      "deleteAdminUser": "This user  is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
+      "deleteSysadminUser": "Invalid attempt to delete sysadmin user - there must be at least one remaining active, enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
+      "deleteUser": {
+        "nonSelf": "You cannot delete yourself!"
+      },
+      "invalid": {
+        "roleIdentifier": "[{0}] is not a valid role identifier. Please choose one of [{1}]."
+      },
+      "missingGroup": {
+        "name": "Please type an initial group name and choose a community."
+      },
+      "user": {
+        "activeSession": "{0} is currently logged into RSpace - this operation is best performed when the user is offline, to prevent  data corruption",
+        "notFound": "User with ID [{0}] could not be found. The user may have been deleted.",
+        "notInGroup": "The user does not belong to any group."
+      }
+    },
+    "general": {
+      "operationFailed": "Operation failed...",
+      "pageReloading": "Page reloading..."
+    },
+    "system": {
+      "admin": {
+        "confirmPasswordTitle": "Confirm password",
+        "pageTitle": "System Admin",
+        "reauthenticate": "Please re-authenticate with your own login password.",
+        "reauthenticateWithVerificationPassword": "Please re-authenticate with your own verification password."
+      },
+      "batchRegistration": {
+        "button": {
+          "addCommunity": "Add community...",
+          "addGroup": "Add group...",
+          "addUser": "Add user...",
+          "createAll": "Create All",
+          "csvInput": "CSV Input",
+          "csvLoad": "Load CSV content",
+          "csvUpload": "Upload CSV file",
+          "label": "Batch User Registration",
+          "manualInput": "Manual creation"
+        },
+        "columns": {
+          "affiliation": "Affiliation",
+          "communityAdmins": "Community Admins",
+          "email": "Email",
+          "firstName": "First Name",
+          "labGroups": "LabGroups",
+          "lastName": "Last Name",
+          "members": "Members",
+          "name": "Name",
+          "password": "Password",
+          "pi": "PI",
+          "role": "Role",
+          "status": "Status",
+          "username": "Username"
+        },
+        "helpText": {
+          "exampleCsvIntro": "You can also import groups and communities, for detailed syntax check {0}.",
+          "exampleCsvLabel": "this example CSV file",
+          "ldapCsv": "If values for First name, Last name or Email are empty RSpace will try to fetch them from LDAP.",
+          "ldapUsersTable": "To fetch First name, Last name or Email from LDAP type the Username and hit Enter."
+        },
+        "roleOptions": {
+          "communityAdmin": "Community Admin",
+          "pi": "PI",
+          "systemAdmin": "System Admin",
+          "user": "User"
+        },
+        "serverMessagesLabel": "Server messages:",
+        "tables": {
+          "communitiesHeading": "Communities to create",
+          "groupsHeading": "Groups to create",
+          "helpTextCsvInput": "Verify content created from CSV input and click 'Create All' to start registration.",
+          "helpTextManualRegistration": "Add users, groups and communities and click 'Create All' to start registration.",
+          "usersHeading": "Users to create"
+        },
+        "textarea": {
+          "helpTextCloud": "To import users please provide CSV content with 7 columns: First name, Last name, Email, Affiliation, Role, Username, Password.",
+          "helpTextSso": "To import users please provide CSV content with 5 columns: First name, Last name, Email, Role, Username.",
+          "helpTextStandalone": "To import users please provide CSV content with 6 columns: First name, Last name, Email, Role, Username, Password."
+        },
+        "upload": {
+          "emptyFile": "The selected CSV file is empty. Please choose a CSV file that contains user data.",
+          "helpTextCloud": "To import users please upload a CSV file with 7 columns:<br/> First name, Last name, Email, Affiliation, Role, Username, Password.",
+          "helpTextSso": "To import users please upload a CSV file with 5 columns:<br/> First name, Last name, Email, Role, Username.",
+          "helpTextStandalone": "To import users please upload a CSV file with 6 columns:<br/> First name, Last name, Email, Role, Username, Password.",
+          "noFile": "No CSV file was provided. Please select a CSV file to upload."
+        }
+      },
+      "communityList": {
+        "admins": {
+          "label": "Admins"
+        },
+        "button": {
+          "label": "Communities"
+        },
+        "empty": "There are no communities yet in RSpace.",
+        "name": {
+          "label": "Name"
+        },
+        "optionColumnLabel": "Option",
+        "profileText": {
+          "label": "Optionally, enter a short  description of this community."
+        },
+        "removeCommunityLink": "Remove community",
+        "uniqueName": {
+          "label": "Unique Name"
+        }
+      },
+      "config": {
+        "button": {
+          "label": "Configuration",
+          "ldap": "LDAP Settings",
+          "netFileSystem": "Institutional File Systems",
+          "ror": "ROR Registry",
+          "systemSettings": "System Settings",
+          "whitelist": "Sysadmin IP White List"
+        }
+      },
+      "createAccount": {
+        "batchUpload": {
+          "communityCreated": "Community created.",
+          "complete": "Import complete",
+          "errors": {
+            "community": "Error when creating a community [{0}] - [{1}]",
+            "communityAdminWithoutAdminRole": "User [{0}] needs Community Admin role.",
+            "creatingSysadminWithoutSystemRole": "Only System Admin can create other System Admin.",
+            "existingEmail": "Email is already registered in RSpace.",
+            "existingUsername": "Username is already registered in RSpace.",
+            "group": "Error when creating a group [{0}] - [{1}]",
+            "groupDisplayNameWithComma": "Comma mark not allowed in display name.",
+            "notifyUser": "Error when sending notification to user [{0}]/[{1}]",
+            "piWithoutPiRole": "User needs PI role.",
+            "repeatedEmail": "Repeated email.",
+            "repeatedUsername": "Repeated username.",
+            "unknownGroup": "Unknown group [{0}].",
+            "unknownUser": "Unknown user [{0}].",
+            "userExists": "Username [{0}] or email [{1}] is already registered in the system",
+            "userInit": "Error when adding content to home folder of user [{0}]"
+          },
+          "groupCreated": "Group created.",
+          "userCreated": "User created.",
+          "userNotified": "User notified."
+        },
+        "button": {
+          "label": "Create Account"
+        },
+        "newAdmin": {
+          "description": "creates an administrator who can manage groups, users and archiving of content across an RSpace Community, but can't create content.",
+          "label": "Community Admin"
+        },
+        "newPi": {
+          "description": "creates a LabGroup ‘owner’ and generates a new LabGroup for them to manage."
+        },
+        "newSysAdmin": {
+          "description": "allows an existing System Admin to create another system-wide administrator with equal permissions, but who can't create content.",
+          "label": "System Admin"
+        },
+        "newUser": {
+          "description": "creates a default user who may be placed in an existing LabGroup."
+        },
+        "pageHeader": "Create a new individual account"
+      },
+      "createAccountForm": {
+        "backdoorAccountInfo": "Should this be a backdoor login account? Backdoor accounts don't use SSO for authentication, can be only logged into through Admin Login screen - see {0}.",
+        "backdoorAccountLinkText": "RSpace Documentation",
+        "backdoorUsernameWarning": "Backdoor account - pick a username that won't conflict with potential SSO user!",
+        "communitySelectionLabel": "Select the new user's Community",
+        "confirmPassword": {
+          "label": "If typing, confirm password"
+        },
+        "email": {
+          "label": "E-mail"
+        },
+        "firstName": {
+          "label": "First name"
+        },
+        "generatePassword": "Enter or {0} password",
+        "generatePasswordLinkLabel": "Generate",
+        "groupsTable": {
+          "name": "Group name",
+          "pi": "PI",
+          "size": "Group size"
+        },
+        "labGroupFilterPlaceholder": "Filter and choose a LabGroup",
+        "labGroupName": {
+          "label": "LabGroup name"
+        },
+        "lastName": {
+          "label": "Last name"
+        },
+        "ldapAuthQuestion": "User will authenticate with LDAP?",
+        "ldapDetails": {
+          "label": "Get LDAP details"
+        },
+        "newLabGroupName": {
+          "placeholder": "New LabGroup name"
+        },
+        "notePassword": {
+          "label": "Please copy or manually note this password, as it must be delivered to the new user outside RSpace."
+        },
+        "password": {
+          "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+          "placeholder": "Password",
+          "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
+        },
+        "passwordConfirmation": {
+          "placeholder": "Password Confirmation",
+          "title": "Confirm Password"
+        },
+        "repeatCheckboxLabel": "Check to repeat",
+        "selectAdminCommunity": {
+          "label": "Choose a community for this admin to manage"
+        },
+        "selectPiCommunity": {
+          "label": "Choose a community for this PI's LabGroup"
+        },
+        "showHidePassword": {
+          "label": "Show / hide passwords"
+        },
+        "userName": {
+          "relaxedTitle": "Minimum 1 alphanumeric character",
+          "strictTitle": "Minimum 6 alphanumeric characters"
+        }
+      },
+      "createCommunity": {
+        "button": {
+          "label": "New Community"
+        },
+        "chooseAdmins": {
+          "label": "Choose one or more administrators."
+        },
+        "displayNamePlaceholder": "A display name for this community",
+        "errors": {
+          "noAdmins": "There are no available admins for this community, please  create a new admin user first."
+        },
+        "moveGroupsPrompt": "If you wish to move any groups into this Community, select them below.",
+        "noGroupsAvailable": "There are no groups yet that can be added to this community",
+        "profileTextPlaceholder": "A short description of this community",
+        "title": "Create a Community"
+      },
+      "createGroup": {
+        "button": {
+          "label": "New Group"
+        }
+      },
+      "csvImport": {
+        "blankUsername": "Blank username at line [{0}]",
+        "community": {
+          "wrongNumberOfFields": "Community line [{0}] at line [{1}] needs at least 2 fields: community name and at least one LabGroup"
+        },
+        "communityAdmin": {
+          "noAdminRole": "Attempt to make User [{0}] the Community Admin at line [{1}], but is not assigned an Admin role. Alter this user's role to ROLE_ADMIN",
+          "wrongNumberOfFields": "Community Admin line [{0}] at line [{1}] needs at least 2 fields: community name and at least one Admin user"
+        },
+        "group": {
+          "blankGroupName": "Group name is blank at line [{0}]",
+          "blankPi": "PI username name is blank at line [{0}]",
+          "piWithoutPiRole": "Attempt to make User [{0}] the group PI at line [{1}], but is not assigned a PI role. Alter this user's role to ROLE_PI",
+          "wrongNumberOfFields": "Group line [{0}] at line [{1}] needs at least 2 fields: group name and a PI user"
+        },
+        "unknownLabGroup": "LabGroup [{0}] not found among groups to create at line [{1}]",
+        "unknownUsername": "User [{0}] not found among users to create at line [{1}]",
+        "user": {
+          "noUsername": "Skipping line:[{0}] at line [{1}] - could not generate username",
+          "unrecognisedRole": "Skipping line:[{0}] at line [{1}] - unrecognised role [{2}] - should be one of: {3}",
+          "wrongNumberOfFields": "Skipping line:[{0}] at line [{1}] - it should have {2} fields, but has {3}"
+        }
+      },
+      "downtime": {
+        "button": {
+          "addNewMaintenance": "Add new downtime",
+          "finish": "Finish now",
+          "label": "Schedule Downtime",
+          "stopLogin": "Stop users logging in",
+          "update": "Update"
+        },
+        "header": {
+          "activeMaintenance": "Active downtime",
+          "currentlyLoggedUsers": "Currently logged users:",
+          "nextMaintenance": "Next downtime",
+          "noMaintenance": "No downtime scheduled yet",
+          "oldMaintenances": "Expired downtimes",
+          "otherMaintenances": "Other scheduled downtimes",
+          "scheduleNew": "Schedule new downtime"
+        },
+        "label": {
+          "ends": "Ends at",
+          "message": "Message",
+          "starts": "Starts at"
+        },
+        "message": {
+          "userCanLoginUntil": "Users allowed to login until",
+          "userCannotLogin": "Users no longer allowed to login"
+        }
+      },
+      "forceRefreshLicense": {
+        "button": {
+          "label": "Reload license"
+        }
+      },
+      "groupList": {
+        "columns": {
+          "enabledDataContent": "Enabled",
+          "fileUsage": "File Usage (Mb)",
+          "options": "Options",
+          "size": "{0} (enabled, disabled)",
+          "sizeLinkLabel": "Size"
+        },
+        "deleteLink": "Delete group",
+        "pageTitle": "Lab Groups",
+        "showAllLink": "Show All",
+        "title": "Groups"
+      },
+      "ldap": {
+        "authenticationEnabledMessage": "LDAP authentication is enabled.",
+        "button": {
+          "runSidRetrievalLabel": "Retrieve SID values for LDAP users",
+          "runSidRetrievalStop": "Stop SID retrieval"
+        },
+        "integrationEnabledMessage": "LDAP integration is enabled.",
+        "sidVerificationEnabledMessage": "SID Verification is enabled."
+      },
+      "netFileSystem": {
+        "add": {
+          "header": "Add File System:"
+        },
+        "button": {
+          "addNewFilesystem": "Add new File System"
+        },
+        "details": {
+          "allowlistsAnyone": "Anyone with an RSpace account",
+          "allowlistsNobody": "Nobody (read access only)",
+          "allowlistsOnlyThese": "Only the following users:",
+          "allowlistsReadNobody": "Nobody (write access only)",
+          "allowlistsReadPlaceholder": "carol",
+          "allowlistsReadQuestion": "Who can read from this file system?",
+          "allowlistsWritePlaceholder": "alice, bob",
+          "allowlistsWriteQuestion": "Who can write to this file system?",
+          "authLabel": "Authentication Type",
+          "authNone": "None (Server-wide access)",
+          "authPassword": "Username/Password",
+          "authPubkeyLabel": "Public Key Authentication",
+          "authPubkeyRegistrationDialogUrl": "Registration Dialog URL",
+          "buttonUpdate": "Update",
+          "clientIrodsAuthLabel": "Password Type",
+          "clientIrodsAuthNative": "Native",
+          "clientIrodsAuthPam": "PAM",
+          "clientIrodsCsNeg": "iRODS CS_NEG",
+          "clientIrodsHomeDir": "iRODS Search Path",
+          "clientIrodsLabel": "iRODS",
+          "clientIrodsPort": "iRODS Port",
+          "clientIrodsZone": "iRODS Zone",
+          "clientLabel": "Client Type",
+          "clientS3BucketName": "Bucket Name",
+          "clientS3Label": "S3",
+          "clientS3PathStyleLabel": "Path-Style Access",
+          "clientS3Region": "Region",
+          "clientS3TypeAws": "Amazon AWS",
+          "clientS3TypeLabel": "S3 Implementation",
+          "clientS3TypeOther": "Generic S3",
+          "clientSambaDomain": "Samba Domain",
+          "clientSambaJcifs": "SMBv1",
+          "clientSambaLabel": "Samba",
+          "clientSambaShare": "Share Name",
+          "clientSambaSmbj": "SMBv2/3",
+          "clientSambaType": "Samba Protocol",
+          "clientSftpLabel": "SFTP",
+          "clientSftpServerDirChoice": "User subdirectory required",
+          "clientSftpServerPublicKey": "SFTP server public key",
+          "header": "File System Details:",
+          "id": "ID",
+          "name": "Name",
+          "statusLabel": "Status",
+          "url": "URL"
+        },
+        "filestores": {
+          "disabled": "Filestore linking is <strong>disabled</strong> for RSpace users - they won't see \"Filestores\" section in their Gallery. <br/> To enable the functionality set <strong>netfilestores.enabled</strong> deployment property to <strong>true</strong> and restart RSpace.",
+          "enabled": "Filestore linking is <strong>enabled</strong> for RSpace users.",
+          "exportDisabled": "Option to include filestore files in archive export is <strong>disabled</strong>.",
+          "exportEnabled": "Option to include filestore files in archive export is <strong>enabled</strong>."
+        },
+        "message": {
+          "noFilesystem": "No File System configured yet."
+        },
+        "table": {
+          "buttonDetails": "Details",
+          "columnAuth": "Authentication Type",
+          "columnClient": "Client Type",
+          "columnName": "Name",
+          "columnUrl": "URL"
+        }
+      },
+      "operateAs": {
+        "button": {
+          "label": "Operate As"
+        }
+      },
+      "pageReloading": "Page reloading...",
+      "performance": {
+        "button": {
+          "label": "Monitoring"
+        }
+      },
+      "piToUser": {
+        "validation": {
+          "piRoleNotAssigned": "{0} does not have a 'PI' role to be revoked.",
+          "piRoleStillAssignedInGroup": "{0} cannot yet have PI role revoked, as they are still the PI of at least one group. Please assign a new PI to these groups. Once {0} is no longer a PI of a group, the PI role can be revoked."
+        }
+      },
+      "property": {
+        "description": {
+          "allowProjectGroups": "When true, users can create Project Groups (which don't have a PI)",
+          "apiAvailable": "Enables API access for users",
+          "apiOauthAuthentication": "Enables accessing public API with OAuth authentication flow",
+          "argosAvailable": "Makes Argos integration available.",
+          "boxApiEnabled": "Allow users to make Versioned links to Box files. This requires RSpace communicating with Box API, so RSpace instance has to be registered on Box page, and box.client.id / box.client.secret have to be set in deployment.properties file",
+          "boxAvailable": "Makes Box integration available to the users. After enabling the integration, user can importfrom Box into the Gallery and (with 'box.linking.enabled = true') link to Box in text field editor",
+          "boxLinkingEnabled": "Enables linking to Box in text field editor. Relevant only if 'box.available' is 'true'",
+          "chemistryAvailable": "Makes chemistry integration available to the users. After enabling the integration, users can create and edit chemical sketches, and search for chemical structures in the Workspace",
+          "clustermarketAvailable": "Makes Calira (formerly Clustermarket) integration available. After enabling the integration, users can link to data regarding laboratory equipment.",
+          "digitalCommonsDataAvailable": "Makes DigitalCommonsData integration available.",
+          "dmpAssistantAvailable": "Makes DMP Assistant integration available.",
+          "dmpToolAvailable": "Makes DMPTool integration available.",
+          "dmponlineAvailable": "Makes DMPonline integration available.",
+          "dropboxAvailable": "Makes Dropbox integration available to the users. After enabling the integration user can import from Dropbox into the Gallery and (with 'dropbox.linking.enabled = true') link to Dropbox in text field editor",
+          "dropboxLinkingEnabled": "Enables linking to Dropbox in text field editor. Relevant only if 'dropbox.available' is 'true'",
+          "dryadAvailable": "Makes Dryad integration available. User can create new dryad submissionand attach RSpace exports or documents to that submission.",
+          "dswAvailable": "Makes DSW integration available.",
+          "egnyteAvailable": "Makes Egnyte integration available to the users. After enabling the integration, users can link to Egnyte in text field editor",
+          "evernoteAvailable": "Enables users to import Evernote XML export files via Create->Import",
+          "fieldmarkAvailable": "Makes Fieldmark integration available.",
+          "galaxyAvailable": "Makes Galaxy integration available.",
+          "githubAvailable": "Makes Github integration available. After enabling, user can add links to files in Github repositories.",
+          "googleDriveAvailable": "Makes Google Drive integration available to the users. After enabling the integration, user can link to Google Drive in text field editor",
+          "groupAutosharingAvailable": "Enables the management of group-wide autosharing.Enables PIs and lab admins with the 'View All' permission to manage the autoshare status for non-PI lab members.",
+          "inventoryAvailable": "Enables Inventory module.",
+          "msTeamsAvailable": "Makes MS Teams integration available to the users. After enabling the integration, user can connect to their MS Teams channels to send messages or forward notifications",
+          "nextcloudAvailable": "Makes Nextcloud integration available to the users. After enabling the integration, users can link to Nextcloud in text field editor",
+          "omeroAvailable": "Makes Omero integration available. After enabling the integration, users can link to Omero image data.",
+          "onboardingAvailable": "Enables onboarding announcements across RSpace.",
+          "oneDriveAvailable": "Makes OneDrive integration available to the users. After enabling the integration, users can import from OneDrive into the Gallery and (with 'onedrive.linking.enabled = true') link to OneDrive in text field editor",
+          "oneDriveLinkingEnabled": "Enables linking to OneDrive in text field editor. Relevant only if 'onedrive.available' is 'true'",
+          "orcidAvailable": "Enables ORCID integration. After enabling the integration, users can set up their ORCID ID on 'My Profile' page.",
+          "owncloudAvailable": "Makes ownCloud integration available to the users. After enabling the integration, users can link to ownCloud in text field editor",
+          "piCanEditAllWorkInLabgroup": "Gives PI edit access to all data in their LabGroup.",
+          "protocolsIoAvailable": "Makes Protocols.io integration available, allowing users to create documents from the protocols available through that service.",
+          "publicLastLoginAvailable": "If enabled, a user's last login time is publicly viewable on their profile page.",
+          "publicSharing": "Enables Publication of Documents.",
+          "publicdocsAllowSeo": "Enables search engine indexing of published documents.",
+          "pyratAvailable": "Makes PyRAT integration available. After enabling the integration, users can link to animals in the PyRAT database.",
+          "raidAvailable": "Enables RAiD integration. After enabling the integration, users can set up their RAiD accounts through the 'Apps' page",
+          "repoAvailable": "Makes {0} repository integration available. After enabling, users can submit exports to a {0} repository.",
+          "selfServiceLabgroups": "When true, a user with permissions (e.g. a PI) can create a LabGroup.",
+          "slackAvailable": "Makes Slack integration available to the users. After enabling the integration, user can connect to their Slack channels to send messages or forward notifications",
+          "snapgeneAvailable": "Enables Snapgene viewer for DNA sequence files. This must only be enabled if the deployment property'snapgene.web.url' is configured to point at an RSpace-Snapgene web-service.",
+          "zenodoAvailable": "Makes Zenodo integration available."
+        },
+        "label": {
+          "clustermarketAvailable": "clustermarket.available"
+        }
+      },
+      "runAs": {
+        "errors": {
+          "invalidUsernameFormat": "User details were in an invalid format - please use the autocomplete to choose a user."
+        },
+        "incognito": {
+          "label": "Operate incognito (without user knowing)"
+        },
+        "label": "Please choose  a user you want to 'operate as'.",
+        "permissionsNotice": "You can impersonate other users through this form, and will have exactly the same roles and permissions as that user.",
+        "userNotInCommunity": "Either {0} is not in your Community, or you are not authorised to 'Operate As' them.",
+        "userNotificationNotice": "The user will be notified that you are impersonating them, unless you choose the incognito option.",
+        "usernamePlaceholder": "Enter a name, email or username..."
+      },
+      "settingValue": {
+        "allowed": "Allowed",
+        "denied": "Denied",
+        "deniedByDefault": "Denied By Default"
+      },
+      "settings": {
+        "additionalPropertiesInfo": "Some settings can only be adjusted by IT staff with with access to the server environment, for more information about additional settings see: {0}",
+        "additionalPropertiesLink": "Additional Server Properties / Settings",
+        "header": {
+          "info": "Click on a setting name for additional description, or on a setting value to start editing."
+        },
+        "loading": "Loading Settings page..."
+      },
+      "showLicense": {
+        "button": {
+          "label": "Show license"
+        }
+      },
+      "support": {
+        "button": {
+          "label": "Maintenance"
+        },
+        "errors": {
+          "serverLogs": "Server logs could not be retrieved: {1}"
+        },
+        "licenseDetails": {
+          "expiryDate": "Expiry date",
+          "title": "License details",
+          "totalFreeAdminSeats": "Total free Community RSpace admin seats",
+          "totalFreeSysadminSeats": "Total free Sysadmin seats",
+          "totalUserLicenses": "Total user licenses"
+        },
+        "serverLogs": {
+          "lineCountHelp": "Please enter the number of log file lines to be sent to the support team (max {0}).",
+          "mailLabel": "Send Server Logs To RSpace Support",
+          "problemDescriptionHelp": "If you wish, enter a message describing your problem to the support team.",
+          "sendButton": "Send",
+          "supportEmailTitle": "Log files from {0}",
+          "view": "View Server Logs"
+        }
+      },
+      "unauthorized": {
+        "userRole": "Unauthorized role manipulation attempt  by [{0}]"
+      },
+      "unpublish": {
+        "button": {
+          "label": "Unpublish"
+        }
+      },
+      "userImport": {
+        "progress": {
+          "creatingCommunities": "Creating communities",
+          "creatingGroups": "Creating groups",
+          "creatingUsers": "Creating users",
+          "notifyingUsers": "Notifying new users"
+        }
+      },
+      "userToPi": {
+        "collaborationGroupConsequence": "He/she will remain in any CollaborationGroups, and assume a PI role in these groups.",
+        "consequencesIntro": "Promoting this user to PI will have the following consequences:",
+        "labGroupRemovalConsequence": "He/she will  be removed from any LabGroups they belong to.",
+        "newLabGroupConsequence": "A new LabGroup will be created.",
+        "success": "PI role successfully created for {0}",
+        "validation": {
+          "alreadyPi": "{0} is already a PI, please choose another user or cancel.",
+          "userRoleRequired": "{0} does not have a 'User' role - only users can be promoted to PIs."
+        }
+      }
+    },
+    "templates": {
+      "transfer": {
+        "audit": {
+          "description": "Ownership of template transferred from {0} to {1}"
+        },
+        "folder": {
+          "deletedUsers": "Deleted Users"
+        },
+        "suffix": {
+          "deleted": " (Deleted)"
+        }
+      }
+    }
+  },
+  "server.system.community": {
+    "community": {
+      "actions": {
+        "go": "Go"
+      },
+      "addAdmin": {
+        "chooseLabel": "Please choose community admin(s)"
+      },
+      "addAdminLinkLabel": "Add admin",
+      "addGroup": {
+        "chooseLabel": "Please choose unassigned groups to add to this community"
+      },
+      "addGroupLinkLabel": "Add group",
+      "admins": {
+        "header": "Admins of this community:"
+      },
+      "appsSettingsDialog": {
+        "placeholder": "test dialog",
+        "title": "Apps Settings for this Community"
+      },
+      "appsSettingsLinkLabel": "Apps Settings",
+      "choose": {
+        "label": "Please choose a community"
+      },
+      "communities": {
+        "title": "Communities"
+      },
+      "defaultCommunity": {
+        "noLabGroups": {
+          "emptyState": "There are no groups in default 'All Groups' community. To add a group belonging to other Community, go to that community and 'Move' the group."
+        }
+      },
+      "displayName": {
+        "label": "Display name"
+      },
+      "editForm": {
+        "profileTextPlaceholder": "Optionally, enter a short text description of this community (max 255 chars)"
+      },
+      "errors": {
+        "moveSrcTargetSame": "Source and target communities are the same!",
+        "removeAdminFailed": "Could not remove admin from this community!",
+        "removeFromDefaultProhibited": "Cannot remove a group from  the default community"
+      },
+      "invitation": {
+        "errors": {
+          "emptyEmailList": "Email list is empty!",
+          "invalidEmail": "Incorrect email"
+        }
+      },
+      "labGroups": {
+        "header": "Lab groups in this community:"
+      },
+      "moveGroupLinkLabel": "Move group",
+      "name": "Community",
+      "noLabGroups": {
+        "emptyState": "There are no groups in this community."
+      },
+      "noProfile": {
+        "emptyState": "There is no profile information for this community."
+      },
+      "profile": {
+        "label": "Profile text"
+      },
+      "profileHeading": "Profile information",
+      "removeGroupLinkLabel": "Remove group",
+      "settings": {
+        "errors": {
+          "systemDenied": "System setting was set to DENIED by system admin and cannot be overridden."
+        }
+      }
+    }
+  },
+  "server.workspace": {
+    "calendar": {
+      "event": {
+        "start": {
+          "beforeEnd": "Event start time must be before end time."
+        },
+        "unavailable": "No calendar file available. Please try creating the calendar event again."
+      }
+    },
+    "chem": {
+      "errors": {
+        "createElementFailed": "Error creating chemical element: {0}",
+        "elementNotFound": "No chem element with id {0}",
+        "elementsUnavailable": "RSChemElements with Chemistry File Id: {0} could not be retrieved. Details: {1}",
+        "fileUnavailable": "Chemistry File with Id: {0} could not be retrieved. Details: {1}",
+        "imageUpdateFailed": "An Error Occurred While Updating Chemical Element Images Details: {0}",
+        "infoUnavailable": "Couldn't retrieve info for chemId: {0}"
+      }
+    },
+    "deletedItems": {
+      "deletedHeader": "Deleted",
+      "heading": "Deleted Items",
+      "lastModifiedByHeader": "Last Modified&nbsp;by",
+      "pageTitle": "Deleted documents",
+      "searchPlaceholder": "Search by name"
+    },
+    "dialogs": {
+      "createCalendarEntry": {
+        "attachedResources": {
+          "label": "Attached resources:"
+        },
+        "description": {
+          "placeholder": "an optional description for this event",
+          "title": "Description"
+        },
+        "eventEnd": {
+          "title": "Event end"
+        },
+        "eventStart": {
+          "title": "Event start"
+        },
+        "eventTitle": {
+          "title": "Event title"
+        },
+        "frequency": {
+          "daily": "Daily",
+          "label": "Frequency",
+          "monthly": "Monthly",
+          "weekly": "Weekly",
+          "yearly": "Yearly"
+        },
+        "includeLinkCheckbox": {
+          "title": "Include links to resources"
+        },
+        "repeatEvent": {
+          "title": "Repeat event"
+        },
+        "repeatFor": {
+          "ariaLabel": "How many times to repeat event",
+          "label": "Repeat for",
+          "unit": "times"
+        },
+        "selectedRecordLabel": "selected record",
+        "treeHeading": "Workspace"
+      },
+      "createFromForm": {
+        "iconAlt": "Icon Image",
+        "instruction": "Click on a form name to create a new Document of that type."
+      },
+      "createFromTemplate": {
+        "filterByName": "Filter by Name",
+        "goButton": "Go",
+        "myTemplatesTab": "My Templates",
+        "newDocumentName": "New document name",
+        "sharedTemplatesTab": "Shared With Me"
+      },
+      "crudops": {
+        "addRemoveTags": "Add/Remove Tags",
+        "addToFavorites": "Add to Favorites",
+        "createDocument": "Create Document",
+        "csv": "CSV",
+        "msTeamsAbbreviation": "MS Teams",
+        "removeFromFavorites": "Remove from Favorites",
+        "revisions": "Revisions",
+        "sendToLabel": "Send to {0}",
+        "sendToTitle": "Send Message to {0}"
+      },
+      "fileTreeBrowser": {
+        "applyOrderingTitle": "Apply new ordering",
+        "changeOrderingTitle": "Change tree ordering",
+        "hideTreeTitle": "Hide tree browser",
+        "showTreeTitle": "Show tree browser"
+      },
+      "folderChooser": {
+        "createNewFolderInstruction": "Optionally, create a new folder in the chosen folder:",
+        "linkText": "choose a folder or notebook",
+        "newFolderAriaLabel": "New folder name",
+        "newFolderPlaceholder": "New Folder Name",
+        "optionally": "Optionally,",
+        "selectedFolder": "Selected folder:",
+        "shareTitle": "Select a folder to share into"
+      },
+      "importFromWord": {
+        "instruction": "Please choose 1 or more <span class=\"importfileType\">Word/OpenOffice</span> files to import:"
+      },
+      "moveRecord": {
+        "dialogTitle": "Select move target",
+        "instruction": "Use the tree below to choose a destination folder for the selected documents",
+        "selection": "Your path selection is"
+      },
+      "permissionChooser": {
+        "groupToBeAbleTo": "group to be able to",
+        "intro": "I want members of the",
+        "mySharedItems": "my shared item(s).",
+        "selectAriaLabel": "Share privileges",
+        "title": "Specify permissions"
+      },
+      "publish": {
+        "confirmInstruction": "Please type \"confirm\"",
+        "displayContactDetailsLabel": "Display contact details?",
+        "internetHeader": "Publish on the internet",
+        "internetViewableWarning": "This will be viewable by non RSpace users.",
+        "linkHeader": "Publish a link",
+        "linkNotebookContentsWarning": "If this is a notebook, all current and future contents will be viewable.",
+        "notebookContentsWarning": "If this is a notebook, all current and future contents will be public.",
+        "searchEngineIndexWarning": "Search engines will index and may cache the published document.",
+        "searchEngineNoIndexWarning": "Search engines will be instructed not to index the document, so it should not appear in search results.",
+        "summaryDescriptionLabel": "Summary description, max length 200 characters:"
+      },
+      "recordEditorLink": {
+        "formatNotSupported": "{0} not supported",
+        "templateBadgeLabel": "T",
+        "templateBadgeTitle": "Template"
+      },
+      "renameRecord": {
+        "action": "Rename",
+        "label": {
+          "name": "Name:",
+          "newName": "Please enter a new name"
+        }
+      },
+      "saveAsTemplate": {
+        "fieldsInstruction": "Include contents from these fields:",
+        "label": {
+          "name": "Template Name"
+        },
+        "title": "Template Dialog"
+      },
+      "share": {
+        "emailHeader": "E-Mail",
+        "goBack": "Go back",
+        "groupHeader": "Group",
+        "header": {
+          "user": "User name"
+        },
+        "instruction": {
+          "individuals": "Select individuals to share with"
+        },
+        "selectGroupAriaLabel": "Select group to share with",
+        "selectGroupInstruction": "Select a group to share with",
+        "selectUserAriaLabel": "Select user to share with",
+        "sharePermissionsAriaLabel": "Share permissions"
+      },
+      "signature": {
+        "infoUnavailable": "...signature info unavailable..."
+      },
+      "useTemplate": {
+        "description": "Document will be created in your <b>Home</b> folder.",
+        "label": {
+          "name": "Document name:"
+        }
+      }
+    },
+    "document": {
+      "create": {
+        "errors": {
+          "failed": "Could not create new document"
+        }
+      },
+      "delete": {
+        "errors": {
+          "editedByOtherUser": "Document {0} cannot be deleted as it is currently edited by {1}",
+          "ownerRequired": "Document can only be deleted by its owner."
+        }
+      },
+      "edit": {
+        "errors": {
+          "signed": "Document {0} is signed and cannot be altered"
+        }
+      },
+      "rename": {
+        "errors": {
+          "notEditable": "The document could not be renamed. It may be signed or locked for editing."
+        }
+      },
+      "restore": {
+        "errors": {
+          "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
+        }
+      }
+    },
+    "documentAndNotebookTemplates": {
+      "chemElementInfoLabel": "Chem Element Info",
+      "chemicalElementNonEditableLabel": "Chemical Element Non-Editable",
+      "clickToEditNameTitle": "Click to edit the name",
+      "clickToEditTagsTitle": "Click to edit the tags",
+      "createdAtLabel": "Created At:",
+      "descriptionLabel": "Description:",
+      "differentServerNotice": "This link points to a different RSpace server",
+      "editNameTitle": "Edit name",
+      "editTagsTitle": "Edit tags",
+      "enterNewCommentLabel": "Enter a new comment:",
+      "fileIdLabel": "File Id:",
+      "fingerprintLabel": "Fingerprint:",
+      "globalIdLabel": "Global ID:",
+      "historicalVersionTitle": "Historical version",
+      "imageInfoLabel": "Image Info",
+      "latestVersionLabel": "Latest Version:",
+      "linkLabel": "Link:",
+      "openInOfficeLink": "Open in Office",
+      "recordInfoLabel": "Record Info",
+      "renameLabel": "Rename",
+      "saveNameTitle": "Save name",
+      "saveTagsTitle": "Save tags",
+      "serverLabel": "Server:",
+      "showLastModifiedDateLabel": "Show last modified date",
+      "uniqueIdLabel": "Unique ID:",
+      "versionIdLabel": "Version Id:"
+    },
+    "documentView": {
+      "attachmentsLabel": "Attachments",
+      "contactLabel": "contact:",
+      "filesButtonLabel": "Files",
+      "importFromOwncloudTitle": "Import From ownCloud / NextCloud",
+      "insertFileAriaLabel": "Insert file from local computer",
+      "metaHeading": "Notebook",
+      "publishedLabel": "Published",
+      "showLastModifiedDate": "Show last modified date",
+      "tapToExpandListing": "Tap to expand listing.",
+      "templateLabel": "Template"
+    },
+    "form": {
+      "choiceOptions": {
+        "invalidFormat": "Choice options specified in invalid format - field names can't contain '=' or '&' characters."
+      },
+      "editor": {
+        "addFieldButton": "Add Field",
+        "addFieldTitle": "Add field",
+        "changeIconButton": "Change Icon",
+        "fieldEditorDialogTitle": "Field Editor",
+        "fieldNamesHeader": "Field Names",
+        "fieldTypeLabel": "Field Type",
+        "fieldsHeader": "Fields",
+        "metaHeading": "Form",
+        "orderFormFieldsDialogTitle": "Order Form Fields",
+        "orderFormFieldsInstruction": "Select a field for moving options and use the arrow keys to change position.",
+        "reorderFieldsButton": "Reorder Fields",
+        "reorderFieldsTitle": "Reorder fields",
+        "revertButton": "Revert",
+        "saveAndCloseButton": "Save and Close",
+        "statusPrefix": "Status -",
+        "tagsLabel": "Tags:",
+        "unpublishLabel": "Unpublish",
+        "updateButton": "Update"
+      },
+      "elisa": {
+        "changes": "Changes",
+        "cytokines": {
+          "choice1": "IL-4",
+          "choice10": "Relm Alpha",
+          "choice11": "YM1",
+          "choice12": "CCL3 (MIP1 alpha)",
+          "choice13": "GM-CSF",
+          "choice14": "IFNy",
+          "choice2": "IL-5",
+          "choice3": "IL-6",
+          "choice4": "IL-10",
+          "choice5": "IL-13",
+          "choice6": "IL-12p40",
+          "choice7": "IL-17",
+          "choice8": "M-CSF",
+          "choice9": "TNFalpha",
+          "label": "Cytokines"
+        },
+        "description": "",
+        "name": "ELISA",
+        "platePlan": "Plate Plan",
+        "protocol": "Protocol",
+        "results": "Results",
+        "volumesAntibodyUsed": "Volumes and concentrations"
+      },
+      "elisaE1": {
+        "changes": "Elisa/E1Changes.html",
+        "cytokines": "IL-13",
+        "name": "SJHP3 ELISA",
+        "platePlan": "Elisa/E1PlatePlan.html",
+        "protocol": "Elisa/E1Protocol.html",
+        "results": "Elisa/E1Results.html",
+        "samples": "Elisa/E1Samples.html",
+        "volumesAntibodyUsed": "Elisa/E1VolumesAntibodyUsed.html"
+      },
+      "elisaT1": {
+        "name": "ELISA",
+        "protocolFieldValue": "",
+        "volumesAntibodyUsedFieldValue": ""
+      },
+      "errors": {
+        "deleteFailed": "Exception deleting form. This has been logged.",
+        "infoUnauthorized": "Unauthorized attempt to get form info"
+      },
+      "experiment": {
+        "conclusionFieldName": "Conclusion",
+        "dateFieldName": "Date",
+        "description": "Structured record of an experiment",
+        "methodFieldName": "Method",
+        "name": "Experiment",
+        "objectiveFieldName": "Objective",
+        "resultsFieldName": "Results"
+      },
+      "experimentE2": {
+        "conclusionFieldValue": "<p>The cancer cell line XYZ was highly sensitive to Drug A. Two additional repeats of this assay will be conducted to account for any biological variability and/or human error.</p><p>The ED50 of Drug A on cell line XYZ was 681.1 pM.</p>",
+        "dateFieldValue": "2018-05-10",
+        "methodFieldValueA": "Experiment/E2MethodA.html",
+        "methodFieldValueB": "Experiment/E2plate.png",
+        "methodFieldValueC": "Experiment/E2MethodC.html",
+        "name": "Sensitivity of Cancer cell line XYZ to Drug A",
+        "objectiveFieldValue": "To determine the ED50 value of Drug A on Cancer cell line XYZ",
+        "resultsFieldValueA": "Experiment/E2ResultsA.html",
+        "resultsFieldValueB": "Experiment/E2DoseResponseCurve.png",
+        "resultsFieldValueC": "Experiment/E2ResultsC.html"
+      },
+      "experimentT1": {
+        "conclusionFieldValue": "",
+        "dateFieldValue": "2018-02-25",
+        "methodFieldValue": "Experiment/Method.html",
+        "name": "Experiment 1",
+        "objectiveFieldValue": "<p>I want to clone w.t. F08G5.1 (with its endogenous promoter, hopefully) into the mosSCI ttTi5605 integration vector pCFJ151 to have for injections and for tagging F08G5.1.</p>",
+        "resultsFieldValue": ""
+      },
+      "field": {
+        "lastModifiedLabel": "Last modified:",
+        "picklistSuffix": "(Picklist)",
+        "saveAndViewTitle": "Save and View"
+      },
+      "fieldEditor": {
+        "addNew": "Add New",
+        "checked": "Checked",
+        "checkedValue": "checked",
+        "dateFormat": "Date Format",
+        "decimalPlaces": "Decimal Places",
+        "defaultDate": "Default Date",
+        "defaultTime": "Default Time",
+        "defaultValue": "Default Value",
+        "deleteOption": "(Delete)",
+        "displayAsPicklist": "Display as a picklist ?",
+        "dragToSortHint": "(Or drag to sort by hand)",
+        "isPassword": "Is Password",
+        "maxValue": "Max Value",
+        "minValue": "Min Value",
+        "multiple": "Multiple",
+        "multipleAllowedNo": "no",
+        "multipleAllowedYes": "yes",
+        "noEditorAssociated": "No editor associated with this field",
+        "orUploadFromFile": "Or upload from a file",
+        "readDataFromUploaded": "Read data from uploaded",
+        "readFile": "Read file",
+        "required": "Required?",
+        "sortAlphabetically": "Sort alphabetically ?",
+        "time12Hour": "hh:mm AM/PM(12 hours)",
+        "time24Hour": "HH:mm(24 hours)",
+        "timeFormat": "Time Format",
+        "title": "Edit field",
+        "typeAndClickAddNew": "Type text and click 'Add New'",
+        "uncheckedValue": "unchecked",
+        "uploadFileInfo": "Upload File Info"
+      },
+      "labProtocol": {
+        "dateCreated": "Date Created",
+        "dateReviewed": "Date Reviewed",
+        "description": "An experimental protocol",
+        "materials": "Materials",
+        "method": "Method",
+        "name": "Lab Protocol",
+        "safety": "Safety"
+      },
+      "labProtocolE1": {
+        "dateCreated": "2018-04-27",
+        "dateReviewed": "2018-04-29",
+        "method": "LabProtocol/E1Method.html",
+        "name": "Extract Protocol for ChIP",
+        "safety": "LabProtocol/E1Safety.html"
+      },
+      "labProtocolT1": {
+        "materialsFieldValue": "Materials-value",
+        "methodFieldValue": "Method value",
+        "name": "Protocol 1",
+        "safetyFieldValue": "Safety-value"
+      },
+      "manage": {
+        "addToMenu": "Add to Menu",
+        "allFormsLabel": "All forms:",
+        "formInfoLabel": "Form Info",
+        "formNameHeader": "Form&nbsp;Name",
+        "heading": "Manage Forms",
+        "myFormsLabel": "My forms:",
+        "permissionsLabel": "Permissions",
+        "removeFromMenu": "Remove from Menu",
+        "selectFormAriaLabel": "Select form",
+        "statusHeader": "Status",
+        "title": "Forms"
+      },
+      "notebookE1": {
+        "content": "Notebook/E1Entry.html",
+        "name": "2018-02-04"
+      },
+      "notebookE2": {
+        "contentA": "Notebook/E2EntryA.html",
+        "contentB": "Notebook/E2EntryB.png",
+        "contentC": "Notebook/E2EntryC.html",
+        "contentD": "Notebook/E2EntryD.png",
+        "contentE": "Notebook/E2EntryE.html",
+        "contentF": "Notebook/E2EntryF.png",
+        "contentG": "Notebook/E2EntryG.png",
+        "contentH": "Notebook/E2EntryH.png",
+        "name": "2018-02-05"
+      },
+      "publishShareDialog": {
+        "instruction": "Configure access to your form by groups that you belong to, or by all RSpace users. If you don't choose any options, the form will remain private to you."
+      },
+      "rtpcr": {
+        "cyclingParameters": "Cycling Parameters",
+        "date": "PCR done on",
+        "description": "For an rtPCR assay",
+        "discussion": "Discussion",
+        "masterMix": "Master Mix",
+        "name": "rtPCR",
+        "positives": "Positives",
+        "primers": "Primers",
+        "results": "Results",
+        "template": "Template",
+        "toDo": "To do"
+      },
+      "rtpcrE1": {
+        "cyclingParameters": "rtPCR/E1CyclingParameters.html",
+        "date": "2018-05-17",
+        "discussion": "rtPCR/E1Discussion.html",
+        "masterMix": "rtPCR/E1MasterMix.html",
+        "name": "bam mutant rtPCR",
+        "positives": "rtPCR/E1Positives.html",
+        "primers": "rtPCR/E1Primers.html",
+        "results": "rtPCR/E1Results.html",
+        "resultsImage": "rtPCR/E1Results.png",
+        "template": "rtPCR/E1Template.html",
+        "toDo": "rtPCR/E1To-do.html"
+      },
+      "sharingConfig": {
+        "groupHelpText": "Configures access to other members of groups that you belong to.",
+        "hideLabel": "Hide",
+        "worldHelpText": "Configures public access to all users.",
+        "worldLabel": "World"
+      },
+      "textField": {
+        "documentEditorAriaLabel": "Document editor",
+        "insertFileToGalleryAriaLabel": "Insert file to Gallery from local computer",
+        "insertMediaAriaLabel": "Insert media from your device",
+        "openJupyterNotebooks": "Open Jupyter Notebook(s)"
+      },
+      "update": {
+        "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/> Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
+      },
+      "welcome": {
+        "name": "Getting started",
+        "welcome1": "Welcome/welcome1.html"
+      }
+    },
+    "importExport": {
+      "download": {
+        "errors": {
+          "failed": "Export could not be downloaded. Contact us at support@researchspace.com for help with export.",
+          "missingFile": "Export could not be downloaded because the file does not exist: it may have already been removed from the server. Contact us at support@researchspace.com for help with export."
+        }
+      },
+      "export": {
+        "all": {
+          "heading": "Export all",
+          "instructions": "If you want to export all of your work and files, click the button below."
+        },
+        "report": {
+          "title": "Export Report"
+        },
+        "selection": {
+          "instructions": "If you want to export a selection of your work, return to the Workspace and use the list checkboxes to choose documents or folders to be exported.Then, choose the Export button in the list of options under the toolbar."
+        }
+      },
+      "import": {
+        "archiveFormatExplanation": "This process imports a single Zip (or .eln) file containing an XML format archive produced by a previous RSpace XML/ELN export. Importing creates new documents in RSpace using the archived files and folders.",
+        "archiveIntro": "Use this facility to import an archive of work into Research Space.",
+        "badFormat": {
+          "unsupportedFileType": "Please supply an RSpace archive file in zip or .eln format"
+        },
+        "errors": {
+          "csvRequired": "Please upload a CSV file",
+          "details": "There was an error importing the archive: {0}",
+          "invalidServerPath": "File {0} is not a valid archive path on the server - must be a readable .zip file{1}",
+          "serverFileUnreadable": "File {0} either does not exist, or cannot be read."
+        },
+        "findFile": "Find your file",
+        "report": {
+          "another": {
+            "label": "Import another archive"
+          },
+          "header": "Archive Import Report",
+          "title": "Import Report",
+          "workspace": {
+            "label": "Back to workspace"
+          }
+        },
+        "submitHelp": "Click to import selected file"
+      },
+      "pdfArchiving": {
+        "submission": {
+          "success": "Your export generation request has been submitted to the server. RSpace will notify you when the export is ready."
+        }
+      },
+      "progress": {
+        "archive": "Importing XML archive",
+        "completed": "Import completed, redirecting",
+        "ontology": "Importing Ontology File"
+      },
+      "title": "Import and Export Archives"
+    },
+    "messaging": {
+      "channelLabel": "Channel",
+      "manyDocsHelp": "The message will include links to selected documents. Only RSpace users with access to these documents will be able to use the links.",
+      "messageLabel": "Message",
+      "messagePlaceholder": "Check my document!",
+      "sendMessageToLabel": "Send a message to {{label}}",
+      "singleDocHelp": "The message will include a link to the current document. Only RSpace users with access to the document will be able to use the link."
+    },
+    "notebook": {
+      "errors": {
+        "nestedNotebook": "Notebooks and folders cannot be created inside notebooks.",
+        "noNotebookInGallery": "You can only create a Notebook in the Workspace, not the Gallery folder tree"
+      },
+      "title": "Notebook Document"
+    },
+    "pageHeadings": {
+      "history": "History"
+    },
+    "photoswipe": {
+      "closeTitle": "Close (Esc)",
+      "fullscreenTitle": "Toggle fullscreen",
+      "nextTitle": "Next (arrow right)",
+      "prevTitle": "Previous (arrow left)",
+      "zoomTitle": "Zoom in/out"
+    },
+    "publish": {
+      "notice": {
+        "documentation": "Read the documentation for {0}",
+        "documentationLinkText": "Publication of documents",
+        "manage": {
+          "sharedDocument": "To unpublish go to the <a href=\"/record/share/published/manage\" target=\"_blank\">Published Documents</a> page."
+        }
+      }
+    },
+    "record": {
+      "icon": {
+        "audio": "Audio",
+        "chemistry": "Chemistry",
+        "file": "File",
+        "folder": "Folder",
+        "image": "Image",
+        "notebook": "Notebook",
+        "sharedFolder": "Shared Folder",
+        "snippet": "Snippet",
+        "structuredDocument": "Structured Document",
+        "structuredDocumentWithForm": "Structured Document (Form Name: ''{0}'', ID: {1})",
+        "template": "Template (Form Name: ''{0}'', ID: {1})",
+        "templatesFolder": "Templates Folder",
+        "unknownFormat": "Unknown Format {0}",
+        "unknownRecord": "Unknown Record {0}",
+        "userFolder": "User Folder",
+        "video": "Video"
+      },
+      "status": {
+        "editing": "Editing",
+        "sealed": "Sealed",
+        "signed": "Signed",
+        "signedAndWitnessed": "Signed and witnessed",
+        "signedAwaitingWitness": "Signed, awaiting witness",
+        "signedWitnessesDeclined": "Signed, all witnesses declined",
+        "view": "View",
+        "viewNotEditable": "View (Not editable)",
+        "viewReadPermissionOnly": "View (read permission only)",
+        "viewSomeoneElseEditing": "View (someone else is editing)"
+      }
+    },
+    "recordInfo": {
+      "fileSizeLabel": "File size:",
+      "infoLabel": "Info",
+      "nameLabel": "Name:",
+      "ownerLabel": "Owner:",
+      "tagsLabel": "Tags:",
+      "versionLabel": "Version:",
+      "viewButton": "View"
+    },
+    "recordInfoPanel": {
+      "captionLabel": "Caption:",
+      "createdByLabel": "Created by:",
+      "createdFromLabel": "Created from:",
+      "creationDateLabel": "Creation Date:",
+      "downloadToDeviceTitle": "Download to your device",
+      "editFileTitle": "Edit this file",
+      "formIdLabel": "Form ID:",
+      "historicalVersionNotice": "This attachment is a historical version and can't be edited directly. To modify or reuse this attachment, please download it and re-attach it to this or a new document",
+      "importedFromArchiveNotice": "Imported from archive",
+      "lastModifiedLabel": "Last Modified:",
+      "linkedDocsTitle": "Lists documents that link to this file",
+      "noReferencesNotice": "There are no references to this file.",
+      "openInOfficeComButton": "Open in Office.com",
+      "openInOfficeComTitle": "Open this file in Office.com",
+      "originalCreatorLabel": "Original creator:",
+      "originalImageLabel": "Original Image:",
+      "pathLabel": "Path:",
+      "previewLabel": "Preview:",
+      "referencedByNotice": "This file is referenced by:",
+      "revisionNotice": {
+        "text": "The information below describes <strong>version {0}</strong> of&nbsp;a&nbsp;document {1}, which may not be the latest version."
+      },
+      "showLinkedDocsButton": "Show linked docs",
+      "signatureStatusLabel": "Signature Status:",
+      "sourceLabel": "Source:",
+      "statusLabel": "Status:",
+      "templateNameLabel": "Template Name:",
+      "typeLabel": "Type:",
+      "uniqueIdLabel": "Unique Id:",
+      "uploadNewVersionButton": "Upload new version",
+      "uploadNewVersionTitle": "Upload new version of this file",
+      "viewFileTitle": "View this file in browser"
+    },
+    "requestFeedback": {
+      "memberOfGroupNotice": "you''re now a member of \"{0}\" group ",
+      "notJoiningGroupNotice": "you''re not joining the group \"{0}\" ",
+      "requestLabel": "Request",
+      "returnToWorkspaceLink": "Return to workspace",
+      "title": "Request Declined"
+    },
+    "revisionHistory": {
+      "backToWorkspace": "Back to Workspace",
+      "dateRangeAriaLabel": "Date range",
+      "dateRangeHeader": "Date Range",
+      "historyForLabel": "Revision history for {0}, created by <b>{1}</b> on {2}",
+      "modificationDateHeader": "Modification Date",
+      "modificationDetailsHeader": "Modification Details",
+      "modifiedByLabel": "Modified by",
+      "pageTitle": "Document History",
+      "searchButtonValue": "Search Revisions",
+      "searchRevisionsByLabel": "Search Revisions By:",
+      "typeOfModificationHeader": "Type of Modification"
+    },
+    "searchableRecordPicker": {
+      "browseTab": "Browse",
+      "globalIdOwnerSummary": "Global Id: {{globalId}}, Owner: {{ownerFullName}}",
+      "searchPlaceholder": "Search with query, or by global ID..."
+    },
+    "sharing": {
+      "groups": {
+        "title": "Share with a group"
+      },
+      "notice": {
+        "manage": {
+          "sharedDocument": "To unshare, or to change permissions of shared documents, go to the <a href=\"/record/share/manage\" target=\"_blank\">Shared Documents</a> page."
+        }
+      },
+      "notification": {
+        "sharedByUser": "{0} shared by {1}"
+      },
+      "others": {
+        "invitationInstructions": "Enter the email of a colleague that you would like to share your documents with. If they accept your invitation, your content will automatically be shared with them.",
+        "title": "Share with others"
+      },
+      "users": {
+        "title": "Share with users"
+      }
+    },
+    "template": {
+      "abandon": {
+        "version": "Deletes the changes made to this version"
+      },
+      "commit": {
+        "version": "Commits the changes to a new version of the form"
+      },
+      "creation": {
+        "errors": {
+          "failed": "The template could not be created.",
+          "noFields": "Please choose at least one field to put in the template."
+        },
+        "success": {
+          "confirmation": "The new template has been created in the Templates folder successfully."
+        }
+      },
+      "publish": {
+        "description": "Makes a form available to users"
+      },
+      "save": {
+        "description": "Saves current changes - does not re-version or alter publishing status."
+      },
+      "unpublish": {
+        "description": "Hides a form from  users"
+      }
+    },
+    "userform": {
+      "accountStatusLabel": "Account Status:",
+      "affiliationLabel": "Affiliation",
+      "apiKey": {
+        "confirmPasswordLabel": "Please confirm your password",
+        "docsLinkPrefix": "See <a href=\"/public/apiDocs\" target=\"_blank\">API Documentation</a>.",
+        "docsLinkSuffix": "For more examples, check out our <a href=\"https://github.com/rspace-os\" target=\"_blank\">GitHub</a>.",
+        "generateKeyButton": "Generate key",
+        "generateWarningIntro": "This API key provides access to your account, research data, and intellectual property. If exposed or compromised:",
+        "generateWarningRisk1": "Unauthorized users could access and steal your data",
+        "generateWarningRisk2": "Your intellectual property could be copied or misused",
+        "generateWarningRisk3": "Your data may be permanently deleted or altered without your consent",
+        "generateWarningTitle": "Important: Your API Key Grants Full Access to Your RSpace Account and Data",
+        "generatingConfirmPrompt": "Are you sure you want to generate a new API key? Please store it securely and never share it with others or expose it in client-side code.",
+        "keyGeneratedAgo": "The current key was generated {{ageLabel}}.",
+        "keyLabel": "Key: {{key}}",
+        "keyNoteWarning": "Be sure to note the key down in a secure manner as it will not be visible again.",
+        "noKeySet": "There is no API key set.",
+        "regenerateKeyButton": "Regenerate key",
+        "revokeKeyButton": "Revoke key"
+      },
+      "cameraViewLabel": "Camera view:",
+      "chooseFileAriaLabel": "Choose a file",
+      "disabledStatus": "Disabled",
+      "egnyte": {
+        "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
+        "disconnectButton": "Disconnect",
+        "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
+        "setupHeading": "Egnyte filestore setup"
+      },
+      "enabledStatus": "Enabled",
+      "lastLoginLabel": "Last Login:",
+      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "pictureLabel": "Picture:",
+      "profileHeading": "Profile",
+      "signupSource": {
+        "google": "Google",
+        "internal": "This is an RSpace internal account",
+        "ldap": "LDAP",
+        "ssoBackdoor": "This is an administrative SSO account used for RSpace maintenance"
+      },
+      "takePictureButton": "Take a Picture",
+      "uploadImageTabLink": "Upload Image"
+    },
+    "workspace": {
+      "copy": {
+        "unknownName": "Unknown Name_Copy"
+      },
+      "delete": {
+        "progress": "Deleting records"
+      },
+      "errors": {
+        "homeFolderMissing": "Home folder should be present, but is not for user {0}",
+        "inconsistentSharingStatus": "The folder you're browsing seems to have inconsistent sharing status. Please contact your System Admin, citing folder ID: {0}. More details at {1}",
+        "notMediaRecord": "Not a media record"
+      },
+      "export": {
+        "failureMessage": "Your export [{0}] failed for the following reason: {1}",
+        "groupPermissionDenied": "Only PIs or LabAdmins with view-all permission can export a group.",
+        "groupRequired": "Group is required.",
+        "invalidRepositoryApp": "App [{0}] cannot be used as a repository.",
+        "noDiskSpace": "RSpace has not enough disk space to start archive export process. Please contact your System Admin.",
+        "projectGroupNotFound": "Project group with ID \"{0}\" does not exist.",
+        "raidAssociationMissing": "Project with ID \"{0}\" has no associated RAiD.",
+        "repositoryConfigurationNotFound": "Repository configuration with ID \"{0}\" could not be found.",
+        "selectionIdsRequired": "Export item IDs are required.",
+        "selectionNamesRequired": "Export item names are required.",
+        "selectionTypesRequired": "Export item types are required.",
+        "successMessage": "Your export [{0}] is now available in the Exports section of <a href=\"{1}\">the Gallery</a>.",
+        "usernameRequired": "Username is required.",
+        "usernameTooLong": "Username cannot be greater than {0} characters."
+      },
+      "folder": {
+        "errors": {
+          "nestedNameTooLong": "Nested folder name above {0} characters is not allowed.",
+          "tooManyNested": "More than {0} nested folders are not allowed."
+        }
+      },
+      "list": {
+        "creationDate": {
+          "header": "Created"
+        },
+        "date": {
+          "header": "Modified"
+        },
+        "id": {
+          "header": "ID"
+        },
+        "name": {
+          "header": "Name"
+        },
+        "options": {
+          "header": "Options"
+        },
+        "owner": {
+          "header": "Owner"
+        },
+        "type": {
+          "header": "Type"
+        },
+        "version": {
+          "header": "Version"
+        },
+        "view": {
+          "header": "View"
+        }
+      },
+      "move": {
+        "errors": {
+          "noRecords": "No records to move"
+        },
+        "some": {
+          "notMoved": "Some records were not moved. You may lack permissions to move the records from their current location, or into the new location."
+        },
+        "success": "Move action successful"
+      },
+      "pagination": {
+        "applyTitle": "Apply the Items per page setting",
+        "itemsPerPage": "Items per page:"
+      },
+      "search": {
+        "errors": {
+          "invalidInput": "Invalid search input",
+          "missingScope": "Either search terms or parent folder must be set"
+        }
+      },
+      "settings": {
+        "errors": {
+          "invalidKey": "Invalid settings key",
+          "missingSessionListing": "Session did not contain a workspace listing associated with the given settings key"
+        }
+      },
+      "share": {
+        "owned": {
+          "intoSharedOwned": "Nothing was moved. A shared document owned by a specific user cannot be shared into a notebook owned by the same user. If the document should be a part of the notebook, the owner can `move` it into the notebook on their Workspace."
+        }
+      },
+      "sort": {
+        "ariaLabel": "Order by",
+        "ascending": "Ascending",
+        "byCreationDate": "Creation Date",
+        "byLastModified": "Last Modified",
+        "byName": "Name",
+        "descending": "Descending",
+        "label": "Order by:",
+        "sortOrderAriaLabel": "Sort order"
+      },
+      "word": {
+        "import": {
+          "noFilesError": "No files were submitted! Please choose some Word or text files to upload."
+        }
+      }
+    },
+    "workspaceAjax": {
+      "favoriteLabel": "Favorite",
+      "groupOwnedLabel": "Group-owned",
+      "mandatoryFieldsMissingAlt": "Some of the mandatory fields in the document are missing a value",
+      "mandatoryFieldsMissingTitle": "Mandatory fields are missing value",
+      "publishedLabel": "Published",
+      "recordInfoLabel": "Record Info",
+      "recordIsSignedAlt": "Record Is Signed",
+      "selectDeselectAllLabel": "Select/deselect all",
+      "sharedLabel": "Shared",
+      "signedTitle": "Signed"
+    }
+  },
+  "server.workspace.editor": {
+    "document": {
+      "sign": {
+        "confirm": {
+          "label": "Confirmation process",
+          "lockWarning": "This document will be signed and locked.",
+          "willBeWitnessed": "This document will be witnessed.",
+          "willNotBeWitnessed": "This document will not be witnessed."
+        },
+        "noWitness": {
+          "shareDocumentHelp": "If you can't find your witness in the list below, please share the document with them first. "
+        },
+        "optionChoice": {
+          "declineReason": "I decline to add a witness statement at this time for the following reason:",
+          "label": "Choose an option:",
+          "workRecordAffirmation": "I verify that this document is an accurate representation of work performed by {0} at the time specified in the system records and / or I agree that the document is complete and should be locked to prevent further editing."
+        },
+        "password": {
+          "label": "Password:"
+        },
+        "statement": {
+          "chooseLabel": "Choose a signing statement:",
+          "finalVersionAffirmation": "This is the final version of this document and I have locked it to prevent additional edits.",
+          "workRecordAffirmation": "I affirm that this document is a true and accurate description of work performed by me on the dates indicated in the system records. "
+        },
+        "witness": {
+          "label": "Optionally, please choose 1 or more witnesses:"
+        }
+      }
     }
   },
   "system": {

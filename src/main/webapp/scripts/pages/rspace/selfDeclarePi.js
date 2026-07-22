@@ -1,11 +1,11 @@
 
 function _selfDeclareAsPi() {
-	RS.blockPage("Adding PI role...");
+	RS.blockPage(RS.msg("legacyjs.selfDeclarePi.addingPiRole"));
 	var jqxhr= $.post(createURL("/userform/ajax/selfDeclareAsPi"));
 	jqxhr.done(function (result) {
 		RS.unblockPage();
 		if (result.data) {
-			RS.confirmAndNavigateTo("Promoted to PI", "success", 2000, "/userform");
+			RS.confirmAndNavigateTo(RS.msg("legacyjs.selfDeclarePi.promotedToPi"), "success", 2000, "/userform");
 		} else {
 			var errorMsgs = result.error.errorMessages.join(';');
 			RS.confirm(errorMsgs, "warning", 5000, { sticky: true });
@@ -13,16 +13,16 @@ function _selfDeclareAsPi() {
 	});
 	jqxhr.fail(function(){
 		RS.unblockPage();
-		RS.ajaxFailed("Self-declare PI process", false, jqxhr);
+		RS.ajaxFailed(RS.msg("legacyjs.selfDeclarePi.actionSelfDeclareProcess"), false, jqxhr);
 	});
 }
 function _selfDeclareAsRegularUser() {
-	RS.blockPage("Removing PI role...");
+	RS.blockPage(RS.msg("legacyjs.selfDeclarePi.removingPiRole"));
 	var jqxhr= $.post(createURL("/userform/ajax/selfDeclareAsRegularUser"));
 	jqxhr.done(function (result) {
 		RS.unblockPage();
 		if (result.data) {
-			RS.confirmAndNavigateTo("Removed PI role", "success", 2000,"/userform");
+			RS.confirmAndNavigateTo(RS.msg("legacyjs.selfDeclarePi.removedPiRole"), "success", 2000,"/userform");
 		} else {
 			var errorMsgs = result.error.errorMessages.join(';');
 			RS.confirm(errorMsgs, "warning", 5000, { sticky: true });
@@ -30,7 +30,7 @@ function _selfDeclareAsRegularUser() {
 	});
 	jqxhr.fail(function(){
 		RS.unblockPage();
-		RS.ajaxFailed("Self-declare PI process", false, jqxhr);
+		RS.ajaxFailed(RS.msg("legacyjs.selfDeclarePi.actionSelfDeclareProcess"), false, jqxhr);
 	});
 }
 
@@ -40,8 +40,7 @@ $(document).ready(function (e) {
 
 	$('#promoteToPiButton').click(function() {
 		if (!isUserAllowedPiRole) {
-			apprise("Based on your status at " + selfDeclarePiInstitutionName+ ", you cannot become a PI " +
-				"unless a system administrator manually enables this for you.");
+			apprise(RS.msg("legacyjs.selfDeclarePi.cannotBecomePi", selfDeclarePiInstitutionName));
 			return;
 		}
 		_selfDeclareAsPi();
@@ -49,15 +48,13 @@ $(document).ready(function (e) {
 
 	$('#demoteFromPiButton').click(function() {
 		if (isUserAPiOfSomeGroup) {
-			apprise("You are a PI of at least one LabGroup. You must delete or transfer over " +
-				"all LabGroups before you can remove your PI status.");
+			apprise(RS.msg("legacyjs.selfDeclarePi.isPiOfLabGroup"));
 			return;
 		}
 		
 		if (!isUserAllowedPiRole) {
-			apprise("Based on your status at " + selfDeclarePiInstitutionName + ", if you remove your PI status, " +
-				"you will need a system administrator to restore it, are you sure you wish to proceed.",
-				{ confirm: true, textOk: "Yes, remove my PI role", textCancel: "No, don't" },
+			apprise(RS.msg("legacyjs.selfDeclarePi.confirmRemovePiStatus", selfDeclarePiInstitutionName),
+				{ confirm: true, textOk: RS.msg("legacyjs.selfDeclarePi.removePiRoleConfirm"), textCancel: RS.msg("legacyjs.selfDeclarePi.removePiRoleCancel") },
 				_selfDeclareAsRegularUser);
 			return;
 		}

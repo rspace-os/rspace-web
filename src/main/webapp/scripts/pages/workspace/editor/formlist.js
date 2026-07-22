@@ -22,7 +22,7 @@ var arrowDownElement = "<image src='/images/arrow_down.png' id='orderByArrows' s
 $(document).ready(function (){
 	var noOfRows = parseInt($("#noOfRows").val());
 	if (noOfRows <= 0) {
-		$("#searchModePanel #message").text("You have no forms to manage.");
+		$("#searchModePanel #message").text(RS.msg("legacyjs.workspace.formList.noFormsToManage"));
 		$("#searchModePanel").addClass("searchError").slideDown(fadeTime).find("#resetSearch").hide();
 		$("#formListContainer").find(".panel, .tabularViewBottom").hide();
 	}
@@ -48,7 +48,7 @@ $(document).ready(function (){
 	showCorrectUserFormsOrAllFormsRadio();
 
 	var paginationEventHandler = function (source, e){
-		RS.blockPage("Loading forms...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.loadingForms"), false, $(tableElement));
 		var url = createURL(source.attr('id').split("_")[1]);
 		var params = RS.getJsonParamsFromUrl(url);
 		settings.urlParams.pageNumber = params.pageNumber;
@@ -60,7 +60,7 @@ $(document).ready(function (){
 	// Changes the number of records per page
 	$(document).on('click', '#applyNumberRecords', function(e){
 		e.preventDefault();
-		RS.blockPage("Changing the number of records per page...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.changingPageSize"), false, $(tableElement));
 		settings.urlParams.pageNumber = 0;
 		settings.urlParams.resultsPerPage = $('#numberRecordsId').val();
 		displayData(settings.searchTerm);
@@ -82,7 +82,7 @@ $(document).ready(function (){
 	// Enables/disables the button to apply new value of number of records per page
 	$(document).on('click', '.userFormsOnly', function(e){
 		var userFormsOnly = $(this).val();
-		var msg = userFormsOnly?"Showing my forms":"Showing all forms";
+		var msg = userFormsOnly ? RS.msg("legacyjs.workspace.formList.showingMyForms") : RS.msg("legacyjs.workspace.formList.showingAllForms");
 		RS.blockPage(msg, false, $(tableElement));
 		settings.urlParams.pageNumber = 0;
 		settings.urlParams.userFormsOnly = userFormsOnly;
@@ -93,7 +93,7 @@ $(document).ready(function (){
   $(document).on("click", "#resetSearch", function(e) {
   	if (!settings.searchMode) return;
   	document.dispatchEvent(new Event('reset-search-input'));
-  	RS.blockPage("Abandoning search...", false, $(tableElement));
+  	RS.blockPage(RS.msg("legacyjs.workspace.formList.abandoningSearch"), false, $(tableElement));
   	resetOrdering();
   	displayData("");
   });
@@ -101,7 +101,7 @@ $(document).ready(function (){
   // Ordering buttons handler
 	$('body').on('click', '.orderByLink', function(e) {
 		e.preventDefault();
-		RS.blockPage("Reordering forms...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.reorderingForms"), false, $(tableElement));
 		settings.urlParams.pageNumber = 0;
 		settings.urlParams.orderBy = $(this).attr('data-orderby');
 		settings.urlParams.sortOrder = $(this).attr('data-sortorder');
@@ -138,7 +138,7 @@ function displayData(searchTerm) {
 	// search term too short (and non-empty)
 	if (searchTerm.length > 0 && searchTerm.length < RS.minSearchTermLength) {
 		RS.unblockPage($(tableElement));
-		apprise("Please enter at least three characters.");
+		apprise(RS.msg("legacyjs.workspace.formList.searchTermTooShort"));
 		return;
 	}
 
@@ -175,7 +175,7 @@ function displayData(searchTerm) {
 			toggleFormActions(false);
 			RS.unblockPage($(tableElement));				
 		}).fail(function() {
-			var message = (settings.searchMode ? "Searching form list" : "Loading forms");
+			var message = (settings.searchMode ? RS.msg("legacyjs.workspace.formList.searchingFormListAction") : RS.msg("legacyjs.workspace.formList.loadingFormsAction"));
 			RS.ajaxFailed(message, false, jxqr);
 		});
 	}
@@ -192,14 +192,14 @@ function setupPublishDlg (){
 		 	modal : true,
 			autoOpen:false,
 			width: 350,
-			title: "Configure access to Forms",
+			title: RS.msg("legacyjs.workspace.formList.configureAccessTitle"),
 			buttons :
 			{
-				Cancel: function (){
+				[RS.msg("legacyjs.workspace.formList.cancelButton")]: function (){
 					$(this).dialog('close');
 				},
 			
-				OK: function (){
+				[RS.msg("legacyjs.workspace.formList.okButton")]: function (){
 
 					// this  dlg is either being called from  'Manager permissions' or 'publish'
 					// and we need to distinguish between them as they use different URLs.
@@ -210,9 +210,9 @@ function setupPublishDlg (){
 					var form$=$('#rsFormSharingForm');
 					if (isManaging != null){
 						form$.attr('action', createURL('/workspace/editor/form/ajax/updateSharePermissions'));
-						RS.blockPage("Changing permissions...", false, $(tableElement));
+						RS.blockPage(RS.msg("legacyjs.workspace.formList.changingPermissions"), false, $(tableElement));
 					} else {
-						RS.blockPage("Publishing...", false, $(tableElement));
+						RS.blockPage(RS.msg("legacyjs.workspace.formList.publishing"), false, $(tableElement));
 					}
 					var data = form$.serialize();
 					
@@ -233,7 +233,7 @@ function setupPublishDlg (){
 								form$.attr('action',createURL("/workspace/editor/form/ajax/publishAndShare"));
 		            	    }
 		            	},
-		                error : function( xhr, err ) { alert('Error'); } 
+		                error : function( xhr, err ) { alert(RS.msg("legacyjs.workspace.formList.genericError")); }
 		            }).always(function(){
 		            	RS.unblockPage($(tableElement));
 		            });					
@@ -247,7 +247,7 @@ function setUpDeleteForm() {
 	// deletes the form if it's new
 	$(document).on("click", ".deleteForm", function(e) {
 		e.preventDefault();
-		RS.blockPage("Deleting selected forms...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.deletingForms"), false, $(tableElement));
 		var ids = getSelectedIds();
 		var jxqr = $.post(createURL("/workspace/editor/form/ajax/deleteForm"), {templateId : ids}, function(response) {
 			RS.webResultCache.clearAll();
@@ -255,12 +255,12 @@ function setUpDeleteForm() {
 				toggleFormActions(false);
 			} else {
 				RS.unblockPage($(tableElement));
-				apprise("Deleting selecting items wasn't successful. Server returned message: " + response.errorMsg.errorMessages.join(" "));
+				apprise(RS.msg("legacyjs.workspace.formList.deleteFailed", response.errorMsg.errorMessages.join(" ")));
 			}
 			displayData(settings.searchTerm);
 		}).fail(function (){
 			RS.unblockPage($(tableElement));
-			RS.ajaxFailed("Delete form", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.workspace.formList.deleteFormAction"), false, jxqr);
 		});		
 	});
 	RS.emulateKeyboardClick('.deleteForm');
@@ -269,7 +269,7 @@ function setUpDeleteForm() {
 function setUpCopyForm (){
 	$(document).on("click", ".copyForm", function (e){
 		e.preventDefault();
-		RS.blockPage("Copying selected forms...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.copyingForms"), false, $(tableElement));
 		var ids = getSelectedIds();
 		$.post(createURL("/workspace/editor/form/ajax/copyForm"),
 			{templateId: ids},
@@ -304,7 +304,7 @@ function getSelectedIds() {
 function setUpPermissionsManage (){
 	$(document).on("click", ".managePermissions", function (e){
 		e.preventDefault();	
-		RS.blockPage("Opening permissions managment tools...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.openingPermissionsTools"), false, $(tableElement));
 		var ids = getSelectedIds();
 		var data = {
 			publish:true,
@@ -327,7 +327,7 @@ function setUpPermissionsManage (){
 function setUpPublishForm(){
 	$(document).on("click", ".publish", function (e){
 		e.preventDefault();
-		RS.blockPage("Opening publishing tools...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.openingPublishingTools"), false, $(tableElement));
 		var ids = getSelectedIds();
 		var data = {
 			publish:true,
@@ -350,7 +350,7 @@ function setUpPublishForm(){
 function setUpAddToMenu (){
 	$(document).on("click", ".addToMenu", function (e){
 		e.preventDefault();
-		RS.blockPage("Adding to Create Menu...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.addingToCreateMenu"), false, $(tableElement));
 		var link$ = $(this);
 		var ids = getSelectedIds();// only 1 at a time allowed just now
 		var data = {
@@ -368,7 +368,7 @@ function setUpAddToMenu (){
 		).always(function(){
 			RS.unblockPage($(tableElement));
 		}).fail(function(){
-			RS.ajaxFailed("Adding to form to Create Menu",false,jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.workspace.formList.addToMenuAction"),false,jxqr);
 		});
 	});
 	RS.emulateKeyboardClick('.addToMenu');
@@ -377,7 +377,7 @@ function setUpAddToMenu (){
 function setUpRemoveFromMenu (){
 	$(document).on("click", ".removeFromMenu", function (e){
 		e.preventDefault();
-		RS.blockPage("Removing from Create Menu...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.removingFromCreateMenu"), false, $(tableElement));
 		var link$ = $(this);
 		var ids = getSelectedIds();
 		var data = {
@@ -394,7 +394,7 @@ function setUpRemoveFromMenu (){
 		).always(function(){
 			RS.unblockPage($(tableElement));
 		}).fail(function(){
-			RS.ajaxFailed("Removing form from Create Menu",false,jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.workspace.formList.removeFromMenuAction"),false,jxqr);
 		});
 	});
 	RS.emulateKeyboardClick('.removeFromMenu');
@@ -408,7 +408,7 @@ function updatePublishingStateText (id, text){
 function setUpUnpublishForm(){
 	$(document).on("click", ".unpublish", function (e){
 		e.preventDefault();
-		RS.blockPage("Unpublishing the forms...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.unpublishingForms"), false, $(tableElement));
 		var link$ = $(this);
 		var ids = getSelectedIds();
 		var data = {
@@ -428,7 +428,7 @@ function setUpUnpublishForm(){
 		).always(function(){
 			RS.unblockPage($(tableElement));
 		}).fail(function(){
-			RS.ajaxFailed("Unpublishing the selected forms",false,jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.workspace.formList.unpublishAction"),false,jxqr);
 		});
 	});
 	RS.emulateKeyboardClick('.unpublish');
@@ -517,7 +517,7 @@ function calculateOptionDisplay(selectedChkBxes) {
 
 function setUpInfoIcon() {
 	$(document).on("click", ".infoImg", function() {
-		RS.blockPage("Opening record information...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.workspace.formList.openingRecordInfo"), false, $(tableElement));
 		var formId = $(this).attr("data-formid");
 		$.get("/workspace/editor/form/ajax/getFormInformation", { templateId: formId }, function(data, status) {
 			if (data.errorMsg != null) {
@@ -559,7 +559,7 @@ function insertData(html) {
 	if (noOfRows > 0) {
 		$("#searchModePanel").removeClass("searchError").addClass("searchSuccess");
 		if (settings.searchMode) {
-			var message = "Showing forms for search term '" + RS.escapeHtml(settings.searchTerm) + "'.";
+			var message = RS.msg("legacyjs.workspace.formList.searchResultsShown", RS.escapeHtml(settings.searchTerm));
 			$("#searchModePanel #message").html(message);
 			$("#resetSearch").show();
 			$("#searchModePanel").slideDown(fadeTime);
@@ -587,13 +587,12 @@ function insertData(html) {
 	} else {
 		$("#searchModePanel").removeClass("searchSuccess").addClass("searchError");
 		if (settings.searchMode) {
-			$("#searchModePanel #message").html("Your search for '" + RS.escapeHtml(settings.searchTerm) + 
-				"' returned no results. Please search again or");
+			$("#searchModePanel #message").html(RS.msg("legacyjs.workspace.formList.searchNoResults", RS.escapeHtml(settings.searchTerm)));
 			$("#resetSearch").show();
 			$("#searchModePanel").slideDown(fadeTime);
 			$("#formListContainer").find(".panel table tbody, .tabularViewBottom").remove();
 		} else {
-			$("#searchModePanel #message").html("You have no forms to manage.");
+			$("#searchModePanel #message").html(RS.msg("legacyjs.workspace.formList.noFormsToManage"));
 			$("#resetSearch").hide();
 			$("#searchModePanel").slideDown(fadeTime);
 			$("#formListContainer").find(".panel table tbody, .tabularViewBottom").remove();
@@ -614,7 +613,7 @@ function toggleFormActions(show) {
 function handleSearchForms(){
 	var searchTerm = $('#search-form-list-input').val().trim();
 	console.log(searchTerm);
-	RS.blockPage("Searching...", false, $(tableElement));
+	RS.blockPage(RS.msg("legacyjs.workspace.formList.searching"), false, $(tableElement));
 
 	// page number reset every time new search is made (even with empty term)
 	settings.urlParams.pageNumber = 0;

@@ -222,7 +222,7 @@ Access the message by its key as follows
 ```
 Alternatively you can use Spring's message tag which handles arguments more cleanly.
 ```
-<spring:message code="group.created.success.nominate.msg1" arguments="${groupName},${principalEmail}"/>
+<spring:message code="group.created.success.nominationStarted" arguments="${groupName},${principalEmail}"/>
 ```
 
 ### Writing Strings directly from a Controller.

@@ -5,7 +5,7 @@
  - parentRef - link to parent file.
 *#
 <!DOCTYPE HTML>
-<html>
+<html lang="$msg.languageTag">
 <head>
 <title>$document.name</title>
 <link href="../resources/document.css" rel="stylesheet" />
@@ -13,28 +13,30 @@
 </head>
 <body>
 <div class="navigationSection">
-<a href="../index.html">Top</a> | <a href="../${parentRef}">Parent folder</a></div>
+<a href="../index.html">$msg.getMessage("export.archive.top")</a> | <a href="../${parentRef}">$msg.getMessage("export.archive.parentFolder")</a></div>
 <div id="headerSection">
 <h4>$document.name</h4>
-<p>Gallery file GL$document.id
-#coreData($document)
+<p>$msg.format("export.archive.mediaView.header", [$document.globalId])
+ <p>$msg.format("export.global.coreData.createdOn", [$date.format('full_date', $document.creationDate), $date.format('short_time', $document.creationDate)])
+ <p>$msg.format("export.global.coreData.by", [$document.createdBy])
+ <p> $!description
 </div><br/>
 <div id = "content">
  #if ($isImage)
  	<img src="$document.name"/>
  #else
-    <a href="$document.name">View attachment</a>
+    <a href="$document.name">$msg.getMessage("export.archive.mediaView.viewAttachment")</a>
  #end
  ## this is caption field
  #if($document.description)
   <div style="margin-top:20px">
      $!document.description
-  </div> 
+  </div>
 #end
   <div style="margin-top:20px">
-  #if ($tiffs) 
+  #if ($tiffs)
     #foreach($tiff in $tiffs)
- 	  Click <a href="$tiff.name">here</a> to access original TIFF image.
+ 	  $msg.format("export.archive.mediaView.originalTiffLink", [$tiff.name])
     #end
   #end
  </div>

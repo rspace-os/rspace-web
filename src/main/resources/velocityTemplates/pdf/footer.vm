@@ -2,6 +2,6 @@
   <br>
   <br>
   <p>
-    $dateLabel &nbsp; &nbsp; Exported by: $name
+    $dateLabel &nbsp; &nbsp; $msg.format("export.pdf.footer.exportedBy", [$name])
   </p>
 </div>

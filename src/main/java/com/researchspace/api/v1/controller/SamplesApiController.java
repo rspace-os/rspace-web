@@ -229,7 +229,11 @@ public class SamplesApiController extends BaseApiInventoryController implements 
       return sampleApiMgr.getSampleTemplateByIdWithPopulatedFields(apiSample.getTemplateId(), user);
     } catch (NotFoundException e) {
       // form ID is set, but is not a readable form.
-      errors.rejectValue("templateId", "", e.getMessage());
+      errors.rejectValue(
+          "templateId",
+          "errors.inventory.sample.templateNotFound",
+          new Object[] {apiSample.getTemplateId()},
+          null);
       // if the form is invalid we can't proceed as there will be downstream exceptions thrown, so
       // fail here
       throwBindExceptionIfErrors(errors);

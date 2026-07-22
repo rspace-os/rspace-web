@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <head>
-    <title><spring:message code="importArchive.report.title"/></title>
+    <title><spring:message code="importExport.import.report.title"/></title>
     <meta name="import Archive" content="import"/>
 
     <style>
@@ -25,10 +25,10 @@
 
 <jsp:include page="archiveImportReportData.html"/>
 
-<h2><spring:message code="importArchive.report.header"/></h2>
-<a href="/workspace"><spring:message code="importArchive.report.workspace.label"/></a>
+<h2><spring:message code="importExport.import.report.header"/></h2>
+<a href="/workspace"><spring:message code="importExport.import.report.workspace.label"/></a>
 <br/>
-<a href="/import/archiveImport"><spring:message code="importArchive.report.another.label"/></a>
+<a href="/import/archiveImport"><spring:message code="importExport.import.report.another.label"/></a>
 <br/>
 
 <div id="reportContent">

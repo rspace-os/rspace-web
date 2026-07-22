@@ -101,7 +101,7 @@
   </div>
   <c:if test="${pageContext.request.locale.language != 'en'}">
     <div id="switchLocale"><a href="<c:url value='/?locale=en'/>">
-        <fmt:message key="webapp.name" /> in English</a></div>
+        <spring:message code="webapp.name"/> in English</a></div>
   </c:if>
 
   <rst:hasDeploymentProperty name="standalone" value="false">
@@ -118,7 +118,7 @@
 
       <rs:isRunAs>
         <span style="background-color:#E4E8EE;" class="header-info header-info--right">
-          <spring:message code="header.runAs.msg" />&nbsp;<shiro:principal/>.
+          <spring:message code="header.runAs.activeBanner" />&nbsp;<shiro:principal/>.
           <a id="runAs"
              href="/logout/runAsRelease"
              class="ui-button-fix ui-widget ui-state-default ui-button-text-only ui-corner-left ui-corner-right"

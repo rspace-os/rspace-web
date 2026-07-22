@@ -4,7 +4,7 @@
 /**
  * Namespace for global variables and functions
  */
-var RS = {};
+var RS = window.RS || {};
 var fadeTime = 400;
 RS._entityMap = {
   "&": "&amp;",
@@ -17,6 +17,33 @@ RS._entityMap = {
 var previousHeightOfBlockedElement = -1;
 var temporaryHeightOfBlockedElement = 0;
 RS.minSearchTermLength = 3;
+
+// TinyMCE iframes reuse the server-injected dictionary from their parent window.
+if (!RS.i18n || !RS.formatIcuMessage) {
+  var parentI18n = {};
+  try {
+    if (window.parent && window.parent !== window && window.parent.RS) {
+      parentI18n = window.parent.RS.i18n || {};
+      RS.formatIcuMessage = RS.formatIcuMessage || window.parent.RS.formatIcuMessage;
+    }
+  } catch (e) {
+    parentI18n = {};
+  }
+  RS.i18n = parentI18n;
+}
+
+/**
+ * Resolves and formats a legacy message, returning the key when no phrase exists.
+ * @param {string} key catalogue key, e.g. "legacyjs.share.blocking"
+ * @param {...*} args positional ICU arguments
+ */
+RS.msg = function (key, ...args) {
+  const pattern = RS.i18n[key];
+  if (pattern == null) {
+    return key;
+  }
+  return RS.formatIcuMessage(pattern, args);
+};
 
 // Appends the shared cache-busting token to a URL. RS.cacheVersion is set inline
 // from the layout decorator after global.js loads; returns the URL unchanged
@@ -132,6 +159,20 @@ RS.nearestElement = function (elem, selector) {
  * @return {element}           The modal's element on which .modal('show') and
  *                             similar can be called.
  */
+// ponytail: legacy apprise() (bower_components/Apprise-v2) hardcodes 'Cancel'/'Ok' when
+// options.textCancel/textOk are omitted. Wrap it here, since global.js loads after
+// apprise-v2.js, instead of editing the vendored file.
+(function () {
+  var legacyApprise = window.apprise;
+  window.apprise = function (text, options, onConfirm) {
+    if (options) {
+      options.textCancel = options.textCancel || RS.msg("legacyjs.common.cancel");
+      options.textOk = options.textOk || RS.msg("legacyjs.common.ok");
+    }
+    return legacyApprise(text, options, onConfirm);
+  };
+})();
+
 RS.apprise = function (text, show, target, onConfirm, options) {
   var newOptions = {
     class: '',
@@ -143,10 +184,10 @@ RS.apprise = function (text, show, target, onConfirm, options) {
       newOptions.buttons.cancel = {
         className: 'btn-default',
         id: 'cancel',
-        text: 'Cancel'
+        text: RS.msg("legacyjs.common.cancel")
       };
       if (options) {
-        newOptions.buttons.cancel.text = options.textCancel || 'Cancel';
+        newOptions.buttons.cancel.text = options.textCancel || RS.msg("legacyjs.common.cancel");
       }
     }
   }
@@ -162,11 +203,11 @@ RS.apprise = function (text, show, target, onConfirm, options) {
     },
     className: 'btn-primary',
     id: 'confirm',
-    text: 'Ok'
+    text: RS.msg("legacyjs.common.ok")
   };
 
   if (options) {
-    newOptions.buttons.confirm.text = options.textOk || 'Ok';
+    newOptions.buttons.confirm.text = options.textOk || RS.msg("legacyjs.common.ok");
 
     if ('title' in options) {
       newOptions.title = options.title;
@@ -457,7 +498,7 @@ RS.blockingProgressBar = (function () {
   my.show = function (config) {
     my._progressType = config.progressType;
     showCancel = config.showCancel || false;
-    msg = config.msg || "Starting...";
+    msg = config.msg || RS.msg("legacyjs.core.progress.starting");
     my._checkingInterval = config.checkingInterval || 3000;
     RS.blockPage(msg, showCancel);
     my._timerId.push(setInterval(_updateProgress, my._checkingInterval));
@@ -495,7 +536,7 @@ RS.blockingProgressBar = (function () {
       RS.blockingProgressBar.showProgress(progress.percentComplete);
       RS.blockingProgressBar.message(progress.description);
       if (progress.done) {
-        RS.blockingProgressBar.message("Completed");
+        RS.blockingProgressBar.message(RS.msg("legacyjs.core.progress.completed"));
       }
     });
 
@@ -533,22 +574,20 @@ RS.unblockPage = function ($element) {
 };
 
 /*
- * Enables a jquery UI dialog button containing argument text
+ * Enables a jquery UI dialog button with the given id
  * args
- *  - label complete or partial button label text
+ *  - id the id set on the button's entry in the dialog's buttons array
  */
-RS.enableJQueryDialogButtonWithLabel = function (label) {
-  $(".ui-dialog-buttonpane button:contains('" + label + "')")
-    .prop("disabled", false).removeClass('ui-state-disabled');
+RS.enableJQueryDialogButtonById = function (id) {
+  $("#" + id).prop("disabled", false).removeClass('ui-state-disabled');
 };
 /*
- * Disables a jquery UI dialog button containing argument text
+ * Disables a jquery UI dialog button with the given id
  * args
- *  - label complete or partial button label text
+ *  - id the id set on the button's entry in the dialog's buttons array
  */
-RS.disableJQueryDialogButtonWithLabel = function (label) {
-  $(".ui-dialog-buttonpane button:contains('" + label + "')")
-    .prop("disabled", true).addClass('ui-state-disabled');
+RS.disableJQueryDialogButtonById = function (id) {
+  $("#" + id).prop("disabled", true).addClass('ui-state-disabled');
 };
 
 /**
@@ -906,13 +945,11 @@ $(function () {
     var jqxhr = $.get('/system/maintenance/ajax/nextMaintenance');
     jqxhr.done(function (nextMaint) {
       if (nextMaint) {
-        var headerInfoMsg = 'Scheduled maintenance will start on ' + nextMaint.formattedStartDate;
-        var warningMsg = 'Scheduled maintenance is about to start on ' + nextMaint.formattedStartDate +
-          '. Please finish your work and log off';
-        var noticeMsg = 'RSpace will be down for a scheduled maintenance from ' +
-          nextMaint.formattedStartDate + ' until ' +
-          nextMaint.formattedEndDate + '. ' +
-          RS.escapeHtml(nextMaint.message);
+        var headerInfoMsg = RS.msg("legacyjs.core.maintenance.header", nextMaint.formattedStartDate);
+        var warningMsg = RS.msg("legacyjs.core.maintenance.warning", nextMaint.formattedStartDate);
+        var noticeMsg = RS.msg("legacyjs.core.maintenance.notice",
+          nextMaint.formattedStartDate, nextMaint.formattedEndDate,
+          RS.escapeHtml(nextMaint.message));
 
         if (!nextMaint.canUserLoginNow) {
           var event = new CustomEvent('show-toast-message', {
@@ -995,13 +1032,15 @@ RS.ajaxFailed = function (action, pageWasBlocked, jqxhr, showAsToast) {
   if (pageWasBlocked) {
     RS.unblockPage();
   }
-  var additionalInfo = "Status: " + jqxhr.status;
+  var additionalInfo;
   if (jqxhr.status >= 500) {
-    additionalInfo = additionalInfo + " - server error";
+    additionalInfo = RS.msg("legacyjs.ajax.status.serverError", jqxhr.status);
   } else if (jqxhr.status >= 400) {
-    additionalInfo = additionalInfo + " - unauthorised or unavailable resource.";
+    additionalInfo = RS.msg("legacyjs.ajax.status.unauthorised", jqxhr.status);
   } else if (jqxhr.status == 0) {
-    additionalInfo = additionalInfo + " - unauthorised or unavailable resource - is your network connection OK?";
+    additionalInfo = RS.msg("legacyjs.ajax.status.unauthorisedNetwork", jqxhr.status);
+  } else {
+    additionalInfo = RS.msg("legacyjs.ajax.status.generic", jqxhr.status);
   }
 
   var responseText = jqxhr.responseText;
@@ -1016,10 +1055,10 @@ RS.ajaxFailed = function (action, pageWasBlocked, jqxhr, showAsToast) {
 
   }
   if (!responseText) {
-    responseText = "No error details in response";
+    responseText = RS.msg("legacyjs.ajax.noDetails");
   }
 
-  var message = action + " could not complete: <br/>" + additionalInfo + "<br/>" + responseText;
+  var message = RS.msg("legacyjs.ajax.failed", action, additionalInfo, responseText);
   if (RS.useBootstrapModals) {
     var focusedElement = $(':focus');
     RS.apprise(message, true, focusedElement);
@@ -1054,7 +1093,7 @@ function getMediaPlayerHTML(id, name, extension) {
   var milliseconds = new Date().getTime();
   if (isPlayableOnJWPlayer(extension)) {
     html = '<div class="mediaDiv" style="border:1px solid; padding:3px; margin: 3px"><div class="videoTemp" id="videoContainer_' +
-        id + '_' + milliseconds + '">Loading the player ...</div></div>';
+        id + '_' + milliseconds + '">' + RS.msg("legacyjs.core.media.loadingPlayer") + '</div></div>';
   }
   return html;
 }
@@ -1088,7 +1127,7 @@ function setUpJWMediaPlayer(id, name, extension) {
     $("#tempData").find('object [name="allowscriptaccess"]').attr('value', 'never');
 
   } else {
-    $('#tempData').find('.videoTemp').text('Player not available');
+    $('#tempData').find('.videoTemp').text(RS.msg("legacyjs.core.media.playerNotAvailable"));
   }
   videoHTML = $("#tempData").html();
 
@@ -1427,11 +1466,11 @@ RS.submitIconUpload = function (cfg) {
 
   var errorMsg;
   if (!file) {
-    errorMsg = "Please select something to upload";
+    errorMsg = RS.msg("legacyjs.core.upload.nothingSelected");
   } else if (!file.type.match('image.*')) {
-    errorMsg = "The file type is not an image.";
+    errorMsg = RS.msg("legacyjs.core.upload.notAnImage");
   } else if (file.size > maxFileSizekB * 1000) {
-    errorMsg = "Please upload a smaller file, that's less  than " + maxFileSizekB + "kB";
+    errorMsg = RS.msg("legacyjs.core.upload.tooLarge", maxFileSizekB);
   }
   if (errorMsg) {
     $('#imagePreview').children().remove();
@@ -1517,7 +1556,7 @@ RS.getPdfDownloadLink = function (documentId, revisionId, fileExtension, $elemen
     return deferred.promise();
   }
 
-  var blockMessage = 'Preparing the file...';
+  var blockMessage = RS.msg("legacyjs.core.pdf.preparing");
   RS.blockPage(blockMessage, false, $elementToBlock);
 
   // asking conversion service for link to resource, may return error if can't convert
@@ -1532,7 +1571,7 @@ RS.getPdfDownloadLink = function (documentId, revisionId, fileExtension, $elemen
 
   jqxhr.done(function (result) {
     if (result.errorMsg !== null) {
-      apprise("Couldn't convert the document");
+      apprise(RS.msg("legacyjs.core.pdf.convertFailed"));
       deferred.reject();
       return;
     }
@@ -1547,9 +1586,9 @@ RS.getPdfDownloadLink = function (documentId, revisionId, fileExtension, $elemen
   jqxhr.fail(function (jqxhr, textStatus) {
     var errorMsgToDisplay;
     if (textStatus === "timeout") {
-      errorMsgToDisplay = "PDF conversion takes longer than usual. Please try again later.";
+      errorMsgToDisplay = RS.msg("legacyjs.core.pdf.timeout");
     } else {
-      errorMsgToDisplay = "Conversion to PDF could not complete.<br/>Status:" + jqxhr.status + "<br />" + jqxhr.responseText;
+      errorMsgToDisplay = RS.msg("legacyjs.core.pdf.conversionFailed", jqxhr.status, jqxhr.responseText);
     }
     if ($elementToBlock) {
       $elementToBlock.html("<br />" + errorMsgToDisplay);
@@ -1588,10 +1627,10 @@ RS.openInNewWindow = function (url) {
 
   // some browsers block opening new tab from asynchronous js, allowing it only for user-initiated clicks
   if (newWindow === null || newWindow === undefined) {
-    Apprise("Pop-up blocker is stopping RSpace from opening new tab.", {
+    Apprise(RS.msg("legacyjs.core.popup.blocked"), {
       buttons: {
         confirm: {
-          text: "Open anyway",
+          text: RS.msg("legacyjs.core.popup.openAnyway"),
           className: "blue",
           action: function () {
             Apprise('close');
@@ -1789,7 +1828,7 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
     $(document).ready(function () {
       RS.switchToBootstrapButton();
       $('#nfsFileInfoDialog').dialog({
-        title: 'Filestore link details',
+        title: RS.msg("legacyjs.core.nfs.dialogTitle"),
         autoOpen: false,
         modal: true,
         minWidth: 350,
@@ -1832,7 +1871,7 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
       console.log("retrieved: ", data);
       if (data) {
         var isFolder = linkType === 'directory';
-        var headerText = isFolder ? "Folder details: " : "File details:";
+        var headerText = isFolder ? RS.msg("legacyjs.core.nfs.folderDetails") : RS.msg("legacyjs.core.nfs.fileDetails");
         var isSmbj = data.fileSystem.clientType === 'SMBJ';
         var isIrods = data.fileSystem.clientType === 'IRODS';
         var isS3 = data.fileSystem.clientType === 'S3';
@@ -1867,7 +1906,7 @@ RS.initAndOpenNetFileInfoDialog = function ($link) {
 
     });
     jqxhr.fail(function (result) {
-      apprise('An error occured on filestore info retrieval' + result.responseText);
+      apprise(RS.msg("legacyjs.core.nfs.infoRetrievalError", result.responseText));
     });
   }
 };
@@ -1897,7 +1936,7 @@ RS.downloadNetFile = function (relPath, nfsId, fileSystemId) {
       namepath: relPath,
       nfsId: nfsId
     };
-    RS.blockPage("Downloading...");
+    RS.blockPage(RS.msg("legacyjs.core.nfs.downloading"));
     var jqxhr = $.post('/netFiles/ajax/prepareNfsFileForDownload', nfsparams);
     jqxhr.done(function (result) {
       if (result == "ok") {
@@ -1912,7 +1951,7 @@ RS.downloadNetFile = function (relPath, nfsId, fileSystemId) {
       }
     });
     jqxhr.fail(function (result) {
-      apprise('An error occurred on file download: ' + RS.escapeHtml(RS.extractAjaxErrorMessage(result)));
+      apprise(RS.msg("legacyjs.core.nfs.downloadError", RS.escapeHtml(RS.extractAjaxErrorMessage(result))));
     });
     jqxhr.always(function () {
       RS.unblockPage();
@@ -1927,7 +1966,7 @@ RS.updateNfsPath = function(relPath, nfsId, fileSystemId, $infoPanel) {
       nfsId: nfsId
     };
     console.log("NfsParams: ", nfsparams);
-    RS.blockPage("Getting Current Path...");
+    RS.blockPage(RS.msg("legacyjs.core.nfs.gettingPath"));
     var jqxhr = $.post('/netFiles/ajax/getCurrentPath', nfsparams);
     jqxhr.done(function (result) {
       if (result !== "need.log.in" && !RS.isBlank(result)) {
@@ -1942,7 +1981,7 @@ RS.updateNfsPath = function(relPath, nfsId, fileSystemId, $infoPanel) {
       }
     });
     jqxhr.fail(function (result) {
-      apprise('An error occurred retrieving current path: ' + RS.escapeHtml(RS.extractAjaxErrorMessage(result)));
+      apprise(RS.msg("legacyjs.core.nfs.pathError", RS.escapeHtml(RS.extractAjaxErrorMessage(result))));
     });
     jqxhr.always(function () {
       RS.unblockPage();
@@ -2034,7 +2073,7 @@ function _hideLoginPanel() {
 }
 
 function _showNfsActionFailureMsg(action, failureDetails) {
-  apprise(action + " action failed (" + failureDetails + "), if that does not work contact your System Admin");
+  apprise(RS.msg("legacyjs.core.nfs.actionFailed", action, failureDetails));
 }
 
 function _toggleLoggedUserPanel(showPanel) {
@@ -2048,7 +2087,7 @@ function _toggleLoggedUserPanel(showPanel) {
   if (!fileSystem) {
     fileSystem = getFileSystemById(selectedFileStore.fileSystem.id);
   }
-  $('#nfsLoggedUserMsg').html('Logged into ' + fileSystem.name + ' as: ');
+  $('#nfsLoggedUserMsg').html(RS.msg("legacyjs.core.nfs.loggedIntoAs", fileSystem.name));
   $('#nfsLoggedUsername').html(fileSystem.loggedUsername);
 }
 
@@ -2105,7 +2144,7 @@ function _togglePanelsForCurrentPageState() {
     $('.userFileStoreLink')
       .filter(function() { return $(this).data('filestoreid') == selectedFileStore.id; })
       .closest('tr').addClass('userFileStoreRowSelected');
-    $("#activeFileTreeTitle").text('Filestore: ' + selectedFileStore.name);
+    $("#activeFileTreeTitle").text(RS.msg("legacyjs.core.nfs.filestoreTitle", selectedFileStore.name));
   }
 
   $("#nfsFileTreePanel").toggle(browsingState || addingState);
@@ -2166,7 +2205,7 @@ function _loginToNFS(fileSystem, afterLoginCallback) {
     nfsuserdir: $('#nfsUserDir').val()
   };
   $('.nfsError').html('');
-  RS.blockPage("Connecting...");
+  RS.blockPage(RS.msg("legacyjs.core.nfs.connecting"));
   var jqxhr = $.post('/netFiles/ajax/nfsLogin', nfsparams);
 
   jqxhr.done(function(result) {
@@ -2192,7 +2231,7 @@ function _loginToNFS(fileSystem, afterLoginCallback) {
       $('.nfsError').html(result);
     }
   });
-  jqxhr.fail(function() { _showNfsActionFailureMsg('Login', jqxhr.responseText); });
+  jqxhr.fail(function() { _showNfsActionFailureMsg(RS.msg("legacyjs.core.nfs.actionLogin"), jqxhr.responseText); });
   jqxhr.always(function() { RS.unblockPage(); });
 }
 
@@ -2271,20 +2310,19 @@ RS.showNetFileLoginDialog = function (fileSystemId, fileStoreId, afterLoginCallb
       fileSystem = fileStore && fileStore.fileSystem;
     }
     if (!fileSystem) {
-      apprise('This file system is no longer available; it may have been disabled or removed. Please contact your System Admin.');
+      apprise(RS.msg("legacyjs.core.nfs.systemUnavailable"));
       return;
     }
 
     if (fileSystem.authType === "PASSWORD") {
       showUsernamePasswordDialog(fileSystem, afterLoginCallback);
     } else {
-      apprise('Sorry, there is some problem with logging you into ' + fileSystem.name +
-        '. Please ask your administrator for help.');
+      apprise(RS.msg("legacyjs.core.nfs.loginProblem", fileSystem.name));
     }
 
   });
   jqxhrPage.fail(function (jqxhr, settings, exception) {
-    apprise('An error occurred on loading net files gallery');
+    apprise(RS.msg("legacyjs.core.nfs.galleryLoadError"));
   });
 
 };
@@ -2345,15 +2383,15 @@ RS.addPaginationTooltips = function (selector) {
 
     // First and Last page sometimes get textual labels rather than numbers.
     if ($(this).text().indexOf("First") >= 0) {
-      title = "First page";
+      title = RS.msg("legacyjs.core.pagination.firstPage");
     } else if ($(this).text().indexOf("Last") >= 0) {
-      title = "Last page";
+      title = RS.msg("legacyjs.core.pagination.lastPage");
     } else {
-      title = "Page " + parseInt($(this).html());
+      title = RS.msg("legacyjs.core.pagination.page", parseInt($(this).html()));
     }
 
     if ($(this).parent().hasClass("active")) {
-      title += " (current page)";
+      title = RS.msg("legacyjs.core.pagination.currentPage", title);
     }
     $(this).attr("title", title);
   });

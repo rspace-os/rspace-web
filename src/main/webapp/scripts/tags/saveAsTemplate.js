@@ -2,7 +2,7 @@ function initSaveAsTemplateDlg() {
 
     RS.switchToBootstrapButton();
     $('#saveAsTemplateDlg').dialog({
-        title: "Save Template",
+        title: RS.msg("legacyjs.core.saveTemplate.title"),
         resizable: true, 
         autoOpen: false,
         minHeight: 200,
@@ -11,8 +11,8 @@ function initSaveAsTemplateDlg() {
         modal: true,
         buttons: 
         {
-            Cancel: function() {$(this).dialog('close');},
-            OK: function () {
+            [RS.msg("legacyjs.common.cancel")]: function() {$(this).dialog('close');},
+            [RS.msg("legacyjs.common.ok")]: function () {
 
                 var IDs = [];
                 $("#saveAsTemplateDlg").find("input").each(function(){ IDs.push(this.id); });
@@ -30,12 +30,12 @@ function initSaveAsTemplateDlg() {
                 }
                 // this is essential else if empty will send a null array to server throwing an error
                 if(cnt==0){
-                    apprise("Please choose at least one field!");
+                    apprise(RS.msg("legacyjs.core.saveTemplate.chooseField"));
                     return;
                     
                 }
                 var tmp_name = $("#template_name").val();
-                RS.blockPage("Creating template...");
+                RS.blockPage(RS.msg("legacyjs.core.saveTemplate.creating"));
                 var jqxhr = $.post(createURL("/workspace/editor/structuredDocument/saveTemplate"),
                         { fieldCompositeIds:sendIds,
                           recordId:recordId,
@@ -48,10 +48,9 @@ function initSaveAsTemplateDlg() {
                     RS.unblockPage();
                     //RSPAC-1712. Show special message if not authorised
                     if(jqxhr.status == 404) {
-                    	apprise("Sorry, you may not create a template from a file you do not own. <br/>" +
-                    			"Please ask the owner to create a template from this document, and share it with you.")
+	apprise(RS.msg("legacyjs.core.saveTemplate.notOwner"))
                     } else {
-                    	 RS.ajaxFailed("Create template", false, jqxhr);
+                    	 RS.ajaxFailed(RS.msg("legacyjs.core.saveTemplate.createAction"), false, jqxhr);
                     }
                    
                 });

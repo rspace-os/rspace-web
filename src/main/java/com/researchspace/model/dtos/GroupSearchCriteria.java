@@ -1,6 +1,7 @@
 package com.researchspace.model.dtos;
 
 import com.researchspace.core.util.FilterCriteria;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.UISearchTerm;
 import com.researchspace.model.GroupType;
 import org.apache.commons.lang3.StringUtils;
@@ -79,7 +80,7 @@ public class GroupSearchCriteria extends FilterCriteria {
     if (StringUtils.isEmpty(uniqueName)) {
       return;
     }
-    this.uniqueName = StringUtils.abbreviate(uniqueName, MAX_SEARCH_LENGTH);
+    this.uniqueName = StringAbbreviationUtils.abbreviate(uniqueName, MAX_SEARCH_LENGTH);
     filterByUniqueName = true;
   }
 
@@ -108,7 +109,7 @@ public class GroupSearchCriteria extends FilterCriteria {
     if (StringUtils.isEmpty(displayNameLike)) {
       return;
     }
-    this.displayName = StringUtils.abbreviate(displayNameLike, MAX_SEARCH_LENGTH);
+    this.displayName = StringAbbreviationUtils.abbreviate(displayNameLike, MAX_SEARCH_LENGTH);
     filterByDisplayNameLike = true;
   }
 

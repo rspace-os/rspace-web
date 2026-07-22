@@ -9,8 +9,8 @@
 
   <!-- Nav tabs -->
   <ul id="recordPickerTopNavBar" class="nav nav-pills" role="tablist">
-    <li role="presentation" class="active"><a href="#searchTab" aria-controls="search" role="tab" data-toggle="tab">Search</a></li>
-    <li role="presentation" class=""><a href="#browseTab" aria-controls="browse" role="tab" data-toggle="tab">Browse</a></li>
+    <li role="presentation" class="active"><a href="#searchTab" aria-controls="search" role="tab" data-toggle="tab"><spring:message code="common:actions.search"/></a></li>
+    <li role="presentation" class=""><a href="#browseTab" aria-controls="browse" role="tab" data-toggle="tab"><spring:message code="searchableRecordPicker.browseTab"/></a></li>
   </ul>
 
   <hr id="navbarHr"/>
@@ -19,8 +19,8 @@
     <div role="tabpanel" class="tab-pane active" id="searchTab">
         <form>
           <div id="searchDocDiv">
-              <input type="text" id="searchQueryInput" name="searchQuery" placeholder="Search with query, or by global ID..."></input>
-              <div id="searchBtn" class="btn btn-default">Search</div>
+              <input type="text" id="searchQueryInput" name="searchQuery" placeholder="<spring:message code='searchableRecordPicker.searchPlaceholder'/>"></input>
+              <div id="searchBtn" class="btn btn-default"><spring:message code="common:actions.search"/></div>
 
               <div id="searchResultsDiv">
 
@@ -50,8 +50,7 @@
     <div class='searchResultDescriptionDiv'>
         <span class="resultDocName">{{docName}}</span>
         <br />
-        Global Id: {{globalId}},
-        Owner: {{ownerFullName}}
+        <spring:message code="searchableRecordPicker.globalIdOwnerSummary"/>
     </div>
   </div>
 </script>

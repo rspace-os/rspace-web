@@ -13,7 +13,7 @@ $(document).ready(function () {
       $('#buttonDescriptions').html(data);
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Getting create user account form", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingFormAction"), false, jqxhr);
     });
   });
 
@@ -24,7 +24,7 @@ $(document).ready(function () {
       $('#buttonDescriptions').html(data);
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Getting create user account form", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingFormAction"), false, jqxhr);
     });
   });
 
@@ -35,7 +35,7 @@ $(document).ready(function () {
       $('#buttonDescriptions').html(data);
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Getting create user account form", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingFormAction"), false, jqxhr);
     });
   });
 
@@ -46,7 +46,7 @@ $(document).ready(function () {
       $('#buttonDescriptions').html(data);
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Getting create user account form", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingFormAction"), false, jqxhr);
     });
   });
 
@@ -54,7 +54,7 @@ $(document).ready(function () {
     e.preventDefault();
     var isChecked = $("#checkCreateRepeatUserAccount").is(':checked');
 
-    RS.blockPage("Creating account...");
+    RS.blockPage(RS.msg("legacyjs.system.createAccount.creatingAccount"));
     var data = $('#createUserAccountForm').serialize();
     var jqxhr = $.post('/system/ajax/createUserAccount', data);
     jqxhr.always(function () {
@@ -66,7 +66,7 @@ $(document).ready(function () {
           $().toastmessage('showNoticeToast', response.errorMsg.errorMessages);
         }
         $().toastmessage({
-          text: 'New Account has been created successfully',
+          text: RS.msg("legacyjs.system.createAccount.accountCreatedSuccessfully"),
           sticky: false,
           position: 'top-right',
           type: 'success',
@@ -90,7 +90,7 @@ $(document).ready(function () {
       }
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Create user account", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.createUserAccountAction"), false, jqxhr);
     });
   });
 
@@ -104,7 +104,7 @@ $(document).ready(function () {
       $("input[name='passwordConfirmation']").val(generatedPassword);
     });
     jqxhr.fail(function () {
-      RS.ajaxFailed("Getting generated password", false, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingGeneratedPasswordAction"), false, jqxhr);
     });
   });
 
@@ -123,7 +123,7 @@ $(document).ready(function () {
 
     var username = $("input[name='username']").val();
     if (!username) {
-      $().toastmessage('showNoticeToast', "Please provide the username");
+      $().toastmessage('showNoticeToast', RS.msg("legacyjs.system.createAccount.provideUsername"));
       return;
     }
 
@@ -147,7 +147,7 @@ $(document).ready(function () {
           filterGroups();
         });
         jqxhr.fail(function () {
-          RS.ajaxFailed("Getting group list", false, jqxhr);
+          RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingGroupListAction"), false, jqxhr);
         });
       }
     } else if (inputClass === "communitiesListOption") {
@@ -253,26 +253,26 @@ function dynamicSort(property) {
 //ldap method common for createAccount.js and batchUserRegistration.js
 function retrieveUserLdapDetails(username, $firstName, $lastName, $email) {
   if ($firstName.val() && $lastName.val() && $email.val()) {
-    $().toastmessage('showNoticeToast', "First name, Last name and Email are already provided, skipping call to LDAP");
+    $().toastmessage('showNoticeToast', RS.msg("legacyjs.system.createAccount.ldapFieldsAlreadyProvided"));
     return;
   }
 
-  RS.blockPage("Retrieving LDAP details...");
+  RS.blockPage(RS.msg("legacyjs.system.createAccount.retrievingLdapDetails"));
   var url = "/system/ldap/ajax/getUserLdapDetails";
   var jqxhr = $.get(url, { username: username });
   jqxhr.always(function () { RS.unblockPage(); });
   jqxhr.done(function (data) {
     if (!data) {
-      $().toastmessage('showNoticeToast', "No LDAP details found for user '" + username + "'");
+      $().toastmessage('showNoticeToast', RS.msg("legacyjs.system.createAccount.noLdapDetailsForUser", username));
       return;
     }
     if (!$firstName.val()) { $firstName.val(data.firstName); }
     if (!$lastName.val()) { $lastName.val(data.lastName); }
     if (!$email.val()) { $email.val(data.email); }
 
-    $().toastmessage('showSuccessToast', "Found LDAP details, updated empty fields");
+    $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.createAccount.ldapDetailsFound"));
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("Getting LDAP details", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.system.createAccount.gettingLdapDetailsAction"), false, jqxhr);
   });
 }

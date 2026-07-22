@@ -1,15 +1,16 @@
 ## Takes a communication 'cmm', dateobject 'dateOb', and baseURL string 'baseURL'
 
-<h2>RSpace message  from $cmm.originator.fullName</h2>
-<a href="$baseURL/userform?userId=$cmm.originator.id">$cmm.originator.fullName</a> sent you a message on #formatDate($dateOb)
+<h2>$msg.format("email.notification.message.rspaceMessageFrom", [$cmm.originator.fullName])</h2>
+$msg.format("email.notification.message.sentMessage", ["$baseURL/userform?userId=$cmm.originator.id", $cmm.originator.fullName, $date.format('full_date', $dateOb), $date.format('short_time', $dateOb)])
 
 #if($cmm.record)
-concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">
-$cmm.record.name</a>
+$msg.format("email.notification.message.concerningDocument", ["$baseURL/workspace/editor/structuredDocument/$cmm.record.id", $cmm.record.name])
 #end
 <p/>
 $cmm.message
 <p/>
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>
 <br/>
-To reply to the sender of this message, please do so in <a href="$baseURL/workspace">RSpace</a>.
+$msg.format("email.notification.message.replyInRSpace", ["$baseURL/workspace"])

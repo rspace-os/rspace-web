@@ -268,8 +268,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
 
   private void assertRelationAllowed(InventoryLinkField field, String relationType) {
     if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", relationType);
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
     String allowed = field.getAllowedRelationTypes();
     if (allowed == null || allowed.trim().isEmpty()) {
@@ -277,7 +276,7 @@ public class InstrumentEntityApiManagerImpl extends InventoryApiManagerImpl<Inst
     }
     if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
     }
   }
 

@@ -211,7 +211,7 @@ public class NfsManagerImpl implements NfsManager {
       result = NfsManager.LOGGED_AS_MSG + nfsClient.getUsername();
 
     } catch (MalformedURLException e) {
-      result = "net.filestores.error.invalidUrl";
+      result = "netFileStores.errors.invalidUrl";
       log.warn(result, e);
     } catch (NfsAuthException authException) {
       NfsAuthentication nfsAuthentication =
@@ -220,7 +220,7 @@ public class NfsManagerImpl implements NfsManager {
       result = errorMsgCode;
       log.warn(result);
     } catch (NfsException e) {
-      result = "net.filestores.error.connection";
+      result = "netFileStores.errors.connection";
       log.warn(result, e);
     }
     return result;

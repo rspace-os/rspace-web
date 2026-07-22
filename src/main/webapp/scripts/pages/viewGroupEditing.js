@@ -33,7 +33,7 @@ $(document).ready(function () {
     $('#changePiLink').click(function (e) {
         e.preventDefault();
         if ($('.setNewPiRadioInput').size() === 0) {
-            apprise('There is no-one in the group who could become a new PI.');
+            apprise(RS.msg("legacyjs.groupEditing.noOneCouldBecomeNewPi"));
             RS.focusAppriseDialog(false);
         } else {
             $('#setNewPiDialog').dialog('open');
@@ -49,17 +49,17 @@ $(document).ready(function () {
     const deleteGroup = (groupType) => {
         var callback = function () {
             var jxqr = $.post(createURL('/'+groupType+'/deleteGroup/' + groupId), function (xhr) {
-                RS.confirm("Group removed", 'success', 5000);
+                RS.confirm(RS.msg("legacyjs.groupEditing.groupRemoved"), 'success', 5000);
                 window.location.replace('/userform');
             });
             jxqr.fail(function () {
-                RS.ajaxFailed("Removing group", true, jxqr);
+                RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionRemovingGroup"), true, jxqr);
             });
         }
 
 		RS.createConfirmationDialog({
-			title: "Confirm deletion",
-			consequences: `Are you sure you want to delete the following group: <strong>${displayName}</strong>?`,
+			title: RS.msg("legacyjs.groupEditing.confirmDeletionTitle"),
+			consequences: RS.msg("legacyjs.groupEditing.confirmDeleteGroupConsequences", displayName),
 			variant: "warning",
 			callback: callback
 		});
@@ -68,32 +68,32 @@ $(document).ready(function () {
   $(document).ready(function(){
   	$('#setNewPiDialog').dialog({
   		autoOpen:false,
-  		title: "Change LabGroup's PI",
+  		title: RS.msg("legacyjs.groupEditing.changePiDialogTitle"),
   		modal: true,
   		buttons :{
-  			Cancel: function () {
+  			[RS.msg("legacyjs.common.cancel")]: function () {
   				$(this).dialog('close');
   			},
-  			Submit: function () {
+  			[RS.msg("legacyjs.groupEditing.submit")]: function () {
   				var newPiId = $("input[name='setNewPi']:checked").val();
   				if(!newPiId) {
-  					apprise("Please select a new PI");
+  					apprise(RS.msg("legacyjs.groupEditing.pleaseSelectNewPi"));
             // RSPAC-1287 can't give focus to the apprise dialog
             RS.focusAppriseDialog(true);
   					return;
   				}
-  				RS.blockPage("Changing PI", false);
+  				RS.blockPage(RS.msg("legacyjs.groupEditing.changingPi"), false);
   				var jqxhr = $.post("/groups/ajax/admin/swapPi/" + groupId, {newPiId:newPiId}, function(resp) {
   					if (resp.data) {
   						RS.unblockPage();
-  						RS.confirm("PI of group changed; reloading page");
+  						RS.confirm(RS.msg("legacyjs.groupEditing.piChangedReloading"));
   						window.location = "/groups/view/" + groupId;
   					} else {
   						apprise(RS.getValidationErrorString(resp.errorMsg));
   					}
   				});
   				jqxhr.fail (function (xhr) {
-  			        RS.ajaxFailed("Changing the PI of the group", true, jqxhr);
+  			        RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionChangingPi"), true, jqxhr);
   			    });
   			}
   		 },
@@ -115,14 +115,14 @@ $(document).ready(function () {
         var data = { canPIEditAll: this.checked };
         var jqxhr = $.post("/groups/ajax/admin/changePiCanEditAll/" + groupId, data, function(data) {
             if (data.data) {
-                RS.confirm("PI can edit all updated to: " + data.data);
+                RS.confirm(RS.msg("legacyjs.groupEditing.piCanEditAllUpdated", data.data));
                 window.location="/groups/view/" +groupId;
             } else {
                 apprise(RS.getValidationErrorString(data.errorMsg));
             }
         });
         jqxhr.fail (function (xhr) {
-            RS.ajaxFailed("Updating PI can edit all", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingPiCanEditAll"), false, jqxhr);
         })
     });
 
@@ -130,13 +130,13 @@ $(document).ready(function () {
         var data = { hideProfile: this.checked };
         var jqxhr = $.post("/groups/ajax/admin/changeHideProfileSetting/" + groupId, data, function(data) {
             if (data.data) {
-                RS.confirm("Profile visibility updated");
+                RS.confirm(RS.msg("legacyjs.groupEditing.profileVisibilityUpdated"));
             } else {
                 apprise(RS.getValidationErrorString(data.errorMsg));
             }
         });
         jqxhr.fail (function (xhr) {
-            RS.ajaxFailed("Updating profile visibility", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingProfileVisibility"), false, jqxhr);
         })
     });
 
@@ -153,7 +153,7 @@ $(document).ready(function () {
     function setUpchangeRoleDialog(){
       $(document).ready(function() {
         $('#changeRoleDialog').dialog({
-       		title: "Change  User's Role",
+       		title: RS.msg("legacyjs.groupEditing.changeUserRoleDialogTitle"),
        		resizable: true,
        		autoOpen: false,
        		height:350,
@@ -173,10 +173,10 @@ $(document).ready(function () {
      				}
        		},
      		  buttons: {
-         		Cancel: function (){
+         		[RS.msg("legacyjs.common.cancel")]: function (){
          			$(this).dialog('close');
          		},
-         		OK: function (){
+         		[RS.msg("legacyjs.common.ok")]: function (){
       				var groupId = $(this).data("groupId");
      				  var userid = $(this).data("userid");
          			var newRole = $('input[name=role]:checked').val();
@@ -186,15 +186,14 @@ $(document).ready(function () {
          			var jqxhr = $.post("/groups/ajax/admin/changeRole/"+groupId+"/"+userid, data, function (data){
        					if(data.data) {
        						console.log("UPDATED!!!" + data.data);
-       						RS.confirm("Role updated to: " + data.data.roleText
-       								 + " with read-all permissions =" + data.data.isAuthorized  );
+						RS.confirm(RS.msg("legacyjs.groupEditing.roleUpdatedTo", data.data.roleText, data.data.isAuthorized));
        						window.location="/groups/view/" +groupId;
        					} else {
        						apprise(getValidationErrorString(data.errorMsg));
        				  }
          			});
          			jqxhr.fail (function (xhr) {
-         				RS.ajaxFailed("Updating roles", false, jqxhr);
+         				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingRoles"), false, jqxhr);
          			})
          			$(this).dialog('close');
      			  }
@@ -252,7 +251,7 @@ $(document).ready(function () {
 
       $('#inviteNewMembersDlg').dialog({
       	autoOpen: false,
-      	title: "Invite new members",
+      	title: RS.msg("legacyjs.groupEditing.inviteNewMembersDialogTitle"),
       	modal: true,
       	height: 400,
       	width: 400,
@@ -265,10 +264,10 @@ $(document).ready(function () {
       		$("#nonExistingUsersTag").tagit("removeAll");
       	},
       	buttons :{
-      		Cancel: function (){
+      		[RS.msg("legacyjs.common.cancel")]: function (){
       			$(this).dialog('close');
       		},
-      		Invite: function (){
+      		[RS.msg("legacyjs.groupEditing.invite")]: function (){
 
       			var url = "/cloud/inviteCloudUser";
       			var existingArr = $("#existingUsersTag").tagit("assignedTags");
@@ -276,7 +275,7 @@ $(document).ready(function () {
       			var emails = [].concat(nonExistingArr, existingArr);
 
       			if(!emails.length) {
-      				RS.confirm("No email found to send an invitation.", "notice", 3000);
+      				RS.confirm(RS.msg("legacyjs.groupEditing.noEmailFoundForInvitation"), "notice", 3000);
       				return false;
       			}
 
@@ -288,20 +287,19 @@ $(document).ready(function () {
       			var jqxhr = $.post(url, data, function(result) {
       				var data = result.data;
       				if(data) {
-      					var s = "<br>The following people have been invited to join the group : <ul>";
       					var emails = "";
       					$.each(data, function(index, obj) {
       						emails += "<li>"+obj+"</li>";
       					});
-      					s += emails + "</ul><br> Invited users will be added to the group when they accept their invitation.";
+      					var s = RS.msg("legacyjs.groupEditing.invitedPeopleList", emails);
       					RS.confirmAndNavigateTo(s, "notice", 2000, "/groups/view/"+groupId);
       				} else {
-      					RS.confirm("Please check the email addresses.", "notice", 3000);
+      					RS.confirm(RS.msg("legacyjs.groupEditing.checkEmailAddresses"), "notice", 3000);
       				}
       			});
 
       			jqxhr.fail (function (xhr) {
-        				RS.ajaxFailed("Inviting new users", false, jqxhr);
+        				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionInvitingNewUsers"), false, jqxhr);
         			});
       		 }
       	 }, //end buttons
@@ -341,27 +339,27 @@ $(document).ready(function () {
 function  setUpLeaveGroupDialog () {
 	$('#removeMeFromGrp').dialog({
 		autoOpen: false,
-	  	title: "Confirm Leave Group",
+	  	title: RS.msg("legacyjs.groupEditing.confirmLeaveGroupTitle"),
 	  	modal: true,
 	  	buttons: {
-	  		Cancel: function (){
+	  		[RS.msg("legacyjs.common.cancel")]: function (){
 	  			$(this).dialog('close');
 	  		},
-	  		"Leave Group": function () {
+	  		[RS.msg("legacyjs.groupEditing.leaveGroup")]: function () {
 	  			$(this).dialog('close');
 	  			var jxqr = $.post("/groups/admin/removeSelf/" + groupId,  function(result) {
       				var data = result.data;
       				if(data == true) {
-      					RS.confirmAndNavigateTo("You have left the group", "notice", 3000, "/groups/view/"+groupId);
+      					RS.confirmAndNavigateTo(RS.msg("legacyjs.groupEditing.leftGroup"), "notice", 3000, "/groups/view/"+groupId);
       				}else if(data == false) {
-      					RS.confirm("You have left the group. This was a private group; you are no longer authorised to view its profile.", "notice", 6000, "/groups/view/"+groupId);
+      					RS.confirm(RS.msg("legacyjs.groupEditing.leftPrivateGroup"), "notice", 6000, "/groups/view/"+groupId);
       				} else {
       					apprise(getValidationErrorString(result.errorMsg));
       				}
       			});
 
       			jxqr.fail (function (xhr) {
-      				RS.ajaxFailed("Leaving group", false, xhr);
+      				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionLeavingGroup"), false, xhr);
         		});
 	  		}
 	  	}
@@ -371,16 +369,16 @@ function  setUpLeaveGroupDialog () {
 function setUpRenameDialog() {
 	$('#renameRecordDirect').dialog({
 		autoOpen:false,
-		title: "Rename Group",
+		title: RS.msg("legacyjs.groupEditing.renameGroupDialogTitle"),
 		modal: true,
 		buttons :{
-			Cancel: function (){
+			[RS.msg("legacyjs.common.cancel")]: function (){
 				$(this).dialog('close');
 			},
-			Rename: function (){
+			[RS.msg("legacyjs.groupEditing.rename")]: function (){
 				var newName=$('#nameFieldDirect').val();
 				if(newName === ""){
-					apprise("Please enter a name!");
+					apprise(RS.msg("legacyjs.groupEditing.pleaseEnterAName"));
 					return;
 				}
 				$(this).dialog('close');
@@ -415,7 +413,7 @@ function initInviteNewMembersDlg(){
 	});
 
 	$("#existingUsersTag").tagit({
-	    placeholderText: "Type and find users by name, username or email",
+	    placeholderText: RS.msg("legacyjs.common.userSearchPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        var isAutocompleteList = false;
 	        $.each(autocompletePublicUserInfoSrcArray, function(i,obj) {
@@ -425,7 +423,7 @@ function initInviteNewMembersDlg(){
 	        });
 
 	        if(isAutocompleteList === false){
-	        	RS.confirm("Please check email. <br> Select an existing RSpace user email from the autocompleted list.", "notice", 2000);
+	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 2000);
 	        	return false;
 	        }
 	    },
@@ -442,11 +440,11 @@ function initInviteNewMembersDlg(){
   });
 
 	$("#nonExistingUsersTag").tagit({
-	    placeholderText: "Type and enter email",
+	    placeholderText: RS.msg("legacyjs.common.enterEmailPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        console.log("beforeTagAdded \t"+ui.tagLabel);
 	        if(! validateEmail(ui.tagLabel)) {
-	        	RS.confirm("Please check email syntax", "error", 1000);
+	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", 1000);
 	        	return false;
 	        }
 	    },

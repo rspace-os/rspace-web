@@ -68,8 +68,8 @@ class ReferencingInventoryItemsControllerTest {
     User user = new User("bob");
     when(userManager.getUserByUsername("bob")).thenReturn(user);
     when(inventoryLinkManager.findReferencingItems("bad!", user))
-        .thenThrow(new ApiRuntimeException("errors.inventory.field.link.targetNotFound", "bad!"));
-    when(messageSource.getMessage(eq("errors.inventory.field.link.targetNotFound"), any()))
+        .thenThrow(new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", "bad!"));
+    when(messageSource.getMessage(eq("errors.inventory.field.linkTargetNotFound"), any()))
         .thenReturn("bad! does not exist, or you do not have permission to view it.");
     Principal principal = () -> "bob";
 

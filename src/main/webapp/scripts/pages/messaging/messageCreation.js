@@ -33,7 +33,7 @@ function initialiseRequestDlg(options) {
   $(document).ready(function(){
     RS.switchToBootstrapButton();
     $(_dialogDivSelector$).dialog({
-      title: "Send a Message",
+      title: RS.msg("legacyjs.messaging.sendMessageDialogTitle"),
       resizable: true,
       autoOpen: false,
       height: 500,
@@ -97,7 +97,7 @@ function initialiseRequestDlg(options) {
       },
       buttons: [{
           id: 'msgDlgCancel',
-          text: 'Cancel',
+          text: RS.msg("legacyjs.common.cancel"),
           click: function() {
             $(this).dialog('close');
           }
@@ -105,12 +105,12 @@ function initialiseRequestDlg(options) {
         // persists request
         {
           id: 'msgDlgSend',
-          text: 'Send',
+          text: RS.msg("legacyjs.common.send"),
           click: function() {
 
             var messageLength = $('.optionalMessageArea').val().length;
             if (messageLength > 2000) {
-              apprise('Optional Message is too long <br /> (' + messageLength + '/2000 characters)');
+              apprise(RS.msg("legacyjs.messaging.optionalMessageTooLong", messageLength));
               return;
             }
 
@@ -122,7 +122,7 @@ function initialiseRequestDlg(options) {
 
             const messageType = form$.find("#messageType").val();
 
-            RS.blockPage('Sending...', false, dlgWindow$);
+            RS.blockPage(RS.msg("legacyjs.messaging.sendingMessage"), false, dlgWindow$);
             var jqxhr = $.post(createURL('/messaging/ajax/create'), json);
             jqxhr.always(function() {
               RS.unblockPage(dlgWindow$);
@@ -140,7 +140,7 @@ function initialiseRequestDlg(options) {
               }
               // we get an empty response
               var text$ = $("<p style='text-align:center'>" +
-                "<img src='/images/tick-icon.png'/> Request sent</p>");
+                "<img src='/images/tick-icon.png'/> " + RS.msg("legacyjs.messaging.requestSent") + "</p>");
               $(_dialogDivSelector$Content).prepend(text$);
               text$.fadeOut(2000, function() {
                 dlg$.dialog('close');
@@ -148,7 +148,7 @@ function initialiseRequestDlg(options) {
               RS.trackEvent("user:send:message:document_editor", { messageType });
             });
             jqxhr.fail(function() {
-              RS.ajaxFailed("Sending message", false, jqxhr);
+              RS.ajaxFailed(RS.msg("legacyjs.messaging.actionSendingMessage"), false, jqxhr);
             });
           }
         }

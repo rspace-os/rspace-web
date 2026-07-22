@@ -8,16 +8,18 @@
 	<div class="row">
     	<axt:biggerLogo/>
     	<div style="text-align:center; margin-top:46px;">
-    	    <h2 class="form-signup-heading">Maintenance Mode</h2>
+    	    <h2 class="form-signup-heading"><spring:message code="maintenance.mode.heading"/></h2>
         </div>
     </div>
     <div style="max-width:550px;margin: 0 auto;margin-top:30px;text-align:center;">
-		Scheduled maintenance is in progress now. Please try again later.
+		<spring:message code="maintenance.mode.inProgressNotice"/>
 		<br />
 		<br />
-		This page will check the maintenance status again in <span class="refreshTimer">30</span> seconds, or you can 
+		<spring:message code="maintenance.mode.checkAgainNotice">
+		  <spring:argument value='<span class="refreshTimer">30</span>'/>
+		</spring:message>
 		<br />
-		<a href="/login">check the status now</a>
+		<a href="/login"><spring:message code="maintenance.mode.checkStatusLink"/></a>
 	</div>
 	
 	<script>

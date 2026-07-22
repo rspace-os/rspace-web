@@ -23,9 +23,9 @@ public class StringFieldDTOValidator extends AbstractFieldFormValidator implemen
         && dto.getDefaultStringValue().length() > DEFAULT_VARCHAR_LENGTH) {
       errors.rejectValue(
           "defaultStringValue",
-          "errors.maxlength",
+          "errors.maxLength",
           new Object[] {"default value", DEFAULT_VARCHAR_LENGTH},
-          "defaultStringValue is too long");
+          null);
     }
   }
 }

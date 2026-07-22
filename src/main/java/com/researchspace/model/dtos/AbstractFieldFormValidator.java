@@ -16,7 +16,7 @@ abstract class AbstractFieldFormValidator implements Validator {
 
   @Override
   public void validate(Object target, Errors errors) {
-    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "no.name");
+    ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "errors.noValue.name");
     AbstractFormFieldDTO<?> dto = (AbstractFormFieldDTO) target;
     if (isNameTooLong(dto.getName())) {
       rejectTooLong(errors);
@@ -24,8 +24,7 @@ abstract class AbstractFieldFormValidator implements Validator {
   }
 
   void rejectTooLong(Errors errors) {
-    errors.reject(
-        "errors.maxlength", new Object[] {"name", MAX_NAME_LENGTH}, "name length is too large");
+    errors.reject("errors.maxLength", new Object[] {"name", MAX_NAME_LENGTH}, null);
   }
 
   boolean isNameTooLong(String name) {

@@ -11,6 +11,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.TransferService;
@@ -20,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -30,7 +30,7 @@ public class TemplateTransferService implements TransferService {
       "templates.transfer.folder.deletedUsers";
   public static final String DELETED_USER_NAME_SUFFIX = "templates.transfer.suffix.deleted";
 
-  private final MessageSource messageSource;
+  private final MessageSourceUtils messageSource;
   private final AuditTrailService auditTrailService;
   private final RecordGroupSharingDao recordGroupSharingDao;
   private final FolderDao folderDao;
@@ -40,7 +40,7 @@ public class TemplateTransferService implements TransferService {
 
   @Autowired
   public TemplateTransferService(
-      MessageSource messageSource,
+      MessageSourceUtils messageSource,
       AuditTrailService auditTrailService,
       RecordGroupSharingDao recordGroupSharingDao,
       FolderDao folderDao,
@@ -78,8 +78,7 @@ public class TemplateTransferService implements TransferService {
       recordManager.moveUsersRecordsToFolder(templateIds, originalOwner, deletedUserFolder);
 
       String deletedUserName =
-          originalOwner.getUsername()
-              + messageSource.getMessage(DELETED_USER_NAME_SUFFIX, null, null);
+          originalOwner.getUsername() + messageSource.getMessage(DELETED_USER_NAME_SUFFIX);
       recordManager.transferTemplates(originalOwner, newOwner, templateIds, deletedUserName);
 
       transferGalleryItemsForTemplates(originalOwner, newOwner, templateIds);
@@ -87,8 +86,7 @@ public class TemplateTransferService implements TransferService {
       String description =
           messageSource.getMessage(
               "templates.transfer.audit.description",
-              new Object[] {originalOwner.getUsername(), newOwner.getUsername()},
-              null);
+              new Object[] {originalOwner.getUsername(), newOwner.getUsername()});
       for (BaseRecord template : sharedRecords) {
         auditTrailService.notify(
             new GenericEvent(newOwner, template, AuditAction.TRANSFER, description));
@@ -127,7 +125,7 @@ public class TemplateTransferService implements TransferService {
         Folder deletedUsersFolder =
             getOrCreateSubfolder(
                 newOwnerGalleryRoot,
-                messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER, null, null),
+                messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER),
                 newOwner);
         destinationFolder =
             getOrCreateSubfolder(deletedUsersFolder, originalOwner.getUsername(), newOwner);
@@ -136,9 +134,7 @@ public class TemplateTransferService implements TransferService {
         Folder categoryFolder = recordManager.getGalleryMediaFolderForUser(category, newOwner);
         Folder deletedUsersFolder =
             getOrCreateSubfolder(
-                categoryFolder,
-                messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER, null, null),
-                newOwner);
+                categoryFolder, messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER), newOwner);
         Folder userFolder =
             getOrCreateSubfolder(deletedUsersFolder, originalOwner.getUsername(), newOwner);
         destinationFolder =
@@ -148,8 +144,7 @@ public class TemplateTransferService implements TransferService {
     }
 
     String deletedUserName =
-        originalOwner.getUsername()
-            + messageSource.getMessage(DELETED_USER_NAME_SUFFIX, null, null);
+        originalOwner.getUsername() + messageSource.getMessage(DELETED_USER_NAME_SUFFIX);
     recordManager.transferTemplates(originalOwner, newOwner, mediaIds, deletedUserName);
     recordManager.updateFilePropertyOwnerForMediaFiles(mediaIds, newOwner.getUsername());
   }
@@ -191,9 +186,7 @@ public class TemplateTransferService implements TransferService {
     Folder templateFolder = folderManager.getTemplateFolderForUser(newOwner);
     Folder deletedUsersTemplates =
         getOrCreateSubfolder(
-            templateFolder,
-            messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER, null, null),
-            newOwner);
+            templateFolder, messageSource.getMessage(DELETED_USER_TEMPLATES_FOLDER), newOwner);
     return getOrCreateSubfolder(deletedUsersTemplates, originalOwner.getUsername(), newOwner);
   }
 }

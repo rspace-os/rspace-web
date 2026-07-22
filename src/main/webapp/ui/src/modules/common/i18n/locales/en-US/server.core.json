@@ -1,0 +1,154 @@
+{
+  "api": {
+    "pubchem": {
+      "errors": {
+        "unexpected": "An unexpected error occurred."
+      }
+    }
+  },
+  "date": {
+    "format": "MM/dd/yyyy"
+  },
+  "errors": {
+    "ajax": {
+      "unauthenticated": {
+        "refreshRequired": "You are no longer authenticated - please refresh the page and log in again."
+      }
+    },
+    "ajaxFragment": {
+      "notice": "There was an error responding to this request, which has been logged.",
+      "refLabel": "Ref: {0}"
+    },
+    "allFields": {
+      "required": "Please fill in all the fields."
+    },
+    "authorization": {
+      "document": {
+        "signed": "This document has already been signed."
+      },
+      "failed": "Attempt to access resource of type {0} identified by {1} by user {2} to perform action {3}",
+      "failure": {
+        "detailed": "Unauthorized attempt by {0} to {1}",
+        "polite": "Sorry, you don''t have permission to {0}"
+      },
+      "signing": "Only the  record owner can sign the record."
+    },
+    "captcha": {
+      "response": {
+        "missing": "Please confirm that you're not a robot."
+      },
+      "verification": {
+        "failed": "Invalid captcha response, please try again."
+      }
+    },
+    "date": "{0} is not a date.",
+    "dateOutsideAllowedRange": "Default date is outside the allowed range.",
+    "detail": "{0}",
+    "disorderedRange": "Default value lies outside the min/ max range.",
+    "emptyString": {
+      "generic": "Field cannot be empty.",
+      "polite": "Please enter a value for {0}."
+    },
+    "existing": {
+      "user": "This username ({0}) or e-mail address ({1}) already exists. Please try a different username and/or email.",
+      "username": "This username ({0}) already exists. Please try a different username.",
+      "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn't be taken by an alias"
+    },
+    "fromDateLaterThanToDate": "From date should be before to date.",
+    "invalid": "{0} is invalid.",
+    "invalidChars": "{0} is not an allowed character for {1}",
+    "invalidDateFormat": "Invalid date format used.",
+    "invalidDateFormattingString": "Invalid date formatting String used.",
+    "invalidOrderByClause": "Invalid order by clause {0} - should be one of {1}",
+    "invalidPassword": "Password must be between {0} and {1} characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[]^_`'{'|'}'~",
+    "invalidRole": "{0} is not a valid role name - must be one of {1}",
+    "invalidStringFormat": "Invalid string format {0} for parameter {1}; should match {2}",
+    "invalidUsername": {
+      "relaxed": "Username must consist of alphanumeric characters.",
+      "strict": "Username must be at least 6 alphanumeric characters."
+    },
+    "invalidXml": {
+      "content": "XML content for field {0} was invalid: {1}",
+      "namespace": "XML content for property {0} has invalid namespace - it  should be {1} but was {2}."
+    },
+    "login": {
+      "adminLogin": {
+        "wrongSignupSource": "The account you try to log into can be only accessed directly through SSO, not with Admin Login."
+      },
+      "credentials": {
+        "wrong": "Invalid username or password, please try again."
+      },
+      "lockout": {
+        "policyDescription": "After four unsuccessful login attempts the account is temporarily locked - try again in 10 minutes."
+      }
+    },
+    "maxLength": "{0} cannot be greater than {1} characters.",
+    "minDateLaterThanMaxDate": "Minimum date is later than maximum date.",
+    "minGtMax": "Min value is greater than max value",
+    "minLength": "{0} cannot be less than {1} characters.",
+    "noOptions": "No search option provided",
+    "noTerms": "No search term provided",
+    "noValue": {
+      "multipleChoice": "No value given for multiple choice option.",
+      "name": "No value given for name field."
+    },
+    "noWildcards": "No wildcards allowed for sysadmin search but was {0}",
+    "notUnique": "{0} is not a unique value, please try another.",
+    "number": {
+      "decimalPlaces": "Decimal places must be a whole number between 0 and 127.",
+      "invalidNumber": "Invalid number format"
+    },
+    "operation": {
+      "failed": {
+        "message": "{0} failed for the following reasons: {1}"
+      }
+    },
+    "page": {
+      "contactSupportNotice": "Please inspect the message detail below – if you believe this to be a server error, please contact ResearchSpace support. You might also try asking the resource owner to share the resource with you.",
+      "databaseUnavailable": "Database exception - query could not be executed.",
+      "genericServerError": "An error occurred on the server.",
+      "idAtTimestamp": "Id - {0} at {1}",
+      "insufficientPermissions": "You have insufficient permissions to view the resource, or you requested an unauthorized or non-existent resource.",
+      "reasonsIntro": "This is usually because",
+      "unauthorizedOperation": "You attempted to do an operation which is unauthorized or not available to you.",
+      "unavailableResource": "An expected resource was unavailable (null). This is probably a server error - please report this to support.",
+      "unhandledExceptionNotice": "An exception occurred on the server. If it persists, please contact ResearchSpace support."
+    },
+    "password": {
+      "conflict": "Password and Confirm Password fields are not identical.",
+      "insecurePassword": "Please choose a more secure password.",
+      "invalid": "Invalid password.",
+      "notEqualUsername": "Please use a  password other than your username."
+    },
+    "reauthentication": {
+      "failed": "Reauthentication failed, please try again."
+    },
+    "recordFilterMustIncludeTerm": "Filtering by folder/document IDs must also include a search term",
+    "required": "{0} is a required field.",
+    "resource": {
+      "inaccessible": "{0} with id [{1}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it."
+    },
+    "searchOptionBlank": "Empty search option",
+    "searchTermBlank": "Empty search term",
+    "searchTermMinLength": "Search term must be at least {0} characters",
+    "searchTermTooLong": "Search term at index {2} is too long ({0} chars) - max search string length is {1} chars.",
+    "signupCode": {
+      "failed": "Please supply the correct signup code (this is case sensitive)."
+    },
+    "signing": {
+      "failed": "Signing failed"
+    },
+    "termCannotParse": "Cannot parse the search term {0}",
+    "termTooPermissive": "Search term [{0}] is too permissive - please use a more precise search term",
+    "termsOptionsMismatch": "The number of terms ({0}) should equal the number of options ({1})",
+    "textQueryWildcardStartDisallowed": "Search term [{0}] should not begin with a wildcard (* or ?).",
+    "unknownSearchOption": "Unknown search option {0}",
+    "username": "An invalid username was specified",
+    "valueCount": {
+      "tooMany": "Only {0} values can be handled at once, please choose fewer items."
+    }
+  },
+  "label": {
+    "password": "Password"
+  }
+}

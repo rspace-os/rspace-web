@@ -1,6 +1,5 @@
 package com.axiope.model.record.init;
 
-import com.researchspace.Constants;
 import com.researchspace.model.User;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.inventory.SampleTemplate;
@@ -76,7 +75,7 @@ public abstract class BuiltinContent implements IBuiltinContent {
   protected ResourceBundle getResourceBundle() {
     if (resourceBundle == null) {
       Locale locale = LocaleContextHolder.getLocale();
-      resourceBundle = ResourceBundle.getBundle(Constants.BUNDLE_KEY, locale);
+      resourceBundle = BuiltinContentMessages.forLocale(locale);
     }
 
     return resourceBundle;

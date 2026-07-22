@@ -283,7 +283,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       return new AjaxReturnObject<>(
           null,
           getErrorListFromMessageCode(
-              "apps.dmpassistant.error.import.batch.too.large", MAX_IMPORT_BATCH_SIZE));
+              "apps.dmpAssistant.errors.importBatchTooLarge", MAX_IMPORT_BATCH_SIZE));
     }
     return proxy(
         model,
@@ -352,7 +352,7 @@ public class DMPAssistantController extends BaseOAuth2Controller {
     } catch (TokenRefreshFailedException e) {
       log.warn("DMP Assistant token refresh failed; user must reconnect");
       return new AjaxReturnObject<>(
-          null, getErrorListFromMessageCode("apps.dmpassistant.error.refresh"));
+          null, getErrorListFromMessageCode("apps.dmpAssistant.errors.refresh"));
     } catch (HttpStatusCodeException e) {
       // Log the full upstream message (which may include the response body, e.g. a
       // Cloudflare HTML challenge page on 403) but never surface that to the user —
@@ -360,11 +360,11 @@ public class DMPAssistantController extends BaseOAuth2Controller {
       log.warn("DMP Assistant request failed: {}", e.getMessage());
       String statusLabel = e.getStatusCode().value() + " " + e.getStatusCode().getReasonPhrase();
       return new AjaxReturnObject<>(
-          null, getErrorListFromMessageCode("apps.dmpassistant.error.upstream", statusLabel));
+          null, getErrorListFromMessageCode("apps.dmpAssistant.errors.upstream", statusLabel));
     } catch (Exception e) {
       log.warn("Error connecting to DMP Assistant", e);
       return new AjaxReturnObject<>(
-          null, getErrorListFromMessageCode("apps.dmpassistant.error.connect"));
+          null, getErrorListFromMessageCode("apps.dmpAssistant.errors.connect"));
     }
   }
 

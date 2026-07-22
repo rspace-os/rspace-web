@@ -68,7 +68,7 @@ public class UsernameReminderByEmailHandler {
 
               EmailContent emailContent =
                   emailContentGenerator.render(
-                      "email.username.reminder.subject",
+                      "email.account.usernameReminderMessage.subject",
                       null,
                       "usernameReminderMessage.vm",
                       velocityModel);

@@ -9,11 +9,11 @@
       <tr>
         <th style="width:25%">
           <a class="orderBy" id="orderByName" href="/directory/ajax/grouplist?orderBy=displayName&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
-            <spring:message code="group.labgroup.name"/>&nbsp;<spring:message code="table.name.header"/>
+            <spring:message code="directory.labGroupList.nameHeader"/>
           </a>
         </th>
         <th style="width:25%">
-          <spring:message code="community.name"/>&nbsp;<spring:message code="table.name.header"/>
+          <spring:message code="directory.labGroupList.communityNameHeader"/>
         </th>
         <th style="width:20%">
           <a class="orderBy" id="orderByPi" href="/directory/ajax/grouplist?orderBy=owner.lastName&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">

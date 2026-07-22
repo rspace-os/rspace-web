@@ -4,7 +4,7 @@
  - parentRef - a String link to the document's folder
 *#
 <!DOCTYPE HTML>
-<html>
+<html lang="$msg.languageTag">
 <head>
 <title>${document.name}</title>
 <link href="../resources/document.css" rel="stylesheet" />
@@ -12,12 +12,14 @@
 </head>
 <body>
 <div class="navigationSection">
-<a href="../index.html">Top</a> | <a href="../${parentRef}">Parent folder</a>
+<a href="../index.html">$msg.getMessage("export.archive.top")</a> | <a href="../${parentRef}">$msg.getMessage("export.archive.parentFolder")</a>
 </div>
 <div id="headerSection">
 <h4>${document.name}</h4>
-<p>Document SD$document.docId (version $document.version)
-#coreData($document)
+<p>$msg.format("export.archive.documentView.header", [$document.globalId, $document.version])
+ <p>$msg.format("export.global.coreData.createdOn", [$date.format('full_date', $document.creationDate), $date.format('short_time', $document.creationDate)])
+ <p>$msg.format("export.global.coreData.by", [$document.createdBy])
+ <p> $!description
 </div>
 #foreach ($field in $document.listFields)
 <H3> ${field.fieldName}</H3>
@@ -28,9 +30,9 @@
     <div>
      ## Here we're listing comments
       #if(! $field.comments.isEmpty())
-      <h2>Comments</h2>
+      <h2>$msg.getMessage("export.global.comments.title")</h2>
       	#foreach($comment in $field.comments)
-      	  <p> Comment $foreach.count </p>
+      	  <p> $msg.format("export.global.comments.number", [$foreach.count]) </p>
       		#foreach($item in $comment.items)
       		   $item.lastUpdater : $item.updateDate : $item.itemContent <br/>
       		#end
@@ -42,12 +44,40 @@
     #foreach($linkedImage in $field.imgMeta)
 
      #if($linkedImage.linkToOriginalFile)
-      Original image:  <a href="$linkedImage.linkToOriginalFile">$linkedImage.linkToOriginalFile</a><br/>
+      $msg.getMessage("export.archive.documentView.originalImage")  <a href="$linkedImage.linkToOriginalFile">$linkedImage.linkToOriginalFile</a><br/>
      #end
     #end ## end of linked image loop
     </div>
 
-    #lomsHtml($field.listsOfMaterials)
+    #if(! $field.listsOfMaterials.isEmpty())
+    <div>
+      <h4>$msg.getMessage("export.global.lomsHtml.title")</h4>
+      #foreach($lom in $field.listsOfMaterials)
+      <div class="lomDiv">
+        $msg.format("export.global.lomsHtml.listOfMaterials", [$lom.name]) <br />
+        $msg.format("export.global.lomsHtml.description", [$lom.description]) <br />
+        <table class="lomTable">
+          <thead>
+            <tr>
+              <td>$msg.getMessage("export.global.lomsHtml.headerItemId")</td>
+              <td>$msg.getMessage("export.global.lomsHtml.headerItemType")</td>
+              <td>$msg.getMessage("export.global.lomsHtml.headerUsedQuantity")</td>
+            </tr>
+          </thead>
+          <tbody>
+            #foreach($material in $lom.materials)
+            <tr>
+              <td>$material.invRecId</td>
+              <td>$material.invRecType</td>
+              <td>$material.usagePlainText</td>
+            </tr>
+            #end
+          </tbody>
+        </table>
+      </div>
+      #end ## end of list of materials loop
+    </div>
+    #end ##lom conditional
 
     <hr>
 #end ## end of field loop

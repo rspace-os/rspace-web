@@ -75,7 +75,7 @@ public class WorkspaceSearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.termsoptionsmismatch", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.termsOptionsMismatch", errors.getAllErrors().get(0).getCode());
 
     // unknown search option
     errors = reinitializeErrors();
@@ -83,7 +83,7 @@ public class WorkspaceSearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.unknownsearchoption", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.unknownSearchOption", errors.getAllErrors().get(0).getCode());
 
     // too long search term
     errors = reinitializeErrors();
@@ -91,7 +91,7 @@ public class WorkspaceSearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.searchtermtoolong", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.searchTermTooLong", errors.getAllErrors().get(0).getCode());
 
     // unknown rderby clause
     errors = reinitializeErrors();
@@ -100,21 +100,21 @@ public class WorkspaceSearchInputValidatorTest {
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.invalidorderbyclause", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.invalidOrderByClause", errors.getAllErrors().get(0).getCode());
 
     errors = reinitializeErrors();
     input = new WorkspaceListingConfig(crit, FULLTEXTOPTION, LEADING_WILDCARDTERM, -1L, true);
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.textquerywildcardstartdisallowed", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.textQueryWildcardStartDisallowed", errors.getAllErrors().get(0).getCode());
 
     errors = reinitializeErrors();
     input = new WorkspaceListingConfig(crit, GLOBALOPTION, LEADING_WILDCARDTERM, -1L, true);
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
     assertEquals(1, errors.getErrorCount());
-    assertEquals("errors.textquerywildcardstartdisallowed", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.textQueryWildcardStartDisallowed", errors.getAllErrors().get(0).getCode());
 
     errors = reinitializeErrors();
     input = new WorkspaceListingConfig(crit, FULLTEXTOPTION, OKLUCENE, -1L, true);
@@ -126,7 +126,7 @@ public class WorkspaceSearchInputValidatorTest {
     input = new WorkspaceListingConfig(crit, FULLTEXTOPTION, TOO_WILDCARD, -1L, true);
     validator.validate(input, errors);
     assertTrue(errors.hasGlobalErrors());
-    assertEquals("errors.termtoopermissive", errors.getAllErrors().get(0).getCode());
+    assertEquals("errors.termTooPermissive", errors.getAllErrors().get(0).getCode());
   }
 
   private BeanPropertyBindingResult reinitializeErrors() {

@@ -1,0 +1,22 @@
+{
+  "gallery": {
+    "api": {
+      "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
+    },
+    "filestore": {
+      "folder": {
+        "uploadRejected": "Cannot move folders to filestores."
+      },
+      "mediaFileRequired": "Only media files can be moved to filestores."
+    },
+    "errors": {
+      "saveFailed": "Save action failed [{0}]"
+    },
+    "snippet": {
+      "creation": {
+        "failed": "Some problems occurred during creation of the snippet. Please try again.",
+        "ok": "A new snippet ''{0}'' has been added to the Gallery."
+      }
+    }
+  }
+}

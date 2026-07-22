@@ -636,6 +636,16 @@ public class PropertyHolder implements IMutablePropertyHolder {
   }
 
   @Override
+  public String getWebappVersion() {
+    return "v" + rsversion;
+  }
+
+  @Override
+  public String getCopyrightYear() {
+    return java.time.Year.now().toString();
+  }
+
+  @Override
   public SemanticVersion getVersion() {
     return new SemanticVersion(rsversion);
   }

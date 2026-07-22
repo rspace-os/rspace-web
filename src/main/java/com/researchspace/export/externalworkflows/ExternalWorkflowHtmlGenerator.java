@@ -7,6 +7,9 @@ import com.researchspace.archive.ArchiveExternalWorkFlowData;
 import com.researchspace.archive.ArchiveExternalWorkFlowInvocation;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowData;
 import com.researchspace.model.externalWorkflows.ExternalWorkFlowInvocation;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -33,6 +36,8 @@ public class ExternalWorkflowHtmlGenerator {
   private String urlPrefix;
 
   @Autowired private VelocityEngine velocityEngine;
+  @Autowired private MessageSourceUtils messages;
+  @Autowired private UserLocaleService userLocaleService;
 
   public String getHtmlForExternalWorkflowData(Set<ExternalWorkFlowData> externalWorkFlowData) {
     if (externalWorkFlowData == null || externalWorkFlowData.isEmpty()) {
@@ -57,6 +62,7 @@ public class ExternalWorkflowHtmlGenerator {
   private String renderRows(List<ExternalWorkflowTableData> rows) {
     Map<String, Object> context = new HashMap<>();
     context.put("rows", rows);
+    context.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     return VelocityEngineUtils.mergeTemplateIntoString(
         velocityEngine, "pdf/external-workflow-table.vm", "UTF-8", context);
   }

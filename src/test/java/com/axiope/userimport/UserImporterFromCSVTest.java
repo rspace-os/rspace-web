@@ -9,6 +9,7 @@ import com.researchspace.model.dto.UserRegistrationInfo;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.properties.PropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.RSpaceTestUtils;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -82,7 +83,7 @@ public class UserImporterFromCSVTest {
     assertEquals(0, users8.getParsedUsers().size());
     assertTrue(users8.getErrors().hasErrorMessages());
     String errorMsg = users8.getErrors().getErrorMessages().get(0);
-    assertEquals("system.csvimport.user.unrecognisedRole", errorMsg);
+    assertEquals("system.csvImport.user.unrecognisedRole", errorMsg);
   }
 
   @Test
@@ -158,14 +159,14 @@ public class UserImporterFromCSVTest {
     ErrorList errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
     assertEquals(
-        "system.csvimport.community.wrongNumberOfFields", errors.getErrorMessages().get(0));
+        "system.csvImport.community.wrongNumberOfFields", errors.getErrorMessages().get(0));
 
     String line2 = "#Communities\n" + "community, unknown lab"; // unknown labGroup name
     UserImportResult result2 = parseCSVLines(line2);
 
     ErrorList errors2 = result2.getErrors();
     assertTrue(errors2.hasErrorMessages());
-    assertEquals("system.csvimport.unknownLabGroup", errors2.getErrorMessages().get(0));
+    assertEquals("system.csvImport.unknownLabGroup", errors2.getErrorMessages().get(0));
   }
 
   @Test
@@ -176,14 +177,14 @@ public class UserImporterFromCSVTest {
     ErrorList errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
     assertEquals(
-        "system.csvimport.communityAdmin.wrongNumberOfFields", errors.getErrorMessages().get(0));
+        "system.csvImport.communityAdmin.wrongNumberOfFields", errors.getErrorMessages().get(0));
 
     line = "#Community Admins\n" + "community, unknownAdmin"; // unknown admin
     result = parseCSVLines(line);
 
     errors = result.getErrors();
     assertTrue(errors.hasErrorMessages());
-    assertEquals("system.csvimport.unknownUsername", errors.getErrorMessages().get(0));
+    assertEquals("system.csvImport.unknownUsername", errors.getErrorMessages().get(0));
   }
 
   @Test
@@ -239,10 +240,11 @@ public class UserImporterFromCSVTest {
 
     ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
     msgSource.setUseCodeAsDefaultMessage(true);
-    userLineParser.setMessages(msgSource);
+    MessageSourceUtils messages = new MessageSourceUtils(msgSource);
+    userLineParser.setMessages(messages);
 
     importer = new UserImporterFromCSV();
     importer.setUserLineParser(userLineParser);
-    importer.setMessages(msgSource);
+    importer.setMessages(messages);
   }
 }

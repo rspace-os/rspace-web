@@ -52,7 +52,7 @@ public class SlackController extends BaseController {
   private static final String USER_ID = "user_id";
   private static final String TEAM_ID = "team_id";
   private static final String SAVE_CONVO_ERROR_GENERIC_MSG =
-      "apps.slack.saveconversation.genericDefault";
+      "apps.slack.saveConversation.genericDefault";
   private static final String EXPORT_MESSAGES_DOCUMENT_NAME = "Exported Slack Messages";
   private static final long MAX_REQUESTED_DURATION_MILLIS = 90 * 24 * 3600 * 1000L; // 90 days
 
@@ -184,7 +184,7 @@ public class SlackController extends BaseController {
 
       // Format results as a SlackMessage
       if (docSearchResults.getHits() == 0) {
-        return new SlackMessage(getText("search.noresults"), null);
+        return new SlackMessage(getText("search.noResults"), null);
       } else {
         SlackMessage message = new SlackMessage("Found these documents:");
         for (BaseRecord doc : docSearchResults.getResults())
@@ -198,7 +198,7 @@ public class SlackController extends BaseController {
   }
 
   private SlackMessage getSearchHelpMessage() {
-    return new SlackMessage(getText("app.slack.search.help"));
+    return new SlackMessage(getText("apps.slack.search.help"));
   }
 
   @Data
@@ -218,7 +218,7 @@ public class SlackController extends BaseController {
 
     if (requestedDurationInMillis > MAX_REQUESTED_DURATION_MILLIS) {
       throw new SlackCommandParseException(
-          getText("apps.slack.saveconversation.maxtimeperiod", new String[] {"90"}));
+          getText("apps.slack.saveConversation.maxTimePeriod", new String[] {"90"}));
     } else if (requestedDurationInMillis == 0) {
       throw new SlackCommandParseException(getText(SAVE_CONVO_ERROR_GENERIC_MSG));
     } else if (requestedDurationInMillis < 0) {
@@ -318,7 +318,7 @@ public class SlackController extends BaseController {
 
       String accessToken = getAccessToken(user, params.get(USER_ID), params.get(TEAM_ID));
       if (accessToken == null) {
-        throw new IllegalStateException(getText("apps.slack.error.noAccessToken"));
+        throw new IllegalStateException(getText("apps.slack.errors.noAccessToken"));
       }
 
       slackService.saveConversation(
@@ -332,7 +332,7 @@ public class SlackController extends BaseController {
           EXPORT_MESSAGES_DOCUMENT_NAME);
 
       return new SlackMessage(
-          getText("apps.slack.saveconversation.ok", new String[] {EXPORT_MESSAGES_DOCUMENT_NAME}));
+          getText("apps.slack.saveConversation.ok", new String[] {EXPORT_MESSAGES_DOCUMENT_NAME}));
     } catch (IllegalArgumentException | IllegalStateException | SlackCommandParseException e) {
       return new SlackMessage(e.getMessage());
     }
@@ -340,12 +340,12 @@ public class SlackController extends BaseController {
 
   private void assertVerificationCode(Map<String, String> params) {
     if (!params.get("token").equals(verificationToken)) {
-      throw new IllegalArgumentException(getText("apps.slack.error.verificationCodeMismatch"));
+      throw new IllegalArgumentException(getText("apps.slack.errors.verificationCodeMismatch"));
     }
   }
 
   private SlackMessage getSaveConversationHelp() {
-    return new SlackMessage(getText("app.slack.saveconversation.help"));
+    return new SlackMessage(getText("apps.slack.saveConversation.help"));
   }
 
   private String getAccessToken(User user, String userId, String teamId) {
@@ -369,11 +369,11 @@ public class SlackController extends BaseController {
             userAppCfgMgr.findByAppConfigValue("SLACK_TEAM_ID", slackTeamId));
 
     if (users.isEmpty()) {
-      throw new IllegalStateException(getText("apps.slack.error.noconnecteduser"));
+      throw new IllegalStateException(getText("apps.slack.errors.noConnectedUser"));
     } else if (users.size() > 1) {
       throw new IllegalStateException(
           getText(
-              "apps.slack.error.tooManyconnectedusers",
+              "apps.slack.errors.tooManyConnectedUsers",
               new String[] {users.get(0).getUsername(), users.get(1).getUsername()}));
 
     } else {

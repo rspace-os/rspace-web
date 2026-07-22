@@ -243,7 +243,7 @@ public class DMPOnlineController extends BaseOAuth2Controller {
       return new AjaxReturnObject(dmpOnlineProvider.listPlans(page, per_page, accessToken), null);
     } catch (HttpClientErrorException | URISyntaxException | MalformedURLException e) {
       log.warn("error connecting to DMPonline", e);
-      return new AjaxReturnObject<>(null, ErrorList.of("Error connecting to DMPonline."));
+      return new AjaxReturnObject<>(null, ErrorList.of(getText("apps.dmpOnline.errors.connect")));
     }
   }
 

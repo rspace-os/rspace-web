@@ -1,6 +1,7 @@
 package com.researchspace.service.archive;
 
 import com.researchspace.model.ArchivalCheckSum;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.archive.export.ExportRemovalPolicy;
 import java.util.Date;
 import org.slf4j.Logger;
@@ -21,6 +22,8 @@ import org.springframework.beans.factory.annotation.Value;
 public class TimeLimitedExportRemovalPolicy implements ExportRemovalPolicy {
   private Logger log = LoggerFactory.getLogger(TimeLimitedExportRemovalPolicy.class);
 
+  private final MessageSourceUtils messages;
+
   @Value("${archive.folder.storagetime}")
   private String storageTimeProperty;
 
@@ -28,6 +31,10 @@ public class TimeLimitedExportRemovalPolicy implements ExportRemovalPolicy {
 
   /** Default length in hours to store archives for. */
   public static final int DEFAULT_LENGTH = 24;
+
+  public TimeLimitedExportRemovalPolicy(MessageSourceUtils messages) {
+    this.messages = messages;
+  }
 
   @Override
   public boolean removeExport(ArchivalCheckSum archive) {
@@ -99,7 +106,8 @@ public class TimeLimitedExportRemovalPolicy implements ExportRemovalPolicy {
 
   @Override
   public String getRemovalCircumstancesMsg() {
-    return String.format(
-        "The export will be eligible for deletion after %d hours.", getStorageTime());
+    return messages.getMessage(
+        "email.notification.exportCompleteNotification.removalPolicyAfterHours",
+        new Object[] {getStorageTime()});
   }
 }

@@ -2,9 +2,9 @@
 
 <head>
 	<title>
-		<fmt:message key="userProfile.title" />
+		<spring:message code="userProfile.title"/>
 	</title>
-	<meta name="heading" content="<fmt:message key='userProfile.heading'/>" />
+	<meta name="heading" content="<spring:message code='userProfile.heading'/>" />
 	<meta name="menu" content="UserMenu" />
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/userform.css'/>" />
 	<script src="<rst:assetUrl value='/scripts/pages/messaging/messageCreation.js'/>"></script>
@@ -20,12 +20,14 @@
 
 <p style="visibility: hidden;">--hidden spacing--</p>
 
+<spring:message code="userform.passwordCharsTitle" var="userformPasswordCharsTitle" htmlEscape="true"/>
+
 <div style="font-size: 1.5em; margin: 15px 0px; display: inline-block;">
 	<c:if test="${canEdit}">My</c:if>
 	<c:if test="${not canEdit}">User</c:if>
-	Profile
+	<spring:message code="userform.profileHeading"/>
 	<span style="font-size: .7em;">
-		<fmt:message key="user.username" />:
+		<spring:message code="system:usersPage.columns.username"/>:
 		${user.username}<c:if test="${not empty user.usernameAlias}">, login alias: ${user.usernameAlias}</c:if>
 	</span>
 </div>
@@ -35,21 +37,21 @@
 		<div class="col-xs-9">
 			<div class="col-xs-12 profileGreyBlocks">
 				<strong>
-					<fmt:message key="user.firstName" />:
+					<spring:message code="system:usersPage.columns.firstName"/>:
 				</strong>
 				<span id="firstName">${user.firstName}</span>
 			</div>
 
 			<div class="col-xs-12 profileGreyBlocks">
 				<strong>
-					<fmt:message key="user.lastName" />:</strong>
+					<spring:message code="system:usersPage.columns.lastName"/>:</strong>
 				<span id="lastName">${user.lastName}</span>
 			</div>
 
 			<rst:hasDeploymentProperty name="cloud" value="true">
 				<div style="line-height: 1.5em;">
 					<strong>
-						<fmt:message key="Affiliation" />:</strong>
+						<spring:message code="userform.affiliationLabel"/>:</strong>
 					<span id="affiliation">${user.affiliation}</span>
 				</div>
 			</rst:hasDeploymentProperty>
@@ -58,7 +60,7 @@
 				<c:if test="${canEdit == true}">
 					<div class="profileEditBar pull-right col-xs-5">
 						<a href="#" class="profileEditButton pull-right" id="userEditProfileButton">
-							<fmt:message key="userProfile.pageLinks.editDetails" />
+							<spring:message code="common:actions.edit"/>
 						</a>
 					</div>
 					<br><br>
@@ -68,10 +70,10 @@
 			<c:if test="${canEditVerificationPassword == true && isVerificationPasswordSet == true}">
 				<div class="profileGreyBlocks" style="text-align:right;padding:10px;">
 					<a href="#" class="profileEditButton" id="userChangeVerificationPasswordButton">
-						<fmt:message key="userProfile.pageLinks.changeVerificationPassword" />
+						<spring:message code="userProfile.pageLinks.changeVerificationPassword"/>
 					</a>
 					<a href="#" class="profileEditButton" id="userForgotVerificationPasswordButton">
-						<fmt:message key="userProfile.pageLinks.forgotVerificationPassword" />
+						<spring:message code="userProfile.pageLinks.forgotVerificationPassword"/>
 					</a>
 				</div>
 			</c:if>
@@ -79,7 +81,7 @@
 			<c:if test="${canEditVerificationPassword == true && isVerificationPasswordSet == false}">
 				<div class="profileGreyBlocks" style="text-align:right;padding:10px;">
 					<a href="#" class="profileEditButton" id="userSetVerificationPasswordButton">
-						<fmt:message key="userProfile.pageLinks.setVerificationPassword" />
+						<spring:message code="userProfile.pageLinks.setVerificationPassword"/>
 					</a>
 				</div>
 			</c:if>
@@ -87,20 +89,20 @@
 			<div class="col-xs-12">
 				<div class="profileGreyBlocks" style="display:flex">
 					<strong style="padding-right: 5px">
-						<fmt:message key="user.email" />:
+						<spring:message code="user.email"/>:
 					</strong>
 					<span id="userEmail" style="flex-grow: 1"> ${user.email}</span>
 					<c:if test="${canEditPassword == true}">
 						<div class="pull-right change-password" style="text-align:right;">
 							<a href="#" class="profileEditButton" id="userChangePasswordButton">
-								<fmt:message key="userProfile.pageLinks.changePassword" />
+								<spring:message code="userProfile.pageLinks.changePassword"/>
 							</a>
 						</div>
 					</c:if>
 					<c:if test="${canEditEmail == true}">
 						<div class="profileEditBar pull-right">
 							<a href="#" class="profileEditButton" id="userChangeEmailButton">
-								<fmt:message key="userProfile.pageLinks.changeEmail" /></a>
+								<spring:message code="common:actions.edit"/></a>
 						</div>
 					</c:if>
 				</div>
@@ -108,19 +110,21 @@
 				<c:if test="${user.signupSource == 'GOOGLE' || user.signupSource == 'LDAP' || user.signupSource == 'INTERNAL' || user.signupSource == 'SSO_BACKDOOR'}">
 					<div class="profileSignupSource">
 						<strong>
-							<fmt:message key="user.signupSource" />:</strong>
+							<spring:message code="user.signupSource"/>:</strong>
 						<span>
-							<c:if test="${user.signupSource == 'GOOGLE'}">Google</c:if>
-							<c:if test="${user.signupSource == 'LDAP'}">LDAP</c:if>
-							<c:if test="${user.signupSource == 'INTERNAL'}">This is an RSpace internal account</c:if>
-							<c:if test="${user.signupSource == 'SSO_BACKDOOR'}">This is an administrative SSO account used for RSpace maintenance</c:if>
+							<c:if test="${user.signupSource == 'GOOGLE'}"><spring:message code="userform.signupSource.google"/></c:if>
+							<c:if test="${user.signupSource == 'LDAP'}"><spring:message code="userform.signupSource.ldap"/></c:if>
+							<c:if test="${user.signupSource == 'INTERNAL'}"><spring:message code="userform.signupSource.internal"/></c:if>
+							<c:if test="${user.signupSource == 'SSO_BACKDOOR'}"><spring:message code="userform.signupSource.ssoBackdoor"/></c:if>
 						</span>
 					</div>
 				</c:if>
 
-				<strong>Account Status: </strong><span>${user.enabled ? "Enabled" : "Disabled"}</span><br>
+				<spring:message code="userform.enabledStatus" var="userformEnabledStatus"/>
+				<spring:message code="userform.disabledStatus" var="userformDisabledStatus"/>
+				<strong><spring:message code="userform.accountStatusLabel"/> </strong><span>${user.enabled ? userformEnabledStatus : userformDisabledStatus}</span><br>
 				<c:if test="${showLastLoginDate != null}">
-				<strong>Last Login: </strong>
+				<strong><spring:message code="userform.lastLoginLabel"/> </strong>
 				<span>
 					<fmt:formatDate pattern="yyyy-MM-dd HH:mm" value="${user.lastLogin}" />
 				</span>
@@ -129,18 +133,18 @@
 				<c:if test="${user.signupSource == 'GOOGLE' || user.signupSource == 'LDAP'}">
 					<div class="profileSignupSource">
 						<strong>
-							<fmt:message key="user.signupSource" />:
+							<spring:message code="user.signupSource"/>:
 						</strong>
 						<span>
-							<c:if test="${user.signupSource == 'GOOGLE'}">Google</c:if>
-							<c:if test="${user.signupSource == 'LDAP'}">LDAP</c:if>
+							<c:if test="${user.signupSource == 'GOOGLE'}"><spring:message code="userform.signupSource.google"/></c:if>
+							<c:if test="${user.signupSource == 'LDAP'}"><spring:message code="userform.signupSource.ldap"/></c:if>
 						</span>
 					</div>
 				</c:if>
 				<c:if test="${not empty user.sid}">
 					<div class="profileSignupSource">
 						<strong>
-							<fmt:message key="user.sid" />:</strong>
+							<spring:message code="user.sid"/>:</strong>
 						<span>${user.sid}</span>
 					</div>
 				</c:if>
@@ -156,7 +160,7 @@
 			<c:if test="${orcidAvailable and (canEdit or not empty orcidId) }">
 				<div class="profileGreyBlocks col-xs-12">
 					<strong>
-						<fmt:message key="user.orcid.label" />: </strong>
+						<spring:message code="user.orcid.label"/>: </strong>
 					<span id="orcidIdSpan" data-orcidid="${orcidId}" style="display:none">
 						<img src="/images/integrations/orcid-small.png" style="vertical-align: text-bottom;" />
 						<a id="userOrcidIdLink" href="#" target="_blank"></a>
@@ -166,11 +170,11 @@
 							<a href="#" id="setOrcidIdButton" class="myProfileButton"
 								data-orcidclientid="${applicationScope['RS_DEPLOY_PROPS']['orcidClientId']}"
 								data-orcidredirecturi="${applicationScope['RS_DEPLOY_PROPS']['urlPrefix']}/orcid/redirect_uri">
-								<fmt:message key="userProfile.pageLinks.setOrcidId" />
+								<spring:message code="userProfile.pageLinks.setOrcidId"/>
 							</a>
 							<a href="#" id="deleteOrcidIdButton" class="myProfileButton" data-orcidoptionsid="${orcidOptionsId}"
 								style="display:none">
-								<fmt:message key="userProfile.pageLinks.deleteOrcidId" />
+								<spring:message code="userProfile.pageLinks.deleteOrcidId"/>
 							</a>
 						</div>
 					</c:if>
@@ -183,20 +187,19 @@
 
 			<rst:hasDeploymentProperty name="fileStoreType" value="EGNYTE">
 				<div style="font-size: 1.5em; margin-bottom: 15px; color: #444;">
-					Egnyte filestore setup
+					<spring:message code="userform.egnyte.setupHeading"/>
 				</div>
 				<div class="profileGreyBlocks col-xs-12"">
 								<div id=" egnyteConnectedDiv" style="display:none">
 					<div class="col-xs-8">
-						Your RSpace account is connected to Egnyte filestore.
+						<spring:message code="userform.egnyte.connectedNotice"/>
 					</div>
 					<div class="pull-right">
-						<a id="egnyteDisconnectBtn" href="#" class="myProfileButton">Disconnect</a>
+						<a id="egnyteDisconnectBtn" href="#" class="myProfileButton"><spring:message code="userform.egnyte.disconnectButton"/></a>
 					</div>
 				</div>
 				<div id="egnyteDisonnectedDiv" style="display:none">
-					There is a problem with your connection to Egnyte filestore, please <a
-						href="/egnyte/egnyteConnectionSetup">re-authenticate</a>.
+					<spring:message code="userform.egnyte.notConfiguredNotice"/>
 				</div>
 				</div>
 				<div class="col-xs-12">
@@ -208,7 +211,7 @@
 				<br />
 				<div class="profileGreyBlocks col-xs-12">
 					<strong>
-						<fmt:message key="userProfile.sectionLabel.collaborationGroups" /> </strong>
+						<spring:message code="userProfile.sectionLabel.collaborationGroups"/> </strong>
 					<br>
 					<c:forEach var="grp" items="${user.groups}" varStatus="status">
 						<c:if test="${grp.groupType == 'COLLABORATION_GROUP'}">
@@ -229,7 +232,7 @@
             	<br />
                 <div class="profileGreyBlocks col-xs-12">
                     <strong>
-                        <fmt:message key="userProfile.sectionLabel.projectGroups" /> </strong>
+                        <spring:message code="userProfile.sectionLabel.projectGroups"/> </strong>
                     <br>
                     <c:forEach var="grp" items="${user.groups}" varStatus="status">
                         <c:if test="${grp.groupType == 'PROJECT_GROUP'}">
@@ -256,7 +259,7 @@
 				<c:if test="${canEdit == true}">
 					<div class="portraitEditBar">
 						<a href="#" class="profileUploadButton" id="userUploadImageButton">
-							<fmt:message key="userProfile.pageLinks.uploadImage" /></a>
+							<spring:message code="userProfile.pageLinks.uploadImage"/></a>
 					</div>
 				</c:if>
 			</div>
@@ -290,7 +293,7 @@
 		<hr />
 		<c:if test="${canEdit}">
 			<div class="api-menu__header col-xs-12">
-				<fmt:message key="user.apikey.label" />
+				<spring:message code="user.apiKey.label"/>
 			</div>
 			<br>
 			<div id="apiKeyInfo" class="api-menu__content col-xs-12" style="padding: 0px;"></div>
@@ -303,34 +306,33 @@
 	<div id="createRequestDlgContent"></div>
 </div>
 
-<fmt:bundle basename="bundles.admin.admin">
 	<div id="uploadImageDialog" style="display: none;">
 		<p>
-			<fmt:message key="dialogs.uploadImage.instruction"></fmt:message>
+			<spring:message code="dialogs.uploadImage.instruction"/>
 		</p>
 
 		<div id="uploadImageTabs">
 			<ul>
-				<li id="uploadImageTabLink"><a href="#uploadImageDiv">Upload Image</a></li>
-				<li id="takePhotoTabLink" style="display:none"><a href="#takePhotoDiv">Take a Picture</a></li>
+				<li id="uploadImageTabLink"><a href="#uploadImageDiv"><spring:message code="userform.uploadImageTabLink"/></a></li>
+				<li id="takePhotoTabLink" style="display:none"><a href="#takePhotoDiv"><spring:message code="userform.takePictureButton"/></a></li>
 			</ul>
 
 			<div id="uploadImageDiv">
-				<input type="file" id="fileChooser" aria-label="Choose a file" style="margin-bottom: 10px;" /><br>
+				<input type="file" id="fileChooser" aria-label="<spring:message code='userform.chooseFileAriaLabel'/>" style="margin-bottom: 10px;" /><br>
 				<output id="imagePreview"></output>
 			</div>
 			<div id="takePhotoDiv">
 				<div style="display: flex; height: 150px;">
 					<div style="width: 130px;">
-						<span>Camera view:</span><br />
+						<span><spring:message code="userform.cameraViewLabel"/></span><br />
 						<video id="profileImageVideo" width="120" height="120" autoplay></video>
 					</div>
 					<div style="width: 110px;">
 						<button id="profileImageVideoSnap" style="margin: 70px 10px;">
-							Take a Picture</button>
+							<spring:message code="userform.takePictureButton"/></button>
 					</div>
 					<div style="width: 130px;">
-						<span>Picture:</span><br />
+						<span><spring:message code="userform.pictureLabel"/></span><br />
 						<canvas id="profileImageVideoCanvas" width="120" height="120"></canvas>
 					</div>
 				</div>
@@ -345,7 +347,7 @@
 				<tr>
 					<td>
 						<label for="firstNameInput">
-							<fmt:message key="dialogs.editProfile.label.firstName"></fmt:message>
+							<spring:message code="system:usersPage.columns.firstName"/>
 						</label>
 					</td>
 					<td>
@@ -361,7 +363,7 @@
 				<tr>
 					<td>
 						<label for="surnameInput">
-							<fmt:message key="dialogs.editProfile.label.lastName"></fmt:message>
+							<spring:message code="system:usersPage.columns.lastName"/>
 						</label>
 					</td>
 					<td>
@@ -376,7 +378,7 @@
 				</tr>
 				<rst:hasDeploymentProperty name="cloud" value="true">
 					<tr>
-						<td><label for="newAffiliation">Affiliation </label></td>
+						<td><label for="newAffiliation"><spring:message code="userform.affiliationLabel"/> </label></td>
 						<td><input value="${user.affiliation}" name="newAffiliation" id="newAffiliation" class="form-control" />
 						</td>
 					</tr>
@@ -392,7 +394,7 @@
 				<tr>
 					<td>
 						<label for="currentPasswordInput">
-							<fmt:message key="dialogs.changePassword.label.current"></fmt:message>
+							<spring:message code="dialogs.changePassword.label.current"/>
 						</label>
 					</td>
 					<td><input type="password" value="" id="currentPasswordInput" class="form-control" /></td>
@@ -400,21 +402,21 @@
 				<tr>
 					<td>
 						<label for="newPasswordInput">
-							<fmt:message key="dialogs.changePassword.label.new"></fmt:message>
+							<spring:message code="dialogs.changePassword.label.new"/>
 						</label>
 					</td>
 					<td style="display: flex; flex-direction: column;">
 						<input type="password" value="" id="newPasswordInput" class="form-control"
 							   pattern="[ -~]{8,50}"
-							   title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+							   title="${userformPasswordCharsTitle}"
 						/>
-						<p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+						<p><spring:message code="userform.passwordCharsHint"/></p>
 					</td>
 				</tr>
 				<tr>
 					<td>
 						<label for="newPasswordConfirm">
-							<fmt:message key="dialogs.changePassword.label.confirm"></fmt:message>
+							<spring:message code="dialogs.changePassword.label.confirm"/>
 						</label>
 					</td>
 					<td><input type="password" value="" id="newPasswordConfirm" class="form-control" /></td>
@@ -429,13 +431,13 @@
             <table>
                 <tr>
                    <td colspan="2" style="white-space: initial">
-                     <p><fmt:message key="dialogs.verificationPassword.description"/></p>
+                     <p><spring:message code="dialogs.verificationPassword.description"/></p>
                    </td>
                 <tr>
                 <tr>
                     <td>
                         <label for="currentVerificationPasswordInput">
-                            <fmt:message key="dialogs.changeVerificationPassword.label.current"></fmt:message>
+                            <spring:message code="dialogs.changeVerificationPassword.label.current"/>
                         </label>
                     </td>
                     <td><input type="password" value="" id="currentVerificationPasswordInput" class="form-control" /></td>
@@ -443,21 +445,21 @@
                 <tr>
                     <td>
                         <label for="newVerificationPasswordInput">
-                            <fmt:message key="dialogs.changeVerificationPassword.label.new"></fmt:message>
+                            <spring:message code="dialogs.changeVerificationPassword.label.new"/>
                         </label>
                     </td>
                     <td style="display: flex; flex-direction: column;">
                         <input type="password" value="" id="newVerificationPasswordInput" class="form-control"
                                pattern="[ -~]{8,50}"
-                               title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+                               title="${userformPasswordCharsTitle}"
                         />
-                        <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                        <p><spring:message code="userform.passwordCharsHint"/></p>
                     </td>
                 </tr>
                 <tr>
                     <td>
                         <label for="newVerificationPasswordConfirm">
-                            <fmt:message key="dialogs.changeVerificationPassword.label.confirm"></fmt:message>
+                            <spring:message code="dialogs.changeVerificationPassword.label.confirm"/>
                         </label>
                     </td>
                     <td><input type="password" value="" id="newVerificationPasswordConfirm" class="form-control" /></td>
@@ -472,27 +474,27 @@
 		    <tr>
 		        <td colspan="2" style="white-space: initial">
 		            <p>
-		                <fmt:message key="dialogs.verificationPassword.description"/>
+		                <spring:message code="dialogs.verificationPassword.description"/>
                     </p>
                 </td>
 			<tr>
 				<td style="width: 35%">
 					<label for="newSetVerificationPasswordInput">
-						<fmt:message key="dialogs.setVerificationPassword.label.new"></fmt:message>
+						<spring:message code="dialogs.setVerificationPassword.label.new"/>
 					</label>
 				</td>
                 <td style="display: flex; flex-direction: column;">
                     <input type="password" value="" id="newSetVerificationPasswordInput" class="form-control"
                            pattern="[ -~]{8,50}"
-                           title="8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\]^_`{|}~"
+                           title="${userformPasswordCharsTitle}"
                     />
-                    <p>8 - 50 characters. Numbers, letters, spaces and special characters are allowed.</p>
+                    <p><spring:message code="userform.passwordCharsHint"/></p>
                 </td>
 			</tr>
 			<tr>
 				<td>
 					<label for="newSetVerificationPasswordConfirm">
-						<fmt:message key="dialogs.setVerificationPassword.label.confirm"></fmt:message>
+						<spring:message code="dialogs.setVerificationPassword.label.confirm"/>
 					</label>
 				</td>
 				<td><input type="password" value="" id="newSetVerificationPasswordConfirm" class="form-control" /></td>
@@ -503,24 +505,22 @@
 
 	<div id="pwdConfirmDialog" style="display: none;">
     <p>
-      <strong>Important: Your API Key Grants Full Access to Your RSpace Account and Data</strong>
+      <strong><spring:message code="userform.apiKey.generateWarningTitle"/></strong>
     </p>
     <p>
-    This API key provides access to your account, research data, and
-    intellectual property. If exposed or compromised:
+    <spring:message code="userform.apiKey.generateWarningIntro"/>
     </p>
     <ul>
-      <li>Unauthorized users could access and steal your data</li>
-      <li>Your intellectual property could be copied or misused</li>
-      <li>Your data may be permanently deleted or altered without your consent</li>
+      <li><spring:message code="userform.apiKey.generateWarningRisk1"/></li>
+      <li><spring:message code="userform.apiKey.generateWarningRisk2"/></li>
+      <li><spring:message code="userform.apiKey.generateWarningRisk3"/></li>
     </ul>
     <p>
-      Are you sure you want to generate a new API key? Please store it securely
-      and never share it with others or expose it in client-side code.
+      <spring:message code="userform.apiKey.generatingConfirmPrompt"/>
     </p>
 		<table>
 			<tr>
-				<td><label for="pwdConfirm">Please confirm your password </label></td>
+				<td><label for="pwdConfirm"><spring:message code="userform.apiKey.confirmPasswordLabel"/> </label></td>
 				<td><input type="password" value="" id="pwdConfirm" class="form-control" /></td>
 			</tr>
 		</table>
@@ -532,7 +532,7 @@
 			<tr>
 				<td>
 					<label for="newEmailInput">
-						<fmt:message key="dialogs.changeEmail.label.new"></fmt:message>
+						<spring:message code="dialogs.changeEmail.label.new"/>
 					</label>
 				</td>
 				<td><input value="${user.email}" id="newEmailInput" class="form-control" /></td>
@@ -540,7 +540,7 @@
 			<tr>
 				<td>
 					<label for="newEmailConfirm">
-						<fmt:message key="dialogs.changeEmail.label.confirm"></fmt:message>
+						<spring:message code="dialogs.changeEmail.label.confirm"/>
 					</label>
 				</td>
 				<td><input value="" id="newEmailConfirm" class="form-control" /></td>
@@ -548,7 +548,7 @@
 			<tr>
 				<td>
 					<label for="emailPasswordInput">
-						<fmt:message key="dialogs.changeEmail.label.password"></fmt:message>
+						<spring:message code="dialogs.changeEmail.label.password"/>
 					</label>
 				</td>
 				<td><input type="password" value="" id="emailPasswordInput" class="form-control" /></td>
@@ -557,41 +557,40 @@
 		<div id="msgAreaEmail" class="msgArea"></div>
 	</div>
 
-</fmt:bundle>
 
 <script type="text/template" id="apiKeyDetailsTemplate">
 	{{#enabled}}
     <div class="api-menu__key col-xs-8">
       {{#key}}
-        Key: {{key}}
+        <spring:message code="userform.apiKey.keyLabel"/>
         <br>
-        Be sure to note the key down in a secure manner as it will not be visible again.
+        <spring:message code="userform.apiKey.keyNoteWarning"/>
       {{/key}}
       {{^key}}
         {{#revokable}}
-          The current key was generated {{ageLabel}}.
+          <spring:message code="userform.apiKey.keyGeneratedAgo"/>
         {{/revokable}}
         {{^revokable}}
-          There is no API key set.
+          <spring:message code="userform.apiKey.noKeySet"/>
         {{/revokable}}
       {{/key}}
 
       <br />
-      See <a href="/public/apiDocs" target="_blank">API Documentation</a>.
-      For more examples, check out our <a href="https://github.com/rspace-os" target="_blank">GitHub</a>.
+      <spring:message code="userform.apiKey.docsLinkPrefix"/>
+      <spring:message code="userform.apiKey.docsLinkSuffix"/>
     </div>
 
     <div class="api-menu__buttons pull-right">
        {{#regenerable}}
          <div class="api-menu__edit">
            <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRegenerateBtn">
-            {{#revokable}}Regenerate{{/revokable}}{{^revokable}}Generate{{/revokable}} key</a>
+            {{#revokable}}<spring:message code="userform.apiKey.regenerateKeyButton"/>{{/revokable}}{{^revokable}}<spring:message code="userform.apiKey.generateKeyButton"/>{{/revokable}}</a>
          </div>
          <br>
        {{/regenerable}}
        {{#revokable}}
          <div class="api-menu__edit">
-           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRevokeBtn">Revoke key</a>
+           <a class="profileEditButton api-menu__button pull-right" href="#" id="apiKeyRevokeBtn"><spring:message code="userform.apiKey.revokeKeyButton"/></a>
          </div>
        {{/revokable}}
     </div>
@@ -614,7 +613,7 @@
 				style="color: #1465b7"
 				data-id='{{clientId}}'
 			>
-				Remove
+				<spring:message code="common:actions.remove"/>
 			</button>
 		</td>
 	</tr>

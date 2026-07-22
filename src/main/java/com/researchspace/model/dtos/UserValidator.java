@@ -31,7 +31,7 @@ public class UserValidator implements Validator {
   /** value returned by field validation method if the field is valid */
   public static final String FIELD_OK = "OK";
 
-  private static final String ERRORS_MAXLENGTH_KEY = "errors.maxlength";
+  private static final String ERRORS_MAXLENGTH_KEY = "errors.maxLength";
   private static final String ERRORS_REQUIRED_KEY = "errors.required";
 
   private Pattern userNamePattern = null;
@@ -102,7 +102,7 @@ public class UserValidator implements Validator {
   private void validateSignupCode(String signupCode, Errors errors) {
     if (!isBlank(properties.getUserSignupCode())
         && !properties.getUserSignupCode().equals(signupCode)) {
-      addToErrorsAndGetMessage(errors, "signupCode", "errors.signupcode.failed", null);
+      addToErrorsAndGetMessage(errors, "signupCode", "errors.signupCode.failed", null);
     }
   }
 
@@ -124,9 +124,9 @@ public class UserValidator implements Validator {
           new Object[] {"Username", User.MAX_UNAME_LENGTH});
     }
     if (!usernameHasValidCharactersAndLength(username)) {
-      String invalidUsernameMsg = "errors.invalidusername";
+      String invalidUsernameMsg = "errors.invalidUsername.strict";
       if (shouldRelaxedUsernamePatternBeUsed()) {
-        invalidUsernameMsg = "errors.invalidusername.relaxed";
+        invalidUsernameMsg = "errors.invalidUsername.relaxed";
       }
       return addToErrorsAndGetMessage(errors, "username", invalidUsernameMsg, null);
     }
@@ -244,14 +244,14 @@ public class UserValidator implements Validator {
       return addToErrorsAndGetMessage(
           errors,
           "password",
-          "errors.invalidpwd",
+          "errors.invalidPassword",
           new Object[] {User.MIN_PWD_LENGTH, User.MAX_PWD_LENGTH});
     }
     if (!passwordIsValid(password)) {
-      return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurepassword", null);
+      return addToErrorsAndGetMessage(errors, "password", "errors.password.insecurePassword", null);
     }
     if (passwordEqualsUserName(password, username)) {
-      return addToErrorsAndGetMessage(errors, "password", "errors.password.notequalusername", null);
+      return addToErrorsAndGetMessage(errors, "password", "errors.password.notEqualUsername", null);
     }
     if (pwdDoesntMatchConfirmPassword(password, confirmPassword)) {
       return addToErrorsAndGetMessage(errors, "password", "errors.password.conflict", null);
@@ -329,7 +329,7 @@ public class UserValidator implements Validator {
         return addToErrorsAndGetMessage(
             errors,
             "affiliation",
-            "errors.maxlength",
+            "errors.maxLength",
             new String[] {"affiliation", "" + Organisation.MAX_INDEXABLE_UTF_LENGTH});
       }
     }

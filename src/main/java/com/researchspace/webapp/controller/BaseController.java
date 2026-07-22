@@ -40,6 +40,7 @@ import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.OrganisationManager;
 import com.researchspace.service.RecordManager;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.UserManager;
 import com.researchspace.session.UserSessionTracker;
 import java.util.ArrayList;
@@ -104,6 +105,7 @@ public abstract class BaseController implements ServletContextAware {
   protected ServletContext servletContext;
 
   protected @Autowired MessageSourceUtils messages;
+  protected @Autowired UserLocaleService userLocaleService;
 
   protected @Autowired ApplicationEventPublisher publisher;
 
@@ -295,7 +297,7 @@ public abstract class BaseController implements ServletContextAware {
   protected void assertUserIsSysAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 

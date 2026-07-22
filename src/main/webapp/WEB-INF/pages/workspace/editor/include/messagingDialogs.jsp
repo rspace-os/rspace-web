@@ -31,13 +31,13 @@
     }
 </style>
 
-<script type="text/template"  type="text/x-mustache-template" id="extMessageRequestDlg-template"> 
+<script type="text/template"  type="text/x-mustache-template" id="extMessageRequestDlg-template">
 <div class="extMessageRequestDlg" id="extMessageRequestDlg_{{name}}" style="display: none">
-    <div class="extMessageRequestDlgContent"> 
-        <h3>Send a message to {{label}}</h3>
- 
+    <div class="extMessageRequestDlgContent">
+        <h3><spring:message code="messaging.sendMessageToLabel"/></h3>
+
         <div class="extMessageRequestInputDiv">
-            <label class="extMessageRequestLabel" for="extMessageChannelsSelect">Channel</label>
+            <label class="extMessageRequestLabel" for="extMessageChannelsSelect"><spring:message code="messaging.channelLabel"/></label>
             <select class="channelSelect">
                {{#channels}}
                  <option value={{id}}>{{label}}</option>
@@ -45,15 +45,13 @@
             </select>
         </div>
         <div class="extMessageRequestInputDiv">
-            <label class="extMessageRequestLabel" for="extMessageRequestMessage">Message</label>
-            <textarea class="extMessageRequestMessage" placeholder="Check my document!"/></textarea>
+            <label class="extMessageRequestLabel" for="extMessageRequestMessage"><spring:message code="messaging.messageLabel"/></label>
+            <textarea class="extMessageRequestMessage" placeholder="<spring:message code='messaging.messagePlaceholder'/>"/></textarea>
             <div class="extMessageRequestMessageLegend_singleDoc">
-                <i>The message will include a link to the current document. Only RSpace users with access 
-                    to the document will be able to use the link.</i>
+                <i><spring:message code="messaging.singleDocHelp"/></i>
             </div>
             <div class="extMessageRequestMessageLegend_manyDocs">
-                <i>The message will include links to selected documents. Only RSpace users with access 
-                    to these documents will be able to use the links.</i>
+                <i><spring:message code="messaging.manyDocsHelp"/></i>
             </div>
         </div>
     </div>

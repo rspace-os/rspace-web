@@ -100,8 +100,8 @@ function generate$RecordInfoPanel(info) {
     $newInfoPanel.find('.strucDocPreview').load("/workspace/editor/structuredDocument/ajax/preview/" + info.id,
       function (response, status, xhr) {
         if (status == "error") {
-          var msg = "Sorry but there was an error: ";
-          $('.strucDocPreview').html("<p style='font-size:large'>" + msg + xhr.status + " " + xhr.statusText + "</p>");
+          var msg = RS.msg("legacyjs.workspace.recordInfoPanel.previewLoadError", xhr.status, xhr.statusText);
+          $('.strucDocPreview').html("<p style='font-size:large'>" + msg + "</p>");
         } else {
           // 0.25 scale, so reduce height of parent container
           var $previewContainer = $newInfoPanel.find('.strucDocPreviewContainer');
@@ -300,38 +300,38 @@ function openRecordInfoDialog(recordId) {
 
 function _getInfoPanelStatus(info) {
   if (info.status === "VIEW_MODE") {
-    return "viewable & editable";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.statusViewableEditable");
   }
   if (info.status === "EDIT_MODE") {
-    return "currently edited by you";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.statusCurrentlyEditedByYou");
   }
   if (info.status === "CANNOT_EDIT_OTHER_EDITING") {
-    return "edit in progress by " + info.currentEditor;
+    return RS.msg("legacyjs.workspace.recordInfoPanel.statusEditInProgressBy", info.currentEditor);
   }
   if (info.status === "CANNOT_EDIT_NO_PERMISSION") {
-    return "viewable";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.statusViewable");
   }
   if (info.status === "CAN_NEVER_EDIT") {
-    return "read-only";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.statusReadOnly");
   }
 }
 
 function _getInfoPanelSignatureStatus(info) {
   if (info.signatureStatus === "UNSIGNED") {
-    return "unsigned";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusUnsigned");
   } else if (info.signatureStatus === "SIGNED_AND_LOCKED") {
-    return "signed";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusSigned");
   } else if (info.signatureStatus === "AWAITING_WITNESS") {
-    return "signed, awaiting witness";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusAwaitingWitness");
   } else if (info.signatureStatus === "WITNESSED") {
-    return "signed and witnessed";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusSignedAndWitnessed");
   } else if (info.signatureStatus === "UNSIGNABLE") {
-    return "unsignable";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusUnsignable");
   } else if (info.signatureStatus === "SIGNED_AND_LOCKED_WITNESSES_DECLINED") {
-    return "signed, all witnesses declined";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusAllWitnessesDeclined");
   } else {
     console.log("Unexpected signature status");
-    return "unknown";
+    return RS.msg("legacyjs.workspace.recordInfoPanel.signatureStatusUnknown");
   }
 }
 
@@ -345,37 +345,37 @@ function _setInfoPanelGlobalIdRow($infoPanelGlobalIdRow, showRowFlag, oid) {
 }
 
 function _setInfoPanelInternalLinksHtml($internalLinksDiv, info, recordTypeNameToDisplay) {
+  var escapedRecordTypeName = RS.escapeHtml(recordTypeNameToDisplay);
   if (!info.linkedByCount) {
-    $internalLinksDiv.empty().append("There are no links to this " + recordTypeNameToDisplay + ".");
+    $internalLinksDiv.empty().append(RS.msg("legacyjs.workspace.recordInfoPanel.noLinksToRecord", escapedRecordTypeName));
     return;
   }
 
-  var docOrDocs = info.linkedByCount === 1 ? "doc" : "docs";
-  var internalLinksHtml = "This " + recordTypeNameToDisplay + " is linked by " + info.linkedByCount + " "
-    + docOrDocs + ". <br /><a href='#' class='showLinkedDocs'>Show linked " + docOrDocs + "</a>";
+  var internalLinksHtml = RS.msg("legacyjs.workspace.recordInfoPanel.linkedByCount", escapedRecordTypeName, info.linkedByCount)
+    + " <br /><a href='#' class='showLinkedDocs'>" + RS.msg("legacyjs.workspace.recordInfoPanel.showLinkedDocs", info.linkedByCount) + "</a>";
 
   $internalLinksDiv.empty().append(internalLinksHtml);
   $internalLinksDiv.find('.showLinkedDocs').click(function () {
     var linkedByReq = $.get("/workspace/getLinkedByRecords?targetRecordId=" + info.id);
     linkedByReq.done(function (resp) {
       if (resp.data) {
-        var fullLinkedByHtml = "This " + recordTypeNameToDisplay + " is linked by: <br/><ul>";
-        var privateRecordLinks = {};
+        var fullLinkedByHtml = RS.msg("legacyjs.workspace.recordInfoPanel.linkedByHeader", escapedRecordTypeName) + " <br/><ul>";
+        var privateRecordLinks = Object.create(null);
         $.each(resp.data, function (i, recordInfo) {
           var owner = recordInfo.ownerFullName;
           if (recordInfo.id) {
             var globalId = recordInfo.oid.idString;
             var name = recordInfo.name;
-            fullLinkedByHtml += "<li><a href='/globalId/" + globalId + "'>" + globalId + "</a>"
-              + ": " + name + "</li>";
+            var encodedGlobalId = encodeURIComponent(globalId).replace(/'/g, "%27");
+            fullLinkedByHtml += "<li><a href='/globalId/" + encodedGlobalId + "'>" + RS.escapeHtml(globalId) + "</a>"
+              + ": " + RS.escapeHtml(name) + "</li>";
           } else {
             var count = privateRecordLinks[owner] || 0;
             privateRecordLinks[owner] = ++count;
           }
         });
         $.each(privateRecordLinks, function (owner, count) {
-          var docOrDocs = count === 1 ? "doc" : "docs";
-          fullLinkedByHtml += "<li>" + count + " private " + docOrDocs + " belonging to " + owner + " </li>";
+          fullLinkedByHtml += "<li>" + RS.msg("legacyjs.workspace.recordInfoPanel.privateDocsBelongingTo", count, RS.escapeHtml(owner)) + " </li>";
         });
         fullLinkedByHtml += "</ul>";
         $internalLinksDiv.empty().append(fullLinkedByHtml);
@@ -394,15 +394,15 @@ function _setInfoPanelInternalLinksHtml($internalLinksDiv, info, recordTypeNameT
  */
 function _setInfoPanelRelatedInventoryItemsHtml($div, info, recordTypeNameToDisplay) {
   $div.empty().append(
-    "<strong>Related inventory items</strong><br/>"
-    + "<span class='relatedInventoryItemsContent'>Loading&hellip;</span>");
+    "<strong>" + RS.msg("legacyjs.workspace.recordInfoPanel.relatedInventoryItemsTitle") + "</strong><br/>"
+    + "<span class='relatedInventoryItemsContent'>" + RS.msg("legacyjs.workspace.recordInfoPanel.loading") + "</span>");
   var $content = $div.find('.relatedInventoryItemsContent');
 
   var req = $.get("/workspace/getReferencingInventoryItems/" + encodeURIComponent(info.oid.idString));
   req.done(function (resp) {
     var items = (resp && resp.referencingItems) || [];
     if (!items.length) {
-      $content.text("No Inventory items link to this " + recordTypeNameToDisplay + ".");
+      $content.text(RS.msg("legacyjs.workspace.recordInfoPanel.noInventoryItemsLinkToRecord", recordTypeNameToDisplay));
       return;
     }
     var html = "<ul>";
@@ -419,7 +419,7 @@ function _setInfoPanelRelatedInventoryItemsHtml($div, info, recordTypeNameToDisp
     $content.html(html);
   });
   req.fail(function () {
-    $content.text("Could not load related Inventory items.");
+    $content.text(RS.msg("legacyjs.workspace.recordInfoPanel.relatedInventoryItemsLoadFailed"));
   });
 }
 
@@ -433,44 +433,42 @@ const makePublicLink = (info, isNotebook, panel) => {
         linkToUnpublishedEntryInPublishedNotebook = true;
       }
       if (linkToUnpublishedEntryInPublishedNotebook) {
-        panel.find('.publicLinksDiv').html('This document is in a published notebook:<li><a target="blank" href=' + window.location.origin + '/public/publishedView/notebook/' + resp + '>public link</a></li>').toggle(resp);
+        panel.find('.publicLinksDiv').html(RS.msg("legacyjs.workspace.recordInfoPanel.linkedInPublishedNotebook", window.location.origin + '/public/publishedView/notebook/' + resp)).toggle(resp);
       } else if (isNotebook) {
-        panel.find('.publicLinksDiv').html('This notebook is published:<li><a target="blank" href=' + window.location.origin + '/public/publishedView/notebook/' + resp + '>public link</a></li>').toggle(resp);
+        panel.find('.publicLinksDiv').html(RS.msg("legacyjs.workspace.recordInfoPanel.notebookPublished", window.location.origin + '/public/publishedView/notebook/' + resp)).toggle(resp);
       } else {
-        panel.find('.publicLinksDiv').html('This document is published: <li><a target="blank" href=' + window.location.origin + '/public/publishedView/document/' + resp + '>public link</a></li>').toggle(resp);
+        panel.find('.publicLinksDiv').html(RS.msg("legacyjs.workspace.recordInfoPanel.documentPublished", window.location.origin + '/public/publishedView/document/' + resp)).toggle(resp);
       }
     } else {
-      panel.find('.publicLinksDiv').html('This ' + (isNotebook?'notebook':'document') +' is not published.').toggle(true);
+      panel.find('.publicLinksDiv').html(RS.msg("legacyjs.workspace.recordInfoPanel.recordNotPublished", isNotebook ? 'notebook' : 'document')).toggle(true);
     }
   });
 }
 
 function _getInfoPanelSharingHtml(info, isNotebook) {
-  var sharingHtml = "This " + (isNotebook ? "notebook" : "document") + " is ";
+  var sharingHtml;
   if (!info.shared && !info.implicitlyShared) {
-    sharingHtml += "not shared.";
+    sharingHtml = RS.msg("legacyjs.workspace.recordInfoPanel.notShared", isNotebook ? "notebook" : "document");
   } else {
-    sharingHtml += "shared: <ul>";
+    sharingHtml = RS.msg("legacyjs.workspace.recordInfoPanel.sharedHeader", isNotebook ? "notebook" : "document") + " <ul>";
     if (info.sharedGroupsAndAccess) {
       $.each(info.sharedGroupsAndAccess, function (group, access) {
-        sharingHtml += "<li>with " + RS.escapeHtml(group) + " (group) for " + access.toLowerCase() + "</li>";
+        sharingHtml += "<li>" + RS.msg("legacyjs.workspace.recordInfoPanel.sharedWithGroup", RS.escapeHtml(group), access.toLowerCase()) + "</li>";
       });
     }
     if (info.sharedUsersAndAccess) {
       $.each(info.sharedUsersAndAccess, function (user, access) {
-        sharingHtml += "<li>with " + RS.escapeHtml(user) + " (user) for " + access.toLowerCase() + "</li>";
+        sharingHtml += "<li>" + RS.msg("legacyjs.workspace.recordInfoPanel.sharedWithUser", RS.escapeHtml(user), access.toLowerCase()) + "</li>";
       });
     }
     if (info.sharedNotebooksAndOwners) {
       $.each(info.sharedNotebooksAndOwners, function (nbGlobalId, owner) {
-        sharingHtml += "<li>into Notebook <a href='/globalId/" + nbGlobalId + "'>" + nbGlobalId +
-          "</a> (owner: " + RS.escapeHtml(owner) + ")</li>";
+        sharingHtml += "<li>" + RS.msg("legacyjs.workspace.recordInfoPanel.sharedIntoNotebook", nbGlobalId, RS.escapeHtml(owner)) + "</li>";
       });
     }
     if (info.implicitShares) {
         $.each(info.implicitShares, function (nbGlobalId, owner) {
-          sharingHtml += "<li>implicitly - is in shared Notebook <a href='/globalId/" + nbGlobalId + "'>" + nbGlobalId +
-            "</a> (shared with : " + RS.escapeHtml(owner) + ")</li>";
+          sharingHtml += "<li>" + RS.msg("legacyjs.workspace.recordInfoPanel.sharedImplicitly", nbGlobalId, RS.escapeHtml(owner)) + "</li>";
         });
       }
     sharingHtml += "</ul>";
@@ -489,13 +487,13 @@ function _saveRecordDescription(recordId, description) {
     description: description
   };
 
-  RS.blockPage("Updating record information...");
+  RS.blockPage(RS.msg("legacyjs.workspace.recordInfoPanel.updatingRecordInformation"));
   var jqxhr = $.post("/workspace/editor/structuredDocument/ajax/description", data);
   jqxhr.always(function () {
     RS.unblockPage();
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("Updating info", true, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.recordInfoPanel.updatingInfoAction"), true, jqxhr);
   });
 
   return jqxhr;
@@ -509,14 +507,14 @@ function initRecordInfoDialog() {
   }
   RS.switchToBootstrapButton();
   $('#recordInfoDialog').dialog({
-    title: 'Info',
+    title: RS.msg("legacyjs.workspace.recordInfoPanel.dialogTitle"),
     autoOpen: false,
     modal: true,
     open: function () {
       $('.ui-dialog-buttonset button').focus();
     },
     buttons: {
-      "OK": function () {
+      [RS.msg("legacyjs.workspace.recordInfoPanel.okButton")]: function () {
         $(this).dialog("close");
       }
     }
@@ -551,7 +549,7 @@ function addMsOfficeActionElement(globalId, lowercaseExt, isRevisionView, $actio
   }
   var appForExtension = msOfficeSupportedExts[lowercaseExt];
   if (appForExtension) {
-    var btnHtml = `<img src="${appForExtension.favIconUrl}" alt="${appForExtension.name}" height="18"> Open in ${appForExtension.name}`;
+    var btnHtml = `<img src="${appForExtension.favIconUrl}" alt="${appForExtension.name}" height="18"> ${RS.msg("legacyjs.workspace.recordInfoPanel.openInApp", appForExtension.name)}`;
     $actionElem.html(btnHtml)
       .off('click').click(function () {
         RS.openInNewWindow('/officeOnline/' + globalId + '/view');
@@ -576,7 +574,7 @@ function addCollaboraActionElement(globalId, lowercaseExt, isRevisionView, $acti
   if(iconUrl === null) {
     iconUrl = RS.getIconPathForExtension(lowercaseExt);
   }
-    var btnHtml = `<img src="${iconUrl}" alt="${appForExtension.name}" height="18"> Open in Collabora`;
+    var btnHtml = `<img src="${iconUrl}" alt="${appForExtension.name}" height="18"> ${RS.msg("legacyjs.workspace.recordInfoPanel.openInApp", "Collabora")}`;
     $actionElem.html(btnHtml)
       .off('click').click(function () {
         RS.openInNewWindow('/collaboraOnline/' + globalId + '/edit');
@@ -602,7 +600,7 @@ function initOfficePreviews() {
     _rerunToggleWopiActionElem();
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("retrieving MS Office supported extensions", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.recordInfoPanel.retrievingMsOfficeExtsAction"), false, jqxhr);
   });
 }
 
@@ -622,7 +620,7 @@ function initCollaboraPreviews() {
     _rerunToggleWopiActionElem();
   });
   jqxhr.fail(function () {
-    RS.ajaxFailed("retrieving Collabora supported extensions", false, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.recordInfoPanel.retrievingCollaboraExtsAction"), false, jqxhr);
   });
 }
 

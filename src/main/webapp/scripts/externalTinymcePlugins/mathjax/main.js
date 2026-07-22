@@ -21,7 +21,7 @@ var mathjaxDialog = {
 	insert: function (ed) {
 		var equation = $('#latex').val();
 		if (!equation) {
-			alert('No equation provided');
+			alert(tinymceDialogUtils.msg("legacyjs.tinymce.mathjax.noEquation"));
 			return;
 		}
 
@@ -67,7 +67,7 @@ var mathjaxDialog = {
 			$.ajaxSetup({ async: true });
 		});
 		jqxhr.fail(function () {
-			tinymceDialogUtils.showErrorAlert("Inserting formula failed.");
+			tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.mathjax.insertFailed"));
 		});
 	}
 };
@@ -113,7 +113,7 @@ $(document).ready(function () {
 			$('#preview').append($(result).find('svg'));
 		});
 		jqxhr.fail(function () {
-			tinymceDialogUtils.showErrorAlert("Getting preview of the equation failed.");
+			tinymceDialogUtils.showErrorAlert(tinymceDialogUtils.msg("legacyjs.tinymce.mathjax.previewFailed"));
 		});
 	}
 });

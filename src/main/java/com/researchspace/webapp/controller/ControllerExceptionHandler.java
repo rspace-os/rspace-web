@@ -5,6 +5,7 @@ import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.SecurityLogger;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
@@ -17,6 +18,7 @@ import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authz.AuthorizationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.ModelAndView;
@@ -28,6 +30,8 @@ import org.springframework.web.servlet.ModelAndView;
  * @see IControllerExceptionHandler
  */
 public class ControllerExceptionHandler implements IControllerExceptionHandler {
+
+  private @Autowired MessageSourceUtils messages;
 
   /**
    * Allows clients to override the 5 main types of exception handling logging (RSpace
@@ -378,12 +382,11 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
     // don't send sensitive DB information back to the user.
     if (e instanceof DataAccessException) {
       log.error("{} db exception: {}", e.getClass(), e.getMessage());
-      return "Database exception - query could not be executed.";
+      return messages.getMessage("errors.page.databaseUnavailable");
       // this is just to prevent bad-looking 'null' messages passed to
       // user
     } else if (e instanceof NullPointerException) {
-      return "An expected resource was unavailable (null). This is probably a server error - please"
-          + " report this to support.";
+      return messages.getMessage("errors.page.unavailableResource");
     } else if (e instanceof ConstraintViolationException) {
       return getConstraintViolationMessage(((ConstraintViolationException) e));
     } else {

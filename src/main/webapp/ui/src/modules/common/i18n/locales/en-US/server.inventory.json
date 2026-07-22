@@ -1,0 +1,146 @@
+{
+  "errors": {
+    "inventory": {
+      "container": {
+        "deletion": {
+          "notEmpty": "Container {0} is not empty and cannot be deleted"
+        },
+        "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
+        "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
+        "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'."
+      },
+      "export": {
+        "requestHasBothIdsAndUsers": "Export requires specifying either items or users to export, but POST request provided both 'globalIds' and 'users'",
+        "requestHasNoIdsNoUsers": "Export requires specifying either items or users to export, but POST request provided neither 'globalIds' nor 'users'",
+        "requestInvalidGlobalIds": "Some of requested globalIds are not valid global identifiers: [{0}]",
+        "unexportableGlobalIds": "Cannot export items with global id [{0}] - items not found, or no permission",
+        "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
+      },
+      "field": {
+        "deleteRequestIdMissing": "''id'' property not provided for a field with ''deleteFieldRequest'' flag.",
+        "deleteRequestIdUnknown": "Field id {0} doesn''t match the id of any pre-existing field.",
+        "duplicateName": "Field name ''{0}'' is duplicated. Field names on a record must be unique.",
+        "link": {
+          "selfLinkForbidden": "An item cannot link to itself: ''{0}''."
+        },
+        "linkRelationTypeInvalid": "Relation type ''{0}'' is not in the DataCite controlled vocabulary.",
+        "linkRelationTypeNotPermitted": "Relation type ''{0}'' is not permitted for field ''{1}''.",
+        "linkTargetKindUnsupported": "Link target must be an Inventory item (sample, subsample, container or instrument) or an ELN document, notebook or gallery file; ''{0}'' is not supported.",
+        "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
+        "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
+        "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+        "validation": "{0}"
+      },
+      "icon": {
+        "imageParseFailure": "Couldn''t parse file [{0}] as an image."
+      },
+      "identifier": {
+        "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+        "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
+        "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
+        "deleteNotOwner": "You can only delete an identifier that you own.",
+        "integrationNotEnabled": "{0} integration is not enabled on this RSpace instance.",
+        "mintingUnsupportedType": "unsupported type for minting: {0}",
+        "typeUnsupported": "identifiers of type {0} are not supported yet"
+      },
+      "import": {
+        "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+        "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
+        "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
+        "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
+        "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+        "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
+        "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
+        "parentContainerNotFound": "Parent container with import id ''{0}'' could not be found",
+        "parentContainerNotListContainer": "Parent container with global id ''{0}'' is a {1} container, but CSV import only supports import into list-type containers",
+        "parentSampleImportIdWithGlobalId": "Parent sample should be set via either 'Parent Sample Import ID' or 'Parent Sample Global ID', but not both at the same time",
+        "parentSampleNotEditable": "Parent sample with global id ''{0}'' doesn''t exist, or user has no permission to add new subsamples into it",
+        "parentSampleNotFound": "Parent sample with import id ''{0}'' could not be found",
+        "parentSampleNotSet": "Parent sample import id or global id must be set, but both were empty",
+        "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id' ",
+        "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
+        "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
+      },
+      "instrument": {
+        "templateNotFound": "No instrument template with id: {0}",
+        "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
+      },
+      "listOfMaterials": {
+        "elnFieldIdRequired": "elnFieldId cannot be null",
+        "nameRequired": "name cannot be empty"
+      },
+      "location": {
+        "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
+        "outsideNewGridDimensions": "Container has a location ({0},{1}) which would be outside new grid dimensions (columns: {2}, rows: {3})."
+      },
+      "move": {
+        "targetContainer": {
+          "unavailable": "Cannot locate target container from provided target container and location details"
+        },
+        "targetLocation": {
+          "notFoundInImageContainer": "Target location not found.",
+          "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
+        }
+      },
+      "publicLink": {
+        "unavailable": "The item you try to see is not publicly available right now."
+      },
+      "quantity": {
+        "negative": "Quantity 'numericValue' must be positive",
+        "unitInvalid": "Quantity unit id [{0}] is invalid",
+        "unitNotAmount": "Quantity unit id [{0}] is not pointing to a unit of amount, it should be an id of a mass, volume or dimensionless unit."
+      },
+      "sample": {
+        "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
+        "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
+        "templateNotFound": "No sample template with id: {0}",
+        "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
+      },
+      "settings": {
+        "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
+      },
+      "subsample": {
+        "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
+      },
+      "temperature": {
+        "invalidUnit": "Unit id is not a valid temperature unit.",
+        "minGreaterThanMax": "Min temperature is greater than max temperature.",
+        "unitsNotComparable": "Temperature units are not mutually comparable."
+      },
+      "template": {
+        "emptyFieldName": "Field name cannot be empty",
+        "emptyFieldType": "Field type cannot be empty",
+        "fieldNameTooLong": "{0} is too long for a template field name, max length is {1}",
+        "invalidFieldContent": "Field validation error: {0} ",
+        "invalidRelationType": "{0} is not a valid DataCite relation type",
+        "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
+        "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
+        "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
+      }
+    }
+  },
+  "export": {
+    "inventory": {
+      "csv": {
+        "commentHeader": "RSpace Inventory Export",
+        "headerCanStoreContainers": "Can Store Containers (Y/N)",
+        "headerCanStoreSubsamples": "Can Store Subsamples (Y/N)",
+        "headerContainerGlobalId": "Parent Container (Global ID)",
+        "headerLomGlobalId": "List of Materials (Global ID)",
+        "headerLomName": "List of Materials (Name)",
+        "headerMaterialGlobalId": "Used Material (Global ID)",
+        "headerMaterialName": "Used Material (Name)",
+        "headerMaterialType": "Used Material (Type)",
+        "headerSampleGlobalId": "Parent Sample (Global ID)",
+        "headerSampleSource": "Sample Source",
+        "headerStorageTemperatureMax": "Storage Temperature (max)",
+        "headerStorageTemperatureMin": "Storage Temperature (min)",
+        "headerStoredContainersCount": "Number of Stored Containers",
+        "headerStoredSubsamplesCount": "Number of Stored Subsamples",
+        "headerTemplateGlobalId": "Parent Template (Global ID)",
+        "headerTemplateName": "Parent Template (name)",
+        "headerUsedQuantity": "Used Quantity"
+      }
+    }
+  }
+}

@@ -478,7 +478,7 @@ public class ContainerApiManagerImpl extends InventoryApiManagerImpl<Container>
       if (!dbContainer.isDeleted()) {
         if (dbContainer.getContentCount() > 0) {
           throw new ApiRuntimeException(
-              "container.deletion.failure.not.empty", dbContainer.getGlobalIdentifier());
+              "errors.inventory.container.deletion.notEmpty", dbContainer.getGlobalIdentifier());
         }
         dbContainer.removeFromCurrentParent();
         dbContainer.setRecordDeleted(true);

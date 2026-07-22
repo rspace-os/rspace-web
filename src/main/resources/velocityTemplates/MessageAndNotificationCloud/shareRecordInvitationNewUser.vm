@@ -1,19 +1,24 @@
-
-Hello,
+$msg.getMessage("email.common.greetingDefault")
 <p>
-Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to view a document '${recordName}'.
-
-<p>
-If you'd like to accept this request, please click <a href = "${acceptanceLink}">here</a>, where you can sign up for an account.
+$msg.format("email.cloud.shareRecordInvitationNewUser.body", [${creator.fullName}, ${creator.email}, ${recordName}])
 
 <p>
-Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+$msg.format("email.cloud.shareRecordInvitationNewUser.accept", [${acceptanceLink}])
 
 <p>
-Once you've signed up, there will be a request waiting for you - accept this request and the document (${recordName}) will be shared.
-
+$msg.getMessage("email.cloud.common.signupEmailNote")
 
 <p>
-#signature
+$msg.format("email.cloud.shareRecordInvitationNewUser.onceSignedUp", [${recordName}])
 
-#aboutRSpaceCloud
+<p>
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>
+
+<h3>$msg.getMessage("email.common.aboutRSpaceHeading")</h3>
+$msg.getMessage("email.common.aboutRSpaceIntro")
+<p>
+$msg.getMessage("email.common.aboutRSpaceDescription")
+</p>

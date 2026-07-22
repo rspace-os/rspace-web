@@ -31,7 +31,7 @@ public class SnippetController extends BaseController {
       errors = getErrorListFromMessageCode("errors.required", "Name");
       return new AjaxReturnObject<>(null, errors);
     } else if (StringUtils.containsAny(snippetName, "/<>")) {
-      errors = getErrorListFromMessageCode("errors.invalidchars", "/,> or <", "name");
+      errors = getErrorListFromMessageCode("errors.invalidChars", "/,> or <", "name");
       return new AjaxReturnObject<>(null, errors);
     }
 
@@ -41,10 +41,10 @@ public class SnippetController extends BaseController {
     if (snippet != null) {
       publisher.publishEvent(createGenericEvent(user, snippet, AuditAction.CREATE));
       return new AjaxReturnObject<>(
-          getText("snippet.creation.ok", new String[] {snippetName}), null);
+          getText("gallery.snippet.creation.ok", new String[] {snippetName}), null);
     }
 
-    errors.addErrorMsg(getText("snippet.creation.failed"));
+    errors.addErrorMsg(getText("gallery.snippet.creation.failed"));
     return new AjaxReturnObject<>(null, errors);
   }
 

@@ -67,7 +67,7 @@ public class SampleApiPutValidatorTest extends InventoryRecordValidationTestBase
     apiSample.setApiTagInfo("<script>"); // contains invalid chars
     e = new BeanPropertyBindingResult(apiSample, "samplePut");
     validator.validate(apiSample, e);
-    assertEquals("errors.invalidchars", e.getGlobalError().getCode());
+    assertEquals("errors.invalidChars", e.getGlobalError().getCode());
   }
 
   @Test

@@ -15,7 +15,7 @@ function addIpAddressConfig () {
 
 		var currDesc = $(this).closest('tr').find('.ipDesc').text();
 		$(this).closest('tr').find('.ipDesc').html("<input class='ipDesc-input' name='description' value='"+currDesc+"'>");
-		$(this).text("Save | ");
+		$(this).text(RS.msg("legacyjs.system.config.saveSeparator"));
 		$(this).removeClass('ipedit');
 		$(this).addClass('ipsave');
 	});
@@ -32,7 +32,7 @@ function addIpAddressConfig () {
 			_reloadIpAddresses();
 		});
 		jxqr.fail(function () {
-			RS.ajaxFailed("Saving ip address", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.system.config.savingIpAddressAction"), false, jxqr);
 		})
 	});
 	
@@ -42,7 +42,7 @@ function addIpAddressConfig () {
 			_reloadIpAddresses();
 		});
 		jxqr.fail(function () {
-			RS.ajaxFailed("Deleting ip address", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.system.config.deletingIpAddressAction"), false, jxqr);
 		})
 	});
 	
@@ -57,19 +57,19 @@ function addIpAddressConfig () {
 			_reloadIpAddresses();
 		});
 		jxqr.fail(function () {
-			RS.ajaxFailed("Adding ip address", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.system.config.addingIpAddressAction"), false, jxqr);
 		})
 	});
 }
 
 function _validate (ipVal, desc){
 	if(! ipVal.match(/^[0-9\.:A-Za-z/]+$/)) {
-		apprise("Please enter a valid IPv4, CIDR, or IPv6  address");
+		apprise(RS.msg("legacyjs.system.config.invalidIpAddress"));
 		return false;
 	}
 	
 	if(desc.length == 0) {
-		apprise("Please enter a human-readable identifier for this IP address");
+		apprise(RS.msg("legacyjs.system.config.missingIpDescription"));
 		return false;
 	}
 	return true;

@@ -1,0 +1,310 @@
+{
+  "externalAuth": {
+    "errors": {
+      "accountNotFound": "No account found for email [{0}], please sign up",
+      "invalidIdToken": "Couldn't create or sign in, idToken was invalid."
+    }
+  },
+  "account": {
+    "disabled": {
+      "contactAdminPrompt": "If this is unexpected, please contact an administrator.",
+      "statusNotice": "Access to your account is not enabled at the moment.",
+      "title": "Account disabled",
+      "unavailableHeading": "Login not Available"
+    }
+  },
+  "accountActivated": {
+    "notice": "Account successfully activated!",
+    "title": "User account activated"
+  },
+  "accountDenied": {
+    "notice": "Account request rejected!",
+    "title": "User account rejected"
+  },
+  "adminLogin": {
+    "heading": "Welcome to RSpace",
+    "passwordPlaceholder": "Password",
+    "title": "Admin login",
+    "usernamePlaceholder": "User"
+  },
+  "adminLoginUnavailable": {
+    "title": "Admin Login",
+    "unavailableNotice": "Admin Login is not available on this system."
+  },
+  "apiDocs": {
+    "noJsWarning": "You need to enable JavaScript to view the RSpace API documentation.",
+    "title": "RSpace API Documentation | ResearchSpace"
+  },
+  "awaitingAuthorisation": {
+    "heading": "Sign Up In Process",
+    "processingNotice": "Your account is still being processed, and you will shortly receive an email confirming your account has been set up.",
+    "title": "Sign up request being processed"
+  },
+  "button": {
+    "login": {
+      "label": "Log in",
+      "with": {
+        "google": "Log in with Google"
+      }
+    },
+    "more": "More...",
+    "signup": {
+      "with": {
+        "google": "Or sign up with Google"
+      }
+    }
+  },
+  "company": {
+    "name": "ResearchSpace",
+    "url": "https://www.researchspace.com/"
+  },
+  "contactSystemAdminIfUnexpected": "If that's unexpected, please contact your System Admin.",
+  "emailChangeConfirmed": {
+    "heading": "Email address has been changed",
+    "title": "Email Changed"
+  },
+  "form": {
+    "emailAddressPlaceholder": "Your Email Address",
+    "emailAddressTitle": "Use a valid email address"
+  },
+  "invalid": {
+    "ipAddress": {
+      "loginBlocked": "The IP address you logged in from is invalid for this login. Please try again from a valid IP address.",
+      "title": "Invalid IP address"
+    }
+  },
+  "license": {
+    "insufficientSeats": {
+      "details": "{1, plural, one {There are insufficient license seats available to create or re-enable a user. Please contact your RSpace administrator. {2}} other {Your request requires # seats, but the number available is {0}. Please contact your RSpace administrator. {2}}}"
+    }
+  },
+  "login": {
+    "errors": {
+      "passwordRequired": "Please specify a password.",
+      "usernameRequired": "Please specify a username."
+    },
+    "heading": "Log in",
+    "title": "Log in"
+  },
+  "logo": {
+    "alt": "RSpace logo"
+  },
+  "maintenance": {
+    "mode": {
+      "checkAgainNotice": "This page will check the maintenance status again in {0} seconds, or you can",
+      "checkStatusLink": "check the status now",
+      "heading": "Maintenance Mode",
+      "inProgressNotice": "Scheduled maintenance is in progress now. Please try again later.",
+      "title": "RSpace Maintenance Mode"
+    }
+  },
+  "noLdapSignUp": {
+    "adminAccountPrompt": "Please ask your Admin for an account or to enable user self signup."
+  },
+  "pi": {
+    "signup": {
+      "info": "If you are a Principal Investigator (PI), then please tick this box. Registered PIs will have a lab group created for them, to which other members can be invited."
+    }
+  },
+  "public": {
+    "requestPassword": {
+      "emailInstructions": "Please enter your email address that you registered with RSpace - instructions to reset your password will be sent to that address.",
+      "title": "Request password reset"
+    }
+  },
+  "publicLinkNotFound": {
+    "contactSourcePrompt": "Please contact your source for the link.",
+    "heading": "Link not found",
+    "title": "Published Link Not Found",
+    "wrongLinkNotice": "We are sorry, it appears you have the wrong link or the link you have is to a document which is no longer published."
+  },
+  "publishIsDisabled": {
+    "disabledNotice": "Sorry - Admin has disabled all public documents.",
+    "heading": "Public Documents are disabled"
+  },
+  "remindUsernameEmailSent": {
+    "sentNotice": "Your username has been sent to {0}.",
+    "title": "Username verification"
+  },
+  "requestPasswordReset": {
+    "heading": "Forgotten your password?"
+  },
+  "requestUsernameReminder": {
+    "heading": "Forgotten your username?",
+    "instructions": "Please enter the email address that you registered with RSpace - your username will be sent to that address.",
+    "title": "Request username reminder"
+  },
+  "resendEmail": {
+    "awaitingEmailConfirmation": {
+      "activationInstructions": "Access to your account is not enabled at the moment. To activate your account and verify your email, click a link in the email that has been sent to you.  In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+      "resendButtonText": "Resend email",
+      "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
+      "title": "Awaiting Email Confirmation"
+    },
+    "resendFailure": {
+      "deliveryFailure": "Sending an activation email to this email address failed.",
+      "supportInstructions": "If this is unexpected, please contact support@researchspace.com to have our System Admin complete the registration process for you.",
+      "title": "Sending Activation Email Failed"
+    },
+    "resendSuccess": {
+      "activationInstructions": "To activate your account and verify your email, click a link in the email that has just been sent to you.",
+      "retryOrSupportInstructions": "If you still don't receive any email, please wait some time and try to <a href=\"/login\">login</a> again, or contact support@researchspace.com to have our System Admin complete the registration process for you.",
+      "title": "Successfully Sent Activation Email"
+    }
+  },
+  "resetPassword": {
+    "changeHeading": "Change {0}",
+    "confirmPasswordLabel": "Confirm {0}",
+    "enterNewPasswordPrompt": "Please enter your new {0}:",
+    "newPasswordLabel": "New {0}",
+    "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+    "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+    "submitButton": "Reset"
+  },
+  "resetPasswordComplete": {
+    "loginPasswordNotice": "You can now <a href=\"/workspace\">login</a> with your new password.",
+    "successNotice": "Thank you, your {0} is successfully changed.",
+    "title": "{0} changed",
+    "verificationPasswordNotice": "You can now use your new verification password in <a href=\"/workspace\">RSpace</a>."
+  },
+  "resetPasswordFail": {
+    "heading": "This link has a problem!",
+    "rejectedNotice": "Sorry, this link could not be accepted - either the token was rejected, or it has expired, or it has already been used.",
+    "retryPrompt": "Please try again to <a href=\"/public/requestPasswordReset\">reset your password</a>.",
+    "title": "Password reset link declined"
+  },
+  "resetPasswordRequestSent": {
+    "instructions": "Please check your email and follow the instructions in the email to reset your password within 1 hour.",
+    "sentNotice": "A password request verification email has been sent to {0}.",
+    "title": "Password verification"
+  },
+  "signup": {
+    "browserWarning": {
+      "chrome": "Chrome",
+      "firefox": "Firefox",
+      "heading": "Browser upgrade recommended to use RSpace",
+      "iconAlt": "Icon by Martin Leblanc",
+      "notice1": "It looks like you are using a Microsoft browser - sorry, we don't support either Internet Explorer or Edge. Some RSpace features will not work properly with these browsers.",
+      "notice2": "We do fully support Chrome, Firefox and Safari. You can use the links below to install one of these browsers if you don't already have it.",
+      "safari": "Safari"
+    },
+    "community": {
+      "activation": {
+        "completeHeading": "Congratulations - account activation is now complete",
+        "completeStatusHeading": "Completed",
+        "completeTitle": "Account Activation Complete",
+        "failTitle": "Account Activation Failed",
+        "failureHeading": "There was a problem with this link!",
+        "loginPromptLink": "log in to use RSpace",
+        "loginPromptPrefix": "You can now"
+      },
+      "confirm": {
+        "activationEmailInstructions": "You will shortly receive an email confirming your account creation. Please read this email and click on the validation link to activate your account. In case you do not receive this email, please check the spam folder. You can click the button below to resend the verification email.",
+        "heading": "Sign Up Requested",
+        "thankYou": "Thank you for signing up to RSpace",
+        "title": "Sign up request confirmed"
+      },
+      "finalSignup": {
+        "label": "One click to join",
+        "title": "Join RSpace"
+      }
+    },
+    "form": {
+      "affiliationLabel": "Affiliation",
+      "affiliationPlaceholder": "Your organisation - type and select",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm Password",
+      "confirmPasswordTitle": "Confirm Password",
+      "createPasswordLabel": "Create a Password (8 - 50 characters). Numbers, letters, spaces and special characters are allowed.",
+      "createUsernameLabel": "Create Username",
+      "emailLabel": "Email address",
+      "fillDetailsPrompt": "Please fill in your details",
+      "firstNameLabel": "First Name",
+      "firstNamePlaceholder": "Your First Name",
+      "lastNameLabel": "Last Name",
+      "lastNamePlaceholder": "Your Last Name",
+      "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
+      "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
+      "passwordPlaceholder": "Create a Password",
+      "piStatusNotice": "Based on your status at {0}, you cannot become a PI unless a system administrator manually enables this for you.",
+      "signupCodeLabel": "Signup code",
+      "signupCodePlaceholder": "Signup code (get this from your administrator)",
+      "submitButton": "Sign up",
+      "termsAgreement": "I agree to these {0}",
+      "termsAgreementLinkText": "Terms and Conditions",
+      "usernameLengthHint": "6 - 50 characters. Only numbers and letters are allowed.",
+      "usernameLengthTitle": "Minimum {0}, max 50 alphanumeric characters",
+      "usernamePlaceholder": "Create a Username"
+    },
+    "heading": "New User Registration",
+    "title": "Sign Up"
+  },
+  "signupConfirmation": {
+    "setupNotice": "You will shortly receive an email confirming that your account has been set up."
+  },
+  "ssoHeader": {
+    "backToWorkspace": "Back to {0} Workspace",
+    "currentRspaceUserLabel": "Current&nbsp;RSpace&nbsp;user:&nbsp;",
+    "logoutFromSsoSession": "Logout from SSO session",
+    "ssoUserLabel": "SSO&nbsp;user:&nbsp;"
+  },
+  "ssoinfo": {
+    "default": {
+      "contactSupportPrompt": "Please contact RSpace Support ({0}) to ask for an account."
+    },
+    "liege": {
+      "contactPrompt": "Please contact labis@uliege.be to ask for an RSpace account.",
+      "heading": "Request access to RSpace",
+      "unavailableNotice": "Sorry - you are unable to use RSpace just yet - an administrator has to create an RSpace account for you first."
+    }
+  },
+  "ssoinfoUsernameConflict": {
+    "heading": "There is a pre-existing RSpace account for your username",
+    "notice": "Sorry - Your username ({0}) is already registered in RSpace as an internal, administrative account. Such account can only be accessed through ''Admin&nbsp;Login'' screen, not directly.",
+    "title": "Conflicting accounts"
+  },
+  "ssoinfoUsernameNotAlias": {
+    "heading": "Login attempt with username, rather than username alias",
+    "notice": "Sorry - Your username ({0}) is matching a user who is configured to login with username alias, rather than by main username.",
+    "title": "Login attempt with username, to account that has an username alias"
+  },
+  "ssologout": {
+    "clickHereToLogOut": "You can <a href={0}>click here</a> to fully log out.",
+    "heading": "Logged out of RSpace",
+    "pleaseLogOutReminder": "Please don't forget to fully log out.",
+    "stillLoggedInNotice": "You are <b>still logged</b> into your <b>institutional Single Sign-On</b> account.",
+    "title": "Logged out"
+  },
+  "token": {
+    "verification": {
+      "email": {
+        "changeFailAlreadyTaken": "It looks like someone already registered an account for the email you want to change to.",
+        "changeFailHeading": "There is a problem with the verification link",
+        "changeFailTitle": "Email Change Failed",
+        "changeSuccessWorkspaceLink": "Go to Workspace"
+      },
+      "fail": {
+        "rejectedLink": "Sorry, this link could not be accepted.",
+        "retryInstructions": "Either the token was rejected, it has expired, or it has already been used. Please login to receive a new token.",
+        "wrongUser": "You are not logged in as the user for whom the link was generated."
+      }
+    }
+  },
+  "unknownUser": {
+    "heading": "RSpace doesn't know you...",
+    "notRegisteredNotice": "Sorry - Your username ({0}) is not registered with RSpace, so you are not able to use RSpace yet.",
+    "title": "Unknown RSpace user"
+  },
+  "verificationEmail": {
+    "checkItsYouHeading": "We need to check it's you...",
+    "thankYou": "Thank you."
+  },
+  "verifyEmailChange": {
+    "heading": "Click to change your email address to {0}",
+    "submitButton": "Change Email",
+    "title": "Email Change"
+  },
+  "webapp": {
+    "name": "ResearchSpace"
+  }
+}

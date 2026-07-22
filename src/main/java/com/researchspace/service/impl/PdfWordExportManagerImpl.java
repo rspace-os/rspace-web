@@ -36,6 +36,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.IMediaFactory;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.archive.PdfWordExportManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
@@ -60,7 +61,6 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -78,7 +78,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
   private @Autowired RecordDao recordDao;
   private @Autowired CommunicationManager commMgr;
   private @Autowired FolderManager fMger;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messageSource;
 
   private @Autowired IPermissionUtils permissions;
   private @Autowired List<ExportProcessor> exportProcessors;
@@ -219,7 +219,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
             "%s/gallery/item/%d", propertyHolder.getServerUrl(), ecatDocumentFile.getId());
     String msg =
         messageSource.getMessage(
-            "workspace.export.msgSuccess", new String[] {escapedName, galleryLink}, null);
+            "workspace.export.successMessage", new String[] {escapedName, galleryLink});
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
 
@@ -302,7 +302,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
     String escapedName = StringEscapeUtils.escapeHtml4(config.getExportName());
     String msg =
         messageSource.getMessage(
-            "workspace.export.msgFailure", new String[] {escapedName, detailMsg}, null);
+            "workspace.export.failureMessage", new String[] {escapedName, detailMsg});
     commMgr.systemNotify(NotificationType.PROCESS_COMPLETED, msg, u.getUsername(), true);
   }
 

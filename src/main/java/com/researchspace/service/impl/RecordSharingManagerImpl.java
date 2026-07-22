@@ -59,6 +59,7 @@ import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.ShareRecordMessageOrRequestDTO;
@@ -118,6 +119,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   private @Autowired UserManager userManager;
   private @Autowired DocumentSharedStateCalculator docSharedStatusCalculator;
   private @Autowired IPropertyHolder properties;
+  private @Autowired MessageSourceUtils messages;
   private PermissionFactory permFac = new DefaultPermissionFactory();
 
   @Override
@@ -334,7 +336,9 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
   }
 
   private String createSharingMessage(User subject, BaseRecord recordOrNotebook) {
-    return String.format("%s shared by %s", recordOrNotebook.getName(), subject.getUsername());
+    return messages.getMessage(
+        "sharing.notification.sharedByUser",
+        new Object[] {recordOrNotebook.getName(), subject.getUsername()});
   }
 
   // looks at 1st config element to see if it is autoshare context.
@@ -480,7 +484,7 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
       return null;
     } else {
       ErrorList el = new ErrorList();
-      el.addErrorMsg("Could not update permission");
+      el.addErrorMsg(messages.getMessage("groups.sharing.errors.updatePermission"));
       return el;
     }
   }

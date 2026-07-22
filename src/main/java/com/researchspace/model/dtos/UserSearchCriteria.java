@@ -1,11 +1,11 @@
 package com.researchspace.model.dtos;
 
 import com.researchspace.core.util.FilterCriteria;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.core.util.UISearchTerm;
 import java.time.LocalDate;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.lang3.StringUtils;
 
 @Data
 @EqualsAndHashCode(
@@ -43,7 +43,7 @@ public class UserSearchCriteria extends FilterCriteria {
    * @param allFields
    */
   public void setAllFields(String allFields) {
-    this.allFields = StringUtils.abbreviate(allFields, MAX_SEARCH_LENGTH);
+    this.allFields = StringAbbreviationUtils.abbreviate(allFields, MAX_SEARCH_LENGTH);
   }
 
   @Override

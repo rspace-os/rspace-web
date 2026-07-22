@@ -36,17 +36,14 @@ abstract class SampleTemplateFieldValidator implements Validator {
           reservedFieldNames.stream().sorted().collect(Collectors.joining("/"));
       errors.rejectValue(
           "name",
-          "errors.inventory.template.reserved.field.name",
+          "errors.inventory.template.reservedFieldName",
           new Object[] {fieldName, reservedFieldNamesString},
-          "reserved field name");
+          null);
     }
     // check length matches limit for InventoryEntityField.name column
     if (StringUtils.length(fieldName) > 50) {
       errors.rejectValue(
-          "name",
-          "errors.inventory.template.field.name.too.long",
-          new Object[] {fieldName, 50},
-          "template field name too long");
+          "name", "errors.inventory.template.fieldNameTooLong", new Object[] {fieldName, 50}, null);
     }
   }
 
@@ -61,9 +58,9 @@ abstract class SampleTemplateFieldValidator implements Validator {
       } catch (IllegalArgumentException e) {
         errors.rejectValue(
             "content",
-            "errors.inventory.template.invalid.field.content",
+            "errors.inventory.template.invalidFieldContent",
             new Object[] {e.getMessage()},
-            e.getMessage());
+            null);
       }
     }
 
@@ -78,9 +75,9 @@ abstract class SampleTemplateFieldValidator implements Validator {
         if (!DataCiteRelationType.isValid(relationType)) {
           errors.rejectValue(
               "allowedRelationTypes",
-              "errors.inventory.template.invalid.relation.type",
+              "errors.inventory.template.invalidRelationType",
               new Object[] {relationType},
-              "invalid relation type");
+              null);
         }
       }
     }

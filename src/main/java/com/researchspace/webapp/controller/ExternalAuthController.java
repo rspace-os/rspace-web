@@ -88,7 +88,7 @@ public class ExternalAuthController extends BaseController {
       log.warn("No profile");
       return new AjaxReturnObject<String>(
           null,
-          ErrorList.createErrListWithSingleMsg("Couldn't create or sign in, idToken was invalid."));
+          ErrorList.createErrListWithSingleMsg(getText("externalAuth.errors.invalidIdToken")));
     }
   }
 
@@ -115,9 +115,8 @@ public class ExternalAuthController extends BaseController {
             "Login attempt for unknown email [{}] from {}",
             newUser.getEmail(),
             RequestUtil.remoteAddr(request));
-        String message =
-            String.format("No account found for email [%s], please sign up", newUser.getEmail());
-        throw new IllegalStateException(message);
+        throw new IllegalStateException(
+            getText("externalAuth.errors.accountNotFound", new Object[] {newUser.getEmail()}));
       }
       User toLogin = existingUser.get(0);
       if (toLogin.isLoginDisabled()) {
@@ -129,7 +128,7 @@ public class ExternalAuthController extends BaseController {
       log.warn("No profile retrieved");
       return new AjaxReturnObject<String>(
           null,
-          ErrorList.createErrListWithSingleMsg("Couldn't create or sign in, idToken was invalid."));
+          ErrorList.createErrListWithSingleMsg(getText("externalAuth.errors.invalidIdToken")));
     }
   }
 

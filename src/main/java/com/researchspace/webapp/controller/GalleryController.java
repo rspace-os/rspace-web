@@ -334,7 +334,8 @@ public class GalleryController extends BaseController {
       return new AjaxReturnObject<>(media.toRecordInfo(), null);
 
     } catch (IllegalStateException e) {
-      ErrorList errorList = ErrorList.of("Save action failed [" + e.getMessage() + "]");
+      ErrorList errorList =
+          ErrorList.of(getText("gallery.errors.saveFailed", new Object[] {e.getMessage()}));
       return new AjaxReturnObject<>(null, errorList);
     }
   }
@@ -465,7 +466,7 @@ public class GalleryController extends BaseController {
 
   private AjaxReturnObject<Boolean> generateTooManyItemsFailureMsg() {
     return new AjaxReturnObject<>(
-        null, ErrorList.of(getText("errors.too.manyitems", MAX_IDS_TO_PROCESS + "")));
+        null, ErrorList.of(getText("errors.valueCount.tooMany", MAX_IDS_TO_PROCESS + "")));
   }
 
   private void doMove(User user, Folder target, Long id) {

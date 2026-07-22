@@ -1,0 +1,252 @@
+{
+  "autoshare": {
+    "errors": {
+      "adminProhibited": "Sysadmins cannot manage group-wide autoshare status",
+      "alreadySet": "Autoshare is already set to the desired state",
+      "disabled": "Please contact your system administrator to enable this feature",
+      "enterpriseRequired": "Group autosharing is only available on the Enterprise version of RSpace",
+      "forbidden": "Forbidden",
+      "labGroupRequired": "Can only manage autosharing for lab groups",
+      "operationInProgress": "Cannot launch new bulk share operation; already running",
+      "userAlreadySet": "Autosharing for user {0} in group {1} has already been set to {2}",
+      "userForbidden": "User {0} attempted to modify user's {1} autoshare status without permission"
+    },
+    "notification": {
+      "allSucceededDisabled": "Automatic sharing is now disabled. All your previously shared work is now unshared.",
+      "allSucceededEnabled": "Automatic sharing is now enabled. All your previously unshared work is now shared.",
+      "mayHaveFailedDisabled": "Setting automatic sharing to disabled may have failed. Some of your previously shared work is still shared - {0}.",
+      "mayHaveFailedEnabled": "Setting automatic sharing to enabled may have failed. Some of your previously unshared work is still unshared - {0}.",
+      "memberDisabled": "{0} has disabled autosharing into group ''{1}'' and unshared all their work",
+      "memberEnabled": "{0} has enabled autosharing into group ''{1}'' and shared all their work",
+      "partialFailureDisabled": "Automatic sharing is now disabled. There was a problem, some of your previously shared work is still shared - {0}.",
+      "partialFailureEnabled": "Automatic sharing is now enabled. There was a problem, some of your previously unshared work is still unshared - {0}."
+    }
+  },
+  "groups": {
+    "actions": {
+      "changeRole": "Change Role"
+    },
+    "create": {
+      "configureIntro": "Create and configure a new Group"
+    },
+    "creation": {
+      "errors": {
+        "currentUserAlreadyMember": "You are already in the group. Please check the email addresses.",
+        "duplicateName": "You have already created a Group with the name: {0}",
+        "groupNameRequired": "Group name is required",
+        "memberEmailInvalid": "Enter correct emails",
+        "piEmailInvalid": "Please enter a correct email",
+        "piEmailRequired": "Principal investigator email is required"
+      }
+    },
+    "edit": {
+      "addUsers": {
+        "autoshareFailed": "Users added, however, failed to enable autosharing for users {0}.",
+        "success": "Users added to the group."
+      },
+      "errors": {
+        "cannotRemoveLastAdminOrPi": "Sorry, cannot remove the only admin or PI of this group. Please assign a new admin or PI role to this group before deleting this member.",
+        "cannotRemoveLastGroupOwner": "Sorry, cannot remove the only group owner this group. Please assign a group owner role to this group before deleting this member.",
+        "invalidRoleName": "Invalid role name value - must be one of DEFAULT or RS_LAB_ADMIN.",
+        "missingDisplayName": "Missing display name!",
+        "missingProfileInfo": "Please enter some profile information.",
+        "noGroupOwnerDelete": "You cannot delete owner of a labgroup",
+        "notMember": "You are not a member of the group.",
+        "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
+        "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",
+        "piRequiredForPublication": "Only PI can allow group publication",
+        "piRoleRequired": "PI does not have a PI role"
+      },
+      "invitationSent": {
+        "confirmation": "Invitation sent to {0}"
+      },
+      "renameSuccess": {
+        "confirmation": "Rename ok"
+      },
+      "title": "Edit group"
+    },
+    "emptyName": "Please enter a name for your LabGroup",
+    "export": {
+      "link": "Export LabGroup's Work"
+    },
+    "heading": "Edit group",
+    "invalidCharacters": "Please choose an alphanumeric name for your group, with no spaces.",
+    "invitation": {
+      "errors": {
+        "missingGroupId": "Could not issue invitation as request was lacking a group ID. This is a server error, please report it quoting RSPAC-1127",
+        "noMembers": "The request couldn't be processed (members string empty)"
+      }
+    },
+    "labGroup": {
+      "name": "LabGroup"
+    },
+    "lead": {
+      "label": "PI / Group Owner"
+    },
+    "members": {
+      "adminNotGroup": "Admin {0} was not in the group member list. A group admin must be a group member.",
+      "groupOwnerNotInGroup": "Group owner {0} was not in the group member list. A group owner must be a group member.",
+      "noGroupOwner": "No group owner was chosen. Every user-collaboration group must have at least one associated group owner.",
+      "noPi": "No PI was chosen. Every group must have an associated PI.",
+      "nonUniqueName": "This name is already used. Please try a new name for your group.",
+      "noneSelected": "Please select >=1 user to add to the group.",
+      "piNotGroup": "PI {0} was not in the group members list. A PI must be a group member."
+    },
+    "pi": {
+      "label": "Principal Investigator"
+    },
+    "profile": {
+      "edit": {
+        "help": "Please enter a short description of this group."
+      }
+    },
+    "shared": {
+      "title": "Shared Documents"
+    },
+    "sharing": {
+      "copyAllLinks": "Copy all links on this page",
+      "copyAllLinksAlt": "copy all links",
+      "copyLinkAlt": "copy link",
+      "copyPublicLinkTooltip": "Copy public link",
+      "linkText": "link",
+      "myGroupsPublishedDocuments": "My Group's Published Documents",
+      "myPublishedDocuments": "My Published Documents",
+      "noPublishedDocuments": "You have no published documents to manage.",
+      "noSharedDocumentRequests": "You have no shared document requests to manage.",
+      "noSharedDocuments": "You have no shared documents to manage.",
+      "permission": {
+        "edit": "EDIT",
+        "read": "READ"
+      },
+      "errors": {
+        "updatePermission": "Could not update permission"
+      },
+      "publicLinkText": "public link",
+      "publishedDocumentsTitle": "Published Documents",
+      "recordInfoLabel": "Record Info",
+      "rspaceUsersPublishedDocuments": "RSpace Users' Published Documents",
+      "searchPlaceholder": "By document or user",
+      "sharedDocumentsRequestsHeading": "Shared Documents Requests",
+      "sharedForEditInto": "Shared for edit into",
+      "table": {
+        "actions": "Actions",
+        "description": "Description",
+        "documentName": "Document name",
+        "globalId": "Global Id",
+        "link": "Link",
+        "options": "Options",
+        "owner": "Owner",
+        "permission": "Permission",
+        "publicLink": "Public link",
+        "publishedDate": "Published date",
+        "publishedOn": "Published on",
+        "publisher": "Publisher",
+        "sharedDate": "Shared date",
+        "sharedWith": "Shared with",
+        "uniqueId": "Unique ID"
+      },
+      "unpublish": "Unpublish",
+      "unshare": "Unshare",
+      "usersPublishedDocuments": "Users' Published Documents",
+      "viewOwnPublishedDocuments": "View your own published documents"
+    },
+    "swapPi": {
+      "errors": {
+        "labGroupRequired": "Can't alter PIs of a collaboration group {0}, aborting set new PI"
+      },
+      "requiredNewPi": "New PI must be different from old PI",
+      "requiredPi": {
+        "inGroup": "The new PI must already belong to the group",
+        "role": "New PI must have global PI role"
+      }
+    },
+    "userDeletion": {
+      "errors": {
+        "activeMembersPreventDeletion": "Other group members still exist that may want access to user's work"
+      }
+    },
+    "view": {
+      "actions": {
+        "changeGroup": "Change Group",
+        "changePi": "Change PI",
+        "createCollabGroup": "Create Collaboration Group",
+        "deleteGroup": "Delete Group",
+        "leaveGroup": "Leave Group",
+        "remove": "Remove",
+        "rename": "Rename"
+      },
+      "changeRole": {
+        "helpLinkText": "Help",
+        "helpText": "See {0} for a full explanation of lab roles.",
+        "selectRolePrompt": "Select a role for the user."
+      },
+      "communityLabel": "Community:",
+      "disabledAccountsHeading": "Disabled Accounts",
+      "exportWork": {
+        "label": "Export Work"
+      },
+      "groupLabel": "Group:",
+      "groupPisHeading": "Group PIs",
+      "homeFolder": {
+        "goTo": "Go to User's Home Folder",
+        "notAvailable": "Home Folder Not Available"
+      },
+      "inviteDialog": {
+        "existingUsers": "RSpace users",
+        "newUsers": "New users"
+      },
+      "labAdminPermissions": {
+        "legend": "Lab Admin permissions",
+        "personalOnly": "Lab Admin cannot view all group's documents.",
+        "viewAll": "Lab Admin <em>can</em> view all group's documents."
+      },
+      "leaveCollaboration": {
+        "label": "Leave Collaboration",
+        "title": "Leave Collaboration"
+      },
+      "newPiInvitation": {
+        "label": "Invite a New PI",
+        "title": "New PI Invitation"
+      },
+      "permissions": {
+        "canEdit": "Can Edit Group's Documents",
+        "canView": "Can View Group's Documents"
+      },
+      "removeMe": {
+        "confirmText": "By accepting, you will be removed from the group '{0}':",
+        "noSharedContent": "You will no longer be able to see shared content within the group.",
+        "piNoAccess": "The PI of the group will no longer be able to see your work.",
+        "privateProfileWarning": "This group is private - you will no longer be able to view the group's profile",
+        "workNotVisible": "Any of your work that you shared will no longer be visible to other group members."
+      },
+      "rename": {
+        "prompt": "Please  enter a new name for this group"
+      },
+      "role": {
+        "groupOwner": "Group Owner",
+        "labAdmin": "Lab Admin"
+      },
+      "setNewPi": {
+        "label": "Select new PI:"
+      },
+      "sharedFolder": {
+        "heading": "Shared Folder",
+        "missing": "Folder missing"
+      },
+      "table": {
+        "autosharing": "Autosharing"
+      },
+      "title": "Group details",
+      "type": {
+        "collaboration": "Collaboration",
+        "project": "Project"
+      }
+    }
+  },
+  "pendingInvitations": {
+    "heading": "Pending invitations",
+    "table": {
+      "action": "Action"
+    }
+  }
+}

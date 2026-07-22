@@ -287,7 +287,7 @@ public class UserDeletionManagerTestIT extends RealTransactionSpringTestBase {
     ServiceOperationResult<User> report =
         userDeletionMgr.removeUser(sysadmin.getId(), policy, sysadmin);
     assertFalse(report.isSucceeded());
-    assertEquals(report.getMessage(), messages.getMessage("errors.deleteuser.nonself"));
+    assertEquals(report.getMessage(), messages.getMessage("errors.deleteUser.nonSelf"));
   }
 
   @Test

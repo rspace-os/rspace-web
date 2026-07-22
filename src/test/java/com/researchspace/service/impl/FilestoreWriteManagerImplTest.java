@@ -1,6 +1,7 @@
 package com.researchspace.service.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -30,6 +31,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 
 class FilestoreWriteManagerImplTest {
 
@@ -109,16 +111,22 @@ class FilestoreWriteManagerImplTest {
 
   @Test
   void deleteFromFilestore_rootPath_rejectedWithoutTouchingClient() throws Exception {
-    assertThrows(
-        BindException.class, () -> manager.deleteFromFilestore(FS_ID, "/", errors(), user));
+    BindException exception =
+        assertThrows(
+            BindException.class, () -> manager.deleteFromFilestore(FS_ID, "/", errors(), user));
+    assertCodedGlobalError(exception, "path", "netFileStores.write.rootModificationForbidden");
     verify(client, never()).resolveDeletableTarget(any());
     verify(client, never()).deleteByKey(any());
   }
 
   @Test
   void moveWithinFilestore_rootSource_rejectedWithoutTouchingClient() throws Exception {
-    assertThrows(
-        BindException.class, () -> manager.moveWithinFilestore(FS_ID, "/", "dest", errors(), user));
+    BindException exception =
+        assertThrows(
+            BindException.class,
+            () -> manager.moveWithinFilestore(FS_ID, "/", "dest", errors(), user));
+    assertCodedGlobalError(
+        exception, "sourcePath", "netFileStores.write.rootModificationForbidden");
     verify(client, never()).moveWithin(any(), any());
   }
 
@@ -155,13 +163,26 @@ class FilestoreWriteManagerImplTest {
   @Test
   void createFolderInFilestore_invalidName_rejectedWithoutCreating() throws Exception {
     // path separator or leading/trailing whitespace is rejected before any S3 call
-    assertThrows(
-        BindException.class,
-        () -> manager.createFolderInFilestore(FS_ID, "parent", "a/b", errors(), user));
-    assertThrows(
-        BindException.class,
-        () -> manager.createFolderInFilestore(FS_ID, "parent", " spaced ", errors(), user));
+    BindException slashException =
+        assertThrows(
+            BindException.class,
+            () -> manager.createFolderInFilestore(FS_ID, "parent", "a/b", errors(), user));
+    assertCodedGlobalError(slashException, "folderName", "netFileStores.write.folderName.invalid");
+
+    BindException spacesException =
+        assertThrows(
+            BindException.class,
+            () -> manager.createFolderInFilestore(FS_ID, "parent", " spaced ", errors(), user));
+    assertCodedGlobalError(spacesException, "folderName", "netFileStores.write.folderName.invalid");
     verify(client, never()).createFolder(any(), any());
+  }
+
+  private static void assertCodedGlobalError(
+      BindException exception, String objectName, String code) {
+    ObjectError error = exception.getBindingResult().getGlobalError();
+    assertEquals(objectName, error.getObjectName());
+    assertEquals(code, error.getCode());
+    assertNull(error.getDefaultMessage());
   }
 
   @Test

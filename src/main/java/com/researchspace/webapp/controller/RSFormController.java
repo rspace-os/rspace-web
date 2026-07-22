@@ -352,7 +352,7 @@ public class RSFormController extends BaseController {
 
     } catch (Exception e) {
       ErrorList el = new ErrorList();
-      el.addErrorMsg("Exception deleting form. This has been logged.");
+      el.addErrorMsg(getText("form.errors.deleteFailed"));
       return new AjaxReturnObject<String>(null, el);
     }
     return new AjaxReturnObject<String>("Success", null);
@@ -888,7 +888,7 @@ public class RSFormController extends BaseController {
     // Check if the user has READ permissions for the form
     if (!permissionUtils.isPermitted(form, PermissionType.READ, user)) {
       return new AjaxReturnObject<DetailedRecordInformation>(
-          null, ErrorList.of("Unauthorized attempt to get form info"));
+          null, ErrorList.of(getText("form.errors.infoUnauthorized")));
     }
 
     DetailedRecordInformation info = new DetailedRecordInformation(form);

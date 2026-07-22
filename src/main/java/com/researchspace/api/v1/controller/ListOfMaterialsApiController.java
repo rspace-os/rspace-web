@@ -87,10 +87,20 @@ public class ListOfMaterialsApiController extends BaseApiInventoryController
       throws BindException {
 
     if (newLom.getElnFieldId() == null) {
-      errors.addError(new ObjectError("List of materials", "elnFieldId cannot be null"));
+      errors.addError(
+          new ObjectError(
+              "List of materials",
+              new String[] {"errors.inventory.listOfMaterials.elnFieldIdRequired"},
+              null,
+              null));
     }
     if (StringUtils.isEmpty(newLom.getName())) {
-      errors.addError(new ObjectError("List of materials", "name cannot be empty"));
+      errors.addError(
+          new ObjectError(
+              "List of materials",
+              new String[] {"errors.inventory.listOfMaterials.nameRequired"},
+              null,
+              null));
     }
     throwBindExceptionIfErrors(errors);
 

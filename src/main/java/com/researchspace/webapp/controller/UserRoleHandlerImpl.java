@@ -101,9 +101,9 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
     velocityModel.put("newPI", newPI);
     velocityModel.put("systemUser", sysadmin);
     velocityModel.put("newLabGroup", newLabGroup);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
 
-    sentHtmlEmailLogAnyException("email.admin.account.created.subject", newPI, velocityModel);
+    sentHtmlEmailLogAnyException("email.admin.promoteToPiComplete.subject", newPI, velocityModel);
   }
 
   @Override

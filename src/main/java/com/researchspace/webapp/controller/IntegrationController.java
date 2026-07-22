@@ -176,12 +176,12 @@ public class IntegrationController extends BaseController {
           && (isBlank(properties.getOwnCloudUrl())
               || isBlank(properties.getOwnCloudClientId())
               || isBlank(properties.getOwnCloudSecret()))) {
-        error = "apps.owncloud.notConfigured.error";
+        error = "apps.owncloud.errors.notConfigured";
       } else if (NEXTCLOUD_APP_NAME.equals(newInfo.getName())
           && (isBlank(properties.getNextCloudUrl())
               || isBlank(properties.getNextCloudClientId())
               || isBlank(properties.getNextCloudSecret()))) {
-        error = "apps.nextcloud.notConfigured.error";
+        error = "apps.nextcloud.errors.notConfigured";
       }
     }
     if (error != null) {

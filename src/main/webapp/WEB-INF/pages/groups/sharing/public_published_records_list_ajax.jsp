@@ -4,7 +4,7 @@
     <span id="publicRecordsPage"></span>
 <div class="panel panel-default">
   <c:if test="${empty sharedRecords}">
-    <p style="padding: 10px;">You have no published documents to manage.</p>
+    <p style="padding: 10px;"><spring:message code="groups.sharing.noPublishedDocuments"/></p>
   </c:if>
 
   <c:if test="${not empty sharedRecords}">
@@ -12,12 +12,12 @@
       <thead>
         <tr>
           <th width="20%"><a class="orderBy" id="orderByName"
-                             href="${orderByNameLink.link}">Document name</a></th>
-          <th width="10%">Link</th>
-          <th width="10%">Publisher</th>
-          <th width="40%">Description</th>
+                             href="${orderByNameLink.link}"><spring:message code="groups.sharing.table.documentName"/></a></th>
+          <th width="10%"><spring:message code="groups.sharing.table.link"/></th>
+          <th width="10%"><spring:message code="groups.sharing.table.publisher"/></th>
+          <th width="40%"><spring:message code="groups.sharing.table.description"/></th>
           <th width="10%"><a class="orderBy" id="orderByCreationDate"
-                             href=${orderByCreationDateLink.link}>Published on</a></th>
+                             href=${orderByCreationDateLink.link}><spring:message code="groups.sharing.table.publishedOn"/></a></th>
         </tr>
       </thead>
 
@@ -28,11 +28,11 @@
 
               <c:choose>
               <c:when test="${groupSharing.shared.structuredDocument}">
-                <td><a id="publicLink_${groupSharing.shared.id}" target='blank' href="/public/publishedView/document/${groupSharing.publicLink}">link</a>
+                <td><a id="publicLink_${groupSharing.shared.id}" target='blank' href="/public/publishedView/document/${groupSharing.publicLink}"><spring:message code="groups.sharing.linkText"/></a>
               </td>
               </c:when>
                 <c:when test="${groupSharing.shared.notebook}">
-                   <td><a id="publicLink_${groupSharing.shared.id}" target='blank' href="/public/publishedView/notebook/${groupSharing.publicLink}">link</a>
+                   <td><a id="publicLink_${groupSharing.shared.id}" target='blank' href="/public/publishedView/notebook/${groupSharing.publicLink}"><spring:message code="groups.sharing.linkText"/></a>
                   </td>
                 </c:when>
                <c:otherwise>

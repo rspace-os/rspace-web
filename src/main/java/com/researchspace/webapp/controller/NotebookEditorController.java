@@ -189,7 +189,7 @@ public class NotebookEditorController extends BaseController {
     EditStatus es = recordManager.requestRecordEdit(recordid, user, users);
     if (EditStatus.ACCESS_DENIED.equals(es) || EditStatus.CANNOT_EDIT_OTHER_EDITING.equals(es)) {
       throw new RecordAccessDeniedException(
-          getText("error.authorization.failure.polite", new Object[] {" delete this document."}));
+          getText("errors.authorization.failure.polite", new Object[] {" delete this document."}));
     }
     try {
       CompositeRecordOperationResult result =

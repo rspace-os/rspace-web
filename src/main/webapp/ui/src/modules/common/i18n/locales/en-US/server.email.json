@@ -1,0 +1,43 @@
+{
+  "email": {
+    "collabGroupInvitation": {
+      "response": "{0, select, COMPLETED {{1} has accepted your invitation to join the {2} {3}.} REJECTED {{1} has rejected your invitation to join the {2} {3}.} other {}}"
+    },
+    "common": {
+      "aboutRSpaceDescription": "Designed in collaboration with the University of Wisconsin and three years in the making, RSpace is an electronic lab notebook designed for academic labs. It's also a research 'space' where labs can collaborate with other labs, at your institution or around the world.<br/>And, it's absolutely free!",
+      "aboutRSpaceHeading": "About RSpace",
+      "aboutRSpaceIntro": "RSpace Community is a new concept.",
+      "dontReply": "Please don't reply to this email, it was generated automatically.",
+      "greeting": "Hello {0},",
+      "greetingDefault": "Hello,",
+      "notificationPrefNewUser": "When you connect to RSpace for the first time, all of the various notification options will be set to 'on' by default.<br>If you don’t want to get notifications from RSpace you can set your notification preferences in My RSpace > My Profile. The notifications settings are at the bottom of the page.",
+      "notificationPrefSuffix": "Too many notifications? Set your messaging preferences in MyRSpace -> My Profile",
+      "signatureSignOff": "Best wishes,",
+      "signatureTeam": "The RSpace team",
+      "sourceIpFooter": "This request was generated from IP address {0}. To find out more about this IP address, please visit <a href=\"{1}\">ip-lookup.net</a>."
+    },
+    "group": {
+      "type": {
+        "collaborationGroup": "collaboration group",
+        "labGroup": "lab group",
+        "projectGroup": "project group"
+      }
+    },
+    "groupInvitation": {
+      "response": "{0, select, COMPLETED {{1} has accepted your invitation to join the {2} {3}.} REJECTED {{1} has declined your invitation to join the {2} {3}.} other {}}"
+    },
+    "message": {
+      "subject": "RSpace message"
+    },
+    "recordWitnessed": {
+      "response": "{0, select, COMPLETED {{1} has witnessed your signature of document {3}.} REJECTED {{1} ({2}) has declined to witness your signature of document {3}.} other {}}"
+    },
+    "request": {
+      "subject": "RSpace request"
+    },
+    "requestStatus": {
+      "generationFailed": "The request status notification could not be generated.",
+      "updated": "{0} updated request status, altered from {1} to {2}"
+    }
+  }
+}

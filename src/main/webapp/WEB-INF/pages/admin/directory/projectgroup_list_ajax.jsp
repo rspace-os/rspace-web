@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <h2 id="directoryListTitle" style="display: none;">
-	<spring:message code="directory.projectgroups.title" />
+	<spring:message code="directory.projectGroups.title" />
 </h2>
 <input type="hidden" id="noOfRows" value="${fn:length(groups.results)}">
 <div class="panel">
@@ -9,7 +9,7 @@
       <tr>
         <th style="width:25%">
           <a class="orderBy" id="orderByName" href="/directory/ajax/grouplist?orderBy=displayName&sortOrder=ASC&resultsPerPage=${pgCrit.resultsPerPage}">
-            <spring:message code="group.projectgroup.name"/>&nbsp;<spring:message code="table.name.header"/>
+            <spring:message code="directory.projectGroupList.nameHeader"/>
           </a>
         </th>
         <th style="width:30%">

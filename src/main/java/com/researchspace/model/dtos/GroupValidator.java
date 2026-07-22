@@ -15,13 +15,13 @@ import org.springframework.validation.Validator;
 public class GroupValidator implements Validator {
 
   // actual string stored in property file
-  public static final String GROUP_MEMBERS_NONESELECTED = "group.members.noneselected";
-  public static final String GROUP_MEMBERS_NON_UNIQUE_NAME = "group.members.non_unique_name";
-  public static final String PI_NOT_IN_GROUP = "group.members.pi_not_group";
-  public static final String ADMIN_NOT_IN_GROUP = "group.members.admin_not_group";
-  public static final String PI_NOT_SELECTED = "group.members.nopi";
-  public static final String GROUP_OWNER_NOT_SELECTED = "group.members.no_group_owner";
-  public static final String GROUP_OWNER_NOT_IN_GROUP = "group.members.group_owner_not_in_group";
+  public static final String GROUP_MEMBERS_NONESELECTED = "groups.members.noneSelected";
+  public static final String GROUP_MEMBERS_NON_UNIQUE_NAME = "groups.members.nonUniqueName";
+  public static final String PI_NOT_IN_GROUP = "groups.members.piNotGroup";
+  public static final String ADMIN_NOT_IN_GROUP = "groups.members.adminNotGroup";
+  public static final String PI_NOT_SELECTED = "groups.members.noPi";
+  public static final String GROUP_OWNER_NOT_SELECTED = "groups.members.noGroupOwner";
+  public static final String GROUP_OWNER_NOT_IN_GROUP = "groups.members.groupOwnerNotInGroup";
 
   @Override
   public boolean supports(Class<?> clazz) {
@@ -42,17 +42,17 @@ public class GroupValidator implements Validator {
     Group group = (Group) target;
 
     if (isBlank(group.getDisplayName())) {
-      errors.rejectValue("displayName", "group.emptyname", null, null);
+      errors.rejectValue("displayName", "groups.emptyName", null, null);
     }
     if (!isBlank(group.getUniqueName()) && !isAlphanumeric(group.getUniqueName())) {
-      errors.rejectValue("uniqueName", "group.invalidcharacters", null, null);
+      errors.rejectValue("uniqueName", "groups.invalidCharacters", null, null);
     }
     if (!isBlank(group.getUniqueName())
         && Organisation.MAX_INDEXABLE_UTF_LENGTH
             < group.getUniqueName().length() + Group.GROUP_UNIQUE_NAME_SUFFIX_LENGTH) {
       errors.rejectValue(
           "uniqueName",
-          "errors.maxlength",
+          "errors.maxLength",
           new String[] {"group name", "" + Organisation.MAX_INDEXABLE_UTF_LENGTH},
           null);
     }

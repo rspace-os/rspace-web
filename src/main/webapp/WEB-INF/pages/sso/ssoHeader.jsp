@@ -58,20 +58,22 @@
 
 <div id="ssoDifferentUserHeaderDiv" class="bootstrap-custom-flat" style="display:none">
     <div class="rs-field" style="display:inline-block; width: 50%; vertical-align:middle;">
-        SSO&nbsp;user:&nbsp;<span class="ssoUsername usernameSpan"></span>
+        <spring:message code="ssoHeader.ssoUserLabel"/><span class="ssoUsername usernameSpan"></span>
         <span id="ssoCurrentlyLoggedAsSpan" style="display:none"> |
-            Current&nbsp;RSpace&nbsp;user:&nbsp;<span class="rspaceUsername usernameSpan"></span>
+            <spring:message code="ssoHeader.currentRspaceUserLabel"/><span class="rspaceUsername usernameSpan"></span>
         </span>
-    </div> 
+    </div>
 
     <div class="rs-field" style="display:inline-block; width: auto !important;" >
         <button id="ssoBackToSessionBtn" role="button" type="submit" class="btn btn-default">
-            Back to <span class="ssoUsername usernameSpan"></span> Workspace
+            <spring:message code="ssoHeader.backToWorkspace">
+              <spring:argument value='<span class="ssoUsername usernameSpan"></span>'/>
+            </spring:message>
         </button>
      </div>
     <div class="rs-field" style="display:inline-block; width: auto !important;" >
         <button id="ssoLogoutBtn" role="button" type="submit" class="btn btn-default">
-            Logout from SSO session
+            <spring:message code="ssoHeader.logoutFromSsoSession"/>
         </button>
     </div>
 </div>

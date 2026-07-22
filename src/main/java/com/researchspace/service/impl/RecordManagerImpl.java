@@ -2,11 +2,11 @@ package com.researchspace.service.impl;
 
 import static com.researchspace.core.util.MediaUtils.DMP_MEDIA_FLDER_NAME;
 import static com.researchspace.core.util.MediaUtils.MISC_MEDIA_FLDER_NAME;
+import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
 import static java.lang.String.format;
-import static org.apache.commons.lang3.StringUtils.abbreviate;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.axiope.search.SearchUtils;

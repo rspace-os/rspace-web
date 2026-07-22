@@ -15,6 +15,8 @@ import com.researchspace.model.comms.data.ArchiveExportNotificationData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedNfsLinkData;
 import com.researchspace.model.comms.data.ArchiveExportNotificationData.ExportedRecordData;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -24,11 +26,17 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class StandardPostExportCompletionTest {
 
   StandardPostExportCompletionImpl postExport = new StandardPostExportCompletionImpl();
+
+  @BeforeEach
+  void setUp() {
+    postExport.setMessages(new MessageSourceUtils(new JsonMessageSource()));
+  }
 
   @Test
   public void checkExportedRecordsSummaryTest() throws URISyntaxException, IOException {

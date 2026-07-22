@@ -14,6 +14,7 @@ import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.Folder;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import java.util.Collections;
@@ -27,12 +28,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.MessageSource;
 
 @ExtendWith(MockitoExtension.class)
 class TemplateTransferServiceTest {
 
-  @Mock MessageSource messageSource;
+  @Mock MessageSourceUtils messageSource;
 
   @Mock AuditTrailService auditTrailService;
 
@@ -53,20 +53,15 @@ class TemplateTransferServiceTest {
   @BeforeEach
   void setUpMessageSourceStubs() {
     Mockito.lenient()
-        .when(
-            messageSource.getMessage(
-                TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER, null, null))
+        .when(messageSource.getMessage(TemplateTransferService.DELETED_USER_TEMPLATES_FOLDER))
         .thenReturn("Deleted Users");
     Mockito.lenient()
-        .when(
-            messageSource.getMessage(TemplateTransferService.DELETED_USER_NAME_SUFFIX, null, null))
+        .when(messageSource.getMessage(TemplateTransferService.DELETED_USER_NAME_SUFFIX))
         .thenReturn(" (Deleted)");
     Mockito.lenient()
         .when(
             messageSource.getMessage(
-                Mockito.eq("templates.transfer.audit.description"),
-                Mockito.any(Object[].class),
-                Mockito.isNull()))
+                Mockito.eq("templates.transfer.audit.description"), Mockito.any(Object[].class)))
         .thenAnswer(
             inv -> {
               Object[] args = inv.getArgument(1);

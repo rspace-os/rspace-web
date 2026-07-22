@@ -21,11 +21,11 @@ $(document).ready(function() {
 
 	$("#principalEmail").tagit({
 		fieldName: "principalEmail",
-	    placeholderText: "Type and find PI or enter new email",
+	    placeholderText: RS.msg("legacyjs.cloudGroup.principalEmailPlaceholder"),
 	    tagLimit: 1,
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm("Please check email syntax", "error", RS.defaultToastDisplayTime);
+	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
 	        	return false;
 	        }
 	    },
@@ -37,7 +37,7 @@ $(document).ready(function() {
 	    	$("#principalEmail li.tagit-new").show();
 	    },
 	    onTagLimitExceeded: function(event, ui) {
-        	RS.confirm("You have already added an email.", "notice", RS.defaultToastDisplayTime);
+        	RS.confirm(RS.msg("legacyjs.cloudGroup.emailAlreadyAdded"), "notice", RS.defaultToastDisplayTime);
         	return false;
 	    },
 	    autocomplete: autocompleteConfig,
@@ -48,7 +48,7 @@ $(document).ready(function() {
 
 	$("#existingUsers").tagit({
 		fieldName: "emails",
-	    placeholderText: "Type and find users by name, username or email",
+	    placeholderText: RS.msg("legacyjs.common.userSearchPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        var isAutocompleteList = false;
 	        $.each(autocompletePublicUserInfoSrcArray, function(i,obj) {
@@ -58,7 +58,7 @@ $(document).ready(function() {
 	        });  
 	        
 	        if(isAutocompleteList === false){
-	        	RS.confirm("Please check email. <br> Select an existing RSpace user email from the autocompleted list.", "notice", 5000);
+	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 5000);
 	        	return false;
 	        }
 	    },
@@ -73,10 +73,10 @@ $(document).ready(function() {
 	
 	$("#nonExistingUsers").tagit({
 		fieldName: "emails",
-	    placeholderText: "Type and enter email",
+	    placeholderText: RS.msg("legacyjs.common.enterEmailPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm("Please check email syntax", "error", RS.defaultToastDisplayTime);
+	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
 	        	return false;
 	        }
 	    },
@@ -98,7 +98,7 @@ function formValidation(){
 	var principalEmail = $("#principalEmail").tagit("assignedTags");
 	
 	if(nomination === "true" && !principalEmail.length) {
-		RS.confirm("No PI email found to send an invitation.", "notice", RS.defaultToastDisplayTime);
+		RS.confirm(RS.msg("legacyjs.cloudGroup.noPiEmailFound"), "notice", RS.defaultToastDisplayTime);
 		return false;
 	}
 }

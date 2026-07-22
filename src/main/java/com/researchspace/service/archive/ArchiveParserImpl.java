@@ -31,6 +31,7 @@ import com.researchspace.core.util.version.Versionable;
 import com.researchspace.dao.ArchiveDao;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.model.Version;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSMetaDataManager;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,6 +64,7 @@ public class ArchiveParserImpl implements IArchiveParser {
 
   private @Autowired ArchiveDao archiveDao;
   private @Autowired RSMetaDataManager metadataMgr;
+  private @Autowired MessageSourceUtils messages;
 
   @Qualifier("propertyHolder")
   @Autowired
@@ -198,7 +200,11 @@ public class ArchiveParserImpl implements IArchiveParser {
     boolean ok = true;
     for (ArchivalDocumentParserRef ref : archiveModel.getCurrentVersions()) {
       if (ref.getArchivalDocument() == null) {
-        report.getErrorList().addErrorMsg("Missing XML  file for document: " + ref.getName());
+        report
+            .getErrorList()
+            .addErrorMsg(
+                messages.getMessage(
+                    "archiveImport.errors.missingDocumentXml", new Object[] {ref.getName()}));
         report.setValidationResult(ImportValidationRule.GENERAL_ARCHIVE_STRUCTURE, false);
         ok = false;
         break;
@@ -219,7 +225,11 @@ public class ArchiveParserImpl implements IArchiveParser {
     boolean ok = true;
     for (ArchivalDocumentParserRef ref : rc.getCurrentVersions()) {
       if (ref.getArchivalForm() == null) {
-        report.getErrorList().addErrorMsg("Missing XML file for form: " + ref.getName());
+        report
+            .getErrorList()
+            .addErrorMsg(
+                messages.getMessage(
+                    "archiveImport.errors.missingFormXml", new Object[] {ref.getName()}));
         report.setValidationResult(ImportValidationRule.GENERAL_ARCHIVE_STRUCTURE, false);
         ok = false;
         break;
@@ -317,7 +327,8 @@ public class ArchiveParserImpl implements IArchiveParser {
               archivalDocumentParserRef);
         } else {
           String errorMessage =
-              String.format("%s folder does not contain a valid document.", folderName);
+              messages.getMessage(
+                  "archiveImport.errors.invalidDocumentFolder", new Object[] {folderName});
           report.getErrorList().addErrorMsg(errorMessage);
           throw new ImportFailureException(new NullPointerException(errorMessage));
         }
@@ -341,9 +352,9 @@ public class ArchiveParserImpl implements IArchiveParser {
           report
               .getInfoList()
               .addErrorMsg(
-                  String.format(
-                      "Only the latest version of %s was imported.",
-                      latestParserRef.getArchivalDocument().getName()));
+                  messages.getMessage(
+                      "archiveImport.info.latestVersionOnly",
+                      new Object[] {latestParserRef.getArchivalDocument().getName()}));
         }
         archiveModel.addToCurrentRevisions(latestParserRef);
       }

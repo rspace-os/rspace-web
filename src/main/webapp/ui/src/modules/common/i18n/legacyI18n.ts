@@ -1,0 +1,33 @@
+import type IntlMessageFormatType from "intl-messageformat";
+import type { PrimitiveType } from "intl-messageformat";
+
+declare global {
+  var RSpaceIntlMessageFormat: typeof IntlMessageFormatType;
+}
+
+const legacyWindow = window as Window & {
+  RS?: {
+    i18n?: Record<string, string>;
+    formatIcuMessage?: (pattern: string, args: PrimitiveType[]) => string;
+  };
+};
+
+legacyWindow.RS = legacyWindow.RS || {};
+// Vite replaces this placeholder with the flattened server.legacyJs.json catalogue.
+legacyWindow.RS.i18n = "__LEGACY_I18N_MESSAGES__" as unknown as Record<string, string>;
+
+const formatterCache = new Map<string, IntlMessageFormatType>();
+
+export function formatIcuMessage(pattern: string, args: PrimitiveType[]): string {
+  const locale = document.documentElement.lang || navigator.language || "en";
+  const cacheKey = `${locale}\0${pattern}`;
+  let formatter = formatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new globalThis.RSpaceIntlMessageFormat(pattern, locale, undefined, { ignoreTag: true });
+    formatterCache.set(cacheKey, formatter);
+  }
+  const values = Object.fromEntries(args.map((value, index) => [index, value]));
+  return formatter.format(values) as string;
+}
+
+legacyWindow.RS.formatIcuMessage = formatIcuMessage;

@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import com.axiope.model.record.init.AntibodySampleTemplate;
 import com.axiope.model.record.init.BacterialSampleTemplate;
+import com.axiope.model.record.init.BuiltinContentMessages;
 import com.axiope.model.record.init.Elisa;
 import com.axiope.model.record.init.Experiment;
 import com.axiope.model.record.init.FFPESampleTemplate;
@@ -10,7 +11,6 @@ import com.axiope.model.record.init.LabProtocol;
 import com.axiope.model.record.init.RtPCR;
 import com.axiope.model.record.init.SampleTemplateBuiltIn;
 import com.axiope.model.record.init.SyntheticWaxSampleTemplate;
-import com.researchspace.Constants;
 import com.researchspace.archive.ArchivalImportConfig;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.EcatMediaFile;
@@ -157,9 +157,10 @@ public class ProdContentInitializerManager extends AbstractContentInitializer
 
     log.info("Adding Notebook example in system; for user [{}]", user.getFullName());
     Locale locale = LocaleContextHolder.getLocale();
-    ResourceBundle resources = ResourceBundle.getBundle(Constants.BUNDLE_KEY, locale);
+    ResourceBundle resources = BuiltinContentMessages.forLocale(locale);
     Notebook notebookFolder =
-        recordFactory.createNotebook(resources.getString("form.notebookE1.folder"), user);
+        recordFactory.createNotebook(
+            resources.getString("common:recordTypes.notebook.singular"), user);
     addChild(folders.getExamples(), notebookFolder, user);
 
     try {

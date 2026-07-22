@@ -57,7 +57,7 @@ public class ApiExtraFieldsHelper implements Validator {
     // if this is a new field, id is null, so we should reject no name
     if (aef.getId() == null) {
       ValidationUtils.rejectIfEmptyOrWhitespace(
-          errors, "name", "errors.required", "name is required");
+          errors, "name", "errors.required", new Object[] {"name"});
     }
     if (aef.getTypeAsFieldType() == FieldType.LINK) {
       validateLinkPayload(aef, errors);
@@ -66,14 +66,14 @@ public class ApiExtraFieldsHelper implements Validator {
     ExtraField extraField = recordFactory.createExtraField(aef.getTypeAsFieldType());
     String validationMsg = extraField.validateNewData(aef.getContent());
     if (!StringUtils.isEmpty(validationMsg)) {
-      errors.rejectValue("content", "", validationMsg);
+      errors.rejectValue(
+          "content", "errors.inventory.field.validation", new Object[] {validationMsg}, null);
     }
   }
 
   private void validateLinkPayload(ApiExtraField aef, Errors errors) {
     if (aef.getLink() == null) {
-      errors.rejectValue(
-          "link", "errors.required", new Object[] {"link"}, "link payload is required");
+      errors.rejectValue("link", "errors.required", new Object[] {"link"}, null);
       return;
     }
     String sourceGlobalId =
@@ -149,13 +149,13 @@ public class ApiExtraFieldsHelper implements Validator {
         }
         if (apiField.isDeleteFieldRequest()) {
           if (apiField.getId() == null) {
-            throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
+            throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
           }
           Optional<ExtraField> dbFieldOpt =
               dbFields.stream().filter(sf -> apiField.getId().equals(sf.getId())).findFirst();
           if (!dbFieldOpt.isPresent()) {
             throw new ApiRuntimeException(
-                "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
+                "errors.inventory.field.deleteRequestIdUnknown", apiField.getId());
           }
           ExtraField dbField = dbFieldOpt.get();
           softDeleteLinkIfPresent(dbField, user);
@@ -259,8 +259,7 @@ public class ApiExtraFieldsHelper implements Validator {
   private void assertRelationTypeValid(ApiInventoryLink apiLink) {
     String relationType = apiLink.getRelationType();
     if (relationType != null && !DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", relationType);
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
   }
 

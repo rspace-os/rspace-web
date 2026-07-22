@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-	<title><fmt:message key="messaging.pageTitle" /></title>
-	<meta name="heading" content="<fmt:message key='mainMenu.heading'/>" />
+	<title><spring:message code="common:appBar.messaging"/></title>
+	<meta name="heading" content="<spring:message code='mainMenu.heading'/>" />
 	<meta name="menu" content="MainMenu" />
 	<link rel="stylesheet" href="<rst:assetUrl value='/styles/pages/messaging/dashboard.css'/>" />
 	<script src="<rst:assetUrl value='/scripts/pages/utils/autocomplete_mod.js'/>"></script>
@@ -22,13 +22,15 @@
 		<h3><a id="createRequest" href="#"> <spring:message code="messaging.sendMessageLinkLabel"/></a></h3>
 		<spring:message code="messaging.sendMessageLinkHelpText"/>
 	</div>
+	<spring:message code="dashboard.createMessage.label" var="createMessageLabel"/>
 	<div class="createMessage">
-		<a href="#" id="msgIconLink"><img src="/images/messageEdited.png" title="Create Message" alt="Create Message"></a>
+		<a href="#" id="msgIconLink"><img src="/images/messageEdited.png" title="${createMessageLabel}" alt="${createMessageLabel}"></a>
 	</div>
 
+	<spring:message code="dashboard.messages.header" var="messageSettingsLabel"/>
  	<div id="settingsLink">
- 		<a href="/userform"><spring:message code="dashboard.msg.header"/><br>
-        <img src="/images/icons/messageSettingsSmall.png" title="Message Settings" alt="Message Settings"></a>
+ 		<a href="/userform"><spring:message code="dashboard.messages.header"/><br>
+        <img src="/images/icons/messageSettingsSmall.png" title="${messageSettingsLabel}" alt="${messageSettingsLabel}"></a>
  	</div>
 </div>
 

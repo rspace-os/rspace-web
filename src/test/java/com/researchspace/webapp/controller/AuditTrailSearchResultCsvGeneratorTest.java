@@ -2,11 +2,11 @@ package com.researchspace.webapp.controller;
 
 import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.testutils.TestFactory.createAnyRecord;
-import static com.researchspace.webapp.controller.AuditTrailSearchResultCsvGenerator.MAX_RESULTS_EXCEEDED;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 
 import com.researchspace.core.util.ISearchResults;
@@ -20,16 +20,28 @@ import com.researchspace.model.audittrail.AuditDomain;
 import com.researchspace.model.audittrail.GenericEvent;
 import com.researchspace.model.audittrail.HistoricData;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import com.researchspace.testutils.TestFactory;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Locale;
 import org.junit.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class AuditTrailSearchResultCsvGeneratorTest {
   AuditTrailSearchResultCsvGenerator auditTrailSearchResultCsvGenerator =
       new AuditTrailSearchResultCsvGenerator();
+
+  {
+    ReflectionTestUtils.setField(
+        auditTrailSearchResultCsvGenerator,
+        "messages",
+        new MessageSourceUtils(new JsonMessageSource()));
+  }
+
   User anyUser = TestFactory.createAnyUser("any");
 
   @Test
@@ -38,7 +50,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> results =
         auditTrailSearchResultCsvGenerator.convertToCsv(emptyResults, defaultSearchConfig());
     assertEquals(2, countLines(results));
-    assertThat(results.getBody(), not(containsString(MAX_RESULTS_EXCEEDED)));
+    assertThat(
+        results.getBody(),
+        not(containsString(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage())));
   }
 
   @Test
@@ -70,7 +84,37 @@ public class AuditTrailSearchResultCsvGeneratorTest {
         auditTrailSearchResultCsvGenerator.convertToCsv(validResults, defaultSearchConfig());
     assertEquals(3, countLines(results));
     String desc = getCellByRowColumn(results, 2, 6);
-    assertThat(desc, startsWith("1 item(s) exported: 30495"));
+    assertThat(desc, startsWith("1 item exported: 30495"));
+  }
+
+  @Test
+  public void allTranslatedCsvContentUsesStableEnglishLocale() throws IOException {
+    boolean[] implicitLocaleUsed = {false};
+    MessageSourceUtils localeCheckingMessages =
+        new MessageSourceUtils() {
+          @Override
+          public String getMessage(String key, Object[] args) {
+            implicitLocaleUsed[0] = true;
+            return key;
+          }
+
+          @Override
+          public String getMessage(String key, Object[] args, Locale locale) {
+            assertEquals(Locale.US, locale);
+            return key;
+          }
+        };
+    ReflectionTestUtils.setField(
+        auditTrailSearchResultCsvGenerator, "messages", localeCheckingMessages);
+
+    Record aRecord = createRecordWithId(25L);
+    String moveData =
+        "{\"data\":{\"from\":{\"data\":{\"id\":\"FL160\",\"name\":\"Examples\",\"type\":\"FOLDER:SYSTEM\"}},\"id\":\"FL189\",\"name\":\"a\",\"to\":{\"data\":{\"id\":\"FL155\",\"name\":\"user5e\",\"type\":\"FOLDER:ROOT\"}},\"type\":\"FOLDER\"}}";
+    auditTrailSearchResultCsvGenerator.convertToCsv(
+        createValidSearchResultForMoveEvent(aRecord, AuditData.fromJson(moveData)),
+        defaultSearchConfig());
+
+    assertFalse("CSV content used the ambient request locale", implicitLocaleUsed[0]);
   }
 
   private String getCellByRowColumn(ResponseEntity<String> results, int row, int column) {
@@ -86,7 +130,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> results =
         auditTrailSearchResultCsvGenerator.convertToCsv(validResults, defaultSearchConfig());
     assertEquals(3, countLines(results));
-    assertThat(results.getBody(), not(containsString(MAX_RESULTS_EXCEEDED)));
+    assertThat(
+        results.getBody(),
+        not(containsString(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage())));
     String id = getCellByRowColumn(results, 2, 4);
     assertThat(id, not(containsString("25")));
     assertThat(results.getBody(), not(containsString(aRecord.getName())));
@@ -100,7 +146,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> csvResponse =
         auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
     assertEquals(3, countLines(csvResponse));
-    assertThat(csvResponse.getBody(), not(containsString(MAX_RESULTS_EXCEEDED)));
+    assertThat(
+        csvResponse.getBody(),
+        not(containsString(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage())));
     String id = getCellByRowColumn(csvResponse, 2, 4);
     assertThat(id, containsString("25"));
     assertThat(csvResponse.getBody(), containsString(aRecord.getName()));
@@ -118,7 +166,9 @@ public class AuditTrailSearchResultCsvGeneratorTest {
     ResponseEntity<String> csvResponse =
         auditTrailSearchResultCsvGenerator.convertToCsv(results, defaultSearchConfig());
     assertEquals(3, countLines(csvResponse));
-    assertThat(csvResponse.getBody(), containsString(MAX_RESULTS_EXCEEDED));
+    assertThat(
+        csvResponse.getBody(),
+        containsString(auditTrailSearchResultCsvGenerator.getMaxResultsExceededMessage()));
   }
 
   private Record createRecordWithId(Long id) {

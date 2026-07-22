@@ -1,9 +1,9 @@
 <div class="runningHeaderLeft">
-  Owner: $docOwner
+  $msg.format("export.pdf.runningHeader.owner", [$docOwner])
 </div>
 <div class="runningHeaderCenter">
   $docTitle
 </div>
 <div class="runningFooterRight">
-  Exported by: $exporterFullName
+  $msg.format("export.pdf.footer.exportedBy", [$exporterFullName])
 </div>

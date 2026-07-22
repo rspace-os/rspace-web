@@ -17,7 +17,7 @@ $(document).ready(function () {
 		insert: function (ed) {
 			var sel$ = $("input[class='protocols_ioChoice']:checked");
 			if (sel$.size() === 0) {
-				showError("Please select one or more protocols to import");
+				showError(RS.msg("legacyjs.tinymce.protocols.selectProtocol"));
 				return;
 			}
 			// Show loader and disable button not to import twice
@@ -40,7 +40,7 @@ $(document).ready(function () {
 						pio_results.push(response.protocol);
 					},
 					error: function (response) {
-						showError('Could not retrieve protocol  ' + id + ' from Protocols.io')
+						showError(RS.msg("legacyjs.tinymce.protocols.retrieveProtocolFailed", id))
 					}
 				}));
 			});
@@ -85,12 +85,12 @@ $(document).ready(function () {
 						} else {
 						  parent.RS.trackEvent("user:import:from_protocols_io:workspace");
 							var importFolderId = response.data.importFolderId;
-							window.parent.RS.confirmAndNavigateTo("All documents imported, reloading page...",
+							window.parent.RS.confirmAndNavigateTo(RS.msg("legacyjs.core.word.allImported"),
 								'success', 3000, window.parent.createURL('/workspace/' + importFolderId));
 						}
 					})
 				.fail(function (result) {
-					showError('Couldn\'t import selected protocol(s).');
+					showError(RS.msg("legacyjs.tinymce.protocols.importFailed", total));
 					console.log("error on importing protocols: " + result.responseText);
 				})
 			});
@@ -163,7 +163,7 @@ $(document).ready(function () {
 	});
 
 	$(".target").change(function () {
-		alert("Handler for .change() called.");
+		alert(RS.msg("legacyjs.tinymce.protocols.changeHandlerCalled"));
 	});
 
 	// Reset button
@@ -243,7 +243,7 @@ $(document).ready(function () {
 				_renderDocs(response);
 			})
 			.error(function (response) {
-				showError("Could not retrieve the list of protocols.");
+				showError(RS.msg("legacyjs.tinymce.protocols.retrieveListFailed"));
 				validAccessToken = false;
 				setupPage();
 			});
@@ -253,7 +253,7 @@ $(document).ready(function () {
 		$('#protocols_ioListing').html('');
 
 		if (typeof (response.items) === 'undefined' || response.items.length === 0) {
-			$('#protocols_ioListing').append("<p>No results found</p>");
+			$('#protocols_ioListing').append("<p>" + RS.msg("legacyjs.tinymce.protocols.noResults") + "</p>");
 			$('.ouro').remove();
 			return;
 		}
@@ -300,4 +300,3 @@ $(document).ready(function () {
 		}
 	}
 });
-

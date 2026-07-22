@@ -24,7 +24,7 @@ public class InventoryExportPostValidatorTest extends SpringTransactionalTest {
     Errors e = resetErrorsAndValidate(exportSettings);
     assertEquals(1, e.getErrorCount());
     assertEquals(
-        "errors.inventory.export.request.has.no.ids.no.users", e.getAllErrors().get(0).getCode());
+        "errors.inventory.export.requestHasNoIdsNoUsers", e.getAllErrors().get(0).getCode());
 
     // too many global ids
     exportSettings.setGlobalIds(Collections.nCopies(1001, "SS123"));
@@ -38,10 +38,9 @@ public class InventoryExportPostValidatorTest extends SpringTransactionalTest {
     e = resetErrorsAndValidate(exportSettings);
     assertEquals(2, e.getErrorCount());
     assertEquals(
-        "errors.inventory.export.request.has.both.ids.and.users",
-        e.getAllErrors().get(0).getCode());
+        "errors.inventory.export.requestHasBothIdsAndUsers", e.getAllErrors().get(0).getCode());
     assertEquals(
-        "errors.inventory.export.request.invalid.globalIds", e.getAllErrors().get(1).getCode());
+        "errors.inventory.export.requestInvalidGlobalIds", e.getAllErrors().get(1).getCode());
 
     // incorrect exportMode
     exportSettings.setGlobalIds(Collections.nCopies(999, "SS123"));
@@ -50,8 +49,7 @@ public class InventoryExportPostValidatorTest extends SpringTransactionalTest {
     assertEquals(2, e.getErrorCount());
     assertEquals("Pattern", e.getAllErrors().get(0).getCode());
     assertEquals(
-        "errors.inventory.export.request.has.both.ids.and.users",
-        e.getAllErrors().get(1).getCode());
+        "errors.inventory.export.requestHasBothIdsAndUsers", e.getAllErrors().get(1).getCode());
 
     // sanity check with valid request
     exportSettings.setUsernamesToExport(List.of("dummy"));

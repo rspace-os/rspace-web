@@ -142,9 +142,9 @@ public class RepositoryConfigurationController extends BaseController {
     }
     RepositoryOperationResult result = depositHandler.testDataverseConnection(cfg.get());
     if (result.isSucceeded()) {
-      return "Success! " + result.getMessage();
+      return getText("repository.connection.success", new Object[] {result.getMessage()});
     } else {
-      return "Failed! " + result.getMessage();
+      return getText("repository.connection.failed", new Object[] {result.getMessage()});
     }
   }
 
@@ -219,7 +219,7 @@ public class RepositoryConfigurationController extends BaseController {
   private void validateAppIsRepository(StringBuilder errorBuilder, App app) {
     if (!app.isRepositoryApp()) {
       errorBuilder.append(
-          getText("invalid.app.choice", new String[] {app.getName(), "Repository"}));
+          getText("apps.errors.invalidChoice", new String[] {app.getName(), "Repository"}));
     }
   }
 

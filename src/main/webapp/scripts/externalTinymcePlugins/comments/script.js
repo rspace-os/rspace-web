@@ -19,7 +19,7 @@ var commentsDialog = {
 				});
 			});
 		jxqr.fail(function () {
-			tinymceDialogUtils.showErrorAlert("Getting comments failed.");
+			tinymceDialogUtils.showErrorAlert(RS.msg("legacyjs.tinymce.comments.getFailed"));
 		});
 	},
 
@@ -86,7 +86,7 @@ var commentsDialog = {
 				});
 
 			jxqr.fail(function () {
-				tinymceDialogUtils.showErrorAlert("Inserting comment failed.");
+				tinymceDialogUtils.showErrorAlert(RS.msg("legacyjs.tinymce.comments.insertFailed"));
 			});
 
 		} else {
@@ -107,7 +107,7 @@ var commentsDialog = {
 					}
 				});
 			jxqr.fail(function () {
-				tinymceDialogUtils.showErrorAlert("Adding comment failed.");
+				tinymceDialogUtils.showErrorAlert(RS.msg("legacyjs.tinymce.comments.addFailed"));
 			});
 		}
 

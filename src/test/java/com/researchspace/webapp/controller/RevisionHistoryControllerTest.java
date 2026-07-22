@@ -19,6 +19,7 @@ import com.researchspace.model.record.RecordInformation;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
@@ -30,7 +31,6 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,7 +39,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockServletContext;
 
 public class RevisionHistoryControllerTest {
@@ -58,20 +57,17 @@ public class RevisionHistoryControllerTest {
   private RevisionHistoryController revisionHistoryCtrller;
   private Principal mockPrincipal;
   private User user;
-  private StaticMessageSource messageSource;
   private MockServletContext context;
 
   @Before
   public void setUp() {
-    messageSource = new StaticMessageSource();
-
     revisionHistoryCtrller = new RevisionHistoryController();
     revisionHistoryCtrller.setUserManager(userMgr);
     revisionHistoryCtrller.setRecordManager(recordMgr);
     revisionHistoryCtrller.setAuditService(auditTrail);
     revisionHistoryCtrller.setAuditManager(auditMgr);
     revisionHistoryCtrller.setFieldManager(fieldManager);
-    revisionHistoryCtrller.setMessageSource(new MessageSourceUtils(messageSource));
+    revisionHistoryCtrller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     revisionHistoryCtrller.setPermissionUtils(permissionUtils);
     context = new MockServletContext();
     revisionHistoryCtrller.setServletContext(context);
@@ -85,7 +81,6 @@ public class RevisionHistoryControllerTest {
   @Test
   public void restoreRevisionRequiresEditPermission() {
     // no permission
-    messageSource.addMessage("restore.failure.message", Locale.getDefault(), "any");
     Mockito.when(userMgr.getUserByUsername(user.getUsername())).thenReturn(user);
     Mockito.when(recordMgr.requestRecordEdit(1L, user, null))
         .thenReturn(EditStatus.CANNOT_EDIT_NO_PERMISSION);

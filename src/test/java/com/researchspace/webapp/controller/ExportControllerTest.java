@@ -40,6 +40,7 @@ import com.researchspace.model.repository.RepositoryTestFactory;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RepositoryDepositHandler;
 import com.researchspace.service.UserAppConfigManager;
@@ -57,7 +58,6 @@ import java.io.File;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -76,7 +76,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -89,6 +88,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 public class ExportControllerTest {
 
   private static final String WORD = "WORD";
+
+  private final MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
+
+  private final String submissionSuccess =
+      messages.getMessage("importExport.pdfArchiving.submission.success");
+
+  private final String wordMultiDocFailure =
+      exportFailureMsg(messages.getMessage("workspace:export.format.chooser.wordErrors.multiple"));
+
+  private final String tooManyFailure =
+      exportFailureMsg(
+          messages.getMessage(
+              "errors.valueCount.tooMany", new Object[] {ExportController.maxIdsToProcess + ""}));
+
+  private String exportFailureMsg(String detail) {
+    return messages.getMessage(
+        "workspace.export.failureMessage",
+        new Object[] {messages.getMessage("common:actions.export"), detail});
+  }
 
   @Rule public MockitoRule mockery = MockitoJUnit.rule();
   @Rule public TemporaryFolder folder = new TemporaryFolder();
@@ -111,7 +129,6 @@ public class ExportControllerTest {
 
   @InjectMocks private ExportController exportController;
 
-  private StaticMessageSource mockMessageSource;
   private HttpSession session;
   private MockHttpServletRequest request;
   private MockHttpServletResponse response;
@@ -123,40 +140,15 @@ public class ExportControllerTest {
 
   @Before
   public void setUp() throws Exception {
-    setupMessageSources();
-
     session = new MockHttpSession();
     request = new MockHttpServletRequest();
     response = new MockHttpServletResponse();
-    exportController.setMessageSource(new MessageSourceUtils(mockMessageSource));
+    exportController.setMessageSource(messages);
     exportController.setResponseUtil(new ResponseUtil());
 
     user = TestFactory.createAnyUser("user1a");
 
     when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(true);
-  }
-
-  private void setupMessageSources() {
-    mockMessageSource = new StaticMessageSource();
-    mockMessageSource.addMessage("errors.too.manyitems", Locale.getDefault(), "toomany");
-    mockMessageSource.addMessage("errors.too.fewitems", Locale.getDefault(), "toofew");
-    mockMessageSource.addMessage("errors.required", Locale.getDefault(), "required");
-    mockMessageSource.addMessage("errors.maxlength", Locale.getDefault(), "toolong");
-    mockMessageSource.addMessage("repository.successMsg", Locale.getDefault(), "success");
-    mockMessageSource.addMessage("repository.submitFailureMsg", Locale.getDefault(), "failure");
-    mockMessageSource.addMessage("errors.invalidstringformat", Locale.getDefault(), "badformat");
-    mockMessageSource.addMessage(
-        "archive.download.failure.msg", Locale.getDefault(), "downloadfailed");
-    mockMessageSource.addMessage("errors.unsupported", Locale.getDefault(), "unsupported");
-    mockMessageSource.addMessage("record.inaccessible", Locale.getDefault(), "noapp");
-    mockMessageSource.addMessage("invalid.app.choice", Locale.getDefault(), "badchoice");
-    mockMessageSource.addMessage(
-        "pdfArchiving.submission.successMsg", Locale.getDefault(), "success");
-    mockMessageSource.addMessage("workspace.export.msgSuccess", Locale.getDefault(), "success");
-    mockMessageSource.addMessage(
-        "workspace.export.msgFailure", Locale.getDefault(), "failure: {1}");
-    mockMessageSource.addMessage(
-        "workspace.export.noDiskSpace", Locale.getDefault(), "failure: noDiskSpace");
   }
 
   private static ExportSelection createExportSelection(Long[] ids, String[] names, String[] types) {
@@ -336,8 +328,6 @@ public class ExportControllerTest {
             .getFlashAttributes()
             .keySet()
             .contains(ExportController.IMPORT_FORM_ERROR_ATTR_NAME));
-    mockMessageSource.addMessage("importArchive.badformat.msg", Locale.getDefault(), "badformat");
-
     // now test error scenarios: empty file rejected
     MultipartFile EMPTYfile =
         new MockMultipartFile("archive.zip", "archive.zip", "zip", new byte[] {});
@@ -369,7 +359,6 @@ public class ExportControllerTest {
     MultipartFile OKfile = createOKMultipartFile(ANY_BYTES);
     RedirectAttributes ra = new RedirectAttributesModelMap();
     // handle exception in import code
-    mockMessageSource.addMessage("importArchive.failure.msg", Locale.getDefault(), "any");
     when(principal.getName()).thenReturn("user1a");
     when(exImportMgr.importArchive(
             Mockito.eq(OKfile),
@@ -395,12 +384,15 @@ public class ExportControllerTest {
     when(diskSpaceChecker.canStartArchiveProcess()).thenReturn(false);
 
     String msgTooMany = exportController.exportArchive(tooManyConfig, errors, request, principal);
-    assertEquals("failure: toomany", msgTooMany);
+    assertEquals(tooManyFailure, msgTooMany);
 
     ExportArchiveDialogConfigDTO okConfig =
         createExportArchiveConfig(ids(1), types(1), names(1), false);
     String msgDiskSpace = exportController.exportArchive(okConfig, errors, request, principal);
-    assertEquals("failure: noDiskSpace", msgDiskSpace);
+    assertEquals(
+        "RSpace has not enough disk space to start archive export process. Please contact your"
+            + " System Admin.",
+        msgDiskSpace);
   }
 
   @Test
@@ -413,7 +405,7 @@ public class ExportControllerTest {
             createExportConfig(tooMany, tooManyNames, tooManyTypes, new ExportToFileConfig()),
             errors,
             principal);
-    assertEquals("failure: toomany", msg);
+    assertEquals(tooManyFailure, msg);
   }
 
   @Test
@@ -426,7 +418,7 @@ public class ExportControllerTest {
     String msg =
         exportController.export(
             createExportConfig(multi, multiNames, multiTypes, cfg), errors, principal);
-    assertEquals("failure: unsupported", msg);
+    assertEquals(wordMultiDocFailure, msg);
   }
 
   private String[] names(int size) {
@@ -464,7 +456,7 @@ public class ExportControllerTest {
             createExportConfig(exportIds, exportNames, exportTypes, defaultCfg), errors, principal);
     Mockito.verify(mockUserMgr, Mockito.never())
         .setPreference(Preference.UI_PDF_PAGE_SIZE, defaultCfg.getPageSize(), user.getUsername());
-    assertEquals("success", rst);
+    assertEquals(submissionSuccess, rst);
 
     // setting size default
     defaultCfg.setSetPageSizeAsDefault(true);
@@ -473,13 +465,11 @@ public class ExportControllerTest {
             createExportConfig(exportIds, exportNames, exportTypes, defaultCfg), errors, principal);
     Mockito.verify(mockUserMgr, Mockito.times(1))
         .setPreference(Preference.UI_PDF_PAGE_SIZE, defaultCfg.getPageSize(), user.getUsername());
-    assertEquals("success", rst);
+    assertEquals(submissionSuccess, rst);
   }
 
   @Test
   public void testExportPdfAllUserRecords() throws Exception {
-    mockMessageSource.addMessage(
-        "pdfArchiving.submission.successMsg", Locale.getDefault(), "success");
     Mockito.when(principal.getName()).thenReturn("user1a");
     Mockito.when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
     Mockito.when(bindingResult.hasErrors()).thenReturn(false);
@@ -493,12 +483,12 @@ public class ExportControllerTest {
     Mockito.verify(bindingResult, Mockito.times(1)).hasErrors();
 
     assertTrue(rst != null);
-    assertEquals("success", rst);
+    assertEquals(submissionSuccess, rst);
 
     // word unsupported
     exportConfig.getExportConfig().setExportFormat(WORD);
     rst = exportController.export(exportConfig, bindingResult, principal);
-    assertEquals("failure: unsupported", rst);
+    assertEquals(wordMultiDocFailure, rst);
   }
 
   @Test
@@ -519,7 +509,7 @@ public class ExportControllerTest {
     String rst = exportController.export(exportConfig, bindingResult, principal);
     Mockito.verify(exImportMgr, never())
         .asyncExportAllUserRecordsToPdf(other, exportConfig.getExportConfig(), user);
-    assertEquals("failure: auth_error", rst);
+    assertEquals(exportFailureMsg("auth_error"), rst);
   }
 
   @Test
@@ -529,8 +519,6 @@ public class ExportControllerTest {
     group.addMember(user, RoleInGroup.RS_LAB_ADMIN);
     group.setLabAdminViewAll(user, true);
 
-    mockMessageSource.addMessage(
-        "pdfArchiving.submission.successMsg", Locale.getDefault(), "success");
     when(principal.getName()).thenReturn("user1a");
     when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
     when(groupManager.getGroup(1L)).thenReturn(group);
@@ -541,7 +529,7 @@ public class ExportControllerTest {
 
     exportConfig.getExportConfig().setExportFormat(WORD);
     String rst = exportController.export(exportConfig, bindingResult, principal);
-    assertEquals("failure: unsupported", rst);
+    assertEquals(wordMultiDocFailure, rst);
   }
 
   @Test
@@ -584,12 +572,10 @@ public class ExportControllerTest {
         () -> exportController.displayPdf("", "any", principal, response),
         IllegalArgumentException.class);
 
-    mockMessageSource.addMessage("errors.invalidstringformat", Locale.getDefault(), "format");
     assertExceptionThrown(
         () -> exportController.displayPdf("../../passwordfile.txt", "any", principal, response),
         IllegalArgumentException.class);
 
-    mockMessageSource.addMessage("errors.invalidstringformat", Locale.getDefault(), "format");
     when(principal.getName()).thenReturn("user1a");
     when(mockUserMgr.getUserByUsername("user1a")).thenReturn(user);
     exportController.displayPdf("OkPDF.txt", "any", principal, response);
@@ -607,14 +593,14 @@ public class ExportControllerTest {
     String msg =
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
-    assertEquals("failure: toomany", msg);
+    assertEquals(tooManyFailure, msg);
 
     ids = ids(ExportController.maxIdsToProcess);
     types = types(ExportController.maxIdsToProcess + 1);
     msg =
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
-    assertEquals("failure: toomany", msg);
+    assertEquals(tooManyFailure, msg);
 
     setupArchiveNotMadeExpectation();
   }
@@ -657,7 +643,12 @@ public class ExportControllerTest {
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
     Mockito.verify(depositHandler, never()).sendArchiveToRepository(any(), any(), any(), any());
-    assertEquals("failure: badchoice", msg);
+    assertEquals(
+        exportFailureMsg(
+            messages.getMessage(
+                "workspace.export.invalidRepositoryApp",
+                new Object[] {slackCfg.getApp().getName()})),
+        msg);
 
     UserAppConfig uac = setupMockAppCfg(appSetId, App.APP_DATAVERSE);
     when(appCfgMgr.getByAppName(uac.getApp().getName(), user)).thenReturn(uac);
@@ -665,7 +656,7 @@ public class ExportControllerTest {
         exportController.exportArchive(
             createExportArchiveConfig(ids, names, types, true), errors, request, principal);
     Mockito.verify(depositHandler, times(1)).sendArchiveToRepository(any(), any(), any(), any());
-    assertEquals("success", msg);
+    assertEquals(submissionSuccess, msg);
   }
 
   @Test

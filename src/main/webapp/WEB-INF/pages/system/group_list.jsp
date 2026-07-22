@@ -1,8 +1,8 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <head>
-  <title>Lab Groups</title>
-  <meta name="heading" content="<fmt:message key='groups.heading'/>" />
+  <title><spring:message code="system.groupList.pageTitle"/></title>
+  <meta name="heading" content="<spring:message code='groups.heading'/>" />
   <meta name="menu" content="MainMenu" />
 
   <!-- moved to default.jsp -->
@@ -24,21 +24,21 @@
           <spring:message code="system.createGroup.button.label" /></span>
       </a>
       <a id="showAll" class="link" href="/system/groups/list?sortOrder=ASC&orderBy=displayName&resultsPerPage=100000">
-        <span>Show All</span>
+        <span><spring:message code="system.groupList.showAllLink"/></span>
       </a>
       <li id="deleteGroup" class="c_action">
-        <a href="#">Delete group</a>
+        <a href="#"><spring:message code="system.groupList.deleteLink"/></a>
       </li>
       <li id="exportGroupRecord" class="c_action">
         <a href="#" class="exportGroup">
-          <spring:message code="action.export" /></a>
+          <spring:message code="common:actions.export" /></a>
       </li>
     </ul>
   </div>
 </shiro:hasAnyRoles>
 
 <div class="tabularViewTop">
-  <h2 class="title">Groups</h2>
+  <h2 class="title"><spring:message code="system.groupList.title"/></h2>
   <div
     class="base-search"
     data-variant="outlined"

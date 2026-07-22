@@ -4,6 +4,7 @@ import static com.researchspace.service.IntegrationsHandler.PROTOCOLS_IO_APP_NAM
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.researchspace.core.util.JacksonUtil;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.model.oauth.UserConnectionId;
@@ -21,7 +22,6 @@ import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -216,7 +216,7 @@ public class ProtocolsIO_OAuthController extends BaseOAuth2Controller {
             log.warn(
                 " Refresh token expired for {}:{}",
                 subject.getName(),
-                StringUtils.abbreviate(conn.getRefreshToken(), 5));
+                StringAbbreviationUtils.abbreviate(conn.getRefreshToken(), 5));
             return new ResponseEntity<String>(
                 "Refresh token expired", HttpStatus.SERVICE_UNAVAILABLE);
           default:

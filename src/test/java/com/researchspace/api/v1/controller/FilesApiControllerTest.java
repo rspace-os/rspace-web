@@ -10,12 +10,12 @@ import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MediaManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.testutils.TestFactory;
 import java.io.InputStream;
-import java.util.Locale;
 import java.util.Optional;
 import javax.ws.rs.NotFoundException;
 import org.junit.After;
@@ -27,7 +27,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockMultipartFile;
 
 public class FilesApiControllerTest {
@@ -48,9 +47,7 @@ public class FilesApiControllerTest {
   @Before
   public void setUp() throws Exception {
     this.subject = TestFactory.createAnyUser("any");
-    StaticMessageSource messages = new StaticMessageSource();
-    messages.addMessage("record.inaccessible", Locale.getDefault(), "inaccessible");
-    fileController.setMessageSource(new MessageSourceUtils(messages));
+    fileController.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     validDocFile = TestFactory.createEcatDocument(1L, subject);
     strucDoc = TestFactory.createAnySD();
     mockBaseUrl();

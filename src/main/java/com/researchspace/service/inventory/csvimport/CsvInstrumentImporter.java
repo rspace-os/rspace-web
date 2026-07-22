@@ -146,7 +146,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
           bulkOperationHandler.convertExceptionToApiError(
               new IllegalArgumentException(
                   messages.getMessage(
-                      "errors.inventory.import.instrument.column.count.mismatch",
+                      "errors.inventory.import.instrumentColumnCountMismatch",
                       new Object[] {csvFieldsMappedToTemplateFieldsCount, templateFieldsCount})));
       csvProcessingResult.addTemplateError(error);
     }
@@ -179,7 +179,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
         if (line.length != expectedColumnsNumber) {
           throw new IllegalArgumentException(
               messages.getMessage(
-                  "errors.inventory.import.instrument.csv.line.unexpected.column.count",
+                  "errors.inventory.import.instrumentCsvLineUnexpectedColumnCount",
                   new Object[] {expectedColumnsNumber, line.length}));
         }
         for (int currentColumnIndex = 0; currentColumnIndex < line.length; currentColumnIndex++) {
@@ -246,7 +246,7 @@ public class CsvInstrumentImporter extends InventoryItemCsvImporter {
       default:
         throw new IllegalArgumentException(
             messages.getMessage(
-                "errors.inventory.import.instrument.unrecognized.field.mapping",
+                "errors.inventory.import.instrumentUnrecognizedFieldMapping",
                 new Object[] {fieldName}));
     }
   }

@@ -2,10 +2,10 @@ package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.controller.InventoryExportApiController.ApiInventoryExportSettingsPost;
 import com.researchspace.model.core.GlobalIdentifier;
+import com.researchspace.service.ListFormatUtils;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -31,11 +31,11 @@ public class InventoryExportPostValidator implements Validator {
 
     if (CollectionUtils.isEmpty(exportSettings.getGlobalIds())
         && CollectionUtils.isEmpty(exportSettings.getUsernamesToExport())) {
-      errors.rejectValue("", "errors.inventory.export.request.has.no.ids.no.users");
+      errors.reject("errors.inventory.export.requestHasNoIdsNoUsers");
     }
     if (CollectionUtils.isNotEmpty(exportSettings.getGlobalIds())
         && CollectionUtils.isNotEmpty(exportSettings.getUsernamesToExport())) {
-      errors.rejectValue("", "errors.inventory.export.request.has.both.ids.and.users");
+      errors.reject("errors.inventory.export.requestHasBothIdsAndUsers");
     }
 
     if (!CollectionUtils.isEmpty(exportSettings.getGlobalIds())) {
@@ -48,9 +48,9 @@ public class InventoryExportPostValidator implements Validator {
       if (!incorrectGlobalIds.isEmpty()) {
         errors.rejectValue(
             "globalIds",
-            "errors.inventory.export.request.invalid.globalIds",
-            new Object[] {StringUtils.join(incorrectGlobalIds, ", ")},
-            "incorrect globalIds");
+            "errors.inventory.export.requestInvalidGlobalIds",
+            new Object[] {ListFormatUtils.formatList(incorrectGlobalIds)},
+            null);
       }
     }
   }

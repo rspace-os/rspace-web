@@ -25,7 +25,7 @@ function setUpFileUpload(config) {
   const maxFileSize = RS_MAX_FILE_SIZE;
 
   $(document).on("click", cancelButtonId, function (e) {
-    RS.confirm("File upload cancellation attempted...", "success", 3000);
+    RS.confirm(RS.msg("legacyjs.gallery.uploadCancellationAttempted"), "success", 3000);
     cancelRequested = true;
     console.log("attempting to cancel  " + toCancel.length + " uploads.");
     for (var i = 0; i < toCancel.length; i++) {
@@ -43,7 +43,7 @@ function setUpFileUpload(config) {
       totalFiles = data.originalFiles.length;
       if (data.files[0]["size"] && data.files[0]["size"] > maxFileSize) {
         uploadErrors.push(
-          "File " + data.files[0].name + " is too big (" + RS.humanFileSize(data.files[0]["size"]) + "), maximum individual size is " + RS.humanFileSize(maxFileSize) + "."
+          RS.msg("legacyjs.gallery.fileTooBig", data.files[0].name, RS.humanFileSize(data.files[0]["size"]), RS.humanFileSize(maxFileSize))
           );
       }
       if (uploadErrors.length > 0) {
@@ -52,7 +52,7 @@ function setUpFileUpload(config) {
       } else if (!cancelRequested) {
         console.log("Submitting file " + data.files[0].name);
         progressBar.show({
-          msg: "Uploading...",
+          msg: RS.msg("legacyjs.gallery.uploadingEllipsis"),
           showCancel: "true",
           progressType: "any",
         }); // just show if at least 1 file can be submitted
@@ -69,13 +69,9 @@ function setUpFileUpload(config) {
     stop: function (e) {
       progressBar.hide();
       if (e.target.className == "chemFromLocalComputer") {
-        RS.blockPage("Inserting chem files...");
+        RS.blockPage(RS.msg("legacyjs.gallery.insertingChemFiles"));
       } else {
-        if (fileCount === 1) {
-          RS.confirm(fileCount + " file uploaded", "success", 4000);
-        } else {
-          RS.confirm(fileCount + " files uploaded", "success", 4000);
-        }
+        RS.confirm(RS.msg("legacyjs.gallery.filesUploaded", fileCount), "success", 4000);
       }
       postStop(e);
       _resetFileUploader();
@@ -85,9 +81,7 @@ function setUpFileUpload(config) {
       var result = data.result.data;
       if (result) {
         progressBar.message(
-          `Uploaded ${
-            result.hasOwnProperty("name") ? result.name : result.fileName
-          }`
+          RS.msg("legacyjs.gallery.uploaded", result.hasOwnProperty("name") ? result.name : result.fileName)
         );
         fileCount++;
       } else {
@@ -109,13 +103,9 @@ function setUpFileUpload(config) {
         if (data.jqXHR.responseText) {
           var obj = $.parseJSON(data.jqXHR.responseText);
           data.jqXHR.responseText = obj.exceptionMessage;
-          RS.ajaxFailed("File upload", false, data.jqXHR);
+          RS.ajaxFailed(RS.msg("legacyjs.gallery.actionFileUpload"), false, data.jqXHR);
         } else {
-          apprise(
-            "Couldn't upload to server - possibly either a folder (not supported), or too big (" +
-              RS.humanFileSize(data.total) +
-              ")"
-          );
+          apprise(RS.msg("legacyjs.gallery.uploadFailedTooBigOrFolder", RS.humanFileSize(data.total)));
         }
       }
     },
@@ -161,7 +151,8 @@ function markAreaDroppable(areaSelector, manualCleanup) {
   $(".drag-drop-chem").remove();
   var $areaSelector = $(areaSelector);
   $areaSelector.prepend(
-    "<span class='drag-drop-gallery chem-enabled'><p class='title'>Import File</p><p class='description'>Drag and drop files here.</br> They will be added as attachments</p></span>"
+    "<span class='drag-drop-gallery chem-enabled'><p class='title'>" + RS.msg("legacyjs.gallery.importFile") +
+      "</p><p class='description'>" + RS.msg("legacyjs.gallery.dragAndDropDescription") + "</p></span>"
   );
 
   var width = $areaSelector.width();

@@ -97,6 +97,7 @@ import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.MessageOrRequestCreatorManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
@@ -644,8 +645,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public ExportRemovalPolicy exportRemovalPolicy() {
-    return new TimeLimitedExportRemovalPolicy();
+  public ExportRemovalPolicy exportRemovalPolicy(MessageSourceUtils messages) {
+    return new TimeLimitedExportRemovalPolicy(messages);
   }
 
   @Bean

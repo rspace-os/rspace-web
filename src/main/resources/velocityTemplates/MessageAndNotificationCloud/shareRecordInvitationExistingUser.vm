@@ -1,16 +1,15 @@
-
-
-Hello $!{invited.fullName},
+$msg.format("email.common.greeting", [${invited.fullName}])
 <p>
-${creator.fullName} (${creator.email}) wants to share a document (${recordName}) with you.
+$msg.format("email.cloud.shareRecordInvitationExistingUser.body", [${creator.fullName}, ${creator.email}, ${recordName}])
 
 <p>
-If you'd like to accept this request, please login to RSpace:
-
-<a href = "${acceptanceLink}">${acceptanceLink}</a>
+$msg.format("email.cloud.shareRecordInvitationExistingUser.loginPrompt", [${acceptanceLink}])
 
 <p>
-Once you've logged in,  there will be a request waiting for you - accept this request and the document (${recordName}) will be shared.
+$msg.format("email.cloud.shareRecordInvitationExistingUser.onceLoggedIn", [${recordName}])
 
 <p>
-#signature
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>

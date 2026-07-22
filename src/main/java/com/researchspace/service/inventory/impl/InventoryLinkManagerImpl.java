@@ -61,13 +61,13 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     } catch (IllegalArgumentException ex) {
       // a malformed Global ID does not resolve to any target; surface it as a clean API error
       // rather than letting the raw IllegalArgumentException escape to the HTTP layer
-      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
+      throw new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", targetGlobalId);
     }
     // the caller must be able to READ the target itself: filtering the sources alone would
     // still confirm an unreadable record's existence and reveal its inbound links to anyone
     // who guesses its id. Same error as the malformed/missing case, so nothing is disclosed.
     if (!linkTargetResolver.targetExistsAndIsReadable(target, actor)) {
-      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
+      throw new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", targetGlobalId);
     }
     List<ApiInventoryReferencingItem> rows = new ArrayList<>();
     for (ExtraLinkField field :
@@ -130,7 +130,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     parseAllowedTargetOrThrow(apiLink.getTargetGlobalId());
     if (!DataCiteRelationType.isValid(apiLink.getRelationType())) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", apiLink.getRelationType());
+          "errors.inventory.field.linkRelationTypeInvalid", apiLink.getRelationType());
     }
   }
 
@@ -143,11 +143,11 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     try {
       gid = new GlobalIdentifier(targetGlobalId);
     } catch (IllegalArgumentException | NullPointerException ex) {
-      throw new ApiRuntimeException("errors.inventory.field.link.targetNotFound", targetGlobalId);
+      throw new ApiRuntimeException("errors.inventory.field.linkTargetNotFound", targetGlobalId);
     }
     if (!InventoryLinkValidator.isAllowedTargetPrefix(gid.getPrefix())) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetKindUnsupported", gid.getPrefix().name());
+          "errors.inventory.field.linkTargetKindUnsupported", gid.getPrefix().name());
     }
     return gid;
   }
@@ -156,7 +156,7 @@ public class InventoryLinkManagerImpl implements InventoryLinkManager {
     GlobalIdentifier gid = new GlobalIdentifier(apiLink.getTargetGlobalId());
     if (!linkTargetResolver.targetExistsAndIsReadable(gid, actor)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.targetNotFound", apiLink.getTargetGlobalId());
+          "errors.inventory.field.linkTargetNotFound", apiLink.getTargetGlobalId());
     }
   }
 

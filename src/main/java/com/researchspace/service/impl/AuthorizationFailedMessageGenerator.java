@@ -1,20 +1,20 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 /** Convenience class to generate standard messages relating to authorization failures. */
 @Component("authorizationFailedMessageGenerator")
 public class AuthorizationFailedMessageGenerator implements OperationFailedMessageGenerator {
   @Autowired
-  public void setMessages(MessageSource messages) {
+  public void setMessages(MessageSourceUtils messages) {
     this.messages = messages;
   }
 
-  private MessageSource messages;
+  private MessageSourceUtils messages;
 
   /**
    * GEts a human-readable authorization error string.
@@ -27,7 +27,7 @@ public class AuthorizationFailedMessageGenerator implements OperationFailedMessa
   public String getFailedMessage(String username, String failedAction) {
     String msg =
         messages.getMessage(
-            "error.authorization.failure", new String[] {username, failedAction}, null);
+            "errors.authorization.failure.detailed", new String[] {username, failedAction});
     return msg;
   }
 

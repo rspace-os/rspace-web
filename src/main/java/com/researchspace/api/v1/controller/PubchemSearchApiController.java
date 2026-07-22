@@ -48,7 +48,7 @@ public class PubchemSearchApiController extends BaseApiController implements Pub
     } catch (Exception e) {
       log.error("Unexpected error during chemical import", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-          .body("An unexpected error occurred.");
+          .body(messages.getMessage("api.pubchem.errors.unexpected"));
     }
   }
 }

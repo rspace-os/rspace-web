@@ -27,7 +27,7 @@ public class InstrumentApiPostValidator extends InstrumentApiValidator implement
       Object target, Errors errors) {
     ApiInstrumentEntityInfo apiInstrumentPost = (ApiInstrumentEntityInfo) target;
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, "name is required");
+        errors, "name", "errors.required", new Object[] {"name"}, null);
     validateNameTooLong(apiInstrumentPost.getName(), errors);
     validateDescriptionTooLong(apiInstrumentPost.getDescription(), errors);
     validateTags(apiInstrumentPost.getTags(), errors);

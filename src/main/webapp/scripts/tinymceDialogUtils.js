@@ -2,6 +2,21 @@
  * utility class for methods that we use across tinymce plugins
  */
 var tinymceDialogUtils = {
+  msg: function () {
+    var args = Array.prototype.slice.call(arguments);
+    try {
+      if (window.RS && window.RS.msg) {
+        return window.RS.msg.apply(window.RS, args);
+      }
+      if (window.parent && window.parent.RS && window.parent.RS.msg) {
+        return window.parent.RS.msg.apply(window.parent.RS, args);
+      }
+    } catch (e) {
+      // Fall through to visible key fallback.
+    }
+    return args[0];
+  },
+
   /**
    * if the relative url of this file contains something before 'scripts' element, 
    * this method will return that first part of the url.

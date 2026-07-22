@@ -1,5 +1,7 @@
 package com.researchspace.webapp.controller;
 
+import java.util.Locale;
+
 public enum PasswordType {
   LOGIN_PASSWORD("password"),
   VERIFICATION_PASSWORD("verification password");
@@ -16,6 +18,6 @@ public enum PasswordType {
   }
 
   public String capitalise() { // Used in JSP
-    return this.text.substring(0, 1).toUpperCase() + this.text.substring(1);
+    return this.text.substring(0, 1).toUpperCase(Locale.ROOT) + this.text.substring(1);
   }
 }

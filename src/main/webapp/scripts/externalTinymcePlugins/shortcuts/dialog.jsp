@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
-<html>
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 
 <head>
   <title>Configure keyboard shortcuts</title>

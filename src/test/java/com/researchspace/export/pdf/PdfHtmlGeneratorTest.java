@@ -8,6 +8,9 @@ import com.researchspace.archive.ArchivalNfsFile;
 import com.researchspace.model.User;
 import com.researchspace.model.record.RSForm;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.RSpaceTestUtils;
 import com.researchspace.testutils.TestFactory;
 import java.time.LocalDate;
@@ -22,6 +25,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class PdfHtmlGeneratorTest {
 
@@ -40,6 +44,9 @@ public class PdfHtmlGeneratorTest {
     VelocityEngine velocityEngine =
         RSpaceTestUtils.setupVelocity("src/main/resources/velocityTemplates");
     pdfHtmlGenerator = new PdfHtmlGenerator(velocityEngine, new HTMLUnicodeFontProcesser());
+    ReflectionTestUtils.setField(
+        pdfHtmlGenerator, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(pdfHtmlGenerator, "userLocaleService", new UserLocaleService());
     basicHtmlDoc = RSpaceTestUtils.loadTextResourceFromPdfDir("basic.html");
     User user = new User();
     user.setFirstName("Some");
@@ -77,6 +84,22 @@ public class PdfHtmlGeneratorTest {
     String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
 
     Assertions.assertTrue(htmlElementContains(processedHtml, "style", "size: " + pageSize));
+  }
+
+  @Test
+  public void styleContainsPageCounterLabel() {
+    input =
+        new ExportProcessorInput(
+            basicHtmlDoc,
+            Collections.emptyList(),
+            new RevisionInfo(),
+            Collections.emptyList(),
+            Collections.emptySet());
+
+    String processedHtml = pdfHtmlGenerator.prepareHtml(input, doc, config);
+
+    Assertions.assertTrue(
+        htmlElementContains(processedHtml, "style", "content: 'Page: ' counter(page);"));
   }
 
   @Test

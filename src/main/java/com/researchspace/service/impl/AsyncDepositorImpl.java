@@ -34,6 +34,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DMPManager;
 import com.researchspace.service.IAsyncArchiveDepositor;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserExternalIdResolver;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.archive.export.ExportEcatDocumentResult;
@@ -93,6 +94,12 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
 
   void setCommMgr(CommunicationManager commMgr) {
     this.commMgr = commMgr;
+  }
+
+  private @Autowired MessageSourceUtils messages;
+
+  void setMessages(MessageSourceUtils messages) {
+    this.messages = messages;
   }
 
   private @Autowired VelocityEngine velocity;
@@ -251,6 +258,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     Map<String, Object> config = new HashMap<>();
     config.put("result", result);
     config.put("app", app);
+    config.put("msg", messages);
 
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
@@ -273,6 +281,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
     config.put("identifier", result.getRaidIdentifier());
     config.put("url", result.getRaidUrl());
     config.put("doi", result.getDoi());
+    config.put("msg", messages);
 
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(

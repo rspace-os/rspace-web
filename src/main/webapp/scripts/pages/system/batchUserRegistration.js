@@ -8,7 +8,7 @@ $(document).ready(function() {
             $('#buttonDescriptions').html(data);
         });
         jqxhr.fail(function() {
-            RS.ajaxFailed("Getting batch user registration page", false, jqxhr);
+            RS.ajaxFailed(RS.msg("legacyjs.system.batchUserRegistration.gettingPageAction"), false, jqxhr);
         });
     });
     
@@ -53,19 +53,19 @@ $(document).ready(function() {
             modal : true,
             autoOpen:false,
             width: 420,
-            title: "Batch upload users",
+            title: RS.msg("legacyjs.system.batchUserRegistration.uploadDialogTitle"),
             open : function () {
                 $('#csvFileInput').val('');
                 setUploadButtonEnabled($(this), false);
             },
             buttons :{
-                Cancel: function (){
+                [RS.msg("legacyjs.system.common.cancel")]: function (){
                     $(this).dialog('close');
                 },
-                "Upload" : function () {
+                [RS.msg("legacyjs.system.batchUserRegistration.upload")] : function () {
 
                     if (!$('#csvFileInput')[0].files.length) {
-                        $().toastmessage('showErrorToast', 'Please select a CSV file to upload');
+                        $().toastmessage('showErrorToast', RS.msg("legacyjs.system.batchUserRegistration.selectCsvFile"));
                         return;
                     }
 
@@ -88,7 +88,7 @@ $(document).ready(function() {
 
     function getUploadButton($dialogContent) {
         return $dialogContent.dialog('widget')
-            .find('.ui-dialog-buttonpane button:contains("Upload")');
+            .find('.ui-dialog-buttonpane button').last();
     }
 
     // toggle both the native disabled state and jQuery UI's disabled styling so the
@@ -103,7 +103,7 @@ $(document).ready(function() {
 
         var input = $('#csvInputContentArea').val();
         
-        RS.blockPage("Uploading...");
+        RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.uploading"));
         var jqxhr = $.post("/system/userRegistration/parseInputString",
                     {usersAndGroupsCsvFormat : input});
         
@@ -117,7 +117,7 @@ $(document).ready(function() {
     
     function submitBatchCsvFile(url) {
  
-        RS.blockPage("Uploading...");
+        RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.uploading"));
 
         var data = new FormData($('#csvUploadForm')[0]);
         var jqxhr = $.ajax({
@@ -141,11 +141,11 @@ $(document).ready(function() {
         jqxhr.done(function(result) {
             var validationErrors = (result.errors && result.errors.errorMessages) || [];
             if (validationErrors.length > 0) {
-                $().toastmessage('showErrorToast', 'Errors in CSV content');
+                $().toastmessage('showErrorToast', RS.msg("legacyjs.system.batchUserRegistration.errorsInCsvContent"));
                 displayServerMessages($("#batchServerErrorMsgs"), result.errors.errorMessages);
                 return;
             } 
-            $().toastmessage('showSuccessToast', 'CSV content loaded fine');
+            $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.batchUserRegistration.csvContentLoadedFine"));
             $('#csvInputContent').slideUp();
             displayUserImportResults(result);
         });
@@ -153,9 +153,9 @@ $(document).ready(function() {
             var serverErrors = xhr.responseJSON
                 && xhr.responseJSON.errors
                 && xhr.responseJSON.errors.errorMessages;
-            $().toastmessage('showErrorToast', 'Errors in CSV content');
+            $().toastmessage('showErrorToast', RS.msg("legacyjs.system.batchUserRegistration.errorsInCsvContent"));
             displayServerMessages($("#batchServerErrorMsgs"),
-                serverErrors && serverErrors.length ? serverErrors : [ 'Could not process CSV upload.' ]);
+                serverErrors && serverErrors.length ? serverErrors : [ RS.msg("legacyjs.system.batchUserRegistration.couldNotProcessCsvUpload") ]);
         });
     }
     
@@ -280,7 +280,7 @@ $(document).ready(function() {
         addBatchCreationHandlers(jqxhr);
         RS.blockingProgressBar.show({
         	progressType:"rs-userBatchRegistration",
-        	msg:"Starting user creation"} );
+        	msg: RS.msg("legacyjs.system.batchUserRegistration.startingUserCreation")} );
     });
     
     function getDataFromBatchTables() {
@@ -354,7 +354,7 @@ $(document).ready(function() {
     
     function submitUsersAndGroups(toCreateData) {
         
-        RS.blockPage("Starting...");
+        RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.starting"));
         var jqxhr = RS.sendJsonPostRequestToUrl('/system/userRegistration/batchCreate', toCreateData);
         jqxhr.always(function() {
             RS.unblockPage();
@@ -380,7 +380,7 @@ $(document).ready(function() {
         jqxhr.always(function() {
             RS.blockingProgressBar.hide();
             $('#csvUploadProgress').html('');
-            $("button:contains('Ok')").click();
+            $('#apprise-btn-confirm').click();
             $('#batchUploadUserDlg').dialog('close');
         });
 
@@ -397,17 +397,16 @@ $(document).ready(function() {
             }
             
             if (result.errorMsg.errorMessages.length && result.data.length) {
-                $().toastmessage('showNoticeToast', 'Batch registration complete with some errors');
+                $().toastmessage('showNoticeToast', RS.msg("legacyjs.system.batchUserRegistration.completeWithSomeErrors"));
             } else if (result.data.length) {
-                $().toastmessage('showSuccessToast', 'Batch registration complete');
+                $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.batchUserRegistration.complete"));
             }
         });
 
         jqxhr.fail(function(jqxhr, textStatus, errorThrown) {
-            var msg = "Unhandled exception was thrown during Batch User Registration:<br />"
-                + "Status: " + textStatus + "(" + jqxhr.status + ") - " + errorThrown;
+            var msg = RS.msg("legacyjs.system.batchUserRegistration.unhandledException", textStatus, jqxhr.status, errorThrown);
             displayServerMessages($("#batchServerErrorMsgs"), [ msg ]);
-            $().toastmessage('showErrorToast', 'Unexpected error during batch registration');
+            $().toastmessage('showErrorToast', RS.msg("legacyjs.system.batchUserRegistration.unexpectedError"));
         });
     }
 
@@ -435,7 +434,7 @@ $(document).ready(function() {
             var $userRows = $('#usersToCreateTableBody tr').filter('[data-username="' + username + '"]');
             $userRows.each(function(i, row) {
                 $(row).find('[data-fieldname="username"]').addClass('invalidField');
-                addErrorMsgToStatusField($(row), 'Repeated username.');
+                addErrorMsgToStatusField($(row), RS.msg("legacyjs.system.batchUserRegistration.repeatedUsername"));
             });
         });
     }

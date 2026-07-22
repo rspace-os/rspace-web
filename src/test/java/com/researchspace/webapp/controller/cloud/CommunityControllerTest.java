@@ -11,6 +11,7 @@ import com.researchspace.model.TokenBasedVerification;
 import com.researchspace.model.TokenBasedVerificationType;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.CreateCloudGroupValidator;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.cloud.CloudGroupManager;
@@ -29,7 +30,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.web.servlet.ModelAndView;
@@ -44,13 +44,12 @@ public class CommunityControllerTest {
   @Mock Principal principal;
   @Mock CloudGroupManager cloudGroupManager;
   @Mock CreateCloudGroupValidator validator;
-  StaticMessageSource msges = new StaticMessageSource();
 
   User user;
 
   @Before
   public void setUp() throws Exception {
-    controller.setMessageSource(new MessageSourceUtils(msges));
+    controller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     user = TestFactory.createAnyUser("any");
   }
 
@@ -65,7 +64,6 @@ public class CommunityControllerTest {
     token.setUser(user);
     when(userMgr.getUserVerificationToken(token.getToken())).thenReturn(token);
     principalReturnsUserName();
-    // msges.addMessage(code, locale, msg);
     ModelAndView mav =
         controller.getEmailChangeVerificationPage(
             token.getToken(), new ExtendedModelMap(), principal);

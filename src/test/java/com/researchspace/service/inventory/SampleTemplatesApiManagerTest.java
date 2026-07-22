@@ -251,7 +251,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createSampleTemplate(post, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -274,7 +274,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -303,7 +303,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
     ApiRuntimeException are =
         assertThrows(
             ApiRuntimeException.class, () -> sampleApiMgr.createSampleTemplate(post, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -323,7 +323,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -373,7 +373,7 @@ public class SampleTemplatesApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> sampleApiMgr.updateApiSampleTemplate(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test

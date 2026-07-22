@@ -71,7 +71,7 @@ function journal($, extensions = default_extensions) {
     setup: function() {
 
       if (journalSettings.parentRecordId == null) {
-        alert("No parent record ID was set, journal view cannot be rendered");
+        alert(RS.msg("legacyjs.workspace.journal.noParentRecordId"));
         return false;
       }
 
@@ -190,7 +190,7 @@ function journal($, extensions = default_extensions) {
             editable = "VIEW_MODE";
 
             $("#journalPage").show("fade", {}, 400, function() {
-              $(".journalPageContent").html("<div id=\"journalEmpty\">There are no entries to display.</div>");
+              $(".journalPageContent").html("<div id=\"journalEmpty\">" + RS.msg("legacyjs.workspace.journal.noEntriesToDisplay") + "</div>");
               $("#journalSearch").hide();
               $("#entryTagsButton").hide();
               $("#editEntry, #deleteEntry").hide();
@@ -205,7 +205,7 @@ function journal($, extensions = default_extensions) {
               RS.checkToolbarDividers(".toolbar-divider");
               journalPrivateVars.selectedRecordId = null;
               journalPrivateVars.recordPosition = 0;
-              methods._statusMessage("There are no entries to display.");
+              methods._statusMessage(RS.msg("legacyjs.workspace.journal.noEntriesToDisplay"));
               displayStatus(editable);
             });
           } else {
@@ -265,7 +265,7 @@ function journal($, extensions = default_extensions) {
     _carryOnEntry: function(data) {
       // replace old content with spinning loader
       $(".journalPageContent").html("<div id=\"journalPageLoading\"><img src=\"" + journalSettings.appPath + extensions.imageSrcPrefix + "images/ajax-loading.gif\"/></div>");
-        methods._statusMessage("Loading entry...");
+        methods._statusMessage(RS.msg("legacyjs.workspace.journal.loadingEntry"));
         journalPrivateVars.entryTags = data.tags ? data.tags : "";
         journalPrivateVars.entryTags = RS.unescape(journalPrivateVars.entryTags);
         journalPrivateVars.baseURL = data.baseURL;
@@ -288,7 +288,7 @@ function journal($, extensions = default_extensions) {
 
         if (data.name == "NO_RESULT") {
           // call reverse action
-          methods._statusMessage("No more records in this direction.");
+          methods._statusMessage(RS.msg("legacyjs.workspace.journal.noMoreRecordsInDirection"));
           if (journalPrivateVars.recordPosition < 0) {
             methods._nextPage();
           } else {
@@ -325,7 +325,7 @@ function journal($, extensions = default_extensions) {
         extensions.topHeaderModify();
       $('.rs-record-header-line .journalToolbarButton').button();
 
-      var entryNumberText = 'Entry ' + (journalPrivateVars.recordPosition + 1) + ' of ' + journalPrivateVars.entryCount;
+      var entryNumberText = RS.msg("legacyjs.workspace.journal.entryNumber", journalPrivateVars.recordPosition + 1, journalPrivateVars.entryCount);
       $('#notebookNameAndEntryNumber').html(entryNumberText); // notebook name already escaped
 
       //Remove show last modified from view.
@@ -710,7 +710,7 @@ function journal($, extensions = default_extensions) {
       $.ajax({
         url: path + journalSettings.parentRecordId + "/" + (journalPrivateVars.historyPosition - 1) + "/" + encodeURIComponent(searchText) + "/",
         fail: function(data, status, xhr) {
-          apprise("Search failed: " + xhr);
+          apprise(RS.msg("legacyjs.workspace.journal.searchFailed", xhr));
         },
         success: function(data, status, xhr) {
           journalPrivateVars.moreItemsAvailable = xhr.getResponseHeader('moreItemsAvailable') == 'true';
@@ -721,7 +721,7 @@ function journal($, extensions = default_extensions) {
             $("#journalEntriesRibbon").html(ribbonHtml);
 
             if ((journalPrivateVars.historyPosition - 1) === 0) {
-              $("#journalEntriesRibbonContent").html("<div id=\"journalEntriesRibbonNoResults\">No results were found</div>");
+              $("#journalEntriesRibbonContent").html("<div id=\"journalEntriesRibbonNoResults\">" + RS.msg("legacyjs.workspace.journal.noResultsFound") + "</div>");
             }
           } else {
             journalPrivateVars.searchModeOn = true;

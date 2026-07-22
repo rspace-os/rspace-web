@@ -3,6 +3,7 @@ package com.researchspace.webapp.controller;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import com.researchspace.core.util.MediaUtils;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.RSMath;
 import com.researchspace.model.User;
 import com.researchspace.service.MediaManager;
@@ -11,7 +12,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.XMLConstants;
-import org.apache.commons.lang3.StringUtils;
 import org.jdom2.Document;
 import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
@@ -82,7 +82,7 @@ public class SVGMathController extends BaseController {
       throw new IllegalArgumentException(msg);
     }
     if (latex.length() > RSMath.LATEX_COLUMN_SIZE) {
-      msg = getText("errors.maxlength", new Object[] {"Latex", RSMath.LATEX_COLUMN_SIZE + ""});
+      msg = getText("errors.maxLength", new Object[] {"Latex", RSMath.LATEX_COLUMN_SIZE + ""});
       throw new IllegalArgumentException(msg);
     }
     msg = validateSVGXML(svg, msg);
@@ -101,11 +101,14 @@ public class SVGMathController extends BaseController {
       Document jdomDoc = builder.build(new StringReader(svg));
       Namespace ns = jdomDoc.getRootElement().getNamespace();
       if (!SVG_NS.equals(ns.getURI())) {
-        msg = getText("errors.invalidxml.ns", new Object[] {"SVG", SVG_NS, ns.getURI()});
+        msg = getText("errors.invalidXml.namespace", new Object[] {"SVG", SVG_NS, ns.getURI()});
       }
     } catch (JDOMException | IOException e) {
       log.warn("SVG validation failed: {}", e.getMessage());
-      msg = getText("errors.invalidxml", new Object[] {"SVG", StringUtils.abbreviate(svg, 255)});
+      msg =
+          getText(
+              "errors.invalidXml.content",
+              new Object[] {"SVG", StringAbbreviationUtils.abbreviate(svg, 255)});
     }
     return msg;
   }

@@ -51,6 +51,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.session.SessionAttributeUtils;
@@ -203,7 +204,15 @@ public class GroupController extends BaseController {
       String[] piArry = pis.split(",");
       User piowner = userManager.getUserByUsername(piArry[0]);
       if (!group.isProjectGroup() && !piowner.hasRole(Role.PI_ROLE)) {
-        errors.addError(new FieldError("group", "pis", "PI does not have a PI role"));
+        errors.addError(
+            new FieldError(
+                "group",
+                "pis",
+                null,
+                false,
+                new String[] {"groups.edit.errors.piRoleRequired"},
+                null,
+                null));
         return EDIT_GROUP_VIEW_NAME;
       }
       group.setOwner(piowner);
@@ -366,21 +375,21 @@ public class GroupController extends BaseController {
     Group group = groupManager.getGroup(groupId);
     permissionUtils.assertIsPermitted(group, PermissionType.WRITE, subject, "rename group");
     if (StringUtils.isBlank(newName)) {
-      ErrorList el = ErrorList.of("Missing display name!");
+      ErrorList el = ErrorList.of(getText("groups.edit.errors.missingDisplayName"));
       return new AjaxReturnObject<String>(null, el);
     }
     if (newName.length() > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
       ErrorList el =
           ErrorList.of(
               getText(
-                  "errors.maxlength", new String[] {Organisation.MAX_INDEXABLE_UTF_LENGTH + ""}));
+                  "errors.maxLength", new String[] {Organisation.MAX_INDEXABLE_UTF_LENGTH + ""}));
       return new AjaxReturnObject<String>(null, el);
     }
     group.setDisplayName(newName);
     groupManager.saveGroup(group, false, subject);
     publisher.publishEvent(new GenericEvent(subject, group, AuditAction.WRITE, "renamed group"));
     model.addAttribute("group", group);
-    return new AjaxReturnObject<String>("Rename ok", null);
+    return new AjaxReturnObject<String>(getText("groups.edit.renameSuccess.confirmation"), null);
   }
 
   /**
@@ -391,7 +400,7 @@ public class GroupController extends BaseController {
    */
   @ResponseBody
   @PostMapping("/editProfile/{groupId}")
-  public AjaxReturnObject<String> editGroupProfile(
+  public AjaxReturnObject<Boolean> editGroupProfile(
       Model model,
       @PathVariable("groupId") Long groupId,
       @RequestParam("newProfile") String newProfile) {
@@ -400,7 +409,7 @@ public class GroupController extends BaseController {
     permissionUtils.assertIsPermitted(grp, PermissionType.WRITE, subject, "edit group profile");
 
     if (StringUtils.isBlank(newProfile)) {
-      ErrorList el = ErrorList.of("Please enter some profile information.");
+      ErrorList el = ErrorList.of(getText("groups.edit.errors.missingProfileInfo"));
       return new AjaxReturnObject<>(null, el);
     }
     grp.setProfileText(newProfile);
@@ -408,7 +417,7 @@ public class GroupController extends BaseController {
     model.addAttribute("group", grp);
     publisher.publishEvent(
         new GenericEvent(subject, grp, AuditAction.WRITE, "Group profile edited"));
-    return new AjaxReturnObject<>("Edit profile ok", null);
+    return new AjaxReturnObject<>(true, null);
   }
 
   /**
@@ -427,12 +436,14 @@ public class GroupController extends BaseController {
     User toRemove = userManager.get(userIdToRemove);
     User subject = userManager.getAuthenticatedUserInSession();
     if (group.isOnlyGroupPi(toRemove.getUsername())) {
-      model.addAttribute(ERROR_ATTRIBUTE_NAME, getText("group.edit.mustbe1.admin.error.msg"));
+      model.addAttribute(
+          ERROR_ATTRIBUTE_NAME, getText("groups.edit.errors.cannotRemoveLastAdminOrPi"));
       model.addAttribute("group", group);
       return GROUPS_VIEW_NAME;
     }
     if (group.isOnlyGroupOwner(toRemove.getUsername())) {
-      model.addAttribute(ERROR_ATTRIBUTE_NAME, getText("group.edit.mustbe1.groupowner.error.msg"));
+      model.addAttribute(
+          ERROR_ATTRIBUTE_NAME, getText("groups.edit.errors.cannotRemoveLastGroupOwner"));
       model.addAttribute("group", group);
       return GROUPS_VIEW_NAME;
     }
@@ -460,18 +471,18 @@ public class GroupController extends BaseController {
 
     User subjectToRemove = userManager.getAuthenticatedUserInSession();
     if (group.isOnlyGroupPi(subjectToRemove.getUsername())) {
-      String msg = getText("group.edit.mustbe1.admin.error.msg");
+      String msg = getText("groups.edit.errors.cannotRemoveLastAdminOrPi");
       return new AjaxReturnObject<Boolean>(null, ErrorList.of(msg));
     }
 
     if (group.isProjectGroup() && group.isOnlyGroupOwner(subjectToRemove.getUsername())) {
-      String msg = getText("group.edit.mustbe1.groupowner.error.msg");
+      String msg = getText("groups.edit.errors.cannotRemoveLastGroupOwner");
       return new AjaxReturnObject<Boolean>(null, ErrorList.of(msg));
     }
 
     if (!group.getMembers().contains(subjectToRemove)) {
       return new AjaxReturnObject<Boolean>(
-          null, ErrorList.of("You are not a member of the group."));
+          null, ErrorList.of(getText("groups.edit.errors.notMember")));
     }
 
     group =
@@ -574,12 +585,11 @@ public class GroupController extends BaseController {
       Principal principal, @ModelAttribute("group") Group group, BindingResult errors) {
     if (group.getId() == null) {
       log.error("Group ID  was null for group {} ", group.toString());
-      return "Could not issue invitation as request was lacking a group ID."
-          + "This is a server error, please report it quoting RSPAC-1127";
+      return getText("groups.invitation.errors.missingGroupId");
     }
     if (group.getMemberString() == null || group.getMemberString().isEmpty()) {
       errors.rejectValue("memberString", GroupValidator.GROUP_MEMBERS_NONESELECTED);
-      return "The request couldn't be processed (members string empty)";
+      return getText("groups.invitation.errors.noMembers");
     }
 
     User subject = userManager.getAuthenticatedUserInSession();
@@ -616,11 +626,11 @@ public class GroupController extends BaseController {
       }
 
       if (failedAutoshares.size() > 0) {
-        return "Users added, however, failed to enable autosharing for users "
-            + String.join(", ", failedAutoshares)
-            + ".";
+        return getText(
+            "groups.edit.addUsers.autoshareFailed",
+            new Object[] {ListFormatUtils.formatList(failedAutoshares)});
       } else {
-        return "Users added to the group.";
+        return getText("groups.edit.addUsers.success");
       }
     }
 
@@ -635,7 +645,10 @@ public class GroupController extends BaseController {
     MessageOrRequest request =
         requestCreateMgr.createRequest(
             cgf, principal.getName(), new HashSet<String>(group.getMemberString()), null, null);
-    String msg = "Invitation sent to " + StringUtils.join(group.getMemberString(), ",");
+    String msg =
+        getText(
+            "groups.edit.invitationSent.confirmation",
+            new Object[] {ListFormatUtils.formatList(group.getMemberString())});
     publisher.publishEvent(new GenericEvent(subject, request, AuditAction.CREATE, msg));
     return msg;
   }
@@ -670,7 +683,7 @@ public class GroupController extends BaseController {
     Group grp = groupManager.getGroup(groupId);
     RoleInGroup roleInGrp = RoleInGroup.getRoleFromString(role);
     if (roleInGrp == null || roleInGrp.equals(RoleInGroup.PI)) {
-      ErrorList el = ErrorList.of(getText("group.edit.invalidrolename.error.msg"));
+      ErrorList el = ErrorList.of(getText("groups.edit.errors.invalidRoleName"));
       return new AjaxReturnObject<>(null, el);
     }
 
@@ -688,13 +701,13 @@ public class GroupController extends BaseController {
 
     // can't remove last PI
     if (grp.isOnlyGroupPi(toChange.getUsername())) {
-      ErrorList el = ErrorList.of(getText("group.edit.mustbe1.admin.error.msg"));
+      ErrorList el = ErrorList.of(getText("groups.edit.errors.cannotRemoveLastAdminOrPi"));
       return new AjaxReturnObject<>(null, el);
     }
 
     // can't remove last group owner
     if (grp.isOnlyGroupOwner(toChange.getUsername())) {
-      ErrorList el = ErrorList.of(getText("group.edit.mustbe1.groupowner.error.msg"));
+      ErrorList el = ErrorList.of(getText("groups.edit.errors.cannotRemoveLastGroupOwner"));
       return new AjaxReturnObject<>(null, el);
     }
 
@@ -1101,7 +1114,8 @@ public class GroupController extends BaseController {
     User subject = userManager.getAuthenticatedUserInSession();
     Group group = groupManager.getGroupWithCommunities(groupId);
     if (!subject.hasRoleInGroup(group, RoleInGroup.PI)) {
-      return new AjaxReturnObject<>(null, ErrorList.of("Only PI can allow group publication"));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("groups.edit.errors.piRequiredForPublication")));
     }
     group.setPublicationAllowed(publicationAllowed);
     groupManager.saveGroup(group, false, subject);
@@ -1113,7 +1127,8 @@ public class GroupController extends BaseController {
     User subject = userManager.getAuthenticatedUserInSession();
     Group group = groupManager.getGroupWithCommunities(groupId);
     if (!subject.hasRoleInGroup(group, RoleInGroup.PI)) {
-      return new AjaxReturnObject<>(null, ErrorList.of("Only PI can enforce group ontologies"));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("groups.edit.errors.piRequiredForOntologyEnforcement")));
     }
     group.setEnforceOntologies(enforceOntologies);
     groupManager.saveGroup(group, false, subject);
@@ -1125,7 +1140,7 @@ public class GroupController extends BaseController {
     Group group = groupManager.getGroupWithCommunities(groupId);
     if (!subject.hasRoleInGroup(group, RoleInGroup.PI)) {
       return new AjaxReturnObject<>(
-          null, ErrorList.of("Only PI can allow group to use Bio Ontologies"));
+          null, ErrorList.of(getText("groups.edit.errors.piRequiredForBioOntologies")));
     }
     group.setAllowBioOntologies(allow);
     groupManager.saveGroup(group, false, subject);
@@ -1136,7 +1151,8 @@ public class GroupController extends BaseController {
     User subject = userManager.getAuthenticatedUserInSession();
     Group group = groupManager.getGroupWithCommunities(groupId);
     if (!subject.hasRoleInGroup(group, RoleInGroup.PI)) {
-      return new AjaxReturnObject<>(null, ErrorList.of("Only PI can allow group publication"));
+      return new AjaxReturnObject<>(
+          null, ErrorList.of(getText("groups.edit.errors.piRequiredForPublication")));
     }
     group.setSeoAllowed(seoAllowed);
     groupManager.saveGroup(group, false, subject);
@@ -1148,15 +1164,15 @@ public class GroupController extends BaseController {
    */
   private String canManageAutoshareForGroup(Group group, User user, boolean targetAutoshareStatus) {
     if (!systemPropertyPermissionUtils.isPropertyAllowed(group, "group_autosharing.available")) {
-      return "Please contact your system administrator to enable this feature";
+      return getText("autoshare.errors.disabled");
     } else if (!group.isLabGroup()) {
-      return "Can only manage autosharing for lab groups";
+      return getText("autoshare.errors.labGroupRequired");
     } else if (properties.isCloud()) {
-      return "Group autosharing is only available on the Enterprise version of RSpace";
+      return getText("autoshare.errors.enterpriseRequired");
     } else if (group.isAutoshareEnabled() == targetAutoshareStatus) {
-      return "Autoshare is already set to the desired state";
+      return getText("autoshare.errors.alreadySet");
     } else if (groupsWithAutoshareInProgress.containsKey(group.getId())) {
-      return "Cannot launch new bulk share operation; already running";
+      return getText("autoshare.errors.operationInProgress");
     }
 
     boolean isLabAdmin = group.getLabAdminsWithViewAllPermission().contains(user);
@@ -1167,10 +1183,10 @@ public class GroupController extends BaseController {
 
     Community community = communityMgr.getWithAdmins(group.getCommunityId());
     if (user.hasSysadminRole() || community.getAdmins().contains(user)) {
-      return "Sysadmins cannot manage group-wide autoshare status";
+      return getText("autoshare.errors.adminProhibited");
     }
 
-    return "Forbidden";
+    return getText("autoshare.errors.forbidden");
   }
 
   /**

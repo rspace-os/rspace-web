@@ -1,8 +1,8 @@
 package com.researchspace.webapp.controller;
 
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.licensews.LicenseExpiredException;
 import com.researchspace.service.LicenseService;
-import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.AfterThrowing;
@@ -127,7 +127,7 @@ public class ServiceLoggerAspct {
       if (arg == null) {
         buf.append("[null]");
       } else {
-        buf.append(StringUtils.abbreviate(arg.toString(), maxLength));
+        buf.append(StringAbbreviationUtils.abbreviate(arg.toString(), maxLength));
       }
     }
     return buf.toString();

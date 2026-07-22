@@ -164,4 +164,26 @@
         <tag-class>com.axiope.webapp.taglib.CacheVersionTag</tag-class>
     </tag>
 
+    <tag>
+        <name>i18nMessages</name>
+        <tag-class>com.axiope.webapp.taglib.I18nMessagesTag</tag-class>
+    </tag>
+
+    <tag>
+        <name>notificationTypeLabel</name>
+        <tag-class>com.axiope.webapp.taglib.NotificationTypeLabelTag</tag-class>
+        <attribute>
+            <name>notificationType</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>com.researchspace.model.comms.NotificationType</type>
+        </attribute>
+        <attribute>
+            <name>var</name>
+            <required>true</required>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.String</type>
+        </attribute>
+    </tag>
+
 </taglib>

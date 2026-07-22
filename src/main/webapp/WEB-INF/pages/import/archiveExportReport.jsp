@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <head>
-    <title><spring:message code="exportArchive.report.title"/></title>
+    <title><spring:message code="importExport.export.report.title"/></title>
 </head>
 
 <style>
@@ -42,8 +42,8 @@
            // add info about parent notebook to exported notebook entries
            $.each(notificationData.exportedRecords, function() {
               if (this.exportedParentGlobalId && this.exportedParentGlobalId.startsWith('NB')) {
-                  this.displayNote = 'exported as a part of <a href="/globalId/' + this.exportedParentGlobalId + '">' + this.exportedParentGlobalId + '</a> notebook';
-              } 
+                  this.displayNote = RS.msg("legacyjs.archiveExportReport.exportedAsPartOfNotebook", this.exportedParentGlobalId);
+              }
            });
        }
        if (notificationData.nfsLinksIncluded) {
@@ -65,19 +65,19 @@
 
 <div id="archiveExportReportTemplate" style="display:none">
 
-  <div class="archiveExportSummaryMsg"> 
-      Archive export report for {{archiveType}} export of {{exportedUserOrGroupId}} {{exportScope}} generated on {{creationTimeFormatted}}. <br/>
+  <div class="archiveExportSummaryMsg">
+      <spring:message code="archiveExportReport.summary"/> <br/>
   </div>
   <div class="downloadLinkMsg">
-      Download link: <a href="{{downloadLink}}">{{downloadLink}}</a>.
+      <spring:message code="archiveExportReport.downloadLinkLabel"/> <a href="{{downloadLink}}">{{downloadLink}}</a>.
   </div>
-  
-  <h2> Exported documents</h2>
+
+  <h2> <spring:message code="archiveExportReport.exportedDocumentsHeading"/></h2>
   <table class="exportedDocumentsTable">
     <tr>
-     <th> Name </th>
-     <th> Global Id </th>
-     <th> Notes </th>
+     <th> <spring:message code="archiveExportReport.nameHeader"/> </th>
+     <th> <spring:message code="archiveExportReport.globalIdHeader"/> </th>
+     <th> <spring:message code="archiveExportReport.notesHeader"/> </th>
     </tr>
     <!-- {{#exportedRecords}}-->
     <tr>
@@ -90,22 +90,22 @@
 
   {{#nfsLinksIncluded}}
    {{#exportedNfsLinksPresent}}
-     <h2> Exported filestore links</h2>
+     <h2> <spring:message code="archiveExportReport.exportedFilestoreLinksHeading"/></h2>
      {{#maxNfsFileSizeMB}}
-       File size limit for individual filestore files was set to <strong>{{maxNfsFileSizeMB}} MB</strong>. <br/>
+       <spring:message code="archiveExportReport.fileSizeLimitNotice"/> <br/>
      {{/maxNfsFileSizeMB}}
      {{#excludedNfsFileExtensionsList}}
-       Files of <strong>{{excludedNfsFileExtensionsList}}</strong> type were not included. <br/>
+       <spring:message code="archiveExportReport.excludedFileTypesNotice"/> <br/>
      {{/excludedNfsFileExtensionsList}}
      <table class="exportedNfsLinksTable">
       <tr>
-       <th> File System name </th>
-       <th> Filestore path </th>
-       <th> Resource path</th>
-       <th> Added to archive </th>
-       <th> Error </th>
-       <th> Folder</th>
-       <th> Folder export summary</th>
+       <th> <spring:message code="archiveExportReport.fileSystemNameHeader"/> </th>
+       <th> <spring:message code="archiveExportReport.filestorePathHeader"/> </th>
+       <th> <spring:message code="archiveExportReport.resourcePathHeader"/></th>
+       <th> <spring:message code="archiveExportReport.addedToArchiveHeader"/> </th>
+       <th> <spring:message code="archiveExportReport.errorHeader"/> </th>
+       <th> <spring:message code="archiveExportReport.folderHeader"/></th>
+       <th> <spring:message code="archiveExportReport.folderExportSummaryHeader"/></th>
       </tr>
       <!-- {{#exportedNfsLinks}}-->
       <tr>
@@ -125,7 +125,7 @@
      </table>
    {{/exportedNfsLinksPresent}}
    {{^exportedNfsLinksPresent}}
-     <strong>Export filestore links</strong> option was selected, but exported documents didn't contain any filestore links.
+     <spring:message code="archiveExportReport.noFilestoreLinksNotice"/>
    {{/exportedNfsLinksPresent}}
   {{/nfsLinksIncluded}}
 

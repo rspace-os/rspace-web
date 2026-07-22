@@ -34,7 +34,7 @@ function _updateShareIntoFolderView() {
     if (selectedCount === 0 || selectedCount  > 1) {
         clearFolderChooser('-share');
     } else if (selected$.first().closest('.groupShareSection').length === 1) {
-        showFolderChooser('-share', 'to share into. Otherwise, documents will be shared into the top of your LabGroup Shared folder.');
+        showFolderChooser('-share', RS.msg("legacyjs.core.share.folderChooserDescription"));
     }
 
     // update the counters
@@ -42,13 +42,14 @@ function _updateShareIntoFolderView() {
 		userSelectCount$ = $("#shareUserHeader .selectedCount");
 
 	if(selectedGroups > 0){
-        groupSelectCount$.show().find("span").html(selectedGroups);
+        groupSelectCount$.show().find(".selectedCountNumber").html(selectedGroups);
     }else{
         groupSelectCount$.hide();
 	}
 
 	if(selectedUsers > 0){
-        userSelectCount$.show().find("span").html(selectedUsers);
+        userSelectCount$.show().find(".selectedCountNumber").html(selectedUsers);
+        userSelectCount$.find(".selectedCountLabel").html(RS.msg("legacyjs.core.share.usersSelectedCount", selectedUsers));
 	}else{
         userSelectCount$.hide();
 	}
@@ -62,7 +63,8 @@ function _setShowNotebooksInShareIntoFolderView(selectedTypes) {
         var urlParam = 'showNotebooksForShare=' + showNotebooks;
         setFolderChooserDirListingParams('-share', urlParam);
 
-        var linkDesc = 'choose a folder ' + (showNotebooks ? 'or notebook' : '');
+        var linkDesc = RS.msg("legacyjs.core.share.chooseFolder",
+            showNotebooks ? RS.msg("legacyjs.core.share.orNotebook") : "");
         setFolderChooserLinkDesc('-share', linkDesc);
 
         clearFolderChooser('-share');
@@ -118,7 +120,9 @@ const getSharedFolderTarget = (type) => {
 function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelector='#share-dialog',
                            type= SHARE_DOCS_TYPE) {
     onshare = onshare || function(sharedIds) {};
-    if (dialogTitle !== "Publish") {
+    const shareLabel = RS.msg("legacyjs.core.share.share");
+    const publishLabel = RS.msg("legacyjs.core.share.publish");
+    if (dialogTitle !== publishLabel) {
         throw new Error("Legacy share dialog triggered, please remove");
     }
 
@@ -127,7 +131,7 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
         _updateShareIntoFolderView();
     });
 
-    if (dialogTitle!== 'Publish' && typeof initFolderChooser === 'function') {
+    if (dialogTitle !== publishLabel && typeof initFolderChooser === 'function') {
         initFolderChooser('-share', function () {
             return $('input[name="grpId"]:checked').first().attr(getSharedFolderTarget(type));
         }, function ($selectedRow) {
@@ -176,10 +180,12 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
             });
 
             if(publicOnly){
-                $(":contains('Share')").closest('button').text('Publish').prop('disabled', true).css('opacity',0.5);
+                $('#share-dialog-submit-btn').text(publishLabel)
+                    .prop('disabled', true).css('opacity',0.5);
             }
             else {
-                $(":contains('Publish')").closest('button').text('Share').prop('disabled', false).css('opacity',1);
+                $('#share-dialog-submit-btn').text(shareLabel)
+                    .prop('disabled', false).css('opacity',1);
             }
 
             var selectedTypes = $(this).data("selectedTypes");
@@ -206,11 +212,11 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
             clearPublishOnInternetFields();
             clearPublishLinkFields();
         },
-        buttons : {
-            Cancel : function() {
+        buttons : [
+            { text: RS.msg("legacyjs.common.cancel"), click: function() {
                 $(this).dialog('close');
-            },
-            Share : function() {
+            }},
+            { id: 'share-dialog-submit-btn', text: shareLabel, click: function() {
                 const isCloud = $(this).data("isCloud");
                 const checkedCount = $('input[name="userId"]:checked').size() + $('input[name="grpId"]:checked').size() + $('input[name="shareGroupSelect"]:checked').size();
                 const noEmailInputs = ($("input.email").filter(function () {return $.trim($(this).val()).length > 0;}).length === 0);
@@ -226,12 +232,7 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
                 const displayContactDetails =  publishOnInternet ?$("#displayContactDetails").is(":checked") : $("#displayLinkContactDetails").is(":checked");
                 // if nothing is checked then remind user.
                 if (checkedCount === 0 && noCheckedEmailCloud && noCheckedExternalGroupCloud && noPublicShareOnInternetConfirmed && noPublicShareLinkConfirmed) {
-                    let errorMessage = "<p>Please select a sharing option. Either:" +
-                    "<ul><li> Share with a group you belong to, or a member of that group" +
-                    "<li> Invite by email an individual to share with" +
-                    "<li> Invite members of another group to view your document" +
-                        " <li> Cancel to abort.</ul></p>"
-                    apprise(errorMessage);
+                    apprise(RS.msg("legacyjs.core.share.selectOption"));
                     // TO-DO: RSPAC-1287 Focus the apprise dialog
                     return;
                 }
@@ -313,7 +314,7 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
                     };
                 }
                 var dataStr = JSON.stringify(data);
-                RS.blockPage("Sharing document(s)");
+                RS.blockPage(RS.msg("legacyjs.core.share.sharing", idsToShare.length));
                 var urlString = isCloud ? "/cloud/ajax/shareRecord" :  "/workspace/ajax/shareRecord";
                 var jqxhr = $.ajax({
                     url : createURL(urlString),
@@ -350,10 +351,10 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
                     }
                 });
                 jqxhr.fail(function(xhr) {
-                    RS.ajaxFailed("Sharing", true, xhr);
+                    RS.ajaxFailed(RS.msg("legacyjs.core.share.action"), true, xhr);
                 });
-            }
-        }
+            }}
+        ]
     });
 
     function createTextArea(text) {
@@ -389,7 +390,7 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
         }
         const btn = document.createElement("button");
         btn.setAttribute("id", 'copy_to_clipboard');
-        btn.textContent = 'copy lastest links';
+        btn.textContent = RS.msg("legacyjs.core.share.copyLatestLinks");
         btn.onclick = ()=>fallbackCopyTextToClipboard2(text);
         // // Avoid scrolling to bottom
         btn.style.top = "0";
@@ -419,42 +420,54 @@ function createShareDialog(dialogTitle, idsToShareGetter, onshare=null, tagSelec
             onshare(sharedIds);
 
             const unsharedLength = toShareLength - numShared;
-            const action = (publishAttempted?" published" :" shared");
             if (numShared === toShareLength) {
-                var successMsg = (toShareLength == 1 ? "Document" : (toShareLength + " documents")) + action;
+                var successMsg = publishAttempted
+                    ? RS.msg("legacyjs.core.share.successPublished", toShareLength)
+                    : RS.msg("legacyjs.core.share.successShared", toShareLength);
                 if (numPublicLinks>0) {
                     if(clipboardButton){
-                        successMsg += ". There is a copy button at the top left of this screen" +
-                            " which will copy document names with their published links to your clipboard."
+                        successMsg += ". " + RS.msg("legacyjs.core.share.clipboardButtonHint");
                     } else {
-                        successMsg += ". Document names with their published links are in your clipboard."
+                        successMsg += ". " + RS.msg("legacyjs.core.share.clipboardHint");
                     }
                 }
                 RS.confirm(successMsg, "success", clipboardButton ? 5000 : 3000);
             } else {
                 if (sharedLength === 0) {
-                    RS.confirm("Document(s) not "+action, "warning", 3000);
+                    RS.confirm(publishAttempted
+                        ? RS.msg("legacyjs.core.share.notPublished", unsharedLength)
+                        : RS.msg("legacyjs.core.share.notShared", unsharedLength), "warning", 3000);
                 } else {
-                    RS.confirm("Not all documents were "+action, "notice", 3000);
+                    RS.confirm(publishAttempted
+                        ? RS.msg("legacyjs.core.share.notAllPublished")
+                        : RS.msg("legacyjs.core.share.notAllShared"), "notice", 3000);
                 }
 
-                var errorMsg = (publishAttempted ? "Publication": "Sharing") +  " was " + (sharedLength > 0 ? "partially" : "") + " unsuccessful";
+                var errorMsg = publishAttempted
+                    ? (sharedLength > 0
+                        ? RS.msg("legacyjs.core.share.publicationPartiallyUnsuccessful")
+                        : RS.msg("legacyjs.core.share.publicationUnsuccessful"))
+                    : (sharedLength > 0
+                        ? RS.msg("legacyjs.core.share.sharingPartiallyUnsuccessful")
+                        : RS.msg("legacyjs.core.share.sharingUnsuccessful"));
                 if (sharedLength > 0) {
-                    errorMsg += ", " + unsharedLength + " document" + (unsharedLength === 1 ? " was" : "s were") + " skipped";
+                    errorMsg += ", " + RS.msg("legacyjs.core.share.skipped", unsharedLength);
                 }
                 var errorsLength = (result.errorMsg && result.errorMsg.errorMessages) ? result.errorMsg.errorMessages.length : 0;
                 if (errorsLength) {
-                    errorMsg += " because of the following error" + (errorsLength > 1 ? "s" : "") + ": <br/> - "
-                        + getValidationErrorString(result.errorMsg, "<br/> - ");
+                    errorMsg += " " + RS.msg("legacyjs.core.share.becauseErrors", errorsLength,
+                        getValidationErrorString(result.errorMsg, "<br/> - "));
                 } else {
-                    errorMsg += ". Maybe the document" + (unsharedLength === 1 ? " is" : "s are") + " already" +  (publishAttempted ? " published?":" shared?");
+                    errorMsg += ". " + (publishAttempted
+                        ? RS.msg("legacyjs.core.share.maybeAlreadyPublished", unsharedLength)
+                        : RS.msg("legacyjs.core.share.maybeAlreadyShared", unsharedLength));
                 }
                 apprise(errorMsg);
 
                 // TO-DO: RSPAC-1287 Focus the apprise dialog
             }
         } else {
-            apprise("Sharing did not complete: " + getValidationErrorString(result.errorMsg));
+            apprise(RS.msg("legacyjs.core.share.didNotComplete", getValidationErrorString(result.errorMsg)));
             // TO-DO: RSPAC-1287 Focus the apprise dialog
         }
     }
@@ -478,14 +491,14 @@ const clearPublishOnInternetFields = () => {
     $("#publicationDescription").val('');
     $("#displayContactDetails").prop( "checked", false );
     disablePublishButton();
-    updateSelection(".publishSelected", 'publish', true);
+    updateSelection(".publishSelected", RS.msg("legacyjs.core.share.publishOption"), true);
 }
 const clearPublishLinkFields = () => {
     $('input[id="make_public_link_confirmation"]').val('');
     $("#publicationLinkDescription").val('');
     $("#displayLinkContactDetails").prop( "checked", false );
     disablePublishButton();
-    updateSelection(".publishLinkSelected", 'publish', true);
+    updateSelection(".publishLinkSelected", RS.msg("legacyjs.core.share.publishOption"), true);
 }
 
 $(document).on("click", "#shareRecord", function (e) {
@@ -562,8 +575,9 @@ $(document).on('click', '#publishRecord', function (e) {
 
 $(document).on('click', '.add-email', function(e) {
     var row = "<tr class='emailRow row'><td><input type='text' name='email' class='email'></td><td>" +
-        "<select><option value='read' selected>Read</option><option value='write'>Edit</option></select></td>" +
-        "<td> <button type='button' class='remove-email'>Remove</button></td></tr>";
+        "<select><option value='read' selected>" + RS.msg("legacyjs.core.permission.read") + "</option>" +
+        "<option value='write'>" + RS.msg("legacyjs.core.permission.edit") + "</option></select></td>" +
+        "<td> <button type='button' class='remove-email'>" + RS.msg("legacyjs.core.action.remove") + "</button></td></tr>";
     $(".share-table").append(row);
     applyAutocomplete(".email");
 });
@@ -576,8 +590,9 @@ $(document).on('click', '.remove-email', function(e) {
 
 $(document).on('click', '.add-group', function(e) {
     var row = "<tr class='groupRow row'><td><input type='text' name='externalGroupId' class='externalGroupId' data-groupid></td><td>" +
-        "<select><option value='read' selected>Read</option><option value='write'>Edit</option></select></td>" +
-        "<td> <button type='button' class='remove-group'>Remove</button></td></tr>";
+        "<select><option value='read' selected>" + RS.msg("legacyjs.core.permission.read") + "</option>" +
+        "<option value='write'>" + RS.msg("legacyjs.core.permission.edit") + "</option></select></td>" +
+        "<td> <button type='button' class='remove-group'>" + RS.msg("legacyjs.core.action.remove") + "</button></td></tr>";
     $(".group-share-table").append(row);
     applyGroupAutocomplete(3, ".externalGroupId");
 });
@@ -611,8 +626,8 @@ $(document).on('click', '.shareRadio', function(e) {
     setTimeout(function(){ $(".directory a").click();}, 1000);
 });
 
-const disablePublishButton = () => $(":contains('Publish')").closest('button').prop('disabled', true).css('opacity',0.5);
-const enablePublishButton = () => $(":contains('Publish')").closest('button').prop('disabled', false).css('opacity',1);
+const disablePublishButton = () => $('#share-dialog-submit-btn').prop('disabled', true).css('opacity',0.5);
+const enablePublishButton = () => $('#share-dialog-submit-btn').prop('disabled', false).css('opacity',1);
 
 $(document).on('click', '#clearPublish', function() {
     clearPublishOnInternetFields();
@@ -627,8 +642,8 @@ $(document).on('click', '#resetShareIntoFolder', function(e) {
 
 $(document).on('input','#make_public_confirmation', function() {
     if($('input[id="make_public_confirmation"]').val().toLowerCase() === 'confirm'){
-        updateSelection(".publishSelected", 'publish', false);
-        $(".publishSelected").text("(confirmed)");
+        updateSelection(".publishSelected", RS.msg("legacyjs.core.share.publishOption"), false);
+        $(".publishSelected").text(RS.msg("legacyjs.core.share.confirmed"));
         enablePublishButton();
     } else {
         updateSelection(".publishSelected", 'publish', true);
@@ -638,8 +653,8 @@ $(document).on('input','#make_public_confirmation', function() {
 
 $(document).on('input','#make_public_link_confirmation', function() {
     if($('input[id="make_public_link_confirmation"]').val().toLowerCase() === 'confirm'){
-        updateSelection(".publishLinkSelected", 'publish', false);
-        $(".publishLinkSelected").text("(confirmed)");
+        updateSelection(".publishLinkSelected", RS.msg("legacyjs.core.share.publishOption"), false);
+        $(".publishLinkSelected").text(RS.msg("legacyjs.core.share.confirmed"));
         enablePublishButton();
     } else {
         updateSelection(".publishLinkSelected", 'publish', true);
@@ -652,7 +667,7 @@ function updateSelection (className, groupName, clear) {
     if(clear) {
         $(className).text(""); 
     } else {
-        $(className).text("(" + groupName + " selected)");
+        $(className).text(RS.msg("legacyjs.core.share.selectionSelected", groupName));
     }
 }
 

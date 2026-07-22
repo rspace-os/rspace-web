@@ -14,7 +14,7 @@ var toolsDialog = {
         addCategoryLinkHandler();
       });
       jxqr.fail(function(xhr) {
-        RS.ajaxFailed("Loading tools", false, xhr);
+        RS.ajaxFailed(RS.msg("legacyjs.tinymce.tools.loadingTools"), false, xhr);
       });
     });
   },
@@ -67,7 +67,7 @@ function addCategoryLinkHandler() {
       addSelectedToolLinkHandler();
     });
     jxqr.fail(function(xhr) {
-      RS.ajaxFailed("Loading tools", false, xhr);
+      RS.ajaxFailed(RS.msg("legacyjs.tinymce.tools.loadingTools"), false, xhr);
     });
   });
 }

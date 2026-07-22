@@ -20,7 +20,7 @@ var defaultRefresh = function (result) {
       $('#record_list').show(effect, effectDuration);
       $("#searchModePanel").removeClass("searchError").addClass("searchSuccess");
       if (workspaceSettings.searchMode) {
-        var message = "Showing results of your search.";
+        var message = RS.msg("legacyjs.workspace.crudOps.searchResultsShown");
         $("#searchModePanel #message").text(message);
         $("#resetSearch").show();
         $("#searchModePanel").slideDown(fadeTime);
@@ -33,11 +33,11 @@ var defaultRefresh = function (result) {
       $('#record_list').show(effect, effectDuration);
       $("#searchModePanel").removeClass("searchSuccess").addClass("searchError");
       if (workspaceSettings.searchMode) {
-        $("#searchModePanel #message").text("Your search returned no results. Please search again or");
+        $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.crudOps.searchNoResults"));
         $("#resetSearch").show();
         $("#searchModePanel").slideDown(fadeTime);
       } else {
-        $("#searchModePanel #message").text("No records have been found.");
+        $("#searchModePanel #message").text(RS.msg("legacyjs.workspace.crudOps.noRecordsFound"));
         $("#resetSearch").hide();
         $("#searchModePanel").slideDown(fadeTime);
       }
@@ -115,16 +115,17 @@ function setUpShareDialog() {
 
   //update icons & img title
   var onshare = function (ids) {
+    var sharedLabel = RS.msg("legacyjs.workspace.crudOps.sharedAltTitle");
     $.each(ids, function (index, item) {
       var img$ = $("tr[data-recordId='" + item + "'] img.sharedStatusImg");
-      if (img$.attr("alt") !== 'Shared') {
+      if (img$.attr("alt") !== sharedLabel) {
         img$.attr("src", "/images/documentStatusShared.png").attr(
-            "alt", "Shared").attr("title", "Shared");
+            "alt", sharedLabel).attr("title", sharedLabel);
       }
     });
   };
 
-  createShareDialog("Publish", idsToShareGetter, onshare, '#publish-dialog');
+  createShareDialog(RS.msg("legacyjs.workspace.crudOps.publishDialogTitle"), idsToShareGetter, onshare, '#publish-dialog');
 }
 
 function setUpExportDialogs() {
@@ -217,12 +218,11 @@ function depositDataShare(fname) {
   var jqxhr = $.post(createURL("/workspace/ajax/depositArchive"), { deposit: fname },
       function (result) {
         var str = new String(result);
-        str = "Deposit successfully at " + str;
-        RS.confirm(str, "success", 3000);
+        RS.confirm(RS.msg("legacyjs.workspace.crudOps.depositSuccessful", str), "success", 3000);
       });
 
   jqxhr.fail(function () {
-    RS.ajaxFailed("Archiving deposit", true, jqxhr);
+    RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.archivingDepositAction"), true, jqxhr);
   });
 }
 
@@ -240,11 +240,11 @@ function createMoveDialog(onmove, moveparams) {
   $('#move-dialog').dialog({
     modal: true,
     autoOpen: false,
-    title: "Select target folder",
+    title: RS.msg("legacyjs.workspace.crudOps.selectTargetFolderTitle"),
     open: function () {
       var moveTargetRoot = $("#movetargetRoot").val()
       if (moveTargetRoot === "INVALID") {
-        apprise("Cannot calculate valid move targets for content of the current folder.");
+        apprise(RS.msg("legacyjs.workspace.crudOps.cannotCalculateMoveTargets"));
         $(this).dialog('close');
         return;
       }
@@ -305,7 +305,7 @@ function createMoveDialog(onmove, moveparams) {
               RS.trackEvent("user:move:documents:workspace", { count: data.toMove.length });
             });
         jqxhr.fail(function () {
-          RS.ajaxFailed("Move", true, jqxhr);
+          RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.moveAction"), true, jqxhr);
         });
       }
     }
@@ -422,7 +422,7 @@ function registerCopyRecordsHandler(oncopy) {
       newName: namesToCopy,
       idToCopy: idsToCopy
     });
-    RS.blockPage("Copying...");
+    RS.blockPage(RS.msg("legacyjs.workspace.crudOps.copyingProgress"));
     var jqxhr = $.post(createURL("/workspace/ajax/copy"), data, function (result) {
       RS.unblockPage();
       oncopy(result);
@@ -430,7 +430,7 @@ function registerCopyRecordsHandler(oncopy) {
     });
 
     jqxhr.fail(function () {
-      RS.ajaxFailed("Copy", true, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.copyAction"), true, jqxhr);
     });
   });
 }
@@ -448,7 +448,7 @@ function registerDeleteRecordsHandler(onDelete) {
     var callback = function () {
       RS.blockingProgressBar.show({
         progressType: "rs-deleteRecord",
-        msg: "Deleting..."
+        msg: RS.msg("legacyjs.workspace.crudOps.deletingProgress")
       });
       var data = $.extend({}, workspaceSettings, {
         settingsKey: settingsKey,
@@ -463,14 +463,14 @@ function registerDeleteRecordsHandler(onDelete) {
           });
       jqxhr.fail(function () {
         RS.blockingProgressBar.hide();
-        RS.ajaxFailed("Delete", true, jqxhr);
+        RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.deleteAction"), true, jqxhr);
       });
     }
     getSelectedIdsAndNames(idsToDelete, namesToDelete);
 
     RS.createConfirmationDialog({
-      title: "Confirm deletion",
-      consequences: `Do you want to delete the following document(s)?<br><strong>${RS.escapeHtml(namesToDelete.join(", "))}</strong><br><br>Deleting documents that you <em>own</em> will also delete them from the view of those you're sharing with. Deleting a document <em>shared with you</em> will only delete it from your view.`,
+      title: RS.msg("legacyjs.workspace.crudOps.confirmDeletionTitle"),
+      consequences: RS.msg("legacyjs.workspace.crudOps.deleteConfirmConsequences", namesToDelete.length, RS.escapeHtml(namesToDelete.join(", "))),
       variant: "warning",
       callback: callback
     });
@@ -495,7 +495,8 @@ function registerFavoritesRecordsHandler() {
       const favIds = result.data;
 
       if (favIds) {
-        const favImg = ' <img class="favoriteImg" src="/images/favorite.svg" width="20" height="20" alt="Favorite" title="Favorite">';
+        const favoriteLabel = RS.msg("legacyjs.workspace.crudOps.favoriteAltTitle");
+        const favImg = ' <img class="favoriteImg" src="/images/favorite.svg" width="20" height="20" alt="' + favoriteLabel + '" title="' + favoriteLabel + '">';
 
         $.each(favIds, function (index, id) {
           const row$ = $("tr[data-recordId='" + id + "']");
@@ -517,16 +518,12 @@ function registerFavoritesRecordsHandler() {
         updateCrudopsMenu();
 
         RS.trackEvent("user:favorite:documents:workspace", { count: favIds.length });
-        if (favIds.length === 1) {
-          RS.confirm("Document marked as favorite", "success", 3000);
+        RS.confirm(RS.msg("legacyjs.workspace.crudOps.markedAsFavorite", favIds.length), "success", 3000);
         } else {
-          RS.confirm(favIds.length + " documents marked as favourite", "success", 3000);
-        }
-      } else {
-        apprise("Failed to favorite: " + getValidationErrorString(result.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.crudOps.favoriteFailed", getValidationErrorString(result.errorMsg)));
       }
     }).fail(function () {
-      RS.ajaxFailed("Adding to favorites", true, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.addingToFavoritesAction"), true, jqxhr);
     });
   });
 
@@ -549,16 +546,12 @@ function registerFavoritesRecordsHandler() {
           row$.find("input[name='favoriteStatus']").val("NO_FAVORITE");
         });
         updateCrudopsMenu();
-        if (favIds.length == 1) {
-          RS.confirm("Item removed from favorites", "success", 3000);
+        RS.confirm(RS.msg("legacyjs.workspace.crudOps.removedFromFavorites", favIds.length), "success", 3000);
         } else {
-          RS.confirm(favIds.length + " documents removed from favorites", "success", 3000);
-        }
-      } else {
-        apprise("Favorites did not complete: " + getValidationErrorString(result.errorMsg));
+        apprise(RS.msg("legacyjs.workspace.crudOps.favoritesIncomplete", getValidationErrorString(result.errorMsg)));
       }
     }).fail(function () {
-      RS.ajaxFailed("Deleting from favorites", true, jqxhr);
+      RS.ajaxFailed(RS.msg("legacyjs.workspace.crudOps.deletingFromFavoritesAction"), true, jqxhr);
     });
   });
 }

@@ -66,14 +66,14 @@ public class ContainerApiPostValidatorTest extends InventoryRecordValidationTest
     e = resetErrorsAndValidate(container);
     assertEquals(2, e.getErrorCount());
     assertEquals(
-        "errors.inventory.container.gridLayout.missingOptions", e.getFieldError().getCode());
+        "errors.inventory.container.gridLayoutMissingOptions", e.getFieldError().getCode());
 
     // just rows number
     gridLayout.setRowsNumber(2);
     e = resetErrorsAndValidate(container);
     assertEquals(2, e.getErrorCount());
     assertEquals(
-        "errors.inventory.container.gridLayout.missingOptions", e.getFieldError().getCode());
+        "errors.inventory.container.gridLayoutMissingOptions", e.getFieldError().getCode());
 
     // invalid columns number (negative)
     gridLayout.setColumnsNumber(-2);
@@ -113,7 +113,7 @@ public class ContainerApiPostValidatorTest extends InventoryRecordValidationTest
   }
 
   private void assertInvalidSize(Errors e) {
-    assertEquals("errors.inventory.container.gridLayout.invalidSize", e.getFieldError().getCode());
+    assertEquals("errors.inventory.container.gridLayoutInvalidSize", e.getFieldError().getCode());
   }
 
   @Test

@@ -1,7 +1,9 @@
 package com.researchspace.service.impl;
 
 import com.researchspace.service.EmailContent;
+import com.researchspace.service.LocaleBoundMessages;
 import com.researchspace.service.MessageSourceUtils;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
@@ -33,9 +35,9 @@ public class EmailContentGenerator {
       Object[] subjectArgs,
       String htmlTemplate,
       Map<String, Object> velocityModel) {
-    String subject = messages.getMessage(subjectKey, subjectArgs);
-    return fromHtmlFragment(
-        subject, mergeTemplate(htmlTemplate, velocityModel), LocaleContextHolder.getLocale());
+    Locale locale = LocaleContextHolder.getLocale();
+    String subject = messages.getMessage(subjectKey, subjectArgs, locale);
+    return fromHtmlFragment(subject, mergeTemplate(htmlTemplate, velocityModel, locale), locale);
   }
 
   EmailContent fromHtmlFragment(String subject, String htmlFragment, Locale locale) {
@@ -45,7 +47,10 @@ public class EmailContentGenerator {
     return new EmailContent(subject, html, EmailHtmlToPlainText.toPlainText(html));
   }
 
-  private String mergeTemplate(String template, Map<String, Object> velocityModel) {
-    return VelocityEngineUtils.mergeTemplateIntoString(velocity, template, "UTF-8", velocityModel);
+  private String mergeTemplate(
+      String template, Map<String, Object> velocityModel, Locale recipientLocale) {
+    Map<String, Object> model = new HashMap<>(velocityModel);
+    model.putIfAbsent("msg", new LocaleBoundMessages(messages, recipientLocale));
+    return VelocityEngineUtils.mergeTemplateIntoString(velocity, template, "UTF-8", model);
   }
 }

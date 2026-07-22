@@ -46,7 +46,7 @@ public class StringFieldDTOValidatorTest {
     Errors errors = new BeanPropertyBindingResult(NO_NAME, "MyObject");
     validator.validate(NO_NAME, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("no.name", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.noValue.name", errors));
   }
 
   @Test
@@ -57,7 +57,7 @@ public class StringFieldDTOValidatorTest {
     Errors errors = new BeanPropertyBindingResult(nfdto, "MyObject");
     validator.validate(nfdto, errors);
     assertTrue(errors.hasErrors());
-    assertTrue(ValidationTestUtils.hasError("errors.maxlength", errors));
+    assertTrue(ValidationTestUtils.hasError("errors.maxLength", errors));
   }
 
   @Test

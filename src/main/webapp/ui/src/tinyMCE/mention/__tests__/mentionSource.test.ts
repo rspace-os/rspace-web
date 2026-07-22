@@ -127,6 +127,7 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
     : { startContainer: caretNode, startOffset: 0 };
 
   const sandbox: Record<string, unknown> = {
+    RS: { msg: (key: string) => key },
     tinymce: {
       PluginManager: { add: () => {} },
       activeEditor: {

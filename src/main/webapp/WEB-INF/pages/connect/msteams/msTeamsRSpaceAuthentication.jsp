@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 
 <head>
-    <title>RSpace authentication screen for MS Teams</title>
+    <title><spring:message code="connect.msteams.rspaceAuthentication.title"/></title>
     
     <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsThemes.css'/>" rel="stylesheet" />
     <link href="<rst:assetUrl value='/styles/pages/connect/msteams/msTeamsRSpaceAuthentication.css'/>" rel="stylesheet" />

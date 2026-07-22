@@ -46,6 +46,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.FolderNavigationService;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordDeletionManager;
@@ -59,7 +60,6 @@ import com.researchspace.testutils.TestFactory;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.ws.rs.NotFoundException;
@@ -73,7 +73,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.springframework.context.support.StaticMessageSource;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
@@ -96,7 +95,6 @@ public class FolderApiControllerTest {
   Notebook createdNotebook, existingNotebook = null;
   Folder createdFolder;
   Folder topLevelGalleryFolder;
-  StaticMessageSource msg = new StaticMessageSource();
   MockServletContext context = new MockServletContext();
 
   @Before
@@ -122,9 +120,8 @@ public class FolderApiControllerTest {
 
     this.existingNotebook = TestFactory.createANotebook("existing", subject);
     this.existingNotebook.setId(4L);
-    controller.setMessageSource(new MessageSourceUtils(msg));
+    controller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
     controller.setServletContext(context);
-    msg.addMessage("record.inaccessible", Locale.getDefault(), "inaccessible");
   }
 
   @After

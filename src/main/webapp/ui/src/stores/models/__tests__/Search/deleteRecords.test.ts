@@ -81,7 +81,7 @@ describe("action: deleteRecords", () => {
                     internalCode: 40002,
                     message: "Errors detected : 1",
                     messageCode: null,
-                    errors: ["container.deletion.failure.not.empty"],
+                    errors: ["errors.inventory.container.deletion.notEmpty"],
                     iso8601Timestamp: "2024-08-29T08:57:41.817794Z",
                     data: null,
                   },

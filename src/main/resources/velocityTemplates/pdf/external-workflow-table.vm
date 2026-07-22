@@ -1,14 +1,14 @@
 <div class="external-workflow-data">
   <br>
-  <h4>Galaxy Workflow Data</h4>
+  <h4>$msg.getMessage("export.pdf.externalWorkflow.title")</h4>
   <div class="external-workflow-table-container">
     <table class="external-workflow-table">
       <thead>
       <tr>
-        <th>Data Uploaded</th>
-        <th>Container/Galaxy History</th>
-        <th>Invocation</th>
-        <th>Invocation Status</th>
+        <th>$msg.getMessage("export.pdf.externalWorkflow.headerDataUploaded")</th>
+        <th>$msg.getMessage("export.pdf.externalWorkflow.headerContainerHistory")</th>
+        <th>$msg.getMessage("export.pdf.externalWorkflow.headerInvocation")</th>
+        <th>$msg.getMessage("export.pdf.externalWorkflow.headerInvocationStatus")</th>
       </tr>
       </thead>
       <tbody>

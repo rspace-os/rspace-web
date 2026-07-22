@@ -91,7 +91,7 @@ $(document).ready(function (){
 	});
 
 	var paginationEventHandler = function(source, e) {
-		RS.blockPage("Loading the chosen page...", false, $(tableElement));
+		RS.blockPage(RS.msg("legacyjs.common.loadingChosenPage"), false, $(tableElement));
 		let url = createURL(source.attr('id').split("_").slice(1).join("_"));
 		if (RS.webResultCache.get(url) != undefined) {
 			$('#directoryContainer').html(RS.webResultCache.get(url));
@@ -104,7 +104,7 @@ $(document).ready(function (){
 			});
 			jxqr.fail(function() {
 				RS.unblockPage($(tableElement));
-				RS.ajaxFailed("Getting user activity information", false, jxqr);
+				RS.ajaxFailed(RS.msg("legacyjs.admin.gettingUserActivity"), false, jxqr);
 			});
 		}
 	};

@@ -789,7 +789,7 @@ public class SysAdminController extends BaseController {
         errors, "runAsUsername", "errors.required", new Object[] {"username"});
     String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
-      errors.rejectValue("runAsUsername", "system.runAs.invalidusernameformat.msg", null);
+      errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat", null);
     }
     rejectIfNotReauthenticated(runAsUserCmnd.getSysadminPassword(), errors, adminUser);
     if (errors.hasErrors()) {
@@ -887,10 +887,9 @@ public class SysAdminController extends BaseController {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("runAs", runAs);
     velocityModel.put("systemUser", admin);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
         emailContentGenerator.render(
-            "email.admin.operateas.subject",
+            "email.admin.adminRunningAsUserNotification.subject",
             null,
             "adminRunningAsUserNotification.vm",
             velocityModel);

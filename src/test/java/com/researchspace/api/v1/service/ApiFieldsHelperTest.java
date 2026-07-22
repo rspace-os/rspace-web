@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -44,10 +45,7 @@ public class ApiFieldsHelperTest {
 
     Errors errors = new MapBindingResult(new HashMap<>(), "sample");
     helper.validateMandatoryFieldsForEntityPost(
-        "sample",
-        List.of(incoming),
-        List.<InventoryEntityField>of(mandatoryLinkTemplateField()),
-        errors);
+        List.of(incoming), List.<InventoryEntityField>of(mandatoryLinkTemplateField()), errors);
 
     assertFalse(errors.hasErrors(), "a provided link target must satisfy the mandatory link field");
   }
@@ -60,11 +58,9 @@ public class ApiFieldsHelperTest {
 
     Errors errors = new MapBindingResult(new HashMap<>(), "sample");
     helper.validateMandatoryFieldsForEntityPost(
-        "sample",
-        List.of(incoming),
-        List.<InventoryEntityField>of(mandatoryLinkTemplateField()),
-        errors);
+        List.of(incoming), List.<InventoryEntityField>of(mandatoryLinkTemplateField()), errors);
 
     assertTrue(errors.hasErrors(), "a mandatory link field with no link must be rejected");
+    assertEquals("errors.inventory.field.mandatoryFieldEmpty", errors.getFieldError().getCode());
   }
 }

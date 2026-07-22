@@ -1,19 +1,23 @@
 package com.researchspace.export.pdf;
 
 import com.researchspace.archive.ArchivalNfsFile;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.export.pdf.ExportToFileConfig.DATE_FOOTER_PREF;
 import com.researchspace.export.stoichiometry.StoichiometryHtmlGenerator;
 import com.researchspace.model.core.IRSpaceDoc;
 import com.researchspace.model.record.StructuredDocument;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
@@ -36,6 +40,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PdfHtmlGenerator {
   @Autowired private StoichiometryHtmlGenerator stoichiometryHtmlGenerator;
+  @Autowired private MessageSourceUtils messages;
+  @Autowired private UserLocaleService userLocaleService;
   private final VelocityEngine velocityEngine;
 
   private HTMLUnicodeFontProcesser htmlUnicodeFontProcesser;
@@ -52,57 +58,71 @@ public class PdfHtmlGenerator {
 
   public String prepareHtml(
       ExportProcessorInput documentData, IRSpaceDoc doc, ExportToFileConfig config) {
-    String docTitle = StringUtils.abbreviate(doc.getName(), MAX_TITLE_WIDTH);
+    Locale locale = userLocaleService.getLocaleFor(config.getExporter());
+    String docTitle = StringAbbreviationUtils.abbreviate(doc.getName(), MAX_TITLE_WIDTH);
     String pageSize = config.getPageSize().equals("A4") ? "A4" : "LETTER";
-    String footerFormattedDate = formatFooterDate(doc, config);
+    String footerFormattedDate = formatFooterDate(doc, config, locale);
 
     String html = documentData.getDocumentAsHtml();
     html =
         addStyleElement(
             html,
             makeHtmlStyleElement(
-                pageSize, !config.isIncludeFooterAtEndOnly(), footerFormattedDate));
+                pageSize, !config.isIncludeFooterAtEndOnly(), footerFormattedDate, locale));
     html =
         addEachPageElems(
-            html, doc.getOwner().getFullName(), docTitle, config.getExporter().getFullName());
+            html,
+            doc.getOwner().getFullName(),
+            docTitle,
+            config.getExporter().getFullName(),
+            locale);
     html = prepareTables(html);
-    html = addDocExtras(documentData, config, html);
+    html = addDocExtras(documentData, config, html, locale);
     if (config.isIncludeFooterAtEndOnly()) {
-      html = addFooterAtEnd(html, config.getExporter().getFullName(), footerFormattedDate);
+      html = addFooterAtEnd(html, config.getExporter().getFullName(), footerFormattedDate, locale);
     }
     return html;
   }
 
-  private String formatFooterDate(IRSpaceDoc doc, ExportToFileConfig config) {
-    String footerFormattedDate;
+  String formatFooterDate(IRSpaceDoc doc, ExportToFileConfig config, Locale locale) {
     DATE_FOOTER_PREF format = config.getDateTypeEnum();
     if (format == DATE_FOOTER_PREF.NEW) {
-      footerFormattedDate = "Create date: " + simpleDateFmt.format(doc.getCreationDate());
+      return messages.getMessage(
+          "export.pdf.footer.createDate",
+          new Object[] {simpleDateFmt.format(doc.getCreationDate())},
+          locale);
     } else if (format == DATE_FOOTER_PREF.UPD) {
-      footerFormattedDate =
-          "Last updated: " + simpleDateFmt.format(doc.getModificationDateAsDate());
+      return messages.getMessage(
+          "export.pdf.footer.lastUpdated",
+          new Object[] {simpleDateFmt.format(doc.getModificationDateAsDate())},
+          locale);
     } else {
-      footerFormattedDate = "Export date: " + LocalDate.now();
+      return messages.getMessage(
+          "export.pdf.footer.exportDate", new Object[] {LocalDate.now().toString()}, locale);
     }
-    return footerFormattedDate;
   }
 
-  private String makeHtmlStyleElement(String pageSize, boolean footerEachPage, String footerDate) {
+  private String makeHtmlStyleElement(
+      String pageSize, boolean footerEachPage, String footerDate, Locale locale) {
     Map<String, Object> context = new HashMap<>();
     context.put("pageSize", pageSize);
     context.put("footerEachPage", footerEachPage);
     context.put("footerDate", footerDate);
+    context.put(
+        "pageLabel",
+        messages.getMessage("export.pdf.header.pageLabel", null, locale).replace("'", "\\'"));
     return VelocityEngineUtils.mergeTemplateIntoString(
         velocityEngine, "pdf/styles.vm", "UTF-8", context);
   }
 
   private String addEachPageElems(
-      String html, String docOwner, String docTitle, String exporterFullName) {
+      String html, String docOwner, String docTitle, String exporterFullName, Locale locale) {
 
     Map<String, Object> context = new HashMap<>();
     context.put("docOwner", StringEscapeUtils.escapeHtml4(docOwner));
     context.put("docTitle", StringEscapeUtils.escapeHtml4(docTitle));
     context.put("exporterFullName", StringEscapeUtils.escapeHtml4(exporterFullName));
+    context.put("msg", new LocaleBoundMessages(messages, locale));
     String runningPageHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/runningPageElems.vm", "UTF-8", context);
@@ -145,7 +165,7 @@ public class PdfHtmlGenerator {
   }
 
   private String addDocExtras(
-      ExportProcessorInput documentData, ExportToFileConfig config, String html) {
+      ExportProcessorInput documentData, ExportToFileConfig config, String html, Locale locale) {
     // a page break should be inserted (only) once after the main content and before the extra info.
     // where it should be inserted depends on which extras (if any) are to be included in the
     // exported doc.
@@ -153,7 +173,7 @@ public class PdfHtmlGenerator {
     if (config.isComments() && documentData.hasComments()) {
       html = addNewPageBefore(html, "comments");
       newPageAddedForDocExtras = true;
-      html = addComments(html, documentData.getComments());
+      html = addComments(html, documentData.getComments(), locale);
     }
 
     if (config.isProvenance() && documentData.hasRevisionInfo()) {
@@ -161,7 +181,7 @@ public class PdfHtmlGenerator {
         html = addNewPageBefore(html, "provenance");
         newPageAddedForDocExtras = true;
       }
-      html = addProvenance(html, documentData.getRevisionInfo());
+      html = addProvenance(html, documentData.getRevisionInfo(), locale);
     }
     if (documentData.hasStoichiometryTable()) {
       html = stoichiometryHtmlGenerator.addStoichiometryLinks(html, config.getExporter());
@@ -171,7 +191,7 @@ public class PdfHtmlGenerator {
       if (!newPageAddedForDocExtras) {
         html = addNewPageBefore(html, "nfs");
       }
-      html = addNfsLinks(html, documentData.getNfsLinks());
+      html = addNfsLinks(html, documentData.getNfsLinks(), locale);
     }
     return html;
   }
@@ -186,7 +206,7 @@ public class PdfHtmlGenerator {
     return doc.toString();
   }
 
-  private String addNfsLinks(String html, List<ArchivalNfsFile> nfsLinks) {
+  private String addNfsLinks(String html, List<ArchivalNfsFile> nfsLinks, Locale locale) {
     List<NfsTableData> files = new ArrayList<>();
     for (ArchivalNfsFile nfsLink : nfsLinks) {
       files.add(
@@ -197,13 +217,14 @@ public class PdfHtmlGenerator {
     }
     Map<String, Object> context = new HashMap<>();
     context.put("files", files);
+    context.put("msg", new LocaleBoundMessages(messages, locale));
     String nfsTableHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/nfs-table.vm", "UTF-8", context);
     return appendToEndOfBody(html, nfsTableHtml);
   }
 
-  private String addProvenance(String html, RevisionInfo revisionInfo) {
+  private String addProvenance(String html, RevisionInfo revisionInfo, Locale locale) {
     List<ProvenanceTableData> modifications = new ArrayList<>();
     for (int i = 0; i < revisionInfo.getSize(); i++) {
       String version = revisionInfo.getVersion(i);
@@ -215,13 +236,14 @@ public class PdfHtmlGenerator {
     }
     Map<String, Object> context = new HashMap<>();
     context.put("modifications", modifications);
+    context.put("msg", new LocaleBoundMessages(messages, locale));
     String provenanceTableHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/provenance-table.vm", "UTF-8", context);
     return appendToEndOfBody(html, provenanceTableHtml);
   }
 
-  private String addComments(String html, List<CommentAppendix> commentAppendices) {
+  private String addComments(String html, List<CommentAppendix> commentAppendices, Locale locale) {
     Map<Integer, List<String>> commentNumberToComments = new HashMap<>();
     int count = 1;
     for (CommentAppendix commentAppendix : commentAppendices) {
@@ -230,7 +252,9 @@ public class PdfHtmlGenerator {
         String name = commentAppendix.getItemName(i);
         String date = commentAppendix.getItemDate(i);
         String content = commentAppendix.getItemContent(i);
-        String comment = name + date + content;
+        String comment =
+            messages.getMessage(
+                "export.pdf.comments.line", new Object[] {name, date, content}, locale);
         comments.add(comment);
       }
       commentNumberToComments.put(count, comments);
@@ -238,16 +262,19 @@ public class PdfHtmlGenerator {
     }
     Map<String, Object> context = new HashMap<>();
     context.put("commentNumberToComments", commentNumberToComments);
+    context.put("msg", new LocaleBoundMessages(messages, locale));
     String commentsHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/comments.vm", "UTF-8", context);
     return appendToEndOfBody(html, commentsHtml);
   }
 
-  private String addFooterAtEnd(String html, String fullName, String footerFormattedDate) {
+  private String addFooterAtEnd(
+      String html, String fullName, String footerFormattedDate, Locale locale) {
     Map<String, Object> context = new HashMap<>();
     context.put("name", fullName);
     context.put("dateLabel", footerFormattedDate);
+    context.put("msg", new LocaleBoundMessages(messages, locale));
     String footerHtml =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocityEngine, "pdf/footer.vm", "UTF-8", context);

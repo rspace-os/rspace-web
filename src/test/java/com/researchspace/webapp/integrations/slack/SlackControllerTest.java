@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.researchspace.model.User;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserAppConfigManager;
 import com.researchspace.slack.SlackMessage;
@@ -18,26 +19,20 @@ import java.util.*;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.context.support.StaticMessageSource;
 
 public class SlackControllerTest {
 
   private SlackController slackController = new SlackController();
 
   private UserAppConfigManager userAppCfgMgr = mock(UserAppConfigManager.class);
-  StaticMessageSource messageSource = new StaticMessageSource();
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @Before
   public void setUp() throws Exception {
-    messageSource.addMessage(
-        "apps.slack.saveconversation.genericDefault", Locale.getDefault(), "genericDefault");
-    messageSource.addMessage(
-        "apps.slack.saveconversation.maxtimeperiod", Locale.getDefault(), "maxTime");
-    messageSource.addMessage("apps.slack.error.noconnecteduser", Locale.getDefault(), "noUser");
     slackController.setVerificationToken("dummyToken");
     slackController.setUserAppCfgMgr(userAppCfgMgr);
     slackController.setClock(Clock.fixed(Instant.parse("2017-12-28T01:23:45Z"), ZoneId.of("UTC")));
-    slackController.setMessageSource(new MessageSourceUtils(messageSource));
+    slackController.setMessageSource(messages);
   }
 
   @Test
@@ -49,16 +44,23 @@ public class SlackControllerTest {
     Map<String, String> params = getParamsWithGoodToken();
     params.put("text", "");
     SlackMessage noTimePeriodResponse = slackController.saveConversation(params);
-    assertEquals("genericDefault", noTimePeriodResponse.getText());
+    assertEquals(
+        "Please provide a valid time period, e.g. '7 days' or '7d'",
+        noTimePeriodResponse.getText());
 
     params.put("text", "91d");
     SlackMessage tooLongPeriodResponse = slackController.saveConversation(params);
-    assertEquals("maxTime", tooLongPeriodResponse.getText());
+    assertEquals(
+        messages.getMessage("apps.slack.saveConversation.maxTimePeriod", new Object[] {"90"}),
+        tooLongPeriodResponse.getText());
 
     params.put("text", "90d");
     SlackMessage okResponse = slackController.saveConversation(params);
     // passed the time limit
-    assertEquals("noUser", okResponse.getText());
+    assertEquals(
+        "There are no RSpace users associated with this Slack account! Please connect to Slack"
+            + " from the RSpace Apps tab.",
+        okResponse.getText());
   }
 
   @Test

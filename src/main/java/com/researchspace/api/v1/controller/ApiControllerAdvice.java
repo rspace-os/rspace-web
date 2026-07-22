@@ -208,7 +208,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
 
     for (ObjectError error : ex.getBindingResult().getGlobalErrors()) {
       String resolvedMessage = messages.getMessage(error);
-      errors.add(error.getObjectName() + ": " + messages.getMessage(error));
+      errors.add(error.getObjectName() + ": " + resolvedMessage);
       bindErrors.add(new BindError(error, () -> resolvedMessage));
     }
     BindErrorList errorList = new BindErrorList(bindErrors);

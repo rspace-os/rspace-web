@@ -96,7 +96,6 @@ public class ExportController extends BaseController {
 
   public static final String IMPORT_FORM_ERROR_ATTR_NAME = "importFormError";
   public static final String IMPORT_ONTOLOGY_ERROR_ATTR_NAME = "importOntologyError";
-  public static final String PLEASE_UPLOAD_A_CSV_FILE = "Please upload a CSV file";
 
   public static final int maxIdsToProcess = 100;
 
@@ -129,14 +128,16 @@ public class ExportController extends BaseController {
 
   private void validateAppIsRepository(StringBuilder erbf, App app) {
     if (!app.isRepositoryApp()) {
-      erbf.append(getText("invalid.app.choice", new String[] {app.getName(), "Repository"}));
+      erbf.append(getText("workspace.export.invalidRepositoryApp", new Object[] {app.getName()}));
     }
   }
 
   private void validateCfgIfExists(
       Long appConfigSetId, StringBuilder erbf, Optional<AppConfigElementSet> cfg) {
     if (appConfigSetId > 0 && !cfg.isPresent()) {
-      erbf.append(getResourceNotFoundMessage("Dataverse config", appConfigSetId));
+      erbf.append(
+          getText(
+              "workspace.export.repositoryConfigurationNotFound", new Object[] {appConfigSetId}));
     }
   }
 
@@ -183,7 +184,7 @@ public class ExportController extends BaseController {
     if (!m.matches()) {
       throw new IllegalArgumentException(
           getText(
-              "errors.invalidstringformat",
+              "errors.invalidStringFormat",
               new String[] {pdfname, "pdfName", VALID_PDF_FILE_CHARS.toString()}));
     }
     User user = getUserByUsername(principal.getName());
@@ -203,15 +204,22 @@ public class ExportController extends BaseController {
 
     ProgressMonitor progress =
         createProgressMonitor(
-            RS_IMPORT_XML_ARCHIVE_PROGRESS, 100_000, "Importing XML archive", session);
+            RS_IMPORT_XML_ARCHIVE_PROGRESS,
+            100_000,
+            getText("importExport.progress.archive"),
+            session);
     if (file == null || file.isEmpty()) {
       return returnToDashboardPageWithErrorMsg(
-          ra, getText("importArchive.badformat.msg"), IMPORT_FORM_ERROR_ATTR_NAME);
+          ra,
+          getText("importExport.import.badFormat.unsupportedFileType"),
+          IMPORT_FORM_ERROR_ATTR_NAME);
     }
     if (!file.getOriginalFilename().endsWith("zip")
         && !file.getOriginalFilename().endsWith(".eln")) {
       return returnToDashboardPageWithErrorMsg(
-          ra, getText("importArchive.badformat.msg"), IMPORT_FORM_ERROR_ATTR_NAME);
+          ra,
+          getText("importExport.import.badFormat.unsupportedFileType"),
+          IMPORT_FORM_ERROR_ATTR_NAME);
     }
 
     return doImport(
@@ -234,14 +242,17 @@ public class ExportController extends BaseController {
 
     ProgressMonitor progress =
         createProgressMonitor(
-            RS_IMPORT_XML_ARCHIVE_PROGRESS, 100_000, "Importing Ontology File", session);
+            RS_IMPORT_XML_ARCHIVE_PROGRESS,
+            100_000,
+            getText("importExport.progress.ontology"),
+            session);
     if (file == null || file.isEmpty()) {
       return returnToDashboardPageWithErrorMsg(
-          ra, PLEASE_UPLOAD_A_CSV_FILE, IMPORT_ONTOLOGY_ERROR_ATTR_NAME);
+          ra, getText("importExport.import.errors.csvRequired"), IMPORT_ONTOLOGY_ERROR_ATTR_NAME);
     }
     if (!file.getOriginalFilename().endsWith("csv")) {
       return returnToDashboardPageWithErrorMsg(
-          ra, PLEASE_UPLOAD_A_CSV_FILE, IMPORT_ONTOLOGY_ERROR_ATTR_NAME);
+          ra, getText("importExport.import.errors.csvRequired"), IMPORT_ONTOLOGY_ERROR_ATTR_NAME);
     }
 
     return doOntologyImport(
@@ -260,7 +271,7 @@ public class ExportController extends BaseController {
     try {
       ontologyImportManager.writeImportToOntologyDoc(
           multipartfile.getInputStream(), dataColumn, urlColumn, ontologyName, ontologyVersion);
-      progress.setDescription("Import completed, redirecting");
+      progress.setDescription(getText("importExport.progress.completed"));
       return "redirect:/workspace";
     } catch (ImportFailureException e) {
       return returnToDashboardPageWithErrorMsg(
@@ -278,13 +289,13 @@ public class ExportController extends BaseController {
       Principal principal) {
     try {
       ImportArchiveReport report = importer.get();
-      progress.setDescription("Import completed, redirecting");
+      progress.setDescription(getText("importExport.progress.completed"));
       session.setAttribute(SessionAttributeUtils.LATEST_IMPORT_REPORT, report);
       return "redirect:/import/archiveImportReport"; // redirect after post
     } catch (Exception e) {
       return returnToDashboardPageWithErrorMsg(
           model,
-          getText("importArchive.failure.msg") + e.getMessage(),
+          getText("importExport.import.errors.details", new Object[] {e.getMessage()}),
           IMPORT_FORM_ERROR_ATTR_NAME);
     } finally {
       ontologyImportManager.updateImportedOntologiesWithCorrectForm(principal.getName());
@@ -314,12 +325,14 @@ public class ExportController extends BaseController {
     if (errors.hasErrors()) {
       return returnToDashboardPageWithErrorMsg(
           ra,
-          "File "
-              + serverPath
-              + " is not a valid archive path on the server - must be a readable .zip file"
-              + errors.getAllErrors().stream()
-                  .map(ObjectError::getDefaultMessage)
-                  .collect(Collectors.joining(",")),
+          getText(
+              "importExport.import.errors.invalidServerPath",
+              new Object[] {
+                serverPath,
+                errors.getAllErrors().stream()
+                    .map(ObjectError::getDefaultMessage)
+                    .collect(Collectors.joining(","))
+              }),
           IMPORT_FORM_ERROR_ATTR_NAME);
     }
 
@@ -327,12 +340,17 @@ public class ExportController extends BaseController {
     if (!file.exists() || !file.canRead()) {
       return returnToDashboardPageWithErrorMsg(
           ra,
-          "File " + serverPath.getServerFilePath() + " either does not exist, or cannot be read.",
+          getText(
+              "importExport.import.errors.serverFileUnreadable",
+              new Object[] {serverPath.getServerFilePath()}),
           IMPORT_FORM_ERROR_ATTR_NAME);
     }
     ProgressMonitor progress =
         createProgressMonitor(
-            RS_IMPORT_XML_ARCHIVE_PROGRESS, 100_000, "Importing XML archive", session);
+            RS_IMPORT_XML_ARCHIVE_PROGRESS,
+            100_000,
+            getText("importExport.progress.archive"),
+            session);
     return doImport(
         () -> performFileImport(principal, progress, file), session, ra, progress, principal);
   }
@@ -394,45 +412,39 @@ public class ExportController extends BaseController {
     switch (exportSelection.getType()) {
       case SELECTION:
         if (exportSelection.getExportIds() == null) {
-          errorBuffer.append(
-              getText("errors.required.field", new String[] {"exportSelection.exportIds"}));
+          errorBuffer.append(getText("workspace.export.selectionIdsRequired"));
           return true;
         }
         if (exportSelection.getExportNames() == null) {
-          errorBuffer.append(
-              getText("errors.required.field", new String[] {"exportSelection.exportNames"}));
+          errorBuffer.append(getText("workspace.export.selectionNamesRequired"));
           return true;
         }
         if (exportSelection.getExportTypes() == null) {
-          errorBuffer.append(
-              getText("errors.required.field", new String[] {"exportSelection.exportTypes"}));
+          errorBuffer.append(getText("workspace.export.selectionTypesRequired"));
           return true;
         }
         if (exportSelection.getExportTypes().length > maxIdsToProcess
             || exportSelection.getExportIds().length > maxIdsToProcess
             || exportSelection.getExportNames().length > maxIdsToProcess) {
-          errorBuffer.append(getText("errors.too.manyitems", new String[] {maxIdsToProcess + ""}));
+          errorBuffer.append(
+              getText("errors.valueCount.tooMany", new String[] {maxIdsToProcess + ""}));
           return true;
         }
         break;
       case USER:
         if (exportSelection.getUsername() == null || exportSelection.getUsername().isEmpty()) {
-          errorBuffer.append(
-              getText("errors.required.field", new String[] {"exportSelection.username"}));
+          errorBuffer.append(getText("workspace.export.usernameRequired"));
           return true;
         }
         if (exportSelection.getUsername().length() > User.MAX_UNAME_LENGTH) {
           errorBuffer.append(
-              getText(
-                  "errors.maxlength",
-                  new String[] {"userId", Integer.toString(User.MAX_UNAME_LENGTH)}));
+              getText("workspace.export.usernameTooLong", new Object[] {User.MAX_UNAME_LENGTH}));
           return true;
         }
         break;
       case GROUP:
         if (exportSelection.getGroupId() == null) {
-          errorBuffer.append(
-              getText("errors.required.field", new String[] {"exportSelection.group"}));
+          errorBuffer.append(getText("workspace.export.groupRequired"));
           return true;
         }
         break;
@@ -440,6 +452,11 @@ public class ExportController extends BaseController {
         return true;
     }
     return false;
+  }
+
+  private String getExportFailureMessage(String detail) {
+    return getText(
+        "workspace.export.failureMessage", new Object[] {getText("common:actions.export"), detail});
   }
 
   /**
@@ -468,14 +485,10 @@ public class ExportController extends BaseController {
       try {
         projectGroup = groupManager.getGroup(exportConfig.getProjectGroupId());
       } catch (ObjectRetrievalFailureException ex) {
-        return getText(
-            "workspace.export.msgFailure",
-            new String[] {
-              "Export",
-              "The projectGroup with ID \""
-                  + exportConfig.getProjectGroupId()
-                  + "\" does not exists."
-            });
+        return getExportFailureMessage(
+            getText(
+                "workspace.export.projectGroupNotFound",
+                new Object[] {exportConfig.getProjectGroupId()}));
       }
     }
 
@@ -483,23 +496,18 @@ public class ExportController extends BaseController {
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(errors, el);
-      return getText(
-          "workspace.export.msgFailure",
-          new String[] {"Export", el.getAllErrorMessagesAsStringsSeparatedBy(",")});
+      return getExportFailureMessage(el.getAllErrorMessagesAsStringsSeparatedBy(","));
     }
 
     // Checks for any missing or invalid data in exportSelection
     StringBuilder errorBuffer = new StringBuilder();
     if (checkForExportSelectionErrors(exportSelection, errorBuffer)) {
-      return getText(
-          "workspace.export.msgFailure", new String[] {"Export", errorBuffer.toString()});
+      return getExportFailureMessage(errorBuffer.toString());
     }
 
     // RSPAC-900 only single files currently supported
     if (isMultiDocWordExport(exportSelection.getExportIds(), exportToFileConfig)) {
-      return getText(
-          "workspace.export.msgFailure",
-          new String[] {"Export", getMultiDocExportErrorMsg(errorBuffer)});
+      return getExportFailureMessage(getMultiDocExportErrorMsg());
     }
     User exporter = getUserByUsername(principal.getName());
 
@@ -525,9 +533,7 @@ public class ExportController extends BaseController {
           break;
         case USER:
           if (isWordExport(exportToFileConfig)) {
-            return getText(
-                "workspace.export.msgFailure",
-                new String[] {"Export", getMultiDocExportErrorMsg(errorBuffer)});
+            return getExportFailureMessage(getMultiDocExportErrorMsg());
           }
 
           User userToExport = userManager.getUserByUsername(exportSelection.getUsername());
@@ -542,9 +548,7 @@ public class ExportController extends BaseController {
           break;
         case GROUP:
           if (isWordExport(exportToFileConfig)) {
-            return getText(
-                "workspace.export.msgFailure",
-                new String[] {"Export", getMultiDocExportErrorMsg(new StringBuilder())});
+            return getExportFailureMessage(getMultiDocExportErrorMsg());
           }
 
           if (groupPermUtils.userCanExportGroup(
@@ -553,11 +557,7 @@ public class ExportController extends BaseController {
                 exportManager.asyncExportGroupToPdf(
                     exportToFileConfig, exporter, exportSelection.getGroupId());
           } else {
-            return getText(
-                "workspace.export.msgFailure",
-                new String[] {
-                  "Export", "only PIs or LabAdmins with view all permissions can export a group"
-                });
+            return getExportFailureMessage(getText("workspace.export.groupPermissionDenied"));
           }
           break;
       }
@@ -577,9 +577,9 @@ public class ExportController extends BaseController {
       }
     } catch (Exception e) {
       handleUnexpectedRollbackException(e);
-      return getText("workspace.export.msgFailure", new String[] {"Export", e.getMessage()});
+      return getExportFailureMessage(e.getMessage());
     }
-    return getText("pdfArchiving.submission.successMsg");
+    return getText("importExport.pdfArchiving.submission.success");
   }
 
   @Data
@@ -601,17 +601,14 @@ public class ExportController extends BaseController {
     Optional<AppConfigElementSet> optionalAppConfig =
         userAppConfigMgr.findByAppConfigElementSetId(repositoryConfig.getRepoCfg());
     validateCfgIfExists(repositoryConfig.getRepoCfg(), errorBuffer, optionalAppConfig);
-    String msg = "";
     if (errorBuffer.length() > 0) {
-      msg = getText("workspace.export.msgFailure", new String[] {"Export", errorBuffer.toString()});
-      return new RepoDepositPreDepositValidation(msg);
+      return new RepoDepositPreDepositValidation(getExportFailureMessage(errorBuffer.toString()));
     }
 
     App app = userAppConfigMgr.getByAppName(repositoryConfig.getAppName(), exporter).getApp();
     validateAppIsRepository(errorBuffer, app);
     if (errorBuffer.length() > 0) {
-      msg = getText("workspace.export.msgFailure", new String[] {"Export", errorBuffer.toString()});
-      return new RepoDepositPreDepositValidation(msg);
+      return new RepoDepositPreDepositValidation(getExportFailureMessage(errorBuffer.toString()));
     }
     RepoDepositPreDepositValidation rc = new RepoDepositPreDepositValidation();
     rc.setApp(app);
@@ -692,14 +689,10 @@ public class ExportController extends BaseController {
       try {
         projectGroup = groupManager.getGroup(exportDialogConfig.getProjectGroupId());
       } catch (ObjectRetrievalFailureException ex) {
-        return getText(
-            "workspace.export.msgFailure",
-            new String[] {
-              "Export",
-              "The projectGroup with ID \""
-                  + exportDialogConfig.getProjectGroupId()
-                  + "\" does not exists."
-            });
+        return getExportFailureMessage(
+            getText(
+                "workspace.export.projectGroupNotFound",
+                new Object[] {exportDialogConfig.getProjectGroupId()}));
       }
     }
 
@@ -707,16 +700,13 @@ public class ExportController extends BaseController {
     if (errors.hasErrors()) {
       ErrorList el = new ErrorList();
       inputValidator.populateErrorList(errors, el);
-      return getText(
-          "workspace.export.msgFailure",
-          new String[] {"Export", el.getAllErrorMessagesAsStringsSeparatedBy(",")});
+      return getExportFailureMessage(el.getAllErrorMessagesAsStringsSeparatedBy(","));
     }
 
     // Checks for any missing or invalid data in exportSelection
     StringBuilder errorBuffer = new StringBuilder();
     if (checkForExportSelectionErrors(exportSelection, errorBuffer)) {
-      return getText(
-          "workspace.export.msgFailure", new String[] {"Export", errorBuffer.toString()});
+      return getExportFailureMessage(errorBuffer.toString());
     }
 
     // Check enough disk space for an archive
@@ -756,11 +746,7 @@ public class ExportController extends BaseController {
                 exportManager.asyncExportGroupToArchive(
                     exportCfg, exporter, groupId, baseUri, standardPostExport);
           } else {
-            return getText(
-                "workspace.export.msgFailure",
-                new String[] {
-                  "Export", "only PIs or LabAdmins with view all permissions can export a group"
-                });
+            return getExportFailureMessage(getText("workspace.export.groupPermissionDenied"));
           }
           break;
       }
@@ -781,21 +767,17 @@ public class ExportController extends BaseController {
       }
     } catch (Exception e) {
       handleUnexpectedRollbackException(e);
-      return getText("workspace.export.msgFailure", new String[] {"Export", e.getMessage()});
+      return getExportFailureMessage(e.getMessage());
     }
 
-    return getText("pdfArchiving.submission.successMsg");
+    return getText("importExport.pdfArchiving.submission.success");
   }
 
   private String getRaidValidationError(AbstractExportDialog exportDialog) {
-    return getText(
-        "workspace.export.msgFailure",
-        new String[] {
-          "Export",
-          "The projectID \""
-              + exportDialog.getProjectGroupId()
-              + "\" has not got any RaidAssociated"
-        });
+    return getExportFailureMessage(
+        getText(
+            "workspace.export.raidAssociationMissing",
+            new Object[] {exportDialog.getProjectGroupId()}));
   }
 
   private boolean validateRaidAndDecorate(
@@ -827,10 +809,8 @@ public class ExportController extends BaseController {
     }
   }
 
-  private String getMultiDocExportErrorMsg(StringBuilder erbf) {
-    erbf.append(
-        getText("errors.unsupported", new String[] {"'Export to Word of multiple documents'"}));
-    return erbf.toString();
+  private String getMultiDocExportErrorMsg() {
+    return getText("workspace:export.format.chooser.wordErrors.multiple");
   }
 
   private boolean isMultiDocWordExport(Long[] exportIds, ExportToFileConfig exportCfg) {

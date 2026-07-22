@@ -74,7 +74,7 @@ public class CommunityAdminController extends BaseController {
       throwAuthorisationException(communityId, subject, PermissionType.WRITE);
     }
     if (Community.DEFAULT_COMMUNITY_ID.equals(communityId)) {
-      ErrorList errors = ErrorList.of(getText("community.removeFromDefaultProhibited.msg"));
+      ErrorList errors = ErrorList.of(getText("community.errors.removeFromDefaultProhibited"));
       return new AjaxReturnObject<Long>(null, errors);
     }
     for (Long id : groupIds) {
@@ -98,7 +98,7 @@ public class CommunityAdminController extends BaseController {
       @RequestParam("from") Long cmmunityIdFrom,
       @RequestParam("to") Long cmmunityIdTo) {
     if (cmmunityIdFrom.equals(cmmunityIdTo)) {
-      ErrorList errors = ErrorList.of(getText("community.moveSrcTargetSame.msg"));
+      ErrorList errors = ErrorList.of(getText("community.errors.moveSrcTargetSame"));
       return new AjaxReturnObject<Long>(null, errors);
     }
     User user = userManager.getAuthenticatedUserInSession();
@@ -185,7 +185,7 @@ public class CommunityAdminController extends BaseController {
   private void throwAuthorisationException(Long id, User subject, PermissionType permType) {
     throw new AuthorizationException(
         getText(
-            "authorisation.failed",
+            "errors.authorization.failed",
             new Object[] {"Community", id, subject.getFullName(), permType}));
   }
 
@@ -232,7 +232,7 @@ public class CommunityAdminController extends BaseController {
               subject, result.getEntity(), AuditAction.WRITE, "removed admin [" + adminId + "]"));
       return new AjaxReturnObject<Boolean>(true, null);
     } else {
-      ErrorList el = ErrorList.of("Could not remove admin from this community!");
+      ErrorList el = ErrorList.of(getText("community.errors.removeAdminFailed"));
       return new AjaxReturnObject<Boolean>(null, el);
     }
   }
@@ -333,9 +333,7 @@ public class CommunityAdminController extends BaseController {
             .equalsIgnoreCase(HierarchicalPermission.DENIED.name())
         && !newValue.equalsIgnoreCase(HierarchicalPermission.DENIED.name())) {
       return new AjaxReturnObject<>(
-          null,
-          ErrorList.of(
-              "System setting was set to DENIED by system admin and cannot be overridden."));
+          null, ErrorList.of(getText("community.settings.errors.systemDenied")));
     }
 
     SystemPropertyValue systemPropertyValue =

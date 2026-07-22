@@ -11,7 +11,7 @@ $(document).ready(function (){
 		var jxqr = $.post(url,data, function(rc){
 			if(rc.data  == 'EDIT_MODE') {
 				 $().toastmessage('showToast', {
-		         text     : "Restored",
+		         text     : RS.msg("legacyjs.workspace.revisionHistory.restoredToast"),
 		         sticky   : false,
 		         position : 'top-right',
 		         type     : 'success',
@@ -24,7 +24,7 @@ $(document).ready(function (){
 			}  			
 		});
 		jxqr.fail (function (){
-			RS.ajaxFailed("Restore", false, jxqr);
+			RS.ajaxFailed(RS.msg("legacyjs.workspace.revisionHistory.restoreAction"), false, jxqr);
 		});
 		
 	});
@@ -89,7 +89,9 @@ function init (){
 }
 
 function _getMustacheTemplate(){
-	return "<span class='templateCreateRevision'> {{deltaType}}  <a href='/globalId/{{globalId}}'>{{globalId}}</a> owned by <a href='/userform?userId={{ownerId}}'>{{ownerName}} </span>";
+	return "<span class='templateCreateRevision'> {{deltaType}}  <a href='/globalId/{{globalId}}'>{{globalId}}</a> "
+		+ RS.msg("legacyjs.workspace.revisionHistory.ownedBy")
+		+ " <a href='/userform?userId={{ownerId}}'>{{ownerName}} </span>";
 }
 
 function returnKeyPress(e){

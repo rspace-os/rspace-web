@@ -5,17 +5,21 @@ import static java.util.stream.Collectors.joining;
 
 import com.researchspace.core.util.DateUtil;
 import com.researchspace.core.util.ISearchResults;
+import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.model.audittrail.AuditAction;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.audit.search.AuditTrailSearchResult;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,10 +34,31 @@ public class AuditTrailSearchResultCsvGenerator {
   static final String ATTACHMENT_FILENAME_RSPACE_AUDIT_TRAIL_CSV =
       "attachment; filename=\"rspace-audit-trail.csv\"";
   static final int MAX_RESULTS_PER_CSV = 10_000;
-  static final String MAX_RESULTS_EXCEEDED =
-      String.format("Results are truncated at %d results", MAX_RESULTS_PER_CSV);
+  private static final Locale CSV_LOCALE = Locale.US;
 
+  @Autowired private MessageSourceUtils messages;
+
+  String getMaxResultsExceededMessage() {
+    return messages.getMessage(
+        "export.audit.csv.maxResultsExceeded", new Object[] {MAX_RESULTS_PER_CSV}, CSV_LOCALE);
+  }
+
+  // CsvBeanWriter property names; these must match AuditTrailCSVConverterInput fields.
   private String[] HEADER = {"time", "user", "action", "type", "resource", "name", "description"};
+
+  // All CSV text remains en-US because consumers treat it as a stable contract.
+  private String[] getDisplayHeader() {
+    return new String[] {
+      messages.getMessage("common:profile.accountActivity.time", null, CSV_LOCALE),
+      messages.getMessage("common:userDetails.roles.user", null, CSV_LOCALE),
+      messages.getMessage("common:profile.accountActivity.action", null, CSV_LOCALE),
+      messages.getMessage("export.audit.csv.headerType", null, CSV_LOCALE),
+      messages.getMessage("export.audit.csv.headerResource", null, CSV_LOCALE),
+      messages.getMessage("export.audit.csv.headerName", null, CSV_LOCALE),
+      messages.getMessage("export.audit.csv.headerDescription", null, CSV_LOCALE)
+    };
+  }
+
   private static final CellProcessor[] CELL_PROCESSORS =
       new CellProcessor[] {
         null,
@@ -52,7 +77,7 @@ public class AuditTrailSearchResultCsvGenerator {
     try (CsvBeanWriter beanWriter =
         new CsvBeanWriter(swStringWriter, CsvPreference.STANDARD_PREFERENCE)) {
 
-      beanWriter.writeHeader(HEADER);
+      beanWriter.writeHeader(getDisplayHeader());
       beanWriter.writeComment(createComment(inputSearchConfig, res));
 
       List<AuditTrailSearchResult> auditEntries = res.getResults();
@@ -115,22 +140,25 @@ public class AuditTrailSearchResultCsvGenerator {
   }
 
   private String generateExportDetails(List<Map<String, Object>> exportedList) {
-    String rc;
-    rc = exportedList.size() + " item(s) exported: ";
     // join with ';' as is going to CSV
     String ids = exportedList.stream().map(m -> m.get("id").toString()).collect(joining(";"));
-    rc = rc + StringUtils.abbreviate(ids, 100);
-    return rc;
+    return messages.getMessage(
+        "export.audit.csv.exportedItemCount",
+        new Object[] {exportedList.size(), StringAbbreviationUtils.abbreviate(ids, 100)},
+        CSV_LOCALE);
   }
 
   private String generateMoveDetails(
       Map<String, Map<String, Object>> from, Map<String, Map<String, Object>> to) {
-    return String.format(
-        "From %s (%s) to %s (%s)",
-        from.get("data").get("name"),
-        from.get("data").get("id"),
-        to.get("data").get("name"),
-        to.get("data").get("id"));
+    return messages.getMessage(
+        "export.audit.csv.moveDetails",
+        new Object[] {
+          from.get("data").get("name"),
+          from.get("data").get("id"),
+          to.get("data").get("name"),
+          to.get("data").get("id")
+        },
+        CSV_LOCALE);
   }
 
   private ResponseEntity<String> createCsvEntityResponse(String csv) {
@@ -144,11 +172,14 @@ public class AuditTrailSearchResultCsvGenerator {
   private String createComment(
       AuditTrailUISearchConfig inputSearchConfig, ISearchResults<AuditTrailSearchResult> res) {
     String comment =
-        String.format(
-            "# audit trail download generated at %s.",
-            DateUtil.convertDateToISOFormat(Instant.now().toEpochMilli(), TimeZone.getDefault()));
+        messages.getMessage(
+            "export.audit.csv.commentGeneratedAt",
+            new Object[] {
+              DateUtil.convertDateToISOFormat(Instant.now().toEpochMilli(), TimeZone.getDefault())
+            },
+            CSV_LOCALE);
     if (res.getTotalHits().intValue() >= MAX_RESULTS_PER_CSV) {
-      comment = comment + " " + MAX_RESULTS_EXCEEDED;
+      comment = comment + " " + getMaxResultsExceededMessage();
     }
     return comment;
   }

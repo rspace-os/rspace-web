@@ -12,7 +12,7 @@ public class ContainerApiPostValidator extends ContainerApiValidator {
   @Override
   public void validate(Object target, Errors errors) {
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, "name is required");
+        errors, "name", "errors.required", new Object[] {"name"}, null);
     validateIncomingContainerFields((ApiContainer) target, errors);
     validateNewGridConfigOptions((ApiContainer) target, errors);
   }
@@ -23,7 +23,7 @@ public class ContainerApiPostValidator extends ContainerApiValidator {
           "cType",
           "errors.required",
           new Object[] {"Container type (cType) (LIST, GRID or IMAGE)"},
-          "cTypeRequired");
+          null);
       return;
     }
     // if we want a grid, a valid grid layout is present
@@ -33,16 +33,16 @@ public class ContainerApiPostValidator extends ContainerApiValidator {
             "gridLayout",
             "errors.required",
             new Object[] {"Grid layout must be set for a grid container"},
-            "Grid layout required");
+            null);
       } else if (target.getGridLayout().getColumnsNumber() == null
           || target.getGridLayout().getColumnsNumber() == 0
           || target.getGridLayout().getRowsNumber() == null
           || target.getGridLayout().getRowsNumber() == 0) {
         errors.rejectValue(
             "gridLayout",
-            "errors.inventory.container.gridLayout.invalidSize",
+            "errors.inventory.container.gridLayoutInvalidSize",
             new Object[] {0, 0},
-            "Valid grid size required");
+            null);
       }
     }
   }

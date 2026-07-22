@@ -67,7 +67,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     if (passwordRequiredButBlank(
             userForm.getPassword(), userForm.getPasswordConfirmation(), userForm.isLdapAuthChoice())
         || affiliationRequiredButBlank(userForm.getPassword())) {
-      errorList.addErrorMsg(getText("errors.allfields.required"));
+      errorList.addErrorMsg(getText("errors.allFields.required"));
     }
 
     /* Username validation */
@@ -92,7 +92,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     if (!Role.isRoleStringIdentifiable(role)) {
       errorList.addErrorMsg(
           getText(
-              "errors.invalid.roleidentifier",
+              "errors.invalid.roleIdentifier",
               new Object[] {role, StringUtils.join(Role.getValidRoles())}));
       return new AjaxReturnObject<User>(null, errorList);
     }
@@ -116,7 +116,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
         groupManager.addUserToGroup(
             userForm.getUsername(), userForm.getLabGroupId(), RoleInGroup.DEFAULT);
       } else {
-        errorList.addErrorMsg(getText("errors.user.notingroup"));
+        errorList.addErrorMsg(getText("errors.user.notInGroup"));
       }
 
     } else if (isPIRole && (isSubjectSysAdmin || isSubjectRSpaceAdmin)) {
@@ -134,7 +134,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
           communityService.addGroupToCommunity(
               newLabGroup.getId(), userForm.getCommunityId(), subject);
         } else {
-          errorList.addErrorMsg(getText("errors.missinggroup.name"));
+          errorList.addErrorMsg(getText("errors.missingGroup.name"));
           return new AjaxReturnObject<User>(null, errorList);
         }
       } else {
@@ -158,7 +158,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
             communityService.addAdminsToCommunity(new Long[] {newUser.getId()}, community.getId());
         communityService.save(comm);
       } else {
-        errorList.addErrorMsg(getText("errors.adminnotincommunity"));
+        errorList.addErrorMsg(getText("errors.adminNotInCommunity"));
       }
 
     } else if (isSysAdminRole) {
@@ -179,7 +179,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   }
 
   private String getText(String string, Object[] args) {
-    return messageSource.getMessage(string, new Object[] {}, Locale.getDefault());
+    return messageSource.getMessage(string, args, Locale.getDefault());
   }
 
   private String getText(String string) {
@@ -258,10 +258,10 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     velocityModel.put("newUser", newUser);
     velocityModel.put("newUserRole", role.split("_")[1]);
     velocityModel.put("adminUser", adminUser);
-    velocityModel.put("htmlPrefix", properties.getServerUrl());
+    velocityModel.put("baseURL", properties.getServerUrl());
     EmailContent content =
         emailContentGenerator.render(
-            "email.newuseraccount.complete.subject",
+            "email.account.newUserAccountComplete.subject",
             null,
             "newUserAccountComplete.vm",
             velocityModel);

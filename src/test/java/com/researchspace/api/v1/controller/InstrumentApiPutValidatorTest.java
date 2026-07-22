@@ -70,7 +70,7 @@ public class InstrumentApiPutValidatorTest extends InventoryRecordValidationTest
     apiInstrument.setApiTagInfo("<script>"); // contains invalid chars
     Errors e = new BeanPropertyBindingResult(apiInstrument, "instrumentPut");
     validator.validate(apiInstrument, e);
-    assertEquals("errors.invalidchars", e.getGlobalError().getCode());
+    assertEquals("errors.invalidChars", e.getGlobalError().getCode());
   }
 
   @Test

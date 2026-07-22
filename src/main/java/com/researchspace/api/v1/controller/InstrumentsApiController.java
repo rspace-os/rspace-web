@@ -296,7 +296,11 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
       return instrumentApiMgr.assertUserCanReadInstrumentTemplateWithPopulatedFields(
           apiInstrument.getTemplateId(), user);
     } catch (NotFoundException e) {
-      errors.rejectValue("templateId", "", e.getMessage());
+      errors.rejectValue(
+          "templateId",
+          "errors.inventory.instrument.templateNotFound",
+          new Object[] {apiInstrument.getTemplateId()},
+          null);
       throwBindExceptionIfErrors(errors);
     }
     return null;

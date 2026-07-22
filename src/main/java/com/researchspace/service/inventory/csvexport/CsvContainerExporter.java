@@ -47,7 +47,7 @@ public class CsvContainerExporter extends InventoryItemCsvExporter {
       List<Container> containers, CsvExportMode exportMode) {
     List<String> columnNames = super.getBasicColumnNamesForCsv(exportMode);
     for (ExportableInvRecProperty prop : CONTAINER_EXPORTABLE_PROPS) {
-      columnNames.add(prop.getCsvColumnHeader());
+      columnNames.add(prop.getCsvColumnHeader(messages));
     }
     columnNames.addAll(
         getExtraFieldColumnNamesForCsv(getExtraFieldsFromAllItems(containers), exportMode));

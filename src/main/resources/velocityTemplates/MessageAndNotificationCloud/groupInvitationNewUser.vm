@@ -1,24 +1,31 @@
-
-
-Hello,
+$msg.getMessage("email.common.greetingDefault")
 <p>
-Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to join their RSpace group '${group.displayName}'.
+$msg.format("email.cloud.groupInvitationNewUser.body", [${creator.fullName}, ${creator.email}, ${group.displayName}])
 
 <p>
-If you'd like to accept this invitation, please click <a href = "${acceptanceLink}">here</a>, where you can sign up for an account.
+$msg.format("email.cloud.groupInvitationNewUser.accept", [${acceptanceLink}])
 
 <p>
-Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
+$msg.getMessage("email.cloud.common.signupEmailNote")
 
 <p>
-Once you've signed up, there will be an invitation message waiting for you  - accept this invitation and you will be added to ${creator.fullName}'s group.
+$msg.format("email.cloud.groupInvitationNewUser.onceSignedUp", [${creator.fullName}])
 
-<p>There is lots of written and video help material on the <a href="https://researchspace.helpdocs.io/">RSpace help website</a>, or you can use the in-app <b>Need Help?</b> button on the bottom-right of RSpace.
-You can also ask for help at <a href="mailto:support@researchspace.com">support@researchspace.com</a>.</p>
 <p>
-#signature
+$msg.getMessage("email.cloud.groupInvitationNewUser.help")
+<p>
+$msg.getMessage("email.common.signatureSignOff")
+<p>
+$msg.getMessage("email.common.signatureTeam")
+</p>
 
-#aboutRSpaceCloud
+<h3>$msg.getMessage("email.common.aboutRSpaceHeading")</h3>
+$msg.getMessage("email.common.aboutRSpaceIntro")
+<p>
+$msg.getMessage("email.common.aboutRSpaceDescription")
+</p>
 
 <p/>
-#dontReply
+<p>
+$msg.getMessage("email.common.dontReply")
+</p>

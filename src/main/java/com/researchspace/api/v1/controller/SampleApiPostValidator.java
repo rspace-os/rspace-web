@@ -29,7 +29,7 @@ public class SampleApiPostValidator extends SampleApiValidator implements Valida
   ApiSampleInfo coreValidationForSamplesAndTemplatesPost(Object target, Errors errors) {
     ApiSampleInfo apiSamplePost = (ApiSampleInfo) target;
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, "name is required");
+        errors, "name", "errors.required", new Object[] {"name"}, null);
     validateNameTooLong(apiSamplePost.getName(), errors);
     validateDescriptionTooLong(apiSamplePost.getDescription(), errors);
     validateTags(apiSamplePost.getTags(), errors);

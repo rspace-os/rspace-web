@@ -2,7 +2,7 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
 import com.researchspace.properties.IPropertyHolder;
-import java.util.Locale;
+import com.researchspace.service.UserLocaleService;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +15,7 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
 
   private IPropertyHolder properties;
   private @Autowired MessageSource messageSource;
+  private @Autowired UserLocaleService userLocaleService;
 
   public SysadminCreateUserFormConfigurerImpl(@Autowired IPropertyHolder propertyHolder) {
     this.properties = propertyHolder;
@@ -56,10 +57,14 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
   public String getUsernamePatternTitle() {
     if (isStrictUsername()) {
       return messageSource.getMessage(
-          "system.createAccountForm.userName.strictTitle", new Object[] {}, Locale.getDefault());
+          "system.createAccountForm.userName.strictTitle",
+          new Object[] {},
+          userLocaleService.getLocale());
     } else {
       return messageSource.getMessage(
-          "system.createAccountForm.userName.relaxedTitle", new Object[] {}, Locale.getDefault());
+          "system.createAccountForm.userName.relaxedTitle",
+          new Object[] {},
+          userLocaleService.getLocale());
     }
   }
 

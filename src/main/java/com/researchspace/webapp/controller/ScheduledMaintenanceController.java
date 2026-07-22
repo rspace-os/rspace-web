@@ -97,7 +97,7 @@ public class ScheduledMaintenanceController extends BaseController {
       inputValidator.populateErrorList(errors, el);
       throw new IllegalArgumentException(
           getText(
-              "operation.failed.message",
+              "errors.operation.failed.message",
               new String[] {messagePart, el.getAllErrorMessagesAsStringsSeparatedBy(",")}));
     }
   }

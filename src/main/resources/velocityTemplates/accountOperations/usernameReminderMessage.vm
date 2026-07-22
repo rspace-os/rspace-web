@@ -4,26 +4,27 @@ Arguments:
 - username
 - loginLink - The login URL to the RSpace instance
 - ipAddress - The IP address from where the username reminder request was generated.
+- msg - MessageSourceUtils for i18n phrase lookup
 *#
 
-<p>Hello,</p>
+<p>$msg.getMessage("email.common.greetingDefault")</p>
 
 <p>
-You, or someone else, requested a username reminder for RSpace at this email
-address.
+$msg.getMessage("email.account.usernameReminderMessage.body")
 </p>
 
 <p>
-Your username is ${username}
-<br>
-<a href="${loginLink}">Login to RSpace</a>
+$msg.format("email.account.usernameReminderMessage.username", [${username}, ${loginLink}])
 </p>
 
 <p>
-If you did not request a username reminder, please get in touch with your RSpace
-support team.
+$msg.getMessage("email.account.usernameReminderMessage.ifNotYou")
 </p>
 
-<p>#dontReply</p>
+<p><p>
+$msg.getMessage("email.common.dontReply")
+</p></p>
 
-<p>#emailSourceIpFooter (${ipAddress})</p>
+<p><div style="font-size:80%">
+$msg.format("email.common.sourceIpFooter", [$ipAddress, "https://ip-lookup.net/index.php?ip=$ipAddress"])
+</div></p>

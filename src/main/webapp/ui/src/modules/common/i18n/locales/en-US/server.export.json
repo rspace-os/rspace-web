@@ -1,0 +1,198 @@
+{
+  "archiveExportReport": {
+    "addedToArchiveHeader": "Added to archive",
+    "downloadLinkLabel": "Download link:",
+    "errorHeader": "Error",
+    "excludedFileTypesNotice": "Files of <strong>{{excludedNfsFileExtensionsList}}</strong> type were not included.",
+    "exportedDocumentsHeading": "Exported documents",
+    "exportedFilestoreLinksHeading": "Exported filestore links",
+    "fileSizeLimitNotice": "File size limit for individual filestore files was set to <strong>{{maxNfsFileSizeMB}} MB</strong>.",
+    "fileSystemNameHeader": "File System name",
+    "filestorePathHeader": "Filestore path",
+    "folderExportSummaryHeader": "Folder export summary",
+    "folderHeader": "Folder",
+    "globalIdHeader": "Global Id",
+    "nameHeader": "Name",
+    "noFilestoreLinksNotice": "<strong>Export filestore links</strong> option was selected, but exported documents didn't contain any filestore links.",
+    "notesHeader": "Notes",
+    "resourcePathHeader": "Resource path",
+    "summary": "Archive export report for {{archiveType}} export of {{exportedUserOrGroupId}} {{exportScope}} generated on {{creationTimeFormatted}}."
+  },
+  "archiveImport": {
+    "errors": {
+      "createDocumentFailed": "Could not create document from archive document: {0}",
+      "databaseInsertFailed": "Error attempting to insert content into database: {0}",
+      "invalidDocumentFolder": "{0} folder does not contain a valid document.",
+      "itemFailed": "Archive item {0} could not be imported: {1}",
+      "missingDocumentXml": "Missing XML file for document: {0}",
+      "missingFormXml": "Missing XML file for form: {0}",
+      "validationFailed": "Validation of archive was not successful"
+    },
+    "exportAllLink": "Export all my work",
+    "info": {
+      "existingUserSkipped": "User [{0}] already exists; skipping",
+      "importingGalleryItem": "Importing Gallery item {0}",
+      "latestVersionOnly": "Only the latest version of {0} was imported."
+    },
+    "importArchiveOnServerHeading": "Import archive on server",
+    "importArchiveOnServerInstructions": "If you want to import an archive that is already on the RSpace server, you can set this path instead of uploading from your computer. Please ask your RSpace administrator on how to get this file path.",
+    "importOntologyDataColumnLabel": "Identify column which holds data",
+    "importOntologyHeading": "Import an ontology file - csv format",
+    "importOntologyNameLabel": "Ontology name",
+    "importOntologyUriColumnLabel": "Identify column which holds uris for data (if single column data choose '1')",
+    "importOntologyVersionLabel": "Ontology version",
+    "progress": {
+      "document": "Importing document {0}",
+      "galleryDocuments": "Importing Gallery documents"
+    },
+    "serverFilePathLabel": "Enter absolute file path on server"
+  },
+  "export": {
+    "archive": {
+      "azIndex": {
+        "title": "A-Z listing"
+      },
+      "documentView": {
+        "header": "Document {0} (version {1})",
+        "originalImage": "Original image:"
+      },
+      "htmlIndex": {
+        "fullAzIndexLink": "Full A-Z index of all exported items",
+        "listingOf": "Listing of {0}",
+        "manifest": "Manifest",
+        "nfsSummaryLink": "Summary of links to external files",
+        "noItems": "There are no items in this folder."
+      },
+      "mediaView": {
+        "header": "Gallery file {0}",
+        "originalTiffLink": "Click <a href=\"{0}\">here</a> to access original TIFF image.",
+        "viewAttachment": "View attachment"
+      },
+      "nfsExports": {
+        "heading": "All external file links in export",
+        "title": "External file system links"
+      },
+      "parentFolder": "Parent folder",
+      "top": "Top"
+    },
+    "audit": {
+      "csv": {
+        "commentGeneratedAt": "# audit trail download generated at {0}.",
+        "exportedItemCount": "{0, plural, one {1 item} other {# items}} exported: {1}",
+        "headerDescription": "Description",
+        "headerName": "Name",
+        "headerResource": "Resource",
+        "headerType": "Type",
+        "maxResultsExceeded": "Results are truncated at {0} results",
+        "moveDetails": "From {0} ({1}) to {2} ({3})"
+      }
+    },
+    "global": {
+      "comments": {
+        "number": "Comment {0}",
+        "title": "Comments"
+      },
+      "coreData": {
+        "by": "By {0}",
+        "createdOn": "Created on {0} at {1}"
+      },
+      "lomsHtml": {
+        "description": "Description: {0}",
+        "headerItemId": "Inventory Item Id",
+        "headerItemType": "Inventory Item Type",
+        "headerUsedQuantity": "Used Quantity",
+        "listOfMaterials": "List of materials: {0}",
+        "title": "Lists of materials"
+      },
+      "nfsElements": {
+        "headerArchivePath": "Archive Path",
+        "headerFileStorePath": "File Store Path",
+        "headerFileSystemUri": "File System URI",
+        "headerFolderExportSummary": "Folder export summary",
+        "headerReasonNotIncluded": "Reason for not including",
+        "headerRelativePath": "Relative Path",
+        "no": "no",
+        "notIncluded": "-not included-",
+        "title": "Linked filestore files referenced by this document",
+        "yes": "yes"
+      }
+    },
+    "pdf": {
+      "comments": {
+        "line": "{0} on {1}: {2}"
+      },
+      "exporterNameWithOrcid": "{0} - Orcid ID {1}",
+      "externalWorkflow": {
+        "headerContainerHistory": "Container/Galaxy History",
+        "headerDataUploaded": "Data Uploaded",
+        "headerInvocation": "Invocation",
+        "headerInvocationStatus": "Invocation Status",
+        "title": "Galaxy Workflow Data"
+      },
+      "footer": {
+        "createDate": "Create date: {0}",
+        "exportDate": "Export date: {0}",
+        "exportedBy": "Exported by: {0}",
+        "lastUpdated": "Last updated: {0}"
+      },
+      "header": {
+        "pageLabel": "Page: "
+      },
+      "nfsTable": {
+        "headerFileSystemId": "File System ID",
+        "headerFileSystemUrl": "File System URL",
+        "headerPath": "Path",
+        "title": "Network Files"
+      },
+      "provenance": {
+        "headerDate": "Date",
+        "headerModificationType": "Modification Type",
+        "headerName": "Name",
+        "title": "Provenance Information"
+      },
+      "runningHeader": {
+        "owner": "Owner: {0}"
+      },
+      "stoichiometry": {
+        "headerInventory": "Inventory",
+        "headerName": "Name",
+        "headerRole": "Role",
+        "reactionHeader": " the chemical reaction above.",
+        "reactionlessHeader": " this reactionless stoichiometry.",
+        "title": "Stoichiometry Information for {0}"
+      }
+    },
+    "protocolsIo": {
+      "abstract": "Abstract",
+      "attachedDocument": "Attached Document:",
+      "beforeStart": "Before start",
+      "brand": "Brand:",
+      "centrifuge": "Centrifuge:",
+      "command": "Command:",
+      "comment": "Comment:",
+      "dataset": "Dataset:",
+      "equipment": "Equipment",
+      "importedFrom": "Imported from",
+      "linkOut": "Link out",
+      "materials": "Materials",
+      "metadata": "Metadata",
+      "name": "Name:",
+      "nestedProtocol": "Nested protocol:",
+      "note": "Note:",
+      "operatingSystem": "Operating system:",
+      "originalAuthors": "Original authors:",
+      "originalCreator": "Original creator:",
+      "publishedOn": "Published on:",
+      "repository": "Repository:",
+      "safetyInformation": "Safety information",
+      "seePreviousStep": "See <a href=\"#{0}\"> previous step </a>",
+      "shaker": "Shaker:",
+      "softwarePackage": "Software package:",
+      "source": "Source",
+      "stepNumber": "Step {0}",
+      "steps": "Steps",
+      "type": "Type:",
+      "version": "Version:"
+    }
+  }
+}

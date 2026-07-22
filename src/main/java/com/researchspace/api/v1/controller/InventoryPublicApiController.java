@@ -24,7 +24,7 @@ public class InventoryPublicApiController extends BaseApiInventoryController
 
     ApiInventoryRecordInfo fullRec = identifierMgr.findPublishedItemVersionByPublicLink(publicLink);
     if (fullRec == null) {
-      throw new NotFoundException(messages.getMessage("inventory.item.not.public"));
+      throw new NotFoundException(messages.getMessage("errors.inventory.publicLink.unavailable"));
     }
 
     return getRecordCopyLimitedToPublishedDetails(fullRec);

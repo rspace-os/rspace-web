@@ -39,13 +39,13 @@ abstract class InventoryRecordValidationTestBase extends SpringTransactionalTest
   void assertMaxLengthMsg(Errors e) {
     String code =
         e.getFieldError() != null ? e.getFieldError().getCode() : e.getGlobalError().getCode();
-    assertEquals("errors.maxlength", code);
+    assertEquals("errors.maxLength", code);
   }
 
   void assertMinLengthMsg(Errors e) {
     String code =
         e.getFieldError() != null ? e.getFieldError().getCode() : e.getGlobalError().getCode();
-    assertEquals("errors.minlength", code);
+    assertEquals("errors.minLength", code);
   }
 
   void assertFieldNameIs(Errors e, String fieldName) {

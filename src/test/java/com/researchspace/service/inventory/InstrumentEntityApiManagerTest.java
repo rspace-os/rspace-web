@@ -201,7 +201,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> instrumentApiMgr.createNewApiInstrument(request, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -603,7 +603,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> instrumentApiMgr.updateApiInstrument(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -626,7 +626,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> instrumentApiMgr.updateApiInstrument(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -649,7 +649,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> instrumentApiMgr.updateApiInstrument(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test
@@ -676,7 +676,7 @@ public class InstrumentEntityApiManagerTest extends SpringTransactionalTest {
         assertThrows(
             ApiRuntimeException.class,
             () -> instrumentApiMgr.updateApiInstrument(update, testUser));
-    assertEquals("errors.inventory.field.duplicate.name", are.getMessage());
+    assertEquals("errors.inventory.field.duplicateName", are.getMessage());
   }
 
   @Test

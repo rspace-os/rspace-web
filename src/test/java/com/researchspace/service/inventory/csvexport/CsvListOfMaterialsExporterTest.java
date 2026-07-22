@@ -95,7 +95,7 @@ public class CsvListOfMaterialsExporterTest extends SpringTransactionalTest {
         lomExporter
             .getCsvCommentFragmentForLom(ExportScope.SELECTION, CsvExportMode.COMPACT, user)
             .toString();
-    assertTrue(csvComment.startsWith("# " + lomExporter.CSV_COMMENT_HEADER), csvComment);
+    assertTrue(csvComment.startsWith("# " + lomExporter.getCsvCommentHeader()), csvComment);
     assertTrue(csvComment.contains("# Exported content: LIST_OF_MATERIALS"), csvComment);
     assertTrue(csvComment.contains("# Export scope: SELECTION"), csvComment);
     assertTrue(csvComment.contains("# Export mode: COMPACT"), csvComment);

@@ -4,7 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.chemistry.StoichiometryDTO;
 import com.researchspace.model.dtos.chemistry.StoichiometryMoleculeDTO;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryService;
+import com.researchspace.service.UserLocaleService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +30,8 @@ public class StoichiometryHtmlGenerator {
 
   @Autowired private StoichiometryService stoichiometryService;
   @Autowired private VelocityEngine velocityEngine;
+  @Autowired private MessageSourceUtils messages;
+  @Autowired private UserLocaleService userLocaleService;
 
   @SneakyThrows
   public String addStoichiometryLinks(String html, User exporter) {
@@ -43,16 +48,18 @@ public class StoichiometryHtmlGenerator {
       for (StoichiometryMoleculeDTO moleculeDTO : stoichiometryDTO.getMolecules()) {
         molecules.add(new StoichiometryTableData(moleculeDTO));
       }
+      java.util.Locale locale = userLocaleService.getLocaleFor(exporter);
       Map<String, Object> context = new HashMap<>();
       context.put("molecules", molecules);
+      context.put("msg", new LocaleBoundMessages(messages, locale));
       String header = stoichiometryElement.attr("alt");
       if (header.isEmpty()) {
-        header = " the chemical reaction above.";
+        header = messages.getMessage("export.pdf.stoichiometry.reactionHeader", null, locale);
       }
       boolean isReactionLess =
           stoichiometryElement.attr("data-stoichiometry-table-only").equals("true");
       if (isReactionLess) {
-        header = " this reactionless stoichiometry.";
+        header = messages.getMessage("export.pdf.stoichiometry.reactionlessHeader", null, locale);
       }
       context.put("header", header);
       String stoichiometryTableHtml =

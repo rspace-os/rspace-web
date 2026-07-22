@@ -42,10 +42,11 @@
             <thead>
             <tr>
                 <th>
+                    <spring:message code="workspaceAjax.selectDeselectAllLabel" var="workspaceAjaxSelectDeselectAllLabel"/>
                     <input  id="selectAllToggle"
                             type="checkbox"
-                            title="Select/deselect all"
-                            aria-label="Select/deselect all"
+                            title="${workspaceAjaxSelectDeselectAllLabel}"
+                            aria-label="${workspaceAjaxSelectDeselectAllLabel}"
                     />
                 </th>
                 <th>
@@ -165,39 +166,43 @@
                             <axt:record_icon record="${record}" />
                         </td>
                         <td class="workspace-record-name">
-                            <a href="#" class="workspaceRecordInfo" alt="Record Info" title="Record Info">
+                            <spring:message code="workspaceAjax.recordInfoLabel" var="workspaceAjaxRecordInfoLabel"/>
+                            <a href="#" class="workspaceRecordInfo" alt="${workspaceAjaxRecordInfoLabel}" title="${workspaceAjaxRecordInfoLabel}">
                                 <img class="infoImg"src="/images/info.svg" style="top:-1px">
                             </a>
                             <axt:record_editor_link parentType="${parentType}" record="${record}" user="${user}"/>
                             <c:if test="${record.favoriteStatus eq 'FAVORITE'}">
+                                <spring:message code="workspaceAjax.favoriteLabel" var="workspaceAjaxFavoriteLabel"/>
                                 <img class="favoriteImg"
                                      src="/images/favorite.svg"
-                                     alt="Favorite"
-                                     title="Favorite">
+                                     alt="${workspaceAjaxFavoriteLabel}"
+                                     title="${workspaceAjaxFavoriteLabel}">
                             </c:if>
+                            <spring:message code="workspaceAjax.sharedLabel" var="workspaceAjaxSharedLabel"/>
                             <img id="sharedStatusImg_${record.id}"
                                  src="/images/shared.svg"
-                                 alt="Shared"
-                                 title="Shared"
+                                 alt="${workspaceAjaxSharedLabel}"
+                                 title="${workspaceAjaxSharedLabel}"
                                  <c:if test="${not record.shared}">hidden</c:if>
                             >
+                            <spring:message code="workspaceAjax.publishedLabel" var="workspaceAjaxPublishedLabel"/>
                             <img id="publishedStatusImg_${record.id}"
                                  src="/images/icons/html.png"
-                                 alt="Published"
-                                 title="Published"
+                                 alt="${workspaceAjaxPublishedLabel}"
+                                 title="${workspaceAjaxPublishedLabel}"
                                  width="35" height="35"
                                  <c:if test="${not record.published}">hidden</c:if>
                             >
                             <c:if test="${record.signed}">
                                 <img class="witnessedImg"
                                      src="/images/signed.svg"
-                                     alt="Record Is Signed"
-                                     title="Signed">
+                                     alt="<spring:message code='workspaceAjax.recordIsSignedAlt'/>"
+                                     title="<spring:message code='workspaceAjax.signedTitle'/>">
                             </c:if>
                             <c:if test="${record.structuredDocument and not record.allFieldsValid}">
                                 <img src="/images/icons/missingMandatoryField.svg"
-                                     alt="Some of the mandatory fields in the document are missing a value"
-                                     title="Mandatory fields are missing value" width="30" height="30"
+                                     alt="<spring:message code='workspaceAjax.mandatoryFieldsMissingAlt'/>"
+                                     title="<spring:message code='workspaceAjax.mandatoryFieldsMissingTitle'/>" width="30" height="30"
                                 >
                             </c:if>
                         </td>
@@ -216,8 +221,9 @@
                         </td>
                         <c:choose>
                             <c:when test="${record.type.equals('FOLDER:SHARED_GROUP_FOLDER_ROOT')}">
-                                <td class="workspace-record-ownerName" data-uname="Group-owned">
-                                    Group-owned
+                                <spring:message code="workspaceAjax.groupOwnedLabel" var="workspaceAjaxGroupOwnedLabel"/>
+                                <td class="workspace-record-ownerName" data-uname="${workspaceAjaxGroupOwnedLabel}">
+                                    ${workspaceAjaxGroupOwnedLabel}
                                 </td>
                             </c:when>
                             <c:otherwise>

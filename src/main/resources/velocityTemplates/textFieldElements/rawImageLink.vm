@@ -14,6 +14,6 @@
 *#
 <p>
  <img id="${fieldId}-${itemId}" class="imageDropped inlineImageThumbnail"
-   src="#imgThumbnailSrc ($fieldId $itemId $width $height  $rotation $milliseconds)"
+   src="/thumbnail/data?sourceType=IMAGE&sourceId=$itemId&sourceParentId=$fieldId&width=$width&height=$height&rotation=$rotation&time=$milliseconds"
    alt="image $name" width="$width" height="$height" data-size="${width}-${height}" data-rotation="${rotation}" />
 </p>&nbsp;

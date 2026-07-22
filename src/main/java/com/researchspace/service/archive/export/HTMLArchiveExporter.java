@@ -9,6 +9,9 @@ import com.researchspace.archive.model.ArchiveExportConfig;
 import com.researchspace.archive.model.IArchiveExportConfig;
 import com.researchspace.model.core.RecordType;
 import com.researchspace.model.record.Record;
+import com.researchspace.service.LocaleBoundMessages;
+import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.service.archive.ArchiveExportServiceManager;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +38,9 @@ public class HTMLArchiveExporter extends AbstractArchiveExporter
   @Autowired private ResourceToArchiveCopier resourceCopier;
 
   @Autowired private VelocityEngine velocity;
+
+  @Autowired private MessageSourceUtils messages;
+  @Autowired private UserLocaleService userLocaleService;
 
   @Override
   protected void preZip(
@@ -88,6 +94,7 @@ public class HTMLArchiveExporter extends AbstractArchiveExporter
   private String processNfsExportsTemplate(Set<ArchivalNfsFile> allNfs) {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("nfsList", allNfs);
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "nfsExports.vm", "UTF-8", velocityModel);
@@ -254,6 +261,7 @@ public class HTMLArchiveExporter extends AbstractArchiveExporter
     velocityModel.put("folderName", pageTitle);
     velocityModel.put("manifest", manifest);
     velocityModel.put("includeLinkToNfsEports", includeLinkToNfsEports);
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "htmlIndex.vm", "UTF-8", velocityModel);
@@ -263,6 +271,7 @@ public class HTMLArchiveExporter extends AbstractArchiveExporter
   private String processAZIndexTemplate(List<IndexItem> indexItems) {
     Map<String, Object> velocityModel = new HashMap<String, Object>();
     velocityModel.put("indexItems", indexItems);
+    velocityModel.put("msg", new LocaleBoundMessages(messages, userLocaleService.getLocale()));
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(
             velocity, "a-zIndex.vm", "UTF-8", velocityModel);

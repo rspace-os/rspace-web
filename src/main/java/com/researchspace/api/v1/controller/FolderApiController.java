@@ -69,7 +69,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     } else {
       targetFolder = folderMgr.getFolder(toCreate.getParentFolderId(), user);
       if (targetFolder.isNotebook()) {
-        errors.reject("notebook.nestednotebook.error", "Nested notebooks are prohibited");
+        errors.reject("notebook.errors.nestedNotebook");
         throw new BindException(errors);
       }
       if (targetFolder.isSharedFolder() && toCreate.isNotebook()) {
@@ -78,15 +78,14 @@ public class FolderApiController extends BaseApiController implements FolderApi 
       }
     }
     if (targetFolder.hasType(RecordType.ROOT_MEDIA)) {
-      errors.reject("gallery.api.no_top_level_folder", "Can't create top-level Gallery folder");
+      errors.reject("gallery.api.noTopLevelFolder");
       throw new BindException(errors);
     }
 
     Folder newCreatedFolder = null;
     if (toCreate.isNotebook()) {
       if (!targetFolder.isInWorkspace()) {
-        errors.reject(
-            "notebook.no_notebook_in_gallery.error", "Notebooks can only exist in the Workspace");
+        errors.reject("notebook.errors.noNotebookInGallery");
         throw new BindException(errors);
       }
       newCreatedFolder =

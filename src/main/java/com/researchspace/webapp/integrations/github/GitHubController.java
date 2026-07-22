@@ -6,6 +6,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.integrations.helper.ConnectionResultPage;
@@ -67,6 +68,7 @@ public class GitHubController {
 
   private @Autowired IntegrationsHandler integrationsHandler;
   private @Autowired UserManager userManager;
+  private @Autowired MessageSourceUtils messages;
 
   private RestTemplate restTemplate;
 
@@ -294,7 +296,7 @@ public class GitHubController {
       dir = java.net.URLDecoder.decode(dir, "UTF-8");
     } catch (UnsupportedEncodingException e) {
       log.error("Error while parsing a GitHub tree view request", e);
-      model.addAttribute("error", "Error while parsing the request");
+      model.addAttribute("error", messages.getMessage("apps.github.errors.parseTreeRequest"));
       model.addAttribute("treeNodes", nodes);
       return GITHUB_VIEW_NAME;
     }
@@ -322,7 +324,7 @@ public class GitHubController {
         model.addAttribute("error", "");
       } catch (Exception e) {
         log.error("GitHub tree view request failed", e);
-        model.addAttribute("error", "Error while getting GitHub folder contents");
+        model.addAttribute("error", messages.getMessage("apps.github.errors.getFolderContents"));
       }
     }
     model.addAttribute("treeNodes", nodes);

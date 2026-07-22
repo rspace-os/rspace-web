@@ -6,18 +6,18 @@
 tinymce.PluginManager.add('comments', function (editor, url) {
 	editor.addCommand('cmdComments', function () {
 		editor.windowManager.openUrl({
-			title: 'Comments',
+			title: RS.msg("legacyjs.tinymce.comments.title"),
 			url: RS.withCacheVersion(url + '/iframe.html'),
 			width: 550,
 			height: 460,
 			buttons: [
 				{ 
-					text: 'Cancel', 
+					text: RS.msg("legacyjs.common.cancel"),
 					type: 'custom',
 					name: 'cancel' 
 				},
 				{
-					text: 'Add comment',
+					text: RS.msg("legacyjs.tinymce.comments.addComment"),
 					type: 'custom',
 					name: 'submit',
 					primary: true
@@ -35,20 +35,20 @@ tinymce.PluginManager.add('comments', function (editor, url) {
 
 	editor.ui.registry.addButton('comments', {
 		icon: "comment",
-		tooltip: 'Insert comment',
+		tooltip: RS.msg("legacyjs.tinymce.comments.insertComment"),
 		onAction: function () { editor.execCommand("cmdComments"); },
 		stateSelector: 'img.commentIcon'
 	});
 
 	editor.ui.registry.addMenuItem('optComments', {
-		text: 'Comment',
+		text: RS.msg("legacyjs.tinymce.comments.comment"),
 		icon: "comment",
 		onAction: function () { editor.execCommand("cmdComments"); },
 	});
 
   if(!window.insertActions) window.insertActions = new Map();
   window.insertActions.set("optComments", {
-    text: 'Comment',
+    text: RS.msg("legacyjs.tinymce.comments.comment"),
     icon: 'comment',
     action: () => {
       editor.execCommand('cmdComments');

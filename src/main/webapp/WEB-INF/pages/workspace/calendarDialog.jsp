@@ -9,7 +9,7 @@
             <tr>
                 <td>
                     <label for="cd_event_title">
-                        <fmt:message key="dialogs.createCalendarEntry.eventTitle.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.eventTitle.title"/>
                     </label>
                 </td>
                 <td>
@@ -21,7 +21,7 @@
             <tr>
                 <td>
                     <label for="cd_event_start">
-                        <fmt:message key="dialogs.createCalendarEntry.eventStart.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.eventStart.title"/>
                     </label>
                 </td>
                 <td>
@@ -33,7 +33,7 @@
             <tr>
                 <td>
                     <label for="cd_event_end">
-                        <fmt:message key="dialogs.createCalendarEntry.eventEnd.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.eventEnd.title"/>
                     </label>
                 </td>
                 <td>
@@ -45,11 +45,11 @@
             <tr>
                 <td>
                     <label for="cd_description">
-                        <fmt:message key="dialogs.createCalendarEntry.description.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.description.title"/>
                     </label>
                 </td>
                 <td>
-                    <textarea id="cd_description" name="cd_description" class="form-control" placeholder="an optional description for this event" rows="5"></textarea>
+                    <textarea id="cd_description" name="cd_description" class="form-control" placeholder="<spring:message code='dialogs.createCalendarEntry.description.placeholder'/>" rows="5"></textarea>
                 </td>
             </tr>
 
@@ -57,7 +57,7 @@
             <tr>
                 <td>
                     <label for="cd_repeat_event">
-                        <fmt:message key="dialogs.createCalendarEntry.repeatEvent.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.repeatEvent.title"/>
                     </label>
                 </td>
                 <td>
@@ -68,14 +68,14 @@
             <%-- Repeat event frequency --%>
             <tr id="cd_repeat_event_frequency">
                 <td>
-                    <label for="cd_frequency_select">Frequency</label>
+                    <label for="cd_frequency_select"><spring:message code="dialogs.createCalendarEntry.frequency.label"/></label>
                 </td>
                 <td>
                     <select id="cd_frequency_select" class="form-control">
-                        <option value="DAILY">Daily</option>
-                        <option value="WEEKLY">Weekly</option>
-                        <option value="MONTHLY">Monthly</option>
-                        <option value="YEARLY">Yearly</option>
+                        <option value="DAILY"><spring:message code="dialogs.createCalendarEntry.frequency.daily"/></option>
+                        <option value="WEEKLY"><spring:message code="dialogs.createCalendarEntry.frequency.weekly"/></option>
+                        <option value="MONTHLY"><spring:message code="dialogs.createCalendarEntry.frequency.monthly"/></option>
+                        <option value="YEARLY"><spring:message code="dialogs.createCalendarEntry.frequency.yearly"/></option>
                     </select>
                 </td>
             </tr>
@@ -83,18 +83,18 @@
             <%-- Repeat event number of times --%>
             <tr id="cd_repeat_event_times">
                 <td>
-                    <label for="cd_repeat_n_times">Repeat for</label>
+                    <label for="cd_repeat_n_times"><spring:message code="dialogs.createCalendarEntry.repeatFor.label"/></label>
                 </td>
                 <td>
-                    <input 
-                        type="number" 
-                        id="cd_repeat_n_times" 
-                        value="1" 
-                        style="width: 50%; display: inline !important;" 
+                    <input
+                        type="number"
+                        id="cd_repeat_n_times"
+                        value="1"
+                        style="width: 50%; display: inline !important;"
                         class="form-control"
-                        aria-label="How many times to repeat event"
+                        aria-label="<spring:message code='dialogs.createCalendarEntry.repeatFor.ariaLabel'/>"
                     />
-                    <span>times</span>
+                    <span><spring:message code="dialogs.createCalendarEntry.repeatFor.unit"/></span>
                 </td>
             </tr>
 
@@ -104,7 +104,7 @@
             <tr>
                 <td>
                     <label for="cd_share_event">
-                        <fmt:message key="dialogs.createCalendarEntry.shareEvent.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.shareEvent.title"/>
                     </label>
                 </td>
                 <td>
@@ -118,7 +118,7 @@
             <tr id="cd_share_event_to">
                 <td>
                     <label for="cd_share_to">
-                        <fmt:message key="dialogs.createCalendarEntry.to.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.to.title"/>
                     </label>
                 </td>
                 <td>
@@ -132,7 +132,7 @@
             <tr id="cd_message_text">
                 <td>
                     <label for="cd_message_text_field">
-                        <fmt:message key="dialogs.createCalendarEntry.messageText.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.messageText.title"/>
                     </label>
                 </td>
                 <td>
@@ -145,7 +145,7 @@
             <tr>
                 <td>
                     <label for="cd_include_links_to_resources">
-                        <fmt:message key="dialogs.createCalendarEntry.includeLinkCheckbox.title"/>
+                        <spring:message code="dialogs.createCalendarEntry.includeLinkCheckbox.title"/>
                     </label>
                 </td>
                 <td>
@@ -157,12 +157,12 @@
             <tr id="cd_tree_view">
                 <td></td>
                 <td>
-                    <div>Attached resources:</div>
+                    <div><spring:message code="dialogs.createCalendarEntry.attachedResources.label"/></div>
                     <ul id="cd_current_files" style="padding: 0;">
-                        <li style="list-style: none;">None</li>
+                        <li style="list-style: none;"><spring:message code="common:actions.none"/></li>
                     </ul>
-                    <button type="button" id="cd_add_file">Add</button>
-                    <button type="button" id="cd_clear">Clear</button>
+                    <button type="button" id="cd_add_file"><spring:message code="common:actions.add"/></button>
+                    <button type="button" id="cd_clear"><spring:message code="common:actions.clear"/></button>
                 </td>
             </tr>
         </tbody>
@@ -172,25 +172,25 @@
 <%-- Dialog for attaching files --%>
 <div id="attachFileToCalendarEntryDlg" style="display: none">
     <div class="sortingSettings" style="padding: 5px;">
-        Order by:
-        <select class="orderBy" aria-label="Order by">
-            <option value="name">Name</option>
-            <option value="creationdate">Creation Date</option>
-            <option value="modificationdate">Last Modified</option>
+        <spring:message code="workspace.sort.label"/>
+        <select class="orderBy" aria-label="<spring:message code='workspace.sort.ariaLabel'/>">
+            <option value="name"><spring:message code="workspace.sort.byName"/></option>
+            <option value="creationdate"><spring:message code="workspace.sort.byCreationDate"/></option>
+            <option value="modificationdate"><spring:message code="workspace.sort.byLastModified"/></option>
         </select>
-        <select class="sortOrder" aria-label="Sort order">
-            <option value="ASC">Ascending</option>
-            <option value="DESC">Descending</option>
+        <select class="sortOrder" aria-label="<spring:message code='workspace.sort.sortOrderAriaLabel'/>">
+            <option value="ASC"><spring:message code="workspace.sort.ascending"/></option>
+            <option value="DESC"><spring:message code="workspace.sort.descending"/></option>
         </select>
     </div>
     <div id="file_tree_frame">
-        <h3>Workspace</h3>
+        <h3><spring:message code="dialogs.createCalendarEntry.treeHeading"/></h3>
         <div id="calendar_file_tree" style="height: 320px; width: 100%; background-color: white; overflow: auto;"></div>
     </div>
     <div id="linkData">
         <fieldset id="linksFieldset" class="links">
             <div>
-                <label id='label' for="selectedNode">selected record</label> <input type="text" id='selectedNode' disabled="disabled" />
+                <label id='label' for="selectedNode"><spring:message code="dialogs.createCalendarEntry.selectedRecordLabel"/></label> <input type="text" id='selectedNode' disabled="disabled" />
             </div>
         </fieldset>
     </div>

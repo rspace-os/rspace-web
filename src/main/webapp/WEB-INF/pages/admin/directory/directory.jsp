@@ -16,7 +16,7 @@
 
 <div id="selectDirectoryListSection" style="margin-top: 20px;"> 
 	<a class="publicListButton" id="userListButton" style="padding:11px 7px 9px 67px;background-image:url('/images/icons/usersListIcon.png');" tabindex="0"> 
-	 <spring:message code="directory.users.title"/>
+	 <spring:message code="system:usersPage.title"/>
   </a> 
 	<a class="publicListButton" id="groupListButton" style="padding:11px 7px 9px 78px;background-image:url('/images/icons/groupsListIcon.png');" tabindex="0">
 	  <spring:message code="userProfile.sectionLabel.labGroups"/>
@@ -25,25 +25,25 @@
 	 <spring:message code="community.communities.title"/>
   </a>
 	<a class="publicListButton" id="projectGroupListButton" style="padding:11px 7px 9px 83px;background-image:url('/images/icons/projectGroupsListIcon.png');" tabindex="0">
-	 <spring:message code="directory.projectgroups.title"/>
+	 <spring:message code="directory.projectGroups.title"/>
   </a>
 </div>
 
-<div class="tabularViewTop"> 
-  <h2 class="title">Users</h2>
+<div class="tabularViewTop">
+  <h2 class="title"><spring:message code="system:usersPage.title"/></h2>
   <rst:hasDeploymentProperty name="cloud" value="true" match="false">
-    <div 
-      class="base-search" 
+    <div
+      class="base-search"
       data-elId="searchDirectoryListInput"
       data-onSubmit="handleSearchDirectoryQuery"
       data-variant="outlined"
     ></div>
   </rst:hasDeploymentProperty>
   <rst:hasDeploymentProperty name="cloud" value="true" match="true">
-    <div 
+    <div
       class="base-search"
-      data-placeholder="By name, email or username"
-      data-elId="searchDirectoryListInput" 
+      data-placeholder="<spring:message code='directory.search.placeholder'/>"
+      data-elId="searchDirectoryListInput"
       data-onSubmit="handleSearchDirectoryQuery"
       data-variant="outlined"
     ></div>
@@ -52,7 +52,7 @@
 
 <div id="searchModePanel" style="display: none;">
   <span id="message"></span>
-  <button id="resetSearch">Clear search</button>
+  <button id="resetSearch"><spring:message code="common:search.clearTooltip"/></button>
 </div>
 
 

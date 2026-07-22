@@ -196,7 +196,7 @@ public class RevisionHistoryController extends BaseController {
           auditService.notify(new RestoreEvent(user, updated, revision));
           return new AjaxReturnObject<>(res.name(), null);
         } else {
-          ErrorList el = getErrorListFromMessageCode("restore.failure.message", res);
+          ErrorList el = getErrorListFromMessageCode("document.restore.errors.notEditable", res);
           return new AjaxReturnObject<>(null, el);
         }
         // we're restoring a deleted document. Could be anything

@@ -500,8 +500,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     // ApiRuntimeException maps to a 422 with the resolved bundle message, where a raw
     // IllegalArgumentException would surface as an unmapped 500.
     if (!DataCiteRelationType.isValid(relationType)) {
-      throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeInvalid", relationType);
+      throw new ApiRuntimeException("errors.inventory.field.linkRelationTypeInvalid", relationType);
     }
     String allowed = field.getAllowedRelationTypes();
     if (allowed == null || allowed.trim().isEmpty()) {
@@ -509,7 +508,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
     }
     if (!Arrays.asList(allowed.split("\\|")).contains(relationType)) {
       throw new ApiRuntimeException(
-          "errors.inventory.field.link.relationTypeNotPermitted", relationType, field.getName());
+          "errors.inventory.field.linkRelationTypeNotPermitted", relationType, field.getName());
     }
   }
 
@@ -1112,7 +1111,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
       }
       if (apiField.isDeleteFieldRequest()) {
         if (apiField.getId() == null) {
-          throw new ApiRuntimeException("errors.inventory.field.deleteRequest.idMissing");
+          throw new ApiRuntimeException("errors.inventory.field.deleteRequestIdMissing");
         }
         Optional<InventoryEntityField> dbFieldOpt =
             dbTemplate.getActiveFields().stream()
@@ -1120,7 +1119,7 @@ public class SampleApiManagerImpl extends InventoryApiManagerImpl<SampleEntity>
                 .findFirst();
         if (dbFieldOpt.isEmpty()) {
           throw new ApiRuntimeException(
-              "errors.inventory.field.deleteRequest.idUnknown", apiField.getId());
+              "errors.inventory.field.deleteRequestIdUnknown", apiField.getId());
         }
         dbTemplate.deleteSampleField(dbFieldOpt.get(), apiField.isDeleteFieldOnSampleUpdate());
         softDeleteLinkOfDeletedLinkField(dbFieldOpt.get(), user);

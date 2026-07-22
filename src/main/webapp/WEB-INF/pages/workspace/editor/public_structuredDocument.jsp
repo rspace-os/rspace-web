@@ -53,7 +53,7 @@
     <h1 class="publicTitle">${documentName}</h1>
     <h3 class="publicSummary">${publicationSummary}</h3>
     <c:if test="${not empty contactDetails}">
-      <h3 class="publicSummary">contact: ${contactDetails}</h3>
+      <h3 class="publicSummary"><spring:message code="documentView.contactLabel"/> ${contactDetails}</h3>
     </c:if>
   
     <div class="documentPanel">

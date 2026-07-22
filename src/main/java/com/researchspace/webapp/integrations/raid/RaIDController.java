@@ -99,10 +99,7 @@ public class RaIDController extends BaseOAuth2Controller {
           raidServiceManager.getAssociatedRaidByAliasAndProjectId(raidServerAlias, projectGroupId);
     } catch (Exception e) {
       log.error("Not able to get RAiD list for the user \"{}\":", principal.getName(), e);
-      errors.reject(
-          "raidList",
-          null,
-          "Not able to get RAiD list for the user \"" + principal.getName() + "\"");
+      errors.reject("apps.raid.errors.listForUser", new Object[] {principal.getName()}, null);
     }
     if (errors.hasErrors()) {
       ErrorList el = inputValidator.populateErrorList(errors, new ErrorList());
@@ -125,29 +122,34 @@ public class RaIDController extends BaseOAuth2Controller {
       @PathVariable Long sharedFolderId, Principal principal) {
     Optional<RaidGroupAssociationDTO> result = Optional.empty();
     BindingResult errors = new BeanPropertyBindingResult(null, "raidGroupAssociation");
-    String errorMsg = "";
     try {
       result =
           raidServiceManager.getAssociatedRaidByFolderId(
               userManager.getUserByUsername(principal.getName()), sharedFolderId);
     } catch (FolderNotSharedException fnse) {
       result = Optional.empty();
-      errorMsg =
+      String errorMsg =
           String.format(
               "Not able to get RAiD associated to the project group with folder ID '%d' for the"
                   + " user '%s' cause that is not a Project Group shared folder",
               sharedFolderId, principal.getName());
       log.error(errorMsg, fnse);
-      errors.reject("raidList", null, errorMsg);
+      errors.reject(
+          "apps.raid.errors.folderNotProjectGroup",
+          new Object[] {sharedFolderId, principal.getName()},
+          null);
     } catch (Exception e) {
       result = Optional.empty();
-      errorMsg =
+      String errorMsg =
           String.format(
               "Not able to get RAiD associated to the project group with"
                   + " folder ID '%d' for the user '%s'",
               sharedFolderId, principal.getName());
       log.error(errorMsg, e);
-      errors.reject("raidList", null, errorMsg);
+      errors.reject(
+          "apps.raid.errors.folderLookup",
+          new Object[] {sharedFolderId, principal.getName()},
+          null);
     }
     ErrorList el = null;
     if (errors.hasErrors()) {
@@ -183,8 +185,7 @@ public class RaIDController extends BaseOAuth2Controller {
               + raidGroupAssociation.getRaid().getRaidServerAlias()
               + "\" server");
     } catch (Exception e) {
-      errors.reject(
-          "raidGroupAssociation", null, "Not able to associate RAiD to group: " + e.getMessage());
+      errors.reject("apps.raid.errors.associateGroup", new Object[] {e.getMessage()}, null);
       log.error("Not able to associate RAiD to group: " + e.getMessage());
     }
 
@@ -216,19 +217,16 @@ public class RaIDController extends BaseOAuth2Controller {
       } else {
         errors.rejectValue(
             "projectGroupId",
-            "raid.noAssociationFound",
-            "The group with projectGroupId "
-                + projectGroupId
-                + " has no RaiDs already associated.");
+            "apps.raid.errors.noAssociationForGroup",
+            new Object[] {projectGroupId},
+            null);
         log.error(
             "The group with projectGroupId "
                 + projectGroupId
                 + " has no RaiDs already associated.");
       }
     } catch (Exception e) {
-      errors.reject(
-          "disassociateRaidFromGroup",
-          "Not able to disassociate RAiD from group: " + e.getMessage());
+      errors.reject("apps.raid.errors.disassociateGroup", new Object[] {e.getMessage()}, null);
       log.error("Not able to disassociate RAiD from group: " + e.getMessage());
     }
     ErrorList el = null;
@@ -278,18 +276,16 @@ public class RaIDController extends BaseOAuth2Controller {
           if (errors != null) {
             errors.rejectValue(
                 "raidServerAlias",
-                "connectionError",
-                "no connection to RAiD for server alias \"" + currentServerAlias + "\"");
+                "apps.raid.errors.connection",
+                new Object[] {currentServerAlias},
+                null);
           }
         }
       }
     } catch (Exception ex) {
       log.error("Not able to get RAiD list for the user \"{}\":", principal.getName(), ex);
       if (errors != null) {
-        errors.reject(
-            "raidList",
-            null,
-            "Not able to get RAiD list for the user \"" + principal.getName() + "\"");
+        errors.reject("apps.raid.errors.listForUser", new Object[] {principal.getName()}, null);
       }
     }
     return result;

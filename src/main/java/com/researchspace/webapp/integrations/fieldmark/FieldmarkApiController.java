@@ -37,11 +37,7 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
           "The list of notebooks cannot be fetched because of the following error: "
               + serverEx.getMessage());
       BindingResult errors = new BeanPropertyBindingResult(null, "fieldmarkServer");
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error fetching notebooks due to the Fieldmark server");
+      errors.reject("apps.fieldmark.errors.fetchNotebooks");
       throwBindExceptionIfErrors(errors);
     }
     return null;
@@ -59,21 +55,14 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
       candidateFields = fieldmarkServiceManagerImpl.getIgsnCandidateFields(user, notebookId);
     } catch (FieldmarkImportException serverEx) {
       log.error("Error creating IGSN candidate fields: " + serverEx.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error creating IGSN candidate fields for notebook \"" + notebookId + "\"");
+      errors.reject(
+          "apps.fieldmark.errors.createIgsnCandidateFields", new Object[] {notebookId}, null);
     } catch (UnsupportedOperationException dataciteEx) {
       log.error("Error creating IGSN candidate fields: " + dataciteEx.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Not possible to create IGSN candidate fields for notebook \""
-              + notebookId
-              + "\" because "
-              + dataciteEx.getMessage());
+      errors.reject(
+          "apps.fieldmark.errors.createIgsnCandidateFieldsUnsupported",
+          new Object[] {notebookId, dataciteEx.getMessage()},
+          null);
     } finally {
       throwBindExceptionIfErrors(errors);
     }
@@ -93,14 +82,10 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
       importResult = fieldmarkServiceManagerImpl.importNotebook(importRequest, user);
     } catch (FieldmarkImportException e) {
       log.error("Error importing notebook from Fieldmark: " + e.getMessage());
-      errors.rejectValue(
-          "",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error importing notebook \""
-              + importRequest.getNotebookId()
-              + "\" from Fieldmark: "
-              + e.getMessage());
+      errors.reject(
+          "apps.fieldmark.errors.importNotebook",
+          new Object[] {importRequest.getNotebookId(), e.getMessage()},
+          null);
     } finally {
       throwBindExceptionIfErrors(errors);
     }
@@ -110,11 +95,7 @@ public class FieldmarkApiController extends BaseApiInventoryController implement
   private void validateInput(FieldmarkApiImportRequest importRequest, BindingResult errors) {
     if (importRequest == null || StringUtils.isBlank(importRequest.getNotebookId())) {
       log.error("Cannot import from Fieldmark cause the \"notebookId\" is empty");
-      errors.rejectValue(
-          "notebookId",
-          "errors.fieldmark.import",
-          new Object[] {},
-          "Error importing notebook casue the request had an empty \"notebookId\"");
+      errors.rejectValue("notebookId", "apps.fieldmark.errors.notebookIdRequired");
     }
   }
 }

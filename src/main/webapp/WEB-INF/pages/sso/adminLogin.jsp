@@ -1,7 +1,7 @@
 <%@ include file="/common/taglibs.jsp"%>
 <head>
-    <title>Admin login</title>
-    <meta name="heading" content="<fmt:message key='login.heading'/>"/>
+    <title><spring:message code="adminLogin.title"/></title>
+    <meta name="heading" content="<spring:message code='login.heading'/>"/>
 
     <script src="<rst:assetUrl value='/scripts/bower_components/bootstrap/dist/js/bootstrap.js'/>"></script>
 
@@ -9,13 +9,13 @@
     <link href="<rst:assetUrl value='/styles/bootstrap-custom-flat.css'/>" rel="stylesheet">
     <link href="<rst:assetUrl value='/styles/simplicity/header.css'/>" rel="stylesheet">
     <link href="<rst:assetUrl value='/styles/authentication/login.css'/>" rel="stylesheet">
-    
+
     <%-- key icon. FontAwesome doesn't work for some reason. Futher investigation is needed. --%>
-    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet"> 
+    <link href="<rst:assetUrl value='/styles/fontello-key/css/fontello.css'/>" rel="stylesheet">
     <script src="<rst:assetUrl value='/scripts/global.js'/>"></script>
 </head>
 
-<div class="page"> 
+<div class="page">
 
   <jsp:include page="/WEB-INF/pages/sso/ssoHeader.jsp" />
 
@@ -24,15 +24,15 @@
   <%-- BEGIN: login form --%>
   <div class="rs-sign-in-form bootstrap-custom-flat">
     <div class="rs-sign-in-form__head ">
-      <span>Welcome to RSpace</span>
+      <span><spring:message code="adminLogin.heading"/></span>
     </div>
-    
+
     <c:url value='/login' var="loginURL"></c:url>
     <form method="post" id="loginForm" action="${loginURL}" autocomplete="off" class="form-horizontal rs-sign-in-form__body">
       <fieldset>
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
-          <input id="username" type="text" name="username" placeholder="User" required="required" autofocus 
+          <input id="username" type="text" name="username" placeholder="<spring:message code='adminLogin.usernamePlaceholder'/>" required="required" autofocus
                   class="form-control rs-field__input
                         <c:if test='${param.loginException != null}'>
                         rs-field__input--invalid
@@ -43,7 +43,7 @@
 
         <div class="form-group col-lg-12 rs-field rs-field--input">
           <input type="hidden" name="adminLogin" />
-          <input id="password" type="password" name="password" placeholder="Password" required="required" 
+          <input id="password" type="password" name="password" placeholder="<spring:message code='adminLogin.passwordPlaceholder'/>" required="required"
                  class="form-control rs-field__input
                         <c:if test='${param.loginException != null}'>
                         rs-field__input--invalid
@@ -55,16 +55,16 @@
           <c:if test="${param.loginException != null}">
             <c:choose>
               <c:when test="${param.loginException eq 'IncorrectSignupSourceException'}">
-                <div class="rs-tooltip"> 
-                  <fmt:message key="errors.login.adminLogin.wrongSignupSource"/>
+                <div class="rs-tooltip">
+                  <spring:message code="errors.login.adminLogin.wrongSignupSource"/>
                 </div>
               </c:when>
               <c:otherwise>
                 <div class="rs-tooltip">
-                  <fmt:message key="errors.login.credentials.wrong"/>
+                  <spring:message code="errors.login.credentials.wrong"/>
                 </div>
                 <div class="rs-tooltip">
-                  <fmt:message key="errors.login.lockout.policy.description"/>
+                  <spring:message code="errors.login.lockout.policyDescription"/>
                 </div>
               </c:otherwise>
             </c:choose>
@@ -78,7 +78,7 @@
 
         <div class="form-group col-lg-12 rs-field">
           <button id="submit" role="button" type="submit" class="btn btn-primary rs-field__button">
-            <span><fmt:message key='button.login' /></span>
+            <span><spring:message code='button.login.label'/></span>
           </button>
         </div>
 

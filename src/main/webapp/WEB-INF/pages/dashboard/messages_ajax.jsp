@@ -5,6 +5,7 @@
 <%@ taglib prefix="rst" uri="http://researchspace.com/tags"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib prefix="f" uri="http://researchspace.com/functions" %>
 <link rel="stylesheet" media="all" href="<rst:assetUrl value='/styles/messages.css'/>" />
 
 <style>
@@ -41,15 +42,15 @@
 <div id="messageListContents">
   <c:choose>
     <c:when test="${empty messages}">
-        There are no active messages or requests.
+        <spring:message code="messages.empty"/>
     </c:when>
     <c:otherwise>
-        <h2 id="messagesTitle"> My Messages </h2>
+        <h2 id="messagesTitle"> <spring:message code="messages.title"/> </h2>
         <div style="padding-bottom: 10px" id="notification_linkMenu">
-            Order by
-            <a href="#" class="morOrderBy" id="orderBy_communication.creationTime">Time</a>
-            <a href="#" class="morOrderBy" id="orderBy_originator.username">| Sender </a>
-            <a href="#" class="morOrderBy" id="orderBy_communication.requestedCompletionDate">| Completion date </a>
+            <spring:message code="messages.orderBy.label"/>
+            <a href="#" class="morOrderBy" id="orderBy_communication.creationTime"><spring:message code="messages.orderBy.time"/></a>
+            <a href="#" class="morOrderBy" id="orderBy_originator.username"><spring:message code="messages.orderBy.sender"/></a>
+            <a href="#" class="morOrderBy" id="orderBy_communication.requestedCompletionDate"><spring:message code="messages.orderBy.completionDate"/></a>
         </div>
         <div id="allMessages" style="width:100%;padding-top:10px;">
             <c:forEach items="${messages}" var="message">
@@ -59,17 +60,18 @@
                         <div class="messageText">
                           <strong>
                             <c:if test="${message.simpleMessage}">
-                                <c:if test="${message.messageType == 'GLOBAL_MESSAGE'}">Global </c:if>Message
+                                <c:if test="${message.messageType == 'GLOBAL_MESSAGE'}"><spring:message code="messages.type.global"/> </c:if><spring:message code="messages.type.message"/>
                             </c:if>
                             <c:if test="${not message.simpleMessage}">
                                 ${message.messageType.label}
-                              </c:if> request
+                              </c:if> <spring:message code="messages.type.requestSuffix"/>
                                <c:if test = "${fn:contains(message.messageType.label, 'Collaboration')}">
-                              <a rel="noreferrer" href = "https://researchspace.helpdocs.io/article/l72tg5rzze-collaboration-between-labs" target="_blank">
+                              <spring:message code="common:help.collaborationBetweenLabs" var="collaborationHelpSlug"/>
+                              <a rel="noreferrer" href="${f:helpDocsUrl(collaborationHelpSlug)}" target="_blank">
                               <img src ="images/info.png" width=12 height=12/> </a>
                             </c:if>
                           </strong>
-                          <strong>From:</strong>
+                          <strong><spring:message code="messages.from.label"/></strong>
                           <span
                             data-test-id="mini-profile-activator-${message.originator.id}"
                             class="user-details"
@@ -81,26 +83,25 @@
                           ><a href="#" style="font-size: 14px; line-height:30px"><c:out value="${message.originator.firstName}" /> <c:out value="${message.originator.lastName}" /></a></span>
                             <c:choose>
                             <c:when test="${message.messageType.label == JOIN_LABGROUP_REQUEST}">
-                                <p>To join: <strong>${message.group.displayName}</strong></p>
-                                <span class = "warning">If you accept, the group PI will be able to see all of your data</span>
+                                <p><spring:message code="messages.joinRequest.toJoin"/> <strong>${message.group.displayName}</strong></p>
+                                <span class = "warning"><spring:message code="messages.joinLabGroup.warning"/></span>
                             </c:when>
                             <c:when test="${message.messageType.label == JOIN_PROJECT_GROUP_REQUEST}">
-                                <p>To join: <strong>${message.group.displayName}</strong></p>
-                                <span class = "warning">Project Groups have no PI, your documents won't be visible <br>
-                                    to other group members until you explicitly share them.</span>
+                                <p><spring:message code="messages.joinRequest.toJoin"/> <strong>${message.group.displayName}</strong></p>
+                                <span class = "warning"><spring:message code="messages.joinProjectGroup.warning"/></span>
                             </c:when>
                                 <c:otherwise>
                                     <br/>
                                 </c:otherwise>
                             </c:choose>
                           <c:if test="${not empty message.record}">
-                              <strong>Concerning: </strong>
+                              <strong><spring:message code="messages.concerning.label"/> </strong>
                               <a class="messageRecordLink" href="/workspace/editor/structuredDocument/${message.record.id}">${message.record.name}</a>
                               <br/>
                           </c:if>
                           <c:if test="${not message.simpleMessage}">
                               <c:if test="${not empty message.requestedCompletionDate }">
-                                  <strong>Due for completion by: </strong>
+                                  <strong><spring:message code="messages.completionBy.label"/> </strong>
                                   <fmt:formatDate pattern="E dd MMM yyyy HH:mm" value="${message.requestedCompletionDate}"></fmt:formatDate>
                                   <a href="/messaging/ical?id=${message.id}"><img src="/images/ics-icon.png" style="margin-top: -4px;"/></a>
                               </c:if>
@@ -113,19 +114,19 @@
                         <br />
 
                         <div class="messageText">
-                            <strong>Sent: </strong>
+                            <strong><spring:message code="messages.sent.label"/> </strong>
                             <rst:relDate input="${message.creationTime}"></rst:relDate>
 	                        <%-- Add in recipient list if there is more than 1 recipient, or if is global message,
 	                         to show user which other people can view the message --%>
 	                        <c:choose>
 	                          <c:when test="${message.messageType == 'GLOBAL_MESSAGE'}">
-	                            <div>Recipients: All Users</div>
+	                            <div><spring:message code="messages.recipients.allUsers"/></div>
 	                          </c:when>
 	                          <c:otherwise>
 	                            <c:set var="numRecipients" value="${fn:length(message.recipients)}" />
 	                            <c:if test="${numRecipients > 1}">
 	                              <div style="white-space: normal;">
-	                                 ${numRecipients} recipients:
+	                                 <spring:message code="messages.recipients.count" arguments="${numRecipients}"/>
 	                                 <rst:joinProperties property="recipient.fullName" maxSize="5" collection="${message.recipients}"></rst:joinProperties>
 	                               </div>
 	                            </c:if>
@@ -141,7 +142,7 @@
                           <c:choose>
                             <c:when test="${message.statefulRequest}">
                                 <input type="hidden" class="currentStatus" value="${message.status}" />
-                                <span style="color:#C1C1C1;">Set Request Status:</span>
+                                <span style="color:#C1C1C1;"><spring:message code="messages.setStatus.label"/></span>
                                 <br/>
                                 <select class="messageStatusChooser" name="messageStatus" style="margin-top:4px;">
                                     <option value="${message.status}" selected="selected">${message.status}</option>
@@ -150,10 +151,10 @@
                                             <c:choose>
                                                 <c:when
                                                     test="${message.messageType.yesNoMessage and stat eq 'COMPLETED' and message.messageType.label != JOIN_LABGROUP_REQUEST}">
-                                                    <option value="${stat}">ACCEPTED</option>
+                                                    <option value="${stat}"><spring:message code="messages.status.accepted"/></option>
                                                 </c:when>
                                                 <c:when test="${message.messageType.label == JOIN_LABGROUP_REQUEST and stat eq 'COMPLETED'}">
-                                                    <option value="${stat}">ACCEPTED - share data with PI</option>
+                                                    <option value="${stat}"><spring:message code="messages.status.acceptedShareWithPi"/></option>
                                                 </c:when>
                                                 <c:otherwise>
                                                     <option value="${stat}">${stat}</option>
@@ -163,13 +164,13 @@
                                     </c:forEach>
                                 </select>
                                 <div class="updateDetails" style="display: none;width:100%;">
-                                    <textarea class="replyMessageArea" placeholder="Add optional message" style="margin:3px 0 3px 0"></textarea><br/>
-                                    <a href="#" class="updateReplyLink">Update & Reply</a>
+                                    <textarea class="replyMessageArea" placeholder="<spring:message code='messages.reply.placeholder'/>" style="margin:3px 0 3px 0"></textarea><br/>
+                                    <a href="#" class="updateReplyLink"><spring:message code="messages.updateReply.label"/></a>
                                 </div>
                             </c:when>
                             <c:otherwise>
                                 <input type="hidden" class="currentStatus" value="${message.status}" />
-                                <a href="#" class="hideMessage">Dismiss</a>
+                                <a href="#" class="hideMessage"><spring:message code="common:actions.dismiss"/></a>
                                 <c:if test="${message.messageType != 'GLOBAL_MESSAGE'}">
                                     <c:forEach items="${message.recipients}" varStatus="i" var="recipient">
                                         <c:if test="${recipient.recipient.username eq user}">
@@ -194,7 +195,7 @@
                                 <c:if test="${message.messageType != 'GLOBAL_MESSAGE'}">
                                     <div class="updateDetails">
                                         <textarea class="replyMessageArea"></textarea>
-                                        <a href="#" class="replyMsgLink">Reply</a>
+                                        <a href="#" class="replyMsgLink"><spring:message code="messages.reply.label"/></a>
                                     </div>
                                 </c:if>
                             </c:otherwise>

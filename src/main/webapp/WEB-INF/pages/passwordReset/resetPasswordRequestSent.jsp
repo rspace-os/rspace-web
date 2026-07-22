@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp" %>
 <head>
-    <title>Password verification</title>
+    <title><spring:message code="resetPasswordRequestSent.title"/></title>
     <link href="<rst:assetUrl value='/styles/pages/public/passwordReset.css'/>" rel="stylesheet">
 </head>
 
@@ -8,14 +8,13 @@
     <div class="row">
         <axt:biggerLogo/>
         <div class="passwordResetSentDiv">
-            <h2 class="form-signup-heading">We need to check it's you...</h2>
+            <h2 class="form-signup-heading"><spring:message code="verificationEmail.checkItsYouHeading"/></h2>
             <br/>
-            A password request verification email has been sent to ${email}.
+            <spring:message code="resetPasswordRequestSent.sentNotice" arguments="${email}"/>
             <br/>
-            Please check your email and follow the instructions in
-            the email to reset your password within 1 hour.
+            <spring:message code="resetPasswordRequestSent.instructions"/>
             <br/><br/>
-            Thank you.
+            <spring:message code="verificationEmail.thankYou"/>
         </div>
     </div>
 </div>

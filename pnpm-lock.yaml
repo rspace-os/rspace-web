@@ -136,6 +136,9 @@ importers:
       immer:
         specifier: 11.1.11
         version: 11.1.11
+      intl-messageformat:
+        specifier: 11.2.8
+        version: 11.2.8
       jwt-decode:
         specifier: 4.0.0
         version: 4.0.0

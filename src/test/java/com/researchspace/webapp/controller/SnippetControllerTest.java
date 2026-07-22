@@ -32,7 +32,8 @@ public class SnippetControllerTest extends SpringTransactionalTest {
     AjaxReturnObject<String> response =
         snippetController.createSnippet("a", "b", 0L, principalTestUserStub);
     String createResultMsg = response.getData();
-    assertEquals(createResultMsg, messages.getMessage("snippet.creation.ok", new String[] {"a"}));
+    assertEquals(
+        createResultMsg, messages.getMessage("gallery.snippet.creation.ok", new String[] {"a"}));
 
     // test invalid names
     String invalidName = "<img src=\"image.png\" onerror=\"alert('1');\">";
@@ -40,6 +41,6 @@ public class SnippetControllerTest extends SpringTransactionalTest {
     assertNull(response.getData());
     assertEquals(
         response.getErrorMsg().getAllErrorMessagesAsStringsSeparatedBy(""),
-        messages.getMessage("errors.invalidchars", new String[] {"/,> or <", "name"}));
+        messages.getMessage("errors.invalidChars", new String[] {"/,> or <", "name"}));
   }
 }

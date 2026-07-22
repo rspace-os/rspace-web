@@ -183,7 +183,7 @@ public class StructuredDocumentController extends BaseController {
 
     ErrorList el = new ErrorList();
     if (!isFileUploaded(mswordOrEvernoteFile)) {
-      el.addErrorMsg(getText("workspace.word.import.nofiles.error.msg"));
+      el.addErrorMsg(getText("workspace.word.import.noFilesError"));
       return new AjaxReturnObject<List<RecordInformation>>(null, el);
     }
 
@@ -438,7 +438,8 @@ public class StructuredDocumentController extends BaseController {
     } catch (AuthorizationException ae) {
       return new AjaxReturnObject<String>(
           null,
-          getErrorListFromMessageCode("error.authorization.failure.polite", "rename this record."));
+          getErrorListFromMessageCode(
+              "errors.authorization.failure.polite", "rename this record."));
     }
     if (recordRenamed) {
       // the audit event snapshots the audited object's current name, so it must carry the new one
@@ -446,7 +447,7 @@ public class StructuredDocumentController extends BaseController {
       auditService.notify(new RenameAuditEvent(subject, record, oldName, newname));
     } else {
       return new AjaxReturnObject<String>(
-          null, getErrorListFromMessageCode("rename.failed.msg", new Object[] {}));
+          null, getErrorListFromMessageCode("document.rename.errors.notEditable", new Object[] {}));
     }
     return new AjaxReturnObject<String>("Success", null);
   }
@@ -460,7 +461,7 @@ public class StructuredDocumentController extends BaseController {
     if (StringUtils.isBlank(newName)) {
       message = getText("errors.required", "Name");
     } else if (newName.contains("/")) {
-      message = getText("errors.invalidchars", new Object[] {"/", "name"});
+      message = getText("errors.invalidChars", new Object[] {"/", "name"});
     }
     return message;
   }
@@ -489,7 +490,7 @@ public class StructuredDocumentController extends BaseController {
 
     if (!permissionUtils.isPermitted(recordOrFolder, PermissionType.WRITE, u)) {
       throw new AuthorizationException(
-          getText("error.authorization.failure.polite", new String[] {"edit description"}));
+          getText("errors.authorization.failure.polite", new String[] {"edit description"}));
     }
     recordOrFolder.setDescription(desc);
     baseRecordManager.save(recordOrFolder, u);
@@ -854,7 +855,7 @@ public class StructuredDocumentController extends BaseController {
             sd.getParent().getId(), sd.getForm().getId(), user);
     publisher.publishEvent(createGenericEvent(user, newInstanceRecord, AuditAction.CREATE));
     if (newInstanceRecord == null) {
-      ErrorList el = ErrorList.of("Could not create new document");
+      ErrorList el = ErrorList.of(getText("document.create.errors.failed"));
       return new AjaxReturnObject<String>(null, el);
     }
     String urlToReturn = getDocumentEditorUrlForRecord(newInstanceRecord);
@@ -948,7 +949,7 @@ public class StructuredDocumentController extends BaseController {
 
     // subject is not owner; only owner can delete from here.
     if (parent == null) {
-      throw new IllegalStateException(getText("document.deletebyuseronly.msg"));
+      throw new IllegalStateException(getText("document.delete.errors.ownerRequired"));
     }
     Long parentid = parent.getId();
 
@@ -972,13 +973,13 @@ public class StructuredDocumentController extends BaseController {
         return new AjaxReturnObject<String>(
             null,
             getErrorListFromMessageCode(
-                "error.authorization.failure.polite", new Object[] {" delete this document."}));
+                "errors.authorization.failure.polite", new Object[] {" delete this document."}));
       }
       String editor = tracker.getEditingUserForRecord(recordId);
       return new AjaxReturnObject<String>(
           null,
           getErrorListFromMessageCode(
-              "document.delete.failure.msg", new Object[] {recordId, editor}));
+              "document.delete.errors.editedByOtherUser", new Object[] {recordId, editor}));
     }
     String urlToReturn = "/workspace/" + parentid;
     return new AjaxReturnObject<String>(urlToReturn, null);
@@ -1063,7 +1064,7 @@ public class StructuredDocumentController extends BaseController {
       return getErrorListFromMessageCode("errors.emptyString.polite", "your comment");
     } else if (!EcatComment.validateLength(comment)) {
       return getErrorListFromMessageCode(
-          "errors.maxlength", "Comment", EcatComment.MAX_COMMENT_LENGTH);
+          "errors.maxLength", "Comment", EcatComment.MAX_COMMENT_LENGTH);
     }
     return null;
   }
@@ -1285,7 +1286,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxlength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
     }
     User user = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
@@ -1301,7 +1302,7 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxlength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText("errors.maxLength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
     }
     User user =
         userManager.getUserByUsername(
@@ -1333,7 +1334,7 @@ public class StructuredDocumentController extends BaseController {
 
     User user = getUserByUsername(principal.getName());
     if (fieldCompositeIds.length < 1) {
-      return getText("template.creation.nofields.msg");
+      return getText("template.creation.errors.noFields");
     }
     List<Long> fieldIds = new ArrayList<Long>();
     for (int i = 0; i < fieldCompositeIds.length; i++) {
@@ -1344,11 +1345,11 @@ public class StructuredDocumentController extends BaseController {
     StructuredDocument template =
         recordManager.createTemplateFromDocument(recordId, fieldIds, user, templateName);
     if (template == null) {
-      return getText("template.creation.failure.msg");
+      return getText("template.creation.errors.failed");
     }
     publisher.publishEvent(createGenericEvent(user, template, AuditAction.CREATE));
 
-    return getText("template.creation.success.msg");
+    return getText("template.creation.success.confirmation");
   }
 
   @ResponseBody
@@ -1377,11 +1378,11 @@ public class StructuredDocumentController extends BaseController {
 
     String errorMsg = null;
     if (!record.getOwner().equals(signerOrOperateAsSysadmin)) {
-      errorMsg = "error.authorization.signing";
+      errorMsg = "errors.authorization.signing";
     } else if (!signingManager.isReauthenticated(signer, password)) {
       errorMsg = "errors.password.invalid";
     } else if (signingManager.isSigned(recordId)) {
-      errorMsg = "authorisation.document.signed";
+      errorMsg = "errors.authorization.document.signed";
     }
     if (errorMsg != null) {
       return new AjaxReturnObject<SignatureInfo>(null, getErrorListFromMessageCode(errorMsg));
@@ -1391,7 +1392,8 @@ public class StructuredDocumentController extends BaseController {
     SigningResult result = signingManager.signRecord(recordId, signer, witnesses, statement);
     Optional<Signature> sig = result.getSignature();
     if (!sig.isPresent()) {
-      return new AjaxReturnObject<SignatureInfo>(null, ErrorList.of("Signing failed"));
+      return new AjaxReturnObject<SignatureInfo>(
+          null, ErrorList.of(getText("errors.signing.failed")));
     }
     return new AjaxReturnObject<SignatureInfo>(sig.get().toSignatureInfo(), null);
   }
