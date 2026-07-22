@@ -369,19 +369,21 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   public ISearchResults<InventoryRecord> getSearchedInventoryRecords(
       InventorySearchConfig srchConfigInput) {
     LuceneSrchCfg srchConfig = new LuceneSrchCfg(srchConfigInput, termListFactory);
-    List<InventoryRecord> luceneHits =
-        getLuceneInventoryQueryList(srchConfig).stream()
-            .filter(
-                rec ->
-                    isNotOwnedByDefaultTemplatesOwnerOrTemplate(
-                        rec, srchConfigInput.getDefaultTemplatesOwners()))
-            .filter(rec -> canCurrentUserReadInvRec(rec, srchConfigInput.getAuthenticatedUser()))
-            .collect(Collectors.toList());
+    List<InventoryRecord> luceneHits = getLuceneInventoryQueryList(srchConfig);
     List<InventoryRecord> dbHits =
         findInvRecordsWithGlobalIdOrBarcodeMatchingSearchQuery(srchConfigInput);
     List<InventoryRecord> finalHits =
         Stream.concat(luceneHits.stream(), dbHits.stream())
             .distinct()
+            // Apply the default-owner and read-permission filters to BOTH Lucene and direct
+            // (global-id / barcode) hits, so a direct lookup cannot bypass them (RSDEV-1219): a
+            // restricted user must not receive a default owner's ordinary records, nor any record
+            // they lack read permission on, merely by searching its global id or barcode.
+            .filter(
+                rec ->
+                    isNotOwnedByDefaultTemplatesOwnerOrTemplate(
+                        rec, srchConfigInput.getDefaultTemplatesOwners()))
+            .filter(rec -> canCurrentUserReadInvRec(rec, srchConfigInput.getAuthenticatedUser()))
             .filter(rec -> isMatchingDeletedItemsOption(rec, srchConfigInput.getDeletedOption()))
             .filter(this::isNotSubSampleOfTemplate)
             .filter(this::isNotWorkbench)

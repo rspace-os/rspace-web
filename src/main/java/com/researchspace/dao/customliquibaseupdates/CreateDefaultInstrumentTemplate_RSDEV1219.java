@@ -67,9 +67,10 @@ public class CreateDefaultInstrumentTemplate_RSDEV1219 extends AbstractCustomLiq
               + "'");
     }
     // Idempotency: custom changes run once per DB via DATABASECHANGELOG, but guard anyway for
-    // re-baselined / restored databases. Only a *locked* template counts as already seeded; an
-    // editable same-named template (e.g. from a prior run interrupted before the lock step) must be
-    // locked rather than treated as done, or the deployment would keep an unlocked default.
+    // re-baselined / restored databases. Only a *locked* template counts as already seeded.
+    // An editable same-named template does NOT suppress seeding and is left untouched: it may
+    // be a sysadmin template that does not match the PIDINST 1.0 fields, so we always create
+    // the canonical locked template below rather than locking a template we did not create.
     List<InstrumentTemplate> existing =
         instrumentTemplateDao.findInstrumentTemplatesByName(TEMPLATE_NAME, sysadmin);
     if (existing.stream().anyMatch(template -> !template.isEditable())) {
@@ -89,18 +90,10 @@ public class CreateDefaultInstrumentTemplate_RSDEV1219 extends AbstractCustomLiq
       ThreadContext.bind(new DefaultSecurityManager());
     }
     try {
-      InstrumentTemplate template;
-      if (existing.isEmpty()) {
-        ApiInstrumentTemplate created =
-            instrumentApiMgr.createInstrumentTemplate(readTemplatePost(), sysadmin);
-        // the create path sets isEditable=true by default; the seeder is the only writer of false
-        template = instrumentTemplateDao.get(created.getId());
-      } else {
-        // a prior run created the template but did not lock it; finish the job by locking the
-        // existing one rather than creating a duplicate
-        template = existing.get(0);
-        log.info("Found an unlocked default instrument template '{}'; locking it", TEMPLATE_NAME);
-      }
+      ApiInstrumentTemplate created =
+          instrumentApiMgr.createInstrumentTemplate(readTemplatePost(), sysadmin);
+      // the create path sets isEditable=true by default; the seeder is the only writer of false
+      InstrumentTemplate template = instrumentTemplateDao.get(created.getId());
       template.setEditable(false);
       instrumentTemplateDao.save(template);
       instrumentTemplateDao.resetDefaultTemplateOwner();

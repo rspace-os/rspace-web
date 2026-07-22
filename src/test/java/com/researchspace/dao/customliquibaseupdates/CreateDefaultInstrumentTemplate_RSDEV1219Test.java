@@ -1,5 +1,6 @@
 package com.researchspace.dao.customliquibaseupdates;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -85,25 +86,38 @@ class CreateDefaultInstrumentTemplate_RSDEV1219Test {
     verify(instrumentApiMgr, never()).createInstrumentTemplate(any(), any());
     verify(locked, never()).setEditable(anyBoolean());
     verify(instrumentTemplateDao, never()).save(any());
+    assertEquals(
+        "Default instrument template already present; no changes made",
+        seeder.getConfirmationMessage());
   }
 
   @Test
-  @DisplayName(
-      "An unlocked template from an interrupted prior run is locked, not skipped or duplicated")
-  void locksExistingUnlockedTemplateInsteadOfSkipping() {
+  @DisplayName("An editable same-named template does not suppress seeding and is left untouched")
+  void createsCanonicalTemplateWhenOnlyEditableSameNamedExists() {
     when(userDao.getUserByUsername(anyString())).thenReturn(sysadmin);
-    InstrumentTemplate editable = Mockito.mock(InstrumentTemplate.class);
-    when(editable.isEditable()).thenReturn(true);
+    InstrumentTemplate preExistingEditable = Mockito.mock(InstrumentTemplate.class);
+    when(preExistingEditable.isEditable()).thenReturn(true);
     when(instrumentTemplateDao.findInstrumentTemplatesByName(
             CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME, sysadmin))
-        .thenReturn(List.of(editable));
+        .thenReturn(List.of(preExistingEditable));
+    ApiInstrumentTemplate created = Mockito.mock(ApiInstrumentTemplate.class);
+    when(created.getId()).thenReturn(42L);
+    when(instrumentApiMgr.createInstrumentTemplate(
+            any(ApiInstrumentTemplatePost.class), eq(sysadmin)))
+        .thenReturn(created);
+    InstrumentTemplate canonical = Mockito.mock(InstrumentTemplate.class);
+    when(instrumentTemplateDao.get(42L)).thenReturn(canonical);
 
     seeder.doExecute(null);
 
-    verify(instrumentApiMgr, never()).createInstrumentTemplate(any(), any());
-    verify(editable).setEditable(false);
-    verify(instrumentTemplateDao).save(editable);
-    verify(instrumentTemplateDao).resetDefaultTemplateOwner();
+    // the canonical template is created from JSON and locked; the sysadmin's own template is
+    // untouched
+    verify(instrumentApiMgr)
+        .createInstrumentTemplate(any(ApiInstrumentTemplatePost.class), eq(sysadmin));
+    verify(canonical).setEditable(false);
+    verify(instrumentTemplateDao).save(canonical);
+    verify(preExistingEditable, never()).setEditable(anyBoolean());
+    verify(instrumentTemplateDao, never()).save(preExistingEditable);
   }
 
   @Test
@@ -128,5 +142,10 @@ class CreateDefaultInstrumentTemplate_RSDEV1219Test {
     verify(saved).setEditable(false);
     verify(instrumentTemplateDao).save(saved);
     verify(instrumentTemplateDao).resetDefaultTemplateOwner();
+    assertEquals(
+        "Created locked default instrument template '"
+            + CreateDefaultInstrumentTemplate_RSDEV1219.TEMPLATE_NAME
+            + "'",
+        seeder.getConfirmationMessage());
   }
 }
