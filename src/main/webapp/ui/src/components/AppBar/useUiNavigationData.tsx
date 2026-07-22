@@ -1,5 +1,6 @@
 import React from "react";
 import axios from "@/common/axios";
+import { useTracedRequest } from "@/common/otel";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import type * as FetchingData from "../../util/fetchingData";
 import * as Parsers from "../../util/parsers";
@@ -49,6 +50,7 @@ interface UserSetEmailEvent extends CustomEvent {
  * the AppBar.
  */
 export default function useUiNavigationData(): FetchingData.Fetched<UiNavigationData> {
+  const traceRequest = useTracedRequest();
   const { getToken } = useOauthToken();
   const [loading, setLoading] = React.useState(true);
   const [uiData, setUiData] = React.useState<null | UiNavigationData>(null);
@@ -114,11 +116,13 @@ export default function useUiNavigationData(): FetchingData.Fetched<UiNavigation
     setErrorMessage(null);
     try {
       const token = await getToken();
-      const { data } = await axios.get<unknown>("/api/v1/userDetails/uiNavigationData", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { data } = await traceRequest(() =>
+        axios.get<unknown>("/api/v1/userDetails/uiNavigationData", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      );
       Parsers.isObject(data)
         .flatMap(Parsers.isNotNull)
         .flatMap((obj) => {

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
+import { onPageLoadWithOtel, type UiTraceContext, UiTraceContextProvider } from "@/common/otel";
 import { createMuiCssLayerCache } from "@/components/MuiCssLayerProvider";
 import { color, currentPageKey } from "@/util/pageBranding";
 import createAccentedTheme from "../accentedTheme";
@@ -15,7 +16,12 @@ import ErrorBoundary from "../components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
-window.addEventListener("load", () => {
+const traceContext: UiTraceContext = {
+  page: window.location.pathname.split("/")[1] || "home",
+  reactIsland: "app-bar",
+};
+
+onPageLoadWithOtel(traceContext, () => {
   /*
    * We append the app bar to the body to be outside of the wide margins on
    * many pages
@@ -42,28 +48,30 @@ window.addEventListener("load", () => {
   root.render(
     <React.StrictMode>
       <CacheProvider value={cache}>
-        <QueryClientProvider client={queryClient}>
-          <Analytics>
-            <ErrorBoundary>
-              <CssBaseline />
-              <meta
-                name="theme-color"
-                content={`hsl(${pageColor.background.hue}, ${pageColor.background.saturation}%, ${pageColor.background.lightness}%)`}
-              />
-              <ThemeProvider theme={createAccentedTheme(pageColor)}>
-                <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
-                  {/*
-                   * We use a DialogBoundary to keep the menu inside the shadow DOM
-                   */}
-                  <DialogBoundary>
-                    <AppBar variant="page" currentPage={currentPageKey()} accessibilityTips={{}} />
-                  </DialogBoundary>
-                </Box>
-                <Box sx={{ height: "30px" }}></Box>
-              </ThemeProvider>
-            </ErrorBoundary>
-          </Analytics>
-        </QueryClientProvider>
+        <UiTraceContextProvider traceContext={traceContext}>
+          <QueryClientProvider client={queryClient}>
+            <Analytics>
+              <ErrorBoundary>
+                <CssBaseline />
+                <meta
+                  name="theme-color"
+                  content={`hsl(${pageColor.background.hue}, ${pageColor.background.saturation}%, ${pageColor.background.lightness}%)`}
+                />
+                <ThemeProvider theme={createAccentedTheme(pageColor)}>
+                  <Box sx={{ fontSize: "1rem", lineHeight: "1.5" }}>
+                    {/*
+                     * We use a DialogBoundary to keep the menu inside the shadow DOM
+                     */}
+                    <DialogBoundary>
+                      <AppBar variant="page" currentPage={currentPageKey()} accessibilityTips={{}} />
+                    </DialogBoundary>
+                  </Box>
+                  <Box sx={{ height: "30px" }}></Box>
+                </ThemeProvider>
+              </ErrorBoundary>
+            </Analytics>
+          </QueryClientProvider>
+        </UiTraceContextProvider>
       </CacheProvider>
     </React.StrictMode>,
   );
