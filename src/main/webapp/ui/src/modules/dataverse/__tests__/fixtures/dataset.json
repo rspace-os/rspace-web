@@ -1,0 +1,13 @@
+{
+  "status": "OK",
+  "data": {
+    "id": 100,
+    "identifier": "FK2/MOCK123",
+    "protocol": "doi",
+    "authority": "10.5072",
+    "persistentUrl": "https://doi.org/10.5072/FK2/MOCK123",
+    "metadataLanguage": null,
+    "datasetVersion": null,
+    "latestVersion": null
+  }
+}

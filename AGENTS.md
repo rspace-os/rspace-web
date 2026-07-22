@@ -106,8 +106,8 @@ Frontend test conventions:
   `toHaveAttribute`, and `toBeDisabled`.
 - With `vi.mocked(obj.method)`, first assign the method to a local variable to
   avoid the unbound-method lint rule.
-- MUI `Select` inside `FormField` has an unreliable accessible name. Add a
-  stable `data-testid` via `SelectDisplayProps` when a test must query it.
+- MUI `Select` inside `FormField` needs an explicit accessible name. Pass an
+  `aria-label` via `SelectDisplayProps` and query it by role and name.
 - Use the `rspace-browser-tests` skill for `*.spec.tsx` Browser Mode work.
 
 ### Backend commands

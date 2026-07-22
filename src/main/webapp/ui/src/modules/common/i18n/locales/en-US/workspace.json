@@ -511,6 +511,7 @@
       "reset": "Reset",
       "satisfyAll": "Satisfy all conditions",
       "satisfyOne": "Satisfy at least one condition",
+      "searchType": "Search type",
       "searchTypes": {
         "attachment": "Attachment",
         "created": "Creation date",

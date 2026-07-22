@@ -1651,11 +1651,13 @@ export default interface Resources {
         "ascending": "Ascending",
         "descending": "Descending"
       },
+      "directionLabel": "Sort direction",
       "order": {
         "creationDate": "Creation Date",
         "lastModified": "Last Modified",
         "name": "Name"
-      }
+      },
+      "orderLabel": "Sort field"
     },
     "userDetails": {
       "accountDisabled": "Disabled",
@@ -5156,6 +5158,7 @@ export default interface Resources {
         "reset": "Reset",
         "satisfyAll": "Satisfy all conditions",
         "satisfyOne": "Satisfy at least one condition",
+        "searchType": "Search type",
         "searchTypes": {
           "attachment": "Attachment",
           "created": "Creation date",

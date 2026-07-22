@@ -93,7 +93,8 @@ export default function CreateMenu(props: CreateMenuProps) {
           <Box
             component="img"
             src="/images/icons/folder.png"
-            alt={t("toolbar.folderIcon")}
+            alt=""
+            aria-hidden="true"
             sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           {t("toolbar.folder")}
@@ -102,7 +103,8 @@ export default function CreateMenu(props: CreateMenuProps) {
           <Box
             component="img"
             src="/images/icons/notebook.png"
-            alt={t("toolbar.notebookIcon")}
+            alt=""
+            aria-hidden="true"
             sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
           />
           {t("toolbar.notebook")}
@@ -117,7 +119,8 @@ export default function CreateMenu(props: CreateMenuProps) {
             <Box
               component="img"
               src={entry.iconURL}
-              alt={t("toolbar.folderIcon")}
+              alt=""
+              aria-hidden="true"
               sx={{ paddingRight: "7px", width: "22px", marginLeft: "-5px" }}
             />
             {entry.name}
@@ -167,7 +170,8 @@ export default function CreateMenu(props: CreateMenuProps) {
             <Box
               component="img"
               src="/images/integrations/protocolsio.png"
-              alt={t("toolbar.protocolsIoIcon")}
+              alt=""
+              aria-hidden="true"
               sx={{ paddingRight: "5px", width: "22px", marginLeft: "-5px" }}
             />
             {t("toolbar.fromProtocolsIo")}

@@ -17,4 +17,26 @@ corepack enable >/dev/null 2>&1 || true
 pnpm install --frozen-lockfile
 
 echo "[entrypoint] Starting Vite dev server on 0.0.0.0:5173 (HMR client port ${VITE_HMR_CLIENT_PORT:-5173}) ..."
-exec pnpm run serve
+if [ "${RSPACE_E2E_MOCKS:-false}" != "true" ]; then
+  exec pnpm run serve
+fi
+
+echo "[entrypoint] Starting E2E mock server on ${E2E_MOCK_HOST:-0.0.0.0}:${E2E_MOCK_PORT:-9099} ..."
+node src/main/webapp/ui/src/__tests__/e2e/mockServer.ts "${E2E_MOCK_PORT:-9099}" &
+mock_pid=$!
+pnpm run serve &
+vite_pid=$!
+
+stop_children() {
+  kill "${mock_pid}" "${vite_pid}" 2>/dev/null || true
+  wait "${mock_pid}" "${vite_pid}" 2>/dev/null || true
+}
+trap stop_children EXIT INT TERM
+
+# The mock server and Vite are both required in E2E mode. If either exits, stop
+# the other and let the container's restart policy bring the pair back together.
+set +e
+wait -n "${mock_pid}" "${vite_pid}"
+status=$?
+set -e
+exit "${status}"
