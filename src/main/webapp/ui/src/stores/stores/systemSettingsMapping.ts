@@ -90,7 +90,7 @@ function toB2InstSettings(entry: IdentifierSettings): B2InstSettings {
     serverUrl: entry.serverUrl,
     username: entry.username,
     password: entry.password,
-    repositoryPrefix: entry.repositoryPrefix,
+    repositoryPrefix: "",
   };
 }
 

@@ -102,6 +102,7 @@ function DividedPair({ children }: DividedPairArgs) {
 export const INSTITUTION_LOGO_ADDRESS = "/public/banner";
 
 const IGSN_BASE_URL = `https://www.igsn.org/`;
+const PIDINST_BASE_URL = `https://www.pidinst.org/`;
 const formatDegrees = (value: string): string => `${value}˚`;
 
 /**
@@ -250,7 +251,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
           <Grid container sx={{ flexDirection: "column", alignItems: "center" }} spacing={0.5}>
             <Grid>
               <a
-                href={IGSN_BASE_URL}
+                href={isPidinst ? PIDINST_BASE_URL : IGSN_BASE_URL}
                 title={t(isPidinst ? "links.pidinstHomepage" : "links.igsnHomepage")}
                 target="_blank"
                 rel="noreferrer"

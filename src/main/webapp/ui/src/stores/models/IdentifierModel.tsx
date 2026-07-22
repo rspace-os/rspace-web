@@ -424,9 +424,11 @@ export default class IdentifierModel implements Identifier {
   async publish({
     confirm,
     addAlert,
+    onPublished,
   }: {
     confirm: (title: React.ReactNode, message: React.ReactNode, yesLabel: string, noLabel: string) => Promise<boolean>;
     addAlert: (alert: Alert) => void;
+    onPublished?: () => void;
   }): Promise<void> {
     if (!this.ApiServiceBase) throw new Error("This operation requires the user be authenticated");
     const ApiServiceBase = this.ApiServiceBase;
@@ -469,6 +471,7 @@ export default class IdentifierModel implements Identifier {
             variant: "success",
           }),
         );
+        onPublished?.();
       }
     } catch (error) {
       // in case of errors like 422 the server provides a specific response message that we want to display
