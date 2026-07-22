@@ -18,12 +18,12 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -205,7 +205,10 @@ public class CommunityAdminController extends BaseController {
             subject,
             community,
             AuditAction.WRITE,
-            "added admins (" + StringUtils.join(adminids, ",") + ")"));
+            getText(
+                "community.audit.adminsAdded",
+                ListFormatUtils.formatList(
+                    community.getAdminIds().stream().map(String::valueOf).toList()))));
     return REDIRECT_SYSTEM_COMMUNITY + community.getId();
   }
 

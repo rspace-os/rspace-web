@@ -42,7 +42,6 @@ import com.researchspace.service.SharingHandler;
 import com.researchspace.service.mapping.DocumentSharesBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import javax.ws.rs.NotFoundException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -235,7 +234,8 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (result.getExceptionCount() > 0 && result.getResultCount() == 0) {
       String exceptionMessages =
-          result.getExceptions().stream().map(Throwable::getMessage).collect(Collectors.joining());
+          ListFormatUtils.formatList(
+              result.getExceptions().stream().map(Throwable::getMessage).toList());
       if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
         throw new IllegalArgumentException(
             getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));

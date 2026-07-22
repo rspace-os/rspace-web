@@ -442,7 +442,7 @@ public class StructuredDocumentController extends BaseController {
       return new AjaxReturnObject<String>(
           null,
           getErrorListFromMessageCode(
-              "errors.authorization.failure.polite", "rename this record."));
+              "errors.authorization.failure.polite", getText("label.renameRecordAction")));
     }
     if (recordRenamed) {
       // the audit event snapshots the audited object's current name, so it must carry the new one
@@ -487,14 +487,18 @@ public class StructuredDocumentController extends BaseController {
 
     if (StringUtils.length(desc) > EditInfo.DESCRIPTION_LENGTH) {
       throw new IllegalArgumentException(
-          getText("errors.maxLength", new Object[] {"description", EditInfo.DESCRIPTION_LENGTH}));
+          getText(
+              "errors.maxLength",
+              new Object[] {getText("label.description"), EditInfo.DESCRIPTION_LENGTH}));
     }
     User u = getUserByUsername(principal.getName());
     BaseRecord recordOrFolder = baseRecordManager.get(recordId, u);
 
     if (!permissionUtils.isPermitted(recordOrFolder, PermissionType.WRITE, u)) {
       throw new AuthorizationException(
-          getText("errors.authorization.failure.polite", new String[] {"edit description"}));
+          getText(
+              "errors.authorization.failure.polite",
+              new String[] {getText("label.editDescriptionAction")}));
     }
     recordOrFolder.setDescription(desc);
     baseRecordManager.save(recordOrFolder, u);
@@ -977,7 +981,8 @@ public class StructuredDocumentController extends BaseController {
         return new AjaxReturnObject<String>(
             null,
             getErrorListFromMessageCode(
-                "errors.authorization.failure.polite", new Object[] {" delete this document."}));
+                "errors.authorization.failure.polite",
+                new Object[] {getText("label.deleteDocumentAction")}));
       }
       String editor = tracker.getEditingUserForRecord(recordId);
       return new AjaxReturnObject<String>(
@@ -1065,10 +1070,10 @@ public class StructuredDocumentController extends BaseController {
 
   private ErrorList validateComment(String comment) {
     if (StringUtils.isEmpty(comment)) {
-      return getErrorListFromMessageCode("errors.emptyString.polite", "your comment");
+      return getErrorListFromMessageCode("errors.emptyString.polite", getText("label.yourComment"));
     } else if (!EcatComment.validateLength(comment)) {
       return getErrorListFromMessageCode(
-          "errors.maxLength", "Comment", EcatComment.MAX_COMMENT_LENGTH);
+          "errors.maxLength", getText("label.comment"), EcatComment.MAX_COMMENT_LENGTH);
     }
     return null;
   }
@@ -1289,7 +1294,8 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxLength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText(
+              "errors.maxLength", new String[] {getText("label.tagFilter"), MAX_TAG_LENGTH + ""}));
     }
     User user = userManager.getAuthenticatedUserInSession();
     return new AjaxReturnObject<>(
@@ -1305,7 +1311,8 @@ public class StructuredDocumentController extends BaseController {
     if (!isBlank(tagFilter)) {
       Validate.isTrue(
           tagFilter.length() <= MAX_TAG_LENGTH,
-          getText("errors.maxLength", new String[] {"tagFilter", MAX_TAG_LENGTH + ""}));
+          getText(
+              "errors.maxLength", new String[] {getText("label.tagFilter"), MAX_TAG_LENGTH + ""}));
     }
     User user =
         userManager.getUserByUsername(

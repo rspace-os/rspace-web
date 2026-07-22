@@ -3,6 +3,7 @@ package com.researchspace.service.impl;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.Constants;
 import com.researchspace.model.Community;
 import com.researchspace.model.Group;
@@ -25,17 +26,18 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -93,7 +95,11 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
       errorList.addErrorMsg(
           getText(
               "errors.invalid.roleIdentifier",
-              new Object[] {role, StringUtils.join(Role.getValidRoles())}));
+              new Object[] {
+                role,
+                ListFormatUtils.formatList(
+                    Arrays.asList(Role.getValidRoles()), ListFormatter.Type.OR)
+              }));
       return new AjaxReturnObject<User>(null, errorList);
     }
 

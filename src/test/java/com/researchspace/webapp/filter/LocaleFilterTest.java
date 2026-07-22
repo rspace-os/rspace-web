@@ -7,6 +7,7 @@ import javax.servlet.ServletException;
 import javax.servlet.jsp.jstl.core.Config;
 import junit.framework.TestCase;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockFilterConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -73,6 +74,33 @@ public class LocaleFilterTest extends TestCase {
 
     Locale locale = (Locale) request.getSession().getAttribute(Constants.PREFERRED_LOCALE_KEY);
     assertEquals(EN_US, locale);
+  }
+
+  public void testApiAcceptLanguageSetsRequestAndThreadLocale() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/api/v1/documents");
+    request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "fr-FR, en-US;q=0.8");
+
+    filter.doFilter(
+        request,
+        new MockHttpServletResponse(),
+        (wrappedRequest, response) -> {
+          assertEquals(Locale.FRANCE, wrappedRequest.getLocale());
+          assertEquals(Locale.FRANCE, LocaleContextHolder.getLocale());
+        });
+
+    assertNull(LocaleContextHolder.getLocaleContext());
+  }
+
+  public void testNonApiAcceptLanguageDoesNotOverrideDeploymentLocale() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    request.setRequestURI("/workspace");
+    request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "fr-FR");
+
+    filter.doFilter(
+        request,
+        new MockHttpServletResponse(),
+        (wrappedRequest, response) -> assertEquals(EN_US, wrappedRequest.getLocale()));
   }
 
   public void testJstlLocaleIsSet() throws Exception {

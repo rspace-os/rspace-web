@@ -24,6 +24,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
+import { legacyMsg } from "@/__tests__/helpers/legacyI18n";
 
 // Resolve from this file's location rather than process.cwd(): the jsdom test
 // environment polyfills `process` (vite-plugin-node-polyfills), so
@@ -127,7 +128,7 @@ function load(opts: string | null | LoadOptions): { mentions: Mentions; getCalls
     : { startContainer: caretNode, startOffset: 0 };
 
   const sandbox: Record<string, unknown> = {
-    RS: { msg: (key: string) => key },
+    RS: { msg: legacyMsg },
     tinymce: {
       PluginManager: { add: () => {} },
       activeEditor: {

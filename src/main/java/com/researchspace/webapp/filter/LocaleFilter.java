@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.jstl.core.Config;
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -43,7 +44,7 @@ public class LocaleFilter extends OncePerRequestFilter {
       HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws IOException, ServletException {
 
-    Locale locale = userLocaleService.getLocale();
+    Locale locale = resolveLocale(request);
     LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
     LocaleContextHolder.setLocale(locale);
     request.setAttribute(RESOLVED_LOCALE_TAG_REQUEST_ATTRIBUTE, locale.toLanguageTag());
@@ -68,5 +69,14 @@ public class LocaleFilter extends OncePerRequestFilter {
     } finally {
       LocaleContextHolder.setLocaleContext(previousLocaleContext);
     }
+  }
+
+  private Locale resolveLocale(HttpServletRequest request) {
+    String requestPath = request.getRequestURI().substring(request.getContextPath().length());
+    if ((requestPath.equals("/api/v1") || requestPath.startsWith("/api/v1/"))
+        && request.getHeader(HttpHeaders.ACCEPT_LANGUAGE) != null) {
+      return request.getLocale();
+    }
+    return userLocaleService.getLocale();
   }
 }

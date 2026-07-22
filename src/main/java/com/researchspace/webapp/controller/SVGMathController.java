@@ -82,7 +82,10 @@ public class SVGMathController extends BaseController {
       throw new IllegalArgumentException(msg);
     }
     if (latex.length() > RSMath.LATEX_COLUMN_SIZE) {
-      msg = getText("errors.maxLength", new Object[] {"Latex", RSMath.LATEX_COLUMN_SIZE + ""});
+      msg =
+          getText(
+              "errors.maxLength",
+              new Object[] {getText("label.latex"), RSMath.LATEX_COLUMN_SIZE + ""});
       throw new IllegalArgumentException(msg);
     }
     msg = validateSVGXML(svg, msg);
@@ -101,14 +104,17 @@ public class SVGMathController extends BaseController {
       Document jdomDoc = builder.build(new StringReader(svg));
       Namespace ns = jdomDoc.getRootElement().getNamespace();
       if (!SVG_NS.equals(ns.getURI())) {
-        msg = getText("errors.invalidXml.namespace", new Object[] {"SVG", SVG_NS, ns.getURI()});
+        msg =
+            getText(
+                "errors.invalidXml.namespace",
+                new Object[] {getText("label.svg"), SVG_NS, ns.getURI()});
       }
     } catch (JDOMException | IOException e) {
       log.warn("SVG validation failed: {}", e.getMessage());
       msg =
           getText(
               "errors.invalidXml.content",
-              new Object[] {"SVG", StringAbbreviationUtils.abbreviate(svg, 255)});
+              new Object[] {getText("label.svg"), StringAbbreviationUtils.abbreviate(svg, 255)});
     }
     return msg;
   }

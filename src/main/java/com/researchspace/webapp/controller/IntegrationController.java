@@ -26,13 +26,13 @@ import static com.researchspace.service.IntegrationsHandler.RAID_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.SLACK_APP_NAME;
 import static com.researchspace.service.IntegrationsHandler.ZENODO_APP_NAME;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.model.User;
 import com.researchspace.model.dto.IntegrationInfo;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.preference.Preference;
 import com.researchspace.model.preference.URLPreferenceValidator;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.impl.IntegrationsHandlerImpl;
 import com.researchspace.session.SessionAttributeUtils;
 import java.security.Principal;
@@ -99,7 +99,7 @@ public class IntegrationController extends BaseController {
       }
     }
     if (infos.size() == 0) {
-      String text = "There were no valid Apps : " + join(names, ",");
+      String text = getText("apps.errors.noneValid", ListFormatUtils.formatList(List.of(names)));
       ErrorList msg = ErrorList.of(text);
       log.warn(text);
       return new AjaxReturnObject<>(null, msg);

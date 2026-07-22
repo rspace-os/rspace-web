@@ -13,10 +13,24 @@ const legacyWindow = window as Window & {
 };
 
 legacyWindow.RS = legacyWindow.RS || {};
-// Vite replaces this placeholder with the flattened server.legacyJs.json catalogue.
-legacyWindow.RS.i18n = "__LEGACY_I18N_MESSAGES__" as unknown as Record<string, string>;
+// Vite replaces this placeholder with the flattened server.legacyJs.json catalogues.
+const catalogues = "__LEGACY_I18N_CATALOGUES__" as unknown as Record<string, Record<string, string>>;
+const locale = document.documentElement.lang || "en-US";
+legacyWindow.RS.i18n = selectLegacyCatalogue(catalogues, locale);
 
 const formatterCache = new Map<string, IntlMessageFormatType>();
+
+export function selectLegacyCatalogue(
+  availableCatalogues: Record<string, Record<string, string>>,
+  languageTag: string,
+): Record<string, string> {
+  return (
+    availableCatalogues[languageTag] ??
+    availableCatalogues[languageTag.split("-")[0]] ??
+    availableCatalogues["en-US"] ??
+    {}
+  );
+}
 
 export function formatIcuMessage(pattern: string, args: PrimitiveType[]): string {
   const locale = document.documentElement.lang || navigator.language || "en";

@@ -5,10 +5,11 @@ import static com.axiope.search.SearchConstants.CREATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.FULL_TEXT_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.MODIFICATION_DATE_SEARCH_OPTION;
 import static com.axiope.search.SearchConstants.RECORDS_SEARCH_OPTION;
-import static org.apache.commons.lang3.StringUtils.join;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.WorkspaceListingConfig;
+import com.researchspace.service.ListFormatUtils;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -115,7 +116,11 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
       if (!WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS.contains(orderBy)) {
         errors.reject(
             "errors.invalidOrderByClause",
-            new Object[] {orderBy, join(WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS, ",")},
+            new Object[] {
+              orderBy,
+              ListFormatUtils.formatList(
+                  WorkspaceListingConfig.PERMITTED_ORDERBY_FIELDS, ListFormatter.Type.OR)
+            },
             null);
       }
     }

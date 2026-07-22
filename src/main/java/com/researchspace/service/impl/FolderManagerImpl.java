@@ -4,7 +4,6 @@ import static com.researchspace.core.util.MediaUtils.GALLERY_MEDIA_FOLDERS;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.ArrayUtils.contains;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.core.util.CollectionFilter;
 import com.researchspace.core.util.ISearchResults;
@@ -47,6 +46,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
@@ -739,9 +739,9 @@ public class FolderManagerImpl implements FolderManager {
   public Folder getApiUploadTargetFolder(String contentType, User subject, Long folderId) {
     Validate.isTrue(
         isValidContentType(contentType),
-        format(
-            "contentType must be empty string (for workspace) or one of (%s) for files",
-            join(GALLERY_MEDIA_FOLDERS, ",")));
+        messageSourceUtils.getMessage(
+            "errors.gallery.invalidContentType",
+            new Object[] {ListFormatUtils.formatList(List.of(GALLERY_MEDIA_FOLDERS))}));
     boolean isDestinationWorkspace = isDestinationWorkspace(contentType);
     boolean isDestinationGallery = !isDestinationWorkspace;
     String parentFolderName = isDestinationWorkspace ? subject.getUsername() : contentType;

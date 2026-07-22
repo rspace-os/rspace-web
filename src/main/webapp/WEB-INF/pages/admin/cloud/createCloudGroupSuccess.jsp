@@ -1,6 +1,6 @@
 <%@ include file="/common/taglibs.jsp"%>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="${fn:escapeXml(empty requestScope.rsResolvedLocaleTag ? 'en-US' : requestScope.rsResolvedLocaleTag)}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">

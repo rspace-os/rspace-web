@@ -65,6 +65,7 @@
         "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
         "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
         "parentContainerNotFound": "Parent container with import id ''{0}'' could not be found",
+        "parentContainerGlobalIdInvalid": "Parent Container Global Id ''{0}'' is not a valid global id of an inventory container",
         "parentContainerNotListContainer": "Parent container with global id ''{0}'' is a {1} container, but CSV import only supports import into list-type containers",
         "parentSampleImportIdWithGlobalId": "Parent sample should be set via either 'Parent Sample Import ID' or 'Parent Sample Global ID', but not both at the same time",
         "parentSampleNotEditable": "Parent sample with global id ''{0}'' doesn''t exist, or user has no permission to add new subsamples into it",
@@ -75,6 +76,7 @@
         "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
       },
       "instrument": {
+        "nameExists": "There is already an instrument named [{0}]",
         "templateNotFound": "No instrument template with id: {0}",
         "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
       },
@@ -104,6 +106,10 @@
         "unitNotAmount": "Quantity unit id [{0}] is not pointing to a unit of amount, it should be an id of a mass, volume or dimensionless unit."
       },
       "sample": {
+        "deletion": {
+          "hasStoredSubsamples": "The Sample has at least one Subsample located inside a container"
+        },
+        "nameExists": "There is already a sample named [{0}]",
         "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
         "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
         "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
@@ -128,6 +134,13 @@
         "minGreaterThanMax": "Min temperature is greater than max temperature.",
         "unitsNotComparable": "Temperature units are not mutually comparable."
       },
+      "validation": {
+        "failed": "Validation failed for provided record"
+      },
+      "name": {
+        "empty": "Name cannot be empty",
+        "tooLong": "Name is too long (max {0} chars)"
+      },
       "template": {
         "emptyFieldName": "Field name cannot be empty",
         "emptyFieldType": "Field type cannot be empty",
@@ -138,6 +151,20 @@
         "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
         "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
       }
+    }
+  },
+  "inventory": {
+    "audit": {
+      "listOfMaterials": {
+        "added": "Added List of Materials {0}.",
+        "deleted": "Deleted List of Materials {0}.",
+        "edited": "Edited List of Materials {0}.",
+        "itemsAdded": " Added inventory items: {0}.",
+        "itemsRemoved": " Removed inventory items: {0}."
+      }
+    },
+    "listOfMaterials": {
+      "label": "List of materials"
     }
   },
   "export": {

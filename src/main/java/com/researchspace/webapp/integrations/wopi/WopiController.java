@@ -419,7 +419,9 @@ public class WopiController extends BaseController {
    */
   private String validateNewRecordName(String newName) {
     if (!StringUtils.isBlank(newName) && newName.length() > DEFAULT_VARCHAR_LENGTH) {
-      return getText("errors.maxLength", new String[] {"name", DEFAULT_VARCHAR_LENGTH + ""});
+      return getText(
+          "errors.maxLength",
+          new String[] {getText("label.nameLowercase"), DEFAULT_VARCHAR_LENGTH + ""});
     }
     return sdocController.validateNewRecordName(newName);
   }

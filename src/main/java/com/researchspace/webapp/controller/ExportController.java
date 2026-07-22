@@ -331,9 +331,8 @@ public class ExportController extends BaseController {
               "importExport.import.errors.invalidServerPath",
               new Object[] {
                 serverPath,
-                errors.getAllErrors().stream()
-                    .map(ObjectError::getDefaultMessage)
-                    .collect(Collectors.joining(","))
+                ListFormatUtils.formatList(
+                    errors.getAllErrors().stream().map(ObjectError::getDefaultMessage).toList())
               }),
           IMPORT_FORM_ERROR_ATTR_NAME);
     }

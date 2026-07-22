@@ -3,19 +3,20 @@ package com.researchspace.service.impl;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.LocaleBoundMessages;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.spring.VelocityEngineUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 /** Renders an HTML email and derives its plain-text alternative from the rendered body. */
 public class EmailContentGenerator {
 
   private @Autowired VelocityEngine velocity;
   private @Autowired MessageSourceUtils messages;
+  private @Autowired UserLocaleService userLocaleService;
 
   /**
    * Renders an email whose subject is resolved from an i18n message key, so callers pass a
@@ -35,9 +36,13 @@ public class EmailContentGenerator {
       Object[] subjectArgs,
       String htmlTemplate,
       Map<String, Object> velocityModel) {
-    Locale locale = LocaleContextHolder.getLocale();
+    Locale locale = getLocale();
     String subject = messages.getMessage(subjectKey, subjectArgs, locale);
     return fromHtmlFragment(subject, mergeTemplate(htmlTemplate, velocityModel, locale), locale);
+  }
+
+  Locale getLocale() {
+    return userLocaleService.getLocale();
   }
 
   EmailContent fromHtmlFragment(String subject, String htmlFragment, Locale locale) {

@@ -89,7 +89,7 @@ public class ListOfMaterialsApiController extends BaseApiInventoryController
     if (newLom.getElnFieldId() == null) {
       errors.addError(
           new ObjectError(
-              "List of materials",
+              getMessage("inventory.listOfMaterials.label", null),
               new String[] {"errors.inventory.listOfMaterials.elnFieldIdRequired"},
               null,
               null));
@@ -97,7 +97,7 @@ public class ListOfMaterialsApiController extends BaseApiInventoryController
     if (StringUtils.isEmpty(newLom.getName())) {
       errors.addError(
           new ObjectError(
-              "List of materials",
+              getMessage("inventory.listOfMaterials.label", null),
               new String[] {"errors.inventory.listOfMaterials.nameRequired"},
               null,
               null));

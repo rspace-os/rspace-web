@@ -23,6 +23,7 @@ import com.researchspace.model.User;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.model.permissions.PermissionType;
 import com.researchspace.model.system.SystemPropertyValue;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SystemPropertyManager;
@@ -36,8 +37,10 @@ import io.vavr.control.Either;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Locale;
 import org.apache.shiro.authz.AuthorizationException;
 import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,6 +49,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -57,7 +61,7 @@ public class DNAViewerControllerTest {
   @Mock SnapgeneWSClient wsClient;
   @Mock RecordManager rcdMgr;
   @Mock IPermissionUtils perms;
-  @Mock MessageSourceUtils messages;
+  MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @Mock SystemPropertyManager systemPropertyManagerImpl;
   @Mock SystemPropertyValue isSnapgeneAllowed;
   @InjectMocks DNAViewerController dnaController;
@@ -69,9 +73,16 @@ public class DNAViewerControllerTest {
 
   @Before
   public void before() {
+    LocaleContextHolder.setLocale(Locale.US);
+    dnaController.setMessageSource(messages);
     edf.setExtension("gb");
     when(systemPropertyManagerImpl.findByName(SNAPGENE_AVAILABLE)).thenReturn(isSnapgeneAllowed);
     when(isSnapgeneAllowed.getValue()).thenReturn(ALLOWED.name());
+  }
+
+  @After
+  public void after() {
+    LocaleContextHolder.resetLocaleContext();
   }
 
   @Test

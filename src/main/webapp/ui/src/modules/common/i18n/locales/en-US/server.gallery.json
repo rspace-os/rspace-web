@@ -1,4 +1,9 @@
 {
+  "errors": {
+    "gallery": {
+      "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
+    }
+  },
   "gallery": {
     "api": {
       "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"

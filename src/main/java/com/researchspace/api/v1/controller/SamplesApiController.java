@@ -32,6 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -266,18 +267,22 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
     String errorMsg = "";
     if (StringUtils.isEmpty(sampleName)) {
-      errorMsg = "Name cannot be empty";
+      errorMsg = getMessage("errors.inventory.name.empty", null);
     } else if (StringUtils.length(sampleName) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
-      errorMsg = "Name is too long (max 255 chars)";
+      errorMsg =
+          getMessage(
+              "errors.inventory.name.tooLong", new Object[] {BaseRecord.DEFAULT_VARCHAR_LENGTH});
     }
 
     if (errorMsg.isEmpty()) {
       boolean exists = sampleApiMgr.nameExistsForUser(sampleName, user);
       if (exists) {
-        errorMsg = "There is already a sample named [" + sampleName + "]";
+        errorMsg = getMessage("errors.inventory.sample.nameExists", new Object[] {sampleName});
       }
     }
-    return String.format("{ \"valid\": %s, \"message\": \"%s\" }", errorMsg.isEmpty(), errorMsg);
+    return String.format(
+        "{ \"valid\": %s, \"message\": \"%s\" }",
+        errorMsg.isEmpty(), StringEscapeUtils.escapeJson(errorMsg));
   }
 
   @Override

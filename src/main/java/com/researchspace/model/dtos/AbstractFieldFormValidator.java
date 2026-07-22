@@ -3,6 +3,7 @@ package com.researchspace.model.dtos;
 import static com.researchspace.model.dtos.AbstractFormFieldDTO.MAX_NAME_LENGTH;
 
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.validation.Validator;
@@ -24,7 +25,10 @@ abstract class AbstractFieldFormValidator implements Validator {
   }
 
   void rejectTooLong(Errors errors) {
-    errors.reject("errors.maxLength", new Object[] {"name", MAX_NAME_LENGTH}, null);
+    errors.reject(
+        "errors.maxLength",
+        new Object[] {new DefaultMessageSourceResolvable("label.nameLowercase"), MAX_NAME_LENGTH},
+        null);
   }
 
   boolean isNameTooLong(String name) {

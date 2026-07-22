@@ -2,7 +2,6 @@ package com.researchspace.api.v1.service.impl;
 
 import static com.researchspace.core.util.imageutils.ImageUtils.getBufferedImageFromUploadedFile;
 import static org.apache.commons.io.FilenameUtils.getExtension;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormFieldPost;
 import com.researchspace.api.v1.controller.FormTemplatesCommon.FormPost;
@@ -17,6 +16,8 @@ import com.researchspace.model.record.RSForm;
 import com.researchspace.service.AbstractFormManager;
 import com.researchspace.service.FormManager;
 import com.researchspace.service.IconImageManager;
+import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.session.UserSessionTracker;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -38,6 +39,7 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
   private @Autowired FormManager formMgr;
   private @Autowired IconImageManager iconImageManager;
   private @Autowired IPermissionUtils permissionUtils;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public AbstractForm editForm(
@@ -82,10 +84,13 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
   void assertValidIncomingFieldFormIds(Long id, Set<Long> originalIds, List<Long> idsToKeep) {
     if (!CollectionUtils.isSubCollection(idsToKeep, originalIds)) {
       throw new IllegalArgumentException(
-          String.format(
-              "At least one  ID in the incoming form fields does not exist in the form with ID"
-                  + " [%d]. Persisted fieldFormIds are: [%s], supplied are: [%s] ",
-              id, join(originalIds, ","), join(idsToKeep, ",")));
+          messages.getMessage(
+              "errors.form.invalidFieldIds",
+              new Object[] {
+                id,
+                ListFormatUtils.formatList(originalIds.stream().map(String::valueOf).toList()),
+                ListFormatUtils.formatList(idsToKeep.stream().map(String::valueOf).toList())
+              }));
     }
   }
 

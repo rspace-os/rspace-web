@@ -2,13 +2,11 @@ package com.researchspace.api.v1.controller;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.service.FilestoreOperationForbiddenException;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -23,7 +21,7 @@ class ApiControllerAdviceTest {
 
   @Test
   void bindErrorsAreResolvedCentrally() {
-    MessageSourceUtils messages = mock(MessageSourceUtils.class);
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     ApiControllerAdvice advice = new ApiControllerAdvice();
     advice.messages = messages;
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(new TestForm(), "fieldmark");
@@ -31,27 +29,23 @@ class ApiControllerAdviceTest {
     errors.reject("apps.fieldmark.errors.fetchNotebooks", null, null);
     FieldError fieldError = errors.getFieldError();
     ObjectError globalError = errors.getGlobalError();
-    when(messages.getMessage(fieldError)).thenReturn("A Fieldmark notebook ID is required.");
-    when(messages.getMessage(globalError)).thenReturn("Unable to fetch Fieldmark notebooks.");
-
     ApiError apiError = advice.getApiErrorFromBindException(new BindException(errors));
 
     assertNull(fieldError.getDefaultMessage());
     assertNull(globalError.getDefaultMessage());
     assertEquals(
         List.of(
-            "notebookId: A Fieldmark notebook ID is required.",
-            "fieldmark: Unable to fetch Fieldmark notebooks."),
+            "notebookId: Error importing notebook because the request had an empty \"notebookId\"",
+            "fieldmark: Error fetching notebooks due to the Fieldmark server"),
         apiError.getErrors());
+    assertEquals("Errors detected : 2", apiError.getMessage());
     BindErrorList errorList = (BindErrorList) apiError.getData();
     assertEquals(
-        "A Fieldmark notebook ID is required.",
+        "Error importing notebook because the request had an empty \"notebookId\"",
         errorList.getValidationErrors().get(0).getMessage());
     assertEquals(
-        "Unable to fetch Fieldmark notebooks.",
+        "Error fetching notebooks due to the Fieldmark server",
         errorList.getValidationErrors().get(1).getMessage());
-    verify(messages).getMessage(fieldError);
-    verify(messages).getMessage(globalError);
   }
 
   private static class TestForm {

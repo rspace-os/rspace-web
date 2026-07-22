@@ -317,7 +317,7 @@ public class MessageAndRequestController extends BaseController implements Appli
       @RequestParam(value = "message") String message) {
 
     if (isBlank(message)) {
-      ErrorList errors = getErrorListFromMessageCode("errors.required", "message");
+      ErrorList errors = getErrorListFromMessageCode("errors.required", getText("label.message"));
       return new AjaxReturnObject<>(null, errors);
     }
 

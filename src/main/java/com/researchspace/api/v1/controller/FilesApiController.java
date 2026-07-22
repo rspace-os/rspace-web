@@ -181,7 +181,9 @@ public class FilesApiController extends BaseApiController implements FilesApi {
   private void validateCaptionMaxLength(String caption) {
     Validate.isTrue(
         caption.length() <= EditInfo.DESCRIPTION_LENGTH,
-        getMessage("errors.maxLength", new Object[] {"caption", EditInfo.DESCRIPTION_LENGTH}));
+        getMessage(
+            "errors.maxLength",
+            new Object[] {getMessage("label.caption", null), EditInfo.DESCRIPTION_LENGTH}));
   }
 
   @Override

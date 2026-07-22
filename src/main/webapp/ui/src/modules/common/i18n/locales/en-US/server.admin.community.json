@@ -1,4 +1,9 @@
 {
+  "community": {
+    "audit": {
+      "adminsAdded": "Added admins ({0})"
+    }
+  },
   "create": {
     "group": {
       "bePi": {

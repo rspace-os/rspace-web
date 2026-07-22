@@ -181,7 +181,8 @@ public class DeploymentPropertiesController extends BaseController {
         return deploymentHelpEmail;
       default:
         throw new IllegalArgumentException(
-            messages.getResourceNotFoundMessage("Property", propertyName));
+            messages.getResourceNotFoundMessage(
+                messages.getMessage("resourceType.property"), propertyName));
     }
   }
 

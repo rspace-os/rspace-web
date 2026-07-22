@@ -201,27 +201,26 @@ We should aim to provide simple Javadoc, at least for:
 
 ## Internationalization
 
-The main label translation file is `ApplicationResources.properties` file in `src/main/resources`.
+English translations live in the i18next JSON catalogues under
+`src/main/webapp/ui/src/modules/common/i18n/locales/en-US`. Frontend messages
+use the module catalogue (`common.json`, `inventory.json`, and so on); backend
+messages are partitioned across the `server.*.json` files in the same directory.
+All catalogues use ICU MessageFormat.
 
-There are also page-specific property files in `src/main/resources/bundles`;
-these are registered as spring message bundles in `applicationContext-resources.xml`
-
-To add a new property, add it to `ApplicationResources.properties` or a
-file in the `bundles` folder. These message keys are loosely organised by
-the page in which they appear.
+Add backend text to the closest `server.*.json` file and resolve it through
+Spring's `MessageSource` or `MessageSourceUtils`. Use semantic lower-camel-case
+keys and full phrases rather than concatenating translated fragments.
+Format user-facing lists with `ListFormatUtils`, not `String.join` or
+`Collectors.joining`; delimiter joining is only for machine formats. Tests
+that exercise localized output should construct `MessageSourceUtils` with a
+real `JsonMessageSource`, not stub translation results.
 
 ### Usage in JSP pages
 
-This is easiest, make sure the JSP `fmt: tag` library is accessible
+Make sure the Spring tag library is accessible through
+`/common/taglibs.jsp`, then use `spring:message`:
 ```
-<@ include file="/common/taglibs.jsp">
-```
-Access the message by its key as follows
-```
-<fmt:message key="menu.templates"/>
-```
-Alternatively you can use Spring's message tag which handles arguments more cleanly.
-```
+<%@ include file="/common/taglibs.jsp"%>
 <spring:message code="group.created.success.nominationStarted" arguments="${groupName},${principalEmail}"/>
 ```
 
@@ -235,14 +234,12 @@ An example of this is provided by the StructuredDocumentController class.
 
 ### From Javascript
 
-For Javascript that is included in a JSP (and is therefore processed by
-the JSP engine) we can probably use the same mechanism as for HTML
-content in a JSP page described above.
-
-For `.js` files that are loaded directly into the browser, there are
-various options available including
-http://code.google.com/p/jquery-i18n-properties/ - we need to
-investigate and choose this.
+Legacy JavaScript uses `RS.msg("legacyjs.feature.message", ...args)`. Its
+messages live in `server.legacyJs.json` and use positional ICU arguments such
+as `{0}`. React and TypeScript code follows
+`DevDocs/DeveloperNotes/FrontendI18nKeys.md` and uses i18next directly.
+Use the shared `formatList` helper for displayed lists. Tests use the real
+i18next instance (or the real test instance helpers), never a mocked `t`.
 
 ## Secure coding practices
 

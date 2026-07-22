@@ -4824,6 +4824,11 @@ export default interface Resources {
     }
   },
   "server.admin.community": {
+    "community": {
+      "audit": {
+        "adminsAdded": "Added admins ({0})"
+      }
+    },
     "create": {
       "group": {
         "bePi": {
@@ -4917,6 +4922,7 @@ export default interface Resources {
       "errors": {
         "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
         "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+        "noneValid": "There were no valid Apps: {0}",
         "notFoundByName": "No app with name [{0}]",
         "notFoundByProperty": "App could not be identified for property {0}"
       },
@@ -5043,6 +5049,14 @@ export default interface Resources {
       "orcid": {
         "connectedPrefix": "Success - Your Orcid ID is",
         "connectedSuffix": "This window will close shortly."
+      },
+      "snapgene": {
+        "errors": {
+          "fileTooLarge": "The max file size supported by Snapgene server is {0} bytes, but this file is {1} bytes",
+          "unsupportedFileType": "This file either has incorrect suffix or is not a supported DNA file - suffix must be one of {0}",
+          "webserviceFailed": "Snapgene webservice call failed: {0} - {1}",
+          "webserviceNoDetails": "Snapgene webservice call failed"
+        }
       }
     },
     "external": {
@@ -5080,6 +5094,9 @@ export default interface Resources {
   },
   "server.core": {
     "api": {
+      "errors": {
+        "detected": "Errors detected : {0}"
+      },
       "pubchem": {
         "errors": {
           "unexpected": "An unexpected error occurred."
@@ -5137,6 +5154,9 @@ export default interface Resources {
         "user": "This username ({0}) or e-mail address ({1}) already exists. Please try a different username and/or email.",
         "username": "This username ({0}) already exists. Please try a different username.",
         "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn't be taken by an alias"
+      },
+      "form": {
+        "invalidFieldIds": "At least one ID in the incoming form fields does not exist in form [{0}]. Persisted field form IDs are [{1}]; supplied IDs are [{2}]."
       },
       "fromDateLaterThanToDate": "From date should be before to date.",
       "globalId": {
@@ -5241,7 +5261,34 @@ export default interface Resources {
       }
     },
     "label": {
-      "password": "Password"
+      "caption": "caption",
+      "comment": "Comment",
+      "deleteDocumentAction": "delete this document",
+      "description": "description",
+      "editDescriptionAction": "edit description",
+      "email": "email",
+      "latex": "LaTeX",
+      "message": "message",
+      "name": "Name",
+      "nameLowercase": "name",
+      "password": "Password",
+      "renameRecordAction": "rename this record",
+      "repository": "Repository",
+      "svg": "SVG",
+      "tag": "Tag",
+      "tagFilter": "tag filter",
+      "tagLowercase": "tag",
+      "token": "Token",
+      "yourComment": "your comment"
+    },
+    "requestType": {
+      "passwordReminder": "password reminder",
+      "usernameReminder": "username reminder"
+    },
+    "resourceType": {
+      "dataverseConfiguration": "Dataverse configuration",
+      "exportPlan": "Export plan",
+      "property": "Property"
     }
   },
   "server.dashboard": {
@@ -5851,6 +5898,11 @@ export default interface Resources {
     }
   },
   "server.gallery": {
+    "errors": {
+      "gallery": {
+        "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
+      }
+    },
     "gallery": {
       "api": {
         "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
@@ -6294,6 +6346,7 @@ export default interface Resources {
           "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
           "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
           "instrumentUnrecognizedFieldMapping": "Unrecognized field mapping for instrument import: {0}",
+          "parentContainerGlobalIdInvalid": "Parent Container Global Id ''{0}'' is not a valid global id of an inventory container",
           "parentContainerImportIdWithGlobalId": "Parent container should be set via either 'Parent Container Import ID' or 'Parent Container Global ID', but not both at the same time",
           "parentContainerNotEditable": "Parent container with global id ''{0}'' doesn''t exist, or user has no permission to move items into it",
           "parentContainerNotFound": "Parent container with import id ''{0}'' could not be found",
@@ -6308,6 +6361,7 @@ export default interface Resources {
           "unrecognizedFileType": "Unrecognized fileType: {0}"
         },
         "instrument": {
+          "nameExists": "There is already an instrument named [{0}]",
           "templateNotFound": "No instrument template with id: {0}",
           "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
         },
@@ -6328,6 +6382,10 @@ export default interface Resources {
             "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
           }
         },
+        "name": {
+          "empty": "Name cannot be empty",
+          "tooLong": "Name is too long (max {0} chars)"
+        },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "publicLink": {
           "unavailable": "The item you try to see is not publicly available right now."
@@ -6338,6 +6396,10 @@ export default interface Resources {
           "unitNotAmount": "Quantity unit id [{0}] is not pointing to a unit of amount, it should be an id of a mass, volume or dimensionless unit."
         },
         "sample": {
+          "deletion": {
+            "hasStoredSubsamples": "The Sample has at least one Subsample located inside a container"
+          },
+          "nameExists": "There is already a sample named [{0}]",
           "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
@@ -6371,6 +6433,9 @@ export default interface Resources {
           "invalidUnitIdDefault": "Unit id was {0} must be the id of a unit (see /units)",
           "invalidUnitIdNotAmount": "Unit id {0} is not a valid sample-template default unit; must be a mass, volume, or dimensionless (\"items\") unit (see /units)",
           "reservedFieldName": "{0} is a reserved field name, please choose a name other than {1}"
+        },
+        "validation": {
+          "failed": "Validation failed for provided record"
         }
       }
     },
@@ -6396,6 +6461,20 @@ export default interface Resources {
           "headerTemplateName": "Parent Template (name)",
           "headerUsedQuantity": "Used Quantity"
         }
+      }
+    },
+    "inventory": {
+      "audit": {
+        "listOfMaterials": {
+          "added": "Added List of Materials {0}.",
+          "deleted": "Deleted List of Materials {0}.",
+          "edited": "Edited List of Materials {0}.",
+          "itemsAdded": " Added inventory items: {0}.",
+          "itemsRemoved": " Removed inventory items: {0}."
+        }
+      },
+      "listOfMaterials": {
+        "label": "List of materials"
       }
     }
   },

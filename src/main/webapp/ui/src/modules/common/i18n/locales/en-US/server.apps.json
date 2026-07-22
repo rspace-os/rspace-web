@@ -46,6 +46,7 @@
     "errors": {
       "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
       "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+      "noneValid": "There were no valid Apps: {0}",
       "notFoundByName": "No app with name [{0}]",
       "notFoundByProperty": "App could not be identified for property {0}"
     },
@@ -179,6 +180,14 @@
     "orcid": {
       "connectedPrefix": "Success - Your Orcid ID is",
       "connectedSuffix": "This window will close shortly."
+    },
+    "snapgene": {
+      "errors": {
+        "fileTooLarge": "The max file size supported by Snapgene server is {0} bytes, but this file is {1} bytes",
+        "unsupportedFileType": "This file either has incorrect suffix or is not a supported DNA file - suffix must be one of {0}",
+        "webserviceFailed": "Snapgene webservice call failed: {0} - {1}",
+        "webserviceNoDetails": "Snapgene webservice call failed"
+      }
     }
   },
   "oauth": {

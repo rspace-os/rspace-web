@@ -28,10 +28,12 @@ public class SnippetController extends BaseController {
 
     ErrorList errors = new ErrorList();
     if (StringUtils.isBlank(snippetName)) {
-      errors = getErrorListFromMessageCode("errors.required", "Name");
+      errors = getErrorListFromMessageCode("errors.required", getText("label.name"));
       return new AjaxReturnObject<>(null, errors);
     } else if (StringUtils.containsAny(snippetName, "/<>")) {
-      errors = getErrorListFromMessageCode("errors.invalidChars", "/,> or <", "name");
+      errors =
+          getErrorListFromMessageCode(
+              "errors.invalidChars", "/,> or <", getText("label.nameLowercase"));
       return new AjaxReturnObject<>(null, errors);
     }
 

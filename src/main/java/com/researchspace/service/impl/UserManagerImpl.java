@@ -375,7 +375,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
       User user, String email, String remoteHost, TokenBasedVerificationType type) {
     if (StringUtils.isBlank(email)) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.emptyString.polite", new Object[] {"email"}));
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.email")}));
     }
     if (user == null) {
       List<User> found = userDao.getUserByEmail(email);
@@ -393,7 +394,8 @@ public class UserManagerImpl extends GenericManagerImpl<User, Long> implements U
   public TokenBasedVerification getUserVerificationToken(String token) {
     if (StringUtils.isBlank(token)) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.emptyString.polite", new Object[] {"Token"}));
+          messages.getMessage(
+              "errors.emptyString.polite", new Object[] {messages.getMessage("label.token")}));
     }
     TokenBasedVerification upc = userDao.getByToken(token);
     return upc;

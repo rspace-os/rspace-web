@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import axios from "@/common/axios";
 import i18n from "@/modules/common/i18n";
+import { formatList } from "@/modules/common/i18n/listFormat";
 import { getErrorMessage } from "@/util/error";
 import useOauthToken from "../../hooks/auth/useOauthToken";
 import AlertContext, { mkAlert } from "../../stores/contexts/Alert";
@@ -477,7 +478,7 @@ export function useGalleryActions(): {
           mkAlert({
             variant: "error",
             title: messages.failure(failures.length),
-            message: failures.join("; "),
+            message: formatList(failures, i18n.resolvedLanguage ?? i18n.language),
           }),
         );
       }

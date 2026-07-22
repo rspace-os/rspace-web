@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.researchspace.service.EmailContent;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.UserLocaleService;
 import com.researchspace.testutils.TestFactory;
 import java.util.HashMap;
 import java.util.Locale;
@@ -14,7 +15,6 @@ import java.util.Map;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class EmailContentGeneratorTest {
@@ -35,6 +35,7 @@ class EmailContentGeneratorTest {
     ReflectionTestUtils.setField(generator, "velocity", velocity);
     ReflectionTestUtils.setField(
         generator, "messages", new MessageSourceUtils(new JsonMessageSource()));
+    ReflectionTestUtils.setField(generator, "userLocaleService", new UserLocaleService());
   }
 
   @Test
@@ -42,17 +43,12 @@ class EmailContentGeneratorTest {
     Map<String, Object> model = new HashMap<>();
     model.put("runAs", TestFactory.createAnyUser("runAsUser"));
     model.put("systemUser", TestFactory.createAnyUser("systemUser"));
-    LocaleContextHolder.setLocale(Locale.GERMANY);
-    EmailContent content;
-    try {
-      content =
-          generator.render(
-              "email.admin.adminRunningAsUserNotification.subject",
-              "velocityTemplates/adminRunningAsUserNotification.vm",
-              model);
-    } finally {
-      LocaleContextHolder.resetLocaleContext();
-    }
+    setDeploymentLocale("de-DE");
+    EmailContent content =
+        generator.render(
+            "email.admin.adminRunningAsUserNotification.subject",
+            "velocityTemplates/adminRunningAsUserNotification.vm",
+            model);
 
     assertFalse(model.containsKey("msg"));
     assertEquals("RSpace admin is using your account", content.subject());
@@ -86,19 +82,20 @@ class EmailContentGeneratorTest {
     model.put("systemUser", systemUser);
     model.put("accountDisabled", "true");
 
-    LocaleContextHolder.setLocale(Locale.UK);
-    EmailContent content;
-    try {
-      content =
-          generator.render(
-              "email.account.accountEnablementNotification.subjectEnabled",
-              "velocityTemplates/accountOperations/accountEnablementNotification.vm",
-              model);
-    } finally {
-      LocaleContextHolder.resetLocaleContext();
-    }
+    setDeploymentLocale("en-GB");
+    EmailContent content =
+        generator.render(
+            "email.account.accountEnablementNotification.subjectEnabled",
+            "velocityTemplates/accountOperations/accountEnablementNotification.vm",
+            model);
 
     assertFalse(content.htmlContent().contains("<head>"));
     assertTrue(content.plainTextContent().contains(systemUser.getEmail()));
+  }
+
+  private void setDeploymentLocale(String languageTag) {
+    UserLocaleService locales =
+        (UserLocaleService) ReflectionTestUtils.getField(generator, "userLocaleService");
+    ReflectionTestUtils.setField(locales, "configuredLocaleTag", languageTag);
   }
 }

@@ -129,13 +129,15 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     String errorMsg = "";
     if (StringUtils.isEmpty(name)) {
-      errorMsg = "Name cannot be empty";
+      errorMsg = getMessage("errors.inventory.name.empty", null);
     } else if (StringUtils.length(name) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
-      errorMsg = "Name is too long (max 255 chars)";
+      errorMsg =
+          getMessage(
+              "errors.inventory.name.tooLong", new Object[] {BaseRecord.DEFAULT_VARCHAR_LENGTH});
     }
 
     if (errorMsg.isEmpty() && instrumentApiMgr.nameExistsForUser(name, user)) {
-      errorMsg = "There is already an instrument named [" + name + "]";
+      errorMsg = getMessage("errors.inventory.instrument.nameExists", new Object[] {name});
     }
     return String.format(
         "{ \"valid\": %s, \"message\": \"%s\" }",

@@ -21,6 +21,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.ServiceOperationResultCollection;
 import com.researchspace.service.AutoshareManager;
 import com.researchspace.service.CommunicationManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordSharingManager;
 import com.researchspace.service.SharingHandler;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.ListUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -310,10 +310,11 @@ public class AutoshareManagerImpl implements AutoshareManager {
                   : "autoshare.notification.allSucceededDisabled");
     } else if (result.getFailureCount() > 0 && result.getExceptionCount() == 0) {
       String failures =
-          result.getFailures().stream()
-              .map(RecordGroupSharing::getShared)
-              .map(br -> br.getName() + " - " + br.getGlobalIdentifier())
-              .collect(Collectors.joining(","));
+          ListFormatUtils.formatList(
+              result.getFailures().stream()
+                  .map(RecordGroupSharing::getShared)
+                  .map(br -> br.getName() + " - " + br.getGlobalIdentifier())
+                  .toList());
       notificationMessage =
           messages.getMessage(
               targetAutoshareStatus
@@ -322,9 +323,8 @@ public class AutoshareManagerImpl implements AutoshareManager {
               new Object[] {StringAbbreviationUtils.abbreviate(failures, 255)});
     } else {
       String exceptions =
-          result.getExceptions().stream()
-              .map(Exception::getMessage)
-              .collect(Collectors.joining(","));
+          ListFormatUtils.formatList(
+              result.getExceptions().stream().map(Exception::getMessage).toList());
       notificationMessage =
           messages.getMessage(
               targetAutoshareStatus

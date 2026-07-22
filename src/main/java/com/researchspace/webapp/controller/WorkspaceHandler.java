@@ -28,7 +28,9 @@ public class WorkspaceHandler {
     if (StringUtils.contains(notebookName, "/")) {
       // TODO a nicer way to return an error to the form
       throw new IllegalArgumentException(
-          messages.getMessage("errors.invalidChars", new Object[] {"/", "name"}));
+          messages.getMessage(
+              "errors.invalidChars",
+              new Object[] {"/", messages.getMessage("label.nameLowercase")}));
     }
     Folder newNotebook =
         folderManager.createNewNotebook(

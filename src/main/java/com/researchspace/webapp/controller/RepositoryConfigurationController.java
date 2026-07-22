@@ -221,14 +221,18 @@ public class RepositoryConfigurationController extends BaseController {
   private void validateAppIsRepository(StringBuilder errorBuilder, App app) {
     if (!app.isRepositoryApp()) {
       errorBuilder.append(
-          getText("apps.errors.invalidChoice", new String[] {app.getName(), "Repository"}));
+          getText(
+              "apps.errors.invalidChoice",
+              new String[] {app.getName(), getText("label.repository")}));
     }
   }
 
   private void validateCfgIfExists(
       Long appConfigSetId, StringBuilder erbf, Optional<AppConfigElementSet> cfg) {
     if (appConfigSetId > 0 && cfg.isEmpty()) {
-      erbf.append(getResourceNotFoundMessage("Dataverse config", appConfigSetId));
+      erbf.append(
+          getResourceNotFoundMessage(
+              getText("resourceType.dataverseConfiguration"), appConfigSetId));
     }
   }
 }

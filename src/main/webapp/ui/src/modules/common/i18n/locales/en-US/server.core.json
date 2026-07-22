@@ -1,5 +1,8 @@
 {
   "api": {
+    "errors": {
+      "detected": "Errors detected : {0}"
+    },
     "pubchem": {
       "errors": {
         "unexpected": "An unexpected error occurred."
@@ -10,6 +13,9 @@
     "format": "MM/dd/yyyy"
   },
   "errors": {
+    "form": {
+      "invalidFieldIds": "At least one ID in the incoming form fields does not exist in form [{0}]. Persisted field form IDs are [{1}]; supplied IDs are [{2}]."
+    },
     "ajax": {
       "unauthenticated": {
         "refreshRequired": "You are no longer authenticated - please refresh the page and log in again."
@@ -161,6 +167,33 @@
     }
   },
   "label": {
-    "password": "Password"
+    "caption": "caption",
+    "comment": "Comment",
+    "description": "description",
+    "deleteDocumentAction": "delete this document",
+    "editDescriptionAction": "edit description",
+    "email": "email",
+    "latex": "LaTeX",
+    "message": "message",
+    "name": "Name",
+    "nameLowercase": "name",
+    "password": "Password",
+    "repository": "Repository",
+    "renameRecordAction": "rename this record",
+    "svg": "SVG",
+    "tag": "Tag",
+    "tagLowercase": "tag",
+    "tagFilter": "tag filter",
+    "token": "Token",
+    "yourComment": "your comment"
+  },
+  "requestType": {
+    "passwordReminder": "password reminder",
+    "usernameReminder": "username reminder"
+  },
+  "resourceType": {
+    "dataverseConfiguration": "Dataverse configuration",
+    "exportPlan": "Export plan",
+    "property": "Property"
   }
 }

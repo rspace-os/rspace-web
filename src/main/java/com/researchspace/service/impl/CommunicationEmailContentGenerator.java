@@ -9,7 +9,6 @@ import com.researchspace.service.NotificationTypeMessages;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import org.springframework.context.i18n.LocaleContextHolder;
 
 /** Selects and renders the email content for a communication. */
 class CommunicationEmailContentGenerator {
@@ -45,7 +44,7 @@ class CommunicationEmailContentGenerator {
     model.put("cmm", communication);
     model.put("baseURL", htmlDomainPrefix);
     model.put("dateOb", new Date());
-    model.put("date", new LocaleAwareDateTool(LocaleContextHolder.getLocale()));
+    model.put("date", new LocaleAwareDateTool(contentGenerator.getLocale()));
     if (communication instanceof Notification notification) {
       model.put(
           "notificationTypeKey",

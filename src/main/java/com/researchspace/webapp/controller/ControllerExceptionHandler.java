@@ -5,11 +5,11 @@ import com.researchspace.core.util.LoggingUtils;
 import com.researchspace.core.util.RequestUtil;
 import com.researchspace.model.field.ErrorList;
 import com.researchspace.model.permissions.SecurityLogger;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
@@ -403,8 +403,7 @@ public class ControllerExceptionHandler implements IControllerExceptionHandler {
   }
 
   private String getConstraintViolationMessage(ConstraintViolationException e) {
-    return e.getConstraintViolations().stream()
-        .map(cv -> cv.getMessage())
-        .collect(Collectors.joining());
+    return ListFormatUtils.formatList(
+        e.getConstraintViolations().stream().map(cv -> cv.getMessage()).toList());
   }
 }

@@ -1,5 +1,6 @@
 package com.researchspace.api.v1.controller;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiExtraField;
 import com.researchspace.api.v1.model.ApiInventoryRecordInfo;
 import com.researchspace.api.v1.model.ApiQuantityInfo;
@@ -8,13 +9,13 @@ import com.researchspace.model.inventory.Container;
 import com.researchspace.model.record.BaseRecord;
 import com.researchspace.model.record.EditInfo;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.inventory.ApiExtraFieldsHelper;
 import com.researchspace.webapp.controller.RSpaceTag;
 import com.researchspace.webapp.controller.TagValidator;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,7 +123,8 @@ abstract class InventoryRecordValidator {
   void validateExtraFieldName(String fieldName, Errors errors) {
     if (fieldName != null && getReservedFieldNames().contains(fieldName.toLowerCase())) {
       String reservedFieldNamesString =
-          getReservedFieldNames().stream().sorted().collect(Collectors.joining("/"));
+          ListFormatUtils.formatList(
+              getReservedFieldNames().stream().sorted().toList(), ListFormatter.Type.OR);
       errors.rejectValue(
           "name",
           "errors.inventory.template.reservedFieldName",

@@ -217,7 +217,7 @@ public class ApiControllerAdvice extends RestControllerAdvice {
         new ApiError(
             HttpStatus.BAD_REQUEST,
             ApiErrorCodes.INVALID_FIELD.getCode(),
-            "Errors detected : " + ex.getErrorCount(),
+            messages.getMessage("api.errors.detected", new Object[] {ex.getErrorCount()}),
             errors,
             errorList);
     return apiError;

@@ -78,7 +78,9 @@ public abstract class PasswordResetByEmailHandlerBase {
             });
       } catch (RequestNotPermitted e) {
         throw new IllegalStateException(
-            messages.getMessage("errors.rateLimitExceeded", new Object[] {"password reminder"}));
+            messages.getMessage(
+                "errors.rateLimitExceeded",
+                new Object[] {messages.getMessage("requestType.passwordReminder")}));
       }
     } else {
       SECURITY_LOG.warn(

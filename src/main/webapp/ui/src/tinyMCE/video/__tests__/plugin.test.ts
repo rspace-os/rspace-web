@@ -3,27 +3,12 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { legacyMsg } from "@/__tests__/helpers/legacyI18n";
 
 // Resolve from this file's location rather than process.cwd(): the jsdom test
 // environment polyfills `process` (vite-plugin-node-polyfills), so
 // `process.cwd()` returns "/" instead of the ui directory.
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const messages: Record<string, string> = {
-  "legacyjs.common.cancel": "Cancel",
-  "legacyjs.tinymce.command.insert": "Insert",
-  "legacyjs.tinymce.video.detected": "{0} video detected.",
-  "legacyjs.tinymce.video.embed": "Embed video",
-  "legacyjs.tinymce.video.help": "Paste a supported video URL.",
-  "legacyjs.tinymce.video.httpOrHttps": "Video URLs must start with http:// or https://.",
-  "legacyjs.tinymce.video.supportedProviderUrl": "Enter a URL from a supported video provider.",
-  "legacyjs.tinymce.video.supportedProviders":
-    "Supported providers: YouTube, YouTube Privacy-Enhanced Mode, JoVE, TIB AV-Portal.",
-  "legacyjs.tinymce.video.urlLabel": "Video URL",
-  "legacyjs.tinymce.video.validHttpUrl": "Enter a valid HTTP or HTTPS URL.",
-  "legacyjs.tinymce.video.video": "Video",
-  "legacyjs.tinymce.video.youtubePlayerTitle": "YouTube video player",
-};
 
 type TinyDialogConfig = {
   title: string;
@@ -201,7 +186,7 @@ describe("TinyMCE video embed plugin", () => {
         RS: { msg: (key: string, ...args: Array<unknown>) => string; trackEvent: ReturnType<typeof vi.fn> };
       }
     ).RS = {
-      msg: (key, ...args) => (messages[key] ?? key).replace("{0}", args[0] === undefined ? "" : String(args[0])),
+      msg: legacyMsg,
       trackEvent: vi.fn(),
     };
   });

@@ -3,7 +3,6 @@ package com.researchspace.api.v1.controller;
 import static com.researchspace.service.UserDeletionPolicy.UserTypeRestriction.TEMP_USER;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.StringUtils.join;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.researchspace.api.v1.SysadminApi;
@@ -428,7 +427,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
             .collect(partitioningBy(username -> userMgr.userExists(username)));
 
     if (!existingUserMap.get(Boolean.FALSE).isEmpty()) {
-      String missingUsers = join(existingUserMap.get(Boolean.FALSE), ",");
+      String missingUsers = ListFormatUtils.formatList(existingUserMap.get(Boolean.FALSE));
       throw new IllegalArgumentException(
           getMessage("groups.creation.errors.missingUsers", new Object[] {missingUsers}));
     }

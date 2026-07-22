@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import org.springframework.context.NoSuchMessageException;
 
 /** Exposes JSON phrases through the {@link ResourceBundle} API used by built-in content. */
 public final class BuiltinContentMessages {
@@ -18,11 +17,7 @@ public final class BuiltinContentMessages {
     return new ResourceBundle() {
       @Override
       protected Object handleGetObject(String key) {
-        try {
-          return MESSAGE_SOURCE.getMessage(key, null, locale);
-        } catch (NoSuchMessageException e) {
-          return null;
-        }
+        return MESSAGE_SOURCE.getMessage(key, null, null, locale);
       }
 
       @Override

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
+import { legacyMsg } from "@/__tests__/helpers/legacyI18n";
 
 class FakeDiv {
   html = "";
@@ -58,7 +59,7 @@ function loadInternalLinksRenderer() {
     $: jquery,
     RS: {
       escapeHtml,
-      msg: (key: string, ...args: unknown[]) => `${key}:${args.join("|")}`,
+      msg: legacyMsg,
     },
     document: {},
     window: { location: { href: "" } },

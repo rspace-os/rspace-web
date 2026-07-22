@@ -6,9 +6,11 @@ import com.researchspace.model.User;
 import com.researchspace.testutils.TestFactory;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 public class JoinPropertyTagTest {
 
@@ -16,11 +18,14 @@ public class JoinPropertyTagTest {
 
   @Before
   public void setUp() throws Exception {
+    LocaleContextHolder.setLocale(Locale.US);
     tag = new JoinPropertyStringFromCollection();
   }
 
   @After
-  public void tearDown() throws Exception {}
+  public void tearDown() throws Exception {
+    LocaleContextHolder.resetLocaleContext();
+  }
 
   @Test
   public void testGetStringBasic() {
@@ -28,10 +33,11 @@ public class JoinPropertyTagTest {
     tag.setCollection(users);
     // plain properties
     tag.setProperty("username");
-    assertEquals("u1, u2, u3", tag.getOutputString());
+    assertEquals("u1, u2, and u3", tag.getOutputString());
     // also get methods
     tag.setProperty("fullNameAndEmail");
-    assertEquals("first last (u1@b), first last (u2@b), first last (u3@b)", tag.getOutputString());
+    assertEquals(
+        "first last (u1@b), first last (u2@b), and first last (u3@b)", tag.getOutputString());
   }
 
   private List<User> createUsers() {
@@ -53,15 +59,15 @@ public class JoinPropertyTagTest {
     tag.setCollection(users);
     // plain properties
     tag.setProperty("username");
-    assertEquals("u1, u2, u3", tag.getOutputString());
+    assertEquals("u1, u2, and u3", tag.getOutputString());
     // also get methods
     tag.setProperty("username");
     tag.setMaxSize(2);
-    assertEquals("u1, u2...", tag.getOutputString());
+    assertEquals("u1 and u2...", tag.getOutputString());
     tag.setMaxSize(1);
     assertEquals("u1...", tag.getOutputString());
     tag.setMaxSize(500);
-    assertEquals("u1, u2, u3", tag.getOutputString());
+    assertEquals("u1, u2, and u3", tag.getOutputString());
   }
 
   @Test
@@ -71,7 +77,7 @@ public class JoinPropertyTagTest {
     tag.setCollection(users);
     tag.setProperty("fullName");
     assertEquals(
-        "&quot;&gt;&lt;svg onload=alert(1)&gt; last, first last, first last",
+        "&quot;&gt;&lt;svg onload=alert(1)&gt; last, first last, and first last",
         tag.getOutputString());
   }
 }
