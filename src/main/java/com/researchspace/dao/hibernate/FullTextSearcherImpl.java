@@ -369,21 +369,27 @@ public class FullTextSearcherImpl implements IFullTextSearcher {
   public ISearchResults<InventoryRecord> getSearchedInventoryRecords(
       InventorySearchConfig srchConfigInput) {
     LuceneSrchCfg srchConfig = new LuceneSrchCfg(srchConfigInput, termListFactory);
-    List<InventoryRecord> luceneHits = getLuceneInventoryQueryList(srchConfig);
-    List<InventoryRecord> dbHits =
-        findInvRecordsWithGlobalIdOrBarcodeMatchingSearchQuery(srchConfigInput);
-    List<InventoryRecord> finalHits =
-        Stream.concat(luceneHits.stream(), dbHits.stream())
-            .distinct()
-            // Apply the default-owner and read-permission filters to BOTH Lucene and direct
-            // (global-id / barcode) hits, so a direct lookup cannot bypass them (RSDEV-1219): a
-            // restricted user must not receive a default owner's ordinary records, nor any record
-            // they lack read permission on, merely by searching its global id or barcode.
+    // The default-owner and read-permission filters apply to LUCENE hits only. Direct global-id /
+    // barcode hits are deliberately exempt: by design they may return records the user cannot
+    // fully read, which the API layer then strips down to public-view fields
+    // (ApiInventoryRecordInfo.clearPropertiesForPublicView; contract pinned by
+    // SearchManagerTest.inventorySearchForLimitedAndPublicView). The default-owner post-filter
+    // exists only to compensate for the default owners being added to the Lucene username filter
+    // (RSDEV-1219 E2), so it has no role on the direct-lookup path either: a default owner's
+    // ordinary record found by exact id/barcode is public-view sanitised like anyone else's.
+    List<InventoryRecord> luceneHits =
+        getLuceneInventoryQueryList(srchConfig).stream()
             .filter(
                 rec ->
                     isNotOwnedByDefaultTemplatesOwnerOrTemplate(
                         rec, srchConfigInput.getDefaultTemplatesOwners()))
             .filter(rec -> canCurrentUserReadInvRec(rec, srchConfigInput.getAuthenticatedUser()))
+            .collect(Collectors.toList());
+    List<InventoryRecord> dbHits =
+        findInvRecordsWithGlobalIdOrBarcodeMatchingSearchQuery(srchConfigInput);
+    List<InventoryRecord> finalHits =
+        Stream.concat(luceneHits.stream(), dbHits.stream())
+            .distinct()
             .filter(rec -> isMatchingDeletedItemsOption(rec, srchConfigInput.getDeletedOption()))
             .filter(this::isNotSubSampleOfTemplate)
             .filter(this::isNotWorkbench)
