@@ -1,14 +1,9 @@
 package com.researchspace.service.impl;
 
-import com.researchspace.model.User;
 import com.researchspace.model.comms.Communication;
-import com.researchspace.model.comms.CommunicationTarget;
-import com.researchspace.model.comms.MessageOrRequest;
 import com.researchspace.model.comms.MessageRecipientFactory;
-import com.researchspace.model.comms.MessageType;
-import com.researchspace.model.preference.Preference;
-import com.researchspace.service.Broadcaster;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
@@ -18,18 +13,9 @@ import io.vavr.CheckedRunnable;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import javax.mail.Address;
 import javax.mail.AuthenticationFailedException;
@@ -43,11 +29,7 @@ import javax.mail.internet.MailDateFormat;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.velocity.tools.generic.DateTool;
 import org.jsoup.helper.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,14 +49,8 @@ import org.springframework.beans.factory.annotation.Value;
  *   <li>If there are too many recipients on an email, some email providers reject the mail (e.g.
  *       AWS limit is 50 recipients per email). Address lists are partitioned into groups of 25 to
  *       avoid these errors and the message sent in separate messages.
- *       <p><b> Implementation notes </b>
- *       <p>TODO this class has too many responsibilities; needs refactoring into separate classes
  */
-public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
-
-  public static final String TEXT_ONLY_EMAIL_DEFAULT = "This email can only be viewed in HTML";
-
-  private final StrictEmailContentGenerator strictEmailContentGenerator;
+public class EmailBroadcastImpl implements EmailBroadcast {
 
   private int retryDelayMillis = 1000;
 
@@ -82,9 +58,9 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
     this.retryDelayMillis = retryDelayMillis;
   }
 
-  RetryConfig retryConfig = null;
+  RetryConfig retryConfig;
 
-  RateLimiter rateLimiter = null;
+  RateLimiter rateLimiter;
 
   void setRateLimiter(RateLimiter rateLimiter) {
     this.rateLimiter = rateLimiter;
@@ -94,8 +70,8 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
     RateLimiterConfig cfg =
         RateLimiterConfig.custom()
             .limitForPeriod(maxEmailsPerSecond)
-            .limitRefreshPeriod(Duration.of(1, ChronoUnit.SECONDS))
-            .timeoutDuration(Duration.of(5, ChronoUnit.SECONDS))
+            .limitRefreshPeriod(Duration.ofSeconds(1))
+            .timeoutDuration(Duration.ofSeconds(5))
             .build();
     return RateLimiter.of("emailLimiter", cfg);
   }
@@ -111,30 +87,16 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
         .build();
   }
 
-  /** Encapsulates HTML and possibly-null plain-text variant. */
-  @AllArgsConstructor
-  @Builder
-  public static class EmailContent {
-    @Getter private final String htmlContent;
-
-    private final String plainTextContent;
-
-    public Optional<String> getPlainTextContent() {
-      return Optional.ofNullable(plainTextContent);
+  record EmailConfig(List<String> addresses, EmailContent content, Communication comm) {
+    EmailConfig {
+      addresses =
+          addresses.stream()
+              .filter(address -> !address.endsWith(EmailBroadcast.UNKNOWN_EMAIL_SUFFIX))
+              .toList();
     }
   }
 
-  @lombok.Value
-  @AllArgsConstructor
-  public static class EmailConfig {
-    List<String> addresses;
-    String subject;
-    EmailContent content;
-    Communication comm;
-    boolean isStrictValidEmail;
-  }
-
-  private Integer maxEmailsPerSecond;
+  private final Integer maxEmailsPerSecond;
 
   public Integer getMaxSendingRate() {
     return maxEmailsPerSecond;
@@ -178,9 +140,6 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
   @Value("${mail.replyTo}")
   private String replyTo;
 
-  @Value("${server.urls.prefix}")
-  private String htmlDomainPrefix;
-
   @Value("${mail.ssl.enabled}")
   private String sslEnabled;
 
@@ -194,21 +153,14 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
    * @throws IllegalArgumentException if <=0
    */
   public void setAddressChunkSize(Integer addressChunkSize) {
-    Validate.isTrue(addressChunkSize > 0, "Chunk size must be > 0");
+    Validate.isTrue(addressChunkSize != null && addressChunkSize > 0, "Chunk size must be > 0");
     this.addressChunkSize = addressChunkSize;
   }
 
-  public EmailBroadcastImpl(StrictEmailContentGenerator strictEmailContentGenerator) {
-    this(5, 25, strictEmailContentGenerator);
-  }
-
-  public EmailBroadcastImpl(
-      Integer maxEmailsPerSecond,
-      Integer addressChunkSize,
-      StrictEmailContentGenerator strictEmailContentGenerator) {
+  public EmailBroadcastImpl(Integer maxEmailsPerSecond, Integer addressChunkSize) {
+    Validate.isTrue(maxEmailsPerSecond != null && maxEmailsPerSecond > 0, "Rate must be > 0");
     this.maxEmailsPerSecond = maxEmailsPerSecond;
-    this.addressChunkSize = addressChunkSize;
-    this.strictEmailContentGenerator = strictEmailContentGenerator;
+    setAddressChunkSize(addressChunkSize);
     log.info("Email sender will rate limit to {} mails per seconds", maxEmailsPerSecond);
   }
 
@@ -218,71 +170,19 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
     rateLimiter = buildRateLimiter(maxEmailsPerSecond);
   }
 
-  public void setHtmlDomainPrefix(String htmlDomainPrefix) {
-    this.htmlDomainPrefix = htmlDomainPrefix;
-  }
-
   @Override
-  public void broadcast(Communication comm) {
-
-    List<String> addrs = new ArrayList<>();
-    Set<CommunicationTarget> recpts = comm.getRecipients();
-    addRecipients(comm, addrs, recpts);
-    // no point continuing if nobody wants emails
-    if (addrs.isEmpty()) {
-      return;
+  public void sendEmail(EmailContent content, List<String> recipients, Communication comm) {
+    List<String> addresses = new EmailConfig(recipients, content, comm).addresses();
+    for (int start = 0; start < addresses.size(); start += addressChunkSize) {
+      List<String> batch =
+          addresses.subList(start, Math.min(start + addressChunkSize, addresses.size()));
+      rateLimiter.executeRunnable(() -> sendAndLog(new EmailConfig(batch, content, comm)));
     }
-    String subj = comm.getSubject();
-    if (subj == null || subj.isEmpty()) {
-      subj = "email: ";
-    }
-    EmailContent body = generateEmailBody(comm);
-    // we split into separate emails of 25 recipients each to avoid too many
-    // recipients issues (RSPAC-2156):
-    Collection<List<String>> addressPartitions = partitionAddressesBySize(addrs, addressChunkSize);
-    for (List<String> addressPartition : addressPartitions) {
-      PartitionedEmailSender sender =
-          new PartitionedEmailSender(comm, subj, body, addressPartition);
-      rateLimiter.executeRunnable(sender);
-    }
-  }
-
-  @lombok.Value
-  class PartitionedEmailSender implements Runnable {
-    Communication comm;
-    String subj;
-    EmailContent body;
-    List<String> addressPartition;
-
-    public void run() {
-      sendHtmlEmail(subj, body, addressPartition, comm);
-    }
-  }
-
-  private Collection<List<String>> partitionAddressesBySize(List<String> addrs, int chunkSize) {
-    final AtomicInteger counter = new AtomicInteger();
-    return addrs.stream()
-        .collect(Collectors.groupingBy(it -> counter.getAndIncrement() / chunkSize))
-        .values();
-  }
-
-  @Override
-  public void sendTextEmail(String subj, String txt, List<String> recipients, Communication comm) {
-    String html = "<html><body>" + txt + "</body></html>";
-    sendAndLog(
-        new EmailConfig(
-            recipients, subj, EmailContent.builder().htmlContent(html).build(), comm, false));
-  }
-
-  @Override
-  public void sendHtmlEmail(
-      String subj, EmailContent content, List<String> recipients, Communication comm) {
-    sendAndLog(new EmailConfig(recipients, subj, content, comm, true));
   }
 
   private void sendAndLog(EmailConfig config) {
     String id = RandomStringUtils.randomAlphabetic(10);
-    logEmailSendStart(config.getContent().getHtmlContent(), id);
+    logEmailSendStart(config.content().htmlContent(), id);
     Retry retry = Retry.of("email", retryConfig);
     CheckedRunnable internal = createEmailSenderInternal(config, id);
     CheckedRunnable decorated = Retry.decorateCheckedRunnable(retry, internal);
@@ -310,7 +210,7 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
             "{}:{} -  {}. Not retrying", AUTHENTICATION_FAILURE_PREFIX, id, e.getMessage());
         throw e;
       } catch (SendFailedException e1) {
-        emailErrorLog.warn("{}:{} - {}. Retrying}", SEND_FAILURE_PREFIX, id, e1.getMessage());
+        emailErrorLog.warn("{}:{} - {}. Retrying", SEND_FAILURE_PREFIX, id, e1.getMessage());
         throw e1;
       } catch (MessagingException e2) {
         emailErrorLog.warn("{}:{} - {}", GENERAL_FAILURE_PREFIX, id, e2.getMessage());
@@ -323,75 +223,10 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
     log.debug("Sending email [{}] with text :{}", id, txt);
   }
 
-  // package-scoped for testing
-  void addRecipients(Communication comm, List<String> addrs, Set<CommunicationTarget> recpts) {
-
-    for (CommunicationTarget tg : recpts) {
-
-      User recipient = tg.getRecipient();
-      // don't send emails to users with disabled accounts
-      // rspac-2142
-      if (!recipient.isEnabled()) {
-        continue;
-      }
-      if (comm.isNotification()
-          && recipient
-              .getValueForPreference(Preference.BROADCAST_NOTIFICATIONS_BY_EMAIL)
-              .getValueAsBoolean()) {
-        addrs.add(recipient.getEmail());
-        comm.setSubject("Notification");
-      } else if (comm.isMessageOrRequest()
-          && recipient
-              .getValueForPreference(Preference.BROADCAST_REQUEST_BY_EMAIL)
-              .getValueAsBoolean()) {
-        addrs.add(recipient.getEmail());
-        comm.setSubject("Request");
-      }
-    }
-  }
-
-  @Override
-  public EmailContent generateEmailBody(Communication comm) {
-    EmailContent body = null;
-    String templateName = null;
-
-    if (comm.isNotification()) {
-      templateName = "notification.vm";
-    } else if (comm.isMessageOrRequest()) {
-      MessageType messageType = ((MessageOrRequest) comm).getMessageType();
-      if (MessageType.SIMPLE_MESSAGE.equals(messageType)) {
-        templateName = "message.vm";
-      } else {
-        templateName = "request.vm";
-      }
-    }
-
-    if (templateName != null) {
-      body =
-          strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-              templateName, getVelocityData(comm));
-    }
-    return body;
-  }
-
-  private Map<String, Object> getVelocityData(Communication comm) {
-    Map<String, Object> cfg = new HashMap<>();
-    cfg.put("cmm", comm);
-    cfg.put("baseURL", htmlDomainPrefix);
-    cfg.put("dateOb", new Date());
-    cfg.put("date", new DateTool());
-    return cfg;
-  }
-
   /*
    * package scoped for overriding in tests
    */
   void sendMailToAddresses(EmailConfig emailConfig) throws MessagingException {
-    // don't sent emails to unknown addresses
-    emailConfig.getAddresses().removeIf(a -> a.endsWith(EmailBroadcast.UNKNOWN_EMAIL_SUFFIX));
-    if (emailConfig.getAddresses().isEmpty()) {
-      return;
-    }
     Properties props = readEmailProperties();
     Session session = createSession(props);
 
@@ -403,8 +238,7 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
   }
 
   private Transport configureMailTransport(Session session) throws MessagingException {
-    Transport transport;
-    transport = session.getTransport("smtp");
+    Transport transport = session.getTransport("smtp");
     transport.connect(emailHost, Integer.parseInt(port), emailAccount, password);
     return transport;
   }
@@ -419,30 +253,23 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
       throws MessagingException {
 
     setDateHeader(message, Instant.now());
-    message.setSubject(emailConfig.getSubject());
+    message.setSubject(emailConfig.content().subject());
     message.setFrom(new InternetAddress(from));
-    msgRecipientFac.populateRecipients(emailConfig.getAddresses(), message, emailConfig.getComm());
+    msgRecipientFac.populateRecipients(emailConfig.addresses(), message, emailConfig.comm());
     message.setReplyTo(new Address[] {new InternetAddress(replyTo)});
-    if (!emailConfig.isStrictValidEmail()) {
-      message.setContent(emailConfig.getContent().getHtmlContent(), "text/html; charset=utf8");
-    } else {
-      // it's strict email, minimise spamminess by including plain-text alternative.
-      Multipart multiPart = generateMultipartContent(emailConfig);
-      message.setContent(multiPart);
-    }
+    message.setContent(generateMultipartContent(emailConfig));
   }
 
   // package-scoped for testing
   Multipart generateMultipartContent(EmailConfig emailConfig) throws MessagingException {
     Multipart multiPart = new MimeMultipart("alternative");
     MimeBodyPart textPart = new MimeBodyPart();
-    textPart.setText(
-        emailConfig.getContent().getPlainTextContent().orElse(TEXT_ONLY_EMAIL_DEFAULT), "utf-8");
+    textPart.setText(emailConfig.content().plainTextContent(), "utf-8");
 
     MimeBodyPart htmlPart = new MimeBodyPart();
 
-    htmlPart.setContent(emailConfig.getContent().getHtmlContent(), "text/html");
-    htmlPart.setHeader("Content-Type", "text/html");
+    htmlPart.setContent(emailConfig.content().htmlContent(), "text/html; charset=UTF-8");
+    htmlPart.setHeader("Content-Type", "text/html; charset=UTF-8");
     // ordering is important to set priority that email client users
     multiPart.addBodyPart(textPart);
     multiPart.addBodyPart(htmlPart);
@@ -450,7 +277,7 @@ public class EmailBroadcastImpl implements EmailBroadcast, Broadcaster {
   }
 
   private Properties readEmailProperties() {
-    Properties props = System.getProperties();
+    Properties props = new Properties(System.getProperties());
     props.put("mail.smtp.user", emailAccount);
     props.put("mail.smtp.password", password);
     props.put("mail.smtp.host", emailHost);

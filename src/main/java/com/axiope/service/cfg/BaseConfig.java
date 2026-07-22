@@ -169,6 +169,7 @@ import com.researchspace.service.impl.ChemistryImageUpdateInitialisor;
 import com.researchspace.service.impl.ChemistrySearchIndexInitialisor;
 import com.researchspace.service.impl.CollabGroupShareRequestCreateHandler;
 import com.researchspace.service.impl.CollabGroupShareRequestUpdateHandler;
+import com.researchspace.service.impl.CommunicationEmailBroadcaster;
 import com.researchspace.service.impl.ContentInitialiserUtilsImpl;
 import com.researchspace.service.impl.CustomFormAppInitialiser;
 import com.researchspace.service.impl.DBDataIntegrityChecker;
@@ -182,6 +183,7 @@ import com.researchspace.service.impl.DevBroadCaster;
 import com.researchspace.service.impl.DevEmailSenderImpl;
 import com.researchspace.service.impl.DocumentHTMLPreviewHandlerImpl;
 import com.researchspace.service.impl.EmailBroadcastImpl;
+import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.service.impl.ExampleContentAction;
 import com.researchspace.service.impl.ExportImportImpl;
 import com.researchspace.service.impl.ExportUtils;
@@ -214,7 +216,6 @@ import com.researchspace.service.impl.RepositoryDepositHandlerImpl;
 import com.researchspace.service.impl.SampleTemplateAppInitialiser;
 import com.researchspace.service.impl.SanityChecker;
 import com.researchspace.service.impl.SharingHandlerImpl;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
 import com.researchspace.service.impl.SysadminUserCreationHandlerImpl;
 import com.researchspace.service.impl.SystemConfigurationInitialisor;
 import com.researchspace.service.impl.SystemPropertyPermissionManagerImpl;
@@ -316,6 +317,9 @@ public abstract class BaseConfig {
 
   @Value("${email.enabled}")
   private String emailEnabled;
+
+  @Value("${server.urls.prefix}")
+  private String htmlDomainPrefix;
 
   // optional folder for velocity templates
   @Value("${velocity.ext.dir}")
@@ -1130,8 +1134,7 @@ public abstract class BaseConfig {
   @Bean
   public EmailBroadcast emailBroadcast() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImpl(
-          getMaxEmailsPerSecond(), getEmailAddressChunkSize(), strictEmailContentGenerator());
+      return new EmailBroadcastImpl(getMaxEmailsPerSecond(), getEmailAddressChunkSize());
     }
     return new DevEmailSenderImpl();
   }
@@ -1139,11 +1142,10 @@ public abstract class BaseConfig {
   @Bean
   public Broadcaster broadcaster() {
     if (Boolean.parseBoolean(emailEnabled)) {
-      return new EmailBroadcastImpl(
-          getMaxEmailsPerSecond(), getEmailAddressChunkSize(), strictEmailContentGenerator());
-    } else {
-      return new DevBroadCaster();
+      return new CommunicationEmailBroadcaster(
+          emailBroadcast(), emailContentGenerator(), htmlDomainPrefix);
     }
+    return new DevBroadCaster();
   }
 
   private Integer getMaxEmailsPerSecond() {
@@ -1288,8 +1290,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  StrictEmailContentGenerator strictEmailContentGenerator() {
-    return new StrictEmailContentGenerator();
+  EmailContentGenerator emailContentGenerator() {
+    return new EmailContentGenerator();
   }
 
   @Bean

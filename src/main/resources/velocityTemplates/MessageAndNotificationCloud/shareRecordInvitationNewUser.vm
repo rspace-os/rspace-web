@@ -1,14 +1,11 @@
-<html>
-#utf8header
-<body>
 
 Hello,
 <p>
 Welcome to RSpace! ${creator.fullName} (${creator.email}) has invited you to view a document '${recordName}'.
 
-<p> 
+<p>
 If you'd like to accept this request, please click <a href = "${acceptanceLink}">here</a>, where you can sign up for an account.
- 
+
 <p>
 Please use this email address when you fill out the signup form - you can change it afterwards if you want, once your account is set up.
 
@@ -18,7 +15,5 @@ Once you've signed up, there will be a request waiting for you - accept this req
 
 <p>
 #signature
-         
+
 #aboutRSpaceCloud
-</body>
-</html>

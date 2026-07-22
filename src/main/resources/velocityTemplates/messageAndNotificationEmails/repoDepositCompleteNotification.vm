@@ -11,9 +11,9 @@ $result.message
 <br/>
 #end
 #if($result.url)
- <a href="$result.url">$result.url</a>
+<a href="$result.url">$result.url</a>
 #else
- <br>No URL for the repository could be retrieved</br>
+<br>No URL for the repository could be retrieved</br>
 #end
 <br/>
 #dontReply

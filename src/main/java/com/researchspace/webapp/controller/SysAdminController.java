@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.model.views.ServiceOperationResult.convertToStringEntity;
 import static java.lang.Boolean.TRUE;
 
@@ -49,6 +48,7 @@ import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.model.views.UserStatistics;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.IReauthenticator;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.SysadminUserCreationHandler;
@@ -61,8 +61,7 @@ import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserRoleHandler;
 import com.researchspace.service.UserStatisticsManager;
 import com.researchspace.service.UserTagManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import com.researchspace.webapp.filter.IUserAccountLockoutPolicy;
 import java.net.URI;
 import java.security.Principal;
@@ -132,7 +131,7 @@ public class SysAdminController extends BaseController {
   private @Autowired SysadminCreateUserFormConfigurer createUserFormConfigurer;
   private @Autowired SysadminUserCreationHandler sysadminUserCreationHandler;
   private @Autowired IUserAccountLockoutPolicy lockoutPolicy;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -890,9 +889,11 @@ public class SysAdminController extends BaseController {
     velocityModel.put("systemUser", admin);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "adminRunningAsUserNotification.vm", velocityModel);
-    emailer.sendHtmlEmail(
-        "RSpace admin is using your account", content, toList(runAs.getEmail()), null);
+        emailContentGenerator.render(
+            "email.admin.operateas.subject",
+            null,
+            "adminRunningAsUserNotification.vm",
+            velocityModel);
+    emailer.sendEmail(content, List.of(runAs.getEmail()), null);
   }
 }
