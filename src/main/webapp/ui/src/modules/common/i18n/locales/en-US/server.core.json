@@ -103,6 +103,18 @@
         "message": "{0} failed for the following reasons: {1}"
       }
     },
+    "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
+    "composedId": {
+      "missing": "No id to retrieve",
+      "invalidFormat": "Incorrect id format - should be '\\d+-\\d+' but was '{0}'"
+    },
+    "globalId": {
+      "invalidSyntax": "Invalid syntax of oid [{0}]",
+      "unsupported": "Currently this OID [{0}] is unsupported."
+    },
+    "pagination": {
+      "invalidSortParameter": "Problem parsing sort parameter: [{0}]. It must be one of {1}."
+    },
     "page": {
       "contactSupportNotice": "Please inspect the message detail below – if you believe this to be a server error, please contact ResearchSpace support. You might also try asking the resource owner to share the resource with you.",
       "databaseUnavailable": "Database exception - query could not be executed.",

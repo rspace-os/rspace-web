@@ -90,8 +90,15 @@ public class BaseApiController implements ServletContextAware {
     pgCrit.setPageNumber(apiPgCrit.getPageNumber().longValue());
     pgCrit.setResultsPerPage(apiPgCrit.getPageSize());
     if (apiPgCrit.getOrderBy() != null) {
-      pgCrit.setOrderBy(apiPgCrit.getSort().getOrderBy());
-      pgCrit.setSortOrder(apiPgCrit.getSort().getSortOrder());
+      try {
+        pgCrit.setOrderBy(apiPgCrit.getSort().getOrderBy());
+        pgCrit.setSortOrder(apiPgCrit.getSort().getSortOrder());
+      } catch (ApiPaginationCriteria.InvalidSortParameterException e) {
+        throw new IllegalArgumentException(
+            getMessage(
+                "errors.pagination.invalidSortParameter",
+                new Object[] {e.getOrderBy(), String.join(",", e.getValidParams())}));
+      }
     }
     return pgCrit;
   }

@@ -11,7 +11,6 @@ import static com.researchspace.webapp.integrations.dsw.DSWClient.DSW_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_ALIAS;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_APIKEY;
 import static com.researchspace.webapp.integrations.pyrat.PyratClient.PYRAT_CONFIGURED_SERVERS;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.join;
@@ -33,6 +32,7 @@ import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SystemPropertyManager;
 import com.researchspace.service.SystemPropertyPermissionManager;
 import com.researchspace.service.UserAppConfigManager;
@@ -89,6 +89,7 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private @Autowired UserManager userMgr;
   private @Autowired IRepositoryConfigFactory repositoryConfigFactory;
   private @Autowired UserConnectionManager userConnManager;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired IPropertyHolder propertyHolder;
   private @Autowired PyratClient pyratClient;
   private @Autowired RaIDServiceClientAdapter raidClientService;
@@ -425,9 +426,9 @@ public class IntegrationsHandlerImpl implements IntegrationsHandler {
   private void checkValidIntegration(String name) {
     if (!isValidIntegration(name)) {
       throw new IllegalArgumentException(
-          format(
-              "Invalid integration name %s, must be one of [%s]",
-              name, join(booleanIntegrationPrefs, ",")));
+          messages.getMessage(
+              "apps.errors.invalidIntegrationName",
+              new Object[] {name, join(booleanIntegrationPrefs, ",")}));
     }
   }
 

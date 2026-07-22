@@ -1,6 +1,15 @@
 {
   "errors": {
     "inventory": {
+      "notEnabled": "Inventory is not enabled on this RSpace instance.",
+      "barcode": {
+        "unsupportedCodeType": "Unsupported code type: {0}"
+      },
+      "globalId": {
+        "unsupportedType": "Unsupported global id type: {0}",
+        "unsupportedParent": "Unknown parent global id: {0}",
+        "unsupportedParentPrefix": "Unsupported parent oid prefix: {0}"
+      },
       "container": {
         "deletion": {
           "notEmpty": "Container {0} is not empty and cannot be deleted"
@@ -31,6 +40,9 @@
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
         "validation": "{0}"
       },
+      "file": {
+        "imagesNotSupported": "Getting images for general files not supported yet"
+      },
       "icon": {
         "imageParseFailure": "Couldn''t parse file [{0}] as an image."
       },
@@ -45,6 +57,7 @@
       },
       "import": {
         "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
+        "unrecognizedFileType": "Unrecognized fileType: {0}",
         "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
         "instrumentCsvLineUnexpectedColumnCount": "Unexpected CSV line field count: expected {0, plural, one {# value} other {# values}}, but found {1, plural, one {# value} other {# values}}.",
         "instrumentTemplateIdAndTemplateInfoConflict": "Provide either ''templateId'' to use an existing instrument template or ''templateInfo'' to create a new one, but not both.",
@@ -93,11 +106,19 @@
       "sample": {
         "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
         "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
+        "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
         "templateNotFound": "No sample template with id: {0}",
         "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
       },
       "settings": {
         "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
+      },
+      "stoichiometry": {
+        "actualAmountRequired": "Molecule actual amount must be set for deduction",
+        "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+        "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
+        "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
+        "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
       },
       "subsample": {
         "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"

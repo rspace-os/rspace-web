@@ -9,6 +9,8 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.dtos.UserValidator;
 import com.researchspace.service.IVerificationPasswordValidator;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserManager;
 import com.researchspace.testutils.TestFactory;
 import org.junit.After;
@@ -39,6 +41,7 @@ public class VerificationPasswordControllerTest {
   @Before
   public void setUp() throws Exception {
     anyUser = TestFactory.createAnyUser("any");
+    verificationPasswordController.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
   @After

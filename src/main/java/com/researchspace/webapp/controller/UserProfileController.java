@@ -584,9 +584,8 @@ public class UserProfileController extends BaseController {
 
   private void throwUnacceptableImage(MultipartFile imageFile) {
     throw new IllegalArgumentException(
-        String.format(
-            "RSpace could not interpret  file %s as an image file",
-            imageFile.getOriginalFilename()));
+        getText(
+            "userProfile.image.errors.notAnImage", new Object[] {imageFile.getOriginalFilename()}));
   }
 
   /** Get the profile image */

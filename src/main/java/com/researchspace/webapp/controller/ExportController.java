@@ -864,11 +864,11 @@ public class ExportController extends BaseController {
 
     Communication communication = commMgr.getIfOwnerOrTarget(notificationId, subject);
     if (!communication.isNotification()) {
-      throw new IllegalArgumentException("not a notification id");
+      throw new IllegalArgumentException(getText("export.report.errors.notANotificationId"));
     }
     Notification notification = (Notification) communication;
     if (!NotificationType.ARCHIVE_EXPORT_COMPLETED.equals(notification.getNotificationType())) {
-      throw new IllegalArgumentException("not an export notification id");
+      throw new IllegalArgumentException(getText("export.report.errors.notAnExportNotificationId"));
     }
 
     model.addAttribute("notification", notification);

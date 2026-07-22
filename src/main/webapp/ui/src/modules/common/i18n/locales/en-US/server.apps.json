@@ -2,7 +2,9 @@
   "apps": {
     "dmp": {
       "errors": {
+        "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
         "import": "Couldn't import DMP",
+        "invalidLicenseUrl": "{0} is not a valid URL",
         "list": "Couldn't list DMPs"
       }
     },
@@ -42,7 +44,10 @@
       }
     },
     "errors": {
-      "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}"
+      "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
+      "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+      "notFoundByName": "No app with name [{0}]",
+      "notFoundByProperty": "App could not be identified for property {0}"
     },
     "egnyte": {
       "errors": {
@@ -176,6 +181,13 @@
       "connectedSuffix": "This window will close shortly."
     }
   },
+  "oauth": {
+    "errors": {
+      "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
+      "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+      "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time."
+    }
+  },
   "external": {
     "messaging": {
       "send": {
@@ -189,6 +201,13 @@
     "connection": {
       "failed": "Failed! {0}",
       "success": "Success! {0}"
+    },
+    "errors": {
+      "appConfigElementSetNotFound": "No app config element set found for app {0}",
+      "invalidAppId": "Invalid app Id",
+      "noUserConnection": "No UserConnection exists for: {0}",
+      "unknownIntegration": "Unknown or undefined integration",
+      "urlCreationFailed": "Couldn't create {0} repositoryURL {1}"
     }
   },
   "search": {

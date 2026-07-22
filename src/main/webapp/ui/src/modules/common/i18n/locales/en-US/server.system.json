@@ -19,7 +19,11 @@
     "deleteAdminUser": "This user  is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
     "deleteSysadminUser": "Invalid attempt to delete sysadmin user - there must be at least one remaining active, enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
     "deleteUser": {
+      "disabled": "Delete user is disabled!",
       "nonSelf": "You cannot delete yourself!"
+    },
+    "identifierProvider": {
+      "unsupported": "Unsupported identifier provider: {0}"
     },
     "invalid": {
       "roleIdentifier": "[{0}] is not a valid role identifier. Please choose one of [{1}]."

@@ -35,6 +35,7 @@
         "duplicateName": "You have already created a Group with the name: {0}",
         "groupNameRequired": "Group name is required",
         "memberEmailInvalid": "Enter correct emails",
+        "missingUsers": "Please create these users before creating a group: {0}",
         "piEmailInvalid": "Please enter a correct email",
         "piEmailRequired": "Principal investigator email is required"
       }
@@ -47,15 +48,24 @@
       "errors": {
         "cannotRemoveLastAdminOrPi": "Sorry, cannot remove the only admin or PI of this group. Please assign a new admin or PI role to this group before deleting this member.",
         "cannotRemoveLastGroupOwner": "Sorry, cannot remove the only group owner this group. Please assign a group owner role to this group before deleting this member.",
+        "exactlyOnePi": "Exactly one user must be the group's PI.",
+        "groupOwnerRequired": "Project group should have at least 1 GROUP_OWNER.",
         "invalidRoleName": "Invalid role name value - must be one of DEFAULT or RS_LAB_ADMIN.",
+        "labAdminWrongGroupType": "Lab admin can only view documents of a lab group, but this group is {0}",
         "missingDisplayName": "Missing display name!",
         "missingProfileInfo": "Please enter some profile information.",
         "noGroupOwnerDelete": "You cannot delete owner of a labgroup",
         "notMember": "You are not a member of the group.",
+        "onlyPiRoleChange": "Attempt to change the role of the only PI in the group!",
+        "piCannotBeDemoted": "PI [{0}] cannot be demoted to user as is PI of at least 1 group: {1}",
+        "piEditWrongGroupType": "PI can only edit all documents in a lab group, but this group is {0}",
         "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
         "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",
         "piRequiredForPublication": "Only PI can allow group publication",
-        "piRoleRequired": "PI does not have a PI role"
+        "piRoleRequired": "PI does not have a PI role",
+        "recentLoginBlocksDeletion": "Cannot delete group {0}: at least one member has logged in within the last year.",
+        "userDoesNotHavePiRole": "User {0} does not have PI role!",
+        "userNotInGroup": "User {0} is not in group {1}"
       },
       "invitationSent": {
         "confirmation": "Invitation sent to {0}"

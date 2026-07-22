@@ -54,6 +54,7 @@ import com.researchspace.service.IMediaFactory;
 import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.MediaFileLockHandler;
 import com.researchspace.service.MediaManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
@@ -113,6 +114,7 @@ public class MediaManagerImpl implements MediaManager {
   private @Autowired RecordDao recordDao;
 
   private @Autowired BaseRecordAdaptable baseRecordAdapter;
+  private @Autowired MessageSourceUtils messages;
 
   private final MediaFileLockHandler lockHandler = new MediaFileLockHandler();
 
@@ -413,7 +415,9 @@ public class MediaManagerImpl implements MediaManager {
     }
     if (media == null) {
       throw new IllegalStateException(
-          "Media file could not be saved - " + originalFileName.split(Pattern.quote("."))[0]);
+          messages.getMessage(
+              "gallery.errors.saveFailedFile",
+              new Object[] {originalFileName.split(Pattern.quote("."))[0]}));
     }
 
     folderManager.addChild(targetFolder.getId(), media, user);
@@ -467,12 +471,13 @@ public class MediaManagerImpl implements MediaManager {
             mediaFileId, user, new LinkedFieldsToMediaRecordInitPolicy(), true);
 
     if (!recToUpdate.isMediaRecord()) {
-      throw new IllegalArgumentException(mediaFileId + " is not a media record");
+      throw new IllegalArgumentException(
+          messages.getMessage("gallery.errors.notAMediaRecord", new Object[] {mediaFileId}));
     }
 
     String currentLock = lockHandler.getLock(recToUpdate.getGlobalIdentifier());
     if (!StringUtils.isBlank(currentLock) && !currentLock.equals(lockId)) {
-      throw new IllegalStateException("The file is currently locked and can't be updated");
+      throw new IllegalStateException(messages.getMessage("gallery.errors.fileLocked"));
     }
 
     EcatMediaFile media = (EcatMediaFile) recToUpdate;
@@ -482,7 +487,9 @@ public class MediaManagerImpl implements MediaManager {
     String newExtension = getExtension(updatedFileName);
     if (!isNewFileExtensionAllowed(oldExtension, newExtension)) {
       throw new IllegalArgumentException(
-          "Cannot update ." + oldExtension + " file with ." + newExtension);
+          messages.getMessage(
+              "gallery.errors.extensionChangeNotAllowed",
+              new Object[] {oldExtension, newExtension}));
     }
 
     log.debug("Updating existing media file {}", mediaFileId);

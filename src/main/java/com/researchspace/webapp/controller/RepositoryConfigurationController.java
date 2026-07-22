@@ -133,12 +133,12 @@ public class RepositoryConfigurationController extends BaseController {
         userAppConfigMgr.findByAppConfigElementSetId(appConfigSetId);
     validateCfgIfExists(appConfigSetId, errorStringBuilder, cfg);
     if (errorStringBuilder.length() > 0) {
-      throw new IllegalArgumentException("Invalid app Id");
+      throw new IllegalArgumentException(getText("repository.errors.invalidAppId"));
     }
     App app = cfg.get().getUserAppConfig().getApp();
     validateAppIsRepository(errorStringBuilder, app);
     if (errorStringBuilder.length() > 0) {
-      throw new IllegalArgumentException("Invalid app Id");
+      throw new IllegalArgumentException(getText("repository.errors.invalidAppId"));
     }
     RepositoryOperationResult result = depositHandler.testDataverseConnection(cfg.get());
     if (result.isSucceeded()) {
@@ -163,7 +163,9 @@ public class RepositoryConfigurationController extends BaseController {
               .orElseThrow(
                   () ->
                       new IllegalArgumentException(
-                          "No app config element set found for app " + integrationInfoName));
+                          getText(
+                              "repository.errors.appConfigElementSetNotFound",
+                              new Object[] {integrationInfoName})));
       info = depositHandler.getDataverseRepoUIConfigInfo(appConfigElementSet, user);
     } else if (FIGSHARE_APP_NAME.equals(integrationInfoName)) {
       info = depositHandler.getFigshareRepoUIConfigInfo(user);
@@ -175,7 +177,7 @@ public class RepositoryConfigurationController extends BaseController {
       info = depositHandler.getDigitalCommonsDataRepoUIConfigInfo(user);
     }
     if (info == null) {
-      throw new IllegalStateException("unknown or undefined integration");
+      throw new IllegalStateException(getText("repository.errors.unknownIntegration"));
     }
     return info;
   }

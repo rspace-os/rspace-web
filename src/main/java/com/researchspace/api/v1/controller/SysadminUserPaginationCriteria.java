@@ -1,7 +1,5 @@
 package com.researchspace.api.v1.controller;
 
-import static org.apache.commons.lang3.StringUtils.join;
-
 import com.researchspace.api.v1.model.ApiSortEnum;
 import javax.validation.constraints.Pattern;
 import lombok.Data;
@@ -51,12 +49,7 @@ public class SysadminUserPaginationCriteria extends ApiPaginationCriteria {
         case CREATIONDATE_DESC_API_PARAM:
           return ApiSortEnum.CREATION_DATE_DESC;
         default:
-          throw new IllegalArgumentException(
-              "Problem  parsing sort parameter: ["
-                  + getOrderBy()
-                  + "]. It must be one of "
-                  + join(ALL_PARAMS, ",")
-                  + ".");
+          throw new InvalidSortParameterException(getOrderBy(), ALL_PARAMS);
       }
     }
     return null;

@@ -47,6 +47,7 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
 import com.researchspace.service.RecordManager;
@@ -90,6 +91,7 @@ public class FolderManagerImpl implements FolderManager {
   private ApplicationEventPublisher publisher;
   private CommunityServiceManager communityServiceManager;
   private PermissionFactory permFac = new DefaultPermissionFactory();
+  @Autowired private MessageSourceUtils messageSourceUtils;
 
   @Autowired
   public FolderManagerImpl(
@@ -176,9 +178,8 @@ public class FolderManagerImpl implements FolderManager {
     if (src.isNotebook() && src.isShared()) {
       if (grandParentId == null) {
         throw new IllegalStateException(
-            "Cannot infer shared context for Notebook with ID=["
-                + parentId
-                + "], as \"grandParentId\" param is not set");
+            messageSourceUtils.getMessage(
+                "folder.navigation.errors.sharedContextUndetermined", new Object[] {parentId}));
       }
       src = folderDao.get(grandParentId);
     }
@@ -706,10 +707,9 @@ public class FolderManagerImpl implements FolderManager {
             }
             if (targetRecord == null) {
               throw new IllegalStateException(
-                  "The record named '"
-                      + pathItems[i]
-                      + "' does not exist in the path, or cannot be accessed. "
-                      + path);
+                  messageSourceUtils.getMessage(
+                      "folder.navigation.errors.pathNotAccessible",
+                      new Object[] {pathItems[i], path}));
             }
           }
         }

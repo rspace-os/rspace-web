@@ -143,7 +143,8 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   public void deleteFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
     Folder folder = loadFolder(id, user); // test it exists and is a folder.
     if (folder.isSystemFolder() || folder.isRootFolder()) {
-      throw new IllegalArgumentException("Cannot delete user home folder or a system folder");
+      throw new IllegalArgumentException(
+          getMessage("folder.delete.errors.systemOrHomeFolder", new Object[] {}));
     }
     DeletionSettings settings =
         DeletionSettings.builder()
@@ -156,7 +157,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
           recordDeletionManager.doDeletion(
               new Long[] {id}, user::getUsername, settings, user, ProgressMonitor.NULL_MONITOR);
       if (!result.isAllSucceeded()) {
-        throw new RuntimeException("Unknown server error deleting folder: " + id);
+        throw new RuntimeException(getMessage("folder.delete.errors.failed", new Object[] {id}));
       }
     } catch (DocumentAlreadyEditedException e) {
       // this is just thrown when deleting documents, so this should not happen
@@ -239,7 +240,9 @@ public class FolderApiController extends BaseApiController implements FolderApi 
     if (!isEmpty(typesToInclude)
         && !CollectionUtils.containsAll(ACCEPTABLE_TYPES, typesToInclude)) {
       throw new IllegalArgumentException(
-          "typesToInclude terms must be one of: " + StringUtils.join(ACCEPTABLE_TYPES, ","));
+          getMessage(
+              "folder.list.errors.invalidTypesToInclude",
+              new Object[] {StringUtils.join(ACCEPTABLE_TYPES, ",")}));
     }
   }
 

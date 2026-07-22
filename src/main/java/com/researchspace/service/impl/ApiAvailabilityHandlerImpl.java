@@ -113,7 +113,8 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   private void assertInventoryAvailable(User user) {
     if (!isInventoryAvailable(user)) {
-      throw new UnsupportedOperationException("Inventory is not enabled on this RSpace instance.");
+      throw new UnsupportedOperationException(
+          messages.getMessage("errors.inventory.notEnabled", new Object[] {}));
     }
   }
 

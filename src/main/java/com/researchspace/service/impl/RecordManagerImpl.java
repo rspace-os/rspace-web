@@ -83,6 +83,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentCopyManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordContext;
@@ -135,6 +136,7 @@ public class RecordManagerImpl implements RecordManager {
   private @Autowired RecordEditorTracker tracker;
   private @Autowired FieldLinksEntitiesSynchronizer fieldContentSynchroniser;
   private @Autowired FormDao formDao;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired RecordGroupSharingDao recordGroupSharingDao;
   private @Autowired RecordUserFavoritesDao recordUserFavoritesDao;
   private @Autowired IRecordFactory recordFactory;
@@ -989,7 +991,7 @@ public class RecordManagerImpl implements RecordManager {
   public boolean renameRecord(String newname, Long toRenameId, User user) {
     if (StringUtils.isBlank(newname)) {
       throw new IllegalArgumentException(
-          String.format("New name cannot be empty but was [%s]", newname));
+          messages.getMessage("document.rename.errors.nameRequired", new Object[] {newname}));
     }
     newname = sanitizeNewRecordName(newname);
     boolean isRecord = isRecord(toRenameId);
@@ -1051,7 +1053,8 @@ public class RecordManagerImpl implements RecordManager {
   @Override
   public List<RSpaceDocView> getAllFrom(Set<Long> dbids) {
     if (CollectionUtils.isEmpty(dbids)) {
-      throw new IllegalArgumentException("List of ids to retrieve is empty!");
+      throw new IllegalArgumentException(
+          messages.getMessage("record.errors.idsRequired", new Object[] {}));
     }
     return recordDao.getRecordViewsById(dbids);
   }

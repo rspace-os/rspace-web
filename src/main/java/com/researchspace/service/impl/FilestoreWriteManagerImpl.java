@@ -139,8 +139,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (sourceFilestoreId.equals(request.getDestFilestoreId())) {
       throw new UnsupportedOperationException(
-          "Within-filestore transfers are not supported by this endpoint "
-              + "(source and destination filestore ids are identical)");
+          messages.getMessage("netFileStores.write.transfer.sameFilestore", new Object[] {}));
     }
 
     NfsFileStore sourceFilestore = nfsManager.getNfsFileStore(sourceFilestoreId);
@@ -172,8 +171,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (!sourceClient.supportsServerSideTransfer() || !destClient.supportsServerSideTransfer()) {
       throw new UnsupportedOperationException(
-          "Filestore-to-filestore transfer currently supports only S3↔S3; "
-              + "source and destination filestores must both be S3");
+          messages.getMessage("netFileStores.write.transfer.unsupportedBackend", new Object[] {}));
     }
 
     // /transfer has no RSpace record context, so recordNames and recordId are both null.
@@ -193,7 +191,8 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
             : destFilestoreRootPath + "/" + StringUtils.stripStart(request.getDestPath(), "/");
     if (absoluteSourcePath.equals(absoluteDestPath)) {
       throw new UnsupportedOperationException(
-          "Source and destination resolve to the same S3 key: " + absoluteSourcePath);
+          messages.getMessage(
+              "netFileStores.write.transfer.sameS3Key", new Object[] {absoluteSourcePath}));
     }
     ApiExternalStorageOperationResult result = new ApiExternalStorageOperationResult();
     try {
@@ -436,7 +435,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     }
     if (!(nfsClient instanceof WritableNfsClient writable)) {
       throw new UnsupportedOperationException(
-          "Filestore backend does not support write operations: " + filestore.getName());
+          messages.getMessage(
+              "netFileStores.write.filestore.backendNotWritable",
+              new Object[] {filestore.getName()}));
     }
     return writable;
   }

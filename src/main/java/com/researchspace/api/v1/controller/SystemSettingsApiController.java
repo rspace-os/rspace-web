@@ -74,7 +74,8 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
             SystemPropertyName.PIDINST_B2INST_TOKEN,
             null);
       default:
-        throw new IllegalArgumentException("Unsupported identifier provider: " + provider);
+        throw new IllegalArgumentException(
+            getMessage("errors.identifierProvider.unsupported", new Object[] {provider}));
     }
   }
 

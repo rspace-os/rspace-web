@@ -159,8 +159,7 @@ public class RevisionHistoryController extends BaseController {
       throw new AuthorizationException(" Resource is not authorized ");
     }
     if (!strucDoc.isStructuredDocument()) {
-      throw new IllegalStateException(
-          "Viewing this record's audit history only works with StructuredDocuments!");
+      throw new IllegalStateException(getText("document.audit.errors.notStructuredDocument"));
     }
     return strucDoc.asStrucDoc();
   }

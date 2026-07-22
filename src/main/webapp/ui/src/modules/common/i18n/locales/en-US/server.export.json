@@ -87,6 +87,20 @@
         "moveDetails": "From {0} ({1}) to {2} ({3})"
       }
     },
+    "report": {
+      "errors": {
+        "notANotificationId": "Not a notification id",
+        "notAnExportNotificationId": "Not an export notification id"
+      }
+    },
+    "jobs": {
+      "errors": {
+        "s3ExportNotFound": "Couldn't find export on S3 for {0}"
+      }
+    },
+    "errors": {
+      "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
+    },
     "global": {
       "comments": {
         "number": "Comment {0}",
@@ -120,6 +134,9 @@
     "pdf": {
       "comments": {
         "line": "{0} on {1}: {2}"
+      },
+      "errors": {
+        "exportFolderUnavailable": "Could not obtain the PDF export folder."
       },
       "exporterNameWithOrcid": "{0} - Orcid ID {1}",
       "externalWorkflow": {

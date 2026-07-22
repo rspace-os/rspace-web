@@ -18,6 +18,7 @@ import com.researchspace.netfiles.NfsFactory;
 import com.researchspace.netfiles.WritableNfsClient;
 import com.researchspace.netfiles.WriteAttribution;
 import com.researchspace.service.FilestoreAclChecker;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NfsManager;
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class NfsManagerImpl implements NfsManager {
   private @Autowired NfsDao nfsDao;
   private @Autowired @Setter NfsFactory nfsFactory;
   private @Autowired @Setter FilestoreAclChecker aclChecker;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired
   @Setter
@@ -136,7 +138,8 @@ public class NfsManagerImpl implements NfsManager {
   public NfsFileSystem getFileSystem(Long id) {
     NfsFileSystem fileSystem = nfsDao.getNfsFileSystem(id);
     if (fileSystem == null || fileSystem.isDisabled()) {
-      throw new IllegalStateException("no active filesystem for id: " + id);
+      throw new IllegalStateException(
+          messages.getMessage("netFileStores.errors.fileSystemNotActive", new Object[] {id}));
     }
     return fileSystem;
   }

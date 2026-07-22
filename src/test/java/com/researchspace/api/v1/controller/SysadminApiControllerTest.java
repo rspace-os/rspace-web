@@ -43,6 +43,8 @@ import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserDeletionManager;
 import com.researchspace.service.UserDeletionPolicy;
 import com.researchspace.service.UserEnablementUtils;
@@ -101,6 +103,7 @@ public class SysadminApiControllerTest extends JavaxValidatorTest {
   public void setUp() throws Exception {
     response = new MockHttpServletResponse();
     sysadmin.addRole(Role.SYSTEM_ROLE);
+    controller.messages = new MessageSourceUtils(new JsonMessageSource());
   }
 
   @After

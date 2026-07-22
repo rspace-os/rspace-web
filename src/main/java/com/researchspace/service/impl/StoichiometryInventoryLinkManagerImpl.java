@@ -16,6 +16,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.model.units.QuantityInfo;
 import com.researchspace.model.units.QuantityUtils;
 import com.researchspace.model.units.RSUnitDef;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryMoleculeManager;
 import com.researchspace.service.inventory.InventoryPermissionUtils;
@@ -36,6 +37,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
   private final InventoryPermissionUtils invPermissionUtils;
   private final SubSampleApiManager subSampleMgr;
   private final QuantityUtils quantityUtils;
+  private final MessageSourceUtils messages;
 
   @Autowired
   public StoichiometryInventoryLinkManagerImpl(
@@ -43,12 +45,14 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
       StoichiometryMoleculeManager stoichiometryMoleculeManager,
       IPermissionUtils elnPermissionUtils,
       InventoryPermissionUtils invPermissionUtils,
-      SubSampleApiManager subSampleMgr) {
+      SubSampleApiManager subSampleMgr,
+      MessageSourceUtils messages) {
     this.linkDao = linkDao;
     this.stoichiometryMoleculeManager = stoichiometryMoleculeManager;
     this.elnPermissionUtils = elnPermissionUtils;
     this.invPermissionUtils = invPermissionUtils;
     this.subSampleMgr = subSampleMgr;
+    this.messages = messages;
     this.quantityUtils = new QuantityUtils();
   }
 
@@ -59,7 +63,8 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         stoichiometryMoleculeManager.getById(stoichiometryMoleculeId);
 
     if (stoichiometryMolecule.getInventoryLink() != null) {
-      throw new IllegalArgumentException("Stoichiometry molecule already has an inventory link");
+      throw new IllegalArgumentException(
+          messages.getMessage("errors.inventory.stoichiometry.alreadyLinked", new Object[] {}));
     }
 
     InventoryRecord inventoryRecord =
@@ -68,9 +73,9 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
     if (inventoryRecord.isSampleTemplate()) {
       throw new IllegalArgumentException(
-          inventoryRecord.getGlobalIdentifier()
-              + " is a sample template. Only Containers, Samples and Subsamples are valid for"
-              + " linking.");
+          messages.getMessage(
+              "errors.inventory.stoichiometry.unsupportedLinkTarget",
+              new Object[] {inventoryRecord.getGlobalIdentifier()}));
     }
 
     StoichiometryInventoryLink link = new StoichiometryInventoryLink();
@@ -90,16 +95,18 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         StoichiometryMolecule stoichiometryMolecule = link.getStoichiometryMolecule();
         if (stoichiometryMolecule.getStoichiometry().getId() != stoichiometryId) {
           throw new IllegalArgumentException(
-              String.format(
-                  "Link with id %d does not belong to stoichiometry with id %d",
-                  id, stoichiometryId));
+              messages.getMessage(
+                  "errors.inventory.stoichiometry.linkNotInStoichiometry",
+                  new Object[] {id, stoichiometryId}));
         }
         verifyStoichiometryPermissions(stoichiometryMolecule, PermissionType.WRITE, user);
         invPermissionUtils.assertUserCanEditInventoryRecord(link.getInventoryRecord(), user);
 
         Double actualAmount = stoichiometryMolecule.getActualAmount();
         if (actualAmount == null) {
-          throw new IllegalArgumentException("Molecule actual amount must be set for deduction");
+          throw new IllegalArgumentException(
+              messages.getMessage(
+                  "errors.inventory.stoichiometry.actualAmountRequired", new Object[] {}));
         }
         QuantityInfo quantityInfo =
             new QuantityInfo(BigDecimal.valueOf(actualAmount), RSUnitDef.GRAM.getId());
@@ -135,12 +142,13 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
               .getNumericValue();
       if (totalAfterStockUpdate.compareTo(BigDecimal.ZERO) < 0) {
         throw new IllegalArgumentException(
-            "Insufficient stock to perform this action. Attempting to use "
-                + quantityInfo.toPlainString()
-                + " of stock amount "
-                + subSample.getQuantity().toPlainString()
-                + " for "
-                + subSample.getGlobalIdentifier());
+            messages.getMessage(
+                "errors.inventory.stoichiometry.insufficientStock",
+                new Object[] {
+                  quantityInfo.toPlainString(),
+                  subSample.getQuantity().toPlainString(),
+                  subSample.getGlobalIdentifier()
+                }));
       }
       subSampleMgr.registerApiSubSampleUsage(inventoryRecord.getId(), quantityInfo, user);
       generateNewStoichiometryRevision(link.getStoichiometryMolecule());

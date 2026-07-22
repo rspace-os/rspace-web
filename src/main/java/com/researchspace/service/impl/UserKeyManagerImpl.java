@@ -6,6 +6,7 @@ import com.jcraft.jsch.KeyPair;
 import com.researchspace.dao.UserKeyDao;
 import com.researchspace.model.User;
 import com.researchspace.model.UserKeyPair;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserKeyManager;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -30,6 +31,8 @@ public class UserKeyManagerImpl implements UserKeyManager {
   private String passphrase;
 
   @Autowired private UserKeyDao userKeyDao;
+
+  @Autowired private MessageSourceUtils messages;
 
   @Override
   public UserKeyPair getUserKeyPair(User user) {
@@ -74,7 +77,10 @@ public class UserKeyManagerImpl implements UserKeyManager {
       return userKeyPair;
 
     } catch (JSchException | UnsupportedEncodingException e) {
-      throw new IllegalArgumentException("problem with generating ssh key", e);
+      throw new IllegalArgumentException(
+          messages.getMessage(
+              "netFileStores.errors.sshKeyGenerationFailed", new Object[] {e.getMessage()}),
+          e);
     }
   }
 

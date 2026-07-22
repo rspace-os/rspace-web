@@ -20,6 +20,7 @@ import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.SharingHandler;
 import com.researchspace.service.WorkspaceService;
@@ -49,6 +50,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private final SharingHandler recordShareHandler;
   private final AuditTrailService auditService;
   private final MovePermissionChecker permissionChecker;
+  private final MessageSourceUtils messages;
 
   @Autowired
   public WorkspaceServiceImpl(
@@ -58,7 +60,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       GroupManager groupManager,
       SharingHandler recordShareHandler,
       AuditTrailService auditService,
-      MovePermissionChecker permissionChecker) {
+      MovePermissionChecker permissionChecker,
+      MessageSourceUtils messages) {
     this.folderManager = folderManager;
     this.recordManager = recordManager;
     this.baseRecordManager = baseRecordManager;
@@ -66,6 +69,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     this.recordShareHandler = recordShareHandler;
     this.auditService = auditService;
     this.permissionChecker = permissionChecker;
+    this.messages = messages;
   }
 
   @Override
@@ -77,7 +81,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       Long grandparentId,
       User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
-      throw new IllegalArgumentException("Ids to move and target folder are required.");
+      throw new IllegalArgumentException(
+          messages.getMessage("document.move.errors.idsAndTargetRequired", new Object[] {}));
     }
 
     Folder usersRootFolder = folderManager.getRootFolderForUser(user);
@@ -135,7 +140,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
   private void validateMove(List<Long> idsToMove, Long sourceFolderId, User user, Folder target) {
     if (target.getId().equals(sourceFolderId)) {
       throw new IllegalArgumentException(
-          "Source and target folder are the same. Id: " + sourceFolderId);
+          messages.getMessage(
+              "document.move.errors.sameSourceAndTarget", new Object[] {sourceFolderId}));
     }
 
     for (long id : idsToMove) {
@@ -146,12 +152,14 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       }
 
       if (id == target.getId()) {
-        throw new IllegalArgumentException("Attempt to move record with ID: " + id + " to itself");
+        throw new IllegalArgumentException(
+            messages.getMessage("document.move.errors.targetIsSelf", new Object[] {id}));
       }
 
       if (record.getParents().stream()
           .anyMatch(p -> p.getFolder().getId().equals(target.getId()))) {
-        throw new IllegalArgumentException("Record with ID: " + id + " already in target folder");
+        throw new IllegalArgumentException(
+            messages.getMessage("document.move.errors.alreadyInTargetFolder", new Object[] {id}));
       }
     }
   }

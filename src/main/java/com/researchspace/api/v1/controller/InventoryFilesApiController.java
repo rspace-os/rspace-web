@@ -178,7 +178,8 @@ public class InventoryFilesApiController extends BaseApiInventoryController
         IOUtils.copy(is, out);
       }
     } else {
-      throw new UnsupportedOperationException("Getting images for general files not supported yet");
+      throw new UnsupportedOperationException(
+          getMessage("errors.inventory.file.imagesNotSupported", new Object[] {}));
     }
   }
 

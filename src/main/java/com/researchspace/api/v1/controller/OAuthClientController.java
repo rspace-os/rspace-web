@@ -10,6 +10,7 @@ import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.ApiAvailabilityHandler;
 import com.researchspace.service.IReauthenticator;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OAuthTokenManager;
 import com.researchspace.service.SystemPropertyName;
 import com.researchspace.service.SystemPropertyPermissionManager;
@@ -43,6 +44,8 @@ public class OAuthClientController {
   @Autowired private IReauthenticator reauthenticator;
 
   @Autowired private ApiAvailabilityHandler apiHandler;
+
+  @Autowired private MessageSourceUtils messages;
 
   @Autowired private AnalyticsManager analyticsMgr;
 
@@ -84,7 +87,7 @@ public class OAuthClientController {
     if ("password".equals(grantType)) {
       if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
         throw new IllegalArgumentException(
-            "Password grant requires parameters `username` and `password` to be present.");
+            messages.getMessage("oauth.errors.passwordGrantMissingCredentials"));
       }
       try {
         User user = userManager.getUserByUsernameOrAlias(username);
@@ -119,7 +122,7 @@ public class OAuthClientController {
     if ("refresh_token".equals(grantType)) {
       if (StringUtils.isEmpty(refreshToken)) {
         throw new IllegalArgumentException(
-            "Refresh grant requires parameter `refresh_token` to be present.");
+            messages.getMessage("oauth.errors.refreshGrantMissingToken"));
       }
 
       ServiceOperationResult<Void> validationResult = tokenManager.validateToken(refreshToken);
@@ -129,8 +132,7 @@ public class OAuthClientController {
       return refreshGrant(clientId, clientSecret, refreshToken, isJwt, request);
     }
 
-    throw new IllegalArgumentException(
-        "Only password grant and token refresh is supported for OAuth at this time.");
+    throw new IllegalArgumentException(messages.getMessage("oauth.errors.unsupportedGrantType"));
   }
 
   private NewOAuthTokenResponse refreshGrant(

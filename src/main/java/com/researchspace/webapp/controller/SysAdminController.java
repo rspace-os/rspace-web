@@ -242,7 +242,7 @@ public class SysAdminController extends BaseController {
   public ResponseEntity<Object> removeUserAccount(@RequestParam("userId") Long userId) {
 
     if (!(TRUE.toString()).equalsIgnoreCase(properties.getDeleteUser())) {
-      throw new IllegalStateException("Delete user is disabled!");
+      throw new IllegalStateException(getText("errors.deleteUser.disabled"));
     }
 
     User sysadmin = userManager.getAuthenticatedUserInSession();
@@ -431,7 +431,8 @@ public class SysAdminController extends BaseController {
     assertUserIsSysAdmin(currentUser);
 
     if (!userManager.exists(incomingData.getUserId())) {
-      throw new IllegalArgumentException("No user found for id: " + incomingData.getUserId());
+      throw new IllegalArgumentException(
+          getText("errors.user.notFound", new Object[] {incomingData.getUserId()}));
     }
 
     try {

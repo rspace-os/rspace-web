@@ -4724,9 +4724,12 @@ export default interface Resources {
     },
     "userDeletion": {
       "errors": {
+        "exportBeforeDeletionFailed": "Could not make export of user's work before deleting account; user deletion aborted",
         "filestoreRemovalFailed": "Problem during filestore removal",
+        "nonTempUserTooNew": "Can only delete users created more than a year ago",
         "resourceListUnreadable": "Resource list file not readable",
-        "sysadminRequired": "Only user with sysadmin role can delete filestore resources"
+        "sysadminRequired": "Only user with sysadmin role can delete filestore resources",
+        "tempUserTooNew": "Can only delete temp users created more than a year ago"
       }
     },
     "userList": {
@@ -4750,6 +4753,11 @@ export default interface Resources {
         }
       },
       "heading": "User Profile",
+      "image": {
+        "errors": {
+          "notAnImage": "RSpace could not interpret file {0} as an image file"
+        }
+      },
       "message": {
         "delivery": {
           "label": "Preferred delivery method"
@@ -4856,7 +4864,9 @@ export default interface Resources {
     "apps": {
       "dmp": {
         "errors": {
+          "bothArgosAndDmpToolEnabled": "DMPTool and Argos cannot both be enabled",
           "import": "Couldn't import DMP",
+          "invalidLicenseUrl": "{0} is not a valid URL",
           "list": "Couldn't list DMPs"
         }
       },
@@ -4903,7 +4913,10 @@ export default interface Resources {
         }
       },
       "errors": {
-        "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}"
+        "invalidChoice": "App [{0}] is an invalid choice - it must be of type {1}",
+        "invalidIntegrationName": "Invalid integration name {0}, must be one of [{1}]",
+        "notFoundByName": "No app with name [{0}]",
+        "notFoundByProperty": "App could not be identified for property {0}"
       },
       "fieldmark": {
         "errors": {
@@ -5039,10 +5052,24 @@ export default interface Resources {
         }
       }
     },
+    "oauth": {
+      "errors": {
+        "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
+        "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
+        "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time."
+      }
+    },
     "repository": {
       "connection": {
         "failed": "Failed! {0}",
         "success": "Success! {0}"
+      },
+      "errors": {
+        "appConfigElementSetNotFound": "No app config element set found for app {0}",
+        "invalidAppId": "Invalid app Id",
+        "noUserConnection": "No UserConnection exists for: {0}",
+        "unknownIntegration": "Unknown or undefined integration",
+        "urlCreationFailed": "Couldn't create {0} repositoryURL {1}"
       }
     },
     "search": {
@@ -5092,6 +5119,10 @@ export default interface Resources {
           "failed": "Invalid captcha response, please try again."
         }
       },
+      "composedId": {
+        "invalidFormat": "Incorrect id format - should be '\\d+-\\d+' but was '{0}'",
+        "missing": "No id to retrieve"
+      },
       "date": "{0} is not a date.",
       "dateOutsideAllowedRange": "Default date is outside the allowed range.",
       "detail": "{0}",
@@ -5106,6 +5137,10 @@ export default interface Resources {
         "usernameAlias": "This username ({0}) is already registered as a username alias. Please try a different username, or contact System Admin if you think that username shouldn't be taken by an alias"
       },
       "fromDateLaterThanToDate": "From date should be before to date.",
+      "globalId": {
+        "invalidSyntax": "Invalid syntax of oid [{0}]",
+        "unsupported": "Currently this OID [{0}] is unsupported."
+      },
       "invalid": "{0} is invalid.",
       "invalidChars": "{0} is not an allowed character for {1}",
       "invalidDateFormat": "Invalid date format used.",
@@ -5165,12 +5200,16 @@ export default interface Resources {
         "unavailableResource": "An expected resource was unavailable (null). This is probably a server error - please report this to support.",
         "unhandledExceptionNotice": "An exception occurred on the server. If it persists, please contact ResearchSpace support."
       },
+      "pagination": {
+        "invalidSortParameter": "Problem parsing sort parameter: [{0}]. It must be one of {1}."
+      },
       "password": {
         "conflict": "Password and Confirm Password fields are not identical.",
         "insecurePassword": "Please choose a more secure password.",
         "invalid": "Invalid password.",
         "notEqualUsername": "Please use a  password other than your username."
       },
+      "rateLimitExceeded": "You have exceeded the number of {0} requests. Please contact ResearchSpace support for assistance.",
       "reauthentication": {
         "failed": "Reauthentication failed, please try again."
       },
@@ -5683,6 +5722,9 @@ export default interface Resources {
           "moveDetails": "From {0} ({1}) to {2} ({3})"
         }
       },
+      "errors": {
+        "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
+      },
       "global": {
         "comments": {
           "number": "Comment {0}",
@@ -5713,9 +5755,17 @@ export default interface Resources {
           "yes": "yes"
         }
       },
+      "jobs": {
+        "errors": {
+          "s3ExportNotFound": "Couldn't find export on S3 for {0}"
+        }
+      },
       "pdf": {
         "comments": {
           "line": "{0} on {1}: {2}"
+        },
+        "errors": {
+          "exportFolderUnavailable": "Could not obtain the PDF export folder."
         },
         "exporterNameWithOrcid": "{0} - Orcid ID {1}",
         "externalWorkflow": {
@@ -5789,6 +5839,12 @@ export default interface Resources {
         "steps": "Steps",
         "type": "Type:",
         "version": "Version:"
+      },
+      "report": {
+        "errors": {
+          "notANotificationId": "Not a notification id",
+          "notAnExportNotificationId": "Not an export notification id"
+        }
       }
     }
   },
@@ -5798,7 +5854,16 @@ export default interface Resources {
         "noTopLevelFolder": "You cannot create a top-level folder in the Gallery; create folder in one of the sub-galleries, e.g.  Images, Documents"
       },
       "errors": {
-        "saveFailed": "Save action failed [{0}]"
+        "accessDenied": "Access denied",
+        "extensionChangeNotAllowed": "Cannot update .{0} file with .{1}",
+        "fileLocked": "The file is currently locked and can't be updated",
+        "folderNotInGallery": "Provided folder id doesn't point to a Gallery folder",
+        "imageFileNotRetrievable": "Could not retrieve image file {0}",
+        "notAMediaRecord": "{0} is not a media record",
+        "revisionsIdsMismatch": "Revisions and ids must be same length",
+        "saveFailed": "Save action failed [{0}]",
+        "saveFailedFile": "Media file could not be saved - {0}",
+        "selectedMediaIdAndFieldIdBothProvided": "selectedMediaId and fieldId shouldn't be both provided"
       },
       "filestore": {
         "folder": {
@@ -5826,11 +5891,18 @@ export default interface Resources {
         }
       },
       "errors": {
+        "apiNotEnabled": "Gallery Filestores API is not enabled for use on this RSpace instance (netfilestores.enabled=false)",
         "authPublicKey": "Authentication problem, verify that your public key is properly registered or contact your System Admin",
         "connection": "Connection problem, please try again or contact your System Admin",
         "disabled": "This file system has been disabled, please contact your System Admin",
         "download": "Couldn't retrieve the file, please try again or contact your System Admin",
+        "fileStoreNotFound": "Could not find file store with id: {0}",
+        "fileSystemNotActive": "No active filesystem for id: {0}",
+        "filestoreNameNotUnique": "User already has a filestore named ''{0}'' - filestore name must be unique",
+        "invalidNamePathFormat": "Wrong format of namePath: {0}",
         "invalidUrl": "Invalid connection URL. Try connecting to another Filestore or contact your System Admin",
+        "missingRemotePathOrId": "Neither 'remotePath' nor 'remoteId' param is provided",
+        "sshKeyGenerationFailed": "Problem with generating ssh key: {0}",
         "userNotLoggedIn": "User is not logged in"
       },
       "export": {
@@ -5878,6 +5950,7 @@ export default interface Resources {
       },
       "write": {
         "filestore": {
+          "backendNotWritable": "Filestore backend does not support write operations: {0}",
           "notFound": "Could not find file store with id: {0}"
         },
         "filestorePathIdMandatory": "filestorePathId is mandatory",
@@ -5886,7 +5959,12 @@ export default interface Resources {
           "mandatory": "folderName is mandatory"
         },
         "recordIdsMandatory": "recordIds is mandatory",
-        "rootModificationForbidden": "Cannot move or delete the filestore root"
+        "rootModificationForbidden": "Cannot move or delete the filestore root",
+        "transfer": {
+          "sameFilestore": "Within-filestore transfers are not supported by this endpoint (source and destination filestore ids are identical)",
+          "sameS3Key": "Source and destination resolve to the same S3 key: {0}",
+          "unsupportedBackend": "Filestore-to-filestore transfer currently supports only S3↔S3; source and destination filestores must both be S3"
+        }
       }
     }
   },
@@ -5927,6 +6005,7 @@ export default interface Resources {
           "duplicateName": "You have already created a Group with the name: {0}",
           "groupNameRequired": "Group name is required",
           "memberEmailInvalid": "Enter correct emails",
+          "missingUsers": "Please create these users before creating a group: {0}",
           "piEmailInvalid": "Please enter a correct email",
           "piEmailRequired": "Principal investigator email is required"
         }
@@ -5939,15 +6018,24 @@ export default interface Resources {
         "errors": {
           "cannotRemoveLastAdminOrPi": "Sorry, cannot remove the only admin or PI of this group. Please assign a new admin or PI role to this group before deleting this member.",
           "cannotRemoveLastGroupOwner": "Sorry, cannot remove the only group owner this group. Please assign a group owner role to this group before deleting this member.",
+          "exactlyOnePi": "Exactly one user must be the group's PI.",
+          "groupOwnerRequired": "Project group should have at least 1 GROUP_OWNER.",
           "invalidRoleName": "Invalid role name value - must be one of DEFAULT or RS_LAB_ADMIN.",
+          "labAdminWrongGroupType": "Lab admin can only view documents of a lab group, but this group is {0}",
           "missingDisplayName": "Missing display name!",
           "missingProfileInfo": "Please enter some profile information.",
           "noGroupOwnerDelete": "You cannot delete owner of a labgroup",
           "notMember": "You are not a member of the group.",
+          "onlyPiRoleChange": "Attempt to change the role of the only PI in the group!",
+          "piCannotBeDemoted": "PI [{0}] cannot be demoted to user as is PI of at least 1 group: {1}",
+          "piEditWrongGroupType": "PI can only edit all documents in a lab group, but this group is {0}",
           "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
           "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",
           "piRequiredForPublication": "Only PI can allow group publication",
-          "piRoleRequired": "PI does not have a PI role"
+          "piRoleRequired": "PI does not have a PI role",
+          "recentLoginBlocksDeletion": "Cannot delete group {0}: at least one member has logged in within the last year.",
+          "userDoesNotHavePiRole": "User {0} does not have PI role!",
+          "userNotInGroup": "User {0} is not in group {1}"
         },
         "invitationSent": {
           "confirmation": "Invitation sent to {0}"
@@ -6145,6 +6233,9 @@ export default interface Resources {
   "server.inventory": {
     "errors": {
       "inventory": {
+        "barcode": {
+          "unsupportedCodeType": "Unsupported code type: {0}"
+        },
         "container": {
           "deletion": {
             "notEmpty": "Container {0} is not empty and cannot be deleted"
@@ -6175,6 +6266,14 @@ export default interface Resources {
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
           "validation": "{0}"
         },
+        "file": {
+          "imagesNotSupported": "Getting images for general files not supported yet"
+        },
+        "globalId": {
+          "unsupportedParent": "Unknown parent global id: {0}",
+          "unsupportedParentPrefix": "Unsupported parent oid prefix: {0}",
+          "unsupportedType": "Unsupported global id type: {0}"
+        },
         "icon": {
           "imageParseFailure": "Couldn''t parse file [{0}] as an image."
         },
@@ -6203,7 +6302,8 @@ export default interface Resources {
           "parentSampleNotSet": "Parent sample import id or global id must be set, but both were empty",
           "subSampleImportRequiresParentSampleMapping": "Subsample import requires mapping to 'parent sample' or 'parent sample import id' ",
           "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
-          "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
+          "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples",
+          "unrecognizedFileType": "Unrecognized fileType: {0}"
         },
         "instrument": {
           "templateNotFound": "No instrument template with id: {0}",
@@ -6226,6 +6326,7 @@ export default interface Resources {
             "requiredForGridOrImageContainer": "When moving to image/grid type container request has to specify target location"
           }
         },
+        "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "publicLink": {
           "unavailable": "The item you try to see is not publicly available right now."
         },
@@ -6237,11 +6338,19 @@ export default interface Resources {
         "sample": {
           "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
+          "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
         },
         "settings": {
           "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
+        },
+        "stoichiometry": {
+          "actualAmountRequired": "Molecule actual amount must be set for deduction",
+          "alreadyLinked": "Stoichiometry molecule already has an inventory link",
+          "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
+          "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
+          "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
         },
         "subsample": {
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
@@ -7659,7 +7768,11 @@ export default interface Resources {
       "deleteAdminUser": "This user  is the only administrator of a Community. Please replace the adminstrator so that this user can be deleted",
       "deleteSysadminUser": "Invalid attempt to delete sysadmin user - there must be at least one remaining active, enabled sysadmin user. Also, can't delete the internal sysadmin account 'sysadmin1'",
       "deleteUser": {
+        "disabled": "Delete user is disabled!",
         "nonSelf": "You cannot delete yourself!"
+      },
+      "identifierProvider": {
+        "unsupported": "Unsupported identifier provider: {0}"
       },
       "invalid": {
         "roleIdentifier": "[{0}] is not a valid role identifier. Please choose one of [{1}]."
@@ -8459,6 +8572,17 @@ export default interface Resources {
       }
     },
     "document": {
+      "audit": {
+        "errors": {
+          "invalidGlobalId": "Invalid syntax of oid [{0}]",
+          "mediaFileVersionNotFound": "Version {0} not found for media file {1}",
+          "missingVersion": "Unexpected call to audit view without document version [{0}]",
+          "notStructuredDocument": "Viewing record's audit history only works with StructuredDocuments!",
+          "revisionOrVersionRequired": "Either revision or version must be provided",
+          "versionNotFound": "Version {0} not found for record {1}",
+          "versionRequired": "Version must be provided"
+        }
+      },
       "create": {
         "errors": {
           "failed": "Could not create new document"
@@ -8467,22 +8591,50 @@ export default interface Resources {
       "delete": {
         "errors": {
           "editedByOtherUser": "Document {0} cannot be deleted as it is currently edited by {1}",
-          "ownerRequired": "Document can only be deleted by its owner."
+          "itemNotInFolderTree": "Item to delete must be in user's folder tree, not a shared folder",
+          "ownerRequired": "Document can only be deleted by its owner.",
+          "unexpectedError": "Unexpected error deleting item {0}"
         }
       },
       "edit": {
         "errors": {
+          "fieldIdMismatch": "Provided field id: {0} does not match document field id: {1}",
+          "fieldsMismatch": "Provided fields don't match document fields",
           "signed": "Document {0} is signed and cannot be altered"
+        }
+      },
+      "move": {
+        "errors": {
+          "alreadyInTargetFolder": "Record with ID: {0} already in target folder",
+          "failed": "Error performing move. {0}",
+          "idsAndTargetRequired": "Ids to move and target folder are required.",
+          "noResult": "No result from move operation.",
+          "sameSourceAndTarget": "Source and target folder are the same. Id: {0}",
+          "targetIsSelf": "Attempt to move record with ID: {0} to itself"
         }
       },
       "rename": {
         "errors": {
+          "nameRequired": "New name cannot be empty but was [{0}]",
           "notEditable": "The document could not be renamed. It may be signed or locked for editing."
         }
       },
       "restore": {
         "errors": {
           "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
+        }
+      },
+      "search": {
+        "errors": {
+          "advancedQueryParseFailed": "Problem with parsing advancedQuery: {0}",
+          "bothQueryTypesProvided": "Please provide either a query or advancedQuery, not both"
+        }
+      },
+      "tag": {
+        "errors": {
+          "forbiddenCharacter": "The value: {0} may not be used in tags",
+          "newTagsNotAllowedWhenOntologiesEnforced": "New tags cannot be saved through the API when ontologies are enforced",
+          "notTaggable": "Only StructuredDocuments, Folders and Notebooks can be tagged"
         }
       }
     },
@@ -8525,6 +8677,26 @@ export default interface Resources {
       "showLastModifiedDate": "Show last modified date",
       "tapToExpandListing": "Tap to expand listing.",
       "templateLabel": "Template"
+    },
+    "folder": {
+      "delete": {
+        "errors": {
+          "failed": "Unknown server error deleting folder: {0}",
+          "systemOrHomeFolder": "Cannot delete user home folder or a system folder"
+        }
+      },
+      "list": {
+        "errors": {
+          "invalidTypesToInclude": "typesToInclude terms must be one of: {0}"
+        }
+      },
+      "navigation": {
+        "errors": {
+          "notAParent": "Folder {0} is not a parent of {1}",
+          "pathNotAccessible": "The record named ''{0}'' does not exist in the path, or cannot be accessed. {1}",
+          "sharedContextUndetermined": "Cannot infer shared context for Notebook with ID=[{0}], as \"grandParentId\" param is not set"
+        }
+      }
     },
     "form": {
       "choiceOptions": {
@@ -8592,8 +8764,13 @@ export default interface Resources {
         "volumesAntibodyUsedFieldValue": ""
       },
       "errors": {
+        "createMenuVersionMismatch": "Only the current version of a form can be added to the CreateMenu - this is version {0} of form {1}",
         "deleteFailed": "Exception deleting form. This has been logged.",
-        "infoUnauthorized": "Unauthorized attempt to get form info"
+        "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
+        "infoUnauthorized": "Unauthorized attempt to get form info",
+        "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
+        "systemFormUnpublish": "Attempted to unpublish a system form",
+        "unknownFieldType": "Unknown field type [{0}]"
       },
       "experiment": {
         "conclusionFieldName": "Conclusion",
@@ -8818,6 +8995,9 @@ export default interface Resources {
     },
     "messaging": {
       "channelLabel": "Channel",
+      "errors": {
+        "replyToGlobalMessageNotAllowed": "Replying to Global Message is not allowed"
+      },
       "manyDocsHelp": "The message will include links to selected documents. Only RSpace users with access to these documents will be able to use the links.",
       "messageLabel": "Message",
       "messagePlaceholder": "Check my document!",
@@ -8851,6 +9031,9 @@ export default interface Resources {
       }
     },
     "record": {
+      "errors": {
+        "idsRequired": "List of ids to retrieve is empty!"
+      },
       "icon": {
         "audio": "Audio",
         "chemistry": "Chemistry",
@@ -8951,6 +9134,12 @@ export default interface Resources {
       "searchPlaceholder": "Search with query, or by global ID..."
     },
     "sharing": {
+      "errors": {
+        "docIdRequired": "Document id cannot be null",
+        "permissionUpdateFailed": "Could not update permission: {0}",
+        "sharedNotebookMoveFailed": "Errors while moving into Shared Notebook: [{0}]",
+        "sharingFailed": "Problem sharing: {0}"
+      },
       "groups": {
         "title": "Share with a group"
       },
@@ -9146,7 +9335,12 @@ export default interface Resources {
       },
       "word": {
         "import": {
-          "noFilesError": "No files were submitted! Please choose some Word or text files to upload."
+          "createFailed": "Could not create document from {0}",
+          "createFailedWithReason": "Could not create document from {0} - {1}",
+          "evernoteExtensionRequired": "File must be in Evernote XML ending in .enex",
+          "noFilesError": "No files were submitted! Please choose some Word or text files to upload.",
+          "noImporterForFileType": "No importer for file type {0}",
+          "progressDescription": "Processed file ''{0}''. Import is {1}% complete."
         }
       }
     },

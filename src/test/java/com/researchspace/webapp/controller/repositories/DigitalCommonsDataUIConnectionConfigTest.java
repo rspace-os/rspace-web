@@ -13,6 +13,8 @@ import static org.mockito.Mockito.when;
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.net.MalformedURLException;
@@ -41,7 +43,11 @@ class DigitalCommonsDataUIConnectionConfigTest {
     when(subject.getUsername()).thenReturn(USERNAME);
     underTest =
         new DigitalCommonsDataUIConnectionConfig(
-            digitalCommonsDataController, userConnectionManager, subject, propertyHolder);
+            digitalCommonsDataController,
+            userConnectionManager,
+            subject,
+            propertyHolder,
+            new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test
@@ -59,7 +65,7 @@ class DigitalCommonsDataUIConnectionConfigTest {
         assertThrows(IllegalArgumentException.class, () -> underTest.getRepositoryURL());
 
     assertEquals(
-        "Couldn't create Digital Commons Data repositoryURL: unknown protocol: ht",
+        "Couldn't create Digital Commons Data repositoryURL unknown protocol: ht",
         thrown.getMessage());
   }
 

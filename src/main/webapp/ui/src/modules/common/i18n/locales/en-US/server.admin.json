@@ -249,9 +249,12 @@
   },
   "userDeletion": {
     "errors": {
+      "exportBeforeDeletionFailed": "Could not make export of user's work before deleting account; user deletion aborted",
       "filestoreRemovalFailed": "Problem during filestore removal",
+      "nonTempUserTooNew": "Can only delete users created more than a year ago",
       "resourceListUnreadable": "Resource list file not readable",
-      "sysadminRequired": "Only user with sysadmin role can delete filestore resources"
+      "sysadminRequired": "Only user with sysadmin role can delete filestore resources",
+      "tempUserTooNew": "Can only delete temp users created more than a year ago"
     }
   },
   "userProfile": {
@@ -262,6 +265,11 @@
       }
     },
     "heading": "User Profile",
+    "image": {
+      "errors": {
+        "notAnImage": "RSpace could not interpret file {0} as an image file"
+      }
+    },
     "email": {
       "errors": {
         "alreadyRegistered": "There is already user registered with this email",

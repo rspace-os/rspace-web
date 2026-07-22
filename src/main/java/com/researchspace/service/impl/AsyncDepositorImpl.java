@@ -458,7 +458,8 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
       IntegrationInfo dmpToolInfo =
           integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
       if (dmpToolInfo.isEnabled()) {
-        throw new IllegalStateException("DMPTool and Argos cannot both be enabled");
+        throw new IllegalStateException(
+            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled", new Object[] {}));
       }
 
       List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);
@@ -524,7 +525,9 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
         metadata.setLicense(Optional.of(new URL(archiveConfig.getMeta().getLicenseUrl())));
       } catch (MalformedURLException e) {
         throw new IllegalArgumentException(
-            String.format("%s is not a valid URL", archiveConfig.getMeta().getLicenseUrl()));
+            messages.getMessage(
+                "apps.dmp.errors.invalidLicenseUrl",
+                new Object[] {archiveConfig.getMeta().getLicenseUrl()}));
       }
     }
     metadata.setTitle(archiveConfig.getMeta().getTitle());

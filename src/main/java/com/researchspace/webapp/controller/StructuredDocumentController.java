@@ -6,7 +6,6 @@ import static com.researchspace.service.impl.DocumentTagManagerImpl.RSPACTAGS_FO
 import static com.researchspace.service.impl.DocumentTagManagerImpl.allGroupsAllowBioOntologies;
 import static com.researchspace.service.impl.DocumentTagManagerImpl.anyGroupEnforcesOntologies;
 import static com.researchspace.session.SessionAttributeUtils.BATCH_WORDIMPORT_PROGRESS;
-import static java.lang.String.format;
 import static org.apache.commons.io.FilenameUtils.getExtension;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -200,7 +199,9 @@ public class StructuredDocumentController extends BaseController {
         if (!importer.isPresent()) {
           log.warn("No importer for file type '{}' ", getExtension(mf.getOriginalFilename()));
           String error =
-              String.format("No importer for file type %s", getExtension(mf.getOriginalFilename()));
+              getText(
+                  "workspace.word.import.noImporterForFileType",
+                  new Object[] {getExtension(mf.getOriginalFilename())});
           el.addErrorMsg(error);
           log.warn(error);
           continue;
@@ -224,22 +225,24 @@ public class StructuredDocumentController extends BaseController {
           publisher.publishEvent(createGenericEvent(user, createdOrUpdated, AuditAction.CREATE));
         } else {
           String error =
-              String.format("Could not create document from %s ", mf.getOriginalFilename());
+              getText(
+                  "workspace.word.import.createFailed", new Object[] {mf.getOriginalFilename()});
           el.addErrorMsg(error);
           log.error(error);
         }
       } catch (Exception e) {
         String error =
-            String.format(
-                "Could not create document from %s - %s", mf.getOriginalFilename(), e.getMessage());
+            getText(
+                "workspace.word.import.createFailedWithReason",
+                new Object[] {mf.getOriginalFilename(), e.getMessage()});
         el.addErrorMsg(error);
         log.error(error);
       }
       progress.worked(10);
       progress.setDescription(
-          String.format(
-              "Processed file '%s'. Import is  %d%% complete.",
-              mf.getOriginalFilename(), (int) progress.getPercentComplete()));
+          getText(
+              "workspace.word.import.progressDescription",
+              new Object[] {mf.getOriginalFilename(), (int) progress.getPercentComplete()}));
     }
     progress.done();
     return new AjaxReturnObject<List<RecordInformation>>(rc, el);
@@ -483,7 +486,8 @@ public class StructuredDocumentController extends BaseController {
       Principal principal) {
 
     if (StringUtils.length(desc) > EditInfo.DESCRIPTION_LENGTH) {
-      throw new IllegalArgumentException("description too long, should be max 250 chars");
+      throw new IllegalArgumentException(
+          getText("errors.maxLength", new Object[] {"description", EditInfo.DESCRIPTION_LENGTH}));
     }
     User u = getUserByUsername(principal.getName());
     BaseRecord recordOrFolder = baseRecordManager.get(recordId, u);
@@ -1137,8 +1141,7 @@ public class StructuredDocumentController extends BaseController {
     User user = getUserByUsername(principal.getName());
     Record record = assertAccessToRecord(recordId, PermissionType.READ, user);
     if (!record.isStructuredDocument()) {
-      throw new IllegalStateException(
-          "Viewing record's audit history only works with StructuredDocuments!");
+      throw new IllegalStateException(getText("document.audit.errors.notStructuredDocument"));
     }
 
     StructuredDocument currentDoc = (StructuredDocument) record;
@@ -1199,12 +1202,13 @@ public class StructuredDocumentController extends BaseController {
       @RequestParam("globalId") String oidString, Principal principal) {
 
     if (!GlobalIdentifier.isValid(oidString)) {
-      throw new IllegalArgumentException(format("Invalid syntax of oid [%s]", oidString));
+      throw new IllegalArgumentException(
+          getText("document.audit.errors.invalidGlobalId", new Object[] {oidString}));
     }
     GlobalIdentifier oid = new GlobalIdentifier(oidString);
     if (!oid.hasVersionId()) {
       throw new IllegalArgumentException(
-          format("Unexpected call to audit view without document version [%s]", oidString));
+          getText("document.audit.errors.missingVersion", new Object[] {oidString}));
     }
 
     User user = getUserByUsername(principal.getName());
@@ -1213,8 +1217,7 @@ public class StructuredDocumentController extends BaseController {
 
     Record record = assertAccessToRecord(recordId, PermissionType.READ, user);
     if (!record.isStructuredDocument()) {
-      throw new IllegalArgumentException(
-          "Viewing record's audit history only works with StructuredDocuments!");
+      throw new IllegalArgumentException(getText("document.audit.errors.notStructuredDocument"));
     }
 
     // Resolve the audit revision for the requested version. Envers retains the full version

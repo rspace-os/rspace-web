@@ -5,6 +5,7 @@ import static com.researchspace.service.IntegrationsHandler.DIGITAL_COMMONS_DATA
 import com.researchspace.model.User;
 import com.researchspace.model.oauth.UserConnection;
 import com.researchspace.properties.IPropertyHolder;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.UserConnectionManager;
 import com.researchspace.webapp.integrations.digitalcommonsdata.DigitalCommonsDataController;
 import java.net.MalformedURLException;
@@ -21,16 +22,19 @@ public class DigitalCommonsDataUIConnectionConfig implements RSpaceRepoConnectio
   private UserConnectionManager userConnectionManager;
   private DigitalCommonsDataController digitalCommonsDataController;
   private IPropertyHolder propertyHolder;
+  private MessageSourceUtils messages;
 
   public DigitalCommonsDataUIConnectionConfig(
       DigitalCommonsDataController digitalCommonsDataController,
       UserConnectionManager source,
       User subject,
-      IPropertyHolder propertyHolder) {
+      IPropertyHolder propertyHolder,
+      MessageSourceUtils messages) {
     this.subject = subject;
     this.userConnectionManager = source;
     this.propertyHolder = propertyHolder;
     this.digitalCommonsDataController = digitalCommonsDataController;
+    this.messages = messages;
   }
 
   @Override
@@ -39,7 +43,9 @@ public class DigitalCommonsDataUIConnectionConfig implements RSpaceRepoConnectio
       return Optional.of(new URL(this.propertyHolder.getDigitalCommonsDataBaseUrl()));
     } catch (MalformedURLException e) {
       throw new IllegalArgumentException(
-          "Couldn't create Digital Commons Data repositoryURL: " + e.getMessage());
+          messages.getMessage(
+              "repository.errors.urlCreationFailed",
+              new Object[] {"Digital Commons Data", e.getMessage()}));
     }
   }
 
@@ -51,7 +57,8 @@ public class DigitalCommonsDataUIConnectionConfig implements RSpaceRepoConnectio
     Principal principal = () -> subject.getUsername();
     if (optUserConnection.isEmpty()) {
       throw new IllegalArgumentException(
-          "No UserConnection exists for: " + DIGITAL_COMMONS_DATA_APP_NAME);
+          messages.getMessage(
+              "repository.errors.noUserConnection", new Object[] {DIGITAL_COMMONS_DATA_APP_NAME}));
     }
     String accessToken = optUserConnection.get().getAccessToken();
 

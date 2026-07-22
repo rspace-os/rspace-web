@@ -123,9 +123,8 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     config.setExportScope(ExportScope.USER);
     if (rootRecord == null) {
       throw new IllegalStateException(
-          "User "
-              + toExport.getFullName()
-              + "'s account has not been initialised - there is nothing to export!");
+          messageSource.getMessage(
+              "export.errors.userAccountNotInitialised", new Object[] {toExport.getFullName()}));
     }
     Long[] exportIds = new Long[] {rootRecord.getId()};
     String[] exportTypes = new String[] {RecordType.FOLDER.name()};

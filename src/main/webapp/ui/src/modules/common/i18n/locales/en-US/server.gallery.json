@@ -10,7 +10,16 @@
       "mediaFileRequired": "Only media files can be moved to filestores."
     },
     "errors": {
-      "saveFailed": "Save action failed [{0}]"
+      "accessDenied": "Access denied",
+      "extensionChangeNotAllowed": "Cannot update .{0} file with .{1}",
+      "fileLocked": "The file is currently locked and can't be updated",
+      "folderNotInGallery": "Provided folder id doesn't point to a Gallery folder",
+      "imageFileNotRetrievable": "Could not retrieve image file {0}",
+      "notAMediaRecord": "{0} is not a media record",
+      "revisionsIdsMismatch": "Revisions and ids must be same length",
+      "saveFailed": "Save action failed [{0}]",
+      "saveFailedFile": "Media file could not be saved - {0}",
+      "selectedMediaIdAndFieldIdBothProvided": "selectedMediaId and fieldId shouldn't be both provided"
     },
     "snippet": {
       "creation": {

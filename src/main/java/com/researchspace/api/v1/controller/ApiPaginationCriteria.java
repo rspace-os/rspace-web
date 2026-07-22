@@ -60,4 +60,37 @@ public abstract class ApiPaginationCriteria {
   }
 
   abstract void addOrderByToMap(LinkedMultiValueMap<String, String> rc);
+
+  /**
+   * Carries the invalid {@code orderBy} value and the allowed values, so that the caller (which has
+   * access to the localized {@link com.researchspace.service.MessageSourceUtils}) can build the
+   * user-facing message. This class is a plain data-binding target constructed by Spring MVC, so it
+   * cannot itself have a message source injected.
+   */
+  static class InvalidSortParameterException extends IllegalArgumentException {
+    private final String orderBy;
+    private final String[] validParams;
+
+    InvalidSortParameterException(String orderBy, String[] validParams) {
+      // Fallback only: if this ever escapes the try/catch in
+      // BaseApiController#getPaginationCriteriaForApiSearch (its only intended caller), callers
+      // still get a non-null message instead of NPE-prone null from an unset Throwable message.
+      super(
+          "Problem parsing sort parameter: ["
+              + orderBy
+              + "]. It must be one of "
+              + String.join(",", validParams)
+              + ".");
+      this.orderBy = orderBy;
+      this.validParams = validParams;
+    }
+
+    String getOrderBy() {
+      return orderBy;
+    }
+
+    String[] getValidParams() {
+      return validParams;
+    }
+  }
 }

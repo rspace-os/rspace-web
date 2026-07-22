@@ -21,6 +21,8 @@ import com.researchspace.model.record.Folder;
 import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.model.views.ServiceOperationResult;
 import com.researchspace.service.CommunityServiceManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.testutils.TestFactory;
 import java.util.List;
 import org.hamcrest.Matchers;
@@ -31,6 +33,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class FolderManagerTest {
   public @Rule MockitoRule mockery = MockitoJUnit.rule();
@@ -48,6 +51,8 @@ public class FolderManagerTest {
     parent.setId(1L);
     child = TestFactory.createAFolder("child", anyUser);
     child.setId(2L);
+    ReflectionTestUtils.setField(
+        folderManagerImpl, "messageSourceUtils", new MessageSourceUtils(new JsonMessageSource()));
   }
 
   @Test

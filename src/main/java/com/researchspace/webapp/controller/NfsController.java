@@ -206,7 +206,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -221,7 +222,8 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
 
@@ -254,7 +256,8 @@ public class NfsController extends BaseController {
       Principal p) {
 
     if (StringUtils.isEmpty(namePath) || !namePath.contains(":")) {
-      throw new IllegalArgumentException("wrong format of namePath: " + namePath);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.invalidNamePathFormat", new Object[] {namePath}));
     }
 
     User user = getPrincipalUser(p);
@@ -268,7 +271,8 @@ public class NfsController extends BaseController {
 
     NfsFileStore fileStore = nfsManager.getNfsFileStore(fileStoreId);
     if (fileStore == null) {
-      throw new IllegalArgumentException("could not find file store with id: " + fileStoreId);
+      throw new IllegalArgumentException(
+          getText("netFileStores.errors.fileStoreNotFound", new Object[] {fileStoreId}));
     }
     aclChecker.assertCanRead(user, fileStore.getFileSystem());
     if (fileStore.getFileSystem().isDisabled()) {

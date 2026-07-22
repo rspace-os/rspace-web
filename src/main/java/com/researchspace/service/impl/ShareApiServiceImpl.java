@@ -161,7 +161,9 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
 
     if (errors != null && errors.hasErrorMessages()) {
       throw new IllegalArgumentException(
-          "Could not update permission: " + ListFormatUtils.formatList(errors.getErrorMessages()));
+          getMessage(
+              "sharing.errors.permissionUpdateFailed",
+              new Object[] {ListFormatUtils.formatList(errors.getErrorMessages())}));
     }
   }
 
@@ -196,7 +198,8 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   @Override
   public DocumentShares getAllSharesForDoc(Long docId, User user) {
     if (docId == null) {
-      throw new IllegalArgumentException("Document id cannot be null");
+      throw new IllegalArgumentException(
+          getMessage("sharing.errors.docIdRequired", new Object[] {}));
     }
 
     BaseRecord record;
@@ -234,9 +237,11 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
       String exceptionMessages =
           result.getExceptions().stream().map(Throwable::getMessage).collect(Collectors.joining());
       if (result.getExceptions().stream().anyMatch(e -> e instanceof IllegalAddChildOperation)) {
-        throw new IllegalArgumentException("Problem sharing: " + exceptionMessages);
+        throw new IllegalArgumentException(
+            getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));
       } else {
-        throw new RuntimeException("Problem sharing: " + exceptionMessages);
+        throw new RuntimeException(
+            getMessage("sharing.errors.sharingFailed", new Object[] {exceptionMessages}));
       }
     }
   }

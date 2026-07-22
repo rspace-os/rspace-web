@@ -136,7 +136,8 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     if (StringUtils.isBlank(remotePath) && remoteId == null) {
-      throw new IllegalArgumentException("Neither 'remotePath' nor 'remoteId' param is provided");
+      throw new IllegalArgumentException(
+          getMessage("netFileStores.errors.missingRemotePathOrId", new Object[] {}));
     }
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);
@@ -172,9 +173,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
     boolean filestoreNameUnique = nfsManager.verifyFileStoreNameUniqueForUser(filestoreName, user);
     if (!filestoreNameUnique) {
       throw new IllegalArgumentException(
-          "User already has a filestore named '"
-              + filestoreName
-              + "' - filestore name must be unique");
+          getMessage("netFileStores.errors.filestoreNameNotUnique", new Object[] {filestoreName}));
     }
 
     NfsFileStore userStore =

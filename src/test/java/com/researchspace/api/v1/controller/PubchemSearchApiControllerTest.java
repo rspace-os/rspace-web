@@ -10,9 +10,12 @@ import com.researchspace.model.dtos.chemistry.ChemicalImportSearchType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchRequest;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,6 +33,14 @@ public class PubchemSearchApiControllerTest {
   @Mock private ChemicalSearcher chemicalSearcher;
 
   @InjectMocks private PubchemSearchApiController controller;
+
+  @BeforeEach
+  public void setUp() {
+    // PubchemSearchApiController has a single-arg (ChemicalSearcher) constructor, so Mockito's
+    // @InjectMocks uses constructor injection only and never field-injects the inherited
+    // BaseApiController#messages field.
+    controller.setMessageSource(new MessageSourceUtils(new JsonMessageSource()));
+  }
 
   @Test
   public void whenValidSearchRequest_thenReturnSuccessfulResponse() throws Exception {

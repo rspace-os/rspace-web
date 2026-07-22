@@ -65,7 +65,7 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
   private void setBulkSharingInProgress(User subject) {
     if (isBulkShareInProgress(subject)) {
-      throw new IllegalStateException("Cannot launch new bulk share operation; already running");
+      throw new IllegalStateException(messages.getMessage("autoshare.errors.operationInProgress"));
     }
     usersWithBulkShareInProgress.put(subject.getId(), Boolean.TRUE);
   }

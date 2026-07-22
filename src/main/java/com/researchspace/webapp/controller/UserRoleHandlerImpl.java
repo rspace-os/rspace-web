@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.join;
 
 import com.researchspace.Constants;
@@ -18,6 +17,7 @@ import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserRoleHandler;
@@ -45,6 +45,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   private @Autowired IContentInitializer initializer;
   private @Autowired RoleManager roleMgr;
   private @Autowired EmailContentGenerator emailContentGenerator;
+  private @Autowired MessageSourceUtils messages;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -125,9 +126,9 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
             .collect(Collectors.toList());
     if (!grpsAsPi.isEmpty()) {
       throw new IllegalStateException(
-          format(
-              "PI [%s] cannot be demoted to user as is PI of at least 1 group: %s",
-              piToDemote.getUsername(), join(grpsAsPi, ",")));
+          messages.getMessage(
+              "groups.edit.errors.piCannotBeDemoted",
+              new Object[] {piToDemote.getUsername(), join(grpsAsPi, ",")}));
     }
 
     piToDemote.removeRole(roleMgr.getRole(Constants.PI_ROLE));

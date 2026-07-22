@@ -596,7 +596,8 @@ public class RSFormController extends BaseController {
 
     FieldType ft = FieldType.getFieldTypeForString(fieldtype);
     if (ft == null) {
-      throw new IllegalArgumentException("Unknown field type [" + fieldtype + "]");
+      throw new IllegalArgumentException(
+          getText("form.errors.unknownFieldType", new Object[] {fieldtype}));
     }
 
     Object viewModel = null;

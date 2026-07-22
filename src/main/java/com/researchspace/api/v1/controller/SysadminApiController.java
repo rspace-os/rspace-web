@@ -179,7 +179,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
         doUserExport(sysadmin, toDeleteId);
       } catch (Exception e) {
         throw new IllegalStateException(
-            "Could not make export of user's work before deleting account; user deletion aborted");
+            getMessage("userDeletion.errors.exportBeforeDeletionFailed", new Object[] {}));
       }
       ServiceOperationResult<User> result2 = removeUser(toDeleteId, sysadmin, deletionPolicy);
       processResult(result2);
@@ -430,7 +430,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
     if (!existingUserMap.get(Boolean.FALSE).isEmpty()) {
       String missingUsers = join(existingUserMap.get(Boolean.FALSE), ",");
       throw new IllegalArgumentException(
-          "Please create these users before creating a group: " + missingUsers);
+          getMessage("groups.creation.errors.missingUsers", new Object[] {missingUsers}));
     }
 
     Map<User, RoleInGroup> users =
@@ -499,7 +499,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
           groupId,
           recentLogin.getMessage());
       throw new IllegalArgumentException(
-          "Cannot delete group " + groupId + ": a member has logged in within the last year.");
+          getMessage("groups.edit.errors.recentLoginBlocksDeletion", new Object[] {groupId}));
     }
     auditService.notify(new GenericEvent(sysadmin, deleted, AuditAction.DELETE));
   }

@@ -35,7 +35,6 @@ import org.apache.shiro.authz.AuthorizationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -61,7 +60,7 @@ public class WorkspaceServiceTest {
   @Mock SharingHandler recordShareHandler;
   @Mock GroupManager groupManager;
 
-  @InjectMocks WorkspaceServiceImpl service;
+  WorkspaceServiceImpl service;
 
   private Folder root;
 
@@ -72,6 +71,16 @@ public class WorkspaceServiceTest {
     target = folder(TARGET_FOLDER_ID);
     user = TestFactory.createAnyUser("user");
     doc = docWithParent(RECORD_ID, source, user.getUsername());
+    service =
+        new WorkspaceServiceImpl(
+            folderManager,
+            recordManager,
+            baseRecordManager,
+            groupManager,
+            recordShareHandler,
+            auditService,
+            permissionChecker,
+            new MessageSourceUtils(new JsonMessageSource()));
   }
 
   private void mockHasMovePermission(boolean hasPermission) {
