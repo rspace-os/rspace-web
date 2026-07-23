@@ -3,13 +3,19 @@ import { env } from "@/__tests__/e2e/env";
 import { dynamicUserTest as test } from "@/__tests__/e2e/fixtures/dynamicUser";
 import { tags } from "@/__tests__/e2e/tags";
 
-const EXPECTED = { eartagOrId: "MOCK-001" };
+const EXPECTED_MOCK_EARTAG = "MOCK-001";
 
 const INTEGRATION_MODE = env.integrationMode;
-const PYRAT_ALIAS = "mock";
+const PYRAT_ALIAS = INTEGRATION_MODE === "real" ? "default-server" : "mock";
 const PYRAT_API_KEY = INTEGRATION_MODE === "real" ? env.pyratApiKey : "mock-pyrat-token";
 
 test.describe(`PyRAT integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () => {
+  test.beforeAll(async () => {
+    if (INTEGRATION_MODE === "real" && !PYRAT_API_KEY) {
+      throw new Error("PYRAT_API_KEY must be set in .env / CI secrets for real mode");
+    }
+  });
+
   test.beforeEach(async ({ flowSysadminConfig }) => {
     await flowSysadminConfig.ensureSetting("pyrat.available", "ALLOWED");
   });
@@ -26,10 +32,16 @@ test.describe(`PyRAT integration [${INTEGRATION_MODE}]`, { tag: tags.APPS }, () 
     const docEditor = await pageWorkspace.createBasicDocument();
     const dialog = await docEditor.openPyratDialog();
 
-    await dialog.selectAnimal(EXPECTED.eartagOrId);
+    let expectedEartagOrId: string;
+    if (INTEGRATION_MODE === "real") {
+      expectedEartagOrId = await dialog.selectFirstAnimal();
+    } else {
+      expectedEartagOrId = EXPECTED_MOCK_EARTAG;
+      await dialog.selectAnimal(expectedEartagOrId);
+    }
     await dialog.clickInsert();
 
     const field = await docEditor.getField("New List of Materials");
-    await expect.poll(() => field.getText()).toContain(EXPECTED.eartagOrId);
+    await expect.poll(() => field.getText()).toContain(expectedEartagOrId);
   });
 });
