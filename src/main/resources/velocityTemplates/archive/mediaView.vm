@@ -23,7 +23,7 @@
 </div><br/>
 <div id = "content">
  #if ($isImage)
- 	<img src="$document.name"/>
+	<img src="$document.name"/>
  #else
     <a href="$document.name">$msg.getMessage("export.archive.mediaView.viewAttachment")</a>
  #end
@@ -36,7 +36,7 @@
   <div style="margin-top:20px">
   #if ($tiffs)
     #foreach($tiff in $tiffs)
- 	  $msg.format("export.archive.mediaView.originalTiffLink", [$tiff.name])
+	  $msg.format("export.archive.mediaView.originalTiffLink", [$tiff.name])
     #end
   #end
  </div>

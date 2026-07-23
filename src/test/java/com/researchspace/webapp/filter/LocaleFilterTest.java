@@ -76,7 +76,7 @@ public class LocaleFilterTest extends TestCase {
     assertEquals(EN_US, locale);
   }
 
-  public void testApiAcceptLanguageSetsRequestAndThreadLocale() throws Exception {
+  public void testApiAcceptLanguageCannotSelectAnUnavailableLocale() throws Exception {
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setRequestURI("/api/v1/documents");
     request.addHeader(HttpHeaders.ACCEPT_LANGUAGE, "fr-FR, en-US;q=0.8");
@@ -85,8 +85,8 @@ public class LocaleFilterTest extends TestCase {
         request,
         new MockHttpServletResponse(),
         (wrappedRequest, response) -> {
-          assertEquals(Locale.FRANCE, wrappedRequest.getLocale());
-          assertEquals(Locale.FRANCE, LocaleContextHolder.getLocale());
+          assertEquals(EN_US, wrappedRequest.getLocale());
+          assertEquals(EN_US, LocaleContextHolder.getLocale());
         });
 
     assertNull(LocaleContextHolder.getLocaleContext());

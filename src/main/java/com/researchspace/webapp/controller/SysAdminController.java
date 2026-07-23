@@ -83,6 +83,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -628,7 +629,7 @@ public class SysAdminController extends BaseController {
   private void assertSubjectIsSysAdminOrAdmin(User subject) {
     if (!subject.hasRole(Role.SYSTEM_ROLE) && !subject.hasRole(Role.ADMIN_ROLE)) {
       throw new AuthorizationException(
-          getText("system.unauthorized.userrole", new Object[] {subject.getFullName()}));
+          getText("system.unauthorized.userRole", new Object[] {subject.getFullName()}));
     }
   }
 
@@ -748,7 +749,10 @@ public class SysAdminController extends BaseController {
 
     } catch (DataAccessException dae) {
       // probably because not unique?
-      errors.reject("errors.notUnique", new Object[] {"Unique name"}, null);
+      errors.reject(
+          "errors.notUnique",
+          new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")},
+          null);
       return getCreateCommunityValidationErrorView(model, community);
     }
 
@@ -785,9 +789,15 @@ public class SysAdminController extends BaseController {
 
     User adminUser = userManager.getAuthenticatedUserInSession();
     ValidationUtils.rejectIfEmpty(
-        errors, "sysadminPassword", "errors.required", new Object[] {"password"});
+        errors,
+        "sysadminPassword",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.password")});
     ValidationUtils.rejectIfEmpty(
-        errors, "runAsUsername", "errors.required", new Object[] {"username"});
+        errors,
+        "runAsUsername",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.username")});
     String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
       errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat", null);

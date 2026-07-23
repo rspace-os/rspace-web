@@ -107,6 +107,7 @@ import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -385,25 +386,45 @@ public class UserProfileController extends BaseController {
     public void validate(Object target, Errors errors) {
       User u = (User) target;
       ValidationUtils.rejectIfEmpty(
-          errors, FIRST_NAME, ERRORS_REQUIRED, new Object[] {"First name"});
+          errors,
+          FIRST_NAME,
+          ERRORS_REQUIRED,
+          new Object[] {new DefaultMessageSourceResolvable("label.firstName")});
       ValidationUtils.rejectIfEmpty(
-          errors, "lastName", ERRORS_REQUIRED, new Object[] {"Last name"});
+          errors,
+          "lastName",
+          ERRORS_REQUIRED,
+          new Object[] {new DefaultMessageSourceResolvable("label.lastName")});
       if (u.getFirstName().length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors.rejectValue(FIRST_NAME, ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, null);
+        errors.rejectValue(
+            FIRST_NAME,
+            ERRORS_MAXLENGTH,
+            new Object[] {new DefaultMessageSourceResolvable("label.firstName"), "255"},
+            null);
       }
       if (u.getLastName().length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors.rejectValue("lastName", ERRORS_MAXLENGTH, new String[] {FIRST_NAME, "255"}, null);
+        errors.rejectValue(
+            "lastName",
+            ERRORS_MAXLENGTH,
+            new Object[] {new DefaultMessageSourceResolvable("label.lastName"), "255"},
+            null);
       }
       if (properties.isCloud()) {
         ValidationUtils.rejectIfEmpty(
-            errors, AFFILIATION, ERRORS_REQUIRED, new Object[] {"Affiliation"});
+            errors,
+            AFFILIATION,
+            ERRORS_REQUIRED,
+            new Object[] {new DefaultMessageSourceResolvable("label.affiliation")});
         // rspac-932
         if (!StringUtils.isBlank(u.getAffiliation())
             && u.getAffiliation().length() > Organisation.MAX_INDEXABLE_UTF_LENGTH) {
           errors.rejectValue(
               AFFILIATION,
               ERRORS_MAXLENGTH,
-              new String[] {AFFILIATION, "" + Organisation.MAX_INDEXABLE_UTF_LENGTH},
+              new Object[] {
+                new DefaultMessageSourceResolvable("label.affiliation"),
+                "" + Organisation.MAX_INDEXABLE_UTF_LENGTH
+              },
               null);
         }
       }
@@ -487,14 +508,22 @@ public class UserProfileController extends BaseController {
     if (!StringUtils.isEmpty(affiliation) && properties.isCloud()) {
 
       if (affiliation.length() > User.DEFAULT_MAXFIELD_LEN) {
-        errors = ErrorList.of(getText(ERRORS_MAXLENGTH, new String[] {AFFILIATION, "255"}));
+        errors =
+            ErrorList.of(
+                getText(
+                    ERRORS_MAXLENGTH,
+                    new Object[] {new DefaultMessageSourceResolvable("label.affiliation"), "255"}));
         return new AjaxReturnObject<>(null, errors);
       } else {
         user.setAffiliation(affiliation, ProductType.COMMUNITY);
       }
 
     } else if (StringUtils.isEmpty(affiliation) && properties.isCloud()) {
-      errors = ErrorList.of(getText(ERRORS_REQUIRED, new String[] {"Affiliation"}));
+      errors =
+          ErrorList.of(
+              getText(
+                  ERRORS_REQUIRED,
+                  new Object[] {new DefaultMessageSourceResolvable("label.affiliation")}));
       return new AjaxReturnObject<>(null, errors);
     }
 
@@ -697,7 +726,7 @@ public class UserProfileController extends BaseController {
       @RequestParam("password") String pwd, HttpServletRequest req) {
     if (isEmpty(pwd)) {
       return new AjaxReturnObject<>(
-          null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {getText("user.password")})));
+          null, ErrorList.of(getText(ERRORS_REQUIRED, new Object[] {getText("label.password")})));
     }
 
     if (SecurityUtils.getSubject().isRunAs() && !sysadminApiKeyGeneration) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.Set;
 import javax.validation.ConstraintViolation;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import org.junit.jupiter.api.Test;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
@@ -12,7 +13,7 @@ import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 class JsonValidationMessageSourceTest {
 
   private static class Request {
-    @Size(max = 3, message = "{validation.errors.stringMax}")
+    @Size(max = 3, message = "{validation.errors.descriptionStringMax}")
     private final String value = "abcdef";
 
     @NotNull private final String required = null;
@@ -20,8 +21,11 @@ class JsonValidationMessageSourceTest {
     @NotNull(message = "{workspace:export.repositories.common.title}")
     private final String frontendCatalogueValue = null;
 
-    @NotNull(message = "{validation.fields.format} {validation.errors.requiredField}")
-    private final String composedMessage = null;
+    @NotNull(message = "{validation.errors.exportFormatRequired}")
+    private final String semanticMessage = null;
+
+    @Pattern(regexp = "xml|html", message = "{validation.errors.exportFormatInvalid}")
+    private final String invalidFormat = "pdf";
   }
 
   @Test
@@ -33,11 +37,12 @@ class JsonValidationMessageSourceTest {
 
     Set<ConstraintViolation<Request>> violations = validator.validate(new Request());
 
-    assertEquals(4, violations.size());
+    assertEquals(5, violations.size());
     assertEquals(
         Set.of(
-            "\"abcdef\" must be less than 3 characters but was length 6.",
-            "format is a required field.",
+            "Description \"abcdef\" must be less than 3 characters but was length 6.",
+            "Format must be either xml or html.",
+            "Format is a required field.",
             "may not be null",
             "Title"),
         violations.stream()

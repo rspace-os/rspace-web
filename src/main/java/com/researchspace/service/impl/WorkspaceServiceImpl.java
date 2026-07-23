@@ -222,7 +222,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
         && sharingResult.getSharedIds().contains(baseRecordToMove.getId())) {
       return new ServiceOperationResult<>(baseRecordToMove, true);
     }
-    return new ServiceOperationResult<>(null, false, "Move into shared notebook failed");
+    return new ServiceOperationResult<>(
+        null, false, messages.getMessage("document.move.errors.sharedNotebookFailed"));
   }
 
   private Folder getMoveSourceFolder(

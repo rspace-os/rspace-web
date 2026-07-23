@@ -110,6 +110,6 @@
 	</c:when>
 
 	<c:otherwise>
-      	<spring:message code="dialogs.recordEditorLink.formatNotSupported" arguments="${name}"/>
+	<spring:message code="dialogs.recordEditorLink.formatNotSupported" arguments="${name}"/>
     </c:otherwise>
 </c:choose>

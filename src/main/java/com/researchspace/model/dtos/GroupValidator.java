@@ -6,6 +6,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.researchspace.model.Group;
 import com.researchspace.model.Organisation;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
@@ -53,7 +54,10 @@ public class GroupValidator implements Validator {
       errors.rejectValue(
           "uniqueName",
           "errors.maxLength",
-          new String[] {"group name", "" + Organisation.MAX_INDEXABLE_UTF_LENGTH},
+          new Object[] {
+            new DefaultMessageSourceResolvable("label.groupName"),
+            Organisation.MAX_INDEXABLE_UTF_LENGTH
+          },
           null);
     }
     if (group.getMemberString() == null || group.getMemberString().isEmpty()) {

@@ -53,7 +53,8 @@
                notificationData.maxNfsFileSizeMB = (notificationData.maxNfsFileSize / 1048576).toFixed(0);
            }
            if (notificationData.excludedNfsFileExtensions) {
-               notificationData.excludedNfsFileExtensionsList = notificationData.excludedNfsFileExtensions.join(", ")
+               notificationData.excludedNfsFileExtensionsList =
+                   RS.formatList(notificationData.excludedNfsFileExtensions);
            }
        }
    }

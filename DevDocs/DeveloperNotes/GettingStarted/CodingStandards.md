@@ -215,7 +215,8 @@ interpolation contract match, including the namespace in backend references
 rather than concatenating translated fragments.
 Bean Validation annotations use the same JSON catalogues and reference keys
 with Hibernate Validator braces, for example
-`message = "{validation.errors.requiredField}"`.
+`message = "{validation.errors.emailRequired}"`. Each key must resolve to a
+complete phrase; do not compose a message from multiple catalogue keys.
 Format user-facing lists with `ListFormatUtils`, not `String.join` or
 `Collectors.joining`; delimiter joining is only for machine formats. Tests
 that exercise localized output should construct `MessageSourceUtils` with a

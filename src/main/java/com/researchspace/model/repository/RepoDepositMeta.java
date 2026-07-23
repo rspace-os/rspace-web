@@ -22,52 +22,36 @@ public class RepoDepositMeta {
   protected static final int MAX_FIELD_LENGTH = 1000;
   protected static final int MIN_FIELD_LENGTH = 3;
 
-  @Size(
-      max = MAX_USERS,
-      message = "{validation.errors.collectionRange} {validation.fields.authors}")
-  @NotEmpty(message = "{validation.fields.authors} {validation.errors.requiredField}")
+  @Size(max = MAX_USERS, message = "{validation.errors.authorsCollectionRange}")
+  @NotEmpty(message = "{validation.errors.authorsRequired}")
   private @Valid List<UserDepositorAdapter> authors;
 
-  @Size(max = 10, message = "{validation.errors.collectionRange} {validation.fields.contacts}")
-  @NotEmpty(message = "{validation.fields.contacts} {validation.errors.requiredField}")
+  @Size(max = 10, message = "{validation.errors.contactsCollectionRange}")
+  @NotEmpty(message = "{validation.errors.contactsRequired}")
   private @Valid List<UserDepositorAdapter> contacts;
 
   @Size(
       min = MIN_FIELD_LENGTH,
       max = MAX_FIELD_LENGTH,
-      message = "{workspace:export.repositories.common.title} {validation.errors.stringRange}")
-  @NotBlank(
-      message = "{workspace:export.repositories.common.title} {validation.errors.requiredField}")
+      message = "{validation.errors.titleStringRange}")
+  @NotBlank(message = "{validation.errors.titleRequired}")
   private String title;
 
-  @Size(
-      max = MAX_FIELD_LENGTH,
-      message = "{workspace:export.repositories.dataverse.subject} {validation.errors.stringMax}")
-  @NotBlank(
-      message =
-          "{workspace:export.repositories.dataverse.subject} {validation.errors.requiredField}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.subjectStringMax}")
+  @NotBlank(message = "{validation.errors.subjectRequired}")
   private String subject;
 
-  @Size(
-      max = MAX_FIELD_LENGTH,
-      message = "{workspace:export.repositories.dataverse.license} {validation.errors.stringMax}")
-  @NotBlank(message = "{validation.fields.licenseUrl} {validation.errors.requiredField}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.licenseUrlStringMax}")
+  @NotBlank(message = "{validation.errors.licenseUrlRequired}")
   private String licenseUrl;
 
   // License names can be abbreviations, e.g. CC
-  @Size(
-      min = 2,
-      max = MAX_FIELD_LENGTH,
-      message = "{workspace:export.repositories.dataverse.license} {validation.errors.stringMax}")
-  @NotBlank(message = "{validation.fields.licenseName} {validation.errors.requiredField}")
+  @Size(min = 2, max = MAX_FIELD_LENGTH, message = "{validation.errors.licenseNameStringRange}")
+  @NotBlank(message = "{validation.errors.licenseNameRequired}")
   private String licenseName;
 
-  @Size(
-      max = MAX_FIELD_LENGTH,
-      message = "{workspace:export.repositories.common.description} {validation.errors.stringMax}")
-  @NotBlank(
-      message =
-          "{workspace:export.repositories.common.description} {validation.errors.requiredField}")
+  @Size(max = MAX_FIELD_LENGTH, message = "{validation.errors.descriptionStringMax}")
+  @NotBlank(message = "{validation.errors.descriptionRequired}")
   private String description;
 
   private List<RepoDepositTag> tags;

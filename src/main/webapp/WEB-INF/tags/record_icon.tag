@@ -1,4 +1,4 @@
-<%-- 
+<%--
 	produces an image the correct icon based on the record that has been passed into the tag
 --%>
 <%@ attribute name="record" required="true"
@@ -41,7 +41,7 @@
          <c:set var="href" value="/workspace/${record.id}" scope="page" />
     </c:when>
 
-   	<c:when test="${fn:contains(type, 'ROOT')}">
+	<c:when test="${fn:contains(type, 'ROOT')}">
          <spring:message code="record.icon.userFolder" var="alt" scope="page"/>
          <c:set var="src" value="/images/icons/folder-user.png" scope="page" />
          <c:set var="href" value="/workspace/${record.id}" scope="page" />
@@ -59,7 +59,7 @@
     </c:when>
 
     <c:when test="${type eq 'NORMAL' or type eq 'NORMAL:NORMAL_EXAMPLE'}">
-  	   	<spring:message code="record.icon.structuredDocumentWithForm" arguments="${record.asStrucDoc().formName},${record.asStrucDoc().form.oid}" var="alt" scope="page"/>
+		<spring:message code="record.icon.structuredDocumentWithForm" arguments="${record.asStrucDoc().formName},${record.asStrucDoc().form.oid}" var="alt" scope="page"/>
 		<c:set var="src" value="/image/getIconImage/${record.iconId}" scope="page" />
 		 <c:set var="href" value="/workspace/editor/structuredDocument/${record.id}?settingsKey=${settingsKey}" scope="page" />
     </c:when>
@@ -92,12 +92,12 @@
           <c:set var="href" value="/gallery/${record.parent.id}?term=${record.globalIdentifier}" scope="page" />
         <c:choose>
             <c:when test="${record.documentType eq 'Miscellaneous'}">
-            	<spring:message code="record.icon.file" var="alt" scope="page"/>
-          		<c:set var="src" value="/images/icons/unknownDocument.png" scope="page" />
+	<spring:message code="record.icon.file" var="alt" scope="page"/>
+		<c:set var="src" value="/images/icons/unknownDocument.png" scope="page" />
             </c:when>
             <c:otherwise>
-          		<spring:message code="record.icon.file" var="alt" scope="page"/>
-          		<c:set var="src" value="/images/icons/${record.extension}.png" scope="page" />
+		<spring:message code="record.icon.file" var="alt" scope="page"/>
+		<c:set var="src" value="/images/icons/${record.extension}.png" scope="page" />
             </c:otherwise>
         </c:choose>
     </c:when>
@@ -118,7 +118,7 @@
 
 <c:choose>
     <c:when test="${record.notebook}">
-  	    <%-- This opens the notebook directly in Notebook view --%>
+	    <%-- This opens the notebook directly in Notebook view --%>
 		<a data-id="${record.id}" class="notebook" href="<c:url value='/notebookEditor/${record.id}?settingsKey=${settingsKey}&grandParentId=${bcrumb.getFolderId()}'/>">
 			 <img src="<c:url value='${src}'/>" alt="${alt}" title="${alt}" height="${imgHeight}" width="${imgWidth}" data-type="${type}"/>
 		</a>

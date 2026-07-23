@@ -52,7 +52,7 @@ $(document).ready(function() {
     	$(this).closest(".auditRow").appendTo('#storedRowSet');
     });
     $(document).on('click', '.downloadAudit', function(e) {
-    	RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
+	RS.blockPage(RS.msg("legacyjs.audit.queryingAuditTable"));
     	e.preventDefault();
         resetSort();
 		if ($(this).hasClass('action')) {
@@ -180,15 +180,20 @@ function _convertAuditTrailResults (xhr){
      		&& result.data.data && result.data.data.data) {
      		var resultObj = result.data.data.data;
      		var desc = "";
-     		if(resultObj.exported) { // is an archive operation
-     		    desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
-     		  if(resultObj.configuration) {
-			desc = desc + " " + RS.msg("legacyjs.audit.exportedAs",
-                        resultObj.configuration.exportScope, resultObj.configuration.archiveType);
-     		  }
-     		} else if (resultObj.scope) {
-     			desc = desc + RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
-     		}
+		if(resultObj.exported) { // is an archive operation
+		  if(resultObj.configuration) {
+		    desc = RS.msg(
+		      "legacyjs.audit.itemsExportedWithConfiguration",
+		      resultObj.exported.length,
+		      resultObj.configuration.exportScope,
+		      resultObj.configuration.archiveType
+		    );
+		  } else {
+		    desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
+		  }
+		} else if (resultObj.scope) {
+			desc = RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
+		}
      		result.event.description = desc; 
      	}
      	if( result.data.action ==='MOVE') {

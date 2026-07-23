@@ -38,7 +38,7 @@ function addRemoveCommunityHandler(){
 
 		RS.createConfirmationDialog({
 			title: RS.msg("legacyjs.system.common.confirmDeletionTitle"),
-			consequences: RS.msg("legacyjs.system.communityList.confirmDeletionConsequences", Object.values(data).length, Object.values(data).join(', ')),
+			consequences: RS.msg("legacyjs.system.communityList.confirmDeletionConsequences", Object.values(data).length, RS.formatList(Object.values(data))),
 			variant: "warning",
 			callback: callback
 		});

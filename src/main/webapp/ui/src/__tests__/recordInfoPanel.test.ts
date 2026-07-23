@@ -34,7 +34,7 @@ type LinkedRecord = {
   ownerFullName: string;
 };
 
-function loadInternalLinksRenderer() {
+function loadRecordInfoPanelFunctions() {
   let respond: ((response: { data: LinkedRecord[] }) => void) | undefined;
   const jquery = Object.assign(() => ({ ready: () => {} }), {
     get: () => ({
@@ -76,12 +76,21 @@ function loadInternalLinksRenderer() {
       recordType: string,
     ) => void,
     respond: (records: LinkedRecord[]) => respond?.({ data: records }),
+    sharingHtml: (sandbox as unknown as Record<string, unknown>)._getInfoPanelSharingHtml as (
+      info: {
+        shared?: boolean;
+        implicitlyShared?: boolean;
+        sharedGroupsAndAccess?: Record<string, string>;
+        sharedUsersAndAccess?: Record<string, string>;
+      },
+      isNotebook: boolean,
+    ) => string,
   };
 }
 
 describe("record info panel internal links", () => {
   it("escapes record types in the no-links message", () => {
-    const { render } = loadInternalLinksRenderer();
+    const { render } = loadRecordInfoPanelFunctions();
     const div = new FakeDiv();
 
     render(div, { id: 1, linkedByCount: 0 }, '<img src=x onerror="alert(1)">');
@@ -91,7 +100,7 @@ describe("record info panel internal links", () => {
   });
 
   it("escapes linked-record data and safely counts prototype-like owner names", () => {
-    const { render, respond } = loadInternalLinksRenderer();
+    const { render, respond } = loadRecordInfoPanelFunctions();
     const div = new FakeDiv();
     render(div, { id: 1, linkedByCount: 3 }, "document");
 
@@ -111,5 +120,23 @@ describe("record info panel internal links", () => {
     expect(div.html).toContain("&lt;img");
     expect(div.html).toContain("SD1%27%3E%3Cimg%20src%3Dx%3E");
     expect(div.html).toContain("__proto__");
+  });
+
+  it("renders record types and access levels as translated phrases", () => {
+    const { sharingHtml } = loadRecordInfoPanelFunctions();
+
+    expect(
+      sharingHtml(
+        {
+          shared: true,
+          sharedGroupsAndAccess: { "Example group": "READ" },
+          sharedUsersAndAccess: { "Example user": "WRITE" },
+        },
+        true,
+      ),
+    ).toBe(
+      "This notebook is shared: <ul><li>with Example group (group) for read</li>" +
+        "<li>with Example user (user) for write</li></ul>",
+    );
   });
 });

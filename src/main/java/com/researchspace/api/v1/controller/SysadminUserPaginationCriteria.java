@@ -57,11 +57,7 @@ public class SysadminUserPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public ApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new SysadminUserPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new SysadminUserPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   public ApiPaginationCriteria nextPage() {

@@ -17,6 +17,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -74,11 +75,16 @@ public class SVGMathController extends BaseController {
   private void validate(String svg, String latex) {
     String msg = null;
     if (isBlank(latex)) {
-      msg = getText("errors.required", new Object[] {"Latex"});
+      msg =
+          getText(
+              "errors.required", new Object[] {new DefaultMessageSourceResolvable("label.latex")});
       throw new IllegalArgumentException(msg);
     }
     if (isBlank(svg)) {
-      msg = getText("errors.required", new Object[] {"SVG content"});
+      msg =
+          getText(
+              "errors.required",
+              new Object[] {new DefaultMessageSourceResolvable("label.svgContent")});
       throw new IllegalArgumentException(msg);
     }
     if (latex.length() > RSMath.LATEX_COLUMN_SIZE) {

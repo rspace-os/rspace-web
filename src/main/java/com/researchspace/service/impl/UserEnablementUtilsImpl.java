@@ -67,15 +67,10 @@ public class UserEnablementUtilsImpl implements UserEnablementUtils {
     if (result.isLicenseServerAvailable() && !result.isRequestOK()) {
       String customMessage = properties.getLicenseExceededCustomMessage();
 
-      if (numSeatsRequested == 1) {
-        throw new LicenseExceededException(
-            getMessage("license.insufficientSeatsSingle.msg", new Object[] {customMessage}));
-      } else {
-        throw new LicenseExceededException(
-            getMessage(
-                "license.insufficientSeatsMultiple.msg",
-                new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
-      }
+      throw new LicenseExceededException(
+          getMessage(
+              "license.insufficientSeats.details",
+              new Object[] {result.getAvailableSeats(), numSeatsRequested, customMessage}));
     } else if (!result.isLicenseServerAvailable()) {
       throw new LicenseServerUnavailableException();
     }

@@ -72,11 +72,15 @@ public class LocaleFilter extends OncePerRequestFilter {
   }
 
   private Locale resolveLocale(HttpServletRequest request) {
+    Locale configuredLocale = userLocaleService.getLocale();
     String requestPath = request.getRequestURI().substring(request.getContextPath().length());
     if ((requestPath.equals("/api/v1") || requestPath.startsWith("/api/v1/"))
         && request.getHeader(HttpHeaders.ACCEPT_LANGUAGE) != null) {
-      return request.getLocale();
+      Locale requestedLocale = request.getLocale();
+      if (configuredLocale.equals(requestedLocale)) {
+        return requestedLocale;
+      }
     }
-    return userLocaleService.getLocale();
+    return configuredLocale;
   }
 }

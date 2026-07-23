@@ -470,7 +470,7 @@ function registerDeleteRecordsHandler(onDelete) {
 
     RS.createConfirmationDialog({
       title: RS.msg("legacyjs.workspace.crudOps.confirmDeletionTitle"),
-      consequences: RS.msg("legacyjs.workspace.crudOps.deleteConfirmConsequences", namesToDelete.length, RS.escapeHtml(namesToDelete.join(", "))),
+      consequences: RS.msg("legacyjs.workspace.crudOps.deleteConfirmConsequences", namesToDelete.length, RS.formatList(namesToDelete.map(RS.escapeHtml))),
       variant: "warning",
       callback: callback
     });

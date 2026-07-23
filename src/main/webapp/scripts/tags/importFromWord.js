@@ -101,7 +101,7 @@ function _submitWordImportForm(fileType) {
                 names.push(val.name);
             });
             if (names.length > 0) {
-                report = report + RS.msg("legacyjs.core.word.converted", names.join(", "));
+                report = report + RS.msg("legacyjs.core.word.converted", RS.formatList(names));
             }
         }
         if (aro.errorMsg != null && aro.errorMsg.errorMessages.length > 0) {

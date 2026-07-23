@@ -86,11 +86,7 @@ public class DocumentApiPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public DocumentApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new DocumentApiPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new DocumentApiPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   public DocumentApiPaginationCriteria nextPage() {

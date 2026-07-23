@@ -23,12 +23,13 @@
 <spring:message code="userform.passwordCharsTitle" var="userformPasswordCharsTitle" htmlEscape="true"/>
 
 <div style="font-size: 1.5em; margin: 15px 0px; display: inline-block;">
-	<c:if test="${canEdit}">My</c:if>
-	<c:if test="${not canEdit}">User</c:if>
-	<spring:message code="userform.profileHeading"/>
+	<c:choose>
+		<c:when test="${canEdit}"><spring:message code="userform.ownProfileHeading"/></c:when>
+		<c:otherwise><spring:message code="userform.otherProfileHeading"/></c:otherwise>
+	</c:choose>
 	<span style="font-size: .7em;">
 		<spring:message code="system:usersPage.columns.username"/>:
-		${user.username}<c:if test="${not empty user.usernameAlias}">, login alias: ${user.usernameAlias}</c:if>
+		${user.username}<c:if test="${not empty user.usernameAlias}"><spring:message code="userform.loginAliasSuffix" arguments="${user.usernameAlias}"/></c:if>
 	</span>
 </div>
 
@@ -220,7 +221,7 @@
 								<div class="groupsListLink" style="margin: 8px 20px 0 20px;">
 									<a href="${groupURL}"> ${grp.displayName}</a>
 								</div>
-								Role:
+									<spring:message code="system:usersPage.columns.role"/>:
 								<rst:roleInGroup group="${grp}" user="${user}" />
 							</div>
 						</c:if>
@@ -241,7 +242,7 @@
                                 <div class="groupsListLink" style="margin: 8px 20px 0 20px;">
                                     <a href="${groupURL}"> ${grp.displayName}</a>
                                 </div>
-                                Role:
+                                <spring:message code="system:usersPage.columns.role"/>:
                                 <rst:roleInGroup group="${grp}" user="${user}" />
                             </div>
                         </c:if>

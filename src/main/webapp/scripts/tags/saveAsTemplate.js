@@ -50,7 +50,7 @@ function initSaveAsTemplateDlg() {
                     if(jqxhr.status == 404) {
 	apprise(RS.msg("legacyjs.core.saveTemplate.notOwner"))
                     } else {
-                    	 RS.ajaxFailed(RS.msg("legacyjs.core.saveTemplate.createAction"), false, jqxhr);
+	 RS.ajaxFailed(RS.msg("legacyjs.core.saveTemplate.createAction"), false, jqxhr);
                     }
                    
                 });

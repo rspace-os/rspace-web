@@ -66,49 +66,49 @@ $(document).ready(function () {
     }
 
   $(document).ready(function(){
-  	$('#setNewPiDialog').dialog({
-  		autoOpen:false,
-  		title: RS.msg("legacyjs.groupEditing.changePiDialogTitle"),
-  		modal: true,
-  		buttons :{
-  			[RS.msg("legacyjs.common.cancel")]: function () {
-  				$(this).dialog('close');
-  			},
-  			[RS.msg("legacyjs.groupEditing.submit")]: function () {
-  				var newPiId = $("input[name='setNewPi']:checked").val();
-  				if(!newPiId) {
-  					apprise(RS.msg("legacyjs.groupEditing.pleaseSelectNewPi"));
+	$('#setNewPiDialog').dialog({
+		autoOpen:false,
+		title: RS.msg("legacyjs.groupEditing.changePiDialogTitle"),
+		modal: true,
+		buttons :{
+			[RS.msg("legacyjs.common.cancel")]: function () {
+				$(this).dialog('close');
+			},
+			[RS.msg("legacyjs.groupEditing.submit")]: function () {
+				var newPiId = $("input[name='setNewPi']:checked").val();
+				if(!newPiId) {
+					apprise(RS.msg("legacyjs.groupEditing.pleaseSelectNewPi"));
             // RSPAC-1287 can't give focus to the apprise dialog
             RS.focusAppriseDialog(true);
-  					return;
-  				}
-  				RS.blockPage(RS.msg("legacyjs.groupEditing.changingPi"), false);
-  				var jqxhr = $.post("/groups/ajax/admin/swapPi/" + groupId, {newPiId:newPiId}, function(resp) {
-  					if (resp.data) {
-  						RS.unblockPage();
-  						RS.confirm(RS.msg("legacyjs.groupEditing.piChangedReloading"));
-  						window.location = "/groups/view/" + groupId;
-  					} else {
-  						apprise(RS.getValidationErrorString(resp.errorMsg));
-  					}
-  				});
-  				jqxhr.fail (function (xhr) {
-  			        RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionChangingPi"), true, jqxhr);
-  			    });
-  			}
-  		 },
-  	});
+					return;
+				}
+				RS.blockPage(RS.msg("legacyjs.groupEditing.changingPi"), false);
+				var jqxhr = $.post("/groups/ajax/admin/swapPi/" + groupId, {newPiId:newPiId}, function(resp) {
+					if (resp.data) {
+						RS.unblockPage();
+						RS.confirm(RS.msg("legacyjs.groupEditing.piChangedReloading"));
+						window.location = "/groups/view/" + groupId;
+					} else {
+						apprise(RS.getValidationErrorString(resp.errorMsg));
+					}
+				});
+				jqxhr.fail (function (xhr) {
+			        RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionChangingPi"), true, jqxhr);
+			    });
+			}
+		 },
+	});
   });
 
     $('.changeRole').click( function (e){
-    	var role = $(this).data('role');
-    	var groupId = $(this).data('groupid');
-    	var userid = $(this).data('userid');
-    	var adminViewAll = $(this).data('adminviewall');
-    	$('#changeRoleDialog').data('role',role).data('groupId',groupId)
-    	    .data('userid',userid)
-    	    .data('adminviewall',adminViewAll)
-    	    .dialog('open');
+	var role = $(this).data('role');
+	var groupId = $(this).data('groupid');
+	var userid = $(this).data('userid');
+	var adminViewAll = $(this).data('adminviewall');
+	$('#changeRoleDialog').data('role',role).data('groupId',groupId)
+	    .data('userid',userid)
+	    .data('adminviewall',adminViewAll)
+	    .dialog('open');
     });
 
     $('input[name=piCanEditAllWork]').change(function() {
@@ -153,68 +153,68 @@ $(document).ready(function () {
     function setUpchangeRoleDialog(){
       $(document).ready(function() {
         $('#changeRoleDialog').dialog({
-       		title: RS.msg("legacyjs.groupEditing.changeUserRoleDialogTitle"),
-       		resizable: true,
-       		autoOpen: false,
-       		height:350,
-       		width: 350,
-       		modal: true,
-       		open: function (){
-     				var role = $(this).data("role");
-     				if(role === "DEFAULT") {
-     				$("#roleOptionUser").prop('checked', true); }
-     				else { $("#roleOptionAdmin").prop('checked', true);
-     						$('#adminPermissions').show();
-     				}
-     				var adminViewAll = $(this).data("adminviewall");
-     				if(adminViewAll == false) {// allow conversion from string to boolean
-     				$("#adminViewOptionPersonal").prop('checked', true); }
-     				else { $("#adminViewOptionAll").prop('checked', true);
-     				}
-       		},
-     		  buttons: {
-         		[RS.msg("legacyjs.common.cancel")]: function (){
-         			$(this).dialog('close');
-         		},
-         		[RS.msg("legacyjs.common.ok")]: function (){
-      				var groupId = $(this).data("groupId");
-     				  var userid = $(this).data("userid");
-         			var newRole = $('input[name=role]:checked').val();
-         			var isAuthorized = $('input[name=isAuthorized]:checked').val();
+		title: RS.msg("legacyjs.groupEditing.changeUserRoleDialogTitle"),
+		resizable: true,
+		autoOpen: false,
+		height:350,
+		width: 350,
+		modal: true,
+		open: function (){
+				var role = $(this).data("role");
+				if(role === "DEFAULT") {
+				$("#roleOptionUser").prop('checked', true); }
+				else { $("#roleOptionAdmin").prop('checked', true);
+						$('#adminPermissions').show();
+				}
+				var adminViewAll = $(this).data("adminviewall");
+				if(adminViewAll == false) {// allow conversion from string to boolean
+				$("#adminViewOptionPersonal").prop('checked', true); }
+				else { $("#adminViewOptionAll").prop('checked', true);
+				}
+		},
+		  buttons: {
+		[RS.msg("legacyjs.common.cancel")]: function (){
+			$(this).dialog('close');
+		},
+		[RS.msg("legacyjs.common.ok")]: function (){
+				var groupId = $(this).data("groupId");
+				  var userid = $(this).data("userid");
+			var newRole = $('input[name=role]:checked').val();
+			var isAuthorized = $('input[name=isAuthorized]:checked').val();
 
-         			var data = { role: newRole, isAuthorized:isAuthorized };
-         			var jqxhr = $.post("/groups/ajax/admin/changeRole/"+groupId+"/"+userid, data, function (data){
-       					if(data.data) {
-       						console.log("UPDATED!!!" + data.data);
+			var data = { role: newRole, isAuthorized:isAuthorized };
+			var jqxhr = $.post("/groups/ajax/admin/changeRole/"+groupId+"/"+userid, data, function (data){
+					if(data.data) {
+						console.log("UPDATED!!!" + data.data);
 						RS.confirm(RS.msg("legacyjs.groupEditing.roleUpdatedTo", data.data.roleText, data.data.isAuthorized));
-       						window.location="/groups/view/" +groupId;
-       					} else {
-       						apprise(getValidationErrorString(data.errorMsg));
-       				  }
-         			});
-         			jqxhr.fail (function (xhr) {
-         				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingRoles"), false, jqxhr);
-         			})
-         			$(this).dialog('close');
-     			  }
-         	}, //end buttons
-     	  });
+						window.location="/groups/view/" +groupId;
+					} else {
+						apprise(getValidationErrorString(data.errorMsg));
+				  }
+			});
+			jqxhr.fail (function (xhr) {
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionUpdatingRoles"), false, jqxhr);
+			})
+			$(this).dialog('close');
+			  }
+	}, //end buttons
+	  });
       });
     }
 
     $('#editProfileLink').click (function (e){
- 	    e.preventDefault();
- 	    $('#editProfileDlg').dialog('open');
+	    e.preventDefault();
+	    $('#editProfileDlg').dialog('open');
     });
 
     $(".groupDropdown dt a").click(function(e) {
-      	e.preventDefault();
-      	$(".groupDropdown dd ul").toggle();
+	e.preventDefault();
+	$(".groupDropdown dd ul").toggle();
     });
 
     $(document).on('click','#inviteNewMembersGrpLink', function (e){
-   	    e.preventDefault();
-   	    $('#inviteNewMembersDlg').dialog('open');
+	    e.preventDefault();
+	    $('#inviteNewMembersDlg').dialog('open');
         $('#inviteNewMembersDlg .tagit-new input').first().focus();
     });
 
@@ -236,10 +236,10 @@ $(document).ready(function () {
     });
 
     $(document).on('click','#renameGrpLink', function (e){
-    	$('#renameRecordDirect').dialog('open');
+	$('#renameRecordDirect').dialog('open');
     });
     $(document).on('click','#removeMeFromGrpLink', function (e){
-    	$('#removeMeFromGrp').dialog('open');
+	$('#removeMeFromGrp').dialog('open');
     });
     RS.emulateKeyboardClick('#renameGrpLink');
 
@@ -250,59 +250,59 @@ $(document).ready(function () {
 			setUpLeaveGroupDialog();
 
       $('#inviteNewMembersDlg').dialog({
-      	autoOpen: false,
-      	title: RS.msg("legacyjs.groupEditing.inviteNewMembersDialogTitle"),
-      	modal: true,
-      	height: 400,
-      	width: 400,
-      	open : function(event, ui) {
-      		initInviteNewMembersDlg();
-      	},
-      	close : function(event, ui) {
-      		$("#inviteNewMembersDlgContent").accordion("destroy");
-      		$("#existingUsersTag").tagit("removeAll");
-      		$("#nonExistingUsersTag").tagit("removeAll");
-      	},
-      	buttons :{
-      		[RS.msg("legacyjs.common.cancel")]: function (){
-      			$(this).dialog('close');
-      		},
-      		[RS.msg("legacyjs.groupEditing.invite")]: function (){
+	autoOpen: false,
+	title: RS.msg("legacyjs.groupEditing.inviteNewMembersDialogTitle"),
+	modal: true,
+	height: 400,
+	width: 400,
+	open : function(event, ui) {
+		initInviteNewMembersDlg();
+	},
+	close : function(event, ui) {
+		$("#inviteNewMembersDlgContent").accordion("destroy");
+		$("#existingUsersTag").tagit("removeAll");
+		$("#nonExistingUsersTag").tagit("removeAll");
+	},
+	buttons :{
+		[RS.msg("legacyjs.common.cancel")]: function (){
+			$(this).dialog('close');
+		},
+		[RS.msg("legacyjs.groupEditing.invite")]: function (){
 
-      			var url = "/cloud/inviteCloudUser";
-      			var existingArr = $("#existingUsersTag").tagit("assignedTags");
-      			var nonExistingArr = $("#nonExistingUsersTag").tagit("assignedTags");
-      			var emails = [].concat(nonExistingArr, existingArr);
+			var url = "/cloud/inviteCloudUser";
+			var existingArr = $("#existingUsersTag").tagit("assignedTags");
+			var nonExistingArr = $("#nonExistingUsersTag").tagit("assignedTags");
+			var emails = [].concat(nonExistingArr, existingArr);
 
-      			if(!emails.length) {
-      				RS.confirm(RS.msg("legacyjs.groupEditing.noEmailFoundForInvitation"), "notice", 3000);
-      				return false;
-      			}
+			if(!emails.length) {
+				RS.confirm(RS.msg("legacyjs.groupEditing.noEmailFoundForInvitation"), "notice", 3000);
+				return false;
+			}
 
-      			var data = {
-      				groupId : groupId,
-      				emails : emails,
-      			};
+			var data = {
+				groupId : groupId,
+				emails : emails,
+			};
 
-      			var jqxhr = $.post(url, data, function(result) {
-      				var data = result.data;
-      				if(data) {
-      					var emails = "";
-      					$.each(data, function(index, obj) {
-      						emails += "<li>"+obj+"</li>";
-      					});
-      					var s = RS.msg("legacyjs.groupEditing.invitedPeopleList", emails);
-      					RS.confirmAndNavigateTo(s, "notice", 2000, "/groups/view/"+groupId);
-      				} else {
-      					RS.confirm(RS.msg("legacyjs.groupEditing.checkEmailAddresses"), "notice", 3000);
-      				}
-      			});
+			var jqxhr = $.post(url, data, function(result) {
+				var data = result.data;
+				if(data) {
+					var emails = "";
+					$.each(data, function(index, obj) {
+						emails += "<li>"+obj+"</li>";
+					});
+					var s = RS.msg("legacyjs.groupEditing.invitedPeopleList", emails);
+					RS.confirmAndNavigateTo(s, "notice", 2000, "/groups/view/"+groupId);
+				} else {
+					RS.confirm(RS.msg("legacyjs.groupEditing.checkEmailAddresses"), "notice", 3000);
+				}
+			});
 
-      			jqxhr.fail (function (xhr) {
-        				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionInvitingNewUsers"), false, jqxhr);
-        			});
-      		 }
-      	 }, //end buttons
+			jqxhr.fail (function (xhr) {
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionInvitingNewUsers"), false, jqxhr);
+			});
+		 }
+	 }, //end buttons
       }); //end dialog
     });
 
@@ -319,9 +319,9 @@ $(document).ready(function () {
 
 		$.post(createURL('/dashboard/ajax/cancelRecipient'),
 			data, function (xhr) {
-		 		var msg = xhr.data.entity;
-		 		$().toastmessage('showToast', {
-		 			text     : msg,
+				var msg = xhr.data.entity;
+				$().toastmessage('showToast', {
+					text     : msg,
 					sticky   : false,
 					position : 'top-right',
 					type     : 'notice',
@@ -331,7 +331,7 @@ $(document).ready(function () {
 							window.location.href=createURL('/groups/view/'+groupId);
 						}
 					}
-		 		});
+				});
 		});
 	});
 });
@@ -339,30 +339,30 @@ $(document).ready(function () {
 function  setUpLeaveGroupDialog () {
 	$('#removeMeFromGrp').dialog({
 		autoOpen: false,
-	  	title: RS.msg("legacyjs.groupEditing.confirmLeaveGroupTitle"),
-	  	modal: true,
-	  	buttons: {
-	  		[RS.msg("legacyjs.common.cancel")]: function (){
-	  			$(this).dialog('close');
-	  		},
-	  		[RS.msg("legacyjs.groupEditing.leaveGroup")]: function () {
-	  			$(this).dialog('close');
-	  			var jxqr = $.post("/groups/admin/removeSelf/" + groupId,  function(result) {
-      				var data = result.data;
-      				if(data == true) {
-      					RS.confirmAndNavigateTo(RS.msg("legacyjs.groupEditing.leftGroup"), "notice", 3000, "/groups/view/"+groupId);
-      				}else if(data == false) {
-      					RS.confirm(RS.msg("legacyjs.groupEditing.leftPrivateGroup"), "notice", 6000, "/groups/view/"+groupId);
-      				} else {
-      					apprise(getValidationErrorString(result.errorMsg));
-      				}
-      			});
+		title: RS.msg("legacyjs.groupEditing.confirmLeaveGroupTitle"),
+		modal: true,
+		buttons: {
+			[RS.msg("legacyjs.common.cancel")]: function (){
+				$(this).dialog('close');
+			},
+			[RS.msg("legacyjs.groupEditing.leaveGroup")]: function () {
+				$(this).dialog('close');
+				var jxqr = $.post("/groups/admin/removeSelf/" + groupId,  function(result) {
+				var data = result.data;
+				if(data == true) {
+					RS.confirmAndNavigateTo(RS.msg("legacyjs.groupEditing.leftGroup"), "notice", 3000, "/groups/view/"+groupId);
+				}else if(data == false) {
+					RS.confirm(RS.msg("legacyjs.groupEditing.leftPrivateGroup"), "notice", 6000, "/groups/view/"+groupId);
+				} else {
+					apprise(getValidationErrorString(result.errorMsg));
+				}
+			});
 
-      			jxqr.fail (function (xhr) {
-      				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionLeavingGroup"), false, xhr);
-        		});
-	  		}
-	  	}
+			jxqr.fail (function (xhr) {
+				RS.ajaxFailed(RS.msg("legacyjs.groupEditing.actionLeavingGroup"), false, xhr);
+		});
+			}
+		}
 	});
 }
 
@@ -417,14 +417,14 @@ function initInviteNewMembersDlg(){
 	    beforeTagAdded: function(event, ui) {
 	        var isAutocompleteList = false;
 	        $.each(autocompletePublicUserInfoSrcArray, function(i,obj) {
-	        	if (obj.value === ui.tagLabel) {
-	        		isAutocompleteList = true;
-	        	}
+		if (obj.value === ui.tagLabel) {
+			isAutocompleteList = true;
+		}
 	        });
 
 	        if(isAutocompleteList === false){
-	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 2000);
-	        	return false;
+		RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 2000);
+		return false;
 	        }
 	    },
 	    afterTagAdded: function(event, ui) {
@@ -444,8 +444,8 @@ function initInviteNewMembersDlg(){
 	    beforeTagAdded: function(event, ui) {
 	        console.log("beforeTagAdded \t"+ui.tagLabel);
 	        if(! validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", 1000);
-	        	return false;
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", 1000);
+		return false;
 	        }
 	    },
       afterTagAdded: function(event, ui) {

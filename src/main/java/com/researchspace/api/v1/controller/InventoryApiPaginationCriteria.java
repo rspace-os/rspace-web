@@ -119,11 +119,7 @@ public class InventoryApiPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public InventoryApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new InventoryApiPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new InventoryApiPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   @Override

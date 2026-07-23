@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.model.inventory.Container.ContainerType;
 import com.researchspace.service.ListFormatUtils;
 import java.util.List;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -15,7 +16,11 @@ public class ContainerApiPostValidator extends ContainerApiValidator {
   @Override
   public void validate(Object target, Errors errors) {
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, null);
+        errors,
+        "name",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.nameLowercase")},
+        null);
     validateIncomingContainerFields((ApiContainer) target, errors);
     validateNewGridConfigOptions((ApiContainer) target, errors);
   }

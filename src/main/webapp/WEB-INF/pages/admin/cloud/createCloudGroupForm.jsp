@@ -144,7 +144,7 @@
 					<td width="50%"></td>
 					<td width="50%" class="bootstrap-custom-flat" style="text-align:right">
 					   <button class="btn btn-primary" type="submit" role="button" name="createGroup" value="Create" style="width:160px" id="submitCreateCloudGroup">
-					       <span>Create LabGroup</span></button>
+					       <span><spring:message code="system.createAccountForm.buttons.newGroup"/></span></button>
 					</td>
 				</tr>
 			</table>

@@ -25,20 +25,20 @@ $(document).ready(function() {
 	    tagLimit: 1,
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
-	        	return false;
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
+		return false;
 	        }
 	    },
 	    afterTagAdded: function(event, ui) {
-	    	$("#principalEmail li.tagit-new").hide();
-	    	$('#principalEmail .tagit-choice').attr('tabindex', 0);
+		$("#principalEmail li.tagit-new").hide();
+		$('#principalEmail .tagit-choice').attr('tabindex', 0);
 	    },
 	    afterTagRemoved: function(event, ui) {
-	    	$("#principalEmail li.tagit-new").show();
+		$("#principalEmail li.tagit-new").show();
 	    },
 	    onTagLimitExceeded: function(event, ui) {
-        	RS.confirm(RS.msg("legacyjs.cloudGroup.emailAlreadyAdded"), "notice", RS.defaultToastDisplayTime);
-        	return false;
+	RS.confirm(RS.msg("legacyjs.cloudGroup.emailAlreadyAdded"), "notice", RS.defaultToastDisplayTime);
+	return false;
 	    },
 	    autocomplete: autocompleteConfig,
 	});
@@ -52,32 +52,32 @@ $(document).ready(function() {
 	    beforeTagAdded: function(event, ui) {
 	        var isAutocompleteList = false;
 	        $.each(autocompletePublicUserInfoSrcArray, function(i,obj) {
-	        	if (obj.value === ui.tagLabel) { 
-	        		isAutocompleteList = true; 
-	        	}
-	        });  
-	        
+		if (obj.value === ui.tagLabel) {
+			isAutocompleteList = true;
+		}
+	        });
+
 	        if(isAutocompleteList === false){
-	        	RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 5000);
-	        	return false;
+		RS.confirm(RS.msg("legacyjs.common.selectExistingUserEmail"), "notice", 5000);
+		return false;
 	        }
 	    },
 	    afterTagAdded: function(event, ui) {
-	    	$('#existingUsers .tagit-choice').attr('tabindex', 0);
+		$('#existingUsers .tagit-choice').attr('tabindex', 0);
 	    },
 	    autocomplete: autocompleteConfig,
 	});
 	RS.addOnKeyboardClickHandlerToDocument('#existingUsers .tagit-choice', function(e){
 		$(this).find('.tagit-close').click();
 	});
-	
+
 	$("#nonExistingUsers").tagit({
 		fieldName: "emails",
 	    placeholderText: RS.msg("legacyjs.common.enterEmailPlaceholder"),
 	    beforeTagAdded: function(event, ui) {
 	        if(!validateEmail(ui.tagLabel)) {
-	        	RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
-	        	return false;
+		RS.confirm(RS.msg("legacyjs.common.checkEmailSyntax"), "error", RS.defaultToastDisplayTime);
+		return false;
 	        }
 	    },
 	});
@@ -85,7 +85,7 @@ $(document).ready(function() {
 	$(document).on('submit', '#createCloudGroup', function(e) {
 		return formValidation();
 	});
-}); 
+});
 
 function validateEmail(email){
 	var re = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/i;
@@ -93,10 +93,10 @@ function validateEmail(email){
 }
 
 function formValidation(){
-	
+
 	var nomination = $(".options:checked").val();
 	var principalEmail = $("#principalEmail").tagit("assignedTags");
-	
+
 	if(nomination === "true" && !principalEmail.length) {
 		RS.confirm(RS.msg("legacyjs.cloudGroup.noPiEmailFound"), "notice", RS.defaultToastDisplayTime);
 		return false;

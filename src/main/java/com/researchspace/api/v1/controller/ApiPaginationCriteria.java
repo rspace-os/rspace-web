@@ -1,8 +1,6 @@
 package com.researchspace.api.v1.controller;
 
 import com.researchspace.api.v1.model.ApiSortEnum;
-import com.researchspace.service.ListFormatUtils;
-import java.util.Arrays;
 import javax.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -60,6 +58,13 @@ public abstract class ApiPaginationCriteria {
 
   abstract void addOrderByToMap(LinkedMultiValueMap<String, String> rc);
 
+  int previousPageNumber() {
+    if (pageNumber == 0) {
+      throw new IllegalStateException();
+    }
+    return pageNumber - 1;
+  }
+
   /**
    * Carries the invalid {@code orderBy} value and the allowed values, so that the caller (which has
    * access to the localized {@link com.researchspace.service.MessageSourceUtils}) can build the
@@ -71,15 +76,6 @@ public abstract class ApiPaginationCriteria {
     private final String[] validParams;
 
     InvalidSortParameterException(String orderBy, String[] validParams) {
-      // Fallback only: if this ever escapes the try/catch in
-      // BaseApiController#getPaginationCriteriaForApiSearch (its only intended caller), callers
-      // still get a non-null message instead of NPE-prone null from an unset Throwable message.
-      super(
-          "Problem parsing sort parameter: ["
-              + orderBy
-              + "]. It must be one of "
-              + ListFormatUtils.formatList(Arrays.asList(validParams))
-              + ".");
       this.orderBy = orderBy;
       this.validParams = validParams;
     }

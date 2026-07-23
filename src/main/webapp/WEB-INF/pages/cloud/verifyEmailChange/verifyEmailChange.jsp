@@ -4,9 +4,9 @@
 </head>
 <div class="container" style="max-width: 960px; padding: 0 5% 0 5%;">
 	<div class="row">
-    	<axt:biggerLogo/>
-    	<div style="text-align:center; margin-top:46px;">
-    	   <h2 class="form-signup-heading"><spring:message code="verifyEmailChange.heading" arguments="${emailChangeToken.email}"/></h2>
+	<axt:biggerLogo/>
+	<div style="text-align:center; margin-top:46px;">
+	   <h2 class="form-signup-heading"><spring:message code="verifyEmailChange.heading" arguments="${emailChangeToken.email}"/></h2>
         </div>
     </div>
 	<form class="form-signup" method="POST" action="/cloud/verifyEmailChange">

@@ -466,12 +466,12 @@ function showAllowlistWarnings(result) {
     if (result.unknownReadAllowlistUsernames && result.unknownReadAllowlistUsernames.length) {
         showStickyWarning(
             RS.msg("legacyjs.system.netFileSystem.unknownReadAllowlistUsernames",
-            result.unknownReadAllowlistUsernames.map(RS.escapeHtml).join(', ')));
+            RS.formatList(result.unknownReadAllowlistUsernames.map(RS.escapeHtml))));
     }
     if (result.unknownWriteAllowlistUsernames && result.unknownWriteAllowlistUsernames.length) {
         showStickyWarning(
             RS.msg("legacyjs.system.netFileSystem.unknownWriteAllowlistUsernames",
-            result.unknownWriteAllowlistUsernames.map(RS.escapeHtml).join(', ')));
+            RS.formatList(result.unknownWriteAllowlistUsernames.map(RS.escapeHtml))));
     }
 }
 

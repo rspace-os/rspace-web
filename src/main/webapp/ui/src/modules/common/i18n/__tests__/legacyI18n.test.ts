@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatIcuMessage, selectLegacyCatalogue } from "../legacyI18n";
+import { formatIcuMessage, formatLegacyList, selectLegacyCatalogue } from "../legacyI18n";
 
 describe("legacy ICU messages", () => {
   test("formats positional arguments", () => {
@@ -13,6 +13,10 @@ describe("legacy ICU messages", () => {
 
   test("preserves literal HTML", () => {
     expect(formatIcuMessage('<a href="{0}">Open</a>', ["/workspace"])).toBe('<a href="/workspace">Open</a>');
+  });
+
+  test("formats natural-language lists", () => {
+    expect(formatLegacyList(["Ada", "Grace", "Linus"], "en-US")).toBe("Ada, Grace, and Linus");
   });
 
   test("selects the catalogue matching the deployment locale", () => {

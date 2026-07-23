@@ -12,12 +12,17 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class LabProtocol extends BuiltinContent implements IBuiltinContent {
 
   public LabProtocol(IBuiltInPersistor initializer) {
     super(initializer);
+  }
+
+  public LabProtocol(IBuiltInPersistor initializer, Locale locale) {
+    super(initializer, locale);
   }
 
   public LabProtocol() {}

@@ -1,4 +1,4 @@
-<%-- 
+<%--
 	http://getbootstrap.com/components/#glyphicons
 	produces an glyphicon the correct icon based on the record that has been passed into the tag
 --%>
@@ -22,7 +22,7 @@
          <c:set var="src" value="/images/icons/folder.png" scope="page" />
     </c:when>
 
-   	<c:when test="${fn:contains(type, 'ROOT')}">
+	<c:when test="${fn:contains(type, 'ROOT')}">
          <spring:message code="record.icon.folder" var="alt" scope="page"/>
          <c:set var="src" value="/images/icons/folder-user.png" scope="page" />
     </c:when>
@@ -33,7 +33,7 @@
     </c:when>
 
     <c:when test="${type eq 'NORMAL' or type eq 'NORMAL:NORMAL_EXAMPLE'}">
-  	   	<spring:message code="record.icon.structuredDocument" var="alt" scope="page"/>
+		<spring:message code="record.icon.structuredDocument" var="alt" scope="page"/>
 		<c:set var="src" value="/image/getIconImage/${record.iconId}" scope="page" />
     </c:when>
 
@@ -55,12 +55,12 @@
     <c:when test="${record['class'].name eq 'com.researchspace.model.EcatDocumentFile'}">
         <c:choose>
             <c:when test="${record.documentType eq 'Miscellaneous'}">
-            	<spring:message code="record.icon.image" var="alt" scope="page"/>
-          		<c:set var="src" value="/images/icons/unknownDocument.png" scope="page" />
+	<spring:message code="record.icon.image" var="alt" scope="page"/>
+		<c:set var="src" value="/images/icons/unknownDocument.png" scope="page" />
             </c:when>
             <c:otherwise>
-          		<spring:message code="record.icon.image" var="alt" scope="page"/>
-          		<c:set var="src" value="/images/icons/${record.extension}.png" scope="page" />
+		<spring:message code="record.icon.image" var="alt" scope="page"/>
+		<c:set var="src" value="/images/icons/${record.extension}.png" scope="page" />
             </c:otherwise>
         </c:choose>
     </c:when>
@@ -81,7 +81,7 @@
 
 <c:choose>
     <c:when test="${record.notebook}">
-  	    <%-- This opens the notebook directly in Notebook view --%>
+	    <%-- This opens the notebook directly in Notebook view --%>
 		<a data-id="${record.id}" class="notebook" href="<c:url value='/notebookEditor/${record.id}?settingsKey=${settingsKey}'/>">
 			 <img src="<c:url value='${src}'/>" alt="${alt}" height="${imgHeight}" width="${imgWidth}" data-type="${type}"/>
 		</a>

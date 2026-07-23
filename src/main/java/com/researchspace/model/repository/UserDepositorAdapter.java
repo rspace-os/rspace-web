@@ -16,11 +16,11 @@ import org.hibernate.validator.constraints.NotEmpty;
  */
 public class UserDepositorAdapter implements IDepositor {
 
-  @NotEmpty(message = "{validation.fields.email} {validation.errors.requiredField}")
+  @NotEmpty(message = "{validation.errors.emailRequired}")
   @Email(message = "{validation.errors.invalidEmail}")
   private String email;
 
-  @NotBlank(message = "{label.name} {validation.errors.requiredField}")
+  @NotBlank(message = "{validation.errors.nameRequired}")
   @Size(max = 200, message = "{validation.errors.nameRange}")
   private String uniqueName;
 

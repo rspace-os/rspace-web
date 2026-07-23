@@ -25,10 +25,10 @@
 
 <c:if test="${showDefaultSSOInfo}">
   <div class="container" style="max-width:960px;padding:0 5% 0 5%;">
-  	<div class="row">
-      	<axt:biggerLogo/>
-      	<div style="text-align:center; margin-top:46px;">
-      	 <h3 class="form-signup-heading"><spring:message code="unknownUser.heading"/></h3>
+	<div class="row">
+	<axt:biggerLogo/>
+	<div style="text-align:center; margin-top:46px;">
+	 <h3 class="form-signup-heading"><spring:message code="unknownUser.heading"/></h3>
           </div>
       </div>
 
@@ -38,4 +38,3 @@
       </div>
   </div>
 </c:if>
-

@@ -12,13 +12,13 @@
     </style>
     <script>
      $(document).ready(function () {
-    	 $.get("/export/ajax/latestImportResults", function (data){
-    		 var templateHTML = $('#archiveImportReportData').html();
-       	
-       	 var resultsHTML = Mustache.render(templateHTML, data);
+	 $.get("/export/ajax/latestImportResults", function (data){
+		 var templateHTML = $('#archiveImportReportData').html();
+
+	 var resultsHTML = Mustache.render(templateHTML, data);
            $('#reportContent').html(resultsHTML);
-    		 
-    	 });
+
+	 });
      });
     </script>
 </head>

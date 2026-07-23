@@ -19,13 +19,13 @@
             <div id="main">
                 <h1><spring:message code="errorPage.heading"/></h1>
                 <% if (exception != null) { %>
-    				<spring:message code="errors.page.reasonsIntro"/>
-    				<ul>
-    					<li><spring:message code="errors.page.insufficientPermissions"/></li>
-    					<li><spring:message code="errors.page.unauthorizedOperation"/></li>
-    					<li><spring:message code="errors.page.genericServerError"/></li>
-    				</ul>
-    				<spring:message code="errors.page.contactSupportNotice"/>
+				<spring:message code="errors.page.reasonsIntro"/>
+				<ul>
+					<li><spring:message code="errors.page.insufficientPermissions"/></li>
+					<li><spring:message code="errors.page.unauthorizedOperation"/></li>
+					<li><spring:message code="errors.page.genericServerError"/></li>
+				</ul>
+				<spring:message code="errors.page.contactSupportNotice"/>
                         <p><spring:message code="errors.page.idAtTimestamp" arguments="${errorId},${tstamp}"/></p>
                         <pre class="message"> ${exceptionMessage}</pre>
                  <% } else if ((Exception)request.getAttribute("javax.servlet.error.exception") != null) { %>

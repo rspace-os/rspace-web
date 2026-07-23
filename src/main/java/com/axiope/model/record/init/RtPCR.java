@@ -12,12 +12,17 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class RtPCR extends BuiltinContent implements IBuiltinContent {
 
   public RtPCR(IBuiltInPersistor initializer) {
     super(initializer);
+  }
+
+  public RtPCR(IBuiltInPersistor initializer, Locale locale) {
+    super(initializer, locale);
   }
 
   public RtPCR() {}

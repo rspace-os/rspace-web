@@ -32,16 +32,12 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @AllArgsConstructor
   @NoArgsConstructor
   public static class ExportApiConfig {
-    @NotNull
-    @Pattern(
-        regexp = "xml|html",
-        message = "{validation.fields.format} {validation.errors.requiredField}")
+    @NotNull(message = "{validation.errors.exportFormatRequired}")
+    @Pattern(regexp = "xml|html", message = "{validation.errors.exportFormatInvalid}")
     private String format;
 
-    @NotNull
-    @Pattern(
-        regexp = "user|group|selection",
-        message = "{validation.fields.scope} {validation.errors.requiredField}")
+    @NotNull(message = "{validation.errors.exportScopeRequired}")
+    @Pattern(regexp = "user|group|selection", message = "{validation.errors.exportScopeInvalid}")
     private String scope;
 
     private Long id = null;

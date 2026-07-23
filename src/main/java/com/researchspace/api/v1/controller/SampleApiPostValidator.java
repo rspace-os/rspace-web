@@ -5,6 +5,7 @@ import com.researchspace.api.v1.model.ApiSampleWithFullSubSamples;
 import com.researchspace.api.v1.model.ApiSubSample;
 import com.researchspace.service.inventory.InventoryFieldNameUniquenessValidator;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -29,7 +30,11 @@ public class SampleApiPostValidator extends SampleApiValidator implements Valida
   ApiSampleInfo coreValidationForSamplesAndTemplatesPost(Object target, Errors errors) {
     ApiSampleInfo apiSamplePost = (ApiSampleInfo) target;
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        errors, "name", "errors.required", new Object[] {"name"}, null);
+        errors,
+        "name",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.nameLowercase")},
+        null);
     validateNameTooLong(apiSamplePost.getName(), errors);
     validateDescriptionTooLong(apiSamplePost.getDescription(), errors);
     validateTags(apiSamplePost.getTags(), errors);

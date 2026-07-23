@@ -28,10 +28,10 @@
 	</div>
 
 	<spring:message code="dashboard.messages.header" var="messageSettingsLabel"/>
- 	<div id="settingsLink">
- 		<a href="/userform"><spring:message code="dashboard.messages.header"/><br>
+	<div id="settingsLink">
+		<a href="/userform"><spring:message code="dashboard.messages.header"/><br>
         <img src="/images/icons/messageSettingsSmall.png" title="${messageSettingsLabel}" alt="${messageSettingsLabel}"></a>
- 	</div>
+	</div>
 </div>
 
 <div id="mainBlock">
@@ -39,13 +39,13 @@
 	<div id="requestHeader">
 		<a class="dashboardOptions" id="mynotifications" href="#">
 		    <spring:message code="messaging.newNotificationsTitle"/>
-           	<c:if test="${not empty notificationList}">
+	<c:if test="${not empty notificationList}">
                 <span class="badge" id="notificationsBadge">${fn:length(notificationList)}</span>
             </c:if>
 		</a>
 		<a class="dashboardOptions" id="mor" href="#">
-    		<spring:message code="dashboard.received.header"/>
-           	<c:if test="${not empty messages}">
+		<spring:message code="dashboard.received.header"/>
+	<c:if test="${not empty messages}">
                 <span class="badge" id="messagesBadge">${fn:length(messages)}</span>
             </c:if>
 		</a>

@@ -19,12 +19,13 @@ var temporaryHeightOfBlockedElement = 0;
 RS.minSearchTermLength = 3;
 
 // TinyMCE iframes reuse the server-injected dictionary from their parent window.
-if (!RS.i18n || !RS.formatIcuMessage) {
+if (!RS.i18n || !RS.formatIcuMessage || !RS.formatList) {
   var parentI18n = {};
   try {
     if (window.parent && window.parent !== window && window.parent.RS) {
       parentI18n = window.parent.RS.i18n || {};
       RS.formatIcuMessage = RS.formatIcuMessage || window.parent.RS.formatIcuMessage;
+      RS.formatList = RS.formatList || window.parent.RS.formatList;
     }
   } catch (e) {
     parentI18n = {};

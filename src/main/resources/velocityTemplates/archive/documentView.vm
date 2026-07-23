@@ -31,12 +31,12 @@
      ## Here we're listing comments
       #if(! $field.comments.isEmpty())
       <h2>$msg.getMessage("export.global.comments.title")</h2>
-      	#foreach($comment in $field.comments)
-      	  <p> $msg.format("export.global.comments.number", [$foreach.count]) </p>
-      		#foreach($item in $comment.items)
-      		   $item.lastUpdater : $item.updateDate : $item.itemContent <br/>
-      		#end
-      	#end ## end of comment
+	#foreach($comment in $field.comments)
+	  <p> $msg.format("export.global.comments.number", [$foreach.count]) </p>
+		#foreach($item in $comment.items)
+		   $item.lastUpdater : $item.updateDate : $item.itemContent <br/>
+		#end
+	#end ## end of comment
       #end ## end of comment conditional
     </div>
     ## Here we list links to original Files( e.g. Tiffs)

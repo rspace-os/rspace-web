@@ -13,6 +13,7 @@ import com.researchspace.model.record.StructuredDocument;
 import com.researchspace.service.UserFolderSetup;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class Experiment extends BuiltinContent implements IBuiltinContent {
@@ -22,6 +23,10 @@ public class Experiment extends BuiltinContent implements IBuiltinContent {
 
   public Experiment(IBuiltInPersistor initializer) {
     super(initializer);
+  }
+
+  public Experiment(IBuiltInPersistor initializer, Locale locale) {
+    super(initializer, locale);
   }
 
   public Experiment() {}

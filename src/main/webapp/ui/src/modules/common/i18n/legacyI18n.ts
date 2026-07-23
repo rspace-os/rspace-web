@@ -1,5 +1,6 @@
 import type IntlMessageFormatType from "intl-messageformat";
 import type { PrimitiveType } from "intl-messageformat";
+import { formatList as formatLocalizedList } from "./listFormat";
 
 declare global {
   var RSpaceIntlMessageFormat: typeof IntlMessageFormatType;
@@ -9,6 +10,7 @@ const legacyWindow = window as Window & {
   RS?: {
     i18n?: Record<string, string>;
     formatIcuMessage?: (pattern: string, args: PrimitiveType[]) => string;
+    formatList?: (items: Array<string | number>) => string;
   };
 };
 
@@ -44,4 +46,9 @@ export function formatIcuMessage(pattern: string, args: PrimitiveType[]): string
   return formatter.format(values) as string;
 }
 
+export function formatLegacyList(items: Array<string | number>, languageTag = locale): string {
+  return formatLocalizedList(items, languageTag);
+}
+
 legacyWindow.RS.formatIcuMessage = formatIcuMessage;
+legacyWindow.RS.formatList = (items) => formatLegacyList(items);

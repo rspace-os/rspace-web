@@ -56,6 +56,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -354,7 +355,10 @@ public class SysAdminUserRegistrationController extends BaseController {
 
           } catch (DataAccessException dae) {
             // probably because not unique?
-            errors.addErrorMsg(getText("errors.notUnique", new Object[] {"Unique name"}));
+            errors.addErrorMsg(
+                getText(
+                    "errors.notUnique",
+                    new Object[] {new DefaultMessageSourceResolvable("label.uniqueName")}));
           }
 
         } catch (RuntimeException e) {
@@ -636,7 +640,9 @@ public class SysAdminUserRegistrationController extends BaseController {
             errors,
             community.getUniqueName(),
             "admins",
-            getText("errors.required", new Object[] {"Choosing an administrator"}));
+            getText(
+                "errors.required",
+                new Object[] {new DefaultMessageSourceResolvable("label.choosingAdministrator")}));
       } else {
         for (String admin : communityAdmins) {
           User adminUser = usersMap.get(admin);

@@ -3,7 +3,7 @@ function initUploadImageDialog(){
   $(document).ready(function(){
     $('#uploadImageDialog').dialog({
       title: RS.msg("legacyjs.userForm.uploadImageDialogTitle"),
-      resizable: true, 
+      resizable: true,
       autoOpen: false,
       height: 500,
       width: 600,
@@ -17,7 +17,7 @@ function initUploadImageDialog(){
       close: function() {
         stopVideoStream();
       },
-      buttons: 
+      buttons:
       {
         [RS.msg("legacyjs.common.cancel")]: function(){
           $("#uploadImageDialog").dialog('close');
@@ -32,7 +32,7 @@ function initUploadImageDialog(){
                 window.location.reload();
             }
           };
-          
+
           var photoTabActive = $("#uploadImageTabs").tabs("option", "active") === 1;
           if (photoTabActive && photoSnapped) {
             var canvas = document.getElementById('profileImageVideoCanvas');
@@ -47,14 +47,14 @@ function initUploadImageDialog(){
           }
         }
       }
-    });    
+    });
   });
 }
 
 var photoTakingInitialised = false;
 var photoSnapped = false;
 var photoMaxDimension = 120; // will scale down to this dimension
-var videoStream; 
+var videoStream;
 
 function initPhotoTakingArea() {
 
@@ -143,7 +143,7 @@ function initProfileDialog(){
   $(document).ready(function(){
     $('#editProfileDialog').dialog({
       title: RS.msg("legacyjs.userForm.editProfileDialogTitle"),
-      resizable: true, 
+      resizable: true,
       autoOpen: false,
       height: 500,
       width: 600,
@@ -158,17 +158,17 @@ function initProfileDialog(){
       },
       close: function( e ) {
         $(".userFormInput").val('');
-      }, 
-      buttons: 
+      },
+      buttons:
       {
         [RS.msg("legacyjs.common.cancel")]: function(){
           $("#editProfileDialog").dialog('close');
         },
         [RS.msg("legacyjs.common.save")]: function(){
           var data = $('#userProfileForm').serialize();
-          
+
           RS.blockPage(RS.msg("legacyjs.userForm.editingProfileEllipsis"));
-          var jqxhr= $.post(createURL("/userform/ajax/editProfile"), data, function (result) { 
+          var jqxhr= $.post(createURL("/userform/ajax/editProfile"), data, function (result) {
             RS.unblockPage();
             if(result.data != null){
               RS.confirm(RS.msg("legacyjs.userForm.profileUpdated"), "success", 3000);
@@ -184,7 +184,7 @@ function initProfileDialog(){
             } else {
               $('#msgAreaProfile').text(getValidationErrorString (result.errorMsg));
               $('#msgAreaProfile').slideDown('slow');
-              
+
             }
           });
           jqxhr.fail(function(){
@@ -195,7 +195,7 @@ function initProfileDialog(){
       }
     });
   });
-  
+
   applyAffiliationAutocomplete(4, "#newAffiliation");
 }
 
@@ -203,7 +203,7 @@ function initChangePasswordDialog(){
   $(document).ready(function(){
     $('#changePasswordDialog').dialog({
       title: RS.msg("legacyjs.userForm.changePasswordDialogTitle"),
-      resizable: true, 
+      resizable: true,
       autoOpen: false,
       height: 500,
       width: 600,
@@ -214,8 +214,8 @@ function initChangePasswordDialog(){
       close: function( e ) {
         $(".userFormInput").val('');
         $(".msgArea").hide();
-      }, 
-      buttons: 
+      },
+      buttons:
       {
         [RS.msg("legacyjs.common.cancel")]: function(){
           $("#changePasswordDialog").dialog('close');
@@ -231,7 +231,7 @@ function initChangePasswordDialog(){
                   confirmPassword: confirmPassword,
                   hintPassword: hintPassword
               };
-          
+
             RS.blockPage(RS.msg("legacyjs.userForm.changingPasswordEllipsis"));
             const jqxhr = $.post(createURL("/userform/ajax/changePassword"), data, function (result) {
                 RS.unblockPage();
@@ -261,7 +261,7 @@ function initChangeVerificationPasswordDialog(){
   $(document).ready(function(){
 	  $('#changeVerificationPasswordDialog').dialog({
 	    title: RS.msg("legacyjs.userForm.changeVerificationPasswordDialogTitle"),
-	    resizable: true, 
+	    resizable: true,
 	    autoOpen: false,
 	    height: 500,
 	    width: 600,
@@ -272,8 +272,8 @@ function initChangeVerificationPasswordDialog(){
       close: function( e ) {
         $(".userFormInput").val('');
         $(".msgArea").hide();
-      }, 
-	    buttons: 
+      },
+	    buttons:
 	    {
 	      [RS.msg("legacyjs.common.cancel")]: function(){
 	        $("#changeVerificationPasswordDialog").dialog('close');
@@ -289,7 +289,7 @@ function initChangeVerificationPasswordDialog(){
 	            confirmVerificationPassword: confirmVerificationPassword,
 	            hintVerificationPassword: hintVerificationPassword
 	          };
-	        
+
 	        RS.blockPage(RS.msg("legacyjs.userForm.changingVerificationPasswordEllipsis"));
               const jqxhr= $.post(createURL("/vfpwd/ajax/changeVerificationPassword"), data, function (result) {
                   RS.unblockPage();
@@ -319,7 +319,7 @@ function initSetVerificationPasswordDialog(){
   $(document).ready(function(){
 	  $('#setVerificationPasswordDialog').dialog({
 	    title: RS.msg("legacyjs.userForm.setVerificationPasswordDialogTitle"),
-	    resizable: true, 
+	    resizable: true,
 	    autoOpen: false,
 	    height: 500,
 	    width: 600,
@@ -330,28 +330,28 @@ function initSetVerificationPasswordDialog(){
       close: function( e ) {
         $(".userFormInput").val('');
         $(".msgArea").hide();
-      }, 
-	    buttons: 
+      },
+	    buttons:
 	    {
 	      [RS.msg("legacyjs.common.cancel")]: function(){
 	        $("#setVerificationPasswordDialog").dialog('close');
 	      },
 	      [RS.msg("legacyjs.userForm.set")]: function (){
-	  
+
 	        var newVerificationPassword   = $("#newSetVerificationPasswordInput").val();
 	        var confirmVerificationPassword = $("#newSetVerificationPasswordConfirm").val();
 	        var hintVerificationPassword  = $("#newSetVerificationPasswordHint").val();
-	        var data = { 
+	        var data = {
 	            newVerificationPassword: newVerificationPassword,
 	            confirmVerificationPassword: confirmVerificationPassword,
 	            hintVerificationPassword: hintVerificationPassword
 	        };
-	        
+
 	        RS.blockPage(RS.msg("legacyjs.userForm.settingVerificationPasswordEllipsis"));
-	        var jqxhr= $.post(createURL("/vfpwd/ajax/setVerificationPassword"), data, function (result) { 
+	        var jqxhr= $.post(createURL("/vfpwd/ajax/setVerificationPassword"), data, function (result) {
 	          RS.unblockPage();
 	          var msgx = new String(result.data);
-	          
+
 	          if (msgx.indexOf("successfully") != -1) {
 	            RS.confirm(msgx, "success", 3000);
 	            $("#userVerificationPasswordHint").text(hintVerificationPassword);
@@ -376,7 +376,7 @@ function initPwdConfirmDlg () {
   $(document).ready(function(){
     $('#pwdConfirmDialog').dialog({
       title: RS.msg("legacyjs.userForm.confirmPasswordDialogTitle"),
-      resizable: true, 
+      resizable: true,
       autoOpen: false,
       height: "auto",
       width: "auto",
@@ -387,7 +387,7 @@ function initPwdConfirmDlg () {
       close: function ( e ) {
         $("#pwdConfirm").val('');
         $(".msgArea").hide();
-      },     
+      },
       buttons: {
         [RS.msg("legacyjs.common.cancel")]: function() {
           $("#pwdConfirmDialog").dialog('close');
@@ -407,7 +407,7 @@ function initPwdConfirmDlg () {
       }
     });
   });
-  
+
   $("#pwdConfirmDialog").keypress(function(e){
     if (e.keyCode === 13){
       $(this).parent().find('.ui-dialog-buttonset button:eq(1)').click();
@@ -419,7 +419,7 @@ function initChangeEmailDialog(){
   $(document).ready(function(){
     $('#changeEmailDialog').dialog({
       title: RS.msg("legacyjs.userForm.changeEmailDialogTitle"),
-      resizable: true, 
+      resizable: true,
       autoOpen: false,
       height: 500,
       width: 600,
@@ -434,25 +434,25 @@ function initChangeEmailDialog(){
           close: function ( e ) {
             $(".userFormInput").val('');
             $(".msgArea").hide();
-          }, 
-      buttons: 
+          },
+      buttons:
       {
         [RS.msg("legacyjs.common.cancel")]: function(){
           $("#changeEmailDialog").dialog('close');
         },
         [RS.msg("legacyjs.common.save")]: function (){
-    
+
           var newEmailInput = $("#newEmailInput").val();
           var newEmailConfirm = $("#newEmailConfirm").val();
           var emailPasswordInput  = $("#emailPasswordInput").val();
-          var data = { 
+          var data = {
               newEmailInput: newEmailInput,
               newEmailConfirm: newEmailConfirm,
               emailPasswordInput: emailPasswordInput,
           };
-          
+
           RS.blockPage(RS.msg("legacyjs.userForm.changingEmailEllipsis"));
-          var jqxhr= $.post(createURL("/userform/ajax/changeEmail"), data, function (result) { 
+          var jqxhr= $.post(createURL("/userform/ajax/changeEmail"), data, function (result) {
             RS.unblockPage();
             if (result.data) {
                 var msg = '';
@@ -551,15 +551,15 @@ function initApiKeyDisplay () {
   $(document).on("click", "#apiKeyRegenerateBtn", function(e) {
     e.preventDefault();
 
-	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
-      	if (response.data) {
-      		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeApiKey"));
-      	} else {
+	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {
+	if (response.data) {
+		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeApiKey"));
+	} else {
           $('#pwdConfirmDialog').dialog('open');
-      	}
+	}
 	  });
   });
-  
+
   $(document).on("click", "#apiKeyRevokeBtn", function(e) {
     e.preventDefault();
 
@@ -572,7 +572,7 @@ function initApiKeyDisplay () {
       updateApiKeyMenu();
     });
   });
-  
+
   $(document).on("click", "#api-menu__showKey, #api-menu__hideKey", function() {
     showRSApiKey = !showRSApiKey;
     if (showRSApiKey) {
@@ -595,24 +595,24 @@ $(document).ready(function (){
   initChangeEmailDialog();
   initApiKeyDisplay();
   initPwdConfirmDlg();
-  
+
   $('#userUploadImageButton').click(function(e) {
     $('#uploadImageDialog').dialog('open');
     $('#uploadImageDialog').find("#uploadImageTabLink").focus();
   });
-  
+
   $('#userChangePasswordButton').click(function(e) {
     $('#changePasswordDialog').dialog('open');
     });
-  
+
   $('#userChangeVerificationPasswordButton').click(function(e) {
 	$('#changeVerificationPasswordDialog').dialog('open');
 	});
-  
+
   $('#userSetVerificationPasswordButton').click(function(e) {
 	$('#setVerificationPasswordDialog').dialog('open');
 	});
-  
+
   $('#userForgotVerificationPasswordButton').click(function(e) {
 	$.post('/vfpwd/verificationPasswordResetRequest').done(function() {
 		$().toastmessage('showSuccessToast', RS.msg("legacyjs.userForm.passwordResetLinkSent"));
@@ -620,44 +620,44 @@ $(document).ready(function (){
 		$().toastmessage('showErrorToast', RS.msg("legacyjs.userForm.passwordResetLinkError"));
 	});
   });
-  
+
   $('#userEditProfileButton').click(function(e) {
     $('#editProfileDialog').dialog('open');
     });
-   
+
   $('#userChangeEmailButton').click(function(e) {
-	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {  
-      	if (response.data) {
-      		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeChangingEmail"));
-      	} else {
-      		$('#changeEmailDialog').dialog('open');
-      	}
+	  $.get('/vfpwd/ajax/checkVerificationPasswordNeeded', function(response) {
+	if (response.data) {
+		apprise(RS.msg("legacyjs.userForm.setVerificationPasswordBeforeChangingEmail"));
+	} else {
+		$('#changeEmailDialog').dialog('open');
+	}
 	  });
   });
-   
+
   $('#userChangeDetailsButton').click(function(e) {
     $('#changeNameAffiliationDialog').dialog('open');
   });
-   
+
   $('.deleteFromCollbGrpLink').click(function (e){
     e.preventDefault();
     $(this).prev().submit();
   });
-  
+
   initialiseRequestDlg({
     targetFinderPolicy:'ALL_PIS',
     availableMessageTypes:"REQUEST_JOIN_EXISTING_COLLAB_GROUP"
   });
-   
+
   $('.createRequest').click(function(e) {
     e.preventDefault();
     var grpId= $(this).attr('id').split("_")[1];
     $('#createRequestDlg').data("groupId", grpId).dialog('open');
   });
-  
-  $(document).on("change","#fileChooser", function(e) {   
+
+  $(document).on("change","#fileChooser", function(e) {
     e.preventDefault();
-      var files = e.target.files; // FileList object      
+      var files = e.target.files; // FileList object
       // This code generates a thumbnail in the dialog.
       // Loop through the FileList and render image files as thumb-nails.
       f = files[0];
@@ -682,7 +682,7 @@ $(document).ready(function (){
   $('#setOrcidIdButton').click(function() {
     var orcidClientId = $(this).data('orcidclientid');
     var orcidRedirectUri = $(this).data('orcidredirecturi');
-    var url = "https://orcid.org/oauth/authorize?client_id=" + orcidClientId + "&redirect_uri=" 
+    var url = "https://orcid.org/oauth/authorize?client_id=" + orcidClientId + "&redirect_uri="
       + orcidRedirectUri + "&response_type=code&scope=/authenticate";
 
     RS.openOauthAuthorizationWindow(url, '/orcid/redirect_uri', '#orcidAPIconnectionSuccess', function(authWindow) {
@@ -719,7 +719,7 @@ $(document).ready(function (){
       $('#egnyteConnectedDiv').toggle(egnyteFilestoreConnectionOK);
       $('#egnyteDisonnectedDiv').toggle(!egnyteFilestoreConnectionOK);
   }
-  
+
   if (typeof egnyteFilestoreEnabled !== 'undefined') {
       _redrawFilestoreConnectionSection();
       $('#egnyteDisconnectBtn').click(function() {

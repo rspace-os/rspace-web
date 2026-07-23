@@ -238,7 +238,7 @@
         <td class="labelCell"><spring:message code="recordInfo.versionLabel"/> </td>
         <td>
           <span class="boxInfoPanel-versionNumber boxVersion"></span>
-          <button type='button' class='boxFileDownloadBtn'>Download</button>
+          <button type='button' class='boxFileDownloadBtn'><spring:message code="common:actions.download"/></button>
         </td>
       </tr>
       <tr>

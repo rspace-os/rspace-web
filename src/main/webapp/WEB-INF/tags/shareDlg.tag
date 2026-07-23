@@ -122,4 +122,3 @@
 			<spring:message code="sharing.notice.manage.sharedDocument"/>
 		</div>
 	</div>
-

@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -57,7 +58,10 @@ public class ApiExtraFieldsHelper implements Validator {
     // if this is a new field, id is null, so we should reject no name
     if (aef.getId() == null) {
       ValidationUtils.rejectIfEmptyOrWhitespace(
-          errors, "name", "errors.required", new Object[] {"name"});
+          errors,
+          "name",
+          "errors.required",
+          new Object[] {new DefaultMessageSourceResolvable("label.nameLowercase")});
     }
     if (aef.getTypeAsFieldType() == FieldType.LINK) {
       validateLinkPayload(aef, errors);
@@ -73,7 +77,11 @@ public class ApiExtraFieldsHelper implements Validator {
 
   private void validateLinkPayload(ApiExtraField aef, Errors errors) {
     if (aef.getLink() == null) {
-      errors.rejectValue("link", "errors.required", new Object[] {"link"}, null);
+      errors.rejectValue(
+          "link",
+          "errors.required",
+          new Object[] {new DefaultMessageSourceResolvable("label.link")},
+          null);
       return;
     }
     String sourceGlobalId =

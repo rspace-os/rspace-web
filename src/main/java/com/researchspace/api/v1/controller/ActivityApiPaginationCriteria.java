@@ -73,11 +73,7 @@ public class ActivityApiPaginationCriteria extends ApiPaginationCriteria {
 
   @Override
   public ActivityApiPaginationCriteria previousPage() {
-    if (getPageNumber() == 0) {
-      throw new IllegalArgumentException(
-          "Can't create previous pagination criteria - at first page!");
-    }
-    return new ActivityApiPaginationCriteria(getPageNumber() - 1, getPageSize(), getOrderBy());
+    return new ActivityApiPaginationCriteria(previousPageNumber(), getPageSize(), getOrderBy());
   }
 
   public ActivityApiPaginationCriteria nextPage() {

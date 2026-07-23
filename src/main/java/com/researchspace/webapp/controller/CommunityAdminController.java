@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -165,7 +166,10 @@ public class CommunityAdminController extends BaseController {
 
     User authUser = userManager.getAuthenticatedUserInSession();
     ValidationUtils.rejectIfEmptyOrWhitespace(
-        br, "displayName", "errors.required", new Object[] {"Display name"});
+        br,
+        "displayName",
+        "errors.required",
+        new Object[] {new DefaultMessageSourceResolvable("label.displayName")});
     if (br.hasErrors()) {
       model.addAttribute("view", false);
       return "system/community";
@@ -186,7 +190,12 @@ public class CommunityAdminController extends BaseController {
     throw new AuthorizationException(
         getText(
             "errors.authorization.failed",
-            new Object[] {"Community", id, subject.getFullName(), permType}));
+            new Object[] {
+              new DefaultMessageSourceResolvable("resourceType.community"),
+              id,
+              subject.getFullName(),
+              permType
+            }));
   }
 
   @PostMapping("/addAdmin")

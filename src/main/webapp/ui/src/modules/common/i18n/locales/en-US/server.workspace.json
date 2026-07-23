@@ -218,6 +218,7 @@
         "idsAndTargetRequired": "Ids to move and target folder are required.",
         "noResult": "No result from move operation.",
         "sameSourceAndTarget": "Source and target folder are the same. Id: {0}",
+        "sharedNotebookFailed": "Move into shared notebook failed",
         "targetIsSelf": "Attempt to move record with ID: {0} to itself"
       }
     },
@@ -872,6 +873,9 @@
       "setupHeading": "Egnyte filestore setup"
     },
     "lastLoginLabel": "Last Login:",
+    "loginAliasSuffix": ", login alias: {0}",
+    "otherProfileHeading": "User Profile",
+    "ownProfileHeading": "My Profile",
     "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
     "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
     "pictureLabel": "Picture:",

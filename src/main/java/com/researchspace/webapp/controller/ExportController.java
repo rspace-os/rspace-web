@@ -71,6 +71,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectRetrievalFailureException;
 import org.springframework.stereotype.Controller;
@@ -179,7 +180,10 @@ public class ExportController extends BaseController {
       HttpServletResponse res)
       throws IOException, URISyntaxException {
     if (StringUtils.isEmpty(pdfname)) {
-      throw new IllegalArgumentException(getText("errors.required", new String[] {"pdfName"}));
+      throw new IllegalArgumentException(
+          getText(
+              "errors.required",
+              new Object[] {new DefaultMessageSourceResolvable("label.pdfName")}));
     }
     // we have to validate this as we might ending up looking up a file path from here
     Matcher m = VALID_PDF_FILE_CHARS.matcher(pdfname);
@@ -187,7 +191,11 @@ public class ExportController extends BaseController {
       throw new IllegalArgumentException(
           getText(
               "errors.invalidStringFormat",
-              new String[] {pdfname, "pdfName", VALID_PDF_FILE_CHARS.toString()}));
+              new Object[] {
+                pdfname,
+                new DefaultMessageSourceResolvable("label.pdfName"),
+                VALID_PDF_FILE_CHARS.toString()
+              }));
     }
     User user = getUserByUsername(principal.getName());
     responseUtil.setCacheTimeInBrowser(ResponseUtil.YEAR, null, res);
