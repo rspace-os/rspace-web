@@ -61,6 +61,33 @@ class B2instErrorResponseTest {
   }
 
   @Test
+  void describeRendersFieldlessErrorMessagesWithoutPrefix() {
+    String json =
+        "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
+            + "[{\"messages\":[\"Record has validation errors.\"]}]}";
+
+    B2instErrorResponse parsed = JacksonUtil.fromJson(json, B2instErrorResponse.class);
+
+    assertEquals("Record has validation errors.", parsed.describe());
+  }
+
+  @Test
+  void describeRendersBlankFieldErrorMessagesWithoutPrefix() {
+    B2instErrorResponse response =
+        new B2instErrorResponse(
+            400,
+            "A validation error occurred.",
+            List.of(
+                new B2instErrorResponse.FieldError(" ", List.of("Record has validation errors.")),
+                new B2instErrorResponse.FieldError(
+                    "instrument_type", List.of("Missing data for required field."))));
+
+    assertEquals(
+        "Record has validation errors.; instrument_type: Missing data for required field.",
+        response.describe());
+  }
+
+  @Test
   void describeFallsBackToTopLevelMessage() {
     assertEquals(
         "Permission denied.", new B2instErrorResponse(403, "Permission denied.", null).describe());

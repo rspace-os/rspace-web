@@ -30,8 +30,9 @@ public record B2instErrorResponse(int status, String message, List<FieldError> e
   public record FieldError(String field, List<String> messages) {}
 
   /**
-   * One-line human-readable summary: field errors joined as {@code field: message}, else the
-   * top-level message, else {@code null} when the payload carries nothing usable.
+   * One-line human-readable summary: field errors joined as {@code field: message} (message-only
+   * when the payload omits the field name), else the top-level message, else {@code null} when the
+   * payload carries nothing usable.
    */
   public String describe() {
     String fieldSummary =
@@ -40,11 +41,18 @@ public record B2instErrorResponse(int status, String message, List<FieldError> e
             : errors.stream()
                 .filter(Objects::nonNull)
                 .filter(error -> error.messages() != null && !error.messages().isEmpty())
-                .map(error -> error.field() + ": " + String.join(" ", error.messages()))
+                .map(B2instErrorResponse::describeEntry)
                 .collect(Collectors.joining("; "));
     if (!fieldSummary.isBlank()) {
       return fieldSummary;
     }
     return (message == null || message.isBlank()) ? null : message;
+  }
+
+  private static String describeEntry(FieldError error) {
+    String joinedMessages = String.join(" ", error.messages());
+    return (error.field() == null || error.field().isBlank())
+        ? joinedMessages
+        : error.field() + ": " + joinedMessages;
   }
 }
