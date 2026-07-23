@@ -40,8 +40,9 @@ public record B2instErrorResponse(int status, String message, List<FieldError> e
             ? ""
             : errors.stream()
                 .filter(Objects::nonNull)
-                .filter(error -> error.messages() != null && !error.messages().isEmpty())
+                .filter(error -> error.messages() != null)
                 .map(B2instErrorResponse::describeEntry)
+                .filter(entrySummary -> !entrySummary.isEmpty())
                 .collect(Collectors.joining("; "));
     if (!fieldSummary.isBlank()) {
       return fieldSummary;
@@ -50,7 +51,15 @@ public record B2instErrorResponse(int status, String message, List<FieldError> e
   }
 
   private static String describeEntry(FieldError error) {
-    String joinedMessages = String.join(" ", error.messages());
+    String joinedMessages =
+        error.messages().stream()
+            .filter(Objects::nonNull)
+            .map(String::strip)
+            .filter(message -> !message.isEmpty())
+            .collect(Collectors.joining(" "));
+    if (joinedMessages.isEmpty()) {
+      return "";
+    }
     return (error.field() == null || error.field().isBlank())
         ? joinedMessages
         : error.field() + ": " + joinedMessages;

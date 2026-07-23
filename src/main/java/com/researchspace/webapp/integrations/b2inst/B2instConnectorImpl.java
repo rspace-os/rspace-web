@@ -150,7 +150,8 @@ public class B2instConnectorImpl implements B2instConnector {
   /**
    * Builds a human-readable reason for a failed B2INST call. When the server replied, prefers the
    * parsed field-validation errors, then the payload's top-level message, then the HTTP status;
-   * without a response (transport error) falls back to the client exception message.
+   * without a response (transport error) falls back to the client exception message, or the
+   * exception type when even that is blank.
    */
   private String describeFailure(RestClientException e) {
     if (e instanceof RestClientResponseException restError) {
@@ -165,13 +166,18 @@ public class B2instConnectorImpl implements B2instConnector {
       log.warn(
           "No usable failure reason in B2INST error response (HTTP {}): {}",
           restError.getRawStatusCode(),
-          StringUtils.abbreviate(body, 500));
+          StringUtils.abbreviate(redactToken(body), 500));
       return "B2INST returned HTTP "
           + restError.getRawStatusCode()
           + " "
           + restError.getStatusText();
     }
-    return e.getMessage();
+    return StringUtils.defaultIfBlank(e.getMessage(), e.getClass().getSimpleName());
+  }
+
+  /** The bearer token is the one secret we hold that a proxy error page could echo back. */
+  private String redactToken(String body) {
+    return StringUtils.isBlank(token) ? body : body.replace(token, "***");
   }
 
   private String submitUrlOf(B2instRequestResponse created) {

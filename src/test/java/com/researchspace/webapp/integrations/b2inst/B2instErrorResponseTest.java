@@ -88,6 +88,29 @@ class B2instErrorResponseTest {
   }
 
   @Test
+  void describeSkipsNullAndBlankMessageEntries() {
+    String json =
+        "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
+            + "[{\"field\":\"instrument_type\",\"messages\":[null,\" \",\"Missing data for"
+            + " required field.\"]}]}";
+
+    B2instErrorResponse parsed = JacksonUtil.fromJson(json, B2instErrorResponse.class);
+
+    assertEquals("instrument_type: Missing data for required field.", parsed.describe());
+  }
+
+  @Test
+  void describeFallsBackToMessageWhenAllMessagesAreNullOrBlank() {
+    String json =
+        "{\"status\":400,\"message\":\"A validation error occurred.\",\"errors\":"
+            + "[{\"field\":\"instrument_type\",\"messages\":[null,\" \"]}]}";
+
+    B2instErrorResponse parsed = JacksonUtil.fromJson(json, B2instErrorResponse.class);
+
+    assertEquals("A validation error occurred.", parsed.describe());
+  }
+
+  @Test
   void describeFallsBackToTopLevelMessage() {
     assertEquals(
         "Permission denied.", new B2instErrorResponse(403, "Permission denied.", null).describe());

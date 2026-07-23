@@ -22,6 +22,7 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClientException;
 
 @ExtendWith(MockitoExtension.class)
 class B2instConnectorImplTest {
@@ -224,6 +226,7 @@ class B2instConnectorImplTest {
             + "instrument_type: Missing data for required field.; "
             + "owners: Shorter than minimum length 1.",
         ex.getMessage());
+    server.verify();
   }
 
   @Test
@@ -244,6 +247,7 @@ class B2instConnectorImplTest {
     assertEquals(
         "Error submitting B2INST record k2j9p-7yh21 for community review: Permission denied.",
         ex.getMessage());
+    server.verify();
   }
 
   @Test
@@ -265,6 +269,7 @@ class B2instConnectorImplTest {
         "Error submitting B2INST record k2j9p-7yh21 for community review: "
             + "B2INST returned HTTP 502 Bad Gateway",
         ex.getMessage());
+    server.verify();
   }
 
   @Test
@@ -296,6 +301,7 @@ class B2instConnectorImplTest {
       coreLogger.removeAppender(capture);
       capture.stop();
     }
+    server.verify();
 
     String warning =
         warnings.stream()
@@ -326,6 +332,7 @@ class B2instConnectorImplTest {
         "Error submitting B2INST record k2j9p-7yh21 for community review: "
             + "B2INST returned HTTP 502 Bad Gateway",
         ex.getMessage());
+    server.verify();
   }
 
   @Test
@@ -344,6 +351,7 @@ class B2instConnectorImplTest {
         ex.getMessage()
             .startsWith("Error submitting B2INST record k2j9p-7yh21 for community review: "));
     assertTrue(ex.getMessage().contains("connect timed out"));
+    server.verify();
   }
 
   @Test
@@ -368,6 +376,60 @@ class B2instConnectorImplTest {
     assertEquals(
         "Error creating B2INST draft record: community: Missing data for required field.",
         ex.getMessage());
+    server.verify();
+  }
+
+  @Test
+  void publishDoiRedactsConfiguredTokenFromWarnLog() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_GATEWAY)
+                .contentType(MediaType.TEXT_HTML)
+                .body("<html>debug echo: Authorization Bearer TOK123</html>"));
+
+    List<String> warnings = new ArrayList<>();
+    AbstractAppender capture =
+        new AbstractAppender("b2instRedactCapture", null, null, true, Property.EMPTY_ARRAY) {
+          @Override
+          public void append(LogEvent event) {
+            warnings.add(event.getMessage().getFormattedMessage());
+          }
+        };
+    capture.start();
+    org.apache.logging.log4j.core.Logger coreLogger =
+        (org.apache.logging.log4j.core.Logger) LogManager.getLogger(B2instConnectorImpl.class);
+    coreLogger.addAppender(capture);
+    try {
+      assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+    } finally {
+      coreLogger.removeAppender(capture);
+      capture.stop();
+    }
+    server.verify();
+
+    String warning =
+        warnings.stream()
+            .filter(message -> message.contains("B2INST error response"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(warning.contains("TOK123"));
+    assertTrue(warning.contains("***"));
+  }
+
+  @Test
+  void describeFailureFallsBackToExceptionTypeWhenMessageMissing() throws Exception {
+    connector.reloadClient();
+    Method describeFailure =
+        B2instConnectorImpl.class.getDeclaredMethod("describeFailure", RestClientException.class);
+    describeFailure.setAccessible(true);
+
+    Object description = describeFailure.invoke(connector, new RestClientException((String) null));
+
+    assertEquals("RestClientException", description);
   }
 
   @Test
