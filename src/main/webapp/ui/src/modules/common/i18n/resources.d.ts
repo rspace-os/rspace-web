@@ -3129,6 +3129,7 @@ export default interface Resources {
           "targetDeleted": "Target deleted"
         },
         "relatedInventoryItems": {
+          "attachment": "Attachment",
           "columns": {
             "globalId": "Global ID",
             "name": "Name",
@@ -3541,7 +3542,6 @@ export default interface Resources {
         "location": {
           "label": "Location",
           "listExplanation": "No location selection required for list containers.",
-          "mustStoreTypes": "inventory:instrument.createOptions.location.mustStoreTypes",
           "specificExplanation": "Specify a single location for where the new instrument should be placed."
         },
         "template": {
