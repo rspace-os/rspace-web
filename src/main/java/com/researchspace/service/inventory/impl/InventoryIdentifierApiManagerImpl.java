@@ -110,6 +110,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
 
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
+        .filter(r -> IdentifierType.IGSN_DATACITE.equals(r.getType()))
         .filter(
             r -> isBlank(finalIdentifier) || matchIdentifier(r, finalIdentifier, allowSubstring))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
