@@ -2,6 +2,7 @@ package com.researchspace.webapp.integrations.b2inst;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +38,7 @@ public record B2instErrorResponse(int status, String message, List<FieldError> e
         errors == null
             ? ""
             : errors.stream()
+                .filter(Objects::nonNull)
                 .filter(error -> error.messages() != null && !error.messages().isEmpty())
                 .map(error -> error.field() + ": " + String.join(" ", error.messages()))
                 .collect(Collectors.joining("; "));
