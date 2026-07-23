@@ -240,7 +240,9 @@ function routeNetwork() {
   server.use(
     http.get("/userform/ajax/inventoryOauthToken", () => HttpResponse.json({ data: oauthToken() })),
     http.get("/api/v1/stoichiometry", () => HttpResponse.json(createMockStoichiometryResponse())),
-    http.post("/api/v1/stoichiometry/molecule/info", () => HttpResponse.json(createMockStoichiometryResponse())),
+    http.post("/api/v1/stoichiometry/molecule/info", () =>
+      HttpResponse.json({ molecularWeight: 46.07, formula: "C2 H6 O" }),
+    ),
     http.get("/api/inventory/v1/subSamples/:id", ({ params }) => {
       const body = subSampleResponses[Number(params.id)];
       return body
