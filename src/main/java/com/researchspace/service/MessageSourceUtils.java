@@ -35,6 +35,11 @@ public class MessageSourceUtils {
     return messages.getMessage(key, args);
   }
 
+  /** Resolves a message without arguments against an explicit locale. */
+  public String getMessageForLocale(String key, Locale locale) {
+    return messageSource.getMessage(key, null, locale);
+  }
+
   /** Resolves a message against an explicit locale. */
   public String getMessage(String key, Object[] args, Locale locale) {
     return messageSource.getMessage(key, args, locale);

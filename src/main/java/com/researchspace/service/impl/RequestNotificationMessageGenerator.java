@@ -46,7 +46,7 @@ public class RequestNotificationMessageGenerator {
       }
       model.put(
           "groupType",
-          messages.getMessage("email.group.type.collaborationGroup", null, recipientLocale));
+          messages.getMessageForLocale("email.group.type.collaborationGroup", recipientLocale));
       model.put("groupName", groupName);
       return processTemplate(model, "collabgroupInvitationAccepted.vm", recipientLocale);
     }
@@ -58,11 +58,10 @@ public class RequestNotificationMessageGenerator {
         Group newGroup = ((GroupMessageOrRequest) mor).getGroup();
         model.put(
             "groupType",
-            messages.getMessage(
+            messages.getMessageForLocale(
                 newGroup.isProjectGroup()
                     ? "email.group.type.projectGroup"
                     : "email.group.type.labGroup",
-                null,
                 recipientLocale));
         model.put("groupName", newGroup.getDisplayName());
       }
@@ -88,7 +87,7 @@ public class RequestNotificationMessageGenerator {
       return VelocityEngineUtils.mergeTemplateIntoString(velocity, templateName, "UTF-8", model);
     } catch (Exception ex) {
       log.warn(ex.getMessage(), ex);
-      return messages.getMessage("email.requestStatus.generationFailed", null, locale);
+      return messages.getMessageForLocale("email.requestStatus.generationFailed", locale);
     }
   }
 

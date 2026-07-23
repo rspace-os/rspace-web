@@ -49,13 +49,13 @@ public class AuditTrailSearchResultCsvGenerator {
   // All CSV text remains en-US because consumers treat it as a stable contract.
   private String[] getDisplayHeader() {
     return new String[] {
-      messages.getMessage("common:profile.accountActivity.time", null, CSV_LOCALE),
-      messages.getMessage("common:userDetails.roles.user", null, CSV_LOCALE),
-      messages.getMessage("common:profile.accountActivity.action", null, CSV_LOCALE),
-      messages.getMessage("export.audit.csv.headerType", null, CSV_LOCALE),
-      messages.getMessage("export.audit.csv.headerResource", null, CSV_LOCALE),
-      messages.getMessage("export.audit.csv.headerName", null, CSV_LOCALE),
-      messages.getMessage("export.audit.csv.headerDescription", null, CSV_LOCALE)
+      messages.getMessageForLocale("common:profile.accountActivity.time", CSV_LOCALE),
+      messages.getMessageForLocale("common:userDetails.roles.user", CSV_LOCALE),
+      messages.getMessageForLocale("common:profile.accountActivity.action", CSV_LOCALE),
+      messages.getMessageForLocale("export.audit.csv.headerType", CSV_LOCALE),
+      messages.getMessageForLocale("export.audit.csv.headerResource", CSV_LOCALE),
+      messages.getMessageForLocale("export.audit.csv.headerName", CSV_LOCALE),
+      messages.getMessageForLocale("export.audit.csv.headerDescription", CSV_LOCALE)
     };
   }
 

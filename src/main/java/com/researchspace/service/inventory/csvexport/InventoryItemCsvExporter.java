@@ -75,7 +75,7 @@ public abstract class InventoryItemCsvExporter {
     }
 
     public String getCsvColumnHeader(MessageSourceUtils messages) {
-      return messages.getMessage(messageKey, null, CSV_HEADER_LOCALE);
+      return messages.getMessageForLocale(messageKey, CSV_HEADER_LOCALE);
     }
   }
 
@@ -102,7 +102,7 @@ public abstract class InventoryItemCsvExporter {
   protected @Autowired MessageSourceUtils messages;
 
   public String getCsvCommentHeader() {
-    return messages.getMessage("export.inventory.csv.commentHeader", null, CSV_HEADER_LOCALE);
+    return messages.getMessageForLocale("export.inventory.csv.commentHeader", CSV_HEADER_LOCALE);
   }
 
   protected OutputStream getCsvCommentFragment(

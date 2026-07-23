@@ -110,7 +110,7 @@ public class PdfHtmlGenerator {
     context.put("footerDate", footerDate);
     context.put(
         "pageLabel",
-        messages.getMessage("export.pdf.header.pageLabel", null, locale).replace("'", "\\'"));
+        messages.getMessageForLocale("export.pdf.header.pageLabel", locale).replace("'", "\\'"));
     return VelocityEngineUtils.mergeTemplateIntoString(
         velocityEngine, "pdf/styles.vm", "UTF-8", context);
   }

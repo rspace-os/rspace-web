@@ -19,7 +19,7 @@ public class LocaleBoundMessages {
   }
 
   public String getMessage(String key) {
-    return messages.getMessage(key, null, locale);
+    return messages.getMessageForLocale(key, locale);
   }
 
   public String getMessage(String key, Object[] args) {

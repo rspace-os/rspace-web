@@ -103,6 +103,12 @@ public class AuditTrailSearchResultCsvGeneratorTest {
             assertEquals(Locale.US, locale);
             return key;
           }
+
+          @Override
+          public String getMessageForLocale(String key, Locale locale) {
+            assertEquals(Locale.US, locale);
+            return key;
+          }
         };
     ReflectionTestUtils.setField(
         auditTrailSearchResultCsvGenerator, "messages", localeCheckingMessages);

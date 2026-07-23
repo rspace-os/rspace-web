@@ -30,9 +30,9 @@ public class LocaleBoundMessagesTest {
   public void getMessageDelegatesWithBoundLocale() {
     Locale de = Locale.GERMAN;
     LocaleBoundMessages bound = new LocaleBoundMessages(messages, de);
-    Mockito.when(messages.getMessage("k", null, de)).thenReturn("de value");
+    Mockito.when(messages.getMessageForLocale("k", de)).thenReturn("de value");
 
     assertEquals("de value", bound.getMessage("k"));
-    verify(messages).getMessage("k", null, de);
+    verify(messages).getMessageForLocale("k", de);
   }
 }

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -39,8 +38,8 @@ class RequestNotificationMessageGeneratorUnitTest {
     UserLocaleService userLocaleService = mock(UserLocaleService.class);
     Locale recipientLocale = Locale.CANADA_FRENCH;
     when(userLocaleService.getLocaleFor(any(User.class))).thenReturn(recipientLocale);
-    when(messages.getMessage(
-            eq("email.requestStatus.generationFailed"), isNull(), eq(recipientLocale)))
+    when(messages.getMessageForLocale(
+            eq("email.requestStatus.generationFailed"), eq(recipientLocale)))
         .thenReturn("localized fallback");
     ReflectionTestUtils.setField(generator, "messages", messages);
     ReflectionTestUtils.setField(generator, "userLocaleService", userLocaleService);
@@ -51,6 +50,6 @@ class RequestNotificationMessageGeneratorUnitTest {
             new User("recipient"), CommunicationStatus.COMPLETED, CommunicationStatus.NEW, request);
 
     assertEquals("localized fallback", result);
-    verify(messages).getMessage("email.requestStatus.generationFailed", null, recipientLocale);
+    verify(messages).getMessageForLocale("email.requestStatus.generationFailed", recipientLocale);
   }
 }
