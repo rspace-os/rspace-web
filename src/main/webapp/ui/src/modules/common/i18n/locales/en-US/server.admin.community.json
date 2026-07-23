@@ -6,23 +6,7 @@
   },
   "create": {
     "group": {
-      "bePi": {
-        "description": "<strong>Make yourself the group's PI</strong> - the group will be created immediately and member invitations sent."
-      },
-      "creationChoicesIntro": "When creating a LabGroup with this form, you must either:",
       "heading": "Create a LabGroup",
-      "newPi": {
-        "inviteByEmailLabel": "Invite new or existing users to join the group by automated email."
-      },
-      "newUsers": {
-        "heading": "New users"
-      },
-      "nominatePi": {
-        "description": "<strong>Nominate someone else to be PI for the group</strong>, which will then only be created and members invited when the nominee accepts the PI role."
-      },
-      "rspaceUsers": {
-        "heading": "RSpace users"
-      },
       "title": "Create a Group"
     }
   },
