@@ -53,8 +53,7 @@ public class DSWController {
 
   @GetMapping("/currentUser")
   @ResponseBody
-  public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias)
-      throws URISyntaxException, MalformedURLException {
+  public ResponseEntity<JsonNode> currentUsers(@RequestParam() String serverAlias) {
     User user = userManager.getAuthenticatedUserInSession();
     try {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
@@ -70,17 +69,13 @@ public class DSWController {
   @GetMapping("/plans")
   @ResponseBody
   public AjaxReturnObject<JsonNode> listDSWPlans(@RequestParam() String serverAlias)
-      throws URISyntaxException, MalformedURLException {
+      throws URISyntaxException {
     User user = userManager.getAuthenticatedUserInSession();
     try {
       AppConfigElementSet cfg = getConfigForServer(user, serverAlias);
       JsonNode plans = dswClient.getProjectsForCurrentUserJson(serverAlias, cfg);
       return new AjaxReturnObject<>(plans, null);
-    } catch (MalformedURLException e) {
-      log.warn(MSG_PROJECTS_ERROR_URL, e);
-      return new AjaxReturnObject<>(
-          null, ErrorList.of(messages.getMessage("apps.dsw.errors.serverUrl")));
-    } catch (ResourceAccessException e) {
+    } catch (MalformedURLException | ResourceAccessException e) {
       log.warn(MSG_PROJECTS_ERROR_URL, e);
       return new AjaxReturnObject<>(
           null, ErrorList.of(messages.getMessage("apps.dsw.errors.serverUrl")));
