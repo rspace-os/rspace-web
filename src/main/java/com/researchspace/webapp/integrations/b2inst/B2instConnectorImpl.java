@@ -163,7 +163,9 @@ public class B2instConnectorImpl implements B2instConnector {
         return parsedDescription;
       }
       log.warn(
-          "Unparseable B2INST error response (HTTP {}): {}", restError.getRawStatusCode(), body);
+          "No usable failure reason in B2INST error response (HTTP {}): {}",
+          restError.getRawStatusCode(),
+          StringUtils.abbreviate(body, 500));
       return "B2INST returned HTTP "
           + restError.getRawStatusCode()
           + " "

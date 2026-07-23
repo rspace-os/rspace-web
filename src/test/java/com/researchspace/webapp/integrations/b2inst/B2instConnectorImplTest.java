@@ -22,8 +22,14 @@ import com.researchspace.model.system.SystemProperty;
 import com.researchspace.model.system.SystemPropertyValue;
 import com.researchspace.service.SystemPropertyManager;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -251,6 +257,67 @@ class B2instConnectorImplTest {
             withStatus(HttpStatus.BAD_GATEWAY)
                 .contentType(MediaType.TEXT_HTML)
                 .body("<html>Bad Gateway</html>"));
+
+    B2instConnectionException ex =
+        assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+
+    assertEquals(
+        "Error submitting B2INST record k2j9p-7yh21 for community review: "
+            + "B2INST returned HTTP 502 Bad Gateway",
+        ex.getMessage());
+  }
+
+  @Test
+  void publishDoiLogsClarifiedAndAbbreviatedWarningWhenNoUsableReason() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    String longHtmlBody = "<html>" + "x".repeat(2000) + "</html>";
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_GATEWAY).contentType(MediaType.TEXT_HTML).body(longHtmlBody));
+
+    List<String> warnings = new ArrayList<>();
+    AbstractAppender capture =
+        new AbstractAppender("b2instWarnCapture", null, null, true, Property.EMPTY_ARRAY) {
+          @Override
+          public void append(LogEvent event) {
+            warnings.add(event.getMessage().getFormattedMessage());
+          }
+        };
+    capture.start();
+    org.apache.logging.log4j.core.Logger coreLogger =
+        (org.apache.logging.log4j.core.Logger) LogManager.getLogger(B2instConnectorImpl.class);
+    coreLogger.addAppender(capture);
+    try {
+      assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
+    } finally {
+      coreLogger.removeAppender(capture);
+      capture.stop();
+    }
+
+    String warning =
+        warnings.stream()
+            .filter(message -> message.contains("B2INST error response"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(warning.contains("No usable failure reason"));
+    assertTrue(warning.contains("..."));
+    assertTrue(warning.length() < 700);
+  }
+
+  @Test
+  void publishDoiFallsBackToHttpStatusWhenJsonCarriesNothingUsable() {
+    connector.reloadClient();
+    MockRestServiceServer server =
+        MockRestServiceServer.bindTo(connector.getRestTemplate()).build();
+    server
+        .expect(requestTo("https://b2inst-test.gwdg.de/api/records/k2j9p-7yh21/draft/review"))
+        .andRespond(
+            withStatus(HttpStatus.BAD_GATEWAY)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"status\":502}"));
 
     B2instConnectionException ex =
         assertThrows(B2instConnectionException.class, () -> connector.publishDoi("k2j9p-7yh21"));
