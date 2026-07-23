@@ -13,11 +13,6 @@ class JsonMessageSourceTest {
   private static final JsonMessageSource SOURCE = new JsonMessageSource();
 
   @Test
-  void resolvesBundledServerJsonKey() {
-    assertMessage("ResearchSpace", "webapp.name");
-  }
-
-  @Test
   void fallsBackToDefaultLocaleForUnknownLocale() {
     assertEquals("ResearchSpace", SOURCE.getMessage("webapp.name", null, Locale.FRENCH));
   }

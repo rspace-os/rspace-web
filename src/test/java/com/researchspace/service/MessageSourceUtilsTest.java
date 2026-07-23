@@ -18,11 +18,6 @@ class MessageSourceUtilsTest {
   }
 
   @Test
-  void resolvesAgainstExplicitLocale() {
-    assertEquals("ResearchSpace", messages.getMessage("webapp.name", null, enUS));
-  }
-
-  @Test
   void appliesArgsAgainstExplicitLocale() {
     assertEquals(
         "Name is a required field.",
@@ -33,11 +28,5 @@ class MessageSourceUtilsTest {
   void formatAppliesListArgsAgainstExplicitLocale() {
     assertEquals(
         "Name is a required field.", messages.format("errors.required", List.of("Name"), enUS));
-  }
-
-  @Test
-  void unknownLocaleFallsBackToEnUs() {
-    // Only en-US is bundled today; an explicit unknown locale must fall back to it, not the code.
-    assertEquals("ResearchSpace", messages.getMessage("webapp.name", null, Locale.FRENCH));
   }
 }

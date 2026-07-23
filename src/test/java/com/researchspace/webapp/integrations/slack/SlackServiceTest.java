@@ -14,7 +14,6 @@ import com.researchspace.webapp.controller.RecordAccessDeniedException;
 import com.researchspace.webapp.integrations.slack.SlackServiceImpl.MessageHistory;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Locale;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpEntity;
@@ -28,15 +27,13 @@ public class SlackServiceTest {
   private SlackServiceImpl slackService = new SlackServiceImpl();
 
   private RestTemplate restTemplate = mock(RestTemplate.class);
-  private UserLocaleService userLocaleService = mock(UserLocaleService.class);
 
   @Before
   public void setUp() throws Exception {
     slackService.setRestTemplate(restTemplate);
     ReflectionTestUtils.setField(
         slackService, "messages", new MessageSourceUtils(new JsonMessageSource()));
-    ReflectionTestUtils.setField(slackService, "userLocaleService", userLocaleService);
-    when(userLocaleService.getLocaleFor(any())).thenReturn(Locale.US);
+    ReflectionTestUtils.setField(slackService, "userLocaleService", new UserLocaleService());
   }
 
   @Test
