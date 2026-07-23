@@ -170,12 +170,25 @@ public class RecordDaoHibernate extends GenericDaoHibernate<Record, Long> implem
     return new SearchResultsImpl<>(br, pgCrit, totalHits);
   }
 
-  private static String makeOrderBy(PaginationCriteria<? extends BaseRecord> pgCrit) {
+  // BaseRecord properties that live in the embedded EditInfo component. Hibernate 6 no longer
+  // resolves them implicitly, so only these fields get the explicit path prefix; anything else is
+  // passed through unchanged.
+  private static final Set<String> EDIT_INFO_ORDER_BY_FIELDS =
+      Set.of(
+          "name",
+          "description",
+          "createdBy",
+          "modifiedBy",
+          "creationDate",
+          "creationDateMillis",
+          "modificationDate",
+          "modificationDateMillis");
+
+  static String makeOrderBy(PaginationCriteria<? extends BaseRecord> pgCrit) {
     String orderBy;
     if (!StringUtils.isEmpty(pgCrit.getOrderBy())) {
-      // Hibernate 6: editInfo properties need explicit path prefix
       String field = pgCrit.getOrderBy();
-      if (!field.startsWith("editInfo.")) {
+      if (EDIT_INFO_ORDER_BY_FIELDS.contains(field)) {
         field = "editInfo." + field;
       }
       orderBy = " order by " + field + " " + pgCrit.getSortOrder();
