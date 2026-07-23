@@ -24,6 +24,26 @@ public class TransactionAdviceStartupCheckTest {
     public void doSomething() {}
   }
 
+  @Transactional
+  interface ClassAnnotatedApi {
+    void doSomething();
+  }
+
+  static class ClassAnnotatedApiImpl implements ClassAnnotatedApi {
+    @Override
+    public void doSomething() {}
+  }
+
+  interface MethodAnnotatedApi {
+    @Transactional
+    void doSomething();
+  }
+
+  static class MethodAnnotatedApiImpl implements MethodAnnotatedApi {
+    @Override
+    public void doSomething() {}
+  }
+
   static class PlainService {
     public void doSomething() {}
   }
@@ -64,6 +84,18 @@ public class TransactionAdviceStartupCheckTest {
 
     assertEquals(1, offenders.size());
     assertTrue(offenders.get(0).startsWith("proxiedNoTx "));
+  }
+
+  @Test
+  public void annotationDeclaredOnlyOnInterfaceIsStillDetected() {
+    beanFactory.registerSingleton("interfaceClassAnnotated", new ClassAnnotatedApiImpl());
+    beanFactory.registerSingleton("interfaceMethodAnnotated", new MethodAnnotatedApiImpl());
+
+    List<String> offenders = check.findBeansMissingTransactionAdvice(beanFactory);
+
+    assertEquals(2, offenders.size());
+    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("interfaceClassAnnotated ")));
+    assertTrue(offenders.stream().anyMatch(o -> o.startsWith("interfaceMethodAnnotated ")));
   }
 
   @Test
