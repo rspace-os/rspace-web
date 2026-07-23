@@ -72,6 +72,7 @@
       },
       "identifier": {
         "assignTypeMismatch": "Identifier of type {0} cannot be assigned to inventory item [{1}]",
+        "b2instPublishFailed": "Could not publish the instrument PID in B2INST. {0}",
         "bulkMaxExceeded": "cannot allocate more than {0} IGSNs in a single request",
         "bulkPositiveRequired": "not a valid number of IGSNs to allocate: \"{0}\". The number must be greater than 0",
         "deleteNotOwner": "You can only delete an identifier that you own.",

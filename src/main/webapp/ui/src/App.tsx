@@ -28,7 +28,7 @@ function App(): React.ReactNode {
         setLoadingDone(true);
       } else {
         const currentUser = await peopleStore.fetchCurrentUser();
-        await unitStore.fetchUnits();
+        await Promise.all([unitStore.fetchUnits(), authStore.fetchPidinstEnabled()]);
         setLoadingDone(true);
         if (currentUser) {
           await currentUser.getBench();

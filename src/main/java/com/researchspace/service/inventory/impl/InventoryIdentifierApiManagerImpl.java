@@ -110,6 +110,7 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
     }
 
     return doiDao.getActiveIdentifiersByOwner(owner).stream()
+        .filter(r -> IdentifierType.IGSN_DATACITE.equals(r.getType()))
         .filter(
             r -> isBlank(finalIdentifier) || matchIdentifier(r, finalIdentifier, allowSubstring))
         .filter(r -> (isAssociated == null) || isAssociated.equals(r.isAssociated()))
@@ -582,8 +583,9 @@ public class InventoryIdentifierApiManagerImpl implements InventoryIdentifierApi
       result = b2instConnector.publishDoi(doi.getIdentifier());
     } catch (B2instConnectionException b2instException) {
       throw new B2instConnectionException(
-          "Error when publishing the instrument PID in B2INST. "
-              + "If the problem persists, please contact your System Admin",
+          messages.getMessage(
+              "errors.inventory.identifier.b2instPublishFailed",
+              new Object[] {b2instException.getMessage()}),
           b2instException);
     }
     ApiInventoryDOI publishDoi = new ApiInventoryDOI();
