@@ -27,8 +27,8 @@ class ApiControllerAdviceTest {
     ApiControllerAdvice advice = new ApiControllerAdvice();
     advice.messages = messages;
     BeanPropertyBindingResult errors = new BeanPropertyBindingResult(new TestForm(), "fieldmark");
-    errors.rejectValue("notebookId", "apps.fieldmark.errors.notebookIdRequired", null, null);
-    errors.reject("apps.fieldmark.errors.fetchNotebooks", null, null);
+    errors.rejectValue("notebookId", "apps.fieldmark.errors.notebookIdRequired");
+    errors.reject("apps.fieldmark.errors.fetchNotebooks");
     FieldError fieldError = errors.getFieldError();
     ObjectError globalError = errors.getGlobalError();
     ApiError apiError = advice.getApiErrorFromBindException(new BindException(errors));

@@ -27,6 +27,7 @@ import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.ListFormatUtils;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
@@ -41,7 +42,6 @@ import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.MessageSource;
 
 public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHandler {
 
@@ -54,7 +54,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   private @Autowired UserManager userManager;
   private @Autowired GroupManager groupManager;
   private @Autowired IContentInitializer initializer;
-  private @Autowired MessageSource messageSource;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
@@ -186,11 +186,11 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   }
 
   private String getText(String string, Object[] args) {
-    return messageSource.getMessage(string, args, Locale.getDefault());
+    return messages.getMessage(string, args, Locale.getDefault());
   }
 
   private String getText(String string) {
-    return messageSource.getMessage(string, null, Locale.getDefault());
+    return messages.getMessageForLocale(string, Locale.getDefault());
   }
 
   private User attemptUserSave(

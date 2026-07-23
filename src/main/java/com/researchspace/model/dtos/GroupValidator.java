@@ -43,10 +43,10 @@ public class GroupValidator implements Validator {
     Group group = (Group) target;
 
     if (isBlank(group.getDisplayName())) {
-      errors.rejectValue("displayName", "groups.emptyName", null, null);
+      errors.rejectValue("displayName", "groups.emptyName");
     }
     if (!isBlank(group.getUniqueName()) && !isAlphanumeric(group.getUniqueName())) {
-      errors.rejectValue("uniqueName", "groups.invalidCharacters", null, null);
+      errors.rejectValue("uniqueName", "groups.invalidCharacters");
     }
     if (!isBlank(group.getUniqueName())
         && Organisation.MAX_INDEXABLE_UTF_LENGTH
@@ -61,15 +61,15 @@ public class GroupValidator implements Validator {
           null);
     }
     if (group.getMemberString() == null || group.getMemberString().isEmpty()) {
-      errors.rejectValue("memberString", GROUP_MEMBERS_NONESELECTED, null, null);
+      errors.rejectValue("memberString", GROUP_MEMBERS_NONESELECTED);
     }
 
     if (!group.isProjectGroup() && isBlank(group.getPis())) {
-      errors.rejectValue("pis", PI_NOT_SELECTED, null, null);
+      errors.rejectValue("pis", PI_NOT_SELECTED);
     }
     // check for owners in project group
     if (group.isProjectGroup() && isBlank(group.getGroupOwners())) {
-      errors.rejectValue("groupOwners", GROUP_OWNER_NOT_SELECTED, null, null);
+      errors.rejectValue("groupOwners", GROUP_OWNER_NOT_SELECTED);
     }
 
     // check pi name is in group

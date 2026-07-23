@@ -800,7 +800,7 @@ public class SysAdminController extends BaseController {
         new Object[] {new DefaultMessageSourceResolvable("label.username")});
     String[] users = User.getUsernamesFromMultiUser(runAsUserCmnd.getRunAsUsername());
     if (ArrayUtils.isEmpty(users)) {
-      errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat", null);
+      errors.rejectValue("runAsUsername", "system.runAs.errors.invalidUsernameFormat");
     }
     rejectIfNotReauthenticated(runAsUserCmnd.getSysadminPassword(), errors, adminUser);
     if (errors.hasErrors()) {
@@ -821,7 +821,7 @@ public class SysAdminController extends BaseController {
     try {
       targetUser = userManager.getUserByUsername(targetUsername);
     } catch (DataAccessException dae) {
-      errors.reject("errors.username", null, null);
+      errors.reject("errors.username");
     }
     if (errors.hasErrors()) {
       return "system/runAsUserDlg";

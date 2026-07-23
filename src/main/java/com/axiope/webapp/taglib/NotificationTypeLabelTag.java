@@ -1,11 +1,11 @@
 package com.axiope.webapp.taglib;
 
 import com.researchspace.model.comms.NotificationType;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationTypeMessages;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.JspException;
 import javax.servlet.jsp.tagext.TagSupport;
-import org.springframework.context.MessageSource;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
@@ -38,11 +38,10 @@ public class NotificationTypeLabelTag extends TagSupport {
     HttpServletRequest request = (HttpServletRequest) pageContext.getRequest();
     WebApplicationContext ctx =
         RequestContextUtils.findWebApplicationContext(request, pageContext.getServletContext());
-    MessageSource messageSource = ctx.getBean("messageSource", MessageSource.class);
+    MessageSourceUtils messages = ctx.getBean(MessageSourceUtils.class);
     String label =
-        messageSource.getMessage(
+        messages.getMessageForLocale(
             NotificationTypeMessages.keyFor(notificationType),
-            null,
             RequestContextUtils.getLocale(request));
     pageContext.setAttribute(var, label);
     return SKIP_BODY;

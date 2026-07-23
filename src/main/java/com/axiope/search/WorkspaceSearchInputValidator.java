@@ -64,7 +64,7 @@ public class WorkspaceSearchInputValidator extends SearchInputValidator {
       }
       if (options[i].equals(RECORDS_SEARCH_OPTION)) {
         if (options.length < 2 || allOptionsAreRecords(options)) {
-          errors.reject("errors.recordFilterMustIncludeTerm", null);
+          errors.reject("errors.recordFilterMustIncludeTerm");
           return;
         }
         String[] recordList = terms[i].split("\\s*[,;]\\s*");
