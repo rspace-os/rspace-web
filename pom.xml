@@ -2252,8 +2252,8 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-maven-plugin</artifactId>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-maven-plugin</artifactId>
             <version>${jetty.version}</version>
             <configuration>
               <webApp>
@@ -2290,8 +2290,8 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-maven-plugin</artifactId>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-maven-plugin</artifactId>
             <version>${jetty.version}</version>
             <configuration>
               <jettyXmls>jetty/jetty.xml,jetty/jetty-http.xml,jetty/jetty-ssl.xml,jetty/jetty-https.xml</jettyXmls>
@@ -2326,7 +2326,7 @@
               </dependency>
               <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>http2-server</artifactId>
+                <artifactId>jetty-http2-server</artifactId>
                 <version>${jetty.version}</version>
               </dependency>
             </dependencies>
@@ -2718,7 +2718,7 @@
 
   <properties>
     <!-- jetty -->
-    <jetty.version>11.0.26</jetty.version>
+    <jetty.version>12.1.11</jetty.version>
     <slf4j.version>2.0.2</slf4j.version>
 
     <!-- Application settings -->
