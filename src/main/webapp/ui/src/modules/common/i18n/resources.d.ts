@@ -3325,7 +3325,7 @@ export default interface Resources {
       },
       "delete": {
         "body": "The IGSN ID will be deleted, and this item will no longer have an IGSN ID associated with it. Do you want to proceed?",
-        "bodyPidinst": "The PIDINST will be deleted, and this item will no longer have a PIDINST associated with it. Do you want to proceed?",
+        "bodyPidinst": "The PIDINST ID will be deleted, and this item will no longer have a PIDINST associated with it. Do you want to proceed?",
         "title": "You are about to delete this Identifier"
       },
       "publish": {
@@ -3336,8 +3336,8 @@ export default interface Resources {
       },
       "retract": {
         "body": "The IGSN ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the DataCite API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
-        "bodyPidinst": "The PIDINST will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the DataCite API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
-        "bodyPidinstB2Inst": "The PIDINST will be set to <strong>Registered</strong>. It will be removed from B2INST and the B2INST API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other B2INST Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinst": "The PIDINST ID will be set to <strong>Registered</strong>. It will be removed from DataCite Commons and the DataCite API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other DataCite Members via the Member API.</strong><br /><br />Do you want to proceed?",
+        "bodyPidinstB2Inst": "The PIDINST ID will be set to <strong>Registered</strong>. It will be removed from B2INST and the B2INST API, and the landing page will not display any metadata.<br /><br /><strong>The metadata will remain visible to other B2INST Members via the Member API.</strong><br /><br />Do you want to proceed?",
         "title": "You are about to retract this Identifier"
       }
     },
