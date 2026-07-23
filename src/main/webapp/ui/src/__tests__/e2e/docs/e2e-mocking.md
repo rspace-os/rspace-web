@@ -154,7 +154,7 @@ credentials in `.env`:
 | `DATAVERSE_NAME` | Dataverse real-mode spec | Alias of an **existing** collection on that server — an arbitrary/made-up alias 404s (see below) |
 | `DSW_API_KEY` | DSW real-mode spec | Target DSW/FAIR Wizard instance → account settings → API Token |
 | `DSW_SERVER_URL` | DSW real-mode spec | The instance's base URL, e.g. `https://your-dsw-instance.example` |
-| `PYRAT_API_KEY` | PyRAT (real mode not currently runnable — see below) | Target PyRAT instance → Administration → API → Request access |
+| `PYRAT_API_KEY` | PyRAT real-mode spec (per-user key) | Target PyRAT instance → Apps page → PyRAT → Add server → generate a user API key |
 | `OMERO_USERNAME` | OMERO real-mode spec | An OMERO account username (e.g. via `demo.openmicroscopy.org` self-service signup) |
 | `OMERO_PASSWORD` | OMERO real-mode spec | That account's password |
 | `IGSN_ACCOUNT_ID` | IGSN real-mode specs | DataCite Repository Account ID |
@@ -162,8 +162,7 @@ credentials in `.env`:
 | `IGSN_REPO_PREFIX` | IGSN real-mode specs | Prefix assigned to that DataCite repository account |
 | `IGSN_SERVER_URL` | IGSN real-mode specs | DataCite API URL; defaults to `https://api.test.datacite.org` |
 
-Missing a key causes that spec's real-mode run to `test.skip` with an
-actionable message rather than fail — mock mode is unaffected either way.
+Missing a key skips with an actionable message for most specs.
 
 **Fieldmark tokens expire** (observed: about two weeks from generation — check
 Fieldmark's own docs for their exact policy, it isn't published anywhere we
