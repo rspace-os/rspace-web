@@ -1140,12 +1140,14 @@
     <dependency>
       <groupId>jakarta.el</groupId>
       <artifactId>jakarta.el-api</artifactId>
-      <version>4.0.0</version>
+      <version>5.0.1</version>
     </dependency>
     <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>jakarta.el</artifactId>
-      <version>4.0.2</version>
+      <!-- Jakarta EL 5 implementation for tests; the Glassfish EL impl moved to these
+           coordinates (Eclipse Expressly) from org.glassfish:jakarta.el -->
+      <groupId>org.glassfish.expressly</groupId>
+      <artifactId>expressly</artifactId>
+      <version>5.0.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -2759,7 +2761,7 @@
     <liquibase.changelogdiff.folder>generatedDBChangeSets</liquibase.changelogdiff.folder>
 
     <!-- Testing dependency versions -->
-    <jsp.version>3.0.0</jsp.version>
+    <jsp.version>3.1.1</jsp.version>
 
 
     <!-- Database settings -->
