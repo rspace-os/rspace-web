@@ -7,10 +7,10 @@ import MockAdapter from "axios-mock-adapter";
 import type React from "react";
 import { expectAccessible } from "@/__tests__/accessibility";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
-import { emptyShareListingHandler, raidIntegrationInfoHandler } from "@/__tests__/mocks/raidIntegrationMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { DeploymentPropertyContext } from "@/hooks/api/useDeploymentProperty";
+import { emptyShareListingHandler, raidIntegrationInfoHandler } from "../__tests__/mocks/raidIntegrationMocks";
 import {
   ActionsMenuWithFolder,
   ActionsMenuWithMixedSelection,

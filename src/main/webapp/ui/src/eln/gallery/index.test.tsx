@@ -10,11 +10,11 @@ import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
 import { MemoryRouter } from "react-router";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
-import { emptyShareListingHandler, raidIntegrationInfoHandler } from "@/__tests__/mocks/raidIntegrationMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
 import { Gallery } from ".";
+import { emptyShareListingHandler, raidIntegrationInfoHandler } from "./__tests__/mocks/raidIntegrationMocks";
 import type { GallerySection } from "./common";
 
 /**
