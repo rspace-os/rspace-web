@@ -55,7 +55,7 @@ export class WorkspaceSearchBar {
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
       this.submitButton.click(),
     ]);
-    await this.page.locator('[data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
   }
 
   async searchByOwner(query: string): Promise<void> {
@@ -154,7 +154,7 @@ export class WorkspaceSearchBar {
       this.page.waitForResponse((res) => new URL(res.url()).pathname.endsWith("/workspace/ajax/search")),
       this.page.getByRole("button", { name: "Search", exact: true }).last().click(),
     ]);
-    await this.page.locator('[data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await this.page.locator('#file_table [data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
   }
 
   async resetAdvanced(): Promise<void> {

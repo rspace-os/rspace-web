@@ -52,6 +52,9 @@ export class WorkspacePagination {
     await expect(this.itemsPerPageSelect).toHaveValue(String(n));
     await this.applyItemsPerPageButton.click();
     await this.waitForPage(1);
-    await this.itemsPerPageSelect.page().locator('[data-test-id="blockUIImg"]').waitFor({ state: "hidden" });
+    await this.itemsPerPageSelect
+      .page()
+      .locator('#file_table [data-test-id="blockUIImg"]')
+      .waitFor({ state: "hidden" });
   }
 }
