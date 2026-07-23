@@ -1,6 +1,6 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { getAvailableRaidIdentifiersAjax, getRaidIntegrationInfoAjax } from "../queries";
 import type { GetAvailableRaidListResponse, IntegrationRaidInfo, RaidReferenceDTO } from "../schema";
 
@@ -124,14 +124,7 @@ const mockIntegrationInfoFailure: IntegrationRaidInfo = {
 };
 
 function mockGet(path: string, response: () => Response): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.get(path, ({ request }) => {
-      requests.push(request.clone());
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("get", path, response);
 }
 
 describe("getAvailableRaidIdentifiersAjax", () => {

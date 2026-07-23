@@ -8,9 +8,9 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import MockAdapter from "axios-mock-adapter";
 import fc from "fast-check";
-import { HttpResponse, http } from "msw";
 import { MemoryRouter } from "react-router";
 import { oauthTokenHandler } from "@/__tests__/mocks/oauthTokenMocks";
+import { emptyShareListingHandler, raidIntegrationInfoHandler } from "@/__tests__/mocks/raidIntegrationMocks";
 import { server } from "@/__tests__/mswServer";
 import axios from "@/common/axios";
 import { LandmarksProvider } from "@/components/LandmarksContext";
@@ -203,23 +203,7 @@ describe("Gallery", () => {
   beforeEach(() => {
     mockAxios.reset();
     mockNetwork();
-    server.use(
-      oauthTokenHandler(),
-      http.get("/integration/integrationInfo", () =>
-        HttpResponse.json({
-          success: true,
-          data: {
-            name: "RAID",
-            displayName: "RAiD",
-            available: true,
-            enabled: false,
-            oauthConnected: false,
-            options: { RAID_CONFIGURED_SERVERS: [] },
-          },
-        }),
-      ),
-      http.get("/api/v1/share", () => HttpResponse.json({ totalHits: 0, pageNumber: 0, shares: [], _links: [] })),
-    );
+    server.use(oauthTokenHandler(), raidIntegrationInfoHandler(), emptyShareListingHandler());
     document.title = "";
   });
 

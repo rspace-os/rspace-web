@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { server } from "@/__tests__/mswServer";
 import { getWorkspaceRecordInformationAjax } from "@/modules/workspace/queries";
 import type { WorkspaceRecordInformation } from "@/modules/workspace/schema";
@@ -30,16 +31,12 @@ const mockRecordInformation: WorkspaceRecordInformation = {
 
 describe("getWorkspaceRecordInformationAjax", () => {
   it("fetches and unwraps detailed record information", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get(`${WORKSPACE_API_BASE_URL}/getRecordInformation`, ({ request }) => {
-        requests.push(request);
-        return HttpResponse.json({
-          data: mockRecordInformation,
-          error: null,
-          errorMsg: null,
-          success: true,
-        });
+    const requests = captureRequests("get", `${WORKSPACE_API_BASE_URL}/getRecordInformation`, () =>
+      HttpResponse.json({
+        data: mockRecordInformation,
+        error: null,
+        errorMsg: null,
+        success: true,
       }),
     );
 

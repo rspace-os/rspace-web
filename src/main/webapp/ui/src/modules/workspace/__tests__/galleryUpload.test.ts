@@ -12,6 +12,9 @@ function makeFile(): File {
 }
 
 describe("uploadNewGalleryVersion", () => {
+  // request.formData() can't be used here: undici's multipart parser fails
+  // to decode a jsdom-constructed File part in this test environment, so the
+  // request body is asserted as raw multipart bytes instead.
   it("posts multipart form data with the file and selectedMediaId to the upload endpoint", async () => {
     const setSpy = vi.spyOn(FormData.prototype, "set");
     let multipartBody = "";

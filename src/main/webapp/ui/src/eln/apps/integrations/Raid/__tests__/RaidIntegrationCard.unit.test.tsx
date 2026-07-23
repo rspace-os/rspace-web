@@ -1,7 +1,7 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { createRealI18nWrapper } from "@/__tests__/helpers/realI18n";
@@ -10,7 +10,7 @@ import "@/__tests__/__mocks__/matchMedia";
 import "@/__tests__/__mocks__/muiTransitions";
 
 import { silenceConsole } from "@/__tests__/helpers/silenceConsole";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import RaidIntegrationCard, { type RaidConnectedMessage } from "@/eln/apps/integrations/Raid/RaidIntegrationCard";
 import type { IntegrationStates } from "@/eln/apps/useIntegrationsEndpoint";
 import appsEn from "@/modules/common/i18n/locales/en-US/apps.json";
@@ -66,14 +66,7 @@ const connectButton = (name = "apps:actions.connect") => screen.getByRole("butto
 const disconnectButton = (name = "apps:actions.disconnect") => screen.getByRole("button", { name });
 
 function mockDisconnect(response: () => Response) {
-  const requests: Request[] = [];
-  server.use(
-    http.delete("/apps/raid/connect/:alias", ({ request }) => {
-      requests.push(request);
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("delete", "/apps/raid/connect/:alias", response);
 }
 
 describe("RaidIntegrationCard", () => {
@@ -318,6 +311,7 @@ describe("RaidIntegrationCard", () => {
         variant: "error",
         title: "apps:integrations.raid.alerts.disconnectError",
       });
+      expect(alertArg.message).toContain("Failed to fetch");
       expect(disconnectButton()).toBeVisible();
     });
   });

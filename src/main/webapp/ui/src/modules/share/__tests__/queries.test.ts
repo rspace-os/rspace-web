@@ -1,5 +1,6 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, test } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { server } from "@/__tests__/mswServer";
 import type { RestApiError } from "@/modules/common/api/schema";
 import { getShareListing } from "../queries";
@@ -46,13 +47,7 @@ describe("getShareListing", () => {
   const token = "test-token-123";
 
   test("should fetch shared items with query parameters", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get(`${API_BASE_URL}/share`, ({ request }) => {
-        requests.push(request);
-        return HttpResponse.json(mockShareResponse);
-      }),
-    );
+    const requests = captureRequests("get", `${API_BASE_URL}/share`, () => HttpResponse.json(mockShareResponse));
 
     const params = {
       pageNumber: 1,
@@ -81,13 +76,7 @@ describe("getShareListing", () => {
   });
 
   test("should fetch shared items without query parameters", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get(`${API_BASE_URL}/share`, ({ request }) => {
-        requests.push(request);
-        return HttpResponse.json(mockShareResponse);
-      }),
-    );
+    const requests = captureRequests("get", `${API_BASE_URL}/share`, () => HttpResponse.json(mockShareResponse));
 
     await getShareListing({}, { token });
 

@@ -1,6 +1,6 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import {
   calculateStoichiometry,
   deductStock,
@@ -108,39 +108,16 @@ const mockMoleculeInfo: MoleculeInfo = {
   formula: "C2H4O2",
 };
 
-type MockResponse = () => Response;
-
-function mockPost(path: string, response: MockResponse): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.post(path, ({ request }) => {
-      requests.push(request.clone());
-      return response();
-    }),
-  );
-  return requests;
+function mockPost(path: string, response: () => Response): Request[] {
+  return captureRequests("post", path, response);
 }
 
-function mockPut(path: string, response: MockResponse): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.put(path, ({ request }) => {
-      requests.push(request.clone());
-      return response();
-    }),
-  );
-  return requests;
+function mockPut(path: string, response: () => Response): Request[] {
+  return captureRequests("put", path, response);
 }
 
-function mockDelete(path: string, response: MockResponse): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.delete(path, ({ request }) => {
-      requests.push(request.clone());
-      return response();
-    }),
-  );
-  return requests;
+function mockDelete(path: string, response: () => Response): Request[] {
+  return captureRequests("delete", path, response);
 }
 
 describe("calculateStoichiometry", () => {
@@ -182,7 +159,7 @@ describe("calculateStoichiometry", () => {
   });
 
   it("bubbles up network failures during calculation", async () => {
-    mockPost(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
+    const requests = mockPost(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
 
     await expect(
       calculateStoichiometry(
@@ -193,6 +170,7 @@ describe("calculateStoichiometry", () => {
         token,
       ),
     ).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });
 
@@ -254,7 +232,7 @@ describe("updateStoichiometry", () => {
   });
 
   it("bubbles up network failures during updates", async () => {
-    mockPut(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
+    const requests = mockPut(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
 
     await expect(
       updateStoichiometry(
@@ -265,6 +243,7 @@ describe("updateStoichiometry", () => {
         token,
       ),
     ).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });
 
@@ -322,9 +301,10 @@ describe("deleteStoichiometry", () => {
   });
 
   it("bubbles up network failures during deletion", async () => {
-    mockDelete(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
+    const requests = mockDelete(`${API_BASE_URL}/stoichiometry`, () => HttpResponse.error());
 
     await expect(deleteStoichiometry({ stoichiometryId: 3 }, token)).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });
 
@@ -392,7 +372,7 @@ describe("deductStock", () => {
   });
 
   it("bubbles up network failures during deductStock", async () => {
-    mockPost(`${API_BASE_URL}/stoichiometry/link/deductStock`, () => HttpResponse.error());
+    const requests = mockPost(`${API_BASE_URL}/stoichiometry/link/deductStock`, () => HttpResponse.error());
 
     await expect(
       deductStock(
@@ -403,6 +383,7 @@ describe("deductStock", () => {
         token,
       ),
     ).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });
 
@@ -440,7 +421,7 @@ describe("getMoleculeInfo", () => {
   });
 
   it("bubbles up network failures during molecule info requests", async () => {
-    mockPost(`${API_BASE_URL}/stoichiometry/molecule/info`, () => HttpResponse.error());
+    const requests = mockPost(`${API_BASE_URL}/stoichiometry/molecule/info`, () => HttpResponse.error());
 
     await expect(
       getMoleculeInfo(
@@ -450,5 +431,6 @@ describe("getMoleculeInfo", () => {
         token,
       ),
     ).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });

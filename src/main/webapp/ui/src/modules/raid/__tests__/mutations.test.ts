@@ -1,6 +1,6 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { parseOrThrow } from "@/modules/common/queries/parseOrThrow";
 import { addRaidIdentifierAjax, removeRaidIdentifierAjax } from "../mutations";
 import type { AssociateRaidIdentifierRequestBody } from "../schema";
@@ -21,14 +21,7 @@ const mockFailureResponse = {
 };
 
 function mockRaidPost(path: string, response: () => Response): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.post(path, ({ request }) => {
-      requests.push(request.clone());
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("post", path, response);
 }
 
 describe("addRaidIdentifierAjax", () => {

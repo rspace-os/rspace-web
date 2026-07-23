@@ -1,12 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "../../../../../theme";
 
@@ -27,12 +27,6 @@ vi.mock("../GallerySections", () => ({
 
 import ElnRecordInfoDialog from "../ElnRecordInfoDialog";
 
-beforeEach(() => {
-  vi.clearAllMocks();
-});
-
-afterEach(cleanup);
-
 function recordInfoResponse(overrides: Record<string, unknown> = {}) {
   return {
     data: {
@@ -51,15 +45,21 @@ function recordInfoResponse(overrides: Record<string, unknown> = {}) {
 }
 
 function mockRecordInfo(response: () => Response = () => HttpResponse.json(recordInfoResponse())): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.get("/workspace/getRecordInformation", ({ request }) => {
-      requests.push(request);
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("get", "/workspace/getRecordInformation", response);
 }
+
+// Most tests just need the default success response; this satisfies that
+// case for free, and tests wanting an error or a different payload override
+// it with their own `mockRecordInfo(...)` call (MSW checks the most recently
+// registered handler first, so the override takes precedence).
+let requests: Request[] = [];
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  requests = mockRecordInfo();
+});
+
+afterEach(cleanup);
 
 function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
   // The dialog relies on an ancestor QueryClient (App.tsx provides one in the
@@ -92,8 +92,6 @@ async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<type
 
 describe("ElnRecordInfoDialog", () => {
   it("fetches record information using the numeric id derived from the global id", async () => {
-    const requests = mockRecordInfo();
-
     renderDialog();
 
     await waitFor(() => {
@@ -116,8 +114,6 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("does not send a version param when the link is not pinned", async () => {
-    const requests = mockRecordInfo();
-
     renderDialog({ globalId: "SD123" });
 
     await waitFor(() => {
@@ -127,8 +123,6 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("renders the DocumentSections body for an SD target", async () => {
-    mockRecordInfo();
-
     renderDialog({ globalId: "SD123" });
 
     const body = await screen.findByTestId("document-sections");
@@ -221,8 +215,6 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("links the Open button to /globalId/<globalId> in a new tab", async () => {
-    mockRecordInfo();
-
     renderDialog({ globalId: "SD123" });
 
     const openLink = await screen.findByRole("link", { name: "common:actions.open" });
@@ -243,8 +235,6 @@ describe("ElnRecordInfoDialog", () => {
     // a deleted ELN record only routes to an error page, so the dialog drops
     // Open; deleted Inventory targets (still viewable in the trash) keep theirs,
     // but they render through InventoryInfoDialog, which has no Open button
-    mockRecordInfo();
-
     renderDialog({ globalId: "SD123", targetDeleted: true });
 
     // the dialog still renders (Close present), but there is no Open affordance
@@ -255,8 +245,6 @@ describe("ElnRecordInfoDialog", () => {
   it("hides the Open button when the ELN target is not readable (no access)", async () => {
     // an unreadable ELN target (shared then unshared) routes only to an error
     // page, so Open is dropped for the same reason as a deleted target
-    mockRecordInfo();
-
     renderDialog({ globalId: "SD123", noAccess: true });
 
     await screen.findByRole("button", { name: "common:actions.close" });
