@@ -1,6 +1,18 @@
 {
   "api": {
     "errors": {
+      "authentication": {
+        "accountDisabled": "Api access denied as account for user ''{0}'', who is associated with provided authentication token, is locked or disabled",
+        "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+        "apiKeyInvalid": "API key invalid - must match regexp:{0}",
+        "apiKeyMissing": "API key is missing - please include your apiKey as a header in format ''apiKey:myAPikey''.",
+        "credentialsMissing": "API authentication information is missing - please include your apiKey as a header in the format ''apiKey:myAPikey'' or with OAuth in the format ''Authorization: Bearer <myAccessToken>''.",
+        "oauthHeaderInvalid": "Authorization header for OAuth must be in the form \"Bearer <myAccessToken>\"",
+        "oauthTokenInvalid": "OAuth token is invalid or expired.",
+        "tokenUnknown": "User could not be authenticated for token {0}...",
+        "userApiDisabled": "Access to API has been disabled for user ''{0}''",
+        "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
+      },
       "detected": "Errors detected : {0}"
     },
     "pubchem": {
@@ -41,11 +53,13 @@
         "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
         "retrieveJobById": "Retrieving job by id"
       },
+      "apiError": "Authorisation error",
       "audit": {
         "community": "Unauthorized attempt to audit a community",
         "groupOrCommunity": "Unauthorized attempt to audit a group or community"
       },
       "communityAddGroup": "Unauthorized attempt to add group to community",
+      "formIconUpdate": "Unauthorized attempt to update form icon",
       "document": {
         "signed": "This document has already been signed."
       },
@@ -58,7 +72,8 @@
       "signing": "Only the  record owner can sign the record.",
       "sysadminApiOnly": "Only sysadmin can use this API",
       "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
-      "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations"
+      "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
+      "userCreationSysadminOnly": "Creating user accounts requires a sysadmin role"
     },
     "captcha": {
       "response": {

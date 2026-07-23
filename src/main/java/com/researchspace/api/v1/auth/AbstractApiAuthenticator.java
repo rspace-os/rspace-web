@@ -42,8 +42,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
 
     if (!userOpt.isPresent()) {
       throw new ApiAuthenticationException(
-          String.format(
-              "User could not be authenticated for token %s...", abbreviate(accessToken, 4)));
+          "api.errors.authentication.tokenUnknown", abbreviate(accessToken, 4));
     }
 
     User targetUser = userOpt.get();
@@ -106,10 +105,7 @@ abstract class AbstractApiAuthenticator implements ApiAuthenticator {
   private void assertLoginAllowed(User user) {
     if (user.isLoginDisabled()) {
       throw new ApiAuthenticationException(
-          String.format(
-              "Api access denied as account for user '%s', who is associated with provided "
-                  + "authentication token, is locked or disabled",
-              user.getUsername()));
+          "api.errors.authentication.accountDisabled", user.getUsername());
     }
   }
 }

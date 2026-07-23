@@ -103,7 +103,7 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
     ExportSelection exportSelection = checkGlobalPermissions(internalConfig, clientCfg, apiClient);
     checkQueue(internalConfig, clientCfg, apiClient);
     if (!diskSpaceChecker.canStartArchiveProcess()) {
-      throw new IllegalStateException("Insufficient disk space to begin export");
+      throw new IllegalStateException(messages.getMessage("export.errors.insufficientDiskSpace"));
     }
     return checkItemPermissions(internalConfig, apiClient, exportSelection);
   }
@@ -149,7 +149,7 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
     boolean alreadyRunning =
         executions.stream().anyMatch(e -> runningExecutionsForUser(apiClient, e));
     if (alreadyRunning) {
-      throw new TooManyRequestsException("There is already a running export job");
+      throw new TooManyRequestsException(messages.getMessage("export.errors.alreadyRunning"));
     }
   }
 
@@ -194,13 +194,12 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
     } else if (ExportScope.SELECTION.equals(internalConfig.getExportScope())) {
       Set<Long> selections = clientCfg.getSelections();
       if (selections.isEmpty()) {
-        throw new IllegalArgumentException("Please include one or more IDs to export");
+        throw new IllegalArgumentException(messages.getMessage("export.errors.selectionRequired"));
       }
       if (selections.size() > MAX_IDS_ALLOWED) {
         throw new IllegalArgumentException(
-            String.format(
-                "Maximum number of Ids to export is %d, request contains %d Ids",
-                MAX_IDS_ALLOWED, selections.size()));
+            messages.getMessage(
+                "export.errors.selectionLimit", new Object[] {MAX_IDS_ALLOWED, selections.size()}));
       }
       // may be empty if no matching ids
       List<RSpaceDocView> recordViews = recMgr.getAllFrom(selections);

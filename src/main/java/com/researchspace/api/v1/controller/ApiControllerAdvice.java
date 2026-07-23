@@ -43,10 +43,13 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   // 401
   @ExceptionHandler({AuthorizationException.class, ApiAuthenticationException.class})
   public ResponseEntity<Object> handleAuth(final Exception ex, final WebRequest request) {
-    final String error = "Authorisation error";
+    final String error = messages.getMessage("errors.authorization.apiError");
+    final String message =
+        ex instanceof ApiAuthenticationException authException
+            ? messages.getMessage(authException.getMessageKey(), authException.getArgs())
+            : ex.getLocalizedMessage();
     final ApiError apiError =
-        new ApiError(
-            HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), ex.getLocalizedMessage(), error);
+        new ApiError(HttpStatus.UNAUTHORIZED, ApiErrorCodes.AUTH.getCode(), message, error);
     return new ResponseEntity<Object>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 
@@ -160,7 +163,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   @ExceptionHandler({ExportFailureException.class})
   public ResponseEntity<Object> handleUnsupported(
       final ExportFailureException ex, final WebRequest request) {
-    return handle500Error(ex, ApiErrorCodes.BATCH_LAUNCH, "Export batch job launch failure");
+    return handle500Error(
+        ex, ApiErrorCodes.BATCH_LAUNCH, messages.getMessage("export.errors.batchLaunchFailure"));
   }
 
   @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -181,7 +185,8 @@ public class ApiControllerAdvice extends RestControllerAdvice {
   public ResponseEntity<Object> handleChemistryClientException(
       ChemistryClientException ex, WebRequest request) {
     HttpStatus status = ex.getStatus() != null ? ex.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
-    ApiError apiError = new ApiError(status, 50001, ex.getMessage(), "");
+    String resolvedMessage = messages.getMessage(ex.getMessageKey(), ex.getArgs());
+    ApiError apiError = new ApiError(status, 50001, resolvedMessage, "");
     return new ResponseEntity<>(apiError, new HttpHeaders(), apiError.getStatus());
   }
 

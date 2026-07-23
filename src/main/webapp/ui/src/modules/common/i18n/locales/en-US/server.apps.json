@@ -190,9 +190,17 @@
   },
   "oauth": {
     "errors": {
+      "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+      "authenticationDisabled": "OAuth authentication has been disabled by RSpace administrator.",
+      "clientIdRequired": "Parameter client_id must be present!",
+      "clientSecretRequired": "Parameter client_secret must be present!",
+      "invalidCredentials": "Invalid user credentials.",
       "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
       "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
-      "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time."
+      "tokenCreationFailed": "OAuth token could not be created.",
+      "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
+      "userApiAccessDisabled": "User ''{0}'' doesn't have access to API",
+      "userLockedOrDisabled": "User ''{0}'' has their account locked or disabled."
     }
   },
   "external": {

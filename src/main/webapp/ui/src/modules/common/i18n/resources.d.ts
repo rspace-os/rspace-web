@@ -5180,9 +5180,17 @@ export default interface Resources {
     },
     "oauth": {
       "errors": {
+        "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+        "authenticationDisabled": "OAuth authentication has been disabled by RSpace administrator.",
+        "clientIdRequired": "Parameter client_id must be present!",
+        "clientSecretRequired": "Parameter client_secret must be present!",
+        "invalidCredentials": "Invalid user credentials.",
         "passwordGrantMissingCredentials": "Password grant requires parameters `username` and `password` to be present.",
         "refreshGrantMissingToken": "Refresh grant requires parameter `refresh_token` to be present.",
-        "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time."
+        "tokenCreationFailed": "OAuth token could not be created.",
+        "unsupportedGrantType": "Only password grant and token refresh is supported for OAuth at this time.",
+        "userApiAccessDisabled": "User ''{0}'' doesn't have access to API",
+        "userLockedOrDisabled": "User ''{0}'' has their account locked or disabled."
       }
     },
     "repository": {
@@ -5205,6 +5213,18 @@ export default interface Resources {
   "server.core": {
     "api": {
       "errors": {
+        "authentication": {
+          "accountDisabled": "Api access denied as account for user ''{0}'', who is associated with provided authentication token, is locked or disabled",
+          "apiDisabled": "Access to API has been disabled by RSpace administrator.",
+          "apiKeyInvalid": "API key invalid - must match regexp:{0}",
+          "apiKeyMissing": "API key is missing - please include your apiKey as a header in format ''apiKey:myAPikey''.",
+          "credentialsMissing": "API authentication information is missing - please include your apiKey as a header in the format ''apiKey:myAPikey'' or with OAuth in the format ''Authorization: Bearer <myAccessToken>''.",
+          "oauthHeaderInvalid": "Authorization header for OAuth must be in the form \"Bearer <myAccessToken>\"",
+          "oauthTokenInvalid": "OAuth token is invalid or expired.",
+          "tokenUnknown": "User could not be authenticated for token {0}...",
+          "userApiDisabled": "Access to API has been disabled for user ''{0}''",
+          "userOAuthDisabled": "Access through OAuth tokens has been disabled for user ''{0}''"
+        },
         "detected": "Errors detected : {0}"
       },
       "pubchem": {
@@ -5242,6 +5262,7 @@ export default interface Resources {
           "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
           "retrieveJobById": "Retrieving job by id"
         },
+        "apiError": "Authorisation error",
         "audit": {
           "community": "Unauthorized attempt to audit a community",
           "groupOrCommunity": "Unauthorized attempt to audit a group or community"
@@ -5255,11 +5276,13 @@ export default interface Resources {
           "detailed": "Unauthorized attempt by {0} to {1}",
           "polite": "Sorry, you don''t have permission to {0}"
         },
+        "formIconUpdate": "Unauthorized attempt to update form icon",
         "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
         "signing": "Only the  record owner can sign the record.",
         "sysadminApiOnly": "Only sysadmin can use this API",
         "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
-        "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations"
+        "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations",
+        "userCreationSysadminOnly": "Creating user accounts requires a sysadmin role"
       },
       "captcha": {
         "response": {
@@ -5823,6 +5846,8 @@ export default interface Resources {
           "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
           "noFilestoreLinks": ". No filestore links were included",
           "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
+          "removalPolicyNever": "This archive will never be removed.",
+          "removalPolicyNow": "This archive is now eligible for removal.",
           "skippedLinks": ".<br/><br/>{0, plural, one {# filestore link was not included} other {# filestore links were not included}}"
         },
         "message": {
@@ -5948,8 +5973,13 @@ export default interface Resources {
         }
       },
       "errors": {
+        "alreadyRunning": "There is already a running export job",
         "archiveFolderCreationFailed": "Could not create archive folder",
+        "batchLaunchFailure": "Export batch job launch failure",
+        "insufficientDiskSpace": "Insufficient disk space to begin export",
         "launchFailed": "couldn't launch export job",
+        "selectionLimit": "Maximum number of Ids to export is {0}, request contains {1} Ids",
+        "selectionRequired": "Please include one or more IDs to export",
         "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
       },
       "global": {
@@ -8998,10 +9028,18 @@ export default interface Resources {
     "errors": {
       "chemistry": {
         "clearIndexesFailed": "Chemistry service couldn't clear search indexes.",
+        "clearIndexesRequestFailed": "Unsuccessful request to clear chemistry search indexes, status code: {0}.",
+        "conversionRequestFailed": "Unsuccessful conversion request to the chemistry service, status code: {0}.",
         "convertFailed": "Chemistry service couldn't convert the chemical.",
         "imageExportFailed": "Chemistry service couldn't generate the image for the chemical.",
+        "imageExportRequestFailed": "Unsuccessful image export request to the chemistry service, status code: {0}.",
+        "indexingFailed": "Chemistry service couldn't start search indexing.",
+        "indexingRequestFailed": "Unsuccessful chemistry search indexing request, status code: {0}.",
+        "requestRejected": "Chemistry service could not process the request.",
         "saveFailed": "Chemistry service couldn't save the chemical.",
+        "saveRequestFailed": "Unsuccessful save request to the chemistry service, status code: {0}.",
         "searchFailed": "Chemistry service unable to search for the chemical.",
+        "searchRequestFailed": "Unsuccessful search request to the chemistry service, status code: {0}.",
         "serviceCallFailed": "Chemistry service call failed"
       },
       "stoichiometry": {
@@ -9108,6 +9146,7 @@ export default interface Resources {
         "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
         "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
         "infoUnauthorized": "Unauthorized attempt to get form info",
+        "notEditable": "Cannot edit this form: {0}",
         "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
         "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
         "systemFormUnpublish": "Attempted to unpublish a system form",

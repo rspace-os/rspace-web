@@ -23,11 +23,9 @@ public class ApiKeyAuthenticator extends AbstractApiAuthenticator {
   String retrieveTokenFromHeader(HttpServletRequest request) {
     String apiKey = request.getHeader("apiKey");
     if (isEmpty(apiKey)) {
-      throw new ApiAuthenticationException(
-          "API key is missing - please include your apiKey as a header in format"
-              + " 'apiKey:myAPikey'.");
+      throw new ApiAuthenticationException("api.errors.authentication.apiKeyMissing");
     } else if (!apiKey.matches(APIKEY_REGEX)) {
-      throw new ApiAuthenticationException("API key invalid - must match regexp:" + APIKEY_REGEX);
+      throw new ApiAuthenticationException("api.errors.authentication.apiKeyInvalid", APIKEY_REGEX);
     }
 
     return apiKey;

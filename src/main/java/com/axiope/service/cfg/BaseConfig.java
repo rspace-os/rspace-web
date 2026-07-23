@@ -98,7 +98,6 @@ import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
-import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.PiChangeHandler;
 import com.researchspace.service.PostAnyLoginAction;
 import com.researchspace.service.PostFirstLoginAction;
@@ -646,8 +645,8 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public ExportRemovalPolicy exportRemovalPolicy(MessageSourceUtils messages) {
-    return new TimeLimitedExportRemovalPolicy(messages);
+  public ExportRemovalPolicy exportRemovalPolicy() {
+    return new TimeLimitedExportRemovalPolicy();
   }
 
   @Bean
@@ -1392,16 +1391,16 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public ChemistryProvider chemistryProvider(MessageSourceUtils messageSourceUtils) {
+  public ChemistryProvider chemistryProvider() {
     if (chemistryProvider.equals("indigo")) {
-      return new IndigoChemistryProvider(chemistryServiceClient(messageSourceUtils));
+      return new IndigoChemistryProvider(chemistryServiceClient());
     }
     return new DefaultChemistryProvider();
   }
 
   @Bean
-  public ChemistryClient chemistryServiceClient(MessageSourceUtils messageSourceUtils) {
-    return new ChemistryClient(restTemplate(), messageSourceUtils);
+  public ChemistryClient chemistryServiceClient() {
+    return new ChemistryClient(restTemplate());
   }
 
   @Bean

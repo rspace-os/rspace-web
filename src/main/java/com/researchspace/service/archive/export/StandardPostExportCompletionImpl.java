@@ -104,7 +104,10 @@ public class StandardPostExportCompletionImpl implements PostArchiveCompletion {
     config.put("name", name);
     config.put("size", fileSize);
     config.put("exportedRecordsSummary", getExportedRecordsSummary(expCfg, result));
-    config.put("removalPolicyMessage", removalPolicy.getRemovalCircumstancesMsg());
+    ExportRemovalPolicy.RemovalCircumstancesMessage removalMessage =
+        removalPolicy.getRemovalCircumstancesMessage();
+    config.put(
+        "removalPolicyMessage", messages.format(removalMessage.key(), removalMessage.arguments()));
     config.put("msg", messages);
     String msg =
         VelocityEngineUtils.mergeTemplateIntoString(

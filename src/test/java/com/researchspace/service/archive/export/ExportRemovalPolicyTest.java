@@ -1,5 +1,6 @@
 package com.researchspace.service.archive.export;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -20,5 +21,11 @@ public class ExportRemovalPolicyTest {
   public void testConstantPolicies() {
     assertTrue(ExportRemovalPolicy.TRUE.removeExport(TestFactory.createAnArchivalChecksum()));
     assertFalse(ExportRemovalPolicy.FALSE.removeExport(TestFactory.createAnArchivalChecksum()));
+    assertEquals(
+        "email.notification.exportCompleteNotification.removalPolicyNow",
+        ExportRemovalPolicy.TRUE.getRemovalCircumstancesMessage().key());
+    assertEquals(
+        "email.notification.exportCompleteNotification.removalPolicyNever",
+        ExportRemovalPolicy.FALSE.getRemovalCircumstancesMessage().key());
   }
 }

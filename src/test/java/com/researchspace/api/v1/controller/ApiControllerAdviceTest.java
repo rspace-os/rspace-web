@@ -3,11 +3,13 @@ package com.researchspace.api.v1.controller;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.researchspace.api.v1.auth.ApiAuthenticationException;
 import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.BindErrorList;
 import com.researchspace.service.FilestoreOperationForbiddenException;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.chemistry.ChemistryClientException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -67,5 +69,32 @@ class ApiControllerAdviceTest {
             new FilestoreOperationForbiddenException("not your file"), null);
 
     assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+  }
+
+  @Test
+  void chemistryMessageIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+    ChemistryClientException exception =
+        new ChemistryClientException("errors.chemistry.searchRequestFailed", new Object[] {503});
+
+    ResponseEntity<Object> response = advice.handleChemistryClientException(exception, null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals(
+        "Unsuccessful search request to the chemistry service, status code: 503.",
+        error.getMessage());
+  }
+
+  @Test
+  void authenticationMessageIsResolvedAtApiBoundary() {
+    ApiControllerAdvice advice = new ApiControllerAdvice();
+    advice.messages = new MessageSourceUtils(new JsonMessageSource());
+
+    ResponseEntity<Object> response =
+        advice.handleAuth(new ApiAuthenticationException("oauth.errors.invalidCredentials"), null);
+
+    ApiError error = (ApiError) response.getBody();
+    assertEquals("Invalid user credentials.", error.getMessage());
   }
 }

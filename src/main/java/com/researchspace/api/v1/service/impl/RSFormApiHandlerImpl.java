@@ -58,7 +58,8 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
     // validate can edit
     if (!tempForm.getEditStatus().isEditable()) {
       throw new IllegalStateException(
-          String.format("Cannot edit this form: %s", tempForm.getEditStatus().name()));
+          messages.getMessage(
+              "form.errors.notEditable", new Object[] {tempForm.getEditStatus().name()}));
     }
 
     List<Long> orderedTmpIds =
@@ -147,13 +148,15 @@ public class RSFormApiHandlerImpl implements RSFormApiHandler {
   public AbstractForm saveImage(MultipartFile file, Long formId, User user) throws IOException {
     RSForm form = formMgr.get(formId, user);
     if (!permissionUtils.isPermitted(form, PermissionType.WRITE, user)) {
-      throw new AuthorizationException("Unauthorized attempt to update form icon");
+      throw new AuthorizationException(messages.getMessage("errors.authorization.formIconUpdate"));
     }
     Optional<BufferedImage> img =
         getBufferedImageFromUploadedFile(new SpringMultipartFileAdapter(file));
     if (!img.isPresent()) {
       throw new IllegalArgumentException(
-          String.format("Couldn't parse file [%s] as an image.", file.getOriginalFilename()));
+          messages.getMessage(
+              "inventory.errors.icon.imageParseFailure",
+              new Object[] {file.getOriginalFilename()}));
     }
     String suffix = getExtension(file.getOriginalFilename());
     IconEntity ice = IconEntity.createIconEntityFromImage(formId, img.get(), suffix);

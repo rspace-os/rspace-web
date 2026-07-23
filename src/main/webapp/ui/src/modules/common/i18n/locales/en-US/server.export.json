@@ -100,8 +100,13 @@
       }
     },
     "errors": {
+      "alreadyRunning": "There is already a running export job",
       "archiveFolderCreationFailed": "Could not create archive folder",
+      "batchLaunchFailure": "Export batch job launch failure",
+      "insufficientDiskSpace": "Insufficient disk space to begin export",
       "launchFailed": "couldn't launch export job",
+      "selectionLimit": "Maximum number of Ids to export is {0}, request contains {1} Ids",
+      "selectionRequired": "Please include one or more IDs to export",
       "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
     },
     "global": {

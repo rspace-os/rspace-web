@@ -9,6 +9,8 @@
         "moreDetails": "More details are available on the <a href=\"{0}\">export report page</a>.",
         "noFilestoreLinks": ". No filestore links were included",
         "removalPolicyAfterHours": "{0, plural, one {The export will be eligible for deletion after # hour.} other {The export will be eligible for deletion after # hours.}}",
+        "removalPolicyNever": "This archive will never be removed.",
+        "removalPolicyNow": "This archive is now eligible for removal.",
         "skippedLinks": ".<br/><br/>{0, plural, one {# filestore link was not included} other {# filestore links were not included}}"
       },
       "message": {

@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import com.researchspace.model.ArchivalCheckSum;
 import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageSourceUtils;
+import com.researchspace.service.archive.export.ExportRemovalPolicy.RemovalCircumstancesMessage;
 import com.researchspace.testutils.TestFactory;
 import java.util.Date;
 import org.junit.After;
@@ -20,7 +21,7 @@ public class TimeLimitedExportRemovealPolicyTest {
 
   @Before
   public void setUp() throws Exception {
-    policy = new TimeLimitedExportRemovalPolicy(new MessageSourceUtils(new JsonMessageSource()));
+    policy = new TimeLimitedExportRemovalPolicy();
   }
 
   @After
@@ -66,14 +67,17 @@ public class TimeLimitedExportRemovealPolicyTest {
 
   @Test
   public void formatsRemovalMessageForSingularAndPluralHours() {
+    MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
     policy.setStorageTime(1);
+    RemovalCircumstancesMessage singular = policy.getRemovalCircumstancesMessage();
     assertEquals(
         "The export will be eligible for deletion after 1 hour.",
-        policy.getRemovalCircumstancesMsg());
+        messages.format(singular.key(), singular.arguments()));
 
     policy.setStorageTime(2);
+    RemovalCircumstancesMessage plural = policy.getRemovalCircumstancesMessage();
     assertEquals(
         "The export will be eligible for deletion after 2 hours.",
-        policy.getRemovalCircumstancesMsg());
+        messages.format(plural.key(), plural.arguments()));
   }
 }

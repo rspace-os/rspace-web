@@ -5,7 +5,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
-import com.researchspace.service.MessageSourceUtils;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +36,10 @@ public class ChemistryClient {
   private String chemistryServiceUrl;
 
   private final RestTemplate restTemplate;
-  private final MessageSourceUtils messages;
 
   @Autowired
-  public ChemistryClient(RestTemplate restTemplate, MessageSourceUtils messages) {
+  public ChemistryClient(RestTemplate restTemplate) {
     this.restTemplate = restTemplate;
-    this.messages = messages;
   }
 
   public String convert(String chemical, String inputFormat, String outputFormat) {
@@ -60,16 +58,14 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful conversion with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful conversion request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.conversionRequestFailed", new Object[] {responseStatus.value()});
       }
       return response.getBody();
 
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service converting the chemical at {}: {}", url, e.getMessage());
-      throw new ChemistryClientException(messages.getMessage("errors.chemistry.convertFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.convertFailed", e);
     }
   }
 
@@ -100,10 +96,10 @@ public class ChemistryClient {
           errorReason,
           e);
 
-      throw new ChemistryClientException(errorReason, status, e);
+      throw new ChemistryClientException("errors.chemistry.requestRejected", status, e);
     } catch (RestClientException e) {
       log.error("Error calling chemistry service at url={} requestBody={}", url, body, e);
-      throw new ChemistryClientException(messages.getMessage("errors.chemistry.serviceCallFailed"));
+      throw new ChemistryClientException("errors.chemistry.serviceCallFailed");
     }
   }
 
@@ -147,16 +143,13 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful image export with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful image export request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.imageExportRequestFailed", new Object[] {responseStatus.value()});
       }
       return response.getBody();
 
     } catch (RestClientException e) {
       log.warn("Problem with chemistry service exporting image at {}: {}", url, e.getMessage());
-      throw new ChemistryClientException(
-          messages.getMessage("errors.chemistry.imageExportFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.imageExportFailed", e);
     }
   }
 
@@ -178,9 +171,7 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful saving with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful save request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.saveRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
@@ -188,7 +179,7 @@ public class ChemistryClient {
           chemicalId,
           url,
           e.getMessage());
-      throw new ChemistryClientException(messages.getMessage("errors.chemistry.saveFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.saveFailed", e);
     }
   }
 
@@ -209,13 +200,13 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful searching with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful search request to the chemistry service, status code: %d.",
-                responseStatus.value()));
+            "errors.chemistry.searchRequestFailed", new Object[] {responseStatus.value()});
       }
+      List<String> responseBody =
+          Optional.ofNullable(response.getBody()).orElseGet(Collections::emptyList);
       return ChemicalSearchResultsDTO.builder()
           .chemicalHits(
-              response.getBody().stream()
+              responseBody.stream()
                   .map(
                       str -> {
                         try {
@@ -226,7 +217,7 @@ public class ChemistryClient {
                       })
                   .filter(Objects::nonNull)
                   .collect(Collectors.toList()))
-          .totalHits(response.getBody() == null ? 0 : response.getBody().size())
+          .totalHits(responseBody.size())
           .build();
 
     } catch (RestClientException e) {
@@ -234,7 +225,7 @@ public class ChemistryClient {
           "Problem with chemistry service searching for the chemical at {}: {}",
           url,
           e.getMessage());
-      throw new ChemistryClientException(messages.getMessage("errors.chemistry.searchFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.searchFailed", e);
     }
   }
 
@@ -247,16 +238,12 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful clearSearchIndexes request to the chemistry service, status code:"
-                    + " %d.",
-                responseStatus.value()));
+            "errors.chemistry.clearIndexesRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service clearing search indexes at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException(
-          messages.getMessage("errors.chemistry.clearIndexesFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.clearIndexesFailed", e);
     }
   }
 
@@ -269,16 +256,12 @@ public class ChemistryClient {
       if (!responseStatus.is2xxSuccessful()) {
         log.warn("Unsuccessful call with url: " + url + ", code " + responseStatus.value());
         throw new ChemistryClientException(
-            String.format(
-                "Unsuccessful callFastSearchIndexing request to the chemistry service, status code:"
-                    + " %d.",
-                responseStatus.value()));
+            "errors.chemistry.indexingRequestFailed", new Object[] {responseStatus.value()});
       }
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service  fast search indexing at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException(
-          messages.getMessage("errors.chemistry.clearIndexesFailed"), e);
+      throw new ChemistryClientException("errors.chemistry.indexingFailed", e);
     }
   }
 }

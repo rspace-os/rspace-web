@@ -247,10 +247,18 @@
   "errors": {
     "chemistry": {
       "clearIndexesFailed": "Chemistry service couldn't clear search indexes.",
+      "clearIndexesRequestFailed": "Unsuccessful request to clear chemistry search indexes, status code: {0}.",
       "convertFailed": "Chemistry service couldn't convert the chemical.",
+      "conversionRequestFailed": "Unsuccessful conversion request to the chemistry service, status code: {0}.",
       "imageExportFailed": "Chemistry service couldn't generate the image for the chemical.",
+      "imageExportRequestFailed": "Unsuccessful image export request to the chemistry service, status code: {0}.",
+      "indexingFailed": "Chemistry service couldn't start search indexing.",
+      "indexingRequestFailed": "Unsuccessful chemistry search indexing request, status code: {0}.",
+      "requestRejected": "Chemistry service could not process the request.",
       "saveFailed": "Chemistry service couldn't save the chemical.",
+      "saveRequestFailed": "Unsuccessful save request to the chemistry service, status code: {0}.",
       "searchFailed": "Chemistry service unable to search for the chemical.",
+      "searchRequestFailed": "Unsuccessful search request to the chemistry service, status code: {0}.",
       "serviceCallFailed": "Chemistry service call failed"
     },
     "stoichiometry": {
@@ -335,6 +343,7 @@
       "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
       "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
       "infoUnauthorized": "Unauthorized attempt to get form info",
+      "notEditable": "Cannot edit this form: {0}",
       "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
       "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
       "systemFormUnpublish": "Attempted to unpublish a system form",
