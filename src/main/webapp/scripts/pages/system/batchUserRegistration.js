@@ -1,8 +1,8 @@
 $(document).ready(function() {
-
+    
     $(document).on('click', '#batchUserRegistrationButton', function(e) {
         e.preventDefault();
-
+        
         var jqxhr = $.get("/system/ajax/batchUserRegistration");
         jqxhr.done(function(data) {
             $('#buttonDescriptions').html(data);
@@ -11,7 +11,7 @@ $(document).ready(function() {
             RS.ajaxFailed(RS.msg("legacyjs.system.batchUserRegistration.gettingPageAction"), false, jqxhr);
         });
     });
-
+    
     if (typeof ldapEnabled != 'undefined') {
         RS.addOnEnterHandlerToDocument('.batchUsernameInput', function(e){
             var username = this.value;
@@ -26,23 +26,23 @@ $(document).ready(function() {
             }
         });
     }
-
+    
     $(document).on('click', '#batchManualInput', function() {
         $('#chooseInputModeDiv').hide();
         $('#batchCreateForm').show();
         $('#manualRegistrationTablesHelpText').show();
     });
-
+    
     $(document).on('click', '#batchCSVInput', function() {
         $('#chooseInputModeDiv').hide();
         $('#csvInputContent').show();
     });
-
+    
     $(document).on('click', '#csvParseInputContentBtn', function() {
         var jqxhr = submitBatchCsvInput();
         addCsvUploadHandlers(jqxhr);
     });
-
+    
     $(document).on('click', '#csvUploadBtn', function (e){
         e.preventDefault();
         $('#batchUploadUserDlg').dialog('open');
@@ -102,21 +102,21 @@ $(document).ready(function() {
     function submitBatchCsvInput() {
 
         var input = $('#csvInputContentArea').val();
-
+        
         RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.uploading"));
         var jqxhr = $.post("/system/userRegistration/parseInputString",
                     {usersAndGroupsCsvFormat : input});
-
+        
         jqxhr.always(function() {
             RS.unblockPage();
         });
-
+        
         clearServerMessageAreas();
         return jqxhr;
-    }
-
+    } 
+    
     function submitBatchCsvFile(url) {
-
+ 
         RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.uploading"));
 
         var data = new FormData($('#csvUploadForm')[0]);
@@ -132,7 +132,7 @@ $(document).ready(function() {
         jqxhr.always(function() {
             RS.unblockPage();
         });
-
+        
         clearServerMessageAreas();
         return jqxhr;
     }
@@ -144,7 +144,7 @@ $(document).ready(function() {
                 $().toastmessage('showErrorToast', RS.msg("legacyjs.system.batchUserRegistration.errorsInCsvContent"));
                 displayServerMessages($("#batchServerErrorMsgs"), result.errors.errorMessages);
                 return;
-            }
+            } 
             $().toastmessage('showSuccessToast', RS.msg("legacyjs.system.batchUserRegistration.csvContentLoadedFine"));
             $('#csvInputContent').slideUp();
             displayUserImportResults(result);
@@ -158,20 +158,20 @@ $(document).ready(function() {
                 serverErrors && serverErrors.length ? serverErrors : [ RS.msg("legacyjs.system.batchUserRegistration.couldNotProcessCsvUpload") ]);
         });
     }
-
+    
     function displayUserImportResults(results) {
 
         var users = results.parsedUsers;
         var groups = results.parsedGroups;
         var communities = results.parsedCommunities;
-
+        
         $('#batchCreateForm').show();
         $('#csvInputTablesHelpText').show();
 
         addImportResultsToBatchTable(users, getBatchUserRowTemplate(), $('#usersToCreateTableBody'));
         addImportResultsToBatchTable(groups, getBatchGroupRowTemplate(), $('#groupsToCreateTableBody'));
         addImportResultsToBatchTable(communities, getBatchCommunityRowTemplate(), $('#communitiesToCreateTableBody'));
-
+        
         toggleTables();
     }
 
@@ -180,7 +180,7 @@ $(document).ready(function() {
             addBatchTableRow($tableBody, rowTemplate, entity);
         });
     }
-
+    
     function toggleTables() {
         var $userRows = $('#usersToCreateTableBody tr');
         var $groupRows = $('#groupsToCreateTableBody tr');
@@ -189,10 +189,10 @@ $(document).ready(function() {
         $('#usersToCreate').toggle($userRows.size() > 0);
         $('#groupsToCreate').toggle($groupRows.size() > 0);
         $('#communitiesToCreate').toggle($communityRows.size() > 0);
-
+        
         toggleCreateAllButton();
     }
-
+    
     function toggleCreateAllButton(andOtherCreateButtons) {
         var show = false;
         $('#usersToCreateTableBody tr, #groupsToCreateTableBody tr, #communitiesToCreateTableBody tr')
@@ -209,11 +209,11 @@ $(document).ready(function() {
             $('#addBatchUserLnk, #addBatchGroupLnk, #addBatchCommunityLnk').toggle(show);
         }
     }
-
+    
     function getBatchUserRowTemplate() {
         return $('#userToCreateRowTemplate table tbody').html();
     }
-
+    
     function getBatchGroupRowTemplate() {
         return $('#groupToCreateRowTemplate table tbody').html();
     }
@@ -223,11 +223,11 @@ $(document).ready(function() {
     }
 
     $(document).on('click', '#addBatchUserLnk', function() {
-        addBatchTableRow($('#usersToCreateTableBody'), getBatchUserRowTemplate(), {});
+        addBatchTableRow($('#usersToCreateTableBody'), getBatchUserRowTemplate(), {}); 
         toggleTables();
         return false;
     });
-
+    
     $(document).on('click', '#addBatchGroupLnk', function() {
         var group = { uniqueName : "Group" + Math.random().toString(36).slice(-4)};
         addBatchTableRow($('#groupsToCreateTableBody'), getBatchGroupRowTemplate(), group);
@@ -247,19 +247,19 @@ $(document).ready(function() {
         toggleTables();
         return false;
     });
-
+    
     function addBatchTableRow($tableBody, rowTemplate, entity) {
         var rowHtml = Mustache.render(rowTemplate, entity);
 
         if (entity.role) {
             // selecting the role from option list
             rowHtml = rowHtml.replace('value="' + entity.role + '"', 'value="' + entity.role + '" selected ');
-        }
+        }   
         $tableBody.append(rowHtml);
     }
 
     $(document).on('click', '#batchCreateAllBtn', function() {
-        /*
+        /* 
          * adding temporary submit button and clicking it. this is done because html
          * validation is only run after click on submit button within the form, but we
          * don't want a permanent button because it would be triggered after hitting Enter
@@ -267,31 +267,31 @@ $(document).ready(function() {
          */
         $('<input type="submit">').hide().appendTo('#batchCreateForm').click().remove();
     });
-
+    
     $(document).on('submit', '#batchCreateForm', function(e) {
         e.preventDefault();
-
+        
         var toCreateData = getDataFromBatchTables();
         if (!toCreateData) {
             return;
         }
-
+        
         var jqxhr = submitUsersAndGroups(toCreateData);
         addBatchCreationHandlers(jqxhr);
         RS.blockingProgressBar.show({
-	progressType:"rs-userBatchRegistration",
+        	progressType:"rs-userBatchRegistration",
 	msg: RS.msg("legacyjs.system.batchUserRegistration.startingUserCreation")} );
     });
-
+    
     function getDataFromBatchTables() {
         var data = { parsedUsers : [], parsedGroups : [], parsedCommunities : [] };
         var seenUsernames = [];
-
+        
         $('#usersToCreateTableBody tr').each(function(i, row) {
             if ($(row).data('created')) {
-                return;
+                return; 
             }
-
+            
             var user = {};
             $(row).find(':input').each(function(i, input) {
                var fieldName = $(input).data('fieldname');
@@ -301,7 +301,7 @@ $(document).ready(function() {
             user.confirmPassword = user.password;
             data.parsedUsers.push(user);
             seenUsernames.push(user.username);
-
+            
             // setting username on row element so it's easy to find later
             $(row).attr('data-username', user.username);
         });
@@ -312,12 +312,12 @@ $(document).ready(function() {
             applyDuplicatedUsernamesErrorMsg(duplicates);
             return;
         }
-
+        
         $('#groupsToCreateTableBody tr').each(function(i, row) {
             if ($(row).data('created')) {
                 return;
             }
-
+            
             var group = {};
             group.uniqueName = $(row).data('uniquename');
             $(row).find(':input').each(function(i, input) {
@@ -335,7 +335,7 @@ $(document).ready(function() {
             if ($(row).data('created')) {
                 return;
             }
-
+            
             var community = {};
             community.uniqueName = $(row).data('uniquename');
             $(row).find(':input').each(function(i, input) {
@@ -351,27 +351,27 @@ $(document).ready(function() {
 
         return data;
     }
-
+    
     function submitUsersAndGroups(toCreateData) {
-
+        
         RS.blockPage(RS.msg("legacyjs.system.batchUserRegistration.starting"));
         var jqxhr = RS.sendJsonPostRequestToUrl('/system/userRegistration/batchCreate', toCreateData);
         jqxhr.always(function() {
             RS.unblockPage();
         });
-
+        
         clearServerMessageAreas();
         return jqxhr;
     }
-
+    
     function findDuplicatedUsernames(seenUsernames) {
         var sortedUsernames = seenUsernames.sort();
         var duplicates = [];
-
+        
         $.each(sortedUsernames, function(i, name) {
             if (name === sortedUsernames[i-1] && name !== duplicates[duplicates.length-1]) {
                 duplicates.push(name);
-            }
+            } 
         });
         return duplicates;
     }
@@ -389,13 +389,13 @@ $(document).ready(function() {
             if (result.errorMsg) {
                 remainingMsgs = applyServerMsgs(result.errorMsg.errorMessages, applyErrorMsg);
                 displayServerMessages($("#batchServerErrorMsgs"), remainingMsgs);
-            }
+            } 
             if (result.data) {
                 remainingMsgs = applyServerMsgs(result.data, applySuccessMsg);
                 displayServerMessages($("#batchServerSuccessMsgs"), remainingMsgs);
                 toggleCreateAllButton(true);
             }
-
+            
             if (result.errorMsg.errorMessages.length && result.data.length) {
                 $().toastmessage('showNoticeToast', RS.msg("legacyjs.system.batchUserRegistration.completeWithSomeErrors"));
             } else if (result.data.length) {
@@ -420,16 +420,16 @@ $(document).ready(function() {
                msgHandled = msgHandler(msg.substring(2), groupRowLocator);
            } else if (msg.startsWith("C.")) {
                msgHandled = msgHandler(msg.substring(2), communityRowLocator);
-           }
+           } 
            if (!msgHandled) {
                remainingMsgs.push(msg);
            }
         });
         return remainingMsgs;
     }
-
+    
     function applyDuplicatedUsernamesErrorMsg(duplicatedUsernames) {
-
+        
         $.each(duplicatedUsernames, function(i, username) {
             var $userRows = $('#usersToCreateTableBody tr').filter('[data-username="' + username + '"]');
             $userRows.each(function(i, row) {
@@ -463,7 +463,7 @@ $(document).ready(function() {
             console.log('skipping confirmPassword validation error');
             return true;
         }
-
+        
         var $row = rowLocator(uniqueName);
         if ($row.length) {
             addErrorMsgToStatusField($row, message);
@@ -475,7 +475,7 @@ $(document).ready(function() {
     function userRowLocator(username) {
         return $('#usersToCreateTableBody tr').filter('[data-username="' + username + '"]');
     }
-
+    
     function groupRowLocator(uniqueGroupName) {
         return $('#groupsToCreateTableBody tr').filter('[data-uniquename="' + uniqueGroupName + '"]');
     }
@@ -483,7 +483,7 @@ $(document).ready(function() {
     function communityRowLocator(uniqueCommunityName) {
         return $('#communitiesToCreateTableBody tr').filter('[data-uniquename="' + uniqueCommunityName + '"]');
     }
-
+    
     function addErrorMsgToStatusField($row, msg) {
         $row.find('.batchCreateStatus').append('<span class="errorMsg">' + msg + ' </span>');
     }
@@ -506,7 +506,7 @@ $(document).ready(function() {
                 $newField.css('width', thisWidth);
             }
             $newField.addClass('batchFieldCreated');
-            $this.replaceWith($newField);
+            $this.replaceWith($newField); 
         });
         $row.find('.removeBatchRowLnk').hide();
     }
@@ -522,7 +522,7 @@ $(document).ready(function() {
         $msgContainer.html(safeMessages + '<br />');
         $('#batchServerMessagesHeader').show();
     }
-
+    
     function clearServerMessageAreas() {
         $('#batchServerMessagesHeader').hide();
         $('#batchServerErrorMsgs, #batchServerSuccessMsgs, .batchCreateStatus').html('');

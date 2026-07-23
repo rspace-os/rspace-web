@@ -547,7 +547,7 @@ function registerFavoritesRecordsHandler() {
         });
         updateCrudopsMenu();
         RS.confirm(RS.msg("legacyjs.workspace.crudOps.removedFromFavorites", favIds.length), "success", 3000);
-        } else {
+      } else {
         apprise(RS.msg("legacyjs.workspace.crudOps.favoritesIncomplete", getValidationErrorString(result.errorMsg)));
       }
     }).fail(function () {

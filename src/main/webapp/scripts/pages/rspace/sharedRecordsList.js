@@ -88,7 +88,7 @@ $(document).ready(function (){
 		displayData(settings.searchTerm);
 	});
 
-	$(document).on("click", "#resetSearch", function(e) {
+ 	$(document).on("click", "#resetSearch", function(e) {
 		if (!settings.searchMode) return;
 		document.dispatchEvent(new Event('reset-search-input'));
 		RS.blockPage(RS.msg("legacyjs.common.abandoningSearch"), false, $(tableElement));
@@ -107,8 +107,8 @@ $(document).ready(function (){
 			    action: currSelection
 			},
 			function (data) {
-			if (currSelection === 'WRITE') { currSelection = 'EDIT'};
-			$(this).closest('td').html(generateSelectionView(currSelection));
+		    	if (currSelection === 'WRITE') { currSelection = 'EDIT'};
+		    	$(this).closest('td').html(generateSelectionView(currSelection));
 			RS.confirm(RS.msg("legacyjs.sharedRecords.permissionsUpdated"), "success", 3000);
 		    }
 		).always(function(){
@@ -134,9 +134,9 @@ $(document).ready(function (){
 
 		$.post(createURL('/dashboard/ajax/cancelSharedRecordRequest'),
 		data, function (xhr) {
-			var msg = xhr.data.entity;
-			$().toastmessage('showToast', {
-				text     : "<br>" + msg,
+	 		var msg = xhr.data.entity;
+	 		$().toastmessage('showToast', {
+	 			text     : "<br>" + msg,
 				sticky   : false,
 				position : 'top-right',
 				type     : 'notice',
@@ -146,8 +146,8 @@ $(document).ready(function (){
 						window.location.href = createURL('manage');
 					}
 				}
-			});
-		});
+	 		});
+	 	});
 	});
 
 	$(document).on('click', '.recordInfoIcon', function() {
@@ -320,7 +320,7 @@ function insertData(html) {
 			insertData(RS.webResultCache.get(url));
 			RS.unblockPage($(tableElement));
 		} else {
-			jxqr = $.get(url, function (data) {
+		  	jxqr = $.get(url, function (data) {
 				insertAndCache(url, data, 1000 * 30 );
 			}).always(function(){
 				RS.unblockPage($(tableElement));

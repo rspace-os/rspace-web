@@ -26,7 +26,7 @@ $(document).ready(function (){
 		$("#searchModePanel").addClass("searchError").slideDown(fadeTime).find("#resetSearch").hide();
 		$("#formListContainer").find(".panel, .tabularViewBottom").hide();
 	}
-
+	
   setUpContextMenu();
   setupPublishDlg();
 
@@ -36,9 +36,9 @@ $(document).ready(function (){
 	if ($("#resultsPerPage").val().length > 0) {
 		settings.urlParams.resultsPerPage = parseInt($("#resultsPerPage").val());
 	}
-
+	
 	setUpDeleteForm();
-	setUpCopyForm();
+	setUpCopyForm();	
 	setUpPermissionsManage();
 	setUpPublishForm();
 	setUpAddToMenu();
@@ -52,7 +52,7 @@ $(document).ready(function (){
 		var url = createURL(source.attr('id').split("_")[1]);
 		var params = RS.getJsonParamsFromUrl(url);
 		settings.urlParams.pageNumber = params.pageNumber;
-		displayData(settings.searchTerm);
+		displayData(settings.searchTerm);		
 	};
 	RS.setupPagination(paginationEventHandler);
 
@@ -65,7 +65,7 @@ $(document).ready(function (){
 		settings.urlParams.resultsPerPage = $('#numberRecordsId').val();
 		displayData(settings.searchTerm);
 	});
-
+	
 	// Enables/disables the button to apply new value of number of records per page
 	$(document).on('change', '#numberRecordsId', function(e){
 		e.preventDefault();
@@ -87,15 +87,15 @@ $(document).ready(function (){
 		settings.urlParams.pageNumber = 0;
 		settings.urlParams.userFormsOnly = userFormsOnly;
 		displayData(settings.searchTerm);
-
+		
 	});
 
   $(document).on("click", "#resetSearch", function(e) {
-	if (!settings.searchMode) return;
-	document.dispatchEvent(new Event('reset-search-input'));
+  	if (!settings.searchMode) return;
+  	document.dispatchEvent(new Event('reset-search-input'));
 	RS.blockPage(RS.msg("legacyjs.workspace.formList.abandoningSearch"), false, $(tableElement));
-	resetOrdering();
-	displayData("");
+  	resetOrdering();
+  	displayData("");
   });
 
   // Ordering buttons handler
@@ -148,7 +148,7 @@ function displayData(searchTerm) {
 		settings.searchTerm = "";
 		settings.urlParams.pageNumber = 0;
 	}
-
+	
 	// starting search by providing non-empty term
 	if (!settings.searchMode && searchTerm.length > 0) {
 		settings.urlParams.pageNumber = 0;
@@ -169,11 +169,11 @@ function displayData(searchTerm) {
 		toggleFormActions(false);
 		RS.unblockPage($(tableElement));
 	} else {
-		var jxqr = $.get(url, function (data) {
-			insertAndCache(url, data, 1000 * 30 ); // save search data or not?
+	  	var jxqr = $.get(url, function (data) {
+			insertAndCache(url, data, 1000 * 30 ); // save search data or not?				
 		}).always(function(){
 			toggleFormActions(false);
-			RS.unblockPage($(tableElement));
+			RS.unblockPage($(tableElement));				
 		}).fail(function() {
 			var message = (settings.searchMode ? RS.msg("legacyjs.workspace.formList.searchingFormListAction") : RS.msg("legacyjs.workspace.formList.loadingFormsAction"));
 			RS.ajaxFailed(message, false, jxqr);
@@ -188,8 +188,8 @@ function insertAndCache (url, data, expiryMS) {
 
 function setupPublishDlg (){
 	$(document).ready(function() {
-		$('#publishShareDlg').dialog({
-			modal : true,
+		$('#publishShareDlg').dialog({	
+		 	modal : true,
 			autoOpen:false,
 			width: 350,
 			title: RS.msg("legacyjs.workspace.formList.configureAccessTitle"),
@@ -198,14 +198,14 @@ function setupPublishDlg (){
 				[RS.msg("legacyjs.workspace.formList.cancelButton")]: function (){
 					$(this).dialog('close');
 				},
-
+			
 				[RS.msg("legacyjs.workspace.formList.okButton")]: function (){
 
 					// this  dlg is either being called from  'Manager permissions' or 'publish'
 					// and we need to distinguish between them as they use different URLs.
 					var isManaging = $(this).data('manage');
 					var id =$(this).data('id');
-
+					
 					$(this).dialog('close');
 					var form$=$('#rsFormSharingForm');
 					if (isManaging != null){
@@ -215,28 +215,28 @@ function setupPublishDlg (){
 						RS.blockPage(RS.msg("legacyjs.workspace.formList.publishing"), false, $(tableElement));
 					}
 					var data = form$.serialize();
-
+					
 					$.ajax({ url : form$.attr('action'),
 		                type : form$.attr('method'),
 		                dataType: 'json',
 		                data : data,
-		                success : function( response ) {
-			    // if we were publishing, we need to activate the unpublish link
-			    if (isManaging == null){
-					updatePublishingStateText(id, 'PUBLISHED');
+		                success : function( response ) { 
+		            	    // if we were publishing, we need to activate the unpublish link
+		            	    if (isManaging == null){		
+		            			updatePublishingStateText(id, 'PUBLISHED');
 								$('.publish').hide();
 								$('.unpublish').show();
 								_setValueForInputName (id, 'publishingstate', 'PUBLISHED');
-			    } else {
+		            	    } else {
 								var form$=$('#rsFormSharingForm');
-								// make sure to replace URL
+								// make sure to replace URL 
 								form$.attr('action',createURL("/workspace/editor/form/ajax/publishAndShare"));
-			    }
-			},
+		            	    }
+		            	},
 		                error : function( xhr, err ) { alert(RS.msg("legacyjs.workspace.formList.genericError")); }
 		            }).always(function(){
-			RS.unblockPage($(tableElement));
-		            });
+		            	RS.unblockPage($(tableElement));
+		            });					
 				}
 			},
 		});
@@ -261,7 +261,7 @@ function setUpDeleteForm() {
 		}).fail(function (){
 			RS.unblockPage($(tableElement));
 			RS.ajaxFailed(RS.msg("legacyjs.workspace.formList.deleteFormAction"), false, jxqr);
-		});
+		});		
 	});
 	RS.emulateKeyboardClick('.deleteForm');
 }
@@ -303,7 +303,7 @@ function getSelectedIds() {
 
 function setUpPermissionsManage (){
 	$(document).on("click", ".managePermissions", function (e){
-		e.preventDefault();
+		e.preventDefault();	
 		RS.blockPage(RS.msg("legacyjs.workspace.formList.openingPermissionsTools"), false, $(tableElement));
 		var ids = getSelectedIds();
 		var data = {
@@ -333,7 +333,7 @@ function setUpPublishForm(){
 			publish:true,
 			templateId:ids[0]
 		};
-
+	
 		$.get(createURL("/workspace/editor/form/ajax/publishAndShare?templateId="+ids[0]),
 			function (data) {
 				$('#publishShareDlgContent').html(data);
@@ -360,7 +360,7 @@ function setUpAddToMenu (){
 		var jxqr = $.post(createURL("/workspace/editor/form/ajax/menutoggle"),
 			data,
 			function(response) {
-				// toggle menu items
+				// toggle menu items 
 				link$.hide();
 				$('.removeFromMenu').show();
 				_setValueForInputName (ids[0], 'menu', 'true');
@@ -448,10 +448,10 @@ function setUpContextMenu (){
 		}
 		if (numSelectedChkBxes == 1) {
 			$('.single').show();
-			calculateOptionDisplay(selectedChkBxes$);
+			calculateOptionDisplay(selectedChkBxes$);			
 		} else {
 			calculateOptionDisplay(selectedChkBxes$);
-			$('.single').hide();
+			$('.single').hide();			
 		}
 	});
 }
@@ -463,9 +463,9 @@ function calculateOptionDisplay(selectedChkBxes) {
 	var hideAddToMenu = false;
 	var hideRemoveFromMenu = false;
 	var hidePermissions = false;
-
+	
 	selectedChkBxes.each(function() {
-
+	
 		var cbox$ = $(this);
 		var id = cbox$.data('formid');
 		console.log("Del" + _getValueForInputName(id,'deletable') + " pub:" + _getValueForInputName(id,'publishingstate') + ",menu:" +_getValueForInputName(id,'menu') );
@@ -481,7 +481,7 @@ function calculateOptionDisplay(selectedChkBxes) {
 			hidePublish = true;
 		} else if (publishState == 'UNPUBLISHED' || publishState == 'NEW') {
 			hideUnPublish = true;
-		}
+		}  
 		var menuState = _getValueForInputName(id,'menu');
 		if(publishState != 'PUBLISHED') {
 			hideAddToMenu = true;
@@ -490,20 +490,20 @@ function calculateOptionDisplay(selectedChkBxes) {
 			hideAddToMenu = true;
 		} else if (menuState == 'false') {
 			hideRemoveFromMenu = true;
-		}
+		} 
 		if(_getValueForInputName(id,'permissionsedit')=='false') {
 			hidePermissions = true;
-		}
+		} 
 	});
 	if(hideDelete) {
 		$('.deleteForm').hide();
-	}
+	} 
 	if(hidePublish) {
 		$('.publish').hide();
-	}
+	} 
 	if(hideUnPublish) {
 		$('.unpublish').hide();
-	}
+	} 
 	if(hideAddToMenu) {
 		$('.addToMenu').hide();
 	}
@@ -578,11 +578,11 @@ function insertData(html) {
 
 		// RSPAC-1212 Blocking: Setting the height to fit the height of the previously displayed content and the blocking message
 		if ($(tableElement).height() < parseInt(temporaryHeightOfBlockedElement)) {
-			$(tableElement).css({height : temporaryHeightOfBlockedElement});
+			$(tableElement).css({height : temporaryHeightOfBlockedElement});			
 		}
 
 		if (settings.orderByActive) {
-			toggleSortOrder();
+			toggleSortOrder();	
 		}
 	} else {
 		$("#searchModePanel").removeClass("searchSuccess").addClass("searchError");
@@ -596,7 +596,7 @@ function insertData(html) {
 			$("#resetSearch").hide();
 			$("#searchModePanel").slideDown(fadeTime);
 			$("#formListContainer").find(".panel table tbody, .tabularViewBottom").remove();
-		}
+		}		
 	}
 }
 

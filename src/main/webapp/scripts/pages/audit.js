@@ -180,8 +180,8 @@ function _convertAuditTrailResults (xhr){
      		&& result.data.data && result.data.data.data) {
      		var resultObj = result.data.data.data;
      		var desc = "";
-		if(resultObj.exported) { // is an archive operation
-		  if(resultObj.configuration) {
+     		if(resultObj.exported) { // is an archive operation
+     		  if(resultObj.configuration) {
 		    desc = RS.msg(
 		      "legacyjs.audit.itemsExportedWithConfiguration",
 		      resultObj.exported.length,
@@ -190,10 +190,10 @@ function _convertAuditTrailResults (xhr){
 		    );
 		  } else {
 		    desc = RS.msg("legacyjs.audit.itemsExported", resultObj.exported.length);
-		  }
-		} else if (resultObj.scope) {
+     		  }
+     		} else if (resultObj.scope) {
 			desc = RS.msg("legacyjs.audit.itemsExportedAs", resultObj.scope, resultObj.format);
-		}
+     		}
      		result.event.description = desc; 
      	}
      	if( result.data.action ==='MOVE') {
