@@ -65,7 +65,7 @@ class DigitalCommonsDataUIConnectionConfigTest {
         assertThrows(IllegalArgumentException.class, () -> underTest.getRepositoryURL());
 
     assertEquals(
-        "Couldn't create Digital Commons Data repositoryURL unknown protocol: ht",
+        "Couldn't create Digital Commons Data repositoryURL: unknown protocol: ht",
         thrown.getMessage());
   }
 

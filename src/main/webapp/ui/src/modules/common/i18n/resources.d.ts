@@ -5187,7 +5187,7 @@ export default interface Resources {
         "invalidAppId": "Invalid app Id",
         "noUserConnection": "No UserConnection exists for: {0}",
         "unknownIntegration": "Unknown or undefined integration",
-        "urlCreationFailed": "Couldn't create {0} repositoryURL {1}"
+        "urlCreationFailed": "Couldn't create {0} repositoryURL: {1}"
       }
     },
     "search": {
