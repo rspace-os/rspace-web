@@ -1414,7 +1414,11 @@ export default class InventoryBaseRecord
       if (
         await getRootStore().uiStore.confirm(
           i18n.t("inventory:identifierConfirm.delete.title"),
-          i18n.t("inventory:identifierConfirm.delete.body"),
+          i18n.t(
+            this.recordType === "instrument" || this.recordType === "instrumentTemplate"
+              ? "inventory:identifierConfirm.delete.bodyPidinst"
+              : "inventory:identifierConfirm.delete.body",
+          ),
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

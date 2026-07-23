@@ -103,6 +103,34 @@ export const INSTITUTION_LOGO_ADDRESS = "/public/banner";
 
 const IGSN_BASE_URL = `https://www.igsn.org/`;
 const PIDINST_BASE_URL = `https://www.pidinst.org/`;
+
+function IgsnLogoLink(): ReactNode {
+  const { t } = useTranslation("public");
+  return (
+    <a href={IGSN_BASE_URL} title={t("links.igsnHomepage")} target="_blank" rel="noreferrer">
+      <img
+        src={IGSNlogo}
+        alt={t("images.igsnLogo")}
+        title={t("images.igsnLogo")}
+        style={{ padding: "0 4px", width: "70px" }}
+      />
+    </a>
+  );
+}
+
+function PidinstLogoLink(): ReactNode {
+  const { t } = useTranslation("public");
+  return (
+    <a href={PIDINST_BASE_URL} title={t("links.pidinstHomepage")} target="_blank" rel="noreferrer">
+      <img
+        src={PIDINSTlogo}
+        alt={t("images.pidinstLogo")}
+        title={t("images.pidinstLogo")}
+        style={{ padding: "0 4px", width: "70px" }}
+      />
+    </a>
+  );
+}
 const formatDegrees = (value: string): string => `${value}˚`;
 
 /**
@@ -249,21 +277,7 @@ export const IdentifierDataGrid = ({ record, identifier }: IdentifierDataGridArg
         </Grid>
         <Grid>
           <Grid container sx={{ flexDirection: "column", alignItems: "center" }} spacing={0.5}>
-            <Grid>
-              <a
-                href={isPidinst ? PIDINST_BASE_URL : IGSN_BASE_URL}
-                title={t(isPidinst ? "links.pidinstHomepage" : "links.igsnHomepage")}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <img
-                  src={isPidinst ? PIDINSTlogo : IGSNlogo}
-                  alt={t(isPidinst ? "images.pidinstLogo" : "images.igsnLogo")}
-                  title={t(isPidinst ? "images.pidinstLogo" : "images.igsnLogo")}
-                  style={{ padding: "0 4px", width: "70px" }}
-                />
-              </a>
-            </Grid>
+            <Grid>{isPidinst ? <PidinstLogoLink /> : <IgsnLogoLink />}</Grid>
             <Grid>
               <Typography variant="caption">
                 {identifier.resourceTypeGeneral === "PhysicalObject"

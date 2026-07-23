@@ -438,9 +438,11 @@ export default class IdentifierModel implements Identifier {
           i18n.t("inventory:identifierConfirm.publish.title"),
           <TransRichText
             i18nKey={
-              this.doiType.startsWith("PIDINST")
-                ? "inventory:identifierConfirm.publish.bodyPidinst"
-                : "inventory:identifierConfirm.publish.body"
+              this.doiType === "PIDINST_B2INST"
+                ? "inventory:identifierConfirm.publish.bodyPidinstB2Inst"
+                : this.doiType === "PIDINST_DATACITE"
+                  ? "inventory:identifierConfirm.publish.bodyPidinst"
+                  : "inventory:identifierConfirm.publish.body"
             }
           />,
           i18n.t("common:actions.ok"),
@@ -506,7 +508,15 @@ export default class IdentifierModel implements Identifier {
       if (
         await confirm(
           i18n.t("inventory:identifierConfirm.retract.title"),
-          <TransRichText i18nKey="inventory:identifierConfirm.retract.body" />,
+          <TransRichText
+            i18nKey={
+              this.doiType === "PIDINST_B2INST"
+                ? "inventory:identifierConfirm.retract.bodyPidinstB2Inst"
+                : this.doiType === "PIDINST_DATACITE"
+                  ? "inventory:identifierConfirm.retract.bodyPidinst"
+                  : "inventory:identifierConfirm.retract.body"
+            }
+          />,
           i18n.t("common:actions.ok"),
           i18n.t("common:actions.cancel"),
         )

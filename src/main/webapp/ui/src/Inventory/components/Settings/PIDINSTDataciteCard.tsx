@@ -5,7 +5,7 @@ import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Fade from "@mui/material/Fade";
 import FormControl from "@mui/material/FormControl";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControlLabel, { formControlLabelClasses } from "@mui/material/FormControlLabel";
 import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import Grid from "@mui/material/Grid";
@@ -155,7 +155,7 @@ export default function PIDINSTDataciteCard({
         </Box>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.5 }}>
           <FormControlLabel
-            sx={{ "& .MuiFormControlLabel-label": { fontSize: "0.8125rem" } }}
+            sx={{ [`& .${formControlLabelClasses.label}`]: { fontSize: "0.8125rem" } }}
             control={
               <Switch
                 checked={updatedSettings.enabled === "true"}
