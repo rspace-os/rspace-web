@@ -68,7 +68,7 @@ public class SlackServiceImpl implements SlackService {
         String msg =
             this.messages.getMessage(
                 "apps.slack.saveConversation.noMessages",
-                new Object[] {},
+                null,
                 userLocaleService.getLocaleFor(user));
         sendResponseToSlack(responseURI, msg);
         return;

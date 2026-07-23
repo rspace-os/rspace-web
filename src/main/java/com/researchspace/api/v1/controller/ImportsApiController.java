@@ -64,7 +64,7 @@ public class ImportsApiController extends BaseApiController implements ImportApi
       throws IOException {
     if (!file.getOriginalFilename().endsWith("enex")) {
       throw new IllegalArgumentException(
-          getMessage("workspace.word.import.evernoteExtensionRequired", new Object[] {}));
+          getMessage("workspace.word.import.evernoteExtensionRequired"));
     }
     Folder targetFolder = getTargetFolder(folderId, user);
     permissionUtils.isRecordAccessPermitted(user, targetFolder, PermissionType.READ);

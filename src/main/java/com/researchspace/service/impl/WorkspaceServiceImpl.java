@@ -82,7 +82,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
       User user) {
     if (idsToMove == null || idsToMove.isEmpty() || StringUtils.isBlank(targetFolderId)) {
       throw new IllegalArgumentException(
-          messages.getMessage("document.move.errors.idsAndTargetRequired", new Object[] {}));
+          messages.getMessage("document.move.errors.idsAndTargetRequired"));
     }
 
     Folder usersRootFolder = folderManager.getRootFolderForUser(user);

@@ -263,8 +263,7 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       createTopLevelExportFolder(expCfg);
     } catch (IOException ie) {
       throw new ExportFailureException(
-          messageSource.getMessage("export.errors.archiveFolderCreationFailed", new Object[] {}),
-          ie);
+          messageSource.getMessage("export.errors.archiveFolderCreationFailed"), ie);
     }
     expCfg.setExporter(user);
   }
@@ -629,12 +628,11 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
       }
     } catch (FileNotFoundException e) {
       log.warn("Export download failure: {}", e.getMessage());
-      String msg =
-          messageSource.getMessage("importExport.download.errors.missingFile", new String[] {});
+      String msg = messageSource.getMessage("importExport.download.errors.missingFile");
       throw new ArchivalFileNotExistException(msg);
     } catch (Exception e) {
       log.warn("Export download failure: {}", e.getMessage());
-      String msg = messageSource.getMessage("importExport.download.errors.failed", new String[] {});
+      String msg = messageSource.getMessage("importExport.download.errors.failed");
       throw new ExportFailureException(msg, e);
     }
   }

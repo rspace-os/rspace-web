@@ -197,8 +197,7 @@ public class ShareApiServiceImpl extends BaseApiController implements ShareApiSe
   @Override
   public DocumentShares getAllSharesForDoc(Long docId, User user) {
     if (docId == null) {
-      throw new IllegalArgumentException(
-          getMessage("sharing.errors.docIdRequired", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("sharing.errors.docIdRequired"));
     }
 
     BaseRecord record;

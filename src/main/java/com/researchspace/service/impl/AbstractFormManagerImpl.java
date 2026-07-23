@@ -40,7 +40,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     form.setName("Untitled");
     if (!permissionUtils.isPermitted(form, PermissionType.CREATE, user)) {
       throw new AuthorizationException(
-          messageSourceUtils.getMessage("form.errors.createUnauthorized", new Object[] {}));
+          messageSourceUtils.getMessage("form.errors.createUnauthorized"));
     }
     return form;
   }
@@ -59,7 +59,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     T form = absFormdao.get(formId);
     if (!hasWritePermission(subject, form)) {
       throw new AuthorizationException(
-          messageSourceUtils.getMessage("form.errors.fieldCreateUnauthorized", new Object[] {}));
+          messageSourceUtils.getMessage("form.errors.fieldCreateUnauthorized"));
     }
     F field = dto.createFieldForm();
     form.setModificationDate(new Date());
@@ -90,7 +90,7 @@ public abstract class AbstractFormManagerImpl<T extends AbstractForm>
     T form = (T) fieldform.getForm();
     if (!hasWritePermission(subject, form)) {
       throw new AuthorizationException(
-          messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized", new Object[] {}));
+          messageSourceUtils.getMessage("form.errors.fieldUpdateUnauthorized"));
     }
     dto.copyValuesIntoFieldForm(fieldform);
     Date currTime = new Date();

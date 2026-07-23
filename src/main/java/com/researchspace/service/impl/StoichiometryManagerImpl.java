@@ -278,7 +278,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           rsChemElementManager.save(RSChemElement.builder().chemElements(smiles).build(), user);
     } catch (IOException e) {
       throw new StoichiometryException(
-          messages.getMessage("errors.stoichiometry.copyMoleculeFailed", new Object[] {}), e);
+          messages.getMessage("errors.stoichiometry.copyMoleculeFailed"), e);
     }
     return newMol;
   }
@@ -317,8 +317,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private StoichiometryMolecule addNewMoleculeFromDto(
       Stoichiometry stoichiometry, StoichiometryMoleculeUpdateDTO updateMol, User user) {
     if (updateMol.getSmiles() == null || updateMol.getSmiles().isBlank()) {
-      throw new StoichiometryException(
-          messages.getMessage("errors.stoichiometry.smilesRequired", new Object[] {}));
+      throw new StoichiometryException(messages.getMessage("errors.stoichiometry.smilesRequired"));
     }
 
     RSChemElement molecule = RSChemElement.builder().chemElements(updateMol.getSmiles()).build();
@@ -326,7 +325,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       molecule = rsChemElementManager.save(molecule, user);
     } catch (IOException e) {
       throw new StoichiometryException(
-          messages.getMessage("errors.stoichiometry.saveMoleculeFailed", new Object[] {}), e);
+          messages.getMessage("errors.stoichiometry.saveMoleculeFailed"), e);
     }
 
     StoichiometryMolecule newMol =

@@ -57,14 +57,10 @@ public class SysadminCreateUserFormConfigurerImpl implements SysadminCreateUserF
   public String getUsernamePatternTitle() {
     if (isStrictUsername()) {
       return messageSource.getMessage(
-          "system.createAccountForm.userName.strictTitle",
-          new Object[] {},
-          userLocaleService.getLocale());
+          "system.createAccountForm.userName.strictTitle", null, userLocaleService.getLocale());
     } else {
       return messageSource.getMessage(
-          "system.createAccountForm.userName.relaxedTitle",
-          new Object[] {},
-          userLocaleService.getLocale());
+          "system.createAccountForm.userName.relaxedTitle", null, userLocaleService.getLocale());
     }
   }
 

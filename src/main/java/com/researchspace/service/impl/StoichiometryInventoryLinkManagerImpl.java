@@ -64,7 +64,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
 
     if (stoichiometryMolecule.getInventoryLink() != null) {
       throw new IllegalArgumentException(
-          messages.getMessage("errors.inventory.stoichiometry.alreadyLinked", new Object[] {}));
+          messages.getMessage("errors.inventory.stoichiometry.alreadyLinked"));
     }
 
     InventoryRecord inventoryRecord =
@@ -105,8 +105,7 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         Double actualAmount = stoichiometryMolecule.getActualAmount();
         if (actualAmount == null) {
           throw new IllegalArgumentException(
-              messages.getMessage(
-                  "errors.inventory.stoichiometry.actualAmountRequired", new Object[] {}));
+              messages.getMessage("errors.inventory.stoichiometry.actualAmountRequired"));
         }
         QuantityInfo quantityInfo =
             new QuantityInfo(BigDecimal.valueOf(actualAmount), RSUnitDef.GRAM.getId());

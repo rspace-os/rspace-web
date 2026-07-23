@@ -459,7 +459,7 @@ public class AsyncDepositorImpl implements IAsyncArchiveDepositor {
           integrationsHandler.getIntegration(subject, IntegrationsHandler.DMPTOOL_APP_NAME);
       if (dmpToolInfo.isEnabled()) {
         throw new IllegalStateException(
-            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled", new Object[] {}));
+            messages.getMessage("apps.dmp.errors.bothArgosAndDmpToolEnabled"));
       }
 
       List<DMPUser> dmpsForUser = dmpManager.findDMPsForUser(subject);

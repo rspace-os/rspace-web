@@ -141,6 +141,10 @@ public class BaseApiController implements ServletContextAware {
     return messages.getMessage(key, args);
   }
 
+  protected String getMessage(String key) {
+    return messages.getMessage(key);
+  }
+
   /**
    * Standard response for a resource that is not authorised, or does not exist.
    *

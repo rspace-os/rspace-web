@@ -128,7 +128,7 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     if (form.isSystemForm() && !toPublish) {
       log.error("Attempted to unpublish a system form by user {}", authUser.getUsername());
       throw new UnsupportedOperationException(
-          messages.getMessage("form.errors.systemFormUnpublish", new Object[] {}));
+          messages.getMessage("form.errors.systemFormUnpublish"));
     }
     boolean altered = false;
     if (!permissionUtils.isPermitted(form, PermissionType.SHARE, authUser)) {

@@ -113,8 +113,7 @@ public class ApiAvailabilityHandlerImpl implements ApiAvailabilityHandler {
 
   private void assertInventoryAvailable(User user) {
     if (!isInventoryAvailable(user)) {
-      throw new UnsupportedOperationException(
-          messages.getMessage("errors.inventory.notEnabled", new Object[] {}));
+      throw new UnsupportedOperationException(messages.getMessage("errors.inventory.notEnabled"));
     }
   }
 

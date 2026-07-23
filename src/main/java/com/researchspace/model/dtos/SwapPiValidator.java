@@ -25,13 +25,13 @@ public class SwapPiValidator implements Validator {
           "groups.swapPi.errors.labGroupRequired", new Object[] {grp.getDisplayName()}, null);
     }
     if (!newPi.hasRole(Role.PI_ROLE)) {
-      errors.reject("groups.swapPi.requiredPi.role", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredPi.role");
     }
     if (!grp.getAllNonPIMembers().contains(newPi)) {
-      errors.reject("groups.swapPi.requiredPi.inGroup", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredPi.inGroup");
     }
     if (currPi.equals(newPi)) {
-      errors.reject("groups.swapPi.requiredNewPi", new Object[] {}, null);
+      errors.reject("groups.swapPi.requiredNewPi");
     }
   }
 }

@@ -82,8 +82,7 @@ public class SystemSettingsApiController extends BaseApiController implements Sy
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
         || !ipWhiteListChecker.isRequestWhitelisted(request, subject, SECURITY_LOG)) {
-      throw new AuthorizationException(
-          getMessage("errors.authorization.sysadminIpRequired", new Object[] {}));
+      throw new AuthorizationException(getMessage("errors.authorization.sysadminIpRequired"));
     }
   }
 

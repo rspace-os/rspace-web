@@ -143,8 +143,7 @@ public class FolderApiController extends BaseApiController implements FolderApi 
   public void deleteFolder(@PathVariable Long id, @RequestAttribute(name = "user") User user) {
     Folder folder = loadFolder(id, user); // test it exists and is a folder.
     if (folder.isSystemFolder() || folder.isRootFolder()) {
-      throw new IllegalArgumentException(
-          getMessage("folder.delete.errors.systemOrHomeFolder", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("folder.delete.errors.systemOrHomeFolder"));
     }
     DeletionSettings settings =
         DeletionSettings.builder()

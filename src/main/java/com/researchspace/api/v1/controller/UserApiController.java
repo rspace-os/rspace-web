@@ -37,8 +37,7 @@ public class UserApiController extends BaseApiController implements UserApi {
       throw new BindException(errors);
     }
     if (!sysadmin.hasSysadminRole()) {
-      throw new AuthorizationException(
-          getMessage("errors.authorization.userCreationSysadminOnly", new Object[] {}));
+      throw new AuthorizationException(getMessage("errors.authorization.userCreationSysadminOnly"));
     }
 
     // generate API key if requested, return this in the returned User representation.

@@ -69,7 +69,7 @@ public class MaintenanceManagerImpl implements MaintenanceManager {
   private void verifySysadminUser(User user) {
     if (!user.hasRole(Role.SYSTEM_ROLE)) {
       throw new AuthorizationException(
-          messages.getMessage("errors.authorization.maintenanceSysadminOnly", new Object[] {}));
+          messages.getMessage("errors.authorization.maintenanceSysadminOnly"));
     }
   }
 }

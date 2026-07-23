@@ -1067,8 +1067,7 @@ public class RecordManagerImpl implements RecordManager {
   @Override
   public List<RSpaceDocView> getAllFrom(Set<Long> dbids) {
     if (CollectionUtils.isEmpty(dbids)) {
-      throw new IllegalArgumentException(
-          messages.getMessage("record.errors.idsRequired", new Object[] {}));
+      throw new IllegalArgumentException(messages.getMessage("record.errors.idsRequired"));
     }
     return recordDao.getRecordViewsById(dbids);
   }

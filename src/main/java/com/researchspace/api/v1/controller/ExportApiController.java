@@ -76,9 +76,7 @@ public class ExportApiController extends BaseApiController implements ExportApi 
         handler
             .export(cfg, user)
             .orElseThrow(
-                () ->
-                    new ExportFailureException(
-                        getMessage("export.errors.launchFailed", new Object[] {})));
+                () -> new ExportFailureException(getMessage("export.errors.launchFailed")));
     addJobProgressLink(job);
     return job;
   }

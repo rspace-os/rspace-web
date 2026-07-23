@@ -179,7 +179,7 @@ public class InventoryFilesApiController extends BaseApiInventoryController
       }
     } else {
       throw new UnsupportedOperationException(
-          getMessage("errors.inventory.file.imagesNotSupported", new Object[] {}));
+          getMessage("errors.inventory.file.imagesNotSupported"));
     }
   }
 

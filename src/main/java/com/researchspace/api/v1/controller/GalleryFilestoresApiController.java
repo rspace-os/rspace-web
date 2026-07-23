@@ -136,8 +136,7 @@ public class GalleryFilestoresApiController extends GalleryFilestoresBaseApiCont
 
     assertFilestoresApiEnabled(user);
     if (StringUtils.isBlank(remotePath) && remoteId == null) {
-      throw new IllegalArgumentException(
-          getMessage("netFileStores.errors.missingRemotePathOrId", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("netFileStores.errors.missingRemotePathOrId"));
     }
 
     NfsFileStore filestore = nfsManager.getNfsFileStore(filestoreId);

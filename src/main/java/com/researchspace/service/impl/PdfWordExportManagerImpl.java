@@ -156,7 +156,7 @@ public class PdfWordExportManagerImpl extends AbstractExporter implements PdfWor
         recordManager.getGalleryMediaFolderForUser(Folder.EXPORTS_FOLDER_NAME, exporter);
     if (parent == null) {
       throw new IllegalStateException(
-          messageSource.getMessage("export.pdf.errors.exportFolderUnavailable", new Object[] {}));
+          messageSource.getMessage("export.pdf.errors.exportFolderUnavailable"));
     }
     try {
       resultFile =

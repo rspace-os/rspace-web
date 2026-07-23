@@ -139,7 +139,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (sourceFilestoreId.equals(request.getDestFilestoreId())) {
       throw new UnsupportedOperationException(
-          messages.getMessage("netFileStores.write.transfer.sameFilestore", new Object[] {}));
+          messages.getMessage("netFileStores.write.transfer.sameFilestore"));
     }
 
     NfsFileStore sourceFilestore = nfsManager.getNfsFileStore(sourceFilestoreId);
@@ -171,7 +171,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
 
     if (!sourceClient.supportsServerSideTransfer() || !destClient.supportsServerSideTransfer()) {
       throw new UnsupportedOperationException(
-          messages.getMessage("netFileStores.write.transfer.unsupportedBackend", new Object[] {}));
+          messages.getMessage("netFileStores.write.transfer.unsupportedBackend"));
     }
 
     // /transfer has no RSpace record context, so recordNames and recordId are both null.
@@ -227,7 +227,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       client.deleteByKey(target.objectKey());
     } catch (UnsupportedOperationException e) {
       throw new UnsupportedOperationException(
-          messages.getMessage("netFileStores.write.delete.unsupportedBackend", new Object[] {}));
+          messages.getMessage("netFileStores.write.delete.unsupportedBackend"));
     } catch (IOException e) {
       log.error("Error deleting object from filestore: ", e);
       errors.addError(new ObjectError("path", e.getMessage()));
@@ -325,7 +325,7 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       return toFilestoreRelative(filestore, client.moveWithin(absoluteSource, absoluteDestFolder));
     } catch (UnsupportedOperationException e) {
       throw new UnsupportedOperationException(
-          messages.getMessage("netFileStores.write.move.unsupportedBackend", new Object[] {}));
+          messages.getMessage("netFileStores.write.move.unsupportedBackend"));
     } catch (IOException e) {
       log.error("Error moving object within filestore: ", e);
       errors.addError(new ObjectError("sourcePath", e.getMessage()));

@@ -182,7 +182,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
   public StoichiometryMolecule getMoleculeInfo(String smiles) {
     if (smiles == null || smiles.isBlank()) {
       throw new StoichiometryException(
-          messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable", new Object[] {}));
+          messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable"));
     }
     Optional<ElementalAnalysisDTO> analysis = rsChemElementManager.getInfo(smiles);
     if (analysisExists(analysis)) {
@@ -196,7 +196,7 @@ public class StoichiometryServiceImpl implements StoichiometryService {
           .build();
     }
     throw new NotFoundException(
-        messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable", new Object[] {}));
+        messages.getMessage("errors.stoichiometry.moleculeInfoUnavailable"));
   }
 
   @Override

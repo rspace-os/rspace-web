@@ -107,8 +107,7 @@ public class AuditManagerImpl implements AuditManager {
       StructuredDocument current, Number revision, Number userVersion) {
     if (revision == null && userVersion == null) {
       throw new IllegalArgumentException(
-          messageSourceUtils.getMessage(
-              "document.audit.errors.revisionOrVersionRequired", new Object[] {}));
+          messageSourceUtils.getMessage("document.audit.errors.revisionOrVersionRequired"));
     }
     Number requestedRevision = revision;
     if (revision == null) {
@@ -138,7 +137,7 @@ public class AuditManagerImpl implements AuditManager {
   public AuditedRecord getMediaFileVersion(EcatMediaFile media, Number version) {
     if (version == null) {
       throw new IllegalArgumentException(
-          messageSourceUtils.getMessage("document.audit.errors.versionRequired", new Object[] {}));
+          messageSourceUtils.getMessage("document.audit.errors.versionRequired"));
     }
     List<AuditedEntity<EcatMediaFile>> entities =
         auditDao.getRevisionsForMediaFileVersion(media.getId(), version);

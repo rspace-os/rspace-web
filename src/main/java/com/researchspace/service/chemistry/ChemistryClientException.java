@@ -5,6 +5,8 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public class ChemistryClientException extends RuntimeException {
+  private static final Object[] NO_ARGS = {};
+
   private final String messageKey;
   private final Object[] args;
   private final HttpStatus status;
@@ -12,14 +14,14 @@ public class ChemistryClientException extends RuntimeException {
   public ChemistryClientException(String messageKey) {
     super(messageKey);
     this.messageKey = messageKey;
-    this.args = new Object[0];
+    this.args = NO_ARGS;
     this.status = null;
   }
 
   public ChemistryClientException(String messageKey, Exception cause) {
     super(messageKey, cause);
     this.messageKey = messageKey;
-    this.args = new Object[0];
+    this.args = NO_ARGS;
     this.status = null;
   }
 
@@ -33,7 +35,7 @@ public class ChemistryClientException extends RuntimeException {
   public ChemistryClientException(String messageKey, HttpStatus status, Throwable cause) {
     super(messageKey, cause);
     this.messageKey = messageKey;
-    this.args = new Object[0];
+    this.args = NO_ARGS;
     this.status = status;
   }
 }

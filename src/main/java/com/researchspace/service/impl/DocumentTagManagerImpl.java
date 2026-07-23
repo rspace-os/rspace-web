@@ -214,8 +214,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       } else {
         if (ontologiesEnforced && newTagValue.length() > 0) {
           throw new IllegalArgumentException(
-              messages.getMessage(
-                  "document.tag.errors.newTagsNotAllowedWhenOntologiesEnforced", new Object[] {}));
+              messages.getMessage("document.tag.errors.newTagsNotAllowedWhenOntologiesEnforced"));
         }
         // new values - will be saved with the given value as tagMetaData (local ontology)
         valuesToSaveToDB.add(newTagValue);
@@ -237,8 +236,7 @@ public class DocumentTagManagerImpl implements DocumentTagManager {
       record = folderDao.get(recordId);
     }
     if (!record.isTaggable()) {
-      throw new IllegalArgumentException(
-          messages.getMessage("document.tag.errors.notTaggable", new Object[] {}));
+      throw new IllegalArgumentException(messages.getMessage("document.tag.errors.notTaggable"));
     }
     permissnUtils.assertIsPermitted(record, PermissionType.WRITE, user, "save tag");
 

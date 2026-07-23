@@ -90,7 +90,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
     boolean advancedQueryProvided = !StringUtils.isEmpty(srchConfig.getAdvancedQuery());
     if (queryProvided && advancedQueryProvided) {
       throw new IllegalArgumentException(
-          getMessage("document.search.errors.bothQueryTypesProvided", new Object[] {}));
+          getMessage("document.search.errors.bothQueryTypesProvided"));
     }
 
     ApiSearchQuery searchQuery = new ApiSearchQuery();
@@ -364,8 +364,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
 
     // all provided apiFields should be matched at this point
     if (apiFields.size() > 0) {
-      throw new IllegalArgumentException(
-          getMessage("document.edit.errors.fieldsMismatch", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("document.edit.errors.fieldsMismatch"));
     }
     apiDocument.setFields(convertedApiFields);
   }
@@ -393,7 +392,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
             .orElseThrow(
                 () ->
                     new IllegalArgumentException(
-                        getMessage("document.delete.errors.itemNotInFolderTree", new Object[] {})));
+                        getMessage("document.delete.errors.itemNotInFolderTree")));
 
     boolean isNotebookEntryDeletion = parent.isNotebook();
     UserSessionTracker users = getCurrentActiveUsers();
@@ -435,10 +434,7 @@ public class DocumentsApiController extends BaseApiController implements Documen
                 user)
             .stream()
             .findFirst()
-            .orElseThrow(
-                () ->
-                    new RuntimeException(
-                        getMessage("document.move.errors.noResult", new Object[] {})));
+            .orElseThrow(() -> new RuntimeException(getMessage("document.move.errors.noResult")));
 
     if (!moveResult.isSucceeded()) {
       String message = StringUtils.defaultIfBlank(moveResult.getMessage(), "");

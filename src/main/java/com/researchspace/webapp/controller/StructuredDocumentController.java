@@ -450,7 +450,7 @@ public class StructuredDocumentController extends BaseController {
       auditService.notify(new RenameAuditEvent(subject, record, oldName, newname));
     } else {
       return new AjaxReturnObject<String>(
-          null, getErrorListFromMessageCode("document.rename.errors.notEditable", new Object[] {}));
+          null, getErrorListFromMessageCode("document.rename.errors.notEditable"));
     }
     return new AjaxReturnObject<String>("Success", null);
   }

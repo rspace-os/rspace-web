@@ -112,8 +112,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   void assertIsSysadmin(User subject, ServletRequest request) {
     if (!subject.hasRole(Role.SYSTEM_ROLE)
         || !ipWhiteListChecker.isRequestWhitelisted(request, subject, SECURITY_LOG)) {
-      throw new AuthorizationException(
-          getMessage("errors.authorization.sysadminIpRequired", new Object[] {}));
+      throw new AuthorizationException(getMessage("errors.authorization.sysadminIpRequired"));
     }
   }
 
@@ -133,15 +132,13 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
 
   private void validateTempUser(User toDelete) {
     if (!toDelete.isTempAccount() || userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException(
-          getMessage("userDeletion.errors.tempUserTooNew", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("userDeletion.errors.tempUserTooNew"));
     }
   }
 
   private void validateNonTempUser(User toDelete) {
     if (userIsTooNew(toDelete)) {
-      throw new IllegalArgumentException(
-          getMessage("userDeletion.errors.nonTempUserTooNew", new Object[] {}));
+      throw new IllegalArgumentException(getMessage("userDeletion.errors.nonTempUserTooNew"));
     }
   }
 
@@ -179,7 +176,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
         doUserExport(sysadmin, toDeleteId);
       } catch (Exception e) {
         throw new IllegalStateException(
-            getMessage("userDeletion.errors.exportBeforeDeletionFailed", new Object[] {}));
+            getMessage("userDeletion.errors.exportBeforeDeletionFailed"));
       }
       ServiceOperationResult<User> result2 = removeUser(toDeleteId, sysadmin, deletionPolicy);
       processResult(result2);
@@ -449,19 +446,16 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
               .map(Map.Entry::getKey)
               .collect(Collectors.toList());
       if (piUsers.size() != 1) {
-        throw new IllegalArgumentException(
-            getMessage("groups.edit.errors.exactlyOnePi", new Object[] {}));
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.exactlyOnePi"));
       }
       User piUser = piUsers.get(0);
       if (!piUser.hasRole(Role.PI_ROLE)) {
-        throw new IllegalArgumentException(
-            getMessage("groups.edit.errors.piRoleRequired", new Object[] {}));
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.piRoleRequired"));
       }
       group.setOwner(piUser);
     } else {
       if (group.getGroupOwners() == null || group.getGroupOwners().isEmpty()) {
-        throw new IllegalArgumentException(
-            getMessage("groups.edit.errors.groupOwnerRequired", new Object[] {}));
+        throw new IllegalArgumentException(getMessage("groups.edit.errors.groupOwnerRequired"));
       }
       group.setOwner(sysadmin);
     }

@@ -63,8 +63,7 @@ public class SysadminUsersAPIController2MVCIT extends API_MVC_TestBase {
                 API_VERSION.ONE,
                 userToPost.getApiKey(),
                 "/status",
-                () -> createdApiUser::getUsername,
-                new Object[] {}))
+                () -> createdApiUser::getUsername))
         .andExpect(status().is4xxClientError());
   }
 }

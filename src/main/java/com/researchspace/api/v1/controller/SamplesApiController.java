@@ -149,7 +149,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
   private void assertNotSampleTemplate(boolean sampleTemplateFlag) {
     if (sampleTemplateFlag) {
       throw new IllegalArgumentException(
-          getMessage("errors.inventory.sample.templateActionsNotAllowed", new Object[] {}));
+          getMessage("errors.inventory.sample.templateActionsNotAllowed"));
     }
   }
 
@@ -177,7 +177,7 @@ public class SamplesApiController extends BaseApiInventoryController implements 
     }
     templatePermissionCheck.accept(id, user);
     throw new IllegalArgumentException(
-        getMessage("errors.inventory.sample.templateActionsNotAllowed", new Object[] {}));
+        getMessage("errors.inventory.sample.templateActionsNotAllowed"));
   }
 
   /* errors might already be populated with simple validation errors using javax.validation annotations

@@ -87,7 +87,7 @@ public class CommunityServiceManagerImpl implements CommunityServiceManager {
     Community community = communityDao.get(communityId);
     if (!permUtils.isPermitted(community, PermissionType.WRITE, subject)) {
       throw new AuthorizationException(
-          messages.getMessage("errors.authorization.communityAddGroup", new Object[] {}));
+          messages.getMessage("errors.authorization.communityAddGroup"));
     }
     Group grp = groupDao.get(grpId);
     if (!grp.isLabGroup()) {

@@ -190,7 +190,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   }
 
   private String getText(String string) {
-    return getText(string, new Object[] {});
+    return messageSource.getMessage(string, null, Locale.getDefault());
   }
 
   private User attemptUserSave(

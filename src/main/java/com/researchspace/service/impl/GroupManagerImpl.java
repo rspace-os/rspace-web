@@ -919,7 +919,7 @@ public class GroupManagerImpl implements GroupManager {
         if (isPiDemotion(role, ug)) {
           if (isAttemptToDemoteOnlyPiInGroup(group, ug)) {
             throw new IllegalStateException(
-                messages.getMessage("groups.edit.errors.onlyPiRoleChange", new Object[] {}));
+                messages.getMessage("groups.edit.errors.onlyPiRoleChange"));
           }
           // if we're demoting a PI role, need to remove group members folders from the group.
           if (group.isLabGroup()) {
@@ -1121,12 +1121,10 @@ public class GroupManagerImpl implements GroupManager {
     }
 
     if (!group.getPiusers().contains(subject)) {
-      throw new AuthorizationException(
-          messages.getMessage("groups.edit.errors.piEditOnlyPi", new Object[] {}));
+      throw new AuthorizationException(messages.getMessage("groups.edit.errors.piEditOnlyPi"));
     }
     if (!groupPermUtils.piCanEditAllWorkInLabGroup(group) && canPIEditAll) {
-      throw new AuthorizationException(
-          messages.getMessage("groups.edit.errors.piEditNotAllowed", new Object[] {}));
+      throw new AuthorizationException(messages.getMessage("groups.edit.errors.piEditNotAllowed"));
     }
     groupPermUtils.setReadOrEditAllPermissionsForPi(group, subject, canPIEditAll);
   }

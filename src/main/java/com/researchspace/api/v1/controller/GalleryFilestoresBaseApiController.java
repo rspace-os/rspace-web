@@ -15,8 +15,7 @@ public class GalleryFilestoresBaseApiController extends BaseApiController {
 
   protected void assertFilestoresApiEnabled(User subject) {
     if (!properties.isNetFileStoresEnabled() && !subject.hasSysadminRole()) {
-      throw new UnsupportedOperationException(
-          getMessage("netFileStores.errors.apiNotEnabled", new Object[] {}));
+      throw new UnsupportedOperationException(getMessage("netFileStores.errors.apiNotEnabled"));
     }
   }
 }
