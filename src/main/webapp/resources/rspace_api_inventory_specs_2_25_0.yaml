@@ -1534,6 +1534,274 @@ paths:
                 $ref: "#/components/schemas/SubSample"
         "404":
           $ref: "#/components/responses/NotFound"
+  /operations:
+    post:
+      summary: Perform a configured Inventory operation
+      description: >
+        Runs a single configured Inventory operation as one atomic transaction (see adr/0001).
+        From one request the endpoint reduces each origin subsample by the amount taken from it
+        and, for a producing operation, creates one new Sample with its subsamples, custom
+        fields and relation links. Everything succeeds or everything rolls back.
+
+
+        The endpoint is operation-agnostic: operationType is recorded for audit only and is never
+        branched on. The whole payload is client-built - the caller constructs the new sample,
+        chooses each link's relationType, computes any derived field content (e.g. a passage
+        number or an ISO disposal date), and sets each origin's amountTaken. The server validates
+        permissions and invariants but infers nothing from operationType.
+
+
+        ## Origin amount
+
+
+        origins[].amountTaken is a positive-or-zero decrement, not an absolute value: the origin
+        is reduced by it and can never be increased. Zero is a valid no-op (used by Passage,
+        which links without consuming). To empty an origin (Destroy, or Pool's "take all") send
+        the origin's full current quantity. Taking more than an origin holds is rejected with 400
+        and leaves the origin unchanged (adr/0005).
+
+
+        ## Terminal operations
+
+
+        A terminal operation (e.g. Destroy) creates nothing: omit newSample (or send null). The
+        response is still 201 but with an empty body.
+
+
+        ## Per-operation shape
+
+
+        These are all client-built; the server does not recognise them as modes. The examples
+        below show a request body for each.
+
+
+        | Operation | Origins | Link relationType | Origin amount | Notes |
+
+
+        | --- | --- | --- | --- | --- |
+
+
+        | Aliquot | one | IsPartOf | decrement | N equal subsamples |
+
+
+        | Passage | one | IsDerivedFrom | 0 (link only) | "Passage number" text field on the new sample |
+
+
+        | Pool | two or more | HasPart (one link per origin) | per origin (default: empty each) | origins must share a measurement category |
+
+
+        | Derive | one | IsDerivedFrom | decrement | user-named process |
+
+
+        | Cryopreserve | one | IsDerivedFrom | decrement | "Cryomedium" text field; storageTempMin/Max |
+
+
+        | Revive | one | IsDerivedFrom | decrement | storageTempMin/Max |
+
+
+        | Destroy | one | none | empty the origin | no newSample; "Disposed" ISO-date text field on the origin |
+      tags:
+        - Operations
+      requestBody:
+        required: true
+        description: The operation to perform.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryOperationPost"
+            examples:
+              derive:
+                summary: Derive - create a new sample from one origin, taking 0.6 ml
+                value:
+                  operationType: derive
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 0.6, unitId: 3 }
+                  newSample:
+                    name: Derived DNA
+                    templateId: 42
+                    extraFields:
+                      - name: "Is Derived From using process: PCR"
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+                    subSamples:
+                      - quantity: { numericValue: 0.5, unitId: 3 }
+                        extraFields:
+                          - name: "Is Derived From using process: PCR"
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+              aliquot:
+                summary: Aliquot - split 6 ml from one origin into two 3 ml subsamples
+                value:
+                  operationType: aliquot
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 6, unitId: 3 }
+                  newSample:
+                    name: Blood aliquots
+                    templateId: null
+                    extraFields:
+                      - name: Derived from
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
+                    subSamples:
+                      - quantity: { numericValue: 3, unitId: 3 }
+                        extraFields:
+                          - name: Derived from
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
+                      - quantity: { numericValue: 3, unitId: 3 }
+                        extraFields:
+                          - name: Derived from
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsPartOf, targetGlobalId: SS1234, versionPin: null }
+              passage:
+                summary: Passage - link a new passage without consuming the origin (amountTaken 0)
+                value:
+                  operationType: passage
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 0, unitId: 3 }
+                  newSample:
+                    name: HeLa p3
+                    templateId: null
+                    extraFields:
+                      - name: Passaged from
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+                      - name: Passage number
+                        type: text
+                        newFieldRequest: true
+                        content: "3"
+                    subSamples:
+                      - quantity: { numericValue: 5, unitId: 3 }
+                        extraFields:
+                          - name: Passaged from
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+              pool:
+                summary: Pool - combine two origins (emptying each) into one pooled subsample
+                value:
+                  operationType: pool
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 5, unitId: 3 }
+                    - id: 5678
+                      amountTaken: { numericValue: 8, unitId: 3 }
+                  newSample:
+                    name: Pooled lysate
+                    templateId: null
+                    extraFields:
+                      - name: "Pooled from: Vial A"
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: HasPart, targetGlobalId: SS1234, versionPin: null }
+                      - name: "Pooled from: Vial B"
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: HasPart, targetGlobalId: SS5678, versionPin: null }
+                    subSamples:
+                      - quantity: { numericValue: 13, unitId: 3 }
+                        extraFields:
+                          - name: "Pooled from: Vial A"
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: HasPart, targetGlobalId: SS1234, versionPin: null }
+                          - name: "Pooled from: Vial B"
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: HasPart, targetGlobalId: SS5678, versionPin: null }
+              cryopreserve:
+                summary: Cryopreserve - freeze at -80 C with a cryomedium field
+                value:
+                  operationType: cryopreserve
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 1, unitId: 3 }
+                  newSample:
+                    name: Frozen cells
+                    templateId: null
+                    storageTempMin: { numericValue: -80, unitId: 8 }
+                    storageTempMax: { numericValue: -80, unitId: 8 }
+                    extraFields:
+                      - name: Frozen from
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+                      - name: Cryomedium
+                        type: text
+                        newFieldRequest: true
+                        content: "10% DMSO in FBS"
+                    subSamples:
+                      - quantity: { numericValue: 1, unitId: 3 }
+                        extraFields:
+                          - name: Frozen from
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+              revive:
+                summary: Revive - thaw and store at 37 C
+                value:
+                  operationType: revive
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 1, unitId: 3 }
+                  newSample:
+                    name: Revived culture
+                    templateId: null
+                    storageTempMin: { numericValue: 37, unitId: 8 }
+                    storageTempMax: { numericValue: 37, unitId: 8 }
+                    extraFields:
+                      - name: Revived from
+                        type: link
+                        newFieldRequest: true
+                        link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+                    subSamples:
+                      - quantity: { numericValue: 1, unitId: 3 }
+                        extraFields:
+                          - name: Revived from
+                            type: link
+                            newFieldRequest: true
+                            link: { relationType: IsDerivedFrom, targetGlobalId: SS1234, versionPin: null }
+              destroy:
+                summary: Destroy - empty the origin and stamp a disposal date (no new sample)
+                value:
+                  operationType: destroy
+                  origins:
+                    - id: 1234
+                      amountTaken: { numericValue: 5, unitId: 3 }
+                      extraFields:
+                        - name: Disposed
+                          type: text
+                          newFieldRequest: true
+                          content: "2026-07-22"
+      responses:
+        "201":
+          description: >
+            The created Sample with its full subsamples, for a producing operation. For a
+            terminal operation (e.g. Destroy) the status is still 201 but the body is empty
+            because nothing is created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sample"
+        "400":
+          description: >
+            The request failed validation - for example over-removal (taking more than an origin
+            holds), a missing or blank new-sample name, an origin without an id, the same origin
+            listed twice, or an amount with a negative value or a missing/invalid unit. The
+            origins are left unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
   /sampleTemplates:
     get:
       summary: List Sample Templates visible to the current user
@@ -4468,6 +4736,164 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/ExtraField"
+    InventoryOperationPost:
+      description: >
+        A configured Inventory operation to perform. Generic and client-built: operationType is
+        audit-only and never branched on, so the server applies exactly the mutation the request
+        describes (see adr/0001). One request is one atomic transaction.
+      type: object
+      required:
+        - origins
+      properties:
+        operationType:
+          type: string
+          description: >
+            The kind of operation, recorded for audit/logging only; the endpoint never branches
+            on it. Values used by the RSpace UI are aliquot, passage, pool, derive, cryopreserve,
+            revive and destroy, but any string is accepted.
+          example: derive
+        origins:
+          type: array
+          minItems: 1
+          description: >
+            The origin subsample(s) the operation consumes. Always an array: a single-origin
+            operation sends one element, Pool sends two or more. Each origin id must be unique.
+          items:
+            $ref: "#/components/schemas/InventoryOperationOriginUpdate"
+        newSample:
+          allOf:
+            - $ref: "#/components/schemas/InventoryOperationNewSample"
+          description: >
+            The new sample to create. Omit (or send null) for a terminal operation such as
+            Destroy, which creates nothing.
+    InventoryOperationOriginUpdate:
+      description: One origin subsample and how the operation updates it.
+      type: object
+      required:
+        - id
+        - amountTaken
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: The id of the origin subsample.
+        amountTaken:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          description: >
+            A positive-or-zero DECREMENT (not an absolute value): the origin's current quantity
+            is reduced by this amount and can never be increased. numericValue must be >= 0 and
+            unitId must be a real unit id (> 0). Zero is a valid no-op (Passage links without
+            consuming). Send the origin's full current quantity to empty it (Destroy, or Pool's
+            "take all"). Taking more than the origin currently holds is rejected with 400.
+        extraFields:
+          type: array
+          description: >
+            Custom fields to add to the origin subsample itself (each with newFieldRequest
+            true), e.g. Destroy's "Disposed" date. Omit for an ordinary decrement-only origin.
+          items:
+            $ref: "#/components/schemas/InventoryOperationExtraField"
+    InventoryOperationNewSample:
+      description: >
+        The new sample to create, assembled entirely by the client (mirrors the POST /samples
+        payload). Its relation link(s) and text fields are placed on the sample; each created
+        subsample carries its own copy of the provenance link in its own extraFields.
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The new sample's name (required when newSample is present).
+        templateId:
+          type: integer
+          format: int64
+          description: >
+            The id of a sample template to base the sample on, or null for an ad-hoc
+            (template-less) sample.
+        storageTempMin:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          description: >
+            Minimum storage temperature (unit in Celsius), e.g. for Cryopreserve or Revive.
+            Optional.
+        storageTempMax:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          description: Maximum storage temperature (unit in Celsius). Optional.
+        extraFields:
+          type: array
+          description: >
+            The sample's custom fields: the provenance link field(s) and any text fields
+            (e.g. Cryomedium for Cryopreserve, Passage number for Passage).
+          items:
+            $ref: "#/components/schemas/InventoryOperationExtraField"
+        subSamples:
+          type: array
+          description: >
+            The subsamples to create, each with its own quantity (the created amount) and its
+            own copy of the provenance link.
+          items:
+            $ref: "#/components/schemas/InventoryOperationNewSubSample"
+    InventoryOperationNewSubSample:
+      description: One subsample the operation creates.
+      type: object
+      properties:
+        quantity:
+          allOf:
+            - $ref: "#/components/schemas/Quantity"
+          description: The created subsample's quantity.
+        extraFields:
+          type: array
+          description: The subsample's custom fields, typically its own copy of the provenance link.
+          items:
+            $ref: "#/components/schemas/InventoryOperationExtraField"
+    InventoryOperationExtraField:
+      description: >
+        A custom field added to the new sample, a created subsample, or an origin. Set
+        newFieldRequest true to add a new field. A provenance LINK field sets type "link" and a
+        link object; a plain field sets type "text" (or "number") and content.
+      type: object
+      required:
+        - name
+        - newFieldRequest
+      properties:
+        name:
+          type: string
+          description: >
+            The field name. For a link this is the provenance label shown on the record
+            (e.g. "Passaged from", "Pooled from: Vial A").
+        type:
+          type: string
+          description: '"link" for a relation link, or "text"/"number" for a plain field.'
+          example: link
+        newFieldRequest:
+          type: boolean
+          description: Must be true to add the field as a new field.
+        content:
+          type: string
+          description: >
+            The field content for a plain "text"/"number" field (e.g. a passage number, or an
+            ISO YYYY-MM-DD disposal date). Omit for a link field.
+        link:
+          type: object
+          description: The relation, for a "link" field.
+          properties:
+            relationType:
+              type: string
+              description: >
+                A DataCite relation type. Used by the shipped operations: IsDerivedFrom (Derive,
+                Passage, Cryopreserve, Revive), IsPartOf (Aliquot), HasPart (Pool), and
+                IsDocumentedBy (the optional documentation link).
+            targetGlobalId:
+              type: string
+              description: >
+                The global id of the linked record: the origin subsample (e.g. SS1234), or an
+                ELN document (e.g. SD123) for a documentation link.
+            versionPin:
+              type: integer
+              format: int64
+              description: A specific version of the target to pin the link to, or null for the current version.
     Barcode:
       description: Information about item's barcode.
       properties:
