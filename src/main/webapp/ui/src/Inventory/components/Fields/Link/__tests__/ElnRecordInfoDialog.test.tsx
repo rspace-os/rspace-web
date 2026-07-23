@@ -48,19 +48,6 @@ function mockRecordInfo(response: () => Response = () => HttpResponse.json(recor
   return captureRequests("get", "/workspace/getRecordInformation", response);
 }
 
-// Most tests just need the default success response; this satisfies that
-// case for free, and tests wanting an error or a different payload override
-// it with their own `mockRecordInfo(...)` call (MSW checks the most recently
-// registered handler first, so the override takes precedence).
-let requests: Request[] = [];
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  requests = mockRecordInfo();
-});
-
-afterEach(cleanup);
-
 function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
   // The dialog relies on an ancestor QueryClient (App.tsx provides one in the
   // running app); supply a fresh client per render here to mirror that.
@@ -91,6 +78,19 @@ async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<type
 }
 
 describe("ElnRecordInfoDialog", () => {
+  // Most tests just need the default success response; this satisfies that
+  // case for free, and tests wanting an error or a different payload override
+  // it with their own `mockRecordInfo(...)` call (MSW checks the most recently
+  // registered handler first, so the override takes precedence).
+  let requests: Request[] = [];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requests = mockRecordInfo();
+  });
+
+  afterEach(cleanup);
+
   it("fetches record information using the numeric id derived from the global id", async () => {
     renderDialog();
 
