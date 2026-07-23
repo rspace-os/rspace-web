@@ -117,7 +117,6 @@ export default function PIDINSTB2InstCard({
                     placeholder={t("settings.pidinst.b2inst.placeholder", { label: settingsLabels[field] })}
                     helperText={updatedSettings[field] === "" ? t("settings.pidinst.b2inst.fieldRequiredError") : null}
                     variant="outlined"
-                    disabled={updatedSettings.enabled === "false"}
                     slotProps={{
                       inputLabel: {
                         shrink: true,

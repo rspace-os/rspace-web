@@ -122,7 +122,7 @@ export default function PIDINSTDataciteCard({
                       })}
                       helperText={entry[1] === "" ? t("settings.pidinst.datacite.fieldRequiredError") : null}
                       variant="outlined"
-                      disabled={updatedSettings.enabled !== "true" || entry[0] === "serverUrl"}
+                      disabled={entry[0] === "serverUrl"}
                       slotProps={{
                         inputLabel: {
                           shrink: true,
