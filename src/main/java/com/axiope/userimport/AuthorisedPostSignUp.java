@@ -2,15 +2,15 @@ package com.axiope.userimport;
 
 import com.researchspace.model.User;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
+import com.researchspace.service.impl.EmailContentGenerator;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.spring.VelocityEngineUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +48,7 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
   private EmailBroadcast emailSender;
 
   @Autowired private UserManager userMgr;
-  @Autowired private VelocityEngine velocity;
+  @Autowired private EmailContentGenerator contentGenerator;
 
   @Autowired
   public void setBroadcaster(EmailBroadcast broadcaster) {
@@ -64,7 +64,7 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
 
   private void notifyUser(User created) {
 
-    Map<String, Object> rc = new HashMap<String, Object>();
+    Map<String, Object> rc = new HashMap<>();
 
     rc.put("installation", installationName);
     rc.put("fullName", created.getDisplayName());
@@ -77,10 +77,13 @@ public class AuthorisedPostSignUp implements IPostUserSignup {
     List<String> recipients = getRecipients();
 
     try {
-      String message =
-          VelocityEngineUtils.mergeTemplateIntoString(velocity, emailTemplateResource, "UTF-8", rc);
-      emailSender.sendTextEmail(
-          "Sign up request from " + installationName, message, recipients, null);
+      EmailContent content =
+          contentGenerator.render(
+              "email.signup.request.subject",
+              new Object[] {installationName},
+              emailTemplateResource,
+              rc);
+      emailSender.sendEmail(content, recipients, null);
       log.info("Emailed signup request to admin");
 
     } catch (MailException me) {

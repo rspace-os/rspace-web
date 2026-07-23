@@ -476,13 +476,20 @@ const FileCard = observer(
        * after triggering another re-rendering with drag-and-drop not active,
        * and then onClick fires to update the selection state.
        *
-       * This state variable contains a reference to a setTimeout that is
+       * This ref contains a setTimeout handle that is
        * intended to only fire onMouseDown/onTouchStart if the user holds the
        * mouse key/their finger down for more than half a second to prevent
        * these excessive re-renders and make the UI more responsive in
        * updating the selection state.
        */
-      const [dndDebounce, setDndDebounce] = React.useState<null | NodeJS.Timeout>(null);
+      const dndDebounce = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+      const clearDndDebounce = () => {
+        if (dndDebounce.current !== null) {
+          clearTimeout(dndDebounce.current);
+          dndDebounce.current = null;
+        }
+      };
       const dropStyle = {
         ...(isOver
           ? {
@@ -584,25 +591,19 @@ const FileCard = observer(
               }
             }}
             onMouseDown={(...args) => {
-              setDndDebounce(
-                setTimeout(() => {
-                  listeners?.onMouseDown(...args);
-                }, 500),
-              );
+              dndDebounce.current = setTimeout(() => {
+                dndDebounce.current = null;
+                listeners?.onMouseDown(...args);
+              }, 500);
             }}
-            onMouseUp={() => {
-              if (dndDebounce) clearTimeout(dndDebounce);
-            }}
+            onMouseUp={clearDndDebounce}
             onTouchStart={(...args) => {
-              setDndDebounce(
-                setTimeout(() => {
-                  listeners?.onTouchStart(...args);
-                }, 500),
-              );
+              dndDebounce.current = setTimeout(() => {
+                dndDebounce.current = null;
+                listeners?.onTouchStart(...args);
+              }, 500);
             }}
-            onTouchEnd={() => {
-              if (dndDebounce) clearTimeout(dndDebounce);
-            }}
+            onTouchEnd={clearDndDebounce}
             onKeyDown={listeners?.onKeyDown as React.KeyboardEventHandler<HTMLDivElement>}
             {...attributes}
             tabIndex={tabIndex}

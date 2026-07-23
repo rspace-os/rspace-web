@@ -1,6 +1,5 @@
 package com.researchspace.webapp.controller;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.join;
 
@@ -15,14 +14,14 @@ import com.researchspace.model.dtos.UserRoleChangeCmnd;
 import com.researchspace.model.permissions.IPermissionUtils;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.RoleManager;
 import com.researchspace.service.UserManager;
 import com.researchspace.service.UserRoleHandler;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   private @Autowired IPropertyHolder properties;
   private @Autowired IContentInitializer initializer;
   private @Autowired RoleManager roleMgr;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -104,7 +103,7 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
     velocityModel.put("newLabGroup", newLabGroup);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
 
-    sentHtmlEmailLogAnyException("RSpace admin account created", newPI, velocityModel);
+    sentHtmlEmailLogAnyException("email.admin.account.created.subject", newPI, velocityModel);
   }
 
   @Override
@@ -141,11 +140,10 @@ public class UserRoleHandlerImpl implements UserRoleHandler {
   }
 
   private void sentHtmlEmailLogAnyException(
-      String subject, User user, Map<String, Object> velocityModel) {
+      String subjectKey, User user, Map<String, Object> velocityModel) {
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "promoteToPIComplete.vm", velocityModel);
-    emailer.sendHtmlEmail(subject, content, toList(user.getEmail()), null);
+        emailContentGenerator.render(subjectKey, "promoteToPIComplete.vm", velocityModel);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
   }
 
   private void assertAuthorizationAndInitUser(User admin, User newPI, String authFailureMsg) {

@@ -107,31 +107,23 @@
 </div>
 #end
 
-#macro(emailSourceIpFooter_Plaintext $ipAddress )
-#emailSourceIpFooter_content1($ipAddress) https://ip-lookup.net/index.php?ip=$ipAddress
-#end
-
-https://ip-lookup.net/index.php?ip=${ipAddress}
-
-
 #macro(emailSourceIpFooter_content1 $ipAddress )
 This request was generated from IP address ${ipAddress}. To find out more about this IP address, please visit
 #end
 
 ## General footer for invitation messages in Community product.
-#macro(aboutRSpaceCloud $isHTML)
-#if($isHTML)<h3>#end
-About RSpace #if($isHTML)</h3>#end
+#macro(aboutRSpaceCloud)
+<h3>About RSpace</h3>
 
 RSpace Community is a new concept.
-#if($isHTML)<p>#end
+<p>
 Designed in collaboration with the University of Wisconsin and three years in the making,
 RSpace is an electronic lab notebook designed for academic labs.  It's also a research 'space'
 where labs can collaborate with other labs, at your institution or around the world. 
-#if($isHTML)<br/>#end
+<br/>
 
 And, it's absolutely  free!
-#if($isHTML)</p>#end
+</p>
 #end
 
 
@@ -142,25 +134,12 @@ The RSpace team
 </p>
 #end
 
-#macro(signature_Plaintext)
-Best wishes,
-
-The RSpace team
-#end
-
 #macro(browserAdvice)
 <p>
 #browserAdvice_Content1 
 <br>
 #browserAdvice_Content2
 </p>
-#end
-
-#macro(browserAdvice_Plaintext)
-
-#browserAdvice_Content1
-
-#browserAdvice_Content2
 #end
 
 #macro(browserAdvice_Content1)
@@ -177,10 +156,6 @@ We do not support Edge or Internet Explorer.
 </p>
 #end
 
-#macro(dontReply_Plaintext)
-#dontReply_content
-#end
-
 #macro(dontReply_content)
 Please don't reply to this email, it was generated automatically.
 #end
@@ -194,14 +169,6 @@ Please don't reply to this email, it was generated automatically.
 </p>
 #end
 
-#macro(notificationPrefInfoNewUser_Plaintext)
-
-#notificationPrefInfoNewUser_content1
-
-#notificationPrefInfoNewUser_content2
-
-#end
-
 #macro(notificationPrefInfoNewUser_content1)
 When you connect to RSpace for the first time, all of the various notification options will be set to 'on'
  by default. 
@@ -212,16 +179,10 @@ If you don’t want to get notifications from RSpace you can set your notificati
  My RSpace > My Profile. The notifications settings are at the bottom of the page.
 #end
 
-#macro(notificationPrefInfoSuffix $isHTML)
-#if($isHTML)<p style = 'font-size:75%'>#end
+#macro(notificationPrefInfoSuffix)
+<p style = 'font-size:75%'>
 Too many notifications? Set your messaging preferences in MyRSpace -> My Profile
-#if($isHTML)</p>#end
-#end
-
-#macro(utf8header)
-<head>
-  <meta charset="UTF-8">
-</head>
+</p>
 #end
 
 #macro(imgThumbnailSrc  $fieldId $itemId $width $height $rotation $tsMillis)

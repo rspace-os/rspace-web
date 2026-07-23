@@ -1,6 +1,5 @@
 package com.researchspace.service.impl;
 
-import static com.researchspace.core.util.TransformerUtils.toList;
 import static com.researchspace.webapp.filter.RemoteUserRetrievalPolicy.SSO_DUMMY_PASSWORD;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -22,17 +21,18 @@ import com.researchspace.model.record.IllegalAddChildOperation;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.CommunityServiceManager;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
 import com.researchspace.service.IGroupCreationStrategy;
 import com.researchspace.service.SysadminUserCreationHandler;
 import com.researchspace.service.UserExistsException;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
 import com.researchspace.webapp.controller.AjaxReturnObject;
 import com.researchspace.webapp.controller.SysAdminCreateUser;
 import com.researchspace.webapp.filter.RemoteUserRetrievalPolicy;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +53,7 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
   private @Autowired GroupManager groupManager;
   private @Autowired IContentInitializer initializer;
   private @Autowired MessageSource messageSource;
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   @Autowired
   @Qualifier("emailBroadcast")
@@ -260,9 +260,12 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
     velocityModel.put("adminUser", adminUser);
     velocityModel.put("htmlPrefix", properties.getServerUrl());
     EmailContent content =
-        strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-            "newUserAccountComplete.vm", velocityModel);
-    emailer.sendHtmlEmail("RSpace account created", content, toList(newUser.getEmail()), null);
+        emailContentGenerator.render(
+            "email.newuseraccount.complete.subject",
+            null,
+            "newUserAccountComplete.vm",
+            velocityModel);
+    emailer.sendEmail(content, List.of(newUser.getEmail()), null);
   }
 
   private User createNewUserAccount(User newUser) throws UserExistsException {

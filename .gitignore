@@ -55,6 +55,7 @@ xsxx2.pdf
 shell.nix
 .envrc
 .direnv-aliases
+src/main/webapp/ui/.env
 .mysql
 .nix-mvn-settings.xml
 .nix-mvn-toolchains.xml

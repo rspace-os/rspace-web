@@ -1,14 +1,13 @@
 package com.researchspace.webapp.controller;
 
 import com.researchspace.core.util.RequestUtil;
-import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.model.User;
 import com.researchspace.model.permissions.SecurityLogger;
 import com.researchspace.properties.IPropertyHolder;
 import com.researchspace.service.EmailBroadcast;
+import com.researchspace.service.EmailContent;
 import com.researchspace.service.UserManager;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import com.researchspace.service.impl.StrictEmailContentGenerator;
+import com.researchspace.service.impl.EmailContentGenerator;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.ratelimiter.RateLimiterConfig;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
@@ -30,7 +29,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class UsernameReminderByEmailHandler {
   protected Logger SECURITY_LOG = LoggerFactory.getLogger(SecurityLogger.class);
-  private static final String EMAIL_SUBJECT = "RSpace username reminder";
   static final int MAX_REMINDERS_PER_EMAIL_PER_HOUR = 5;
 
   @Autowired IPropertyHolder properties;
@@ -42,7 +40,7 @@ public class UsernameReminderByEmailHandler {
   EmailBroadcast emailer;
 
   Map<String, RateLimiter> perMinute = new ConcurrentHashMap<String, RateLimiter>();
-  private @Autowired StrictEmailContentGenerator strictEmailContentGenerator;
+  private @Autowired EmailContentGenerator emailContentGenerator;
 
   void sendUsernameReminderEmail(HttpServletRequest request, String email) {
     String remoteIpAddress = RequestUtil.remoteAddr(request);
@@ -69,10 +67,12 @@ public class UsernameReminderByEmailHandler {
               velocityModel.put("loginLink", properties.getServerUrl() + "/login");
 
               EmailContent emailContent =
-                  strictEmailContentGenerator.generatePlainTextAndHtmlContent(
-                      "usernameReminderMessage.vm", velocityModel);
-              emailer.sendHtmlEmail(
-                  EMAIL_SUBJECT, emailContent, TransformerUtils.toList(email), null);
+                  emailContentGenerator.render(
+                      "email.username.reminder.subject",
+                      null,
+                      "usernameReminderMessage.vm",
+                      velocityModel);
+              emailer.sendEmail(emailContent, List.of(email), null);
             }
           });
     } catch (RequestNotPermitted e) {

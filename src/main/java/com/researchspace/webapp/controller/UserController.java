@@ -2,12 +2,12 @@ package com.researchspace.webapp.controller;
 
 import com.researchspace.model.User;
 import com.researchspace.service.EmailBroadcast;
-import java.util.Arrays;
+import com.researchspace.service.EmailContent;
+import com.researchspace.service.impl.EmailContentGenerator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.shiro.authz.AuthorizationException;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.spring.VelocityEngineUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,7 +31,7 @@ public class UserController extends BaseController {
     this.emailer = emailer;
   }
 
-  @Autowired private VelocityEngine velocity;
+  @Autowired private EmailContentGenerator contentGenerator;
 
   @GetMapping("authorise/{userid}")
   public String authoriseSignUpRequest(@PathVariable(value = "userid") Long userId) {
@@ -44,16 +44,15 @@ public class UserController extends BaseController {
     user.setAccountLocked(false);
     userManager.save(user);
 
-    Map<String, Object> velocityModel = new HashMap<String, Object>();
+    Map<String, Object> velocityModel = new HashMap<>();
 
     String link = domain + "/workspace";
     velocityModel.put("link", link);
     velocityModel.put("fullName", user.getFullName());
-    String message =
-        VelocityEngineUtils.mergeTemplateIntoString(
-            velocity, "genericAccountActivation.vm", "UTF-8", velocityModel);
-    emailer.sendTextEmail(
-        "RSpace account activated", message, Arrays.asList(new String[] {user.getEmail()}), null);
+    EmailContent content =
+        contentGenerator.render(
+            "email.account.activated.subject", "genericAccountActivation.vm", velocityModel);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
     return "accountActivated";
   }
 
@@ -68,14 +67,12 @@ public class UserController extends BaseController {
     user.setAccountLocked(true);
     userManager.save(user);
 
-    Map<String, Object> rc = new HashMap<String, Object>();
+    Map<String, Object> rc = new HashMap<>();
 
     rc.put("fullName", user.getFullName());
-    String message =
-        VelocityEngineUtils.mergeTemplateIntoString(
-            velocity, "genericAccountDenial.vm", "UTF-8", rc);
-    emailer.sendTextEmail(
-        "RSpace account denied", message, Arrays.asList(new String[] {user.getEmail()}), null);
+    EmailContent content =
+        contentGenerator.render("email.account.denied.subject", "genericAccountDenial.vm", rc);
+    emailer.sendEmail(content, List.of(user.getEmail()), null);
     return "accountDenied";
   }
 }

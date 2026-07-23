@@ -1,10 +1,10 @@
-<html>
-<body>
+
+
 Hello $!{invited.fullName},
 <p>
 ${creator.fullName} (${creator.email}) wants to share a document (${recordName}) with you.
 
-<p> 
+<p>
 If you'd like to accept this request, please login to RSpace:
 
 <a href = "${acceptanceLink}">${acceptanceLink}</a>
@@ -14,5 +14,3 @@ Once you've logged in,  there will be a request waiting for you - accept this re
 
 <p>
 #signature
-</body>
-</html>

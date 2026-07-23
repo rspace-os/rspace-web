@@ -2,8 +2,7 @@ package com.researchspace.service.impl;
 
 import com.researchspace.model.comms.Communication;
 import com.researchspace.service.EmailBroadcast;
-import com.researchspace.service.impl.EmailBroadcastImpl.EmailContent;
-import java.util.Arrays;
+import com.researchspace.service.EmailContent;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,30 +16,12 @@ public class DevEmailSenderImpl implements EmailBroadcast, ConfigurableLogger {
   Logger log = defaultLogger;
 
   @Override
-  public void sendTextEmail(String subj, String txt, List<String> recipients, Communication comm) {
+  public void sendEmail(EmailContent content, List<String> recipients, Communication comm) {
     log.info(
-        "DUMMY EMAIL: Text Email [{}] with subject [{}] sent to [{}]",
-        txt,
-        subj,
-        Arrays.toString(recipients.toArray()));
-  }
-
-  @Override
-  public void sendHtmlEmail(
-      String subj, EmailContent content, List<String> recipients, Communication comm) {
-    log.info(
-        "HTML email (has plainText? {})  with subject '{}' sent to [{}]. Content: [{}]",
-        content.getPlainTextContent().isPresent(),
-        subj,
-        Arrays.toString(recipients.toArray()),
-        content.getHtmlContent());
-  }
-
-  @Override
-  public EmailContent generateEmailBody(Communication comm) {
-    String rc = "generated msg";
-    log.info(rc);
-    return EmailContent.builder().htmlContent("<p>" + rc + "</p>").plainTextContent(rc).build();
+        "HTML email with subject '{}' sent to [{}]. Content: [{}]",
+        content.subject(),
+        recipients,
+        content.htmlContent());
   }
 
   /**

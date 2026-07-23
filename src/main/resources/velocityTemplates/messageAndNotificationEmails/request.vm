@@ -1,48 +1,44 @@
-<html>
-#utf8header
-<body>
-<h2> RSpace Request from "$cmm.originator.fullName" (user "$cmm.originator.username")</h2>
+
+<h2>RSpace Request from "$cmm.originator.fullName" (user "$cmm.originator.username")</h2>
 The RSpace#if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") Principal Investigator #else User #end
 "<b>$cmm.originator.fullName</b>" sent you a
 request on $date.format('full_date', $dateOb) at #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP") $date.format('short_time', $dateOb). #else $date.format('short_time', $dateOb)#end
- #if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP" || $cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
- <br/><br/>
- In order to join the
-  #if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
-  Lab
-  #elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
-  Project
-  #end
- Group "<b>$cmm.group.displayName</b>" click to
- <a rel="nofollow" target="_blank" class="word-wrap"
-    href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=COMPLETED">ACCEPT</a>
- or
- <a rel="nofollow" target="_blank" class="word-wrap"
-    href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=REJECTED">REJECT</a>
- this invitation, then log in to RSpace with your credentials.
- <br/>
-  #if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
-  If you accept, the group's PI will be permitted to view your documents.
-  #elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
-  Project Groups have no PI, your documents won't be visible to other group members until you explicitly share them.
-  #end
+#if ($cmm.messageType == "REQUEST_JOIN_LAB_GROUP" || $cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+<br/><br/>
+In order to join the
+#if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+Lab
+#elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+Project
+#end
+Group "<b>$cmm.group.displayName</b>" click to
+<a rel="nofollow" target="_blank" class="word-wrap"
+href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=COMPLETED">ACCEPT</a>
+or
+<a rel="nofollow" target="_blank" class="word-wrap"
+href="$baseURL/dashboard/updateMessageStatus?messageOrRequestId=$cmm.id&status=REJECTED">REJECT</a>
+this invitation, then log in to RSpace with your credentials.
+<br/>
+#if($cmm.messageType == "REQUEST_JOIN_LAB_GROUP")
+If you accept, the group's PI will be permitted to view your documents.
+#elseif($cmm.messageType == "REQUEST_JOIN_PROJECT_GROUP")
+Project Groups have no PI, your documents won't be visible to other group members until you explicitly share them.
+#end
 
- <br/><br/>
- #end
+<br/><br/>
+#end
 
- #if ($cmm.record && $cmm.record.notebook)
- concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>.
- <br>
- #elseif($cmm.record)
- concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name</a>.
- <br>
- #end
+#if ($cmm.record && $cmm.record.notebook)
+concerning notebook <a href="$baseURL/notebookEditor/$cmm.record.id">$cmm.record.name</a>.
+<br>
+#elseif($cmm.record)
+concerning document <a href="$baseURL/workspace/editor/structuredDocument/$cmm.record.id">$cmm.record.name</a>.
+<br>
+#end
 
- #if ($cmm.message && $cmm.message != "")
- More details: <br>
-  $cmm.message
- #end
+#if ($cmm.message && $cmm.message != "")
+More details:<br>
+$cmm.message
+#end
 <p/>
 #dontReply
-</body>
-</html>

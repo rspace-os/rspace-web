@@ -25,7 +25,6 @@ export default function CreateMenu(props: CreateMenuProps) {
   return (
     <>
       <Button
-        data-test-id="notebook-save-btn"
         onClick={(e) => openMenu(e)}
         variant="outlined"
         className="editMode"

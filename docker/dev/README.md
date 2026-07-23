@@ -108,11 +108,27 @@ When you see Jetty report the app has started, open the URL printed by
 
 Subsequent `up`s reuse the existing database and are much faster.
 
+To run the Playwright suite against local third-party integration mocks, enable
+the stack's E2E mode instead:
+
+```bash
+./docker/dev/rspace-dev up --e2e
+```
+
+This starts the mock server in the frontend/backend shared network namespace
+and points PubChem, Fieldmark, Zenodo, Galaxy, PyRAT, and OMERO at it. The mock
+port is unique per worktree and published on host loopback, so the Java backend
+and host Playwright process both use `http://localhost:<mock-port>`. The choice
+persists in `docker/dev/.env`; use `up --no-e2e` to return to real integration
+endpoints.
+
 ## Everyday commands
 
 ```bash
 ./docker/dev/rspace-dev up [--fresh]   # start (--fresh recreates the DB)
 ./docker/dev/rspace-dev up --chemistry # also start the chemistry microservice
+./docker/dev/rspace-dev up --e2e       # start and use third-party integration mocks
+./docker/dev/rspace-dev up --no-e2e    # stop using integration mocks
 ./docker/dev/rspace-dev logs [svc]     # follow logs: app | frontend | db | chemistry
 ./docker/dev/rspace-dev ps             # status + URLs/ports for this worktree
 ./docker/dev/rspace-dev reload         # recompile Java + hot-redeploy webapp
@@ -400,6 +416,7 @@ is the quick lookup.
 | The `db` container keeps restarting | Corrupt data volume or interrupted init | `rspace-dev reset-db`; if it persists, `rspace-dev nuke` (destroys this worktree's volumes) then `up`. |
 | Frontend edits don't appear in the browser | HMR not receiving file events (common on macOS/Windows or `/mnt/c` on WSL2) | Set `VITE_USE_POLLING=true` in `.env`, then recreate the frontend container so it re-reads the var: `rspace-dev compose up -d --force-recreate frontend` (`rspace-dev restart` only recreates the backend `app`). On WSL2 keep the repo on the Linux filesystem. |
 | Java edits don't take effect after `reload` | Change needs a context rebuild or new JVM (see "What still requires a full restart") | `rspace-dev reload`, and if still stale `rspace-dev restart`. |
+| E2E integration calls reach live services or fail DNS | The stack was started without its mock mode | Run `rspace-dev up --e2e`; use the mock port printed by `rspace-dev ps` when running Playwright. |
 | Docker Desktop using too much RAM/disk | Multiple stacks running, or large caches | `rspace-dev down` worktrees you aren't using; reclaim disk per "Destroying a worktree's instance". |
 
 ## Notes & gotchas
@@ -407,6 +424,9 @@ is the quick lookup.
 - **Ports**: chosen once per worktree and stored in `docker/dev/.env`. Delete
   that file to re-allocate (e.g. after freeing a port). All ports bind to
   `127.0.0.1` only.
+- **E2E integration mocks**: `up --e2e` starts them beside Vite and persists
+  `RSPACE_E2E_MOCKS=true`. `up --no-e2e` disables them. `rspace-dev ps` prints
+  the per-worktree mock URL.
 - **Spotless**: `jetty:run` runs `spotless:apply` during compile, exactly as a
   local Maven run does. If you have unformatted Java, it may reformat files in
   your worktree.

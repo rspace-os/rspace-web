@@ -1,0 +1,11 @@
+{
+  "data": [
+    {
+      "@id": 999,
+      "Name": "Mock Omero Project",
+      "Description": "A mock project used for e2e coverage.",
+      "omero:childCount": 0
+    }
+  ],
+  "meta": { "totalCount": 1 }
+}
