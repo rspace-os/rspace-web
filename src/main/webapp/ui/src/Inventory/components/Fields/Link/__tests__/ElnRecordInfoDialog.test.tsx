@@ -1,10 +1,12 @@
 import { ThemeProvider } from "@mui/material/styles";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { HttpResponse } from "msw";
 import type React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithRealI18n } from "@/__tests__/helpers/realI18n";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import inventoryEn from "@/modules/common/i18n/locales/en-US/inventory.json";
 import materialTheme from "../../../../../theme";
 
@@ -25,15 +27,8 @@ vi.mock("../GallerySections", () => ({
 
 import ElnRecordInfoDialog from "../ElnRecordInfoDialog";
 
-beforeEach(() => {
-  fetchMock.resetMocks();
-  vi.clearAllMocks();
-});
-
-afterEach(cleanup);
-
-function recordInfoResponse(overrides: Record<string, unknown> = {}): string {
-  return JSON.stringify({
+function recordInfoResponse(overrides: Record<string, unknown> = {}) {
+  return {
     data: {
       id: 123,
       oid: { idString: "SD123" },
@@ -46,7 +41,11 @@ function recordInfoResponse(overrides: Record<string, unknown> = {}): string {
     },
     error: null,
     success: true,
-  });
+  };
+}
+
+function mockRecordInfo(response: () => Response = () => HttpResponse.json(recordInfoResponse())): Request[] {
+  return captureRequests("get", "/workspace/getRecordInformation", response);
 }
 
 function renderDialog(props: Partial<React.ComponentProps<typeof ElnRecordInfoDialog>> = {}) {
@@ -79,46 +78,51 @@ async function renderDialogWithRealI18n(props: Partial<React.ComponentProps<type
 }
 
 describe("ElnRecordInfoDialog", () => {
-  it("fetches record information using the numeric id derived from the global id", async () => {
-    fetchMock.mockResponse(recordInfoResponse());
+  // Most tests just need the default success response; this satisfies that
+  // case for free, and tests wanting an error or a different payload override
+  // it with their own `mockRecordInfo(...)` call (MSW checks the most recently
+  // registered handler first, so the override takes precedence).
+  let requests: Request[] = [];
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    requests = mockRecordInfo();
+  });
+
+  afterEach(cleanup);
+
+  it("fetches record information using the numeric id derived from the global id", async () => {
     renderDialog();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(requests).toHaveLength(1);
     });
-    const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("/workspace/getRecordInformation?recordId=123");
+    expect(new URL(requests[0].url).searchParams.get("recordId")).toBe("123");
   });
 
   it("fetches the pinned version when versionPin is set", async () => {
-    fetchMock.mockResponse(recordInfoResponse({ version: 4 }));
+    const requests = mockRecordInfo(() => HttpResponse.json(recordInfoResponse({ version: 4 })));
 
     renderDialog({ globalId: "SD123", versionPin: 4 });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(requests).toHaveLength(1);
     });
-    const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).toContain("recordId=123");
-    expect(url).toContain("version=4");
+    const searchParams = new URL(requests[0].url).searchParams;
+    expect(searchParams.get("recordId")).toBe("123");
+    expect(searchParams.get("version")).toBe("4");
   });
 
   it("does not send a version param when the link is not pinned", async () => {
-    fetchMock.mockResponse(recordInfoResponse());
-
     renderDialog({ globalId: "SD123" });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(requests).toHaveLength(1);
     });
-    const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).not.toContain("version=");
+    expect(new URL(requests[0].url).searchParams.has("version")).toBe(false);
   });
 
   it("renders the DocumentSections body for an SD target", async () => {
-    fetchMock.mockResponse(recordInfoResponse());
-
     renderDialog({ globalId: "SD123" });
 
     const body = await screen.findByTestId("document-sections");
@@ -128,7 +132,7 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("forwards the pinned version into the document body", async () => {
-    fetchMock.mockResponse(recordInfoResponse({ version: 4 }));
+    mockRecordInfo(() => HttpResponse.json(recordInfoResponse({ version: 4 })));
 
     renderDialog({ globalId: "SD123", versionPin: 4 });
 
@@ -138,21 +142,22 @@ describe("ElnRecordInfoDialog", () => {
 
   it("ignores a versionPin on a non-SD (NB) target", async () => {
     // NB/GL are not versionable; a stray pin must not send version= nor show version view.
-    fetchMock.mockResponse(recordInfoResponse({ oid: { idString: "NB55" }, type: "Notebook" }));
+    const requests = mockRecordInfo(() =>
+      HttpResponse.json(recordInfoResponse({ oid: { idString: "NB55" }, type: "Notebook" })),
+    );
 
     renderDialog({ globalId: "NB55", versionPin: 9 });
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(requests).toHaveLength(1);
     });
-    const url = fetchMock.mock.calls[0][0] as string;
-    expect(url).not.toContain("version=");
+    expect(new URL(requests[0].url).searchParams.has("version")).toBe(false);
     const body = await screen.findByTestId("document-sections");
     expect(body).toHaveAttribute("data-pinned-version", "");
   });
 
   it("renders the DocumentSections body for a notebook (NB) target", async () => {
-    fetchMock.mockResponse(recordInfoResponse({ oid: { idString: "NB55" }, type: "Notebook" }));
+    mockRecordInfo(() => HttpResponse.json(recordInfoResponse({ oid: { idString: "NB55" }, type: "Notebook" })));
 
     renderDialog({ globalId: "NB55" });
 
@@ -162,7 +167,7 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("renders the GallerySections body for a gallery (GL) target", async () => {
-    fetchMock.mockResponse(recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" }));
+    mockRecordInfo(() => HttpResponse.json(recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" })));
 
     renderDialog({ globalId: "GL9" });
 
@@ -173,13 +178,15 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("shows an error message when the record cannot be loaded", async () => {
-    fetchMock.mockResponse(
-      JSON.stringify({
-        data: null,
-        error: { errorMessages: ["Record not found"] },
-        success: false,
-      }),
-      { status: 404, statusText: "Not Found" },
+    mockRecordInfo(() =>
+      HttpResponse.json(
+        {
+          data: null,
+          error: { errorMessages: ["Record not found"] },
+          success: false,
+        },
+        { status: 404, statusText: "Not Found" },
+      ),
     );
 
     renderDialog();
@@ -188,13 +195,15 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("shows a version-specific error with a latest link when the pinned version cannot be loaded", async () => {
-    fetchMock.mockResponse(
-      JSON.stringify({
-        data: null,
-        error: { errorMessages: ["Version not found"] },
-        success: false,
-      }),
-      { status: 404, statusText: "Not Found" },
+    mockRecordInfo(() =>
+      HttpResponse.json(
+        {
+          data: null,
+          error: { errorMessages: ["Version not found"] },
+          success: false,
+        },
+        { status: 404, statusText: "Not Found" },
+      ),
     );
 
     await renderDialogWithRealI18n({ globalId: "SD599", versionPin: 4 });
@@ -206,8 +215,6 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("links the Open button to /globalId/<globalId> in a new tab", async () => {
-    fetchMock.mockResponse(recordInfoResponse());
-
     renderDialog({ globalId: "SD123" });
 
     const openLink = await screen.findByRole("link", { name: "common:actions.open" });
@@ -216,7 +223,7 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("opens a gallery target at its location in the Gallery, not a download", async () => {
-    fetchMock.mockResponse(recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" }));
+    mockRecordInfo(() => HttpResponse.json(recordInfoResponse({ oid: { idString: "GL9" }, type: "Image" })));
 
     renderDialog({ globalId: "GL9" });
 
@@ -228,8 +235,6 @@ describe("ElnRecordInfoDialog", () => {
     // a deleted ELN record only routes to an error page, so the dialog drops
     // Open; deleted Inventory targets (still viewable in the trash) keep theirs,
     // but they render through InventoryInfoDialog, which has no Open button
-    fetchMock.mockResponse(recordInfoResponse());
-
     renderDialog({ globalId: "SD123", targetDeleted: true });
 
     // the dialog still renders (Close present), but there is no Open affordance
@@ -240,8 +245,6 @@ describe("ElnRecordInfoDialog", () => {
   it("hides the Open button when the ELN target is not readable (no access)", async () => {
     // an unreadable ELN target (shared then unshared) routes only to an error
     // page, so Open is dropped for the same reason as a deleted target
-    fetchMock.mockResponse(recordInfoResponse());
-
     renderDialog({ globalId: "SD123", noAccess: true });
 
     await screen.findByRole("button", { name: "common:actions.close" });
@@ -249,22 +252,26 @@ describe("ElnRecordInfoDialog", () => {
   });
 
   it("renders nothing when closed", () => {
-    fetchMock.mockResponse(recordInfoResponse());
     const { container } = renderDialog({ open: false });
     expect(container).toBeEmptyDOMElement();
   });
 
   it("retries the fetch when reopened after a failure", async () => {
     // First open fails, second open succeeds; the dialog instance stays mounted.
-    fetchMock.mockResponseOnce(
-      JSON.stringify({
-        data: null,
-        error: { errorMessages: ["Record not found"] },
-        success: false,
-      }),
-      { status: 404, statusText: "Not Found" },
-    );
-    fetchMock.mockResponse(recordInfoResponse());
+    let requestCount = 0;
+    mockRecordInfo(() => {
+      requestCount += 1;
+      return requestCount === 1
+        ? HttpResponse.json(
+            {
+              data: null,
+              error: { errorMessages: ["Record not found"] },
+              success: false,
+            },
+            { status: 404, statusText: "Not Found" },
+          )
+        : HttpResponse.json(recordInfoResponse());
+    });
 
     const { rerender, queryClient } = renderDialog({ open: true });
     expect(await screen.findByText("inventory:fields.link.elnInfoDialog.unavailable")).toBeInTheDocument();

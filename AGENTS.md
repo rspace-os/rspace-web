@@ -99,7 +99,9 @@ Frontend test conventions:
   focused helpers only when needed: `findTableCell` / `getIndexOfTableCell`
   from `@/__tests__/tableQueries`, and `expectAccessible` from
   `@/__tests__/accessibility`.
-- Use `vitest-fetch-mock`; global polyfills live in `src/__tests__/setup.ts`.
+- Network mocking uses MSW. A Node server (`src/__tests__/mswServer.ts`) is
+  enabled globally in `src/__tests__/setup.ts` with strict unhandled-request
+  errors; register test-local handlers with the shared `server` export.
 - Use `toBeAccessible` for accessibility assertions and `silenceConsole()` for
   expected console errors.
 - Prefer semantic jest-dom assertions such as `toBeInTheDocument`,

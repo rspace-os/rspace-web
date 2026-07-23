@@ -4,9 +4,9 @@ import { setup, toBeAccessible } from "@sa11y/vitest";
 // conflicts with the jest-dom types bundled in @vitest/browser under TS 7.
 import * as jestDomMatchers from "@testing-library/jest-dom/matchers";
 import { cleanup } from "@testing-library/react";
-import { afterAll, afterEach, expect, vi } from "vitest";
-import createFetchMock from "vitest-fetch-mock";
+import { afterAll, afterEach, beforeAll, expect } from "vitest";
 import { silenceProcessOutput } from "@/__tests__/helpers/silenceConsole";
+import { server } from "@/__tests__/mswServer";
 import i18n from "@/modules/common/i18n";
 
 await i18n.loadNamespaces([
@@ -48,20 +48,21 @@ setup();
 expect.extend(jestDomMatchers);
 expect.extend({ toBeAccessible });
 
-const fetchMocker = createFetchMock(vi);
-
-fetchMocker.enableMocks();
 // @ts-expect-error Mocking
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 
 afterEach(() => {
   cleanup();
   globalThis.localStorage?.clear?.();
   globalThis.sessionStorage?.clear?.();
+  server.resetHandlers();
 });
 
 const restoreStderr = silenceProcessOutput(["stderr"], ["AggregateError"]);
 afterAll(() => {
+  server.close();
   restoreStderr();
 });
 
