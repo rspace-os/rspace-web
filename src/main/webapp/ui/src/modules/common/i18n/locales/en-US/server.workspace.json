@@ -7,6 +7,10 @@
       "fileUnavailable": "Chemistry File with Id: {0} could not be retrieved. Details: {1}",
       "imageUpdateFailed": "An Error Occurred While Updating Chemical Element Images Details: {0}",
       "infoUnavailable": "Couldn't retrieve info for chemId: {0}"
+    },
+    "validation": {
+      "searchTermRequired": "Search term is required",
+      "searchTypeRequired": "Search type is required"
     }
   },
   "calendar": {
@@ -81,14 +85,12 @@
       "csv": "CSV",
       "msTeamsAbbreviation": "MS Teams",
       "removeFromFavorites": "Remove from Favorites",
-      "revisions": "Revisions",
       "sendToLabel": "Send to {0}",
       "sendToTitle": "Send Message to {0}"
     },
     "fileTreeBrowser": {
       "applyOrderingTitle": "Apply new ordering",
       "changeOrderingTitle": "Change tree ordering",
-      "hideTreeTitle": "Hide tree browser",
       "showTreeTitle": "Show tree browser"
     },
     "folderChooser": {
@@ -97,7 +99,6 @@
       "newFolderAriaLabel": "New folder name",
       "newFolderPlaceholder": "New Folder Name",
       "optionally": "Optionally,",
-      "selectedFolder": "Selected folder:",
       "shareTitle": "Select a folder to share into"
     },
     "importFromWord": {
@@ -232,6 +233,9 @@
         "notTaggable": "Only StructuredDocuments, Folders and Notebooks can be tagged"
       }
     },
+    "validation": {
+      "tagsTooLong": "Document tags cannot be longer than 8000 characters"
+    },
     "restore": {
       "errors": {
         "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
@@ -293,7 +297,6 @@
     "importFromOwncloudTitle": "Import From ownCloud / NextCloud",
     "insertFileAriaLabel": "Insert file from local computer",
     "metaHeading": "Notebook",
-    "publishedLabel": "Published",
     "showLastModifiedDate": "Show last modified date",
     "tapToExpandListing": "Tap to expand listing.",
     "templateLabel": "Template"
@@ -310,6 +313,15 @@
       "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
       "systemFormUnpublish": "Attempted to unpublish a system form",
       "unknownFieldType": "Unknown field type [{0}]"
+    },
+    "validation": {
+      "choiceDefaultsInvalid": "Default options must be included in the possible options",
+      "dateRange": "Min date must be before max date, and default date must be between them",
+      "numberRange": "Min must be < max",
+      "optionRequired": "Please provide at least one option",
+      "radioDefaultInvalid": "Default option must be one of the possible options",
+      "stringTooLong": "String fields must be less than {max} characters",
+      "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp} "
     },
     "editor": {
       "addFieldButton": "Add Field",
@@ -632,6 +644,7 @@
   },
   "record": {
     "errors": {
+      "createLocationForbidden": "User is not authorized to create in this {0}.",
       "idsRequired": "List of ids to retrieve is empty!"
     },
     "icon": {
@@ -663,6 +676,12 @@
       "viewNotEditable": "View (Not editable)",
       "viewReadPermissionOnly": "View (read permission only)",
       "viewSomeoneElseEditing": "View (someone else is editing)"
+    },
+    "types": {
+      "documents": "documents",
+      "folder": "folder",
+      "notebooks": "notebooks",
+      "snippets": "snippets"
     }
   },
   "recordInfo": {
@@ -686,27 +705,29 @@
     "importedFromArchiveNotice": "Imported from archive",
     "lastModifiedLabel": "Last Modified:",
     "linkedDocsTitle": "Lists documents that link to this file",
-    "noReferencesNotice": "There are no references to this file.",
     "openInOfficeComButton": "Open in Office.com",
     "openInOfficeComTitle": "Open this file in Office.com",
     "originalCreatorLabel": "Original creator:",
     "originalImageLabel": "Original Image:",
     "pathLabel": "Path:",
     "previewLabel": "Preview:",
-    "referencedByNotice": "This file is referenced by:",
     "revisionNotice": {
       "text": "The information below describes <strong>version {0}</strong> of&nbsp;a&nbsp;document {1}, which may not be the latest version."
     },
-    "showLinkedDocsButton": "Show linked docs",
     "signatureStatusLabel": "Signature Status:",
     "sourceLabel": "Source:",
     "statusLabel": "Status:",
     "templateNameLabel": "Template Name:",
     "typeLabel": "Type:",
     "uniqueIdLabel": "Unique Id:",
-    "uploadNewVersionButton": "Upload new version",
     "uploadNewVersionTitle": "Upload new version of this file",
     "viewFileTitle": "View this file in browser"
+  },
+  "internalLink": {
+    "errors": {
+      "invalidTarget": "Linked item must be a {0}.",
+      "textFieldRequired": "The field containing the link must be a text field."
+    }
   },
   "requestFeedback": {
     "memberOfGroupNotice": "you''re now a member of \"{0}\" group ",
@@ -736,9 +757,16 @@
   "sharing": {
     "errors": {
       "docIdRequired": "Document id cannot be null",
+      "folderUnsupported": "Cannot share folder: {0}.",
+      "groupIdRequired": "Must specify id of the group",
+      "itemsRequired": "There must be at least 1 document or notebook to share",
       "permissionUpdateFailed": "Could not update permission: {0}",
+      "recipientsRequired": "At least one user ID or group ID must be provided in the 'users' or 'groups' list",
+      "sharedItemIdsLimit": "Maximum number of ids in sharedItemIds is {max}.",
       "sharedNotebookMoveFailed": "Errors while moving into Shared Notebook: [{0}]",
-      "sharingFailed": "Problem sharing: {0}"
+      "sharingFailed": "Problem sharing: {0}",
+      "unsupportedRecordType": "Cannot share record {0}; only {1} can be shared.",
+      "userIdRequired": "Must specify id of the user"
     },
     "groups": {
       "title": "Share with a group"
@@ -808,14 +836,12 @@
     },
     "cameraViewLabel": "Camera view:",
     "chooseFileAriaLabel": "Choose a file",
-    "disabledStatus": "Disabled",
     "egnyte": {
       "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
       "disconnectButton": "Disconnect",
       "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
       "setupHeading": "Egnyte filestore setup"
     },
-    "enabledStatus": "Enabled",
     "lastLoginLabel": "Last Login:",
     "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
     "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
@@ -829,6 +855,24 @@
     },
     "takePictureButton": "Take a Picture",
     "uploadImageTabLink": "Upload Image"
+  },
+  "validation": {
+    "name": {
+      "invalid": "Invalid name",
+      "length": "Name must be between 1 and 50 characters"
+    },
+    "pagination": {
+      "pageNumberNonNegative": "Page number must be 0 or greater.",
+      "pageSizeRange": "Page size must be between {min} and {max}."
+    },
+    "ror": {
+      "invalid": "Not a valid RoR"
+    },
+    "search": {
+      "maxAdvancedQueryLength": "Max advanced query length is {max}.",
+      "maxQueryLength": "Max query length is {max}.",
+      "queryLengthRange": "Min query length is {min}, max query length is {max}."
+    }
   },
   "workspace": {
     "copy": {
@@ -925,11 +969,8 @@
     },
     "sort": {
       "ariaLabel": "Order by",
-      "ascending": "Ascending",
-      "byCreationDate": "Creation Date",
       "byLastModified": "Last Modified",
       "byName": "Name",
-      "descending": "Descending",
       "label": "Order by:",
       "sortOrderAriaLabel": "Sort order"
     },

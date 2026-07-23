@@ -2,6 +2,7 @@ package com.researchspace.service.impl;
 
 import static org.apache.commons.collections4.ListUtils.removeAll;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.StringAbbreviationUtils;
 import com.researchspace.dao.GroupMembershipEventDao;
 import com.researchspace.dao.RecordDao;
@@ -87,10 +88,17 @@ public class AutoshareManagerImpl implements AutoshareManager {
 
     if (!toShare.isAutosharable()) {
       String message =
-          String.format(
-              "%s (%s) cannot be autoshared: autosharing must be enabled and item must be a"
-                  + " document or notebook",
-              toShare.getName(), toShare.getGlobalIdentifier());
+          messages.getMessage(
+              "autoshare.errors.unsupportedItem",
+              new Object[] {
+                toShare.getName(),
+                toShare.getGlobalIdentifier(),
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("common:recordTypes.document.lower"),
+                        messages.getMessage("common:recordTypes.notebook.lower")),
+                    ListFormatter.Type.OR)
+              });
 
       return new ServiceOperationResult<>(null, false, message);
     }

@@ -133,7 +133,6 @@
     },
     "egnyte": {
       "connectionSetup": {
-        "connectButton": "Connect",
         "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
         "passwordPlaceholder": "Egnyte Password",
         "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
@@ -154,7 +153,6 @@
     },
     "msteams": {
       "domainConfig": {
-        "connectButton": "Connect",
         "connectHeading": "Connect to your RSpace server:",
         "noAccountHeading": "Don't have an account yet?",
         "signupLinkText": "https://community.researchspace.com",

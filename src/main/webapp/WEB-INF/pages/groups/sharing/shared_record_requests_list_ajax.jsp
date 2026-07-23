@@ -10,7 +10,7 @@
 			<th><spring:message code="groups.sharing.table.documentName"/></th>
 			<th><spring:message code="groups.sharing.table.globalId"/></th>
 			<th><spring:message code="groups.sharing.table.sharedWith"/></th>
-			<th><spring:message code="groups.sharing.table.permission"/></th>
+			<th><spring:message code="common:shareDialog.columns.permission"/></th>
 			<th><spring:message code="groups.sharing.table.actions"/></th>
 		</tr>
 		<c:forEach items="${requests}" var="request">

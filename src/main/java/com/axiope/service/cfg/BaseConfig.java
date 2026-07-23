@@ -96,6 +96,7 @@ import com.researchspace.service.IRepositoryConfigFactory;
 import com.researchspace.service.ISignupHandlerPolicy;
 import com.researchspace.service.ImageProcessor;
 import com.researchspace.service.IntegrationsHandler;
+import com.researchspace.service.JsonMessageSource;
 import com.researchspace.service.MessageOrRequestCreatorManager;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.PiChangeHandler;
@@ -1159,7 +1160,9 @@ public abstract class BaseConfig {
 
   @Bean("validator")
   LocalValidatorFactoryBean localValidatorFactoryBean() {
-    return new LocalValidatorFactoryBean();
+    LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+    validator.setValidationMessageSource(new JsonMessageSource());
+    return validator;
   }
 
   @Bean

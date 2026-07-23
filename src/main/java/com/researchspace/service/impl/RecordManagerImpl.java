@@ -11,6 +11,7 @@ import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.axiope.search.SearchUtils;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.JacksonUtil;
 import com.researchspace.core.util.SearchResultsImpl;
@@ -83,6 +84,7 @@ import com.researchspace.service.CommunicationManager;
 import com.researchspace.service.DefaultRecordContext;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.DocumentCopyManager;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.OperationFailedMessageGenerator;
@@ -959,7 +961,15 @@ public class RecordManagerImpl implements RecordManager {
     if (!permissnUtils.isPermitted(parentFolder, PermissionType.CREATE, user)
         && !isSharedFolderOrSharedNotebookWithoutCreatePermission(user, parentFolder)) {
       throw new AuthorizationException(
-          "User is not authorized to created in this folder or notebook");
+          messages.getMessage(
+              "record.errors.createLocationForbidden",
+              new Object[] {
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("record.types.folder"),
+                        messages.getMessage("common:recordTypes.notebook.lower")),
+                    ListFormatter.Type.OR)
+              }));
     }
   }
 

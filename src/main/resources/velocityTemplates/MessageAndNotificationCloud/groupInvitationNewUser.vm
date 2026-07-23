@@ -19,7 +19,7 @@ $msg.getMessage("email.common.signatureSignOff")
 $msg.getMessage("email.common.signatureTeam")
 </p>
 
-<h3>$msg.getMessage("email.common.aboutRSpaceHeading")</h3>
+<h3>$msg.getMessage("about:title")</h3>
 $msg.getMessage("email.common.aboutRSpaceIntro")
 <p>
 $msg.getMessage("email.common.aboutRSpaceDescription")

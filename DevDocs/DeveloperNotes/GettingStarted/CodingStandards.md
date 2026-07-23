@@ -207,9 +207,15 @@ use the module catalogue (`common.json`, `inventory.json`, and so on); backend
 messages are partitioned across the `server.*.json` files in the same directory.
 All catalogues use ICU MessageFormat.
 
-Add backend text to the closest `server.*.json` file and resolve it through
-Spring's `MessageSource` or `MessageSourceUtils`. Use semantic lower-camel-case
-keys and full phrases rather than concatenating translated fragments.
+Before adding backend text, reuse an existing frontend key when its meaning and
+interpolation contract match, including the namespace in backend references
+(for example, `common:actions.save`). Otherwise add the text to the closest
+`server.*.json` file. Resolve it through Spring's `MessageSource` or
+`MessageSourceUtils`. Use semantic lower-camel-case keys and full phrases
+rather than concatenating translated fragments.
+Bean Validation annotations use the same JSON catalogues and reference keys
+with Hibernate Validator braces, for example
+`message = "{validation.errors.requiredField}"`.
 Format user-facing lists with `ListFormatUtils`, not `String.join` or
 `Collectors.joining`; delimiter joining is only for machine formats. Tests
 that exercise localized output should construct `MessageSourceUtils` with a

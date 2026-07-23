@@ -61,9 +61,7 @@ public class ApiUserPost {
   private String password;
 
   /** Default is user role if not set */
-  @Pattern(
-      regexp = "(ROLE_USER)|(ROLE_PI)",
-      message = "Unknown role - must be one of 'ROLE_USER' or 'ROLE_PI'")
+  @Pattern(regexp = "(ROLE_USER)|(ROLE_PI)", message = "{errors.user.role.invalid}")
   @NotNull
   @Builder.Default
   private String role = "ROLE_USER";

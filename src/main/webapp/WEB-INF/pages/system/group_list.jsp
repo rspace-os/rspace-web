@@ -38,7 +38,7 @@
 </shiro:hasAnyRoles>
 
 <div class="tabularViewTop">
-  <h2 class="title"><spring:message code="system.groupList.title"/></h2>
+  <h2 class="title"><spring:message code="system:usersPage.groupMembership.panelLabel"/></h2>
   <div
     class="base-search"
     data-variant="outlined"

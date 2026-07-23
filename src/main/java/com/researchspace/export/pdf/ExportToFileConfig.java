@@ -41,7 +41,7 @@ public class ExportToFileConfig implements StructuredDocumentHTMLViewConfig, IEx
 
   private ExportFormat exportFormat = ExportFormat.PDF;
 
-  @NotEmpty(message = "PDF name {errors.required.field}")
+  @NotEmpty(message = "{export.validation.pdfNameRequired}")
   private String exportName = "PDF export";
 
   private boolean provenance = true;

@@ -43,7 +43,7 @@
 				<tr>
 					<td colspan="3">
 						<label>
-							<spring:message code="system.createAccountForm.backdoorAccountLinkText" var="backdoorAccountLinkText"/>
+							<spring:message code="common:helpDocs.documentation" var="backdoorAccountLinkText"/>
 							<spring:message code="common:help.multipleAccountsSameSso" var="multipleAccountsHelpSlug"/>
 							<spring:message code="system.createAccountForm.backdoorAccountInfo">
 								<spring:argument value='<a rel="noreferrer" href="${f:helpDocsUrl(multipleAccountsHelpSlug)}" target="_blank">${backdoorAccountLinkText}</a>'/>
@@ -164,7 +164,7 @@
                 <p><spring:message code="system.createAccountForm.password.helpText"/></p>
 			</td>
 			<td width="30%">
-				<input type="password" name="password" placeholder="<spring:message code='system.createAccountForm.password.placeholder'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.password.title'/>" required />
+				<input type="password" name="password" placeholder="<spring:message code='system:usersPage.piRoleDialog.password'/>" class="accountsInputs" pattern="[ -~]{8,50}" title="<spring:message code='system.createAccountForm.password.title'/>" required />
 
 			</td>
 			<td width="20%">
@@ -233,7 +233,7 @@
 								<tr>
 									<th width="30px"></th>
 									<th><span style="font-weight: bold;" id="sortGroupsByName"><spring:message code="system.createAccountForm.groupsTable.name"/></span></th>
-									<th><span style="font-weight: bold;" id="sortGroupsByPI"><spring:message code="system.createAccountForm.groupsTable.pi"/></span></th>
+									<th><span style="font-weight: bold;" id="sortGroupsByPI"><spring:message code="system:usersPage.roleLabels.pi"/></span></th>
 									<th><span style="font-weight: bold;" id="sortGroupsBySize"><spring:message code="system.createAccountForm.groupsTable.size"/></span></th>
 								</tr>
 							</thead>

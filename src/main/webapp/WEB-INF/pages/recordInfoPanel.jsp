@@ -5,7 +5,7 @@
 
   <div class="linkedRecordsForAttachmentsDiv">
  <!--{{^isEmpty}} -->
-<spring:message code="recordInfoPanel.referencedByNotice"/>
+<spring:message code="inventory:fields.link.gallerySections.referencedBy"/>
 <table class="linkedRecordsForAttachmentsTable" width="100%">
             <tr class="linkedRecordRow"><th>ID</th><th>Name</th></tr>
             <!--{{#items}} -->
@@ -14,7 +14,7 @@
   </table>
  <!--{{/isEmpty}} -->
  <!--{{#isEmpty}} -->
-<spring:message code="recordInfoPanel.noReferencesNotice"/>
+<spring:message code="inventory:fields.link.gallerySections.noReferences"/>
  <!--{{/isEmpty}} -->
 </div>
 
@@ -263,7 +263,7 @@
           style="display:none;"
           tabindex="0"
         >
-          <spring:message code="recordInfoPanel.uploadNewVersionButton"/>
+          <spring:message code="inventory:fields.link.gallerySections.uploadNewVersion"/>
         </button>
         <button
           type='button'
@@ -272,7 +272,7 @@
           style="display:none;"
           tabindex="0"
         >
-          <spring:message code="recordInfoPanel.showLinkedDocsButton"/>
+          <spring:message code="inventory:fields.link.gallerySections.showLinkedDocs"/>
         </button>
       </div>
       <div class="linkedRecordsForAttachments" style="display:none;"></div>

@@ -57,7 +57,7 @@
             <axt:breadcrumb breadcrumb="${bcrumb}" breadcrumbTagId="editorBcrumb"></axt:breadcrumb>
           </span>
                 <c:if test="${!param.publicDocument}">
-                    <spring:message code="documentView.publishedLabel" var="documentViewPublishedLabel"/>
+                    <spring:message code="common:appBar.published" var="documentViewPublishedLabel"/>
                     <div> <img id="publishedStatusImg"
                                src="/images/icons/html.png"
                                alt="${documentViewPublishedLabel}"

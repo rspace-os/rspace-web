@@ -5,6 +5,7 @@ import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUME
 import static com.researchspace.service.CommunicationNotifyPolicy.ALWAYS_NOTIFY;
 import static java.util.stream.Collectors.toSet;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.core.util.ISearchResults;
 import com.researchspace.core.util.TransformerUtils;
 import com.researchspace.dao.CommunicationDao;
@@ -59,6 +60,7 @@ import com.researchspace.service.DocumentSharedStateCalculator;
 import com.researchspace.service.FolderManager;
 import com.researchspace.service.GroupManager;
 import com.researchspace.service.IContentInitializer;
+import com.researchspace.service.ListFormatUtils;
 import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.NotificationConfig;
 import com.researchspace.service.RecordSharingManager;
@@ -294,12 +296,22 @@ public class RecordSharingManagerImpl implements RecordSharingManager {
     BaseRecord recordOrNotebook = getRecordOrNotebook(recordToShareId);
     if (recordOrNotebook.isMediaRecord()) {
       throw new AuthorizationException(
-          String.format(
-              "Can't share  record %s, can only share notebooks or documents or snippets",
-              recordOrNotebook.getGlobalIdentifier()));
+          messages.getMessage(
+              "sharing.errors.unsupportedRecordType",
+              new Object[] {
+                recordOrNotebook.getGlobalIdentifier(),
+                ListFormatUtils.formatList(
+                    List.of(
+                        messages.getMessage("record.types.notebooks"),
+                        messages.getMessage("record.types.documents"),
+                        messages.getMessage("record.types.snippets")),
+                    ListFormatter.Type.OR)
+              }));
     }
     if (recordOrNotebook.isFolder() && !recordOrNotebook.isNotebook()) {
-      throw new AuthorizationException("Cannot share a folder :" + recordOrNotebook.getName());
+      throw new AuthorizationException(
+          messages.getMessage(
+              "sharing.errors.folderUnsupported", new Object[] {recordOrNotebook.getName()}));
     }
     boolean piSharingOnlyWithAnyonymous = false;
     // we dont mix sharing and publishing in the same 'share' action

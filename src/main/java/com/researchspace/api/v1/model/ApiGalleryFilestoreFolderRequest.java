@@ -17,10 +17,10 @@ import lombok.NoArgsConstructor;
 public class ApiGalleryFilestoreFolderRequest {
 
   /** Parent folder, relative to the filestore root. Empty/"/" means the root. */
-  @NotNull(message = "path is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.pathRequired}")
   private String path;
 
-  @NotNull(message = "name is mandatory")
-  @Size(min = 1, message = "name is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.nameRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.nameRequired}")
   private String name;
 }

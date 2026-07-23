@@ -33,11 +33,11 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @NoArgsConstructor
   public static class ExportApiConfig {
     @NotNull
-    @Pattern(regexp = "(xml)|(html)", message = "format {errors.required.field}")
+    @Pattern(regexp = "(xml)|(html)", message = "{export.validation.formatRequired}")
     private String format;
 
     @NotNull
-    @Pattern(regexp = "(user)|(group)|(selection)", message = "scope {errors.required.field}")
+    @Pattern(regexp = "(user)|(group)|(selection)", message = "{export.validation.scopeRequired}")
     private String scope;
 
     private Long id = null;
@@ -60,7 +60,7 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @NoArgsConstructor
   public static class ExportRetrievalConfig {
     @NotBlank
-    @Pattern(regexp = ".*(\\.zip)?", message = "File must be a zip name")
+    @Pattern(regexp = ".*(\\.zip)?", message = "{export.validation.zipFileRequired}")
     private String resource;
   }
 

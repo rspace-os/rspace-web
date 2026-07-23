@@ -26,13 +26,10 @@ public abstract class ApiPaginationCriteria {
   public static final String PAGE_SIZE_REQ_PARAM = "pageSize";
   public static final String ORDERBY_REQ_PARAM = "orderBy";
 
-  @Min(value = 0, message = "Page number must be 0 or greater.")
+  @Min(value = 0, message = "{validation.pagination.pageNumberNonNegative}")
   Integer pageNumber = 0;
 
-  @Range(
-      min = 1,
-      max = MAX_PAGE_SIZE,
-      message = "Page size must be between 1 and " + MAX_PAGE_SIZE + ".")
+  @Range(min = 1, max = MAX_PAGE_SIZE, message = "{validation.pagination.pageSizeRange}")
   Integer pageSize = DEFAULT_PAGE_SIZE;
 
   String orderBy;

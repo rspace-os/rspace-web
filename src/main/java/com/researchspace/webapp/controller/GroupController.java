@@ -1155,7 +1155,7 @@ public class GroupController extends BaseController {
    */
   private String canManageAutoshareForGroup(Group group, User user, boolean targetAutoshareStatus) {
     if (!systemPropertyPermissionUtils.isPropertyAllowed(group, "group_autosharing.available")) {
-      return getText("autoshare.errors.disabled");
+      return getText("common:profile.groups.manager.contactAdmin");
     } else if (!group.isLabGroup()) {
       return getText("autoshare.errors.labGroupRequired");
     } else if (properties.isCloud()) {

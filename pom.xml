@@ -297,13 +297,6 @@
         </includes>
       </resource>
       <resource>
-        <directory>src/main/resources</directory>
-        <includes>
-          <include>ApplicationResources*.properties</include>
-        </includes>
-        <filtering>false</filtering>
-      </resource>
-      <resource>
         <directory>target/resources</directory>
         <filtering>true</filtering>
       </resource>

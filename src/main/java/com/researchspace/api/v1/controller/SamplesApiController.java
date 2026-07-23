@@ -267,7 +267,8 @@ public class SamplesApiController extends BaseApiInventoryController implements 
 
     String errorMsg = "";
     if (StringUtils.isEmpty(sampleName)) {
-      errorMsg = getMessage("errors.inventory.name.empty", null);
+      errorMsg =
+          getMessage("inventory:fields.templateFields.customField.validation.emptyName", null);
     } else if (StringUtils.length(sampleName) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
       errorMsg =
           getMessage(

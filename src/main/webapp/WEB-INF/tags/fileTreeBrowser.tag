@@ -31,12 +31,12 @@
             <div style="text-align: center;">
                 <select class="orderBy" aria-label="<spring:message code='workspace.sort.ariaLabel'/>">
                   <option value="name"><spring:message code="workspace.sort.byName"/></option>
-                  <option value="creationdate"><spring:message code="workspace.sort.byCreationDate"/></option>
+                  <option value="creationdate"><spring:message code="common:treeSort.order.creationDate"/></option>
                   <option value="modificationdate"><spring:message code="workspace.sort.byLastModified"/></option>
                 </select>
                 <select class="sortOrder" style="margin-left: 2px;" aria-label="<spring:message code='workspace.sort.sortOrderAriaLabel'/>">
-                  <option value="ASC"><spring:message code="workspace.sort.ascending"/></option>
-                  <option value="DESC"><spring:message code="workspace.sort.descending"/></option>
+                  <option value="ASC"><spring:message code="common:treeSort.direction.ascending"/></option>
+                  <option value="DESC"><spring:message code="common:treeSort.direction.descending"/></option>
                 </select>
                 <button class="btn btn-default" id="applySortingSettings" title="<spring:message code='dialogs.fileTreeBrowser.applyOrderingTitle'/>">
                     <span class="glyphicon glyphicon-ok"></span>
@@ -47,7 +47,7 @@
       </ul>
       <ul class="nav navbar-nav navbar-right">
         <li>
-          <a id="hideFileTreeSmall" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="<spring:message code='dialogs.fileTreeBrowser.hideTreeTitle'/>">
+          <a id="hideFileTreeSmall" href="#" class="rs-actionbar__item rs-actionbar__item--icon" title="<spring:message code='common:toolbar.hideTreeBrowser'/>">
             <span class="glyphicon glyphicon-menu-right"></span>
           </a>
         </li>

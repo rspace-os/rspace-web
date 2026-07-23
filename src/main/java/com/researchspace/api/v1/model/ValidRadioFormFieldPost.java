@@ -13,7 +13,7 @@ import javax.validation.Payload;
 @Constraint(validatedBy = {ValidRadioFormFieldPostValidator.class})
 @Documented
 public @interface ValidRadioFormFieldPost {
-  String message() default "Default option must be one of the possible options";
+  String message() default "{form.validation.radioDefaultInvalid}";
 
   Class<?>[] groups() default {};
 

@@ -3,7 +3,19 @@
     "inventory": {
       "notEnabled": "Inventory is not enabled on this RSpace instance.",
       "barcode": {
-        "unsupportedCodeType": "Unsupported code type: {0}"
+        "contentRequired": "Content parameter is required",
+        "heightNonNegative": "Requested height cannot be less then zero",
+        "type": {
+          "invalid": "Supported barcodeType values are: 'BARCODE' or 'QR'"
+        },
+        "unsupportedCodeType": "Unsupported code type: {0}",
+        "widthNonNegative": "Requested width cannot be less than zero"
+      },
+      "bulk": {
+        "creationUnsupportedType": "Bulk creation only supports records with the 'type' field set to {0}; was: {1}.",
+        "operationTypeRequired": "Bulk operation must specify operationType",
+        "recordCount": "Bulk operation must specify at least 1, at most 100 records",
+        "recordsRequired": "Bulk operation must specify list of records"
       },
       "globalId": {
         "unsupportedType": "Unsupported global id type: {0}",
@@ -16,12 +28,22 @@
         },
         "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
         "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
-        "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'."
+        "gridLayoutRequired": "Grid layout must be set for a grid container.",
+        "imageTooLarge": "Container image cannot be larger than 10MB",
+        "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
+        "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+        "typeRequired": "Container type (cType) is required and must be one of {0}."
       },
       "export": {
+        "exportMode": {
+          "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
+        },
         "requestHasBothIdsAndUsers": "Export requires specifying either items or users to export, but POST request provided both 'globalIds' and 'users'",
         "requestHasNoIdsNoUsers": "Export requires specifying either items or users to export, but POST request provided neither 'globalIds' nor 'users'",
         "requestInvalidGlobalIds": "Some of requested globalIds are not valid global identifiers: [{0}]",
+        "resultFileType": {
+          "invalid": "resultFileType should be either 'ZIP' or 'SINGLE_CSV'"
+        },
         "unexportableGlobalIds": "Cannot export items with global id [{0}] - items not found, or no permission",
         "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
       },
@@ -75,13 +97,16 @@
         "subSampleImportRequiresSamplesImport": "Subsample import with 'parent sample' mapping requires Sample import, but sampleSettings were empty",
         "templateInfoEmpty": "'templateInfo' property must be provided and describe a template for imported samples"
       },
+      "imageTooLarge": "Image cannot be larger than 10MB",
       "instrument": {
         "nameExists": "There is already an instrument named [{0}]",
         "templateNotFound": "No instrument template with id: {0}",
         "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
       },
       "listOfMaterials": {
+        "descriptionTooLong": "Description cannot be longer than 255 chars",
         "elnFieldIdRequired": "elnFieldId cannot be null",
+        "nameTooLong": "Name cannot be longer than 255 chars",
         "nameRequired": "name cannot be empty"
       },
       "location": {
@@ -116,6 +141,19 @@
         "templateNotFound": "No sample template with id: {0}",
         "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
       },
+      "search": {
+        "deletedItems": {
+          "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
+        },
+        "maxQueryLength": "Max query length is {max}",
+        "parentGlobalId": {
+          "invalid": "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench, Sample, Sample Template, Instrument Template or Basket"
+        },
+        "resultType": {
+          "invalid": "Requested result type must be one of: SAMPLE, SUBSAMPLE, CONTAINER, SAMPLE_TEMPLATE, INSTRUMENT or INSTRUMENT_TEMPLATE"
+        },
+        "usernameTooLong": "Provided value is too long for a username"
+      },
       "settings": {
         "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
       },
@@ -138,8 +176,8 @@
         "failed": "Validation failed for provided record"
       },
       "name": {
-        "empty": "Name cannot be empty",
-        "tooLong": "Name is too long (max {0} chars)"
+        "tooLong": "Name is too long (max {0} chars)",
+        "validationTooLong": "Name cannot be longer than 255 characters"
       },
       "template": {
         "emptyFieldName": "Field name cannot be empty",

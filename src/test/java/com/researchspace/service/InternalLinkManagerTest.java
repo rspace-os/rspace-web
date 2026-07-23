@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -33,6 +34,7 @@ public class InternalLinkManagerTest {
   @Mock BaseRecordManager baseRcdMgr;
   @Mock IPermissionUtils permUtils;
   @Mock InternalLinkDao internalLinkDao;
+  @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   @InjectMocks InternalLinkManagerImpl internalLinkMgr;
 
   User user;

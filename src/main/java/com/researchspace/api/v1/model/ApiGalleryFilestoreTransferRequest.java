@@ -17,15 +17,15 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreTransferRequest {
 
-  @NotNull(message = "sourcePath is mandatory")
-  @Size(min = 1, message = "sourcePath is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.sourcePathRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.sourcePathRequired}")
   private String sourcePath;
 
-  @NotNull(message = "destFilestoreId is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.destFilestoreIdRequired}")
   private Long destFilestoreId;
 
-  @NotNull(message = "destPath is mandatory")
-  @Size(min = 1, message = "destPath is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.destPathRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.destPathRequired}")
   private String destPath;
 
   private boolean deleteSource;

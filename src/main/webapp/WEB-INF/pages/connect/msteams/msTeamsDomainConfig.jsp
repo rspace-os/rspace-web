@@ -23,7 +23,7 @@
     <form>
         <div class="form-group">
             <input type="text" id="serverUrlInput" name="serverUrl"></input>
-            <div id="changeServerBtn" class="btn btn-primary"><spring:message code="connect.msteams.domainConfig.connectButton"/></div>
+            <div id="changeServerBtn" class="btn btn-primary"><spring:message code="apps:actions.connect"/></div>
         </div>
     </form>
 

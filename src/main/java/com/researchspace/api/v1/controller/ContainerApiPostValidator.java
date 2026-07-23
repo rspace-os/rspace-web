@@ -1,7 +1,10 @@
 package com.researchspace.api.v1.controller;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.model.ApiContainer;
 import com.researchspace.model.inventory.Container.ContainerType;
+import com.researchspace.service.ListFormatUtils;
+import java.util.List;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -21,19 +24,22 @@ public class ContainerApiPostValidator extends ContainerApiValidator {
     if (target.getCType() == null) {
       errors.rejectValue(
           "cType",
-          "errors.required",
-          new Object[] {"Container type (cType) (LIST, GRID or IMAGE)"},
+          "errors.inventory.container.typeRequired",
+          new Object[] {
+            ListFormatUtils.formatList(
+                List.of(
+                    ContainerType.LIST.name(),
+                    ContainerType.GRID.name(),
+                    ContainerType.IMAGE.name()),
+                ListFormatter.Type.OR)
+          },
           null);
       return;
     }
     // if we want a grid, a valid grid layout is present
     if (ContainerType.GRID.name().toLowerCase().equals(target.getCType().toLowerCase())) {
       if (target.getGridLayout() == null) {
-        errors.rejectValue(
-            "gridLayout",
-            "errors.required",
-            new Object[] {"Grid layout must be set for a grid container"},
-            null);
+        errors.rejectValue("gridLayout", "errors.inventory.container.gridLayoutRequired");
       } else if (target.getGridLayout().getColumnsNumber() == null
           || target.getGridLayout().getColumnsNumber() == 0
           || target.getGridLayout().getRowsNumber() == null

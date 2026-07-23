@@ -16,10 +16,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreMoveRequest {
 
-  @NotNull(message = "sourcePath is mandatory")
-  @Size(min = 1, message = "sourcePath is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.sourcePathRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.sourcePathRequired}")
   private String sourcePath;
 
-  @NotNull(message = "destPath is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.destPathRequired}")
   private String destPath;
 }

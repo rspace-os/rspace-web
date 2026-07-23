@@ -88,8 +88,8 @@
             </rst:hasDeploymentProperty>
             <td>
                 <select name="roleSelection" data-fieldname="role" style="width:60px;" required>
-                  <option value="ROLE_USER"><spring:message code="system.batchRegistration.roleOptions.user"/></option>
-                  <option value="ROLE_PI"><spring:message code="system.batchRegistration.roleOptions.pi"/></option>
+                  <option value="ROLE_USER"><spring:message code="system:usersPage.roleLabels.user"/></option>
+                  <option value="ROLE_PI"><spring:message code="system:usersPage.roleLabels.pi"/></option>
                   <option value="ROLE_ADMIN"><spring:message code="system.batchRegistration.roleOptions.communityAdmin"/></option>
                   <shiro:hasRole name="ROLE_SYSADMIN">
                     <option value="ROLE_SYSADMIN"><spring:message code="system.batchRegistration.roleOptions.systemAdmin"/></option>
@@ -150,17 +150,17 @@
     <table style="margin-bottom: 0.5em">
         <thead>
             <tr>
-                <th><spring:message code="system.batchRegistration.columns.firstName"/></th>
-                <th><spring:message code="system.batchRegistration.columns.lastName"/></th>
-                <th><spring:message code="system.batchRegistration.columns.email"/></th>
+                <th><spring:message code="system:usersPage.columns.firstName"/></th>
+                <th><spring:message code="system:usersPage.columns.lastName"/></th>
+                <th><spring:message code="system:usersPage.columns.email"/></th>
                 <rst:hasDeploymentProperty name="cloud" value="true">
                     <th><spring:message code="system.batchRegistration.columns.affiliation"/></th>
                 </rst:hasDeploymentProperty>
-                <th><spring:message code="system.batchRegistration.columns.role"/></th>
-                <th><spring:message code="system.batchRegistration.columns.username"/></th>
+                <th><spring:message code="system:usersPage.columns.role"/></th>
+                <th><spring:message code="system:usersPage.columns.username"/></th>
                 <rst:hasDeploymentProperty name="standalone" value="true">
                   <rst:hasDeploymentProperty name="ldapAuthenticationEnabled" value="false">
-                    <th><spring:message code="system.batchRegistration.columns.password"/></th>
+                    <th><spring:message code="system:usersPage.piRoleDialog.password"/></th>
                   </rst:hasDeploymentProperty>
                 </rst:hasDeploymentProperty>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
@@ -186,7 +186,7 @@
         <thead>
             <tr>
                 <th><spring:message code="system.batchRegistration.columns.name"/></th>
-                <th><spring:message code="system.batchRegistration.columns.pi"/></th>
+                <th><spring:message code="system:usersPage.roleLabels.pi"/></th>
                 <th><spring:message code="system.batchRegistration.columns.members"/></th>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
                 <th style="background-color: white"></th>
@@ -206,7 +206,7 @@
         <thead>
             <tr>
                 <th><spring:message code="system.batchRegistration.columns.name"/></th>
-                <th><spring:message code="system.batchRegistration.columns.communityAdmins"/></th>
+                <th><spring:message code="system:usersPage.communityAdmins"/></th>
                 <th><spring:message code="system.batchRegistration.columns.labGroups"/></th>
                 <th><spring:message code="system.batchRegistration.columns.status"/></th>
                 <th style="background-color: white"></th>

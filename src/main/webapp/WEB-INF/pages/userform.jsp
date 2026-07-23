@@ -120,8 +120,8 @@
 					</div>
 				</c:if>
 
-				<spring:message code="userform.enabledStatus" var="userformEnabledStatus"/>
-				<spring:message code="userform.disabledStatus" var="userformDisabledStatus"/>
+				<spring:message code="common:userDetails.accountEnabled" var="userformEnabledStatus"/>
+				<spring:message code="common:userDetails.accountDisabled" var="userformDisabledStatus"/>
 				<strong><spring:message code="userform.accountStatusLabel"/> </strong><span>${user.enabled ? userformEnabledStatus : userformDisabledStatus}</span><br>
 				<c:if test="${showLastLoginDate != null}">
 				<strong><spring:message code="userform.lastLoginLabel"/> </strong>

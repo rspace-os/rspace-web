@@ -62,18 +62,10 @@
       },
       "columns": {
         "affiliation": "Affiliation",
-        "communityAdmins": "Community Admins",
-        "email": "Email",
-        "firstName": "First Name",
         "labGroups": "LabGroups",
-        "lastName": "Last Name",
         "members": "Members",
         "name": "Name",
-        "password": "Password",
-        "pi": "PI",
-        "role": "Role",
-        "status": "Status",
-        "username": "Username"
+        "status": "Status"
       },
       "helpText": {
         "exampleCsvIntro": "You can also import groups and communities, for detailed syntax check {0}.",
@@ -83,9 +75,7 @@
       },
       "roleOptions": {
         "communityAdmin": "Community Admin",
-        "pi": "PI",
-        "systemAdmin": "System Admin",
-        "user": "User"
+        "systemAdmin": "System Admin"
       },
       "serverMessagesLabel": "Server messages:",
       "tables": {
@@ -184,7 +174,6 @@
     },
     "createAccountForm": {
       "backdoorAccountInfo": "Should this be a backdoor login account? Backdoor accounts don't use SSO for authentication, can be only logged into through Admin Login screen - see {0}.",
-      "backdoorAccountLinkText": "RSpace Documentation",
       "backdoorUsernameWarning": "Backdoor account - pick a username that won't conflict with potential SSO user!",
       "communitySelectionLabel": "Select the new user's Community",
       "confirmPassword": {
@@ -200,7 +189,6 @@
       "generatePasswordLinkLabel": "Generate",
       "groupsTable": {
         "name": "Group name",
-        "pi": "PI",
         "size": "Group size"
       },
       "labGroupFilterPlaceholder": "Filter and choose a LabGroup",
@@ -222,7 +210,6 @@
       },
       "password": {
         "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-        "placeholder": "Password",
         "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
       },
       "passwordConfirmation": {
@@ -322,7 +309,6 @@
     },
     "groupList": {
       "columns": {
-        "enabledDataContent": "Enabled",
         "fileUsage": "File Usage (Mb)",
         "options": "Options",
         "size": "{0} (enabled, disabled)",
@@ -330,8 +316,7 @@
       },
       "deleteLink": "Delete group",
       "pageTitle": "Lab Groups",
-      "showAllLink": "Show All",
-      "title": "Groups"
+      "showAllLink": "Show All"
     },
     "ldap": {
       "authenticationEnabledMessage": "LDAP authentication is enabled.",

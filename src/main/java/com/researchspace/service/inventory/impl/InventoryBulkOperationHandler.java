@@ -2,6 +2,7 @@ package com.researchspace.service.inventory.impl;
 
 import static com.researchspace.service.ListFormatUtils.formatList;
 
+import com.ibm.icu.text.ListFormatter;
 import com.researchspace.api.v1.controller.ApiControllerAdvice;
 import com.researchspace.api.v1.controller.ContainersApiController;
 import com.researchspace.api.v1.controller.InstrumentTemplatesApiController;
@@ -191,9 +192,16 @@ public class InventoryBulkOperationHandler {
           return containersApiController.createNewContainer((ApiContainer) recInfo, errors, user);
         default:
           throw new IllegalArgumentException(
-              "bulk creation only supports record with "
-                  + "'type' field set to 'SAMPLE' or 'CONTAINER', was: "
-                  + recInfoType);
+              messages.getMessage(
+                  "errors.inventory.bulk.creationUnsupportedType",
+                  new Object[] {
+                    formatList(
+                        List.of(
+                            ApiInventoryRecordType.SAMPLE.name(),
+                            ApiInventoryRecordType.CONTAINER.name()),
+                        ListFormatter.Type.OR),
+                    recInfoType
+                  }));
       }
     } catch (BindException be) {
       throw new IllegalArgumentException(be);

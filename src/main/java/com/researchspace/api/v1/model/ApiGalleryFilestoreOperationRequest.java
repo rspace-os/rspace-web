@@ -20,8 +20,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreOperationRequest {
 
-  @NotNull(message = "recordIds is mandatory")
-  @Size(min = 1, message = "recordIds is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.recordIdsRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.recordIdsRequired}")
   private Set<Long> recordIds;
 
   private ApiNfsCredentials credentials;

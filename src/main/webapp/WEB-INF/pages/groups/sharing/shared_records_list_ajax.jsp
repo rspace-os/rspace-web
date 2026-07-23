@@ -17,7 +17,7 @@
             href="${orderByShareeLink.link}"><spring:message code="groups.sharing.table.sharedWith"/></a></th>
           <th width="15%"><a class="orderBy" id="orderByCreationDate"
                              href=${orderByCreationDateLink.link}><spring:message code="groups.sharing.table.sharedDate"/></a></th>
-            <th width="15%"><spring:message code="groups.sharing.table.permission"/></th>
+          <th width="15%"><spring:message code="common:shareDialog.columns.permission"/></th>
           <th width="10%"><spring:message code="groups.sharing.table.options"/></th>
         </tr>
       </thead>
@@ -59,7 +59,7 @@
                   </div>
                 </c:when>
                 <c:otherwise>
-                  <select class='update' style="font-size: inherit; padding: 2px 13px 2px 4px;" aria-label="<spring:message code='groups.sharing.table.permission'/>">
+                  <select class='update' style="font-size: inherit; padding: 2px 13px 2px 4px;" aria-label="<spring:message code='common:shareDialog.columns.permission'/>">
                     <option value="" disabled selected>${groupSharing.permType.displayName}</option>
                     <option value='READ'><spring:message code="groups.sharing.permission.read"/></option>
                     <option value='WRITE'><spring:message code="groups.sharing.permission.edit"/></option>
@@ -67,7 +67,7 @@
                 </c:otherwise>
               </c:choose></td>
             <td>
-              <a id="${groupSharing.id}" class="unshare" href="#"><spring:message code="groups.sharing.unshare"/></a>
+              <a id="${groupSharing.id}" class="unshare" href="#"><spring:message code="common:shareDialog.permissions.unshare"/></a>
             </td>
           </tr>
         </c:forEach>

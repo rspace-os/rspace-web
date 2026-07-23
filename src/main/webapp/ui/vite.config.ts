@@ -24,6 +24,7 @@ const intlMessageFormatBundlePath = path.join(
 );
 
 function legacyI18n(): Plugin {
+  const legacyCatalogueFiles = ["server.legacyJs.json", "server.core.json", "server.gallery.json"];
   const catalogues = JSON.stringify(
     Object.fromEntries(
       fs
@@ -32,8 +33,15 @@ function legacyI18n(): Plugin {
           (entry) => entry.isDirectory() && fs.existsSync(path.join(localesPath, entry.name, "server.legacyJs.json")),
         )
         .map((entry) => {
-          const cataloguePath = path.join(localesPath, entry.name, "server.legacyJs.json");
-          return [entry.name, flattenMessages(JSON.parse(fs.readFileSync(cataloguePath, "utf8")))] as const;
+          const catalogue = Object.assign(
+            {},
+            ...legacyCatalogueFiles
+              .filter((file) => fs.existsSync(path.join(localesPath, entry.name, file)))
+              .map((file) =>
+                flattenMessages(JSON.parse(fs.readFileSync(path.join(localesPath, entry.name, file), "utf8"))),
+              ),
+          );
+          return [entry.name, catalogue] as const;
         }),
     ),
   );

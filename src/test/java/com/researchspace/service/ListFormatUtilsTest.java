@@ -6,6 +6,7 @@ import com.ibm.icu.text.ListFormatter;
 import java.util.List;
 import java.util.Locale;
 import org.junit.Test;
+import org.springframework.context.i18n.LocaleContextHolder;
 
 public class ListFormatUtilsTest {
 
@@ -21,5 +22,16 @@ public class ListFormatUtilsTest {
     assertEquals(
         "A, B, or C",
         ListFormatUtils.formatList(List.of("A", "B", "C"), Locale.US, ListFormatter.Type.OR));
+  }
+
+  @Test
+  public void usesRequestLocale() {
+    LocaleContextHolder.setLocale(Locale.FRENCH);
+    try {
+      assertEquals(
+          "A, B ou C", ListFormatUtils.formatList(List.of("A", "B", "C"), ListFormatter.Type.OR));
+    } finally {
+      LocaleContextHolder.resetLocaleContext();
+    }
   }
 }

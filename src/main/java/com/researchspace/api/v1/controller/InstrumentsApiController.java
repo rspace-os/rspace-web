@@ -129,7 +129,8 @@ public class InstrumentsApiController extends BaseApiInventoryController impleme
 
     String errorMsg = "";
     if (StringUtils.isEmpty(name)) {
-      errorMsg = getMessage("errors.inventory.name.empty", null);
+      errorMsg =
+          getMessage("inventory:fields.templateFields.customField.validation.emptyName", null);
     } else if (StringUtils.length(name) > BaseRecord.DEFAULT_VARCHAR_LENGTH) {
       errorMsg =
           getMessage(

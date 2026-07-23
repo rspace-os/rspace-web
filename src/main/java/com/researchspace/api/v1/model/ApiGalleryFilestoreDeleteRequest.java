@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreDeleteRequest {
 
-  @NotNull(message = "path is mandatory")
-  @Size(min = 1, message = "path is mandatory")
+  @NotNull(message = "{errors.gallery.filestore.validation.pathRequired}")
+  @Size(min = 1, message = "{errors.gallery.filestore.validation.pathRequired}")
   private String path;
 }

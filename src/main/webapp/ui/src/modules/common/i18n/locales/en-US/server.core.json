@@ -195,5 +195,23 @@
     "dataverseConfiguration": "Dataverse configuration",
     "exportPlan": "Export plan",
     "property": "Property"
+  },
+  "validation": {
+    "errors": {
+      "collectionRange": "There must be between {min} and {max}",
+      "emailRequired": "Email is a required field.",
+      "invalidEmail": "\"${validatedValue}\" is an invalid email format.",
+      "nameRange": "Name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
+      "nameRequired": "Name is a required field.",
+      "requiredField": "is a required field.",
+      "stringMax": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
+      "stringRange": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}."
+    },
+    "fields": {
+      "authors": "authors",
+      "contacts": "contacts",
+      "licenseName": "License name",
+      "licenseUrl": "License URL"
+    }
   }
 }

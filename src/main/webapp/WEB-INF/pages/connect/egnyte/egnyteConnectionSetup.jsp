@@ -103,7 +103,7 @@
             <input type="password" id="egnytePassword" placeholder="<spring:message code='connect.egnyte.connectionSetup.passwordPlaceholder'/>"></input>
         </div>
         <div class="form-group rs-field">
-            <button id="egnyteConnectBtn" role="button" type="submit" class="btn btn-primary"><spring:message code="connect.egnyte.connectionSetup.connectButton"/></button>
+            <button id="egnyteConnectBtn" role="button" type="submit" class="btn btn-primary"><spring:message code="apps:actions.connect"/></button>
         </div>
       </fieldset>
     </form>
@@ -116,5 +116,4 @@
   </div>
 
 </div>
-
 

@@ -1152,7 +1152,7 @@ public class UserProfileController extends BaseController {
 
     if (!subject.equals(targetUser)
         && !systemPropertyPermissionUtils.isPropertyAllowed(group, "group_autosharing.available")) {
-      return getText("autoshare.errors.disabled");
+      return getText("common:profile.groups.manager.contactAdmin");
     } else if (!group.isLabGroup()) {
       return getText("autoshare.errors.labGroupRequired");
     }

@@ -38,9 +38,9 @@ var snippetDialog = {
 
 		var jxqr = $.post(url, data, function (result) {
 			if (result.errorMsg !== null) {
-				apprise(getValidationErrorString(result.errorMsg));
+				apprise(RS.msg(result.errorMsg.key, ...result.errorMsg.arguments));
 			} else {
-				successMsg = result.data;
+				successMsg = RS.msg(result.data.key, ...result.data.arguments);
 			}
 		});
 		jxqr.fail(function () {

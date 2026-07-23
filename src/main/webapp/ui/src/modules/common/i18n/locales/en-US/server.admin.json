@@ -1,4 +1,16 @@
 {
+  "errors": {
+    "group": {
+      "memberCount": "Group must contain between {min} and {max} members",
+      "nameRequired": "Please provide a name for the group"
+    },
+    "user": {
+      "role": {
+        "invalid": "Unknown role - must be one of 'ROLE_USER' or 'ROLE_PI'"
+      },
+      "usernameRequired": "Username must be provided"
+    }
+  },
   "action": {
     "audit": "Audit"
   },

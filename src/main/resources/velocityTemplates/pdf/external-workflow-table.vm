@@ -1,14 +1,14 @@
 <div class="external-workflow-data">
   <br>
-  <h4>$msg.getMessage("export.pdf.externalWorkflow.title")</h4>
+  <h4>$msg.getMessage("apps:externalWorkflows.dialogTitle")</h4>
   <div class="external-workflow-table-container">
     <table class="external-workflow-table">
       <thead>
       <tr>
-        <th>$msg.getMessage("export.pdf.externalWorkflow.headerDataUploaded")</th>
-        <th>$msg.getMessage("export.pdf.externalWorkflow.headerContainerHistory")</th>
-        <th>$msg.getMessage("export.pdf.externalWorkflow.headerInvocation")</th>
-        <th>$msg.getMessage("export.pdf.externalWorkflow.headerInvocationStatus")</th>
+        <th>$msg.getMessage("apps:externalWorkflows.columns.dataUploaded")</th>
+        <th>$msg.getMessage("apps:externalWorkflows.columns.container")</th>
+        <th>$msg.getMessage("apps:externalWorkflows.columns.invocation")</th>
+        <th>$msg.getMessage("apps:externalWorkflows.columns.status")</th>
       </tr>
       </thead>
       <tbody>

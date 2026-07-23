@@ -16,7 +16,7 @@ import lombok.Singular;
 @ValidSharePost
 public class SharePost {
 
-  @Size(min = 1, max = 255, message = "There must be at least 1 document or notebook to share")
+  @Size(min = 1, max = 255, message = "{sharing.errors.itemsRequired}")
   @Singular("itemToShare")
   private List<Long> itemsToShare;
 

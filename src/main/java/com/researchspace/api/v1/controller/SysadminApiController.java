@@ -316,10 +316,10 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   @AllArgsConstructor
   @NoArgsConstructor
   public static class GroupApiPost {
-    @NotBlank(message = "Please provide a name for the group")
+    @NotBlank(message = "{errors.group.nameRequired}")
     private String displayName;
 
-    @Size(min = 1, max = 20, message = "Group must contain between {min} and {max} members")
+    @Size(min = 1, max = 20, message = "{errors.group.memberCount}")
     @Valid
     @JsonAlias({"members", "users"})
     private List<UserGroupPost> users = new ArrayList<>();
@@ -331,7 +331,7 @@ public class SysadminApiController extends BaseApiController implements Sysadmin
   @AllArgsConstructor
   @NoArgsConstructor
   public static class UserGroupPost {
-    @NotBlank(message = "Username must be provided")
+    @NotBlank(message = "{errors.user.usernameRequired}")
     private String username;
 
     @Pattern(regexp = "(DEFAULT)|(RS_LAB_ADMIN)|(PI)|(GROUP_OWNER)")

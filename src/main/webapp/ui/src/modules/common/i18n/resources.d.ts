@@ -4632,6 +4632,18 @@ export default interface Resources {
         "orcidLogoAlt": "ORCiD Logo"
       }
     },
+    "errors": {
+      "group": {
+        "memberCount": "Group must contain between {min} and {max} members",
+        "nameRequired": "Please provide a name for the group"
+      },
+      "user": {
+        "role": {
+          "invalid": "Unknown role - must be one of 'ROLE_USER' or 'ROLE_PI'"
+        },
+        "usernameRequired": "Username must be provided"
+      }
+    },
     "form": {
       "create": {
         "fieldTypeSelect": "Select Field Type"
@@ -5002,7 +5014,6 @@ export default interface Resources {
       },
       "egnyte": {
         "connectionSetup": {
-          "connectButton": "Connect",
           "credentialsPrompt": "Please provide your Egnyte credential so RSpace can access your account.",
           "passwordPlaceholder": "Egnyte Password",
           "skipConfigLink": "Skip Egnyte configuration, go to Workspace",
@@ -5023,7 +5034,6 @@ export default interface Resources {
       },
       "msteams": {
         "domainConfig": {
-          "connectButton": "Connect",
           "connectHeading": "Connect to your RSpace server:",
           "noAccountHeading": "Don't have an account yet?",
           "signupLinkText": "https://community.researchspace.com",
@@ -5289,6 +5299,24 @@ export default interface Resources {
       "dataverseConfiguration": "Dataverse configuration",
       "exportPlan": "Export plan",
       "property": "Property"
+    },
+    "validation": {
+      "errors": {
+        "collectionRange": "There must be between {min} and {max}",
+        "emailRequired": "Email is a required field.",
+        "invalidEmail": "\"${validatedValue}\" is an invalid email format.",
+        "nameRange": "Name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
+        "nameRequired": "Name is a required field.",
+        "requiredField": "is a required field.",
+        "stringMax": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
+        "stringRange": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}."
+      },
+      "fields": {
+        "authors": "authors",
+        "contacts": "contacts",
+        "licenseName": "License name",
+        "licenseUrl": "License URL"
+      }
     }
   },
   "server.dashboard": {
@@ -5447,7 +5475,6 @@ export default interface Resources {
       },
       "common": {
         "aboutRSpaceDescription": "Designed in collaboration with the University of Wisconsin and three years in the making, RSpace is an electronic lab notebook designed for academic labs. It's also a research 'space' where labs can collaborate with other labs, at your institution or around the world.<br/>And, it's absolutely free!",
-        "aboutRSpaceHeading": "About RSpace",
         "aboutRSpaceIntro": "RSpace Community is a new concept.",
         "dontReply": "Please don't reply to this email, it was generated automatically.",
         "greeting": "Hello {0},",
@@ -5817,13 +5844,6 @@ export default interface Resources {
           "exportFolderUnavailable": "Could not obtain the PDF export folder."
         },
         "exporterNameWithOrcid": "{0} - Orcid ID {1}",
-        "externalWorkflow": {
-          "headerContainerHistory": "Container/Galaxy History",
-          "headerDataUploaded": "Data Uploaded",
-          "headerInvocation": "Invocation",
-          "headerInvocationStatus": "Invocation Status",
-          "title": "Galaxy Workflow Data"
-        },
         "footer": {
           "createDate": "Create date: {0}",
           "exportDate": "Export date: {0}",
@@ -5894,12 +5914,33 @@ export default interface Resources {
           "notANotificationId": "Not a notification id",
           "notAnExportNotificationId": "Not an export notification id"
         }
+      },
+      "validation": {
+        "allVersionsRequired": "allVersions is a required field.",
+        "archiveTypeRequired": "archiveType is a required field.",
+        "descriptionRequired": "description is a required field.",
+        "formatRequired": "format is a required field.",
+        "maxLinkLevelRequired": "maxLinkLevel is a required field.",
+        "pdfNameRequired": "PDF name is a required field.",
+        "scopeRequired": "scope is a required field.",
+        "typeRequired": "type is a required field.",
+        "zipFileRequired": "File must be a zip name"
       }
     }
   },
   "server.gallery": {
     "errors": {
       "gallery": {
+        "filestore": {
+          "validation": {
+            "destFilestoreIdRequired": "destFilestoreId is mandatory",
+            "destPathRequired": "destPath is mandatory",
+            "nameRequired": "name is mandatory",
+            "pathRequired": "path is mandatory",
+            "recordIdsRequired": "recordIds is mandatory",
+            "sourcePathRequired": "sourcePath is mandatory"
+          }
+        },
         "invalidContentType": "contentType must be empty (for workspace) or one of {0} for files"
       }
     },
@@ -6027,11 +6068,11 @@ export default interface Resources {
       "errors": {
         "adminProhibited": "Sysadmins cannot manage group-wide autoshare status",
         "alreadySet": "Autoshare is already set to the desired state",
-        "disabled": "Please contact your system administrator to enable this feature",
         "enterpriseRequired": "Group autosharing is only available on the Enterprise version of RSpace",
         "forbidden": "Forbidden",
         "labGroupRequired": "Can only manage autosharing for lab groups",
         "operationInProgress": "Cannot launch new bulk share operation; already running",
+        "unsupportedItem": "{0} ({1}) cannot be autoshared: autosharing must be enabled and the item must be a {2}.",
         "userAlreadySet": "Autosharing for user {0} in group {1} has already been set to {2}",
         "userForbidden": "User {0} attempted to modify user's {1} autoshare status without permission"
       },
@@ -6170,7 +6211,6 @@ export default interface Resources {
           "link": "Link",
           "options": "Options",
           "owner": "Owner",
-          "permission": "Permission",
           "publicLink": "Public link",
           "publishedDate": "Published date",
           "publishedOn": "Published on",
@@ -6180,7 +6220,6 @@ export default interface Resources {
           "uniqueId": "Unique ID"
         },
         "unpublish": "Unpublish",
-        "unshare": "Unshare",
         "usersPublishedDocuments": "Users' Published Documents",
         "viewOwnPublishedDocuments": "View your own published documents"
       },
@@ -6206,7 +6245,6 @@ export default interface Resources {
           "createCollabGroup": "Create Collaboration Group",
           "deleteGroup": "Delete Group",
           "leaveGroup": "Leave Group",
-          "remove": "Remove",
           "rename": "Rename"
         },
         "changeRole": {
@@ -6220,7 +6258,6 @@ export default interface Resources {
           "label": "Export Work"
         },
         "groupLabel": "Group:",
-        "groupPisHeading": "Group PIs",
         "homeFolder": {
           "goTo": "Go to User's Home Folder",
           "notAvailable": "Home Folder Not Available"
@@ -6267,9 +6304,6 @@ export default interface Resources {
           "heading": "Shared Folder",
           "missing": "Folder missing"
         },
-        "table": {
-          "autosharing": "Autosharing"
-        },
         "title": "Group details",
         "type": {
           "collaboration": "Collaboration",
@@ -6288,7 +6322,19 @@ export default interface Resources {
     "errors": {
       "inventory": {
         "barcode": {
-          "unsupportedCodeType": "Unsupported code type: {0}"
+          "contentRequired": "Content parameter is required",
+          "heightNonNegative": "Requested height cannot be less then zero",
+          "type": {
+            "invalid": "Supported barcodeType values are: 'BARCODE' or 'QR'"
+          },
+          "unsupportedCodeType": "Unsupported code type: {0}",
+          "widthNonNegative": "Requested width cannot be less than zero"
+        },
+        "bulk": {
+          "creationUnsupportedType": "Bulk creation only supports records with the 'type' field set to {0}; was: {1}.",
+          "operationTypeRequired": "Bulk operation must specify operationType",
+          "recordCount": "Bulk operation must specify at least 1, at most 100 records",
+          "recordsRequired": "Bulk operation must specify list of records"
         },
         "container": {
           "deletion": {
@@ -6296,12 +6342,22 @@ export default interface Resources {
           },
           "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
           "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
-          "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'."
+          "gridLayoutRequired": "Grid layout must be set for a grid container.",
+          "imageTooLarge": "Container image cannot be larger than 10MB",
+          "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
+          "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+          "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
         "export": {
+          "exportMode": {
+            "invalid": "exportMode should be either 'FULL' or 'COMPACT'"
+          },
           "requestHasBothIdsAndUsers": "Export requires specifying either items or users to export, but POST request provided both 'globalIds' and 'users'",
           "requestHasNoIdsNoUsers": "Export requires specifying either items or users to export, but POST request provided neither 'globalIds' nor 'users'",
           "requestInvalidGlobalIds": "Some of requested globalIds are not valid global identifiers: [{0}]",
+          "resultFileType": {
+            "invalid": "resultFileType should be either 'ZIP' or 'SINGLE_CSV'"
+          },
           "unexportableGlobalIds": "Cannot export items with global id [{0}] - items not found, or no permission",
           "unexportableUsers": "Cannot export data of users [{0}] - users not found, or no permission"
         },
@@ -6340,6 +6396,7 @@ export default interface Resources {
           "mintingUnsupportedType": "unsupported type for minting: {0}",
           "typeUnsupported": "identifiers of type {0} are not supported yet"
         },
+        "imageTooLarge": "Image cannot be larger than 10MB",
         "import": {
           "fieldMappingsMissingName": "'fieldMappings' property must be provided and contain at least a mapping for 'name' field",
           "instrumentColumnCountMismatch": "{0, plural, one {There is # unmapped CSV column} other {There are # unmapped CSV columns}}, but the instrument template has {1, plural, one {# field} other {# fields}}. The CSV file must exactly map all template fields.",
@@ -6366,8 +6423,10 @@ export default interface Resources {
           "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
         },
         "listOfMaterials": {
+          "descriptionTooLong": "Description cannot be longer than 255 chars",
           "elnFieldIdRequired": "elnFieldId cannot be null",
-          "nameRequired": "name cannot be empty"
+          "nameRequired": "name cannot be empty",
+          "nameTooLong": "Name cannot be longer than 255 chars"
         },
         "location": {
           "outsideGridDimensions": "Location ({0},{1}) is outside container grid dimensions (columns: {2}, rows: {3}).",
@@ -6383,8 +6442,8 @@ export default interface Resources {
           }
         },
         "name": {
-          "empty": "Name cannot be empty",
-          "tooLong": "Name is too long (max {0} chars)"
+          "tooLong": "Name is too long (max {0} chars)",
+          "validationTooLong": "Name cannot be longer than 255 characters"
         },
         "notEnabled": "Inventory is not enabled on this RSpace instance.",
         "publicLink": {
@@ -6405,6 +6464,19 @@ export default interface Resources {
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
           "templateNotFound": "No sample template with id: {0}",
           "unitIncompatibleWithTemplate": "Sample quantity unit {0} ({1}) is incompatible with template quantity unit {2} ({3})"
+        },
+        "search": {
+          "deletedItems": {
+            "invalid": "Requested deletedItems option must be one of: EXCLUDE, INCLUDE or DELETED_ONLY"
+          },
+          "maxQueryLength": "Max query length is {max}",
+          "parentGlobalId": {
+            "invalid": "Requested parentGlobalId is incorrect, must be global id of a Container, Workbench, Sample, Sample Template, Instrument Template or Basket"
+          },
+          "resultType": {
+            "invalid": "Requested result type must be one of: SAMPLE, SUBSAMPLE, CONTAINER, SAMPLE_TEMPLATE, INSTRUMENT or INSTRUMENT_TEMPLATE"
+          },
+          "usernameTooLong": "Provided value is too long for a username"
         },
         "settings": {
           "providerRequired": "A 'provider' must be specified to identify which identifier settings to update (one of IGSN_DATACITE, PIDINST_DATACITE, PIDINST_B2INST)."
@@ -7892,18 +7964,10 @@ export default interface Resources {
         },
         "columns": {
           "affiliation": "Affiliation",
-          "communityAdmins": "Community Admins",
-          "email": "Email",
-          "firstName": "First Name",
           "labGroups": "LabGroups",
-          "lastName": "Last Name",
           "members": "Members",
           "name": "Name",
-          "password": "Password",
-          "pi": "PI",
-          "role": "Role",
-          "status": "Status",
-          "username": "Username"
+          "status": "Status"
         },
         "helpText": {
           "exampleCsvIntro": "You can also import groups and communities, for detailed syntax check {0}.",
@@ -7913,9 +7977,7 @@ export default interface Resources {
         },
         "roleOptions": {
           "communityAdmin": "Community Admin",
-          "pi": "PI",
-          "systemAdmin": "System Admin",
-          "user": "User"
+          "systemAdmin": "System Admin"
         },
         "serverMessagesLabel": "Server messages:",
         "tables": {
@@ -8014,7 +8076,6 @@ export default interface Resources {
       },
       "createAccountForm": {
         "backdoorAccountInfo": "Should this be a backdoor login account? Backdoor accounts don't use SSO for authentication, can be only logged into through Admin Login screen - see {0}.",
-        "backdoorAccountLinkText": "RSpace Documentation",
         "backdoorUsernameWarning": "Backdoor account - pick a username that won't conflict with potential SSO user!",
         "communitySelectionLabel": "Select the new user's Community",
         "confirmPassword": {
@@ -8030,7 +8091,6 @@ export default interface Resources {
         "generatePasswordLinkLabel": "Generate",
         "groupsTable": {
           "name": "Group name",
-          "pi": "PI",
           "size": "Group size"
         },
         "labGroupFilterPlaceholder": "Filter and choose a LabGroup",
@@ -8052,7 +8112,6 @@ export default interface Resources {
         },
         "password": {
           "helpText": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
-          "placeholder": "Password",
           "title": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !&quot;#$%&amp;'()*+,-./:;&lt;=&gt;?@[\\]^_`{|}~"
         },
         "passwordConfirmation": {
@@ -8152,7 +8211,6 @@ export default interface Resources {
       },
       "groupList": {
         "columns": {
-          "enabledDataContent": "Enabled",
           "fileUsage": "File Usage (Mb)",
           "options": "Options",
           "size": "{0} (enabled, disabled)",
@@ -8160,8 +8218,7 @@ export default interface Resources {
         },
         "deleteLink": "Delete group",
         "pageTitle": "Lab Groups",
-        "showAllLink": "Show All",
-        "title": "Groups"
+        "showAllLink": "Show All"
       },
       "ldap": {
         "authenticationEnabledMessage": "LDAP authentication is enabled.",
@@ -8496,6 +8553,10 @@ export default interface Resources {
         "fileUnavailable": "Chemistry File with Id: {0} could not be retrieved. Details: {1}",
         "imageUpdateFailed": "An Error Occurred While Updating Chemical Element Images Details: {0}",
         "infoUnavailable": "Couldn't retrieve info for chemId: {0}"
+      },
+      "validation": {
+        "searchTermRequired": "Search term is required",
+        "searchTypeRequired": "Search type is required"
       }
     },
     "deletedItems": {
@@ -8562,14 +8623,12 @@ export default interface Resources {
         "csv": "CSV",
         "msTeamsAbbreviation": "MS Teams",
         "removeFromFavorites": "Remove from Favorites",
-        "revisions": "Revisions",
         "sendToLabel": "Send to {0}",
         "sendToTitle": "Send Message to {0}"
       },
       "fileTreeBrowser": {
         "applyOrderingTitle": "Apply new ordering",
         "changeOrderingTitle": "Change tree ordering",
-        "hideTreeTitle": "Hide tree browser",
         "showTreeTitle": "Show tree browser"
       },
       "folderChooser": {
@@ -8578,7 +8637,6 @@ export default interface Resources {
         "newFolderAriaLabel": "New folder name",
         "newFolderPlaceholder": "New Folder Name",
         "optionally": "Optionally,",
-        "selectedFolder": "Selected folder:",
         "shareTitle": "Select a folder to share into"
       },
       "importFromWord": {
@@ -8717,6 +8775,9 @@ export default interface Resources {
           "newTagsNotAllowedWhenOntologiesEnforced": "New tags cannot be saved through the API when ontologies are enforced",
           "notTaggable": "Only StructuredDocuments, Folders and Notebooks can be tagged"
         }
+      },
+      "validation": {
+        "tagsTooLong": "Document tags cannot be longer than 8000 characters"
       }
     },
     "documentAndNotebookTemplates": {
@@ -8754,7 +8815,6 @@ export default interface Resources {
       "importFromOwncloudTitle": "Import From ownCloud / NextCloud",
       "insertFileAriaLabel": "Insert file from local computer",
       "metaHeading": "Notebook",
-      "publishedLabel": "Published",
       "showLastModifiedDate": "Show last modified date",
       "tapToExpandListing": "Tap to expand listing.",
       "templateLabel": "Template"
@@ -9013,6 +9073,15 @@ export default interface Resources {
       "update": {
         "explanation": "Editing a form. Click 'Update' to commit this edit and make available.<br/> Abandoning the editing (by clicking 'Revert') will revert to the previous form version."
       },
+      "validation": {
+        "choiceDefaultsInvalid": "Default options must be included in the possible options",
+        "dateRange": "Min date must be before max date, and default date must be between them",
+        "numberRange": "Min must be < max",
+        "optionRequired": "Please provide at least one option",
+        "radioDefaultInvalid": "Default option must be one of the possible options",
+        "stringTooLong": "String fields must be less than {max} characters",
+        "typeUnsupported": "Please supply a supported 'type' property: was '${validatedValue}' but must match {regexp} "
+      },
       "welcome": {
         "name": "Getting started",
         "welcome1": "Welcome/welcome1.html"
@@ -9074,6 +9143,12 @@ export default interface Resources {
       },
       "title": "Import and Export Archives"
     },
+    "internalLink": {
+      "errors": {
+        "invalidTarget": "Linked item must be a {0}.",
+        "textFieldRequired": "The field containing the link must be a text field."
+      }
+    },
     "messaging": {
       "channelLabel": "Channel",
       "errors": {
@@ -9113,6 +9188,7 @@ export default interface Resources {
     },
     "record": {
       "errors": {
+        "createLocationForbidden": "User is not authorized to create in this {0}.",
         "idsRequired": "List of ids to retrieve is empty!"
       },
       "icon": {
@@ -9144,6 +9220,12 @@ export default interface Resources {
         "viewNotEditable": "View (Not editable)",
         "viewReadPermissionOnly": "View (read permission only)",
         "viewSomeoneElseEditing": "View (someone else is editing)"
+      },
+      "types": {
+        "documents": "documents",
+        "folder": "folder",
+        "notebooks": "notebooks",
+        "snippets": "snippets"
       }
     },
     "recordInfo": {
@@ -9167,25 +9249,21 @@ export default interface Resources {
       "importedFromArchiveNotice": "Imported from archive",
       "lastModifiedLabel": "Last Modified:",
       "linkedDocsTitle": "Lists documents that link to this file",
-      "noReferencesNotice": "There are no references to this file.",
       "openInOfficeComButton": "Open in Office.com",
       "openInOfficeComTitle": "Open this file in Office.com",
       "originalCreatorLabel": "Original creator:",
       "originalImageLabel": "Original Image:",
       "pathLabel": "Path:",
       "previewLabel": "Preview:",
-      "referencedByNotice": "This file is referenced by:",
       "revisionNotice": {
         "text": "The information below describes <strong>version {0}</strong> of&nbsp;a&nbsp;document {1}, which may not be the latest version."
       },
-      "showLinkedDocsButton": "Show linked docs",
       "signatureStatusLabel": "Signature Status:",
       "sourceLabel": "Source:",
       "statusLabel": "Status:",
       "templateNameLabel": "Template Name:",
       "typeLabel": "Type:",
       "uniqueIdLabel": "Unique Id:",
-      "uploadNewVersionButton": "Upload new version",
       "uploadNewVersionTitle": "Upload new version of this file",
       "viewFileTitle": "View this file in browser"
     },
@@ -9217,9 +9295,16 @@ export default interface Resources {
     "sharing": {
       "errors": {
         "docIdRequired": "Document id cannot be null",
+        "folderUnsupported": "Cannot share folder: {0}.",
+        "groupIdRequired": "Must specify id of the group",
+        "itemsRequired": "There must be at least 1 document or notebook to share",
         "permissionUpdateFailed": "Could not update permission: {0}",
+        "recipientsRequired": "At least one user ID or group ID must be provided in the 'users' or 'groups' list",
+        "sharedItemIdsLimit": "Maximum number of ids in sharedItemIds is {max}.",
         "sharedNotebookMoveFailed": "Errors while moving into Shared Notebook: [{0}]",
-        "sharingFailed": "Problem sharing: {0}"
+        "sharingFailed": "Problem sharing: {0}",
+        "unsupportedRecordType": "Cannot share record {0}; only {1} can be shared.",
+        "userIdRequired": "Must specify id of the user"
       },
       "groups": {
         "title": "Share with a group"
@@ -9289,14 +9374,12 @@ export default interface Resources {
       },
       "cameraViewLabel": "Camera view:",
       "chooseFileAriaLabel": "Choose a file",
-      "disabledStatus": "Disabled",
       "egnyte": {
         "connectedNotice": "Your RSpace account is connected to Egnyte filestore.",
         "disconnectButton": "Disconnect",
         "notConfiguredNotice": "There is a problem with your connection to Egnyte filestore, please <a href=\"/egnyte/egnyteConnectionSetup\">re-authenticate</a>.",
         "setupHeading": "Egnyte filestore setup"
       },
-      "enabledStatus": "Enabled",
       "lastLoginLabel": "Last Login:",
       "passwordCharsHint": "8 - 50 characters. Numbers, letters, spaces and special characters are allowed.",
       "passwordCharsTitle": "8 - 50 characters. Numbers, letters, spaces and these special characters are allowed: !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~",
@@ -9310,6 +9393,24 @@ export default interface Resources {
       },
       "takePictureButton": "Take a Picture",
       "uploadImageTabLink": "Upload Image"
+    },
+    "validation": {
+      "name": {
+        "invalid": "Invalid name",
+        "length": "Name must be between 1 and 50 characters"
+      },
+      "pagination": {
+        "pageNumberNonNegative": "Page number must be 0 or greater.",
+        "pageSizeRange": "Page size must be between {min} and {max}."
+      },
+      "ror": {
+        "invalid": "Not a valid RoR"
+      },
+      "search": {
+        "maxAdvancedQueryLength": "Max advanced query length is {max}.",
+        "maxQueryLength": "Max query length is {max}.",
+        "queryLengthRange": "Min query length is {min}, max query length is {max}."
+      }
     },
     "workspace": {
       "copy": {
@@ -9406,11 +9507,8 @@ export default interface Resources {
       },
       "sort": {
         "ariaLabel": "Order by",
-        "ascending": "Ascending",
-        "byCreationDate": "Creation Date",
         "byLastModified": "Last Modified",
         "byName": "Name",
-        "descending": "Descending",
         "label": "Order by:",
         "sortOrderAriaLabel": "Sort order"
       },

@@ -3,11 +3,11 @@
     "errors": {
       "adminProhibited": "Sysadmins cannot manage group-wide autoshare status",
       "alreadySet": "Autoshare is already set to the desired state",
-      "disabled": "Please contact your system administrator to enable this feature",
       "enterpriseRequired": "Group autosharing is only available on the Enterprise version of RSpace",
       "forbidden": "Forbidden",
       "labGroupRequired": "Can only manage autosharing for lab groups",
       "operationInProgress": "Cannot launch new bulk share operation; already running",
+      "unsupportedItem": "{0} ({1}) cannot be autoshared: autosharing must be enabled and the item must be a {2}.",
       "userAlreadySet": "Autosharing for user {0} in group {1} has already been set to {2}",
       "userForbidden": "User {0} attempted to modify user's {1} autoshare status without permission"
     },
@@ -146,7 +146,6 @@
         "link": "Link",
         "options": "Options",
         "owner": "Owner",
-        "permission": "Permission",
         "publicLink": "Public link",
         "publishedDate": "Published date",
         "publishedOn": "Published on",
@@ -156,7 +155,6 @@
         "uniqueId": "Unique ID"
       },
       "unpublish": "Unpublish",
-      "unshare": "Unshare",
       "usersPublishedDocuments": "Users' Published Documents",
       "viewOwnPublishedDocuments": "View your own published documents"
     },
@@ -182,7 +180,6 @@
         "createCollabGroup": "Create Collaboration Group",
         "deleteGroup": "Delete Group",
         "leaveGroup": "Leave Group",
-        "remove": "Remove",
         "rename": "Rename"
       },
       "changeRole": {
@@ -196,7 +193,6 @@
         "label": "Export Work"
       },
       "groupLabel": "Group:",
-      "groupPisHeading": "Group PIs",
       "homeFolder": {
         "goTo": "Go to User's Home Folder",
         "notAvailable": "Home Folder Not Available"
@@ -242,9 +238,6 @@
       "sharedFolder": {
         "heading": "Shared Folder",
         "missing": "Folder missing"
-      },
-      "table": {
-        "autosharing": "Autosharing"
       },
       "title": "Group details",
       "type": {

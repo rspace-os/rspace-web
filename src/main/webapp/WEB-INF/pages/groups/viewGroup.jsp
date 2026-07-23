@@ -182,7 +182,7 @@
 
 <c:if test="${group.groupType == 'COLLABORATION_GROUP'}">
   <div id="memberGroups">
-    <h3><spring:message code="groups.view.groupPisHeading"/></h3>
+    <h3><spring:message code="groups:userBox.groupPis"/></h3>
     <table id="memberGroupsTable" class="table">
       <tbody>
       <c:forEach var="groupPI" items="${group.piusers}">
@@ -283,7 +283,7 @@
               <th style="width:10%"><spring:message code="common:sections.documents" /></th>
             </c:if>
             <th><spring:message code="system:usersPage.columns.role" /></th>
-            <th><spring:message code="groups.view.table.autosharing"/></th>
+            <th><spring:message code="common:profile.groups.table.autosharing"/></th>
             <th style="min-width: 120px"><spring:message code="user.actions.label" /></th>
             <c:if test="${showExportFunctionality}">
               <th><spring:message code="system:usersPage.export.work" /></th>
@@ -374,7 +374,7 @@
                       </c:url>
                       <form:form modelAttribute="group" style="display:inline"
                         class="removeUserForm" method="POST" action="${removeUserURL}">
-                        <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.remove"/></button>
+                        <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></button>
                         <form:input type="hidden" path="uniqueName" />
                         <form:input type="hidden" path="id" />
                       </form:form>
@@ -471,7 +471,7 @@
                     </c:url>
                     <form:form modelAttribute="group" style="display:inline"
                       class="removeUserForm" method="POST" action="${removeUserURL}">
-                      <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="groups.view.actions.remove"/></button>
+                      <button type="button" class="removeLink"><img class="groupActionButtonIcon" src="/images/icons/closeIcon.png" alt="" aria-hidden="true"><spring:message code="common:actions.remove"/></button>
                       <form:input type="hidden" path="uniqueName" />
                       <form:input type="hidden" path="id" />
                     </form:form>

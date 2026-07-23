@@ -139,13 +139,6 @@
         "exportFolderUnavailable": "Could not obtain the PDF export folder."
       },
       "exporterNameWithOrcid": "{0} - Orcid ID {1}",
-      "externalWorkflow": {
-        "headerContainerHistory": "Container/Galaxy History",
-        "headerDataUploaded": "Data Uploaded",
-        "headerInvocation": "Invocation",
-        "headerInvocationStatus": "Invocation Status",
-        "title": "Galaxy Workflow Data"
-      },
       "footer": {
         "createDate": "Create date: {0}",
         "exportDate": "Export date: {0}",
@@ -210,6 +203,17 @@
       "steps": "Steps",
       "type": "Type:",
       "version": "Version:"
+    },
+    "validation": {
+      "allVersionsRequired": "allVersions is a required field.",
+      "archiveTypeRequired": "archiveType is a required field.",
+      "descriptionRequired": "description is a required field.",
+      "formatRequired": "format is a required field.",
+      "maxLinkLevelRequired": "maxLinkLevel is a required field.",
+      "pdfNameRequired": "PDF name is a required field.",
+      "scopeRequired": "scope is a required field.",
+      "typeRequired": "type is a required field.",
+      "zipFileRequired": "File must be a zip name"
     }
   }
 }

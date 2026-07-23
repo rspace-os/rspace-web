@@ -5,7 +5,6 @@
     },
     "common": {
       "aboutRSpaceDescription": "Designed in collaboration with the University of Wisconsin and three years in the making, RSpace is an electronic lab notebook designed for academic labs. It's also a research 'space' where labs can collaborate with other labs, at your institution or around the world.<br/>And, it's absolutely free!",
-      "aboutRSpaceHeading": "About RSpace",
       "aboutRSpaceIntro": "RSpace Community is a new concept.",
       "dontReply": "Please don't reply to this email, it was generated automatically.",
       "greeting": "Hello {0},",

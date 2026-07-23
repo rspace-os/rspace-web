@@ -175,12 +175,12 @@
         <spring:message code="workspace.sort.label"/>
         <select class="orderBy" aria-label="<spring:message code='workspace.sort.ariaLabel'/>">
             <option value="name"><spring:message code="workspace.sort.byName"/></option>
-            <option value="creationdate"><spring:message code="workspace.sort.byCreationDate"/></option>
+            <option value="creationdate"><spring:message code="common:treeSort.order.creationDate"/></option>
             <option value="modificationdate"><spring:message code="workspace.sort.byLastModified"/></option>
         </select>
         <select class="sortOrder" aria-label="<spring:message code='workspace.sort.sortOrderAriaLabel'/>">
-            <option value="ASC"><spring:message code="workspace.sort.ascending"/></option>
-            <option value="DESC"><spring:message code="workspace.sort.descending"/></option>
+            <option value="ASC"><spring:message code="common:treeSort.direction.ascending"/></option>
+            <option value="DESC"><spring:message code="common:treeSort.direction.descending"/></option>
         </select>
     </div>
     <div id="file_tree_frame">

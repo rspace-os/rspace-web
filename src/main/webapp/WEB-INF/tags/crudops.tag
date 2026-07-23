@@ -51,7 +51,7 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
       <a href="#"><spring:message code="dialogs.crudops.csv"/></a>
     </li>
   	<li class="crudopsAction revisionsIcon" id="viewRevisions" tabindex="0">
-      <spring:message code="dialogs.crudops.revisions"/>
+      <spring:message code="workspace:export.format.chooser.revisionsSection"/>
     </li>
     <li class="crudopsAction favoritesIcon" id="addToFavorites" tabindex="0">
       <spring:message code="dialogs.crudops.addToFavorites"/>
@@ -103,12 +103,12 @@ d) A function 'idsToNames' gets ids and names of records based on a clicked chec
             <spring:message code="workspace.sort.label"/>
             <select class="orderBy" aria-label="<spring:message code='workspace.sort.ariaLabel'/>">
                 <option value="name"><spring:message code="workspace.sort.byName"/></option>
-                <option value="creationdate"><spring:message code="workspace.sort.byCreationDate"/></option>
+                <option value="creationdate"><spring:message code="common:treeSort.order.creationDate"/></option>
                 <option value="modificationdate"><spring:message code="workspace.sort.byLastModified"/></option>
             </select>
             <select class="sortOrder" aria-label="<spring:message code='workspace.sort.sortOrderAriaLabel'/>">
-                <option value="ASC"><spring:message code="workspace.sort.ascending"/></option>
-                <option value="DESC"><spring:message code="workspace.sort.descending"/></option>
+                <option value="ASC"><spring:message code="common:treeSort.direction.ascending"/></option>
+                <option value="DESC"><spring:message code="common:treeSort.direction.descending"/></option>
             </select>
         </div>
         <div id="movefolder-tree"

@@ -21,7 +21,7 @@
     <div>
         <div id="folderChooserInfo${folderChooserId}" style="display: none">
             <div class="formfield_highlighted">
-                <spring:message code="dialogs.folderChooser.selectedFolder"/>
+                <spring:message code="common:folderSelectionDialog.selectedFolderWithColon"/>
                 <span id="folderChooser-path${folderChooserId}"></span>
             </div>
             <div id="folderChooserFolderCreation${folderChooserId}">

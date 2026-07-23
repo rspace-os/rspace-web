@@ -65,14 +65,14 @@ public class InventoryExportApiController extends BaseApiInventoryController
     @Pattern(
         regexp = "(FULL)|(COMPACT)",
         flags = {Pattern.Flag.CASE_INSENSITIVE},
-        message = "exportMode should be either 'FULL' or 'COMPACT'")
+        message = "{errors.inventory.export.exportMode.invalid}")
     @JsonProperty("exportMode")
     private String exportMode;
 
     @Pattern(
         regexp = "(ZIP)|(SINGLE_CSV)",
         flags = {Pattern.Flag.CASE_INSENSITIVE},
-        message = "resultFileType should be either 'ZIP' or 'SINGLE_CSV'")
+        message = "{errors.inventory.export.resultFileType.invalid}")
     @JsonProperty("resultFileType")
     private String resultFileType;
 

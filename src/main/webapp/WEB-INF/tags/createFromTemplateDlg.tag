@@ -33,7 +33,7 @@
                         <tr>
                             <th></th>
                             <th><a href="#" class="sortByName" data-sorted="true"><spring:message code="workspace.list.name.header"/></a></th>
-                            <th style="width: 10em;"><a href="#" class="sortByCreation" data-sorted="false"><spring:message code="workspace.sort.byCreationDate"/></a></th>
+                            <th style="width: 10em;"><a href="#" class="sortByCreation" data-sorted="false"><spring:message code="common:treeSort.order.creationDate"/></a></th>
                         </tr>
                     </thead>
                     <tbody class="templatesTableBody">
@@ -59,7 +59,7 @@
                         <tr>
                             <th></th>
                             <th style="width: 10em;"><a href="#" class="sortByName" data-sorted="true"><spring:message code="workspace.list.name.header"/></a></th>
-                            <th style="width: 10em;"><a href="#" class="sortByCreation" data-sorted="false"><spring:message code="workspace.sort.byCreationDate"/></a></th>
+                            <th style="width: 10em;"><a href="#" class="sortByCreation" data-sorted="false"><spring:message code="common:treeSort.order.creationDate"/></a></th>
                             <th style="width: 10em;"><a href="#" class="sortByOwner" data-sorted="false"><spring:message code="workspace.list.owner.header"/></a></th>
                         </tr>
                     </thead>

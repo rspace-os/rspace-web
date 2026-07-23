@@ -29,7 +29,7 @@
 	    <td class="table_listCell" style="text-align:left;padding-left:8px;"><a href="/groups/view/${grpInfo.group.id}">${grpInfo.group.displayName}</a></td>
 		<td class="table_listCell" style="text-align:left;">
 		     <span data-test-id="groupTotalSize"> ${grpInfo.group.size} </span>
-		     (<span class="enabled" data-enabledMemberSize="${grpInfo.group.enabledMemberSize}" data-content="<spring:message code='system.groupList.columns.enabledDataContent'/>">${grpInfo.group.enabledMemberSize}</span>,
+		     (<span class="enabled" data-enabledMemberSize="${grpInfo.group.enabledMemberSize}" data-content="<spring:message code='system:usersPage.columns.enabled'/>">${grpInfo.group.enabledMemberSize}</span>,
 		    <span class="disabled" data-disabledMemberSize="${grpInfo.group.disabledMemberSize}">${grpInfo.group.disabledMemberSize}</span>)</td>
 		<td class="table_listCell" style="text-align:left;"><a href="/system/community/${grpInfo.group.community.id}">${grpInfo.group.community.displayName}</a></td>
 		<td class="table_listCell" style="text-align:left;">
