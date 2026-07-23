@@ -33,7 +33,7 @@ describe("uploadNewGalleryVersion", () => {
 
     await uploadNewGalleryVersion({ mediaId: 55, file: makeFile() });
 
-    expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
+    expect(String(contentType).startsWith("multipart/form-data; boundary=")).toBe(true);
     expect(multipartBody).toContain('name="xfile"; filename=');
     expect(multipartBody).toContain('name="selectedMediaId"\r\n\r\n55');
     expect(setSpy).toHaveBeenCalledWith("selectedMediaId", "55");
