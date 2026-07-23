@@ -19,6 +19,9 @@ class JsonValidationMessageSourceTest {
 
     @NotNull(message = "{workspace:export.repositories.common.title}")
     private final String frontendCatalogueValue = null;
+
+    @NotNull(message = "{validation.fields.format} {validation.errors.requiredField}")
+    private final String composedMessage = null;
   }
 
   @Test
@@ -30,10 +33,11 @@ class JsonValidationMessageSourceTest {
 
     Set<ConstraintViolation<Request>> violations = validator.validate(new Request());
 
-    assertEquals(3, violations.size());
+    assertEquals(4, violations.size());
     assertEquals(
         Set.of(
             "\"abcdef\" must be less than 3 characters but was length 6.",
+            "format is a required field.",
             "may not be null",
             "Title"),
         violations.stream()

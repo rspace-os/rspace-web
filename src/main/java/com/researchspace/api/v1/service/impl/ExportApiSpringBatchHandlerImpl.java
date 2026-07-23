@@ -18,6 +18,7 @@ import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
@@ -63,6 +64,7 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
   private @Autowired GroupManager grpMgr;
   private @Autowired ExportImport exportManager;
   private @Autowired OperationFailedMessageGenerator authGen;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired JobExplorer explorer;
   private @Autowired ExportApiStateTracker idStore;
   private @Autowired ArchiveExportPlanner planner;
@@ -207,7 +209,8 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
             "Export selection: ids were %s, but these did not exist",
             StringUtils.join(selections, ","));
         throw new AuthorizationException(
-            authGen.getFailedMessage(apiClient, "Export a selection of "));
+            authGen.getFailedMessage(
+                apiClient, messages.getMessage("errors.authorization.action.exportSelection")));
       }
       // these will be the same size
       String[] types = recordViews.stream().map(RSpaceDocView::getType).toArray(String[]::new);
@@ -218,7 +221,8 @@ public class ExportApiSpringBatchHandlerImpl implements ExportApiHandler {
     }
     if (!permOK) {
       throw new AuthorizationException(
-          authGen.getFailedMessage(apiClient, "Export a user or group"));
+          authGen.getFailedMessage(
+              apiClient, messages.getMessage("errors.authorization.action.exportUserOrGroup")));
     }
 
     return exportSelection;

@@ -39,6 +39,20 @@
       "subfolderNotIncluded": "subfolder of linked folder",
       "userNotLoggedIn": "user not logged into ''{0}'' File System"
     },
+    "info": {
+      "dialog": {
+        "bucketLabel": "Bucket: ",
+        "downloadButton": "Download",
+        "downloadButtonTitle": "Download through RSpace",
+        "nameLabel": "Name: ",
+        "originalPathLabel": "Original path: ",
+        "shareLabel": "Share: ",
+        "storedOnFileSystemLabel": "Stored on a File System:",
+        "updatePathButton": "Update Path",
+        "updatePathButtonTitle": "Update Current Path",
+        "urlLabel": "URL: "
+      }
+    },
     "login": {
       "dialog": {
         "intro": "Please authenticate to File System:",
@@ -68,6 +82,9 @@
       "noUsername": "Please provide the username"
     },
     "write": {
+      "delete": {
+        "unsupportedBackend": "Delete is not supported by this filestore backend"
+      },
       "filestore": {
         "backendNotWritable": "Filestore backend does not support write operations: {0}",
         "notFound": "Could not find file store with id: {0}"
@@ -76,6 +93,9 @@
       "folderName": {
         "invalid": "Folder name cannot contain '/' or start or end with spaces",
         "mandatory": "folderName is mandatory"
+      },
+      "move": {
+        "unsupportedBackend": "Within-filestore move is not supported by this filestore backend"
       },
       "recordIdsMandatory": "recordIds is mandatory",
       "rootModificationForbidden": "Cannot move or delete the filestore root",

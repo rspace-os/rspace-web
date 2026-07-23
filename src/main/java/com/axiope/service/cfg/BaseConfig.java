@@ -1392,16 +1392,16 @@ public abstract class BaseConfig {
   }
 
   @Bean
-  public ChemistryProvider chemistryProvider() {
+  public ChemistryProvider chemistryProvider(MessageSourceUtils messageSourceUtils) {
     if (chemistryProvider.equals("indigo")) {
-      return new IndigoChemistryProvider(chemistryServiceClient());
+      return new IndigoChemistryProvider(chemistryServiceClient(messageSourceUtils));
     }
     return new DefaultChemistryProvider();
   }
 
   @Bean
-  public ChemistryClient chemistryServiceClient() {
-    return new ChemistryClient(restTemplate());
+  public ChemistryClient chemistryServiceClient(MessageSourceUtils messageSourceUtils) {
+    return new ChemistryClient(restTemplate(), messageSourceUtils);
   }
 
   @Bean

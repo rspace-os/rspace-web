@@ -21,6 +21,8 @@ import com.researchspace.model.views.RSpaceDocView;
 import com.researchspace.service.BaseRecordManager;
 import com.researchspace.service.DiskSpaceChecker;
 import com.researchspace.service.GroupManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.UserManager;
@@ -39,6 +41,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.springframework.batch.core.Job;
@@ -69,6 +72,8 @@ public class ExportApiSpringBatchHandlerTest {
   private @Mock DiskSpaceChecker diskSpaceChecker;
 
   private @Mock OperationFailedMessageGenerator authGen;
+
+  private @Spy MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
   JobExecution exe;
 
   User user, pi;

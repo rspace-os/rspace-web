@@ -29,13 +29,15 @@ function initCreateCalendarEntryDlg() {
 
               // Event title is a required field
               if (!eventTitle || eventTitle.length === 0) {
-                  $().toastmessage('showErrorToast', RS.msg("legacyjs.workspace.calendarDialog.titleRequired"));
+                  $().toastmessage('showErrorToast', RS.msg("errors.required",
+                      RS.msg("legacyjs.workspace.calendarDialog.eventTitle")));
                   return false;
               }
 
               // Event start is a required field
               if (!eventStart || eventStart.length === 0) {
-                  $().toastmessage('showErrorToast', RS.msg("legacyjs.workspace.calendarDialog.startRequired"));
+                  $().toastmessage('showErrorToast', RS.msg("errors.required",
+                      RS.msg("legacyjs.workspace.calendarDialog.eventStart")));
                   return false;
               }
 

@@ -309,6 +309,12 @@
       "printBarcode": "Print Barcode",
       "removeFromThisBasket": "Remove from This Basket"
     },
+    "create": {
+      "containerFull": "This Container has no free available locations.",
+      "noPermission": "You do not have permission to create new items from this item.",
+      "nothingSelected": "Nothing is selected.",
+      "singleItemOnly": "Can only create from a single item."
+    },
     "createDialog": {
       "change": "Change",
       "columns": {
@@ -346,6 +352,13 @@
     },
     "historicalVersion": "Cannot modify a historical version.",
     "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
+    "move": {
+      "templatesCannotBeMoved": "Templates cannot be moved."
+    },
+    "printBarcode": {
+      "recordBeingEdited": "Cannot print barcodes whilst a record is being edited.",
+      "templatesHaveNoBarcodes": "Templates do not have barcodes."
+    },
     "splitButton": {
       "label": "More selection options",
       "moreOptions": "More selection options"
@@ -1310,6 +1323,10 @@
       "templateName": "Template Name",
       "templateNameValidation": "Template name is required."
     },
+    "fieldSelect": {
+      "alreadyMapped": "This field is already mapped to another column.",
+      "incompatibleData": "Incompatible data in this column."
+    },
     "fieldTypeMenu": {
       "options": "Options"
     },
@@ -1555,6 +1572,7 @@
         "version": "Version{version, select, none {} other { {version}}}"
       },
       "current": " (current)",
+      "loadFailed": "Could not load version history.",
       "none": "No version history is available for this item yet.",
       "title": "Version history",
       "view": "View version history",
@@ -1809,7 +1827,8 @@
         "applyLabel": "Apply link",
         "discard": "Discard",
         "discardLabel": "Discard link changes",
-        "none": "None"
+        "none": "None",
+        "selectBothBeforeApplying": "Select both a relationship type and a target before applying."
       },
       "numberOfSubsamples": {
         "count": "Number of {plural}",

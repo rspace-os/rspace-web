@@ -199,6 +199,7 @@
     },
     "edit": {
       "errors": {
+        "alreadyEditedBy": "Already edited by {0}",
         "fieldIdMismatch": "Provided field id: {0} does not match document field id: {1}",
         "fieldsMismatch": "Provided fields don't match document fields",
         "signed": "Document {0} is signed and cannot be altered"
@@ -240,6 +241,25 @@
       "errors": {
         "notEditable": "Could not restore - this document is not editable by you. Edit status is {0}"
       }
+    }
+  },
+  "errors": {
+    "chemistry": {
+      "clearIndexesFailed": "Chemistry service couldn't clear search indexes.",
+      "convertFailed": "Chemistry service couldn't convert the chemical.",
+      "imageExportFailed": "Chemistry service couldn't generate the image for the chemical.",
+      "saveFailed": "Chemistry service couldn't save the chemical.",
+      "searchFailed": "Chemistry service unable to search for the chemical.",
+      "serviceCallFailed": "Chemistry service call failed"
+    },
+    "stoichiometry": {
+      "copyMoleculeFailed": "Problem saving molecule from SMILES during stoichiometry copy",
+      "deleteFailed": "Error deleting stoichiometry with id {0}",
+      "moleculeInfoUnavailable": "Couldn't retrieve molecule info for provided structure",
+      "moleculeNotFound": "Molecule ID {0} not found in existing stoichiometry molecules.",
+      "recordIdRequired": "recordId must be provided",
+      "saveMoleculeFailed": "Problem saving new molecule from SMILES",
+      "smilesRequired": "New molecule requires a SMILES string"
     }
   },
   "folder": {
@@ -307,9 +327,14 @@
     },
     "errors": {
       "createMenuVersionMismatch": "Only the current version of a form can be added to the CreateMenu - this is version {0} of form {1}",
+      "createUnauthorized": "You do not have permission to create a form",
       "deleteFailed": "Exception deleting form. This has been logged.",
+      "fieldCreateUnauthorized": "Create field form unauthorised",
+      "fieldDeleteUnauthorized": "Not permitted to delete field [{0}]",
+      "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
       "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
       "infoUnauthorized": "Unauthorized attempt to get form info",
+      "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
       "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
       "systemFormUnpublish": "Attempted to unpublish a system form",
       "unknownFieldType": "Unknown field type [{0}]"
@@ -705,6 +730,10 @@
     "importedFromArchiveNotice": "Imported from archive",
     "lastModifiedLabel": "Last Modified:",
     "linkedDocsTitle": "Lists documents that link to this file",
+    "linkedRecords": {
+      "idHeader": "ID",
+      "nameHeader": "Name"
+    },
     "openInOfficeComButton": "Open in Office.com",
     "openInOfficeComTitle": "Open this file in Office.com",
     "originalCreatorLabel": "Original creator:",

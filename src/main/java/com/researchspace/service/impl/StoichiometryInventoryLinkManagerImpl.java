@@ -170,15 +170,18 @@ public class StoichiometryInventoryLinkManagerImpl implements StoichiometryInven
         stoichiometryMoleculeManager.getDocContainingMolecule(stoichiometryMolecule);
     if (!elnPermissionUtils.isPermitted(recordContainingStoichiometry, permissionType, user)) {
       throw new NotFoundException(
-          String.format(
-              "Stoichiometry resource not found or not accessible (missing %s permissions)",
-              permissionType));
+          messages.getMessage(
+              "errors.inventory.stoichiometry.notAccessible", new Object[] {permissionType}));
     }
   }
 
   private StoichiometryInventoryLink getLinkOrThrowNotFound(long linkId) {
     return linkDao
         .getSafeNull(linkId)
-        .orElseThrow(() -> new NotFoundException("Stoichiometry link not found: id=" + linkId));
+        .orElseThrow(
+            () ->
+                new NotFoundException(
+                    messages.getMessage(
+                        "errors.inventory.stoichiometry.linkNotFound", new Object[] {linkId})));
   }
 }

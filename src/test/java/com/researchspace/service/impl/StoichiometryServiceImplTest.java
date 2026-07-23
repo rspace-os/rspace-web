@@ -19,6 +19,8 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.ChemistryService;
 import com.researchspace.service.DocumentAlreadyEditedException;
 import com.researchspace.service.FieldManager;
+import com.researchspace.service.JsonMessageSource;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.RecordManager;
 import com.researchspace.service.StoichiometryManager;
@@ -36,6 +38,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectRetrievalFailureException;
 
@@ -49,6 +52,8 @@ public class StoichiometryServiceImplTest {
   @Mock private RSChemElementManager rsChemElementManager;
   @Mock private RecordManager recordManager;
   @Mock private FieldManager fieldManager;
+
+  @Spy private MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks private StoichiometryServiceImpl service;
 

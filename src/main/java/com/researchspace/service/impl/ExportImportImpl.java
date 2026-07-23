@@ -262,7 +262,9 @@ public class ExportImportImpl extends AbstractExporter implements ExportImport {
     try {
       createTopLevelExportFolder(expCfg);
     } catch (IOException ie) {
-      throw new ExportFailureException("Could not create archive folder", ie);
+      throw new ExportFailureException(
+          messageSource.getMessage("export.errors.archiveFolderCreationFailed", new Object[] {}),
+          ie);
     }
     expCfg.setExporter(user);
   }

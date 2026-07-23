@@ -1299,6 +1299,7 @@ export default interface Resources {
           "copyError": "Couldn't copy to clipboard. Try again manually.",
           "copySuccess": "Copied to clipboard",
           "createError": "There was a problem while creating your application. Please, try again later or contact support.",
+          "createErrorFallback": "There was a problem while creating your application.",
           "createTitle": "Create an OAuth application",
           "createdTitle": "App Successfully Created",
           "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
@@ -2504,6 +2505,12 @@ export default interface Resources {
         "printBarcode": "Print Barcode",
         "removeFromThisBasket": "Remove from This Basket"
       },
+      "create": {
+        "containerFull": "This Container has no free available locations.",
+        "noPermission": "You do not have permission to create new items from this item.",
+        "nothingSelected": "Nothing is selected.",
+        "singleItemOnly": "Can only create from a single item."
+      },
       "createDialog": {
         "change": "Change",
         "columns": {
@@ -2541,6 +2548,13 @@ export default interface Resources {
       },
       "historicalVersion": "Cannot modify a historical version.",
       "mixedStatusWarning": "Please select only 'Current' or 'In Trash' items to view more actions",
+      "move": {
+        "templatesCannotBeMoved": "Templates cannot be moved."
+      },
+      "printBarcode": {
+        "recordBeingEdited": "Cannot print barcodes whilst a record is being edited.",
+        "templatesHaveNoBarcodes": "Templates do not have barcodes."
+      },
       "splitButton": {
         "label": "More selection options",
         "moreOptions": "More selection options"
@@ -3497,6 +3511,10 @@ export default interface Resources {
       },
       "customDetails": "Custom details",
       "customFieldName": "Custom Field Name",
+      "fieldSelect": {
+        "alreadyMapped": "This field is already mapped to another column.",
+        "incompatibleData": "Incompatible data in this column."
+      },
       "fieldTypeMenu": {
         "options": "Options"
       },
@@ -3750,6 +3768,7 @@ export default interface Resources {
           "version": "Version{version, select, none {} other { {version}}}"
         },
         "current": " (current)",
+        "loadFailed": "Could not load version history.",
         "none": "No version history is available for this item yet.",
         "title": "Version history",
         "view": "View version history",
@@ -4004,7 +4023,8 @@ export default interface Resources {
           "applyLabel": "Apply link",
           "discard": "Discard",
           "discardLabel": "Discard link changes",
-          "none": "None"
+          "none": "None",
+          "selectBothBeforeApplying": "Select both a relationship type and a target before applying."
         },
         "numberOfSubsamples": {
           "count": "Number of {plural}",
@@ -5130,6 +5150,23 @@ export default interface Resources {
         "required": "Please fill in all the fields."
       },
       "authorization": {
+        "action": {
+          "createFolderIn": "create folder in [{0}]",
+          "editFirstName": " edit first name",
+          "editLastName": " edit last name",
+          "exportSelection": "Export a selection of ",
+          "exportUserOrGroup": "Export a user or group",
+          "openDeletedFolder": "open a deleted folder.",
+          "openUnauthorisedFolder": "open an unauthorised folder.",
+          "renameRecord": " attempted rename of {0} [id={1}]",
+          "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
+          "retrieveJobById": "Retrieving job by id"
+        },
+        "audit": {
+          "community": "Unauthorized attempt to audit a community",
+          "groupOrCommunity": "Unauthorized attempt to audit a group or community"
+        },
+        "communityAddGroup": "Unauthorized attempt to add group to community",
         "document": {
           "signed": "This document has already been signed."
         },
@@ -5138,7 +5175,11 @@ export default interface Resources {
           "detailed": "Unauthorized attempt by {0} to {1}",
           "polite": "Sorry, you don''t have permission to {0}"
         },
-        "signing": "Only the  record owner can sign the record."
+        "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
+        "signing": "Only the  record owner can sign the record.",
+        "sysadminApiOnly": "Only sysadmin can use this API",
+        "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
+        "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations"
       },
       "captcha": {
         "response": {
@@ -5303,19 +5344,25 @@ export default interface Resources {
     "validation": {
       "errors": {
         "collectionRange": "There must be between {min} and {max}",
-        "emailRequired": "Email is a required field.",
         "invalidEmail": "\"${validatedValue}\" is an invalid email format.",
         "nameRange": "Name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
-        "nameRequired": "Name is a required field.",
         "requiredField": "is a required field.",
         "stringMax": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
         "stringRange": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}."
       },
       "fields": {
+        "allVersions": "allVersions",
+        "archiveType": "archiveType",
         "authors": "authors",
         "contacts": "contacts",
+        "email": "Email",
+        "format": "format",
         "licenseName": "License name",
-        "licenseUrl": "License URL"
+        "licenseUrl": "License URL",
+        "maxLinkLevel": "maxLinkLevel",
+        "pdfName": "PDF name",
+        "scope": "scope",
+        "type": "type"
       }
     }
   },
@@ -5799,6 +5846,8 @@ export default interface Resources {
         }
       },
       "errors": {
+        "archiveFolderCreationFailed": "Could not create archive folder",
+        "launchFailed": "couldn't launch export job",
         "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
       },
       "global": {
@@ -5833,6 +5882,7 @@ export default interface Resources {
       },
       "jobs": {
         "errors": {
+          "executionNotFound": "No job execution with this Id",
           "s3ExportNotFound": "Couldn't find export on S3 for {0}"
         }
       },
@@ -5916,14 +5966,6 @@ export default interface Resources {
         }
       },
       "validation": {
-        "allVersionsRequired": "allVersions is a required field.",
-        "archiveTypeRequired": "archiveType is a required field.",
-        "descriptionRequired": "description is a required field.",
-        "formatRequired": "format is a required field.",
-        "maxLinkLevelRequired": "maxLinkLevel is a required field.",
-        "pdfNameRequired": "PDF name is a required field.",
-        "scopeRequired": "scope is a required field.",
-        "typeRequired": "type is a required field.",
         "zipFileRequired": "File must be a zip name"
       }
     }
@@ -6015,6 +6057,20 @@ export default interface Resources {
         "subfolderNotIncluded": "subfolder of linked folder",
         "userNotLoggedIn": "user not logged into ''{0}'' File System"
       },
+      "info": {
+        "dialog": {
+          "bucketLabel": "Bucket: ",
+          "downloadButton": "Download",
+          "downloadButtonTitle": "Download through RSpace",
+          "nameLabel": "Name: ",
+          "originalPathLabel": "Original path: ",
+          "shareLabel": "Share: ",
+          "storedOnFileSystemLabel": "Stored on a File System:",
+          "updatePathButton": "Update Path",
+          "updatePathButtonTitle": "Update Current Path",
+          "urlLabel": "URL: "
+        }
+      },
       "login": {
         "dialog": {
           "intro": "Please authenticate to File System:",
@@ -6044,6 +6100,9 @@ export default interface Resources {
         "noUsername": "Please provide the username"
       },
       "write": {
+        "delete": {
+          "unsupportedBackend": "Delete is not supported by this filestore backend"
+        },
         "filestore": {
           "backendNotWritable": "Filestore backend does not support write operations: {0}",
           "notFound": "Could not find file store with id: {0}"
@@ -6052,6 +6111,9 @@ export default interface Resources {
         "folderName": {
           "invalid": "Folder name cannot contain '/' or start or end with spaces",
           "mandatory": "folderName is mandatory"
+        },
+        "move": {
+          "unsupportedBackend": "Within-filestore move is not supported by this filestore backend"
         },
         "recordIdsMandatory": "recordIds is mandatory",
         "rootModificationForbidden": "Cannot move or delete the filestore root",
@@ -6123,6 +6185,8 @@ export default interface Resources {
           "notMember": "You are not a member of the group.",
           "onlyPiRoleChange": "Attempt to change the role of the only PI in the group!",
           "piCannotBeDemoted": "PI [{0}] cannot be demoted to user as is PI of at least 1 group: {1}",
+          "piEditNotAllowed": "System admin or community admin has not allowed  this setting to be changed",
+          "piEditOnlyPi": "Only a PI of this group can change this setting",
           "piEditWrongGroupType": "PI can only edit all documents in a lab group, but this group is {0}",
           "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
           "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",
@@ -6346,6 +6410,7 @@ export default interface Resources {
           "imageTooLarge": "Container image cannot be larger than 10MB",
           "invalidCanStoreFlags": "'canStoreSamples', 'canStoreContainers', and 'canStoreInstruments' flags cannot all be set to 'false'.",
           "locationsImageTooLarge": "Container locations image cannot be larger than 10MB",
+          "notFound": "No container with id: {0}",
           "typeRequired": "Container type (cType) is required and must be one of {0}."
         },
         "export": {
@@ -6374,6 +6439,7 @@ export default interface Resources {
           "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
           "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
           "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+          "notFound": "No inventory entity field with id: {0}",
           "validation": "{0}"
         },
         "file": {
@@ -6419,6 +6485,7 @@ export default interface Resources {
         },
         "instrument": {
           "nameExists": "There is already an instrument named [{0}]",
+          "notFound": "No instrument with id: {0}",
           "templateNotFound": "No instrument template with id: {0}",
           "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
         },
@@ -6459,6 +6526,7 @@ export default interface Resources {
             "hasStoredSubsamples": "The Sample has at least one Subsample located inside a container"
           },
           "nameExists": "There is already a sample named [{0}]",
+          "notFound": "No sample with id: {0}",
           "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
           "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
           "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
@@ -6485,10 +6553,13 @@ export default interface Resources {
           "actualAmountRequired": "Molecule actual amount must be set for deduction",
           "alreadyLinked": "Stoichiometry molecule already has an inventory link",
           "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
+          "linkNotFound": "Stoichiometry link not found: id={0}",
           "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
+          "notAccessible": "Stoichiometry resource not found or not accessible (missing {0} permissions)",
           "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
         },
         "subsample": {
+          "notFound": "No subsample with id: {0}",
           "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
         },
         "temperature": {
@@ -7262,11 +7333,11 @@ export default interface Resources {
           "createFailed": "An error occurred during the creation of the calendar event.",
           "createTitle": "Create a calendar entry",
           "downloading": "Calendar event is being downloaded.",
+          "eventStart": "Event start",
+          "eventTitle": "Event title",
           "noAttachments": "No Attachments",
           "nothingSelected": "Nothing was selected!",
-          "occurrencesInvalid": "Number of times must be a positive integer!",
-          "startRequired": "Event start is a required field.",
-          "titleRequired": "Event title is a required field."
+          "occurrencesInvalid": "Number of times must be a positive integer!"
         },
         "clientUISettings": {
           "savingUiSettingsAction": "Saving UI settings"
@@ -8737,6 +8808,7 @@ export default interface Resources {
       },
       "edit": {
         "errors": {
+          "alreadyEditedBy": "Already edited by {0}",
           "fieldIdMismatch": "Provided field id: {0} does not match document field id: {1}",
           "fieldsMismatch": "Provided fields don't match document fields",
           "signed": "Document {0} is signed and cannot be altered"
@@ -8818,6 +8890,25 @@ export default interface Resources {
       "showLastModifiedDate": "Show last modified date",
       "tapToExpandListing": "Tap to expand listing.",
       "templateLabel": "Template"
+    },
+    "errors": {
+      "chemistry": {
+        "clearIndexesFailed": "Chemistry service couldn't clear search indexes.",
+        "convertFailed": "Chemistry service couldn't convert the chemical.",
+        "imageExportFailed": "Chemistry service couldn't generate the image for the chemical.",
+        "saveFailed": "Chemistry service couldn't save the chemical.",
+        "searchFailed": "Chemistry service unable to search for the chemical.",
+        "serviceCallFailed": "Chemistry service call failed"
+      },
+      "stoichiometry": {
+        "copyMoleculeFailed": "Problem saving molecule from SMILES during stoichiometry copy",
+        "deleteFailed": "Error deleting stoichiometry with id {0}",
+        "moleculeInfoUnavailable": "Couldn't retrieve molecule info for provided structure",
+        "moleculeNotFound": "Molecule ID {0} not found in existing stoichiometry molecules.",
+        "recordIdRequired": "recordId must be provided",
+        "saveMoleculeFailed": "Problem saving new molecule from SMILES",
+        "smilesRequired": "New molecule requires a SMILES string"
+      }
     },
     "folder": {
       "delete": {
@@ -8906,10 +8997,15 @@ export default interface Resources {
       },
       "errors": {
         "createMenuVersionMismatch": "Only the current version of a form can be added to the CreateMenu - this is version {0} of form {1}",
+        "createUnauthorized": "You do not have permission to create a form",
         "deleteFailed": "Exception deleting form. This has been logged.",
+        "fieldCreateUnauthorized": "Create field form unauthorised",
+        "fieldDeleteUnauthorized": "Not permitted to delete field [{0}]",
+        "fieldUpdateUnauthorized": "Unauthorised attempt to update a form field",
         "hasDocumentsCreated": "Form {0} has been used to create documents, and cannot be deleted.",
         "infoUnauthorized": "Unauthorized attempt to get form info",
         "notFound": "Form with id [{0}] could not be retrieved - possibly it has been deleted, does not exist, or you do not have permission to access it.",
+        "publishUnauthorized": "Unauthorised attempt to publish form: {0}",
         "systemFormUnpublish": "Attempted to unpublish a system form",
         "unknownFieldType": "Unknown field type [{0}]"
       },
@@ -9249,6 +9345,10 @@ export default interface Resources {
       "importedFromArchiveNotice": "Imported from archive",
       "lastModifiedLabel": "Last Modified:",
       "linkedDocsTitle": "Lists documents that link to this file",
+      "linkedRecords": {
+        "idHeader": "ID",
+        "nameHeader": "Name"
+      },
       "openInOfficeComButton": "Open in Office.com",
       "openInOfficeComTitle": "Open this file in Office.com",
       "originalCreatorLabel": "Original creator:",
@@ -10206,6 +10306,7 @@ export default interface Resources {
         "dialogTitle": "SnapGene",
         "dnaPreviewAlt": "DNA preview",
         "dnaPreviewError": "An error has occurred. This could be because the SnapGene server is down or the DNA sequence is invalid.",
+        "enzymeLoadFailed": "Could not load the enzyme table.",
         "enzymeSetOptions": {
           "commercialNonredundant": "Commercial nonredundant",
           "sixPlus": "Six plus",
@@ -10217,10 +10318,12 @@ export default interface Resources {
         "enzymeSites": "Enzyme sites",
         "enzymeTableLabel": "Enzyme table",
         "enzymeTypeLabel": "Enzyme type",
+        "fastaLoadFailed": "Could not load the FASTA sequence.",
         "imageType": "Image type",
         "linear": "Linear",
         "linearChoiceLabel": "Linear choice",
         "openReadingFrames": "Open Reading Frames",
+        "orfLoadFailed": "Could not load the ORF table.",
         "orfTable": "ORF table",
         "readingFrames": {
           "all": "All",

@@ -6,7 +6,6 @@ import static com.researchspace.core.util.StringAbbreviationUtils.abbreviate;
 import static com.researchspace.model.comms.NotificationType.NOTIFICATION_DOCUMENT_EDITED;
 import static com.researchspace.model.record.BaseRecord.DEFAULT_VARCHAR_LENGTH;
 import static com.researchspace.model.record.Folder.EXPORTS_FOLDER_NAME;
-import static java.lang.String.format;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 import com.axiope.search.SearchUtils;
@@ -816,7 +815,9 @@ public class RecordManagerImpl implements RecordManager {
       throws DocumentAlreadyEditedException {
     Optional<String> isEditing = tracker.isEditing(structuredDocument);
     if (isEditing.isPresent() && !isEditing.get().equals(userEditor.getUsername())) {
-      throw new DocumentAlreadyEditedException("Already edited by " + isEditing);
+      throw new DocumentAlreadyEditedException(
+          messages.getMessage(
+              "document.edit.errors.alreadyEditedBy", new Object[] {isEditing.get()}));
     }
   }
 
@@ -1023,7 +1024,10 @@ public class RecordManagerImpl implements RecordManager {
     if (!permissnUtils.isPermitted(toSave, PermissionType.RENAME, user)) {
       throw new AuthorizationException(
           authMsgGenerator.getFailedMessage(
-              user, format(" attempted rename of %s [id=%d]", toSave.getName(), toSave.getId())));
+              user,
+              messages.getMessage(
+                  "errors.authorization.action.renameRecord",
+                  new Object[] {toSave.getName(), toSave.getId()})));
     }
     // only get here if name OK, has permission, and is not a system folder.
     toSave.setName(newname);

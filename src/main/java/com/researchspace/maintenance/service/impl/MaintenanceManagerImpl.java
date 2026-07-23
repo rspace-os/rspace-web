@@ -5,6 +5,7 @@ import com.researchspace.maintenance.model.ScheduledMaintenance;
 import com.researchspace.maintenance.service.MaintenanceManager;
 import com.researchspace.model.Role;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import org.apache.shiro.authz.AuthorizationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Service;
 public class MaintenanceManagerImpl implements MaintenanceManager {
 
   private @Autowired MaintenanceDao maintenanceDao;
+  private @Autowired MessageSourceUtils messages;
 
   @Override
   public ScheduledMaintenance getScheduledMaintenance(Long id) {
@@ -66,7 +68,8 @@ public class MaintenanceManagerImpl implements MaintenanceManager {
 
   private void verifySysadminUser(User user) {
     if (!user.hasRole(Role.SYSTEM_ROLE)) {
-      throw new AuthorizationException("Only sysadmin can manage scheduled maintenances");
+      throw new AuthorizationException(
+          messages.getMessage("errors.authorization.maintenanceSysadminOnly", new Object[] {}));
     }
   }
 }

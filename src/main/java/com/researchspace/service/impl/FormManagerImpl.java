@@ -132,7 +132,8 @@ public class FormManagerImpl extends AbstractFormManagerImpl<RSForm> implements 
     }
     boolean altered = false;
     if (!permissionUtils.isPermitted(form, PermissionType.SHARE, authUser)) {
-      throw new AuthorizationException("Unauthorised attempt to publish form: " + form.getId());
+      throw new AuthorizationException(
+          messages.getMessage("form.errors.publishUnauthorized", new Object[] {form.getId()}));
     }
     // only update on status change
     if (toPublish && !form.isPublishedAndVisible()) {

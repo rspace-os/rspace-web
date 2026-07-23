@@ -29,6 +29,23 @@
       "required": "Please fill in all the fields."
     },
     "authorization": {
+      "action": {
+        "createFolderIn": "create folder in [{0}]",
+        "editFirstName": " edit first name",
+        "editLastName": " edit last name",
+        "exportSelection": "Export a selection of ",
+        "exportUserOrGroup": "Export a user or group",
+        "openDeletedFolder": "open a deleted folder.",
+        "openUnauthorisedFolder": "open an unauthorised folder.",
+        "renameRecord": " attempted rename of {0} [id={1}]",
+        "restoreRevisionOfSignedDocument": "restore an earlier revision of a signed document.",
+        "retrieveJobById": "Retrieving job by id"
+      },
+      "audit": {
+        "community": "Unauthorized attempt to audit a community",
+        "groupOrCommunity": "Unauthorized attempt to audit a group or community"
+      },
+      "communityAddGroup": "Unauthorized attempt to add group to community",
       "document": {
         "signed": "This document has already been signed."
       },
@@ -37,7 +54,11 @@
         "detailed": "Unauthorized attempt by {0} to {1}",
         "polite": "Sorry, you don''t have permission to {0}"
       },
-      "signing": "Only the  record owner can sign the record."
+      "maintenanceSysadminOnly": "Only sysadmin can manage scheduled maintenances",
+      "signing": "Only the  record owner can sign the record.",
+      "sysadminApiOnly": "Only sysadmin can use this API",
+      "sysadminCreateSysadminOnly": "Only a sysadmin can create another sysadmin!",
+      "sysadminIpRequired": "Sysadmin role with valid IP required for admin operations"
     },
     "captcha": {
       "response": {
@@ -199,19 +220,25 @@
   "validation": {
     "errors": {
       "collectionRange": "There must be between {min} and {max}",
-      "emailRequired": "Email is a required field.",
       "invalidEmail": "\"${validatedValue}\" is an invalid email format.",
       "nameRange": "Name \"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}.",
-      "nameRequired": "Name is a required field.",
       "requiredField": "is a required field.",
       "stringMax": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be less than {max} characters but was length ${validatedValue.length()}.",
       "stringRange": "\"${validatedValue.length() > 20 ? validatedValue.substring(0,10).concat(\"...\") : validatedValue }\" must be between {min} and {max} characters but was length ${validatedValue.length()}."
     },
     "fields": {
+      "allVersions": "allVersions",
+      "archiveType": "archiveType",
       "authors": "authors",
       "contacts": "contacts",
+      "email": "Email",
+      "format": "format",
       "licenseName": "License name",
-      "licenseUrl": "License URL"
+      "licenseUrl": "License URL",
+      "maxLinkLevel": "maxLinkLevel",
+      "pdfName": "PDF name",
+      "scope": "scope",
+      "type": "type"
     }
   }
 }

@@ -33,11 +33,15 @@ public class ExportApiController extends BaseApiController implements ExportApi 
   @NoArgsConstructor
   public static class ExportApiConfig {
     @NotNull
-    @Pattern(regexp = "(xml)|(html)", message = "{export.validation.formatRequired}")
+    @Pattern(
+        regexp = "xml|html",
+        message = "{validation.fields.format} {validation.errors.requiredField}")
     private String format;
 
     @NotNull
-    @Pattern(regexp = "(user)|(group)|(selection)", message = "{export.validation.scopeRequired}")
+    @Pattern(
+        regexp = "user|group|selection",
+        message = "{validation.fields.scope} {validation.errors.requiredField}")
     private String scope;
 
     private Long id = null;
@@ -75,7 +79,10 @@ public class ExportApiController extends BaseApiController implements ExportApi 
     ApiJob job =
         handler
             .export(cfg, user)
-            .orElseThrow(() -> new ExportFailureException("couldn't launch export job"));
+            .orElseThrow(
+                () ->
+                    new ExportFailureException(
+                        getMessage("export.errors.launchFailed", new Object[] {})));
     addJobProgressLink(job);
     return job;
   }

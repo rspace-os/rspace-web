@@ -312,22 +312,22 @@
   <div class="nfsFileInfoPanel">
     <table class="nfsInfoTable">
       <tr><td colspan="2" class="nfsInfoTableHeaderRow"></td></tr>
-      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-name"> </td></tr>
-      <tr><td class="nfsInfoLabelCell">Original path: </td><td class="nfsInfoPanel-path"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.nameLabel"/></td><td class="nfsInfoPanel-name"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.originalPathLabel"/></td><td class="nfsInfoPanel-path"> </td></tr>
       <tr><td>&nbsp;</td><td></td></tr>
-      <tr><td colspan="2">Stored on a File System:</td></tr>
-      <tr><td class="nfsInfoLabelCell">Name: </td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
-      <tr><td class="nfsInfoLabelCell">URL: </td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
+      <tr><td colspan="2"><spring:message code="netFileStores.info.dialog.storedOnFileSystemLabel"/></td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.nameLabel"/></td><td class="nfsInfoPanel-fileSystemName"> </td></tr>
+      <tr><td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.urlLabel"/></td><td class="nfsInfoPanel-fileSystemPath"> </td></tr>
       <tr class="nfsInfoBucketNameRow">
-        <td class="nfsInfoLabelCell">Bucket: </td><td class="nfsInfoPanel-bucketName"> </td>
+        <td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.bucketLabel"/></td><td class="nfsInfoPanel-bucketName"> </td>
       </tr>
       <tr class="nfsInfoShareNameRow">
-        <td class="nfsInfoLabelCell">Share: </td><td class="nfsInfoPanel-fileSystemShareName"> </td>
+        <td class="nfsInfoLabelCell"><spring:message code="netFileStores.info.dialog.shareLabel"/></td><td class="nfsInfoPanel-fileSystemShareName"> </td>
       </tr>
     </table>
     <div class="nfsInfoPanelButtons">
-      <button type='button' title="Update Current Path" class='nfsInfoPanelBtn nfsUpdatePathBtn'>Update Path</button>
-      <button type='button' title="Download through RSpace" class='nfsInfoPanelBtn nfsFileDownloadBtn'>Download</button>
+      <button type='button' title="<spring:message code="netFileStores.info.dialog.updatePathButtonTitle"/>" class='nfsInfoPanelBtn nfsUpdatePathBtn'><spring:message code="netFileStores.info.dialog.updatePathButton"/></button>
+      <button type='button' title="<spring:message code="netFileStores.info.dialog.downloadButtonTitle"/>" class='nfsInfoPanelBtn nfsFileDownloadBtn'><spring:message code="netFileStores.info.dialog.downloadButton"/></button>
     </div>
   </div>
 </div>

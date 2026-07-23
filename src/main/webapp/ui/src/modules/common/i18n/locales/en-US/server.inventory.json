@@ -27,6 +27,7 @@
           "notEmpty": "Container {0} is not empty and cannot be deleted"
         },
         "gridLayoutInvalidSize": "Provided grid size {0}x{1} is incorrect, must be between 1x1 and 24x24.",
+        "notFound": "No container with id: {0}",
         "gridLayoutMissingOptions": "Grid layout has to specify both columnsNumber and rowsNumber properties.",
         "gridLayoutRequired": "Grid layout must be set for a grid container.",
         "imageTooLarge": "Container image cannot be larger than 10MB",
@@ -60,6 +61,7 @@
         "linkTargetNotFound": "Link target ''{0}'' could not be found or you do not have permission to read it.",
         "mandatoryFieldEmpty": "Field ''{0}'' is mandatory, but provided value was empty",
         "mandatoryFieldNoSelection": "Field ''{0}'' is mandatory, but no option is provided",
+        "notFound": "No inventory entity field with id: {0}",
         "validation": "{0}"
       },
       "file": {
@@ -100,6 +102,7 @@
       "imageTooLarge": "Image cannot be larger than 10MB",
       "instrument": {
         "nameExists": "There is already an instrument named [{0}]",
+        "notFound": "No instrument with id: {0}",
         "templateNotFound": "No instrument template with id: {0}",
         "templateRequired": "Seems like the record is not an instrument template, please use /instruments endpoint for instrument actions"
       },
@@ -135,6 +138,7 @@
           "hasStoredSubsamples": "The Sample has at least one Subsample located inside a container"
         },
         "nameExists": "There is already a sample named [{0}]",
+        "notFound": "No sample with id: {0}",
         "subSamplesArrayNotEmpty": "subSamples array must be empty if newSampleSubSamplesCount is provided",
         "subSamplesCountOutOfRange": "{0} supported values are 1-100, was [{1}]",
         "templateActionsNotAllowed": "Please use /sampleTemplates endpoint for template actions",
@@ -161,10 +165,13 @@
         "actualAmountRequired": "Molecule actual amount must be set for deduction",
         "alreadyLinked": "Stoichiometry molecule already has an inventory link",
         "insufficientStock": "Insufficient stock to perform this action. Attempting to use {0} of stock amount {1} for {2}",
+        "linkNotFound": "Stoichiometry link not found: id={0}",
         "linkNotInStoichiometry": "Link with id {0} does not belong to stoichiometry with id {1}",
+        "notAccessible": "Stoichiometry resource not found or not accessible (missing {0} permissions)",
         "unsupportedLinkTarget": "{0} is a sample template. Only Containers, Samples and Subsamples are valid for linking."
       },
       "subsample": {
+        "notFound": "No subsample with id: {0}",
         "unitIncompatibleWithSample": "Subsample quantity ''{0}'' is incompatible with quantity unit used by parent sample ({1})"
       },
       "temperature": {

@@ -26,12 +26,15 @@ const PrintBarcodeAction: ComponentType<PrintBarcodeActionArgs> = forwardRef<
 
   const disabledHelp = match<void, string>([
     [() => disabled !== "", disabled],
-    [() => selectedResults.some((r) => r.recordType === "sampleTemplate"), "Templates do not have barcodes."],
+    [
+      () => selectedResults.some((r) => r.recordType === "sampleTemplate"),
+      t("contextMenu.printBarcode.templatesHaveNoBarcodes"),
+    ],
     [
       () => selectedResults.some((r) => !r.canRead),
       `You do not have permission to print ${selectedResults.length > 1 ? "these items" : "this item"}.`,
     ],
-    [() => searchStore.activeResultIsBeingEdited, "Cannot print barcodes whilst a record is being edited."],
+    [() => searchStore.activeResultIsBeingEdited, t("contextMenu.printBarcode.recordBeingEdited")],
     [() => true, ""],
   ])();
 

@@ -169,7 +169,8 @@ public class SysadminUserCreationHandlerImpl implements SysadminUserCreationHand
 
     } else if (isSysAdminRole) {
       if (!isSubjectSysAdmin) {
-        throw new AuthorizationException("Only a sysadmin can create another sysadmin!");
+        throw new AuthorizationException(
+            getText("errors.authorization.sysadminCreateSysadminOnly"));
       }
       newUser = attemptUserSave(userForm, subject, errorList, newUser);
       if (errorList.hasErrorMessages()) {

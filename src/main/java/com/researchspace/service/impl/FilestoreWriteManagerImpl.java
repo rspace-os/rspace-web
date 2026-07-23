@@ -225,6 +225,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
       DeletableTarget target = client.resolveDeletableTarget(absolutePath);
       assertDeletable(target.audit(), user);
       client.deleteByKey(target.objectKey());
+    } catch (UnsupportedOperationException e) {
+      throw new UnsupportedOperationException(
+          messages.getMessage("netFileStores.write.delete.unsupportedBackend", new Object[] {}));
     } catch (IOException e) {
       log.error("Error deleting object from filestore: ", e);
       errors.addError(new ObjectError("path", e.getMessage()));
@@ -320,6 +323,9 @@ public class FilestoreWriteManagerImpl implements FilestoreWriteManager {
     String absoluteDestFolder = resolveAbsolute(filestore, destFolderPath);
     try {
       return toFilestoreRelative(filestore, client.moveWithin(absoluteSource, absoluteDestFolder));
+    } catch (UnsupportedOperationException e) {
+      throw new UnsupportedOperationException(
+          messages.getMessage("netFileStores.write.move.unsupportedBackend", new Object[] {}));
     } catch (IOException e) {
       log.error("Error moving object within filestore: ", e);
       errors.addError(new ObjectError("sourcePath", e.getMessage()));

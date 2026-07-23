@@ -18,6 +18,7 @@ import com.researchspace.model.inventory.Sample;
 import com.researchspace.model.inventory.SampleEntity;
 import com.researchspace.model.inventory.SampleTemplate;
 import com.researchspace.model.inventory.SubSample;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.List;
 import javax.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +42,7 @@ public class InventoryRecordRetriever {
   private @Autowired InstrumentDao instrumentDao;
   private @Autowired InstrumentTemplateDao instrumentTemplateDao;
   @Autowired private InventoryPermissionUtils permissionUtils;
+  @Autowired private MessageSourceUtils messages;
 
   /**
    * Returns inventory record of given type.
@@ -120,7 +122,8 @@ public class InventoryRecordRetriever {
   public Instrument getInstrumentIfExists(Long id) {
     boolean exists = instrumentDao.exists(id);
     if (!exists) {
-      throw new NotFoundException("No instrument with id: " + id);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.instrument.notFound", new Object[] {id}));
     }
     return instrumentDao.get(id);
   }
@@ -133,7 +136,8 @@ public class InventoryRecordRetriever {
   public InstrumentTemplate getInstrumentTemplateIfExists(Long id) {
     boolean exists = instrumentTemplateDao.exists(id);
     if (!exists) {
-      throw new NotFoundException("No instrument template with id: " + id);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.instrument.templateNotFound", new Object[] {id}));
     }
     return instrumentTemplateDao.get(id);
   }
@@ -187,7 +191,8 @@ public class InventoryRecordRetriever {
   public Container getContainerIfExists(Long id) {
     boolean exists = containerDao.exists(id);
     if (!exists) {
-      throw new NotFoundException("No container with id: " + id);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.container.notFound", new Object[] {id}));
     }
     return containerDao.get(id);
   }
@@ -204,7 +209,8 @@ public class InventoryRecordRetriever {
     if (sampleTemplateDao.exists(id)) {
       return sampleTemplateDao.get(id);
     }
-    throw new NotFoundException("No sample with id: " + id);
+    throw new NotFoundException(
+        messages.getMessage("errors.inventory.sample.notFound", new Object[] {id}));
   }
 
   /**
@@ -215,7 +221,8 @@ public class InventoryRecordRetriever {
   public SubSample getSubSampleIfExists(Long id) {
     boolean exists = subSampleDao.exists(id);
     if (!exists) {
-      throw new NotFoundException("No subsample with id: " + id);
+      throw new NotFoundException(
+          messages.getMessage("errors.inventory.subsample.notFound", new Object[] {id}));
     }
     return subSampleDao.get(id);
   }

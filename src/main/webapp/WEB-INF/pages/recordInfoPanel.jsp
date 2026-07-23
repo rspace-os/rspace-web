@@ -7,7 +7,7 @@
  <!--{{^isEmpty}} -->
 <spring:message code="inventory:fields.link.gallerySections.referencedBy"/>
 <table class="linkedRecordsForAttachmentsTable" width="100%">
-            <tr class="linkedRecordRow"><th>ID</th><th>Name</th></tr>
+            <tr class="linkedRecordRow"><th><spring:message code="recordInfoPanel.linkedRecords.idHeader"/></th><th><spring:message code="recordInfoPanel.linkedRecords.nameHeader"/></th></tr>
             <!--{{#items}} -->
             <tr><td><a href="/globalId/{{oid.idString}}">{{oid.idString}}</a></td><td>{{name}}</td></tr>
            <!--  {{/items}}   -->

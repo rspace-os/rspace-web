@@ -163,7 +163,7 @@ function VersionHistory({ record }: VersionHistoryArgs): React.ReactNode {
           if (!cancelled)
             setState({
               state: "fail",
-              error: new Error(getErrorMessage(e, "Could not load version history.")),
+              error: new Error(getErrorMessage(e, t("moreInfo.versionHistory.loadFailed"))),
             });
         }
       })();

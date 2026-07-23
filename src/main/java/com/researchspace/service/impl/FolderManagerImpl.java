@@ -591,11 +591,16 @@ public class FolderManagerImpl implements FolderManager {
   }
 
   private String deletedMsg(User user) {
-    return messages.getFailedMessage(user.getUsername(), "open a deleted folder.");
+    return messages.getFailedMessage(
+        user.getUsername(),
+        messageSourceUtils.getMessage("errors.authorization.action.openDeletedFolder"));
   }
 
   private String unauthorisedMsg(User user) {
-    String msg = messages.getFailedMessage(user.getUsername(), "open an unauthorised folder.");
+    String msg =
+        messages.getFailedMessage(
+            user.getUsername(),
+            messageSourceUtils.getMessage("errors.authorization.action.openUnauthorisedFolder"));
     return msg;
   }
 
@@ -606,7 +611,9 @@ public class FolderManagerImpl implements FolderManager {
     if (!canCreateFolder) {
       String msg =
           messages.getFailedMessage(
-              user.getUsername(), "create folder in [" + parent.getId() + "]");
+              user.getUsername(),
+              messageSourceUtils.getMessage(
+                  "errors.authorization.action.createFolderIn", new Object[] {parent.getId()}));
       throw new AuthorizationException(msg);
     }
   }

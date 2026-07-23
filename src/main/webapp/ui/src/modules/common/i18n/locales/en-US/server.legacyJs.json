@@ -710,11 +710,11 @@
         "createFailed": "An error occurred during the creation of the calendar event.",
         "createTitle": "Create a calendar entry",
         "downloading": "Calendar event is being downloaded.",
+        "eventStart": "Event start",
+        "eventTitle": "Event title",
         "noAttachments": "No Attachments",
         "nothingSelected": "Nothing was selected!",
-        "occurrencesInvalid": "Number of times must be a positive integer!",
-        "startRequired": "Event start is a required field.",
-        "titleRequired": "Event title is a required field."
+        "occurrencesInvalid": "Number of times must be a positive integer!"
       },
       "clientUISettings": {
         "savingUiSettingsAction": "Saving UI settings"

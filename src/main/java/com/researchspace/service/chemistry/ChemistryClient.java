@@ -5,6 +5,7 @@ import com.researchspace.model.dtos.chemistry.ChemicalExportFormat;
 import com.researchspace.model.dtos.chemistry.ChemicalExportType;
 import com.researchspace.model.dtos.chemistry.ChemicalSearchResultsDTO;
 import com.researchspace.model.dtos.chemistry.ElementalAnalysisDTO;
+import com.researchspace.service.MessageSourceUtils;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,12 @@ public class ChemistryClient {
   private String chemistryServiceUrl;
 
   private final RestTemplate restTemplate;
+  private final MessageSourceUtils messages;
 
   @Autowired
-  public ChemistryClient(RestTemplate restTemplate) {
+  public ChemistryClient(RestTemplate restTemplate, MessageSourceUtils messages) {
     this.restTemplate = restTemplate;
+    this.messages = messages;
   }
 
   public String convert(String chemical, String inputFormat, String outputFormat) {
@@ -66,7 +69,7 @@ public class ChemistryClient {
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service converting the chemical at {}: {}", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't convert the chemical.", e);
+      throw new ChemistryClientException(messages.getMessage("errors.chemistry.convertFailed"), e);
     }
   }
 
@@ -100,7 +103,7 @@ public class ChemistryClient {
       throw new ChemistryClientException(errorReason, status, e);
     } catch (RestClientException e) {
       log.error("Error calling chemistry service at url={} requestBody={}", url, body, e);
-      throw new ChemistryClientException("Chemistry service call failed");
+      throw new ChemistryClientException(messages.getMessage("errors.chemistry.serviceCallFailed"));
     }
   }
 
@@ -153,7 +156,7 @@ public class ChemistryClient {
     } catch (RestClientException e) {
       log.warn("Problem with chemistry service exporting image at {}: {}", url, e.getMessage());
       throw new ChemistryClientException(
-          "Chemistry service couldn't generate the image for the chemical.", e);
+          messages.getMessage("errors.chemistry.imageExportFailed"), e);
     }
   }
 
@@ -185,7 +188,7 @@ public class ChemistryClient {
           chemicalId,
           url,
           e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't save the chemical.", e);
+      throw new ChemistryClientException(messages.getMessage("errors.chemistry.saveFailed"), e);
     }
   }
 
@@ -231,7 +234,7 @@ public class ChemistryClient {
           "Problem with chemistry service searching for the chemical at {}: {}",
           url,
           e.getMessage());
-      throw new ChemistryClientException("Chemistry service unable to search for the chemical.", e);
+      throw new ChemistryClientException(messages.getMessage("errors.chemistry.searchFailed"), e);
     }
   }
 
@@ -252,7 +255,8 @@ public class ChemistryClient {
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service clearing search indexes at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't clear search indexes.", e);
+      throw new ChemistryClientException(
+          messages.getMessage("errors.chemistry.clearIndexesFailed"), e);
     }
   }
 
@@ -273,7 +277,8 @@ public class ChemistryClient {
     } catch (RestClientException e) {
       log.warn(
           "Problem with chemistry service  fast search indexing at {}: {} ", url, e.getMessage());
-      throw new ChemistryClientException("Chemistry service couldn't clear search indexes.", e);
+      throw new ChemistryClientException(
+          messages.getMessage("errors.chemistry.clearIndexesFailed"), e);
     }
   }
 }

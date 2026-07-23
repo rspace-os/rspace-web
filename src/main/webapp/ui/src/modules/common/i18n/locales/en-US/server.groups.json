@@ -58,6 +58,8 @@
         "notMember": "You are not a member of the group.",
         "onlyPiRoleChange": "Attempt to change the role of the only PI in the group!",
         "piCannotBeDemoted": "PI [{0}] cannot be demoted to user as is PI of at least 1 group: {1}",
+        "piEditNotAllowed": "System admin or community admin has not allowed  this setting to be changed",
+        "piEditOnlyPi": "Only a PI of this group can change this setting",
         "piEditWrongGroupType": "PI can only edit all documents in a lab group, but this group is {0}",
         "piRequiredForBioOntologies": "Only PI can allow group to use Bio Ontologies",
         "piRequiredForOntologyEnforcement": "Only PI can enforce group ontologies",

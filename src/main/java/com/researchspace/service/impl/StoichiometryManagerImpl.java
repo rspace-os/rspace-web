@@ -20,6 +20,7 @@ import com.researchspace.model.stoichiometry.StoichiometryMolecule;
 import com.researchspace.service.AuditManager;
 import com.researchspace.service.ChemicalImportException;
 import com.researchspace.service.ChemicalSearcher;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.RSChemElementManager;
 import com.researchspace.service.StoichiometryInventoryLinkManager;
 import com.researchspace.service.StoichiometryManager;
@@ -44,6 +45,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private final ChemicalSearcher chemicalSearcher;
   private final AuditManager auditManager;
   private final StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
+  private final MessageSourceUtils messages;
 
   @Autowired
   public StoichiometryManagerImpl(
@@ -52,13 +54,15 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       ChemicalSearcher chemicalSearcher,
       AuditManager auditManager,
       // avoids circular dependency
-      @Lazy StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager) {
+      @Lazy StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager,
+      MessageSourceUtils messages) {
     super(stoichiometryDao);
     this.stoichiometryDao = stoichiometryDao;
     this.rsChemElementManager = rsChemElementManager;
     this.chemicalSearcher = chemicalSearcher;
     this.auditManager = auditManager;
     this.stoichiometryInventoryLinkManager = stoichiometryInventoryLinkManager;
+    this.messages = messages;
   }
 
   @Override
@@ -274,7 +278,7 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
           rsChemElementManager.save(RSChemElement.builder().chemElements(smiles).build(), user);
     } catch (IOException e) {
       throw new StoichiometryException(
-          "Problem saving molecule from SMILES during stoichiometry copy", e);
+          messages.getMessage("errors.stoichiometry.copyMoleculeFailed", new Object[] {}), e);
     }
     return newMol;
   }
@@ -299,7 +303,8 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
       StoichiometryMolecule existing = idToMol.get(update.getId());
       if (existing == null) {
         throw new StoichiometryException(
-            "Molecule ID " + update.getId() + " not found in existing stoichiometry molecules.");
+            messages.getMessage(
+                "errors.stoichiometry.moleculeNotFound", new Object[] {update.getId()}));
       }
 
       applyFieldUpdates(existing, update, user);
@@ -312,14 +317,16 @@ public class StoichiometryManagerImpl extends GenericManagerImpl<Stoichiometry, 
   private StoichiometryMolecule addNewMoleculeFromDto(
       Stoichiometry stoichiometry, StoichiometryMoleculeUpdateDTO updateMol, User user) {
     if (updateMol.getSmiles() == null || updateMol.getSmiles().isBlank()) {
-      throw new StoichiometryException("New molecule requires a SMILES string");
+      throw new StoichiometryException(
+          messages.getMessage("errors.stoichiometry.smilesRequired", new Object[] {}));
     }
 
     RSChemElement molecule = RSChemElement.builder().chemElements(updateMol.getSmiles()).build();
     try {
       molecule = rsChemElementManager.save(molecule, user);
     } catch (IOException e) {
-      throw new StoichiometryException("Problem saving new molecule from SMILES", e);
+      throw new StoichiometryException(
+          messages.getMessage("errors.stoichiometry.saveMoleculeFailed", new Object[] {}), e);
     }
 
     StoichiometryMolecule newMol =

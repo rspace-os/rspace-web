@@ -1,6 +1,7 @@
 import ListItemText from "@mui/material/ListItemText";
 import MenuItem from "@mui/material/MenuItem";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Fields } from "../../../stores/models/ImportModel";
 import useStores from "../../../stores/use-stores";
 import { match, toTitleCase } from "../../../util/Util";
@@ -21,6 +22,7 @@ const label = (field: (typeof Fields)[keyof typeof Fields]): string =>
 
 const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemArgs>(
   ({ field, currentField, typeIsCompatibleWithField, onClick }: FieldSelectMenuItemArgs, ref) => {
+    const { t } = useTranslation("inventory");
     const { importStore } = useStores();
     const fieldIsChosen = Boolean(importStore.importData?.fieldIsChosen(field)) && field !== Fields.none;
     const fieldIsChosenHere = field === currentField;
@@ -30,8 +32,8 @@ const FieldSelectMenuItem = React.forwardRef<HTMLLIElement, FieldSelectMenuItemA
     const helpText = match<void, string>([
       [() => fieldIsChosenHere, ""],
       [() => customIsChosen, ""],
-      [() => fieldIsChosen, "This field is already mapped to another column."],
-      [() => !compatibleType, "Incompatible data in this column."],
+      [() => fieldIsChosen, t("import.fieldSelect.alreadyMapped")],
+      [() => !compatibleType, t("import.fieldSelect.incompatibleData")],
       [() => true, ""],
     ])();
 

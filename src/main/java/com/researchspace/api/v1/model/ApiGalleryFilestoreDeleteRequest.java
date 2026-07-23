@@ -1,10 +1,9 @@
 package com.researchspace.api.v1.model;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/delete}. Deletes the file
@@ -16,7 +15,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreDeleteRequest {
 
-  @NotNull(message = "{errors.gallery.filestore.validation.pathRequired}")
-  @Size(min = 1, message = "{errors.gallery.filestore.validation.pathRequired}")
+  @NotEmpty(message = "{errors.gallery.filestore.validation.pathRequired}")
   private String path;
 }

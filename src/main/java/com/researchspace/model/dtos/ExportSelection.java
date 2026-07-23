@@ -18,7 +18,7 @@ public class ExportSelection {
     GROUP
   }
 
-  @NotNull(message = "{export.validation.typeRequired}")
+  @NotNull(message = "{validation.fields.type} {validation.errors.requiredField}")
   private ExportType type;
 
   // In case type = SELECTION, these must be filled.

@@ -95,10 +95,13 @@
     },
     "jobs": {
       "errors": {
+        "executionNotFound": "No job execution with this Id",
         "s3ExportNotFound": "Couldn't find export on S3 for {0}"
       }
     },
     "errors": {
+      "archiveFolderCreationFailed": "Could not create archive folder",
+      "launchFailed": "couldn't launch export job",
       "userAccountNotInitialised": "User {0}''s account has not been initialised - there is nothing to export!"
     },
     "global": {
@@ -205,14 +208,6 @@
       "version": "Version:"
     },
     "validation": {
-      "allVersionsRequired": "allVersions is a required field.",
-      "archiveTypeRequired": "archiveType is a required field.",
-      "descriptionRequired": "description is a required field.",
-      "formatRequired": "format is a required field.",
-      "maxLinkLevelRequired": "maxLinkLevel is a required field.",
-      "pdfNameRequired": "PDF name is a required field.",
-      "scopeRequired": "scope is a required field.",
-      "typeRequired": "type is a required field.",
       "zipFileRequired": "File must be a zip name"
     }
   }

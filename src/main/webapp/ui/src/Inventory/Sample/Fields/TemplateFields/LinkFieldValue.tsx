@@ -106,7 +106,7 @@ function LinkFieldValue({ field, sourceGlobalId, disabled, onChange }: LinkField
   const canApply = changed && !checkingTarget && !targetExistenceError && (bothEmpty || (bothSet && targetValidity.ok));
 
   const validationMessage =
-    changed && !bothEmpty && !bothSet ? "Select both a relationship type and a target before applying." : "";
+    changed && !bothEmpty && !bothSet ? t("sample.fields.linkFieldValue.selectBothBeforeApplying") : "";
 
   const apply = async (): Promise<void> => {
     const nextLink: FieldLink | null = bothEmpty

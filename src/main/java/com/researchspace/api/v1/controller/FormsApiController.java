@@ -199,7 +199,8 @@ public class FormsApiController extends BaseApiController implements FormsApi {
       }
     }
     if (!isSysadmin) {
-      throw new AuthorizationException("Only sysadmin can use this API");
+      throw new AuthorizationException(
+          getMessage("errors.authorization.sysadminApiOnly", new Object[] {}));
     }
     FormSharingCommand shareingCommand = new FormSharingCommand();
     shareingCommand.setGroupOptions(Arrays.asList(new String[] {"READ"}));

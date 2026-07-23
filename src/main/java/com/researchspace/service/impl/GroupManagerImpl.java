@@ -1121,11 +1121,12 @@ public class GroupManagerImpl implements GroupManager {
     }
 
     if (!group.getPiusers().contains(subject)) {
-      throw new AuthorizationException("Only a PI of this group can change this setting");
+      throw new AuthorizationException(
+          messages.getMessage("groups.edit.errors.piEditOnlyPi", new Object[] {}));
     }
     if (!groupPermUtils.piCanEditAllWorkInLabGroup(group) && canPIEditAll) {
       throw new AuthorizationException(
-          "System admin or community admin has not allowed  this setting to be changed");
+          messages.getMessage("groups.edit.errors.piEditNotAllowed", new Object[] {}));
     }
     groupPermUtils.setReadOrEditAllPermissionsForPi(group, subject, canPIEditAll);
   }

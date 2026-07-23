@@ -228,7 +228,9 @@ public class AuditManagerImpl implements AuditManager {
       User subject = userMgr.getAuthenticatedUserInSession();
       String msg =
           messages.getFailedMessage(
-              subject.getUsername(), "restore an earlier revision of a signed document.");
+              subject.getUsername(),
+              messageSourceUtils.getMessage(
+                  "errors.authorization.action.restoreRevisionOfSignedDocument"));
       throw new AuthorizationException(msg);
     }
     AuditedRecord asd = auditDao.getDocumentForRevision(currentDoc, revision);

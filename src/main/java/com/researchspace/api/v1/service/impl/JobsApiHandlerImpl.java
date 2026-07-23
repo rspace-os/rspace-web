@@ -6,6 +6,7 @@ import com.researchspace.apiutils.ApiError;
 import com.researchspace.apiutils.ApiErrorCodes;
 import com.researchspace.core.util.progress.ProgressMonitor;
 import com.researchspace.model.User;
+import com.researchspace.service.MessageSourceUtils;
 import com.researchspace.service.OperationFailedMessageGenerator;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
 
   private @Autowired JobExplorer jobExplorer;
   private @Autowired OperationFailedMessageGenerator authMsgGen;
+  private @Autowired MessageSourceUtils messages;
   private @Autowired ExportApiStateTracker apiState;
   private List<JobResultFactory<?>> jobResultFactories = new ArrayList<>();
 
@@ -114,12 +116,13 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
 
   private void checkExecutionPerms(JobExecution exe, User apiClient) {
     if (exe == null) {
-      throw new NotFoundException("No job execution with this Id");
+      throw new NotFoundException(messages.getMessage("export.jobs.errors.executionNotFound"));
     }
     String executorUName = getJobParam(exe);
     if (!apiClient.getUsername().equals(executorUName)) {
       throw new AuthorizationException(
-          authMsgGen.getFailedMessage(apiClient, "Retrieving job by id"));
+          authMsgGen.getFailedMessage(
+              apiClient, messages.getMessage("errors.authorization.action.retrieveJobById")));
     }
   }
 
@@ -129,6 +132,10 @@ public class JobsApiHandlerImpl implements JobsApiHandler {
 
   void setExplorer(JobExplorer explorer) {
     this.jobExplorer = explorer;
+  }
+
+  void setMessages(MessageSourceUtils messages) {
+    this.messages = messages;
   }
 
   void setAuthMsgGen(OperationFailedMessageGenerator authMsgGen) {

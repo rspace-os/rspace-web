@@ -1,10 +1,10 @@
 package com.researchspace.api.v1.model;
 
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.validator.constraints.NotEmpty;
 
 /**
  * Request body for {@code POST /api/v1/gallery/filestores/{filestoreId}/move}. Moves a file or
@@ -16,8 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApiGalleryFilestoreMoveRequest {
 
-  @NotNull(message = "{errors.gallery.filestore.validation.sourcePathRequired}")
-  @Size(min = 1, message = "{errors.gallery.filestore.validation.sourcePathRequired}")
+  @NotEmpty(message = "{errors.gallery.filestore.validation.sourcePathRequired}")
   private String sourcePath;
 
   @NotNull(message = "{errors.gallery.filestore.validation.destPathRequired}")

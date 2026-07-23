@@ -93,7 +93,7 @@ export default function OAuthDialog(props: any) {
         .catch((error: any) => {
           addAlert(
             mkAlert({
-              message: getErrorMessage(error, "There was a problem while creating your application."),
+              message: getErrorMessage(error, t("profile.oauth.dialog.createErrorFallback")),
               variant: "warning",
               isInfinite: true,
             }),

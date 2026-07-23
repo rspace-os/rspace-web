@@ -50,6 +50,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 
@@ -60,6 +61,8 @@ public class StoichiometryManagerImplTest {
   @Mock private RSChemElementManager rsChemElementManager;
   @Mock private ChemicalSearcher chemicalSearcher;
   @Mock private StoichiometryInventoryLinkManager stoichiometryInventoryLinkManager;
+
+  @Spy private MessageSourceUtils messages = new MessageSourceUtils(new JsonMessageSource());
 
   @InjectMocks private StoichiometryManagerImpl stoichiometryManager;
 

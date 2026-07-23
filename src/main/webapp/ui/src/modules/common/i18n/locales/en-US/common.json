@@ -545,6 +545,7 @@
         "copySuccess": "Copied to clipboard",
         "createdTitle": "App Successfully Created",
         "createError": "There was a problem while creating your application. Please, try again later or contact support.",
+        "createErrorFallback": "There was a problem while creating your application.",
         "createTitle": "Create an OAuth application",
         "secretWarning": "Please write down the client secret. <strong>It will not be available once you close this window.</strong>",
         "validation": {
