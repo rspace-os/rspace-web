@@ -1,6 +1,6 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { getStoichiometry } from "@/modules/stoichiometry/queries";
 import type { StoichiometryResponse } from "@/modules/stoichiometry/schema";
 
@@ -79,14 +79,7 @@ const mockStoichiometryResponse: StoichiometryResponse = {
 };
 
 function mockGetStoichiometry(response: () => Response): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.get(`${API_BASE_URL}/stoichiometry`, ({ request }) => {
-      requests.push(request);
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("get", `${API_BASE_URL}/stoichiometry`, response);
 }
 
 describe("getStoichiometry", () => {
@@ -140,8 +133,9 @@ describe("getStoichiometry", () => {
   });
 
   it("bubbles up network failures", async () => {
-    mockGetStoichiometry(() => HttpResponse.error());
+    const requests = mockGetStoichiometry(() => HttpResponse.error());
 
     await expect(getStoichiometry({ stoichiometryId: 3, token })).rejects.toThrow();
+    expect(requests).toHaveLength(1);
   });
 });

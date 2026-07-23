@@ -1,17 +1,12 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { server } from "@/__tests__/mswServer";
 import { getPublicLink } from "@/modules/workspace/publicLink";
 
 describe("getPublicLink", () => {
   it("requests the public link endpoint with the global id", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get("/public/publishedView/publiclink", ({ request }) => {
-        requests.push(request);
-        return new HttpResponse(null);
-      }),
-    );
+    const requests = captureRequests("get", "/public/publishedView/publiclink", () => new HttpResponse(null));
 
     await getPublicLink("SD123");
 

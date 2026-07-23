@@ -1,16 +1,13 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it } from "vitest";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import { server } from "@/__tests__/mswServer";
 import { getLinkedByRecords, getLinkedDocuments } from "@/modules/workspace/linkedRecords";
 
 describe("getLinkedByRecords", () => {
   it("requests the linked-by endpoint with the numeric target record id", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get("/workspace/getLinkedByRecords", ({ request }) => {
-        requests.push(request);
-        return HttpResponse.json({ data: [], error: null, success: true });
-      }),
+    const requests = captureRequests("get", "/workspace/getLinkedByRecords", () =>
+      HttpResponse.json({ data: [], error: null, success: true }),
     );
 
     await getLinkedByRecords(123);
@@ -69,12 +66,8 @@ describe("getLinkedByRecords", () => {
 
 describe("getLinkedDocuments", () => {
   it("requests the gallery linked-documents endpoint with the media id", async () => {
-    const requests: Request[] = [];
-    server.use(
-      http.get("/gallery/ajax/getLinkedDocuments/:id", ({ request }) => {
-        requests.push(request);
-        return HttpResponse.json({ data: [], error: null, success: true });
-      }),
+    const requests = captureRequests("get", "/gallery/ajax/getLinkedDocuments/:id", () =>
+      HttpResponse.json({ data: [], error: null, success: true }),
     );
 
     await getLinkedDocuments(55);

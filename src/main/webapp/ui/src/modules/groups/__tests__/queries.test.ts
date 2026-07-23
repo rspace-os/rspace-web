@@ -1,6 +1,6 @@
-import { HttpResponse, http } from "msw";
+import { HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
-import { server } from "@/__tests__/mswServer";
+import { captureRequests } from "@/__tests__/mswRequestCapture";
 import type { RestApiError } from "@/modules/common/api/schema";
 import { getGroupById } from "../queries";
 import type { GroupInfo } from "../schema";
@@ -51,14 +51,7 @@ const mockRestApiError: RestApiError = {
 };
 
 function mockGroupResponse(response: () => Response): Request[] {
-  const requests: Request[] = [];
-  server.use(
-    http.get(`${API_BASE_URL}/groups/:id`, ({ request }) => {
-      requests.push(request);
-      return response();
-    }),
-  );
-  return requests;
+  return captureRequests("get", `${API_BASE_URL}/groups/:id`, response);
 }
 
 describe("getGroupById", () => {
